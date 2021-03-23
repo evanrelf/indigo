@@ -6,6 +6,7 @@ in
     buildInputs = with pkgs; [
       cargo
       clippy
+      libiconv
       rustc
       rustfmt
     ];

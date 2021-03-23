@@ -5,3 +5,4 @@ authors = ["Evan Relf <evan@evanrelf.com>"]
 edition = "2018"
 
 [dependencies]
+crossterm = "0.19.0"
