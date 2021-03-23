@@ -4,5 +4,9 @@ version = "0.1.0"
 authors = ["Evan Relf <evan@evanrelf.com>"]
 edition = "2018"
 
+[[bin]]
+name = "ind"
+path = "src/main.rs"
+
 [dependencies]
 crossterm = "0.19.0"
