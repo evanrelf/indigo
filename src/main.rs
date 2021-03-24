@@ -14,7 +14,6 @@ fn main() -> Result<()> {
 
     Terminal::enter();
 
-    Terminal::set_title("idg");
     Terminal::hide_cursor();
     Terminal::flush();
 

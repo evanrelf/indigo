@@ -4,13 +4,15 @@ use crossterm::Result;
 
 pub struct Editor {
     pub quit: bool,
-    buffer: String,
+    pub title: String,
+    pub buffer: String,
 }
 
 impl Editor {
     pub fn new() -> Editor {
         Editor {
             quit: false,
+            title: String::from("ind"),
             buffer: String::from(""),
         }
     }
@@ -67,6 +69,7 @@ impl Editor {
         Terminal::clear();
         Terminal::move_cursor_to(0, 0);
         Terminal::print(&self.buffer);
+        Terminal::set_title(&self.title);
         Terminal::flush();
     }
 }
