@@ -1,6 +1,6 @@
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers, MouseEvent};
-use crossterm::{cursor, event, style, terminal, ExecutableCommand, Result};
-use std::io::stdout;
+use crossterm::{cursor, event, style, terminal, ExecutableCommand, QueueableCommand, Result};
+use std::io::{stdout, Write};
 
 struct Terminal {}
 
@@ -17,20 +17,24 @@ impl Terminal {
 
     fn clear() {
         stdout()
-            .execute(terminal::Clear(terminal::ClearType::All))
+            .queue(terminal::Clear(terminal::ClearType::All))
             .unwrap();
     }
 
     fn move_cursor_to(x: u16, y: u16) {
-        stdout().execute(cursor::MoveTo(x, y)).unwrap();
+        stdout().queue(cursor::MoveTo(x, y)).unwrap();
     }
 
     fn set_title(title: &str) {
-        stdout().execute(terminal::SetTitle(title)).unwrap();
+        stdout().queue(terminal::SetTitle(title)).unwrap();
     }
 
     fn print(message: &str) {
-        stdout().execute(style::Print(message)).unwrap();
+        stdout().queue(style::Print(message)).unwrap();
+    }
+
+    fn flush() {
+        stdout().flush().unwrap();
     }
 }
 
@@ -99,6 +103,7 @@ impl Editor {
         Terminal::clear();
         Terminal::move_cursor_to(0, 0);
         Terminal::print(&self.buffer);
+        Terminal::flush();
     }
 }
 
@@ -106,6 +111,7 @@ fn main() -> Result<()> {
     Terminal::enter();
 
     Terminal::set_title("idg");
+    Terminal::flush();
 
     let mut editor = Editor::new();
 
