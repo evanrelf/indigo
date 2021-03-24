@@ -11,12 +11,25 @@ pub struct Editor {
 }
 
 impl Editor {
-    pub fn new() -> Editor {
+    pub fn new() -> Self {
         Editor {
             quit: false,
             title: String::from("ind"),
             buffer: Rope::new(),
         }
+    }
+
+    pub fn run(&mut self) {
+        Terminal::enter();
+        Terminal::hide_cursor();
+        Terminal::flush();
+
+        while !self.quit {
+            self.render();
+            self.handle_event().unwrap();
+        }
+
+        Terminal::exit();
     }
 
     pub fn handle_event(&mut self) -> Result<()> {

@@ -12,19 +12,7 @@ fn main() -> Result<()> {
         eprintln!("{}", panic_info);
     }));
 
-    Terminal::enter();
-
-    Terminal::hide_cursor();
-    Terminal::flush();
-
-    let mut editor = Editor::new();
-
-    while !editor.quit {
-        editor.render();
-        editor.handle_event()?;
-    }
-
-    Terminal::exit();
+    Editor::new().run();
 
     Ok(())
 }
