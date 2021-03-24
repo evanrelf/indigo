@@ -1,6 +1,7 @@
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 use crossterm::{cursor, event, style, terminal, ExecutableCommand, QueueableCommand, Result};
 use std::io::{stdout, Write};
+use std::panic;
 
 struct Terminal {}
 
@@ -118,6 +119,11 @@ impl Editor {
 }
 
 fn main() -> Result<()> {
+    panic::set_hook(Box::new(|panic_info| {
+        Terminal::exit();
+        eprintln!("{}", panic_info);
+    }));
+
     Terminal::enter();
 
     Terminal::set_title("idg");
