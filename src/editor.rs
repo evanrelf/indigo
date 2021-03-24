@@ -1,11 +1,13 @@
 use crate::terminal::Terminal;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 use crossterm::Result;
+use ropey::Rope;
+use std::borrow::Cow;
 
 pub struct Editor {
     pub quit: bool,
     pub title: String,
-    pub buffer: String,
+    pub buffer: Rope,
 }
 
 impl Editor {
@@ -13,7 +15,7 @@ impl Editor {
         Editor {
             quit: false,
             title: String::from("ind"),
-            buffer: String::from(""),
+            buffer: Rope::new(),
         }
     }
 
@@ -29,16 +31,17 @@ impl Editor {
         let KeyEvent { code, modifiers } = key_event;
 
         if modifiers == KeyModifiers::NONE {
+            let length = self.buffer.len_chars();
             match code {
                 KeyCode::Char(c) => {
-                    self.buffer.push(c);
+                    self.buffer.insert_char(length, c);
                 }
                 KeyCode::Enter => {
-                    self.buffer.push_str("\n\r");
+                    self.buffer.insert(length, "\n");
                 }
                 KeyCode::Backspace => {
-                    if let Some('\r') = self.buffer.pop() {
-                        self.buffer.pop();
+                    if length > 0 {
+                        self.buffer.remove((length - 1)..length);
                     }
                 }
                 _ => (),
@@ -67,9 +70,17 @@ impl Editor {
 
     pub fn render(&mut self) {
         Terminal::clear();
-        Terminal::move_cursor_to(0, 0);
-        Terminal::print(&self.buffer);
+
+        let mut line_number = 0;
+        for line in self.buffer.lines() {
+            Terminal::move_cursor_to(0, line_number);
+            Terminal::print(&Cow::from(line));
+            Terminal::print("\r");
+            line_number += 1;
+        }
+
         Terminal::set_title(&self.title);
+
         Terminal::flush();
     }
 }

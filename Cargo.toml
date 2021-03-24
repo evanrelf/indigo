@@ -10,3 +10,4 @@ path = "src/main.rs"
 
 [dependencies]
 crossterm = "0.19.0"
+ropey = "1.2.0"
