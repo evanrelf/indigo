@@ -1,53 +1,9 @@
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers, MouseEvent};
-use crossterm::{cursor, event, style, terminal, ExecutableCommand, QueueableCommand, Result};
-use std::io::{stdout, Write};
+mod terminal;
+
+use crate::terminal::Terminal;
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers, MouseEvent};
+use crossterm::Result;
 use std::panic;
-
-struct Terminal {}
-
-impl Terminal {
-    fn enter() {
-        terminal::enable_raw_mode().unwrap();
-        stdout().execute(terminal::EnterAlternateScreen).unwrap();
-    }
-
-    fn exit() {
-        stdout().queue(cursor::Show).unwrap();
-        stdout().queue(terminal::LeaveAlternateScreen).unwrap();
-        stdout().flush().unwrap();
-        terminal::disable_raw_mode().unwrap();
-    }
-
-    fn clear() {
-        stdout()
-            .queue(terminal::Clear(terminal::ClearType::All))
-            .unwrap();
-    }
-
-    fn hide_cursor() {
-        stdout().queue(cursor::Hide).unwrap();
-    }
-
-    fn show_cursor() {
-        stdout().queue(cursor::Show).unwrap();
-    }
-
-    fn move_cursor_to(x: u16, y: u16) {
-        stdout().queue(cursor::MoveTo(x, y)).unwrap();
-    }
-
-    fn set_title(title: &str) {
-        stdout().queue(terminal::SetTitle(title)).unwrap();
-    }
-
-    fn print(message: &str) {
-        stdout().queue(style::Print(message)).unwrap();
-    }
-
-    fn flush() {
-        stdout().flush().unwrap();
-    }
-}
 
 struct Editor {
     quit: bool,
