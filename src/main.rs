@@ -36,11 +36,15 @@ impl Terminal {
 
 struct Editor {
     quit: bool,
+    buffer: String,
 }
 
 impl Editor {
     fn new() -> Editor {
-        Editor { quit: false }
+        Editor {
+            quit: false,
+            buffer: String::from(""),
+        }
     }
 
     fn handle_event(&mut self) -> Result<()> {
@@ -53,6 +57,23 @@ impl Editor {
 
     fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<()> {
         let KeyEvent { code, modifiers } = key_event;
+
+        if modifiers == KeyModifiers::NONE {
+            match code {
+                KeyCode::Char(c) => {
+                    self.buffer.push(c);
+                }
+                KeyCode::Enter => {
+                    self.buffer.push_str("\n\r");
+                }
+                KeyCode::Backspace => {
+                    if let Some('\r') = self.buffer.pop() {
+                        self.buffer.pop();
+                    }
+                }
+                _ => (),
+            }
+        }
 
         if modifiers == KeyModifiers::CONTROL {
             match code {
@@ -73,6 +94,12 @@ impl Editor {
     fn handle_resize_event(&mut self, _width: u16, _height: u16) -> Result<()> {
         Ok(())
     }
+
+    fn render(&mut self) {
+        Terminal::clear();
+        Terminal::move_cursor_to(0, 0);
+        Terminal::print(&self.buffer);
+    }
 }
 
 fn main() -> Result<()> {
@@ -80,12 +107,10 @@ fn main() -> Result<()> {
 
     Terminal::set_title("idg");
 
-    Terminal::clear();
-    Terminal::move_cursor_to(0, 0);
-
     let mut editor = Editor::new();
 
     while !editor.quit {
+        editor.render();
         editor.handle_event()?;
     }
 
