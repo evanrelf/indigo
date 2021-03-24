@@ -11,7 +11,9 @@ impl Terminal {
     }
 
     fn exit() {
-        stdout().execute(terminal::LeaveAlternateScreen).unwrap();
+        stdout().queue(cursor::Show).unwrap();
+        stdout().queue(terminal::LeaveAlternateScreen).unwrap();
+        stdout().flush().unwrap();
         terminal::disable_raw_mode().unwrap();
     }
 
@@ -19,6 +21,14 @@ impl Terminal {
         stdout()
             .queue(terminal::Clear(terminal::ClearType::All))
             .unwrap();
+    }
+
+    fn hide_cursor() {
+        stdout().queue(cursor::Hide).unwrap();
+    }
+
+    fn show_cursor() {
+        stdout().queue(cursor::Show).unwrap();
     }
 
     fn move_cursor_to(x: u16, y: u16) {
@@ -111,6 +121,7 @@ fn main() -> Result<()> {
     Terminal::enter();
 
     Terminal::set_title("idg");
+    Terminal::hide_cursor();
     Terminal::flush();
 
     let mut editor = Editor::new();
