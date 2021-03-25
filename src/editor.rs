@@ -10,23 +10,6 @@ pub enum Action {
     DeleteChar(usize, usize),
 }
 
-impl Action {
-    pub fn apply(self, editor: &mut Editor) {
-        match self {
-            Action::Quit => {
-                editor.quit = true;
-            }
-            Action::InsertChar(line, column, c) => {
-                let index = editor.buffer.line_to_char(line) + column;
-                editor.buffer.insert_char(index, c);
-            }
-            Action::DeleteChar(line, column) => {
-                let index = editor.buffer.line_to_char(line) + column;
-                editor.buffer.remove(index..(index + 1));
-            }
-        }
-    }
-}
 
 pub struct Editor {
     pub quit: bool,
@@ -43,22 +26,23 @@ impl Editor {
         }
     }
 
-    pub fn run(&mut self) {
+    pub fn run(mut self) {
         Terminal::enter();
         Terminal::hide_cursor();
         Terminal::flush();
 
         while !self.quit {
             self.render();
-            if let Some(action) = self.handle_event().unwrap() {
-                action.apply(self);
+            let actions = self.handle_event().unwrap();
+            for action in actions {
+                self.apply_action(action);
             }
         }
 
         Terminal::exit();
     }
 
-    pub fn handle_event(&mut self) -> Result<Option<Action>> {
+    pub fn handle_event(&self) -> Result<Vec<Action>> {
         match event::read()? {
             Event::Key(key_event) => self.handle_key_event(key_event),
             Event::Mouse(mouse_event) => self.handle_mouse_event(mouse_event),
@@ -66,46 +50,63 @@ impl Editor {
         }
     }
 
-    fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<Option<Action>> {
+    fn handle_key_event(&self, key_event: KeyEvent) -> Result<Vec<Action>> {
         let KeyEvent { code, modifiers } = key_event;
 
         if modifiers == KeyModifiers::NONE {
             let length = self.buffer.len_chars();
             return Ok(match code {
-                KeyCode::Char(c) => Some(Action::InsertChar(0, length, c)),
-                KeyCode::Enter => Some(Action::InsertChar(0, length, '\n')),
+                KeyCode::Char('0') => vec![Action::InsertChar(0, 0, 'X')],
+                KeyCode::Char(c) => vec![Action::InsertChar(0, length, c)],
+                KeyCode::Enter => vec![Action::InsertChar(0, length, '\n')],
                 KeyCode::Backspace => {
                     if length > 0 {
-                        Some(Action::DeleteChar(0, length - 1))
+                        vec![Action::DeleteChar(0, length - 1)]
                     } else {
-                        None
+                        Vec::new()
                     }
                 }
-                _ => None,
+                _ => Vec::new(),
             });
         }
 
         if modifiers == KeyModifiers::CONTROL {
             return Ok(match code {
-                KeyCode::Char('c') => Some(Action::Quit),
-                _ => None,
+                KeyCode::Char('c') => vec![Action::Quit],
+                _ => Vec::new(),
             });
         }
 
-        Ok(None)
+        Ok(Vec::new())
     }
 
-    fn handle_mouse_event(&mut self, mouse_event: MouseEvent) -> Result<Option<Action>> {
+    fn handle_mouse_event(&self, mouse_event: MouseEvent) -> Result<Vec<Action>> {
         Ok(match mouse_event {
-            _ => None,
+            _ => Vec::new(),
         })
     }
 
-    fn handle_resize_event(&mut self, _width: u16, _height: u16) -> Result<Option<Action>> {
-        Ok(None)
+    fn handle_resize_event(&self, _width: u16, _height: u16) -> Result<Vec<Action>> {
+        Ok(Vec::new())
     }
 
-    pub fn render(&mut self) {
+    pub fn apply_action(&mut self, action: Action) {
+        match action {
+            Action::Quit => {
+                self.quit = true;
+            }
+            Action::InsertChar(line, column, c) => {
+                let index = self.buffer.line_to_char(line) + column;
+                self.buffer.insert_char(index, c);
+            }
+            Action::DeleteChar(line, column) => {
+                let index = self.buffer.line_to_char(line) + column;
+                self.buffer.remove(index..(index + 1));
+            }
+        }
+    }
+
+    pub fn render(&self) {
         Terminal::clear();
 
         let mut line_number = 0;
