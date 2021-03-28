@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::buffer::Buffer;
 use crate::selection::{Position, Selection};
 use crate::terminal::Terminal;
@@ -114,6 +116,13 @@ impl Editor {
                 KeyCode::Char('j') => Some(vec![Action::MoveCursor(Direction::Down, 1)]),
                 KeyCode::Char('k') => Some(vec![Action::MoveCursor(Direction::Up, 1)]),
                 KeyCode::Char('l') => Some(vec![Action::MoveCursor(Direction::Right, 1)]),
+                _ => None,
+            }
+        } else if modifiers == KeyModifiers::CONTROL {
+            None
+        } else if modifiers == KeyModifiers::ALT {
+            match code {
+                KeyCode::Char(';') => Some(vec![Action::FlipSelection]),
                 _ => None,
             }
         } else {
