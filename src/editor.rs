@@ -206,6 +206,7 @@ impl Editor {
 
         self.render_buffer();
         self.render_selection();
+        self.render_status();
 
         Terminal::set_title(&self.title);
 
@@ -258,5 +259,17 @@ impl Editor {
         };
 
         Terminal::print_styled(cursor_char.white().on_red());
+    }
+
+    pub fn render_status(&self) {
+        let (_, terminal_lines) = Terminal::size();
+        Terminal::move_cursor_to(0, terminal_lines);
+        Terminal::print(&format!(
+            "cursor: ({}, {}), anchor: ({}, {})",
+            self.selection.cursor.line,
+            self.selection.cursor.column,
+            self.selection.anchor.line,
+            self.selection.anchor.column,
+        ));
     }
 }
