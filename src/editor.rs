@@ -16,6 +16,7 @@ pub enum Direction {
 
 pub enum Action {
     Quit,
+    ChangeMode(Mode),
     InsertChar(usize, usize, char),
     DeleteChar(usize, usize),
     MoveCursor(Direction, usize),
@@ -43,7 +44,7 @@ impl Editor {
         Editor {
             quit: false,
             title: String::from("ind"),
-            mode: Mode::Insert,
+            mode: Mode::Normal,
             selection: Selection::new(),
             buffer: Buffer::new(Rope::new()),
         }
@@ -67,94 +68,116 @@ impl Editor {
 
     pub fn handle_event(&self) -> Result<Vec<Action>> {
         match event::read()? {
-            Event::Key(key_event) => self.handle_key_event(key_event),
+            Event::Key(key_event) => Ok(self.handle_key_event(key_event)),
             Event::Mouse(mouse_event) => self.handle_mouse_event(mouse_event),
             Event::Resize(width, height) => self.handle_resize_event(width, height),
         }
     }
 
-    fn handle_key_event(&self, key_event: KeyEvent) -> Result<Vec<Action>> {
-        let KeyEvent { code, modifiers } = key_event;
+    fn handle_key_event(&self, key_event: KeyEvent) -> Vec<Action> {
+        let mode_key = match self.mode {
+            Mode::Normal => self.handle_key_event_normal_mode(key_event),
+            Mode::Insert => self.handle_key_event_insert_mode(key_event),
+        };
 
-        Ok(if modifiers == KeyModifiers::NONE {
+        mode_key
+            .or(self.handle_key_event_any_mode(key_event))
+            .unwrap_or(vec![])
+    }
+
+    fn handle_key_event_normal_mode(&self, key_event: KeyEvent) -> Option<Vec<Action>> {
+        let KeyEvent { modifiers, code } = key_event;
+        if modifiers == KeyModifiers::NONE {
             match code {
-                KeyCode::Char(c) => vec![
-                    Action::InsertChar(self.selection.cursor.line, self.selection.cursor.column, c),
-                    Action::MoveCursor(Direction::Right, 1),
-                    Action::ReduceSelection,
-                ],
-                KeyCode::Enter => vec![
-                    Action::InsertChar(
-                        self.selection.cursor.line,
-                        self.selection.cursor.column,
-                        '\n',
-                    ),
-                    Action::MoveCursor(Direction::Down, 1),
-                    Action::ReduceSelection,
-                ],
-                KeyCode::Backspace if self.buffer.contents.len_chars() > 0 => vec![
-                    Action::DeleteChar(
-                        self.selection.cursor.line,
-                        self.selection.cursor.column - 1,
-                    ),
+                KeyCode::Char('i') => Some(vec![Action::ChangeMode(Mode::Insert)]),
+                KeyCode::Char('h') => Some(vec![
                     Action::MoveCursor(Direction::Left, 1),
                     Action::ReduceSelection,
-                ],
-                KeyCode::Up => vec![
+                ]),
+                KeyCode::Char('j') => Some(vec![
+                    Action::MoveCursor(Direction::Down, 1),
+                    Action::ReduceSelection,
+                ]),
+                KeyCode::Char('k') => Some(vec![
                     Action::MoveCursor(Direction::Up, 1),
                     Action::ReduceSelection,
-                ],
-                KeyCode::Down => vec![
-                    Action::MoveCursor(Direction::Down, 1),
-                    Action::ReduceSelection,
-                ],
-                KeyCode::Left => vec![
-                    Action::MoveCursor(Direction::Left, 1),
-                    Action::ReduceSelection,
-                ],
-                KeyCode::Right => vec![
+                ]),
+                KeyCode::Char('l') => Some(vec![
                     Action::MoveCursor(Direction::Right, 1),
                     Action::ReduceSelection,
-                ],
-                _ => Vec::new(),
+                ]),
+                _ => None,
             }
         } else if modifiers == KeyModifiers::SHIFT {
             match code {
-                KeyCode::Up => vec![Action::MoveCursor(Direction::Up, 1)],
-                KeyCode::Down => vec![Action::MoveCursor(Direction::Down, 1)],
-                KeyCode::Left => vec![Action::MoveCursor(Direction::Left, 1)],
-                KeyCode::Right => vec![Action::MoveCursor(Direction::Right, 1)],
-                _ => Vec::new(),
-            }
-        } else if modifiers == KeyModifiers::CONTROL {
-            match code {
-                KeyCode::Char('c') => vec![Action::Quit],
-                _ => Vec::new(),
-            }
-        } else if modifiers == KeyModifiers::ALT {
-            match code {
-                KeyCode::Char(';') => vec![Action::FlipSelection],
-                _ => Vec::new(),
+                KeyCode::Char('h') => Some(vec![Action::MoveCursor(Direction::Left, 1)]),
+                KeyCode::Char('j') => Some(vec![Action::MoveCursor(Direction::Down, 1)]),
+                KeyCode::Char('k') => Some(vec![Action::MoveCursor(Direction::Up, 1)]),
+                KeyCode::Char('l') => Some(vec![Action::MoveCursor(Direction::Right, 1)]),
+                _ => None,
             }
         } else {
-            Vec::new()
-        })
+            None
+        }
+    }
+
+    fn handle_key_event_insert_mode(&self, key_event: KeyEvent) -> Option<Vec<Action>> {
+        let KeyEvent { modifiers, code } = key_event;
+        if modifiers == KeyModifiers::NONE {
+            let cursor = &self.selection.cursor;
+            match code {
+                KeyCode::Esc => Some(vec![Action::ChangeMode(Mode::Normal)]),
+                KeyCode::Char(c) => Some(vec![
+                    Action::InsertChar(cursor.line, cursor.column, c),
+                    Action::MoveCursor(Direction::Right, 1),
+                    Action::ReduceSelection,
+                ]),
+                KeyCode::Enter => Some(vec![
+                    Action::InsertChar(cursor.line, cursor.column, '\n'),
+                    Action::MoveCursor(Direction::Down, 1),
+                    Action::ReduceSelection,
+                ]),
+                KeyCode::Backspace if self.buffer.contents.len_chars() > 0 => Some(vec![
+                    Action::DeleteChar(cursor.line, cursor.column + 1),
+                    Action::MoveCursor(Direction::Left, 1),
+                    Action::ReduceSelection,
+                ]),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    }
+
+    fn handle_key_event_any_mode(&self, key_event: KeyEvent) -> Option<Vec<Action>> {
+        let KeyEvent { modifiers, code } = key_event;
+        if modifiers == KeyModifiers::CONTROL {
+            match code {
+                KeyCode::Char('c') => Some(vec![Action::Quit]),
+                _ => None,
+            }
+        } else {
+            None
+        }
     }
 
     fn handle_mouse_event(&self, mouse_event: MouseEvent) -> Result<Vec<Action>> {
-        Ok(match mouse_event {
-            _ => Vec::new(),
-        })
+        match mouse_event {
+            _ => Ok(vec![]),
+        }
     }
 
     fn handle_resize_event(&self, _width: u16, _height: u16) -> Result<Vec<Action>> {
-        Ok(Vec::new())
+        Ok(vec![])
     }
 
     pub fn apply_action(&mut self, action: Action) {
         match action {
             Action::Quit => {
                 self.quit = true;
+            }
+            Action::ChangeMode(mode) => {
+                self.mode = mode;
             }
             Action::InsertChar(line, column, character) => {
                 self.buffer.insert_char(line, column, character);
