@@ -24,6 +24,10 @@ impl Cursor {
     }
 
     pub fn move_cursor(&mut self, direction: Direction, distance: usize) -> bool {
+        if distance == 0 {
+            return true;
+        }
+
         match direction {
             Direction::Up if self.line >= distance => {
                 self.line -= distance;
