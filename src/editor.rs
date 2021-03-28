@@ -24,6 +24,18 @@ pub struct Cursor {
     column: usize,
 }
 
+impl Cursor {
+    pub fn move_cursor(&mut self, direction: Direction, distance: usize) {
+        match direction {
+            Direction::Up => self.line -= distance,
+            Direction::Down => self.line += distance,
+            Direction::Left => self.column -= distance,
+            Direction::Right => self.column += distance,
+            _ => (),
+        }
+    }
+}
+
 pub struct Editor {
     pub quit: bool,
     pub title: String,
@@ -82,6 +94,10 @@ impl Editor {
                     Action::DeleteChar(self.cursor.line, self.cursor.column - 1),
                     Action::MoveCursor(Direction::Left, 1),
                 ],
+                KeyCode::Up => vec![Action::MoveCursor(Direction::Up, 1)],
+                KeyCode::Down => vec![Action::MoveCursor(Direction::Down, 1)],
+                KeyCode::Left => vec![Action::MoveCursor(Direction::Left, 1)],
+                KeyCode::Right => vec![Action::MoveCursor(Direction::Right, 1)],
                 _ => Vec::new(),
             }
         } else if modifiers == KeyModifiers::CONTROL {
@@ -117,12 +133,9 @@ impl Editor {
                 let index = self.buffer.line_to_char(line) + column;
                 self.buffer.remove(index..(index + 1));
             }
-            Action::MoveCursor(direction, distance) => match direction {
-                Direction::Up => self.cursor.line -= distance,
-                Direction::Down => self.cursor.line += distance,
-                Direction::Left => self.cursor.column -= distance,
-                Direction::Right => self.cursor.column += distance,
-            },
+            Action::MoveCursor(direction, distance) => {
+                self.cursor.move_cursor(direction, distance);
+            }
         }
     }
 
