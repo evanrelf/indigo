@@ -27,9 +27,9 @@ pub struct Cursor {
 impl Cursor {
     pub fn move_cursor(&mut self, direction: Direction, distance: usize) {
         match direction {
-            Direction::Up => self.line -= distance,
+            Direction::Up if self.line >= distance => self.line -= distance,
             Direction::Down => self.line += distance,
-            Direction::Left => self.column -= distance,
+            Direction::Left if self.column >= distance => self.column -= distance,
             Direction::Right => self.column += distance,
             _ => (),
         }
