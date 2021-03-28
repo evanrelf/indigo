@@ -43,8 +43,4 @@ impl Selection {
             anchor: Position { line: 0, column: 0 },
         }
     }
-
-    pub fn from(cursor: Position, anchor: Position) -> Selection {
-        Selection { cursor, anchor }
-    }
 }

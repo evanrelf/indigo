@@ -26,24 +26,12 @@ impl Terminal {
         stdout().queue(cursor::Hide).unwrap();
     }
 
-    pub fn show_cursor() {
-        stdout().queue(cursor::Show).unwrap();
-    }
-
     pub fn move_cursor_to(x: u16, y: u16) {
         stdout().queue(cursor::MoveTo(x, y)).unwrap();
     }
 
     pub fn set_title(title: &str) {
         stdout().queue(terminal::SetTitle(title)).unwrap();
-    }
-
-    pub fn set_foreground_color(color: style::Color) {
-        stdout().queue(style::SetForegroundColor(color)).unwrap();
-    }
-
-    pub fn set_background_color(color: style::Color) {
-        stdout().queue(style::SetBackgroundColor(color)).unwrap();
     }
 
     pub fn print(message: &str) {
