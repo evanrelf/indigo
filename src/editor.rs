@@ -1,23 +1,31 @@
 use crate::buffer::Buffer;
-use crate::cursor::{Cursor, Direction};
+use crate::selection::Selection;
 use crate::terminal::Terminal;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers, MouseEvent};
-use crossterm::style::{Color, Colorize};
+use crossterm::style::Colorize;
 use crossterm::Result;
 use ropey::Rope;
 use std::borrow::Cow;
+
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
 
 pub enum Action {
     Quit,
     InsertChar(usize, usize, char),
     DeleteChar(usize, usize),
     MoveCursor(Direction, usize),
+    MoveAnchor(Direction, usize),
 }
 
 pub struct Editor {
     pub quit: bool,
     pub title: String,
-    pub cursor: Cursor,
+    pub selection: Selection,
     pub buffer: Buffer,
 }
 
@@ -26,7 +34,7 @@ impl Editor {
         Editor {
             quit: false,
             title: String::from("ind"),
-            cursor: Cursor::new(0, 0),
+            selection: Selection::new(),
             buffer: Buffer::new(Rope::new()),
         }
     }
@@ -61,15 +69,22 @@ impl Editor {
         Ok(if modifiers == KeyModifiers::NONE {
             match code {
                 KeyCode::Char(c) => vec![
-                    Action::InsertChar(self.cursor.line(), self.cursor.column(), c),
+                    Action::InsertChar(self.selection.cursor.line, self.selection.cursor.column, c),
                     Action::MoveCursor(Direction::Right, 1),
                 ],
                 KeyCode::Enter => vec![
-                    Action::InsertChar(self.cursor.line(), self.cursor.column(), '\n'),
+                    Action::InsertChar(
+                        self.selection.cursor.line,
+                        self.selection.cursor.column,
+                        '\n',
+                    ),
                     Action::MoveCursor(Direction::Down, 1),
                 ],
                 KeyCode::Backspace if self.buffer.contents.len_chars() > 0 => vec![
-                    Action::DeleteChar(self.cursor.line(), self.cursor.column() - 1),
+                    Action::DeleteChar(
+                        self.selection.cursor.line,
+                        self.selection.cursor.column - 1,
+                    ),
                     Action::MoveCursor(Direction::Left, 1),
                 ],
                 KeyCode::Up => vec![Action::MoveCursor(Direction::Up, 1)],
@@ -109,14 +124,42 @@ impl Editor {
             Action::DeleteChar(line, column) => {
                 self.buffer.delete_char(line, column);
             }
-            Action::MoveCursor(direction, distance) => {
-                self.cursor.move_cursor(direction, distance);
-            }
+            Action::MoveCursor(direction, distance) => match direction {
+                Direction::Up => {
+                    self.selection.cursor.move_up(distance);
+                }
+                Direction::Down => {
+                    self.selection.cursor.move_down(distance);
+                }
+                Direction::Left => {
+                    self.selection.cursor.move_left(distance);
+                }
+                Direction::Right => {
+                    self.selection.cursor.move_right(distance);
+                }
+            },
+            Action::MoveAnchor(direction, distance) => match direction {
+                Direction::Up => {
+                    self.selection.anchor.move_up(distance);
+                }
+                Direction::Down => {
+                    self.selection.anchor.move_down(distance);
+                }
+                Direction::Left => {
+                    self.selection.anchor.move_left(distance);
+                }
+                Direction::Right => {
+                    self.selection.anchor.move_right(distance);
+                }
+            },
         }
     }
 
     pub fn cursor_to_char(&self) -> usize {
-        self.buffer.contents.line_to_char(self.cursor.line()) + self.cursor.column()
+        self.buffer
+            .contents
+            .line_to_char(self.selection.cursor.line)
+            + self.selection.cursor.column
     }
 
     pub fn render(&self) {
@@ -130,7 +173,10 @@ impl Editor {
             line_number += 1;
         }
 
-        Terminal::move_cursor_to(self.cursor.column() as u16, self.cursor.line() as u16);
+        Terminal::move_cursor_to(
+            self.selection.cursor.column as u16,
+            self.selection.cursor.line as u16,
+        );
         let cursor_char = self.cursor_to_char();
         let character = if self.buffer.contents.len_chars() > cursor_char {
             self.buffer.contents.char(cursor_char).to_string()
@@ -141,8 +187,7 @@ impl Editor {
 
         Terminal::set_title(&format!(
             "ind (cursor: {},{})",
-            self.cursor.line(),
-            self.cursor.column()
+            self.selection.cursor.line, self.selection.cursor.column
         ));
 
         Terminal::flush();

@@ -1,6 +1,6 @@
 mod buffer;
-mod cursor;
 mod editor;
+mod selection;
 mod terminal;
 
 use crate::editor::Editor;
