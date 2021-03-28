@@ -137,8 +137,8 @@ impl Editor {
                     Action::MoveCursor(Direction::Down, 1),
                     Action::ReduceSelection,
                 ]),
-                KeyCode::Backspace if self.buffer.contents.len_chars() > 0 => Some(vec![
-                    Action::DeleteChar(cursor.line, cursor.column + 1),
+                KeyCode::Backspace if cursor.column > 0 => Some(vec![
+                    Action::DeleteChar(cursor.line, cursor.column - 1),
                     Action::MoveCursor(Direction::Left, 1),
                     Action::ReduceSelection,
                 ]),
