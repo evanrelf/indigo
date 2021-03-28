@@ -173,52 +173,30 @@ impl Editor {
 
     pub fn apply_action(&mut self, action: Action) {
         match action {
-            Action::Quit => {
-                self.quit = true;
-            }
-            Action::ChangeMode(mode) => {
-                self.mode = mode;
-            }
+            Action::Quit => self.quit = true,
+            Action::ChangeMode(mode) => self.mode = mode,
             Action::InsertChar(line, column, character) => {
-                self.buffer.insert_char(line, column, character);
+                self.buffer.insert_char(line, column, character)
             }
-            Action::DeleteChar(line, column) => {
-                self.buffer.delete_char(line, column);
+            Action::DeleteChar(line, column) => self.buffer.delete_char(line, column),
+            Action::MoveCursor(direction, distance) => {
+                match direction {
+                    Direction::Up => self.selection.cursor.move_up(distance),
+                    Direction::Down => self.selection.cursor.move_down(distance),
+                    Direction::Left => self.selection.cursor.move_left(distance),
+                    Direction::Right => self.selection.cursor.move_right(distance),
+                };
             }
-            Action::MoveCursor(direction, distance) => match direction {
-                Direction::Up => {
-                    self.selection.cursor.move_up(distance);
-                }
-                Direction::Down => {
-                    self.selection.cursor.move_down(distance);
-                }
-                Direction::Left => {
-                    self.selection.cursor.move_left(distance);
-                }
-                Direction::Right => {
-                    self.selection.cursor.move_right(distance);
-                }
-            },
-            Action::MoveAnchor(direction, distance) => match direction {
-                Direction::Up => {
-                    self.selection.anchor.move_up(distance);
-                }
-                Direction::Down => {
-                    self.selection.anchor.move_down(distance);
-                }
-                Direction::Left => {
-                    self.selection.anchor.move_left(distance);
-                }
-                Direction::Right => {
-                    self.selection.anchor.move_right(distance);
-                }
-            },
-            Action::ReduceSelection => {
-                self.selection.reduce();
+            Action::MoveAnchor(direction, distance) => {
+                match direction {
+                    Direction::Up => self.selection.anchor.move_up(distance),
+                    Direction::Down => self.selection.anchor.move_down(distance),
+                    Direction::Left => self.selection.anchor.move_left(distance),
+                    Direction::Right => self.selection.anchor.move_right(distance),
+                };
             }
-            Action::FlipSelection => {
-                self.selection.flip();
-            }
+            Action::ReduceSelection => self.selection.reduce(),
+            Action::FlipSelection => self.selection.flip(),
         }
     }
 
