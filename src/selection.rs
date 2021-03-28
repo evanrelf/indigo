@@ -44,19 +44,27 @@ impl Selection {
         }
     }
 
+    pub fn is_reduced(&self) -> bool {
+        self.anchor.line == self.cursor.line && self.anchor.column == self.cursor.column
+    }
+
     pub fn reduce(&mut self) {
-        self.anchor.line = self.cursor.line;
-        self.anchor.column = self.cursor.column;
+        if !self.is_reduced() {
+            self.anchor.line = self.cursor.line;
+            self.anchor.column = self.cursor.column;
+        }
     }
 
     pub fn flip(&mut self) {
-        let cursor_line = self.cursor.line;
-        let cursor_column = self.cursor.column;
+        if !self.is_reduced() {
+            let cursor_line = self.cursor.line;
+            let cursor_column = self.cursor.column;
 
-        self.cursor.line = self.anchor.line;
-        self.cursor.column = self.anchor.column;
+            self.cursor.line = self.anchor.line;
+            self.cursor.column = self.anchor.column;
 
-        self.anchor.line = cursor_line;
-        self.anchor.column = cursor_column;
+            self.anchor.line = cursor_line;
+            self.anchor.column = cursor_column;
+        }
     }
 }
