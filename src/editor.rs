@@ -131,30 +131,26 @@ impl Editor {
     }
 
     fn handle_key_event_insert_mode(&self, key_event: KeyEvent) -> Option<Vec<Action>> {
-        let KeyEvent { modifiers, code } = key_event;
-        if modifiers == KeyModifiers::NONE {
-            let cursor = &self.selection.cursor;
-            match code {
-                KeyCode::Esc => Some(vec![Action::ChangeMode(Mode::Normal)]),
-                KeyCode::Char(c) => Some(vec![
-                    Action::InsertChar(cursor.line, cursor.column, c),
-                    Action::MoveCursor(Direction::Right, 1),
-                    Action::ReduceSelection,
-                ]),
-                KeyCode::Enter => Some(vec![
-                    Action::InsertChar(cursor.line, cursor.column, '\n'),
-                    Action::MoveCursor(Direction::Down, 1),
-                    Action::ReduceSelection,
-                ]),
-                KeyCode::Backspace if cursor.column > 0 => Some(vec![
-                    Action::DeleteChar(cursor.line, cursor.column - 1),
-                    Action::MoveCursor(Direction::Left, 1),
-                    Action::ReduceSelection,
-                ]),
-                _ => None,
-            }
-        } else {
-            None
+        let KeyEvent { code, .. } = key_event;
+        let cursor = &self.selection.cursor;
+        match code {
+            KeyCode::Esc => Some(vec![Action::ChangeMode(Mode::Normal)]),
+            KeyCode::Char(c) => Some(vec![
+                Action::InsertChar(cursor.line, cursor.column, c),
+                Action::MoveCursor(Direction::Right, 1),
+                Action::ReduceSelection,
+            ]),
+            KeyCode::Enter => Some(vec![
+                Action::InsertChar(cursor.line, cursor.column, '\n'),
+                Action::MoveCursor(Direction::Down, 1),
+                Action::ReduceSelection,
+            ]),
+            KeyCode::Backspace if cursor.column > 0 => Some(vec![
+                Action::DeleteChar(cursor.line, cursor.column - 1),
+                Action::MoveCursor(Direction::Left, 1),
+                Action::ReduceSelection,
+            ]),
+            _ => None,
         }
     }
 
