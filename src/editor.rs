@@ -70,6 +70,7 @@ impl Editor {
             match code {
                 KeyCode::Char(c) => vec![
                     Action::InsertChar(self.selection.cursor.line, self.selection.cursor.column, c),
+                    Action::MoveAnchor(Direction::Right, 1),
                     Action::MoveCursor(Direction::Right, 1),
                 ],
                 KeyCode::Enter => vec![
@@ -78,6 +79,7 @@ impl Editor {
                         self.selection.cursor.column,
                         '\n',
                     ),
+                    Action::MoveAnchor(Direction::Down, 1),
                     Action::MoveCursor(Direction::Down, 1),
                 ],
                 KeyCode::Backspace if self.buffer.contents.len_chars() > 0 => vec![
@@ -85,8 +87,29 @@ impl Editor {
                         self.selection.cursor.line,
                         self.selection.cursor.column - 1,
                     ),
+                    Action::MoveAnchor(Direction::Left, 1),
                     Action::MoveCursor(Direction::Left, 1),
                 ],
+                KeyCode::Up => vec![
+                    Action::MoveAnchor(Direction::Up, 1),
+                    Action::MoveCursor(Direction::Up, 1),
+                ],
+                KeyCode::Down => vec![
+                    Action::MoveAnchor(Direction::Down, 1),
+                    Action::MoveCursor(Direction::Down, 1),
+                ],
+                KeyCode::Left => vec![
+                    Action::MoveAnchor(Direction::Left, 1),
+                    Action::MoveCursor(Direction::Left, 1),
+                ],
+                KeyCode::Right => vec![
+                    Action::MoveAnchor(Direction::Right, 1),
+                    Action::MoveCursor(Direction::Right, 1),
+                ],
+                _ => Vec::new(),
+            }
+        } else if modifiers == KeyModifiers::SHIFT {
+            match code {
                 KeyCode::Up => vec![Action::MoveCursor(Direction::Up, 1)],
                 KeyCode::Down => vec![Action::MoveCursor(Direction::Down, 1)],
                 KeyCode::Left => vec![Action::MoveCursor(Direction::Left, 1)],
