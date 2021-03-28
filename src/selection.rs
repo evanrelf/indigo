@@ -43,4 +43,9 @@ impl Selection {
             anchor: Position { line: 0, column: 0 },
         }
     }
+
+    pub fn reduce(&mut self) {
+        self.anchor.line = self.cursor.line;
+        self.anchor.column = self.cursor.column;
+    }
 }

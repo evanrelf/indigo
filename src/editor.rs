@@ -20,6 +20,7 @@ pub enum Action {
     DeleteChar(usize, usize),
     MoveCursor(Direction, usize),
     MoveAnchor(Direction, usize),
+    ReduceSelection,
 }
 
 pub struct Editor {
@@ -70,8 +71,8 @@ impl Editor {
             match code {
                 KeyCode::Char(c) => vec![
                     Action::InsertChar(self.selection.cursor.line, self.selection.cursor.column, c),
-                    Action::MoveAnchor(Direction::Right, 1),
                     Action::MoveCursor(Direction::Right, 1),
+                    Action::ReduceSelection,
                 ],
                 KeyCode::Enter => vec![
                     Action::InsertChar(
@@ -79,32 +80,32 @@ impl Editor {
                         self.selection.cursor.column,
                         '\n',
                     ),
-                    Action::MoveAnchor(Direction::Down, 1),
                     Action::MoveCursor(Direction::Down, 1),
+                    Action::ReduceSelection,
                 ],
                 KeyCode::Backspace if self.buffer.contents.len_chars() > 0 => vec![
                     Action::DeleteChar(
                         self.selection.cursor.line,
                         self.selection.cursor.column - 1,
                     ),
-                    Action::MoveAnchor(Direction::Left, 1),
                     Action::MoveCursor(Direction::Left, 1),
+                    Action::ReduceSelection,
                 ],
                 KeyCode::Up => vec![
-                    Action::MoveAnchor(Direction::Up, 1),
                     Action::MoveCursor(Direction::Up, 1),
+                    Action::ReduceSelection,
                 ],
                 KeyCode::Down => vec![
-                    Action::MoveAnchor(Direction::Down, 1),
                     Action::MoveCursor(Direction::Down, 1),
+                    Action::ReduceSelection,
                 ],
                 KeyCode::Left => vec![
-                    Action::MoveAnchor(Direction::Left, 1),
                     Action::MoveCursor(Direction::Left, 1),
+                    Action::ReduceSelection,
                 ],
                 KeyCode::Right => vec![
-                    Action::MoveAnchor(Direction::Right, 1),
                     Action::MoveCursor(Direction::Right, 1),
+                    Action::ReduceSelection,
                 ],
                 _ => Vec::new(),
             }
@@ -175,6 +176,9 @@ impl Editor {
                     self.selection.anchor.move_right(distance);
                 }
             },
+            Action::ReduceSelection => {
+                self.selection.reduce();
+            }
         }
     }
 
@@ -216,19 +220,6 @@ impl Editor {
         let anchor_line = self.selection.anchor.line;
         let anchor_column = self.selection.anchor.column;
 
-        // Cursor
-        Terminal::move_cursor_to(cursor_column as u16, cursor_line as u16);
-
-        let cursor_char_index = self.cursor_to_char();
-
-        let cursor_char = if self.buffer.contents.len_chars() > cursor_char_index {
-            self.buffer.contents.char(cursor_char_index).to_string()
-        } else {
-            String::from(" ")
-        };
-
-        Terminal::print_styled(cursor_char.white().on_red());
-
         // Anchor
         Terminal::move_cursor_to(anchor_column as u16, anchor_line as u16);
 
@@ -241,5 +232,18 @@ impl Editor {
         };
 
         Terminal::print_styled(anchor_char.on_yellow());
+
+        // Cursor
+        Terminal::move_cursor_to(cursor_column as u16, cursor_line as u16);
+
+        let cursor_char_index = self.cursor_to_char();
+
+        let cursor_char = if self.buffer.contents.len_chars() > cursor_char_index {
+            self.buffer.contents.char(cursor_char_index).to_string()
+        } else {
+            String::from(" ")
+        };
+
+        Terminal::print_styled(cursor_char.white().on_red());
     }
 }
