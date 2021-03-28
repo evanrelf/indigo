@@ -1,4 +1,7 @@
 use ropey::Rope;
+use std::fs::File;
+use std::io::BufReader;
+use std::path::Path;
 
 pub struct Buffer {
     pub contents: Rope,
@@ -6,6 +9,14 @@ pub struct Buffer {
 
 impl Buffer {
     pub fn new(contents: Rope) -> Buffer {
+        Buffer { contents }
+    }
+
+    pub fn from_file<P>(path: P) -> Buffer
+    where
+        P: AsRef<Path>,
+    {
+        let contents = Rope::from_reader(BufReader::new(File::open(path).unwrap())).unwrap();
         Buffer { contents }
     }
 

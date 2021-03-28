@@ -8,6 +8,7 @@ use crossterm::style::Colorize;
 use crossterm::Result;
 use ropey::Rope;
 use std::borrow::Cow;
+use std::path::Path;
 
 pub enum Direction {
     Up,
@@ -42,13 +43,26 @@ pub struct Editor {
 }
 
 impl Editor {
-    pub fn new() -> Self {
+    pub fn empty() -> Editor {
         Editor {
             quit: false,
             title: String::from("ind"),
             mode: Mode::Normal,
             selections: vec![Selection::new()],
             buffer: Buffer::new(Rope::new()),
+        }
+    }
+
+    pub fn from_file<P>(path: P) -> Editor
+    where
+        P: AsRef<Path>,
+    {
+        Editor {
+            quit: false,
+            title: String::from("ind"),
+            mode: Mode::Normal,
+            selections: vec![Selection::new()],
+            buffer: Buffer::from_file(path),
         }
     }
 

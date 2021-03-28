@@ -6,6 +6,7 @@ mod terminal;
 use crate::editor::Editor;
 use crate::terminal::Terminal;
 use crossterm::Result;
+use std::env;
 use std::panic;
 
 fn main() -> Result<()> {
@@ -14,7 +15,15 @@ fn main() -> Result<()> {
         eprintln!("{}", panic_info);
     }));
 
-    Editor::new().run();
+    if let Some(path) = env::args().nth(1) {
+        Editor::from_file(path).run();
+    } else {
+        Editor::empty().run();
+    }
+
+    for arg in env::args() {
+        println!("{}", arg);
+    }
 
     Ok(())
 }
