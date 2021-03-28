@@ -1,5 +1,5 @@
 use crate::buffer::Buffer;
-use crate::selection::Selection;
+use crate::selection::{Position, Selection};
 use crate::terminal::Terminal;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 use crossterm::style::Colorize;
@@ -179,10 +179,13 @@ impl Editor {
     }
 
     pub fn cursor_to_char(&self) -> usize {
-        self.buffer
-            .contents
-            .line_to_char(self.selection.cursor.line)
-            + self.selection.cursor.column
+        let Position { line, column } = self.selection.cursor;
+        self.buffer.contents.line_to_char(line) + column
+    }
+
+    pub fn anchor_to_char(&self) -> usize {
+        let Position { line, column } = self.selection.anchor;
+        self.buffer.contents.line_to_char(line) + column
     }
 
     pub fn render(&self) {
