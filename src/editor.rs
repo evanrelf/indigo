@@ -213,8 +213,12 @@ impl Editor {
     }
 
     pub fn render_buffer(&self) {
+        let (_, terminal_lines) = Terminal::size();
         let mut line_number = 0;
         for line in self.buffer.contents.lines() {
+            if (line_number + 1) > terminal_lines {
+                break;
+            }
             Terminal::move_cursor_to(0, line_number);
             Terminal::print(&Cow::from(line));
             Terminal::print("\r");
