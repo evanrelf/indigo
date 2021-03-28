@@ -48,11 +48,26 @@ impl Cursor {
     }
 }
 
+pub struct Buffer {
+    pub contents: Rope,
+}
+
+impl Buffer {
+    pub fn insert_char(&mut self, line: usize, column: usize, character: char) {
+        let index = self.contents.line_to_char(line) + column;
+        self.contents.insert_char(index, character);
+    }
+    pub fn delete_char(&mut self, line: usize, column: usize) {
+        let index = self.contents.line_to_char(line) + column;
+        self.contents.remove(index..(index + 1));
+    }
+}
+
 pub struct Editor {
     pub quit: bool,
     pub title: String,
     pub cursor: Cursor,
-    pub buffer: Rope,
+    pub buffer: Buffer,
 }
 
 impl Editor {
@@ -61,7 +76,9 @@ impl Editor {
             quit: false,
             title: String::from("ind"),
             cursor: Cursor { line: 0, column: 0 },
-            buffer: Rope::new(),
+            buffer: Buffer {
+                contents: Rope::new(),
+            },
         }
     }
 
@@ -102,7 +119,7 @@ impl Editor {
                     Action::InsertChar(self.cursor.line, self.cursor.column, '\n'),
                     Action::MoveCursor(Direction::Down, 1),
                 ],
-                KeyCode::Backspace if self.buffer.len_chars() > 0 => vec![
+                KeyCode::Backspace if self.buffer.contents.len_chars() > 0 => vec![
                     Action::DeleteChar(self.cursor.line, self.cursor.column - 1),
                     Action::MoveCursor(Direction::Left, 1),
                 ],
@@ -137,13 +154,11 @@ impl Editor {
             Action::Quit => {
                 self.quit = true;
             }
-            Action::InsertChar(line, column, c) => {
-                let index = self.buffer.line_to_char(line) + column;
-                self.buffer.insert_char(index, c);
+            Action::InsertChar(line, column, character) => {
+                self.buffer.insert_char(line, column, character);
             }
             Action::DeleteChar(line, column) => {
-                let index = self.buffer.line_to_char(line) + column;
-                self.buffer.remove(index..(index + 1));
+                self.buffer.delete_char(line, column);
             }
             Action::MoveCursor(direction, distance) => {
                 self.cursor.move_cursor(direction, distance);
@@ -152,14 +167,14 @@ impl Editor {
     }
 
     pub fn cursor_to_char(&self) -> usize {
-        self.buffer.line_to_char(self.cursor.line) + self.cursor.column
+        self.buffer.contents.line_to_char(self.cursor.line) + self.cursor.column
     }
 
     pub fn render(&self) {
         Terminal::clear();
 
         let mut line_number = 0;
-        for line in self.buffer.lines() {
+        for line in self.buffer.contents.lines() {
             Terminal::move_cursor_to(0, line_number);
             Terminal::print(&Cow::from(line));
             Terminal::print("\r");
@@ -168,8 +183,8 @@ impl Editor {
 
         Terminal::move_cursor_to(self.cursor.column as u16, self.cursor.line as u16);
         let cursor_char = self.cursor_to_char();
-        let character = if self.buffer.len_chars() > cursor_char {
-            self.buffer.char(cursor_char).to_string()
+        let character = if self.buffer.contents.len_chars() > cursor_char {
+            self.buffer.contents.char(cursor_char).to_string()
         } else {
             String::from(" ")
         };
