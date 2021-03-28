@@ -112,10 +112,10 @@ impl Editor {
             }
         } else if modifiers == KeyModifiers::SHIFT {
             match code {
-                KeyCode::Char('h') => Some(vec![Action::MoveCursor(Direction::Left, 1)]),
-                KeyCode::Char('j') => Some(vec![Action::MoveCursor(Direction::Down, 1)]),
-                KeyCode::Char('k') => Some(vec![Action::MoveCursor(Direction::Up, 1)]),
-                KeyCode::Char('l') => Some(vec![Action::MoveCursor(Direction::Right, 1)]),
+                KeyCode::Char('H') => Some(vec![Action::MoveCursor(Direction::Left, 1)]),
+                KeyCode::Char('J') => Some(vec![Action::MoveCursor(Direction::Down, 1)]),
+                KeyCode::Char('K') => Some(vec![Action::MoveCursor(Direction::Up, 1)]),
+                KeyCode::Char('L') => Some(vec![Action::MoveCursor(Direction::Right, 1)]),
                 _ => None,
             }
         } else if modifiers == KeyModifiers::CONTROL {
