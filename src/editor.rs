@@ -25,13 +25,25 @@ pub struct Cursor {
 }
 
 impl Cursor {
-    pub fn move_cursor(&mut self, direction: Direction, distance: usize) {
+    pub fn move_cursor(&mut self, direction: Direction, distance: usize) -> bool {
         match direction {
-            Direction::Up if self.line >= distance => self.line -= distance,
-            Direction::Down => self.line += distance,
-            Direction::Left if self.column >= distance => self.column -= distance,
-            Direction::Right => self.column += distance,
-            _ => (),
+            Direction::Up if self.line >= distance => {
+                self.line -= distance;
+                true
+            }
+            Direction::Down => {
+                self.line += distance;
+                true
+            }
+            Direction::Left if self.column >= distance => {
+                self.column -= distance;
+                true
+            }
+            Direction::Right => {
+                self.column += distance;
+                true
+            }
+            _ => false,
         }
     }
 }
