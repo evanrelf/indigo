@@ -4,16 +4,29 @@ use crossterm::Result;
 use ropey::Rope;
 use std::borrow::Cow;
 
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
 pub enum Action {
     Quit,
     InsertChar(usize, usize, char),
     DeleteChar(usize, usize),
+    MoveCursor(Direction, usize),
 }
 
+pub struct Cursor {
+    line: usize,
+    column: usize,
+}
 
 pub struct Editor {
     pub quit: bool,
     pub title: String,
+    pub cursor: Cursor,
     pub buffer: Rope,
 }
 
@@ -22,6 +35,7 @@ impl Editor {
         Editor {
             quit: false,
             title: String::from("ind"),
+            cursor: Cursor { line: 0, column: 0 },
             buffer: Rope::new(),
         }
     }
@@ -53,31 +67,30 @@ impl Editor {
     fn handle_key_event(&self, key_event: KeyEvent) -> Result<Vec<Action>> {
         let KeyEvent { code, modifiers } = key_event;
 
-        if modifiers == KeyModifiers::NONE {
-            let length = self.buffer.len_chars();
-            return Ok(match code {
-                KeyCode::Char('0') => vec![Action::InsertChar(0, 0, 'X')],
-                KeyCode::Char(c) => vec![Action::InsertChar(0, length, c)],
-                KeyCode::Enter => vec![Action::InsertChar(0, length, '\n')],
-                KeyCode::Backspace => {
-                    if length > 0 {
-                        vec![Action::DeleteChar(0, length - 1)]
-                    } else {
-                        Vec::new()
-                    }
-                }
+        Ok(if modifiers == KeyModifiers::NONE {
+            match code {
+                KeyCode::Char(c) => vec![
+                    Action::InsertChar(self.cursor.line, self.cursor.column, c),
+                    Action::MoveCursor(Direction::Right, 1),
+                ],
+                KeyCode::Enter => vec![
+                    Action::InsertChar(self.cursor.line, self.cursor.column, '\n'),
+                    Action::MoveCursor(Direction::Down, 1),
+                ],
+                KeyCode::Backspace if self.buffer.len_chars() > 0 => vec![
+                    Action::DeleteChar(self.cursor.line, self.cursor.column - 1),
+                    Action::MoveCursor(Direction::Left, 1),
+                ],
                 _ => Vec::new(),
-            });
-        }
-
-        if modifiers == KeyModifiers::CONTROL {
-            return Ok(match code {
+            }
+        } else if modifiers == KeyModifiers::CONTROL {
+            match code {
                 KeyCode::Char('c') => vec![Action::Quit],
                 _ => Vec::new(),
-            });
-        }
-
-        Ok(Vec::new())
+            }
+        } else {
+            Vec::new()
+        })
     }
 
     fn handle_mouse_event(&self, mouse_event: MouseEvent) -> Result<Vec<Action>> {
@@ -103,7 +116,17 @@ impl Editor {
                 let index = self.buffer.line_to_char(line) + column;
                 self.buffer.remove(index..(index + 1));
             }
+            Action::MoveCursor(direction, distance) => match direction {
+                Direction::Up => self.cursor.line -= distance,
+                Direction::Down => self.cursor.line += distance,
+                Direction::Left => self.cursor.column -= distance,
+                Direction::Right => self.cursor.column += distance,
+            },
         }
+    }
+
+    pub fn cursor_to_char(&self) -> usize {
+        self.buffer.line_to_char(self.cursor.line) + self.cursor.column
     }
 
     pub fn render(&self) {
