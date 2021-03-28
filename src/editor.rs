@@ -71,11 +71,14 @@ impl Editor {
         Terminal::hide_cursor();
         Terminal::flush();
 
+        self.render();
         while !self.quit {
-            self.render();
             let actions = self.handle_event().unwrap();
-            for action in actions {
-                self.apply_action(action);
+            if !actions.is_empty() {
+                for action in actions {
+                    self.apply_action(action);
+                }
+                self.render();
             }
         }
 
