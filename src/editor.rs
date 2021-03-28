@@ -140,7 +140,10 @@ impl Editor {
             line_number += 1;
         }
 
-        Terminal::set_title(&self.title);
+        Terminal::set_title(&format!(
+            "ind (cursor: {},{})",
+            self.cursor.line, self.cursor.column
+        ));
 
         Terminal::flush();
     }
