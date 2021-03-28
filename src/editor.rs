@@ -21,6 +21,7 @@ pub enum Action {
     MoveCursor(Direction, usize),
     MoveAnchor(Direction, usize),
     ReduceSelection,
+    FlipSelection,
 }
 
 pub struct Editor {
@@ -122,6 +123,11 @@ impl Editor {
                 KeyCode::Char('c') => vec![Action::Quit],
                 _ => Vec::new(),
             }
+        } else if modifiers == KeyModifiers::ALT {
+            match code {
+                KeyCode::Char(';') => vec![Action::FlipSelection],
+                _ => Vec::new(),
+            }
         } else {
             Vec::new()
         })
@@ -178,6 +184,9 @@ impl Editor {
             },
             Action::ReduceSelection => {
                 self.selection.reduce();
+            }
+            Action::FlipSelection => {
+                self.selection.flip();
             }
         }
     }
