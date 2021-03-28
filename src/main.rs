@@ -1,3 +1,4 @@
+mod buffer;
 mod cursor;
 mod editor;
 mod terminal;

@@ -1,3 +1,4 @@
+use crate::buffer::Buffer;
 use crate::cursor::{Cursor, Direction};
 use crate::terminal::Terminal;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers, MouseEvent};
@@ -13,21 +14,6 @@ pub enum Action {
     MoveCursor(Direction, usize),
 }
 
-pub struct Buffer {
-    pub contents: Rope,
-}
-
-impl Buffer {
-    pub fn insert_char(&mut self, line: usize, column: usize, character: char) {
-        let index = self.contents.line_to_char(line) + column;
-        self.contents.insert_char(index, character);
-    }
-    pub fn delete_char(&mut self, line: usize, column: usize) {
-        let index = self.contents.line_to_char(line) + column;
-        self.contents.remove(index..(index + 1));
-    }
-}
-
 pub struct Editor {
     pub quit: bool,
     pub title: String,
@@ -41,9 +27,7 @@ impl Editor {
             quit: false,
             title: String::from("ind"),
             cursor: Cursor::new(0, 0),
-            buffer: Buffer {
-                contents: Rope::new(),
-            },
+            buffer: Buffer::new(Rope::new()),
         }
     }
 
