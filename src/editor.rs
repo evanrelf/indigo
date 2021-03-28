@@ -24,9 +24,16 @@ pub enum Action {
     FlipSelection,
 }
 
+#[derive(Debug)]
+pub enum Mode {
+    Insert,
+    Normal,
+}
+
 pub struct Editor {
     pub quit: bool,
     pub title: String,
+    pub mode: Mode,
     pub selection: Selection,
     pub buffer: Buffer,
 }
@@ -36,6 +43,7 @@ impl Editor {
         Editor {
             quit: false,
             title: String::from("ind"),
+            mode: Mode::Insert,
             selection: Selection::new(),
             buffer: Buffer::new(Rope::new()),
         }
@@ -265,7 +273,8 @@ impl Editor {
         let (_, terminal_lines) = Terminal::size();
         Terminal::move_cursor_to(0, terminal_lines);
         Terminal::print(&format!(
-            "cursor: ({}, {}), anchor: ({}, {})",
+            "mode: {:?}, cursor: ({}, {}), anchor: ({}, {})",
+            self.mode,
             self.selection.cursor.line,
             self.selection.cursor.column,
             self.selection.anchor.line,
