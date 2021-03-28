@@ -191,6 +191,15 @@ impl Editor {
     pub fn render(&self) {
         Terminal::clear();
 
+        self.render_buffer();
+        self.render_selection();
+
+        Terminal::set_title(&self.title);
+
+        Terminal::flush();
+    }
+
+    pub fn render_buffer(&self) {
         let mut line_number = 0;
         for line in self.buffer.contents.lines() {
             Terminal::move_cursor_to(0, line_number);
@@ -198,24 +207,39 @@ impl Editor {
             Terminal::print("\r");
             line_number += 1;
         }
+    }
 
-        Terminal::move_cursor_to(
-            self.selection.cursor.column as u16,
-            self.selection.cursor.line as u16,
-        );
-        let cursor_char = self.cursor_to_char();
-        let character = if self.buffer.contents.len_chars() > cursor_char {
-            self.buffer.contents.char(cursor_char).to_string()
+    pub fn render_selection(&self) {
+        let cursor_line = self.selection.cursor.line;
+        let cursor_column = self.selection.cursor.column;
+
+        let anchor_line = self.selection.anchor.line;
+        let anchor_column = self.selection.anchor.column;
+
+        // Cursor
+        Terminal::move_cursor_to(cursor_column as u16, cursor_line as u16);
+
+        let cursor_char_index = self.cursor_to_char();
+
+        let cursor_char = if self.buffer.contents.len_chars() > cursor_char_index {
+            self.buffer.contents.char(cursor_char_index).to_string()
         } else {
             String::from(" ")
         };
-        Terminal::print_styled(character.white().on_black());
 
-        Terminal::set_title(&format!(
-            "ind (cursor: {},{})",
-            self.selection.cursor.line, self.selection.cursor.column
-        ));
+        Terminal::print_styled(cursor_char.white().on_red());
 
-        Terminal::flush();
+        // Anchor
+        Terminal::move_cursor_to(anchor_column as u16, anchor_line as u16);
+
+        let anchor_char_index = self.anchor_to_char();
+
+        let anchor_char = if self.buffer.contents.len_chars() > anchor_char_index {
+            self.buffer.contents.char(anchor_char_index).to_string()
+        } else {
+            String::from(" ")
+        };
+
+        Terminal::print_styled(anchor_char.on_yellow());
     }
 }
