@@ -1,6 +1,6 @@
 use crate::terminal::Terminal;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers, MouseEvent};
-use crossterm::style::Color;
+use crossterm::style::{Color, Colorize};
 use crossterm::Result;
 use ropey::Rope;
 use std::borrow::Cow;
@@ -142,15 +142,13 @@ impl Editor {
         }
 
         Terminal::move_cursor_to(self.cursor.column as u16, self.cursor.line as u16);
-        Terminal::set_background_color(Color::Black);
         let cursor_char = self.cursor_to_char();
-        if self.buffer.len_chars() > cursor_char {
-            Terminal::set_foreground_color(Color::White);
-            Terminal::print(&self.buffer.char(cursor_char).to_string());
+        let character = if self.buffer.len_chars() > cursor_char {
+            self.buffer.char(cursor_char).to_string()
         } else {
-            Terminal::print("_");
-        }
-        Terminal::set_background_color(Color::Reset);
+            String::from(" ")
+        };
+        Terminal::print_styled(character.white().on_black());
 
         Terminal::set_title(&format!(
             "ind (cursor: {},{})",

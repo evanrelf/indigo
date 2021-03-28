@@ -1,4 +1,3 @@
-use crossterm::style::Color;
 use crossterm::{cursor, style, terminal, ExecutableCommand, QueueableCommand};
 use std::io::{stdout, Write};
 
@@ -39,16 +38,20 @@ impl Terminal {
         stdout().queue(terminal::SetTitle(title)).unwrap();
     }
 
-    pub fn set_foreground_color(color: Color) {
+    pub fn set_foreground_color(color: style::Color) {
         stdout().queue(style::SetForegroundColor(color)).unwrap();
     }
 
-    pub fn set_background_color(color: Color) {
+    pub fn set_background_color(color: style::Color) {
         stdout().queue(style::SetBackgroundColor(color)).unwrap();
     }
 
     pub fn print(message: &str) {
         stdout().queue(style::Print(message)).unwrap();
+    }
+
+    pub fn print_styled(message: style::StyledContent<String>) {
+        stdout().queue(style::PrintStyledContent(message)).unwrap();
     }
 
     pub fn flush() {
