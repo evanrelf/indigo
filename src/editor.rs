@@ -251,7 +251,7 @@ impl Editor {
                 self.terminal_columns = terminal_columns;
             }
             Action::ScrollUp(amount) => {
-                self.line_at_top -= min(amount, self.line_at_top);
+                self.line_at_top = self.line_at_top.saturating_sub(amount);
             }
             Action::ScrollDown(amount) => {
                 self.line_at_top +=
