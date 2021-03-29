@@ -21,6 +21,7 @@ pub enum Direction {
 
 pub enum Action {
     Quit,
+    Resize(u16, u16),
     ChangeMode(Mode),
     InsertChar(usize, usize, char),
     DeleteChar(usize, usize),
@@ -41,6 +42,8 @@ pub enum Mode {
 pub struct Editor {
     pub quit: bool,
     pub title: String,
+    pub terminal_lines: u16,
+    pub terminal_columns: u16,
     pub mode: Mode,
     pub selections: Vec<Selection>,
     pub buffer: Buffer,
@@ -48,9 +51,13 @@ pub struct Editor {
 
 impl Editor {
     pub fn empty() -> Editor {
+        let (terminal_columns, terminal_lines) = Terminal::size();
+
         Editor {
             quit: false,
             title: String::from("ind"),
+            terminal_lines,
+            terminal_columns,
             mode: Mode::Normal,
             selections: vec![Selection::new()],
             buffer: Buffer::new(Rope::new()),
@@ -61,9 +68,13 @@ impl Editor {
     where
         P: AsRef<Path>,
     {
+        let (terminal_columns, terminal_lines) = Terminal::size();
+
         Editor {
             quit: false,
             title: String::from("ind"),
+            terminal_lines,
+            terminal_columns,
             mode: Mode::Normal,
             selections: vec![Selection::new()],
             buffer: Buffer::from_file(path),
@@ -94,7 +105,9 @@ impl Editor {
         match event::read()? {
             Event::Key(key_event) => Ok(self.handle_key_event(key_event)),
             Event::Mouse(mouse_event) => self.handle_mouse_event(mouse_event),
-            Event::Resize(width, height) => self.handle_resize_event(width, height),
+            Event::Resize(terminal_columns, terminal_lines) => {
+                self.handle_resize_event(terminal_lines, terminal_columns)
+            }
         }
     }
 
@@ -210,13 +223,21 @@ impl Editor {
         })
     }
 
-    fn handle_resize_event(&self, _width: u16, _height: u16) -> Result<Vec<Action>> {
-        Ok(vec![])
+    fn handle_resize_event(
+        &self,
+        terminal_lines: u16,
+        terminal_columns: u16,
+    ) -> Result<Vec<Action>> {
+        Ok(vec![Action::Resize(terminal_lines, terminal_columns)])
     }
 
     pub fn apply_action(&mut self, action: Action) {
         match action {
             Action::Quit => self.quit = true,
+            Action::Resize(terminal_lines, terminal_columns) => {
+                self.terminal_lines = terminal_lines;
+                self.terminal_columns = terminal_columns;
+            }
             Action::ChangeMode(mode) => self.mode = mode,
             Action::InsertChar(line, column, character) => {
                 self.buffer.insert_char(line, column, character)
@@ -274,10 +295,9 @@ impl Editor {
     }
 
     pub fn render_buffer(&self) {
-        let (_, terminal_lines) = Terminal::size();
         let mut line_number = 0;
         for line in self.buffer.contents.lines() {
-            if (line_number + 1) > terminal_lines {
+            if (line_number + 1) > self.terminal_lines {
                 break;
             }
             Terminal::move_cursor_to(0, line_number);
