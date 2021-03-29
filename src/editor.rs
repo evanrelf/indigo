@@ -291,16 +291,6 @@ impl Editor {
         }
     }
 
-    pub fn cursor_to_char(&self, index: usize) -> usize {
-        let Position { line, column } = self.selections[index].cursor;
-        self.buffer.contents.line_to_char(line) + column
-    }
-
-    pub fn anchor_to_char(&self, index: usize) -> usize {
-        let Position { line, column } = self.selections[index].anchor;
-        self.buffer.contents.line_to_char(line) + column
-    }
-
     pub fn render(&self) {
         self.render_buffer();
         self.render_selections();
@@ -335,37 +325,38 @@ impl Editor {
     }
 
     pub fn render_selection(&self, index: usize) {
-        let cursor_line = self.selections[index].cursor.line;
-        let cursor_column = self.selections[index].cursor.column;
-
+        // Anchor
         let anchor_line = self.selections[index].anchor.line;
         let anchor_column = self.selections[index].anchor.column;
 
-        // Anchor
-        Terminal::move_cursor_to(anchor_column as u16, anchor_line as u16);
-
-        let anchor_char_index = self.anchor_to_char(0);
-
-        let anchor_char = if self.buffer.contents.len_chars() > anchor_char_index {
-            self.buffer.contents.char(anchor_char_index).to_string()
-        } else {
-            String::from(" ")
-        };
-
-        Terminal::print_styled(anchor_char.on_yellow());
+        if let Some(anchor_char_index) =
+            self.buffer.coordinates_to_index(anchor_line, anchor_column)
+        {
+            Terminal::move_cursor_to(anchor_column as u16, anchor_line as u16);
+            let anchor_char = if self.buffer.contents.len_chars() > anchor_char_index {
+                self.buffer.contents.char(anchor_char_index).to_string()
+            } else {
+                String::from(" ")
+            };
+            Terminal::print_styled(anchor_char.on_yellow());
+        }
 
         // Cursor
-        Terminal::move_cursor_to(cursor_column as u16, cursor_line as u16);
+        let cursor_line = self.selections[index].cursor.line;
+        let cursor_column = self.selections[index].cursor.column;
 
-        let cursor_char_index = self.cursor_to_char(0);
+        if let Some(cursor_char_index) =
+            self.buffer.coordinates_to_index(cursor_line, cursor_column)
+        {
+            Terminal::move_cursor_to(cursor_column as u16, cursor_line as u16);
+            let cursor_char = if self.buffer.contents.len_chars() > cursor_char_index {
+                self.buffer.contents.char(cursor_char_index).to_string()
+            } else {
+                String::from(" ")
+            };
 
-        let cursor_char = if self.buffer.contents.len_chars() > cursor_char_index {
-            self.buffer.contents.char(cursor_char_index).to_string()
-        } else {
-            String::from(" ")
-        };
-
-        Terminal::print_styled(cursor_char.white().on_red());
+            Terminal::print_styled(cursor_char.white().on_red());
+        }
     }
 
     pub fn render_status(&self) {
