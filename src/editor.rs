@@ -218,16 +218,16 @@ impl Editor {
     }
 
     fn handle_mouse_event(&self, mouse_event: MouseEvent) -> Result<Vec<Action>> {
-        let MouseEvent {
-            kind, row, column, ..
-        } = mouse_event;
+        let kind = mouse_event.kind;
+        let line = mouse_event.row as usize + self.line_at_top;
+        let column = mouse_event.column as usize;
         Ok(match kind {
             MouseEventKind::Down(MouseButton::Left) => vec![
-                Action::MoveCursorAbsolute(0, row.into(), column.into()),
+                Action::MoveCursorAbsolute(0, line, column),
                 Action::ReduceSelection(0),
             ],
             MouseEventKind::Drag(MouseButton::Left) | MouseEventKind::Down(MouseButton::Right) => {
-                vec![Action::MoveCursorAbsolute(0, row.into(), column.into())]
+                vec![Action::MoveCursorAbsolute(0, line, column)]
             }
             MouseEventKind::ScrollDown => vec![Action::ScrollDown(3)],
             MouseEventKind::ScrollUp => vec![Action::ScrollUp(3)],
@@ -326,12 +326,12 @@ impl Editor {
 
     pub fn render_selection(&self, index: usize) {
         // Anchor
-        let anchor_line = self.selections[index].anchor.line;
+        let anchor_line = self.selections[index].anchor.line - self.line_at_top;
         let anchor_column = self.selections[index].anchor.column;
         self.render_selection_end(anchor_line, anchor_column, false);
 
         // Cursor
-        let cursor_line = self.selections[index].cursor.line;
+        let cursor_line = self.selections[index].cursor.line - self.line_at_top;
         let cursor_column = self.selections[index].cursor.column;
         self.render_selection_end(cursor_line, cursor_column, true);
     }
