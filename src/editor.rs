@@ -337,6 +337,13 @@ impl Editor {
     }
 
     pub fn render_selection_end(&self, line: usize, column: usize, is_cursor: bool) {
+        let visible_lines = self.line_at_top..(self.line_at_top + self.terminal_lines as usize);
+        let visible_columns = 0..self.terminal_columns.into();
+
+        if !visible_lines.contains(&line) || !visible_columns.contains(&column) {
+            return;
+        }
+
         if let Some(char_index) = self.buffer.coordinates_to_index(line, column) {
             Terminal::move_cursor_to(column as u16, line as u16);
             let character = if self.buffer.contents.len_chars() > char_index {
