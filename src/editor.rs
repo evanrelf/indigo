@@ -36,6 +36,13 @@ pub enum Action {
     FlipSelection(usize),
 }
 
+pub struct Viewport {
+    lines: u16,
+    columns: u16,
+    vertical_offset: usize,
+    horizontal_offset: usize,
+}
+
 #[derive(Debug)]
 pub enum Mode {
     Insert,
@@ -45,9 +52,7 @@ pub enum Mode {
 pub struct Editor {
     pub quit: bool,
     pub title: String,
-    pub terminal_lines: u16,
-    pub terminal_columns: u16,
-    pub line_at_top: usize,
+    pub viewport: Viewport,
     pub mode: Mode,
     pub selections: Vec<Selection>,
     pub buffer: Buffer,
@@ -55,14 +60,17 @@ pub struct Editor {
 
 impl Editor {
     pub fn empty() -> Editor {
-        let (terminal_columns, terminal_lines) = Terminal::size();
+        let (columns, lines) = Terminal::size();
 
         Editor {
             quit: false,
             title: String::from("ind"),
-            terminal_lines,
-            terminal_columns,
-            line_at_top: 0,
+            viewport: Viewport {
+                lines,
+                columns,
+                vertical_offset: 0,
+                horizontal_offset: 0,
+            },
             mode: Mode::Normal,
             selections: vec![Selection::new()],
             buffer: Buffer::new(Rope::new()),
@@ -73,14 +81,17 @@ impl Editor {
     where
         P: AsRef<Path>,
     {
-        let (terminal_columns, terminal_lines) = Terminal::size();
+        let (columns, lines) = Terminal::size();
 
         Editor {
             quit: false,
             title: String::from("ind"),
-            terminal_lines,
-            terminal_columns,
-            line_at_top: 0,
+            viewport: Viewport {
+                lines,
+                columns,
+                vertical_offset: 0,
+                horizontal_offset: 0,
+            },
             mode: Mode::Normal,
             selections: vec![Selection::new()],
             buffer: Buffer::from_file(path),
@@ -111,9 +122,7 @@ impl Editor {
         match event::read()? {
             Event::Key(key_event) => Ok(self.handle_key_event(key_event)),
             Event::Mouse(mouse_event) => self.handle_mouse_event(mouse_event),
-            Event::Resize(terminal_columns, terminal_lines) => {
-                self.handle_resize_event(terminal_lines, terminal_columns)
-            }
+            Event::Resize(lines, columns) => self.handle_resize_event(lines, columns),
         }
     }
 
@@ -219,7 +228,7 @@ impl Editor {
 
     fn handle_mouse_event(&self, mouse_event: MouseEvent) -> Result<Vec<Action>> {
         let kind = mouse_event.kind;
-        let line = mouse_event.row as usize + self.line_at_top;
+        let line = mouse_event.row as usize + self.viewport.vertical_offset;
         let column = mouse_event.column as usize;
         Ok(match kind {
             MouseEventKind::Down(MouseButton::Left) => vec![
@@ -235,27 +244,26 @@ impl Editor {
         })
     }
 
-    fn handle_resize_event(
-        &self,
-        terminal_lines: u16,
-        terminal_columns: u16,
-    ) -> Result<Vec<Action>> {
-        Ok(vec![Action::Resize(terminal_lines, terminal_columns)])
+    fn handle_resize_event(&self, lines: u16, columns: u16) -> Result<Vec<Action>> {
+        Ok(vec![Action::Resize(lines, columns)])
     }
 
     pub fn apply_action(&mut self, action: Action) {
         match action {
             Action::Quit => self.quit = true,
-            Action::Resize(terminal_lines, terminal_columns) => {
-                self.terminal_lines = terminal_lines;
-                self.terminal_columns = terminal_columns;
+            Action::Resize(lines, columns) => {
+                self.viewport.lines = lines;
+                self.viewport.columns = columns;
             }
             Action::ScrollUp(amount) => {
-                self.line_at_top = self.line_at_top.saturating_sub(amount);
+                self.viewport.vertical_offset =
+                    self.viewport.vertical_offset.saturating_sub(amount);
             }
             Action::ScrollDown(amount) => {
-                self.line_at_top +=
-                    min(amount, self.buffer.contents.len_lines() - self.line_at_top);
+                self.viewport.vertical_offset += min(
+                    amount,
+                    self.buffer.contents.len_lines() - self.viewport.vertical_offset,
+                );
             }
             Action::ChangeMode(mode) => self.mode = mode,
             Action::InsertChar(line, column, character) => {
@@ -302,10 +310,10 @@ impl Editor {
     }
 
     pub fn render_buffer(&self) {
-        let offset = self.line_at_top;
+        let offset = self.viewport.vertical_offset;
         let buffer_end_index = self.buffer.contents.len_lines();
 
-        for terminal_line_index in 0..(self.terminal_lines - 1) {
+        for terminal_line_index in 0..(self.viewport.lines - 1) {
             Terminal::move_cursor_to(0, terminal_line_index);
             Terminal::clear_line();
             let buffer_line_index = (terminal_line_index as usize) + offset;
@@ -326,19 +334,20 @@ impl Editor {
 
     pub fn render_selection(&self, index: usize) {
         // Anchor
-        let anchor_line = self.selections[index].anchor.line - self.line_at_top;
+        let anchor_line = self.selections[index].anchor.line - self.viewport.vertical_offset;
         let anchor_column = self.selections[index].anchor.column;
         self.render_selection_end(anchor_line, anchor_column, false);
 
         // Cursor
-        let cursor_line = self.selections[index].cursor.line - self.line_at_top;
+        let cursor_line = self.selections[index].cursor.line - self.viewport.vertical_offset;
         let cursor_column = self.selections[index].cursor.column;
         self.render_selection_end(cursor_line, cursor_column, true);
     }
 
     pub fn render_selection_end(&self, line: usize, column: usize, is_cursor: bool) {
-        let visible_lines = self.line_at_top..(self.line_at_top + self.terminal_lines as usize);
-        let visible_columns = 0..self.terminal_columns.into();
+        let visible_lines = self.viewport.vertical_offset
+            ..(self.viewport.vertical_offset + self.viewport.vertical_offset as usize);
+        let visible_columns = 0..self.viewport.horizontal_offset.into();
 
         if !visible_lines.contains(&line) || !visible_columns.contains(&column) {
             return;
@@ -370,8 +379,7 @@ impl Editor {
             (42, 42)
         };
 
-        let (_, terminal_lines) = Terminal::size();
-        Terminal::move_cursor_to(0, terminal_lines);
+        Terminal::move_cursor_to(0, self.viewport.lines);
         Terminal::print(&format!(
             "mode: {:?}, cursor 0: ({}, {}), anchor 0: ({}, {}), top: {}, index: {:?}, coords: {:?}",
             self.mode,
@@ -379,7 +387,7 @@ impl Editor {
             self.selections[0].cursor.column,
             self.selections[0].anchor.line,
             self.selections[0].anchor.column,
-            self.line_at_top,
+            self.viewport.vertical_offset,
             cursor_index,
             cursor_coords
         ));
