@@ -333,28 +333,31 @@ impl Editor {
     }
 
     pub fn render_selection(&self, index: usize) {
+        let visible_lines = self.viewport.vertical_offset
+            ..(self.viewport.vertical_offset + self.viewport.lines as usize);
+        let visible_columns = 0..self.viewport.horizontal_offset.into();
+
         // Anchor
-        let anchor_line = self.selections[index].anchor.line - self.viewport.vertical_offset;
+        let anchor_line = self.selections[index].anchor.line;
         let anchor_column = self.selections[index].anchor.column;
-        self.render_selection_end(anchor_line, anchor_column, false);
+        if visible_lines.contains(&anchor_line) && visible_columns.contains(&anchor_column) {
+            self.render_selection_end(anchor_line, anchor_column, false);
+        }
 
         // Cursor
-        let cursor_line = self.selections[index].cursor.line - self.viewport.vertical_offset;
+        let cursor_line = self.selections[index].cursor.line;
         let cursor_column = self.selections[index].cursor.column;
-        self.render_selection_end(cursor_line, cursor_column, true);
+        if visible_lines.contains(&cursor_line) && visible_columns.contains(&cursor_column) {
+            self.render_selection_end(cursor_line, cursor_column, true);
+        }
     }
 
     pub fn render_selection_end(&self, line: usize, column: usize, is_cursor: bool) {
-        let visible_lines = self.viewport.vertical_offset
-            ..(self.viewport.vertical_offset + self.viewport.vertical_offset as usize);
-        let visible_columns = 0..self.viewport.horizontal_offset.into();
-
-        if !visible_lines.contains(&line) || !visible_columns.contains(&column) {
-            return;
-        }
-
         if let Some(char_index) = self.buffer.coordinates_to_index(line, column) {
-            Terminal::move_cursor_to(column as u16, line as u16);
+            Terminal::move_cursor_to(
+                (column - self.viewport.vertical_offset) as u16,
+                (line - self.viewport.horizontal_offset) as u16,
+            );
             let character = if self.buffer.contents.len_chars() > char_index {
                 self.buffer.contents.char(char_index).to_string()
             } else {
@@ -381,7 +384,7 @@ impl Editor {
 
         Terminal::move_cursor_to(0, self.viewport.lines);
         Terminal::print(&format!(
-            "mode: {:?}, cursor 0: ({}, {}), anchor 0: ({}, {}), top: {}, index: {:?}, coords: {:?}",
+            "mode: {:?}, cursor 0: ({}, {}), anchor 0: ({}, {}), voffset: {}, index: {:?}, coords: {:?}",
             self.mode,
             self.selections[0].cursor.line,
             self.selections[0].cursor.column,
