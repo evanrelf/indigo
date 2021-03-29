@@ -10,6 +10,7 @@ use crossterm::style::Colorize;
 use crossterm::Result;
 use ropey::Rope;
 use std::borrow::Cow;
+use std::cmp::min;
 use std::path::Path;
 
 pub enum Direction {
@@ -22,6 +23,8 @@ pub enum Direction {
 pub enum Action {
     Quit,
     Resize(u16, u16),
+    ScrollUp(usize),
+    ScrollDown(usize),
     ChangeMode(Mode),
     InsertChar(usize, usize, char),
     DeleteChar(usize, usize),
@@ -44,6 +47,7 @@ pub struct Editor {
     pub title: String,
     pub terminal_lines: u16,
     pub terminal_columns: u16,
+    pub line_at_top: usize,
     pub mode: Mode,
     pub selections: Vec<Selection>,
     pub buffer: Buffer,
@@ -58,6 +62,7 @@ impl Editor {
             title: String::from("ind"),
             terminal_lines,
             terminal_columns,
+            line_at_top: 0,
             mode: Mode::Normal,
             selections: vec![Selection::new()],
             buffer: Buffer::new(Rope::new()),
@@ -75,6 +80,7 @@ impl Editor {
             title: String::from("ind"),
             terminal_lines,
             terminal_columns,
+            line_at_top: 0,
             mode: Mode::Normal,
             selections: vec![Selection::new()],
             buffer: Buffer::from_file(path),
@@ -156,7 +162,11 @@ impl Editor {
                 _ => None,
             }
         } else if modifiers == KeyModifiers::CONTROL {
-            None
+            match code {
+                KeyCode::Char('e') => Some(vec![Action::ScrollDown(1)]),
+                KeyCode::Char('y') => Some(vec![Action::ScrollUp(1)]),
+                _ => None,
+            }
         } else if modifiers == KeyModifiers::ALT {
             match code {
                 KeyCode::Char(';') => Some(vec![Action::FlipSelection(0)]),
@@ -219,6 +229,8 @@ impl Editor {
             MouseEventKind::Drag(MouseButton::Left) | MouseEventKind::Down(MouseButton::Right) => {
                 vec![Action::MoveCursorAbsolute(0, row.into(), column.into())]
             }
+            MouseEventKind::ScrollDown => vec![Action::ScrollDown(3)],
+            MouseEventKind::ScrollUp => vec![Action::ScrollUp(3)],
             _ => vec![],
         })
     }
@@ -237,6 +249,13 @@ impl Editor {
             Action::Resize(terminal_lines, terminal_columns) => {
                 self.terminal_lines = terminal_lines;
                 self.terminal_columns = terminal_columns;
+            }
+            Action::ScrollUp(amount) => {
+                self.line_at_top -= min(amount, self.line_at_top);
+            }
+            Action::ScrollDown(amount) => {
+                self.line_at_top +=
+                    min(amount, self.buffer.contents.len_lines() - self.line_at_top);
             }
             Action::ChangeMode(mode) => self.mode = mode,
             Action::InsertChar(line, column, character) => {
@@ -296,7 +315,7 @@ impl Editor {
 
     pub fn render_buffer(&self) {
         let mut line_number = 0;
-        for line in self.buffer.contents.lines() {
+        for line in self.buffer.contents.lines_at(self.line_at_top) {
             if (line_number + 1) > self.terminal_lines {
                 break;
             }
