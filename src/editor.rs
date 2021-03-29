@@ -3,7 +3,9 @@
 use crate::buffer::Buffer;
 use crate::selection::{Position, Selection};
 use crate::terminal::Terminal;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers, MouseEvent};
+use crossterm::event::{
+    self, Event, KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind,
+};
 use crossterm::style::Colorize;
 use crossterm::Result;
 use ropey::Rope;
@@ -22,8 +24,10 @@ pub enum Action {
     ChangeMode(Mode),
     InsertChar(usize, usize, char),
     DeleteChar(usize, usize),
-    MoveCursor(usize, Direction, usize),
-    MoveAnchor(usize, Direction, usize),
+    MoveCursorRelative(usize, Direction, usize),
+    MoveCursorAbsolute(usize, usize, usize),
+    MoveAnchorRelative(usize, Direction, usize),
+    MoveAnchorAbsolute(usize, usize, usize),
     ReduceSelection(usize),
     FlipSelection(usize),
 }
@@ -69,6 +73,7 @@ impl Editor {
     pub fn run(mut self) {
         Terminal::enter();
         Terminal::hide_cursor();
+        Terminal::enable_mouse_capture();
         Terminal::flush();
 
         self.render();
@@ -110,29 +115,31 @@ impl Editor {
             match code {
                 KeyCode::Char('i') => Some(vec![Action::ChangeMode(Mode::Insert)]),
                 KeyCode::Char('h') => Some(vec![
-                    Action::MoveCursor(0, Direction::Left, 1),
+                    Action::MoveCursorRelative(0, Direction::Left, 1),
                     Action::ReduceSelection(0),
                 ]),
                 KeyCode::Char('j') => Some(vec![
-                    Action::MoveCursor(0, Direction::Down, 1),
+                    Action::MoveCursorRelative(0, Direction::Down, 1),
                     Action::ReduceSelection(0),
                 ]),
                 KeyCode::Char('k') => Some(vec![
-                    Action::MoveCursor(0, Direction::Up, 1),
+                    Action::MoveCursorRelative(0, Direction::Up, 1),
                     Action::ReduceSelection(0),
                 ]),
                 KeyCode::Char('l') => Some(vec![
-                    Action::MoveCursor(0, Direction::Right, 1),
+                    Action::MoveCursorRelative(0, Direction::Right, 1),
                     Action::ReduceSelection(0),
                 ]),
                 _ => None,
             }
         } else if modifiers == KeyModifiers::SHIFT {
             match code {
-                KeyCode::Char('H') => Some(vec![Action::MoveCursor(0, Direction::Left, 1)]),
-                KeyCode::Char('J') => Some(vec![Action::MoveCursor(0, Direction::Down, 1)]),
-                KeyCode::Char('K') => Some(vec![Action::MoveCursor(0, Direction::Up, 1)]),
-                KeyCode::Char('L') => Some(vec![Action::MoveCursor(0, Direction::Right, 1)]),
+                KeyCode::Char('H') => Some(vec![Action::MoveCursorRelative(0, Direction::Left, 1)]),
+                KeyCode::Char('J') => Some(vec![Action::MoveCursorRelative(0, Direction::Down, 1)]),
+                KeyCode::Char('K') => Some(vec![Action::MoveCursorRelative(0, Direction::Up, 1)]),
+                KeyCode::Char('L') => {
+                    Some(vec![Action::MoveCursorRelative(0, Direction::Right, 1)])
+                }
                 _ => None,
             }
         } else if modifiers == KeyModifiers::CONTROL {
@@ -155,17 +162,17 @@ impl Editor {
                 KeyCode::Esc => Some(vec![Action::ChangeMode(Mode::Normal)]),
                 KeyCode::Char(c) => Some(vec![
                     Action::InsertChar(cursor.line, cursor.column, c),
-                    Action::MoveCursor(0, Direction::Right, 1),
+                    Action::MoveCursorRelative(0, Direction::Right, 1),
                     Action::ReduceSelection(0),
                 ]),
                 KeyCode::Enter => Some(vec![
                     Action::InsertChar(cursor.line, cursor.column, '\n'),
-                    Action::MoveCursor(0, Direction::Down, 1),
+                    Action::MoveCursorRelative(0, Direction::Down, 1),
                     Action::ReduceSelection(0),
                 ]),
                 KeyCode::Backspace if cursor.column > 0 => Some(vec![
                     Action::DeleteChar(cursor.line, cursor.column - 1),
-                    Action::MoveCursor(1, Direction::Left, 1),
+                    Action::MoveCursorRelative(1, Direction::Left, 1),
                     Action::ReduceSelection(0),
                 ]),
                 _ => None,
@@ -188,9 +195,19 @@ impl Editor {
     }
 
     fn handle_mouse_event(&self, mouse_event: MouseEvent) -> Result<Vec<Action>> {
-        match mouse_event {
-            _ => Ok(vec![]),
-        }
+        let MouseEvent {
+            kind, row, column, ..
+        } = mouse_event;
+        Ok(match kind {
+            MouseEventKind::Down(MouseButton::Left) => vec![
+                Action::MoveCursorAbsolute(0, row.into(), column.into()),
+                Action::ReduceSelection(0),
+            ],
+            MouseEventKind::Drag(MouseButton::Left) | MouseEventKind::Down(MouseButton::Right) => {
+                vec![Action::MoveCursorAbsolute(0, row.into(), column.into())]
+            }
+            _ => vec![],
+        })
     }
 
     fn handle_resize_event(&self, _width: u16, _height: u16) -> Result<Vec<Action>> {
@@ -205,7 +222,7 @@ impl Editor {
                 self.buffer.insert_char(line, column, character)
             }
             Action::DeleteChar(line, column) => self.buffer.delete_char(line, column),
-            Action::MoveCursor(index, direction, distance) => {
+            Action::MoveCursorRelative(index, direction, distance) => {
                 match direction {
                     Direction::Up => self.selections[index].cursor.move_up(distance),
                     Direction::Down => self.selections[index].cursor.move_down(distance),
@@ -213,13 +230,21 @@ impl Editor {
                     Direction::Right => self.selections[index].cursor.move_right(distance),
                 };
             }
-            Action::MoveAnchor(index, direction, distance) => {
+            Action::MoveCursorAbsolute(index, line, column) => {
+                self.selections[index].cursor.line = line;
+                self.selections[index].cursor.column = column;
+            }
+            Action::MoveAnchorRelative(index, direction, distance) => {
                 match direction {
                     Direction::Up => self.selections[index].anchor.move_up(distance),
                     Direction::Down => self.selections[index].anchor.move_down(distance),
                     Direction::Left => self.selections[index].anchor.move_left(distance),
                     Direction::Right => self.selections[index].anchor.move_right(distance),
                 };
+            }
+            Action::MoveAnchorAbsolute(index, line, column) => {
+                self.selections[index].anchor.line = line;
+                self.selections[index].anchor.column = column;
             }
             Action::ReduceSelection(index) => self.selections[index].reduce(),
             Action::FlipSelection(index) => self.selections[index].flip(),

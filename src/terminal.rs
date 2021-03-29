@@ -1,4 +1,4 @@
-use crossterm::{cursor, style, terminal, ExecutableCommand, QueueableCommand};
+use crossterm::{cursor, event, style, terminal, ExecutableCommand, QueueableCommand};
 use std::io::{stdout, Write};
 
 pub struct Terminal {}
@@ -14,6 +14,14 @@ impl Terminal {
         stdout().queue(terminal::LeaveAlternateScreen).unwrap();
         stdout().flush().unwrap();
         terminal::disable_raw_mode().unwrap();
+    }
+
+    pub fn enable_mouse_capture() {
+        stdout().queue(event::EnableMouseCapture).unwrap();
+    }
+
+    pub fn disable_mouse_capture() {
+        stdout().queue(event::DisableMouseCapture).unwrap();
     }
 
     pub fn clear() {
