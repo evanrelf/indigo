@@ -21,9 +21,5 @@ fn main() -> Result<()> {
         Editor::empty().run();
     }
 
-    for arg in env::args() {
-        println!("{}", arg);
-    }
-
     Ok(())
 }
