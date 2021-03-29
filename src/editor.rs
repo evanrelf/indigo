@@ -369,16 +369,27 @@ impl Editor {
     }
 
     pub fn render_status(&self) {
+        let line = self.selections[0].cursor.line;
+        let column = self.selections[0].cursor.column;
+        let cursor_index = self.buffer.coordinates_to_index(line, column);
+        let cursor_coords = if let Some(ix) = cursor_index {
+            self.buffer.index_to_coordinates(ix)
+        } else {
+            (42, 42)
+        };
+
         let (_, terminal_lines) = Terminal::size();
         Terminal::move_cursor_to(0, terminal_lines);
         Terminal::print(&format!(
-            "mode: {:?}, cursor 0: ({}, {}), anchor 0: ({}, {}), top: {}",
+            "mode: {:?}, cursor 0: ({}, {}), anchor 0: ({}, {}), top: {}, index: {:?}, coords: {:?}",
             self.mode,
             self.selections[0].cursor.line,
             self.selections[0].cursor.column,
             self.selections[0].anchor.line,
             self.selections[0].anchor.column,
-            self.line_at_top
+            self.line_at_top,
+            cursor_index,
+            cursor_coords
         ));
         Terminal::clear_until_newline();
     }

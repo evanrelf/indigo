@@ -20,15 +20,21 @@ impl Buffer {
         Buffer { contents }
     }
 
-    // pub fn coordinates_to_index(&self, line: usize, column: usize) -> Option<usize> {
-    //     todo!()
-    // }
+    pub fn coordinates_to_index(&self, line_index: usize, column_index: usize) -> Option<usize> {
+        let line_char_index = self.contents.line_to_char(line_index);
+        let line_length = self.contents.line(line_index).len_chars();
+        if column_index < line_length {
+            Some(line_char_index + column_index)
+        } else {
+            None
+        }
+    }
 
-    // pub fn index_to_coordinates(&self, index: usize) -> (usize, usize) {
-    //     let line = self.contents.char_to_line(index);
-    //     let column = todo!();
-    //     (line, column)
-    // }
+    pub fn index_to_coordinates(&self, char_index: usize) -> (usize, usize) {
+        let line_index = self.contents.char_to_line(char_index);
+        let line_char_index = self.contents.line_to_char(line_index);
+        (line_index, char_index - line_char_index)
+    }
 
     pub fn insert_char(&mut self, line: usize, column: usize, character: char) {
         let index = self.contents.line_to_char(line) + column;
