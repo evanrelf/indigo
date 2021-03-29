@@ -5,7 +5,25 @@ pub struct Selection {
     cursor_index: usize,
 }
 
+impl Selection {
+    pub fn new() -> Selection {
+        Selection {
+            anchor_index: 0,
+            cursor_index: 0,
+        }
+    }
+}
+
 pub struct Buffer {
     contents: Rope,
     selections: Vec<Selection>,
+}
+
+impl Buffer {
+    pub fn new() -> Buffer {
+        Buffer {
+            contents: Rope::new(),
+            selections: Vec::new(),
+        }
+    }
 }
