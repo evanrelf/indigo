@@ -305,7 +305,7 @@ impl Editor {
         let offset = self.line_at_top;
         let buffer_end_index = self.buffer.contents.len_lines();
 
-        for terminal_line_index in 0..self.terminal_lines {
+        for terminal_line_index in 0..(self.terminal_lines - 1) {
             Terminal::move_cursor_to(0, terminal_line_index);
             Terminal::clear_line();
             let buffer_line_index = (terminal_line_index as usize) + offset;
