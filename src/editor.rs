@@ -195,7 +195,7 @@ impl Editor {
                 ]),
                 KeyCode::Backspace if cursor.column > 0 => Some(vec![
                     Action::DeleteChar(cursor.line, cursor.column - 1),
-                    Action::MoveCursorRelative(1, Direction::Left, 1),
+                    Action::MoveCursorRelative(0, Direction::Left, 1),
                     Action::ReduceSelection(0),
                 ]),
                 _ => None,
