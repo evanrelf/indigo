@@ -302,8 +302,6 @@ impl Editor {
     }
 
     pub fn render(&self) {
-        Terminal::clear();
-
         self.render_buffer();
         self.render_selections();
         self.render_status();
@@ -314,15 +312,19 @@ impl Editor {
     }
 
     pub fn render_buffer(&self) {
-        let mut line_number = 0;
-        for line in self.buffer.contents.lines_at(self.line_at_top) {
-            if (line_number + 1) > self.terminal_lines {
-                break;
+        let offset = self.line_at_top;
+        let buffer_end_index = self.buffer.contents.len_lines();
+
+        for terminal_line_index in 0..self.terminal_lines {
+            Terminal::move_cursor_to(0, terminal_line_index);
+            Terminal::clear_line();
+            let buffer_line_index = (terminal_line_index as usize) + offset;
+            if buffer_line_index < buffer_end_index {
+                let buffer_line_slice = self.buffer.contents.line(buffer_line_index);
+                Terminal::print(&Cow::from(buffer_line_slice));
+            } else {
+                Terminal::print("~");
             }
-            Terminal::move_cursor_to(0, line_number);
-            Terminal::print(&Cow::from(line));
-            Terminal::print("\r");
-            line_number += 1;
         }
     }
 
@@ -370,12 +372,14 @@ impl Editor {
         let (_, terminal_lines) = Terminal::size();
         Terminal::move_cursor_to(0, terminal_lines);
         Terminal::print(&format!(
-            "mode: {:?}, cursor 0: ({}, {}), anchor 0: ({}, {})",
+            "mode: {:?}, cursor 0: ({}, {}), anchor 0: ({}, {}), top: {}",
             self.mode,
             self.selections[0].cursor.line,
             self.selections[0].cursor.column,
             self.selections[0].anchor.line,
             self.selections[0].anchor.column,
+            self.line_at_top
         ));
+        Terminal::clear_until_newline();
     }
 }

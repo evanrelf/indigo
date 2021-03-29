@@ -24,7 +24,18 @@ impl Terminal {
         stdout().queue(event::DisableMouseCapture).unwrap();
     }
 
-    pub fn clear() {
+    pub fn clear_line() {
+        stdout()
+            .queue(terminal::Clear(terminal::ClearType::CurrentLine))
+            .unwrap();
+    }
+    pub fn clear_until_newline() {
+        stdout()
+            .queue(terminal::Clear(terminal::ClearType::UntilNewLine))
+            .unwrap();
+    }
+
+    pub fn clear_all() {
         stdout()
             .queue(terminal::Clear(terminal::ClearType::All))
             .unwrap();
