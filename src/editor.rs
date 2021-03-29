@@ -328,34 +328,28 @@ impl Editor {
         // Anchor
         let anchor_line = self.selections[index].anchor.line;
         let anchor_column = self.selections[index].anchor.column;
-
-        if let Some(anchor_char_index) =
-            self.buffer.coordinates_to_index(anchor_line, anchor_column)
-        {
-            Terminal::move_cursor_to(anchor_column as u16, anchor_line as u16);
-            let anchor_char = if self.buffer.contents.len_chars() > anchor_char_index {
-                self.buffer.contents.char(anchor_char_index).to_string()
-            } else {
-                String::from(" ")
-            };
-            Terminal::print_styled(anchor_char.on_yellow());
-        }
+        self.render_selection_end(anchor_line, anchor_column, false);
 
         // Cursor
         let cursor_line = self.selections[index].cursor.line;
         let cursor_column = self.selections[index].cursor.column;
+        self.render_selection_end(cursor_line, cursor_column, true);
+    }
 
-        if let Some(cursor_char_index) =
-            self.buffer.coordinates_to_index(cursor_line, cursor_column)
-        {
-            Terminal::move_cursor_to(cursor_column as u16, cursor_line as u16);
-            let cursor_char = if self.buffer.contents.len_chars() > cursor_char_index {
-                self.buffer.contents.char(cursor_char_index).to_string()
+    pub fn render_selection_end(&self, line: usize, column: usize, is_cursor: bool) {
+        if let Some(char_index) = self.buffer.coordinates_to_index(line, column) {
+            Terminal::move_cursor_to(column as u16, line as u16);
+            let character = if self.buffer.contents.len_chars() > char_index {
+                self.buffer.contents.char(char_index).to_string()
             } else {
                 String::from(" ")
             };
 
-            Terminal::print_styled(cursor_char.white().on_red());
+            if is_cursor {
+                Terminal::print_styled(character.white().on_red());
+            } else {
+                Terminal::print_styled(character.black().on_yellow());
+            }
         }
     }
 
