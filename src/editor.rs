@@ -46,6 +46,10 @@ impl Editor {
                     _ => (),
                 }
             }
+            Event::Resize(columns, lines) => {
+                self.viewport.lines = lines;
+                self.viewport.columns = columns;
+            }
             _ => (),
         }
     }
