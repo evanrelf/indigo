@@ -17,6 +17,13 @@ impl Terminal {
         terminal::disable_raw_mode().unwrap();
     }
 
+    pub fn execute<C>(command: C)
+    where
+        C: Command,
+    {
+        stdout().execute(command).unwrap();
+    }
+
     pub fn queue<C>(command: C)
     where
         C: Command,
