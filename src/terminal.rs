@@ -1,4 +1,4 @@
-use crossterm::{cursor, terminal, ExecutableCommand, QueueableCommand};
+use crossterm::{cursor, terminal, Command, ExecutableCommand, QueueableCommand};
 use std::io::{stdout, Write};
 
 pub struct Terminal {}
@@ -14,5 +14,16 @@ impl Terminal {
         stdout().queue(terminal::LeaveAlternateScreen).unwrap();
         stdout().flush().unwrap();
         terminal::disable_raw_mode().unwrap();
+    }
+
+    pub fn queue<C>(command: C)
+    where
+        C: Command,
+    {
+        stdout().queue(command).unwrap();
+    }
+
+    pub fn flush() {
+        stdout().flush().unwrap();
     }
 }
