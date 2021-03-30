@@ -2,15 +2,24 @@ use crate::buffer::Buffer;
 use crate::terminal::Terminal;
 use crossterm::{cursor, event, style, terminal};
 
+pub struct Viewport {
+    lines: u16,
+    columns: u16,
+}
+
 pub struct Editor {
     quit: bool,
+    viewport: Viewport,
     buffers: Vec<Buffer>,
 }
 
 impl Editor {
     pub fn new() -> Editor {
+        let (columns, lines) = Terminal::size();
+
         Editor {
             quit: false,
+            viewport: Viewport { lines, columns },
             buffers: Vec::new(),
         }
     }
