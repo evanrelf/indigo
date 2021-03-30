@@ -34,4 +34,8 @@ impl Terminal {
     pub fn flush() {
         stdout().flush().unwrap();
     }
+
+    pub fn size() -> (u16, u16) {
+        terminal::size().unwrap()
+    }
 }
