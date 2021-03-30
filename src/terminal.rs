@@ -10,9 +10,10 @@ impl Terminal {
     }
 
     pub fn exit() {
-        stdout().queue(cursor::Show).unwrap();
-        stdout().queue(terminal::LeaveAlternateScreen).unwrap();
-        stdout().flush().unwrap();
+        let mut stdout = stdout();
+        stdout.queue(cursor::Show).unwrap();
+        stdout.queue(terminal::LeaveAlternateScreen).unwrap();
+        stdout.flush().unwrap();
         terminal::disable_raw_mode().unwrap();
     }
 
