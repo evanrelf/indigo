@@ -4,6 +4,7 @@ mod terminal;
 
 use crate::editor::Editor;
 use crate::terminal::Terminal;
+use std::env;
 use std::panic;
 
 fn main() {
@@ -12,5 +13,11 @@ fn main() {
         eprintln!("{}", panic_info);
     }));
 
-    Editor::new().run();
+    let mut editor = Editor::new();
+
+    if let Some(path) = env::args().nth(1) {
+        editor.load_file(path);
+    }
+
+    editor.run();
 }

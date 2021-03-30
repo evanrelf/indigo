@@ -1,6 +1,8 @@
 use crate::buffer::Buffer;
 use crate::terminal::Terminal;
 use crossterm::{cursor, event, style, terminal};
+use std::fs::File;
+use std::path::Path;
 
 pub struct Viewport {
     lines: u16,
@@ -34,6 +36,13 @@ impl Editor {
         }
 
         Terminal::exit();
+    }
+
+    pub fn load_file<P>(&mut self, path: P)
+    where
+        P: AsRef<Path>,
+    {
+        self.buffers.push(Buffer::from_file(path));
     }
 
     pub fn handle_event(&mut self) {
