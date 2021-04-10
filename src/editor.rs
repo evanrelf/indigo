@@ -12,6 +12,7 @@ pub struct Viewport {
 pub struct Editor {
     quit: bool,
     viewport: Viewport,
+    buffer_index: usize,
     buffers: Vec<Buffer>,
 }
 
@@ -22,7 +23,8 @@ impl Editor {
         Editor {
             quit: false,
             viewport: Viewport { lines, columns },
-            buffers: Vec::new(),
+            buffer_index: 0,
+            buffers: vec![Buffer::new()],
         }
     }
 
@@ -43,6 +45,7 @@ impl Editor {
         P: AsRef<Path>,
     {
         self.buffers.push(Buffer::from_file(path));
+        self.buffer_index += 1;
     }
 
     pub fn handle_event(&mut self) {
