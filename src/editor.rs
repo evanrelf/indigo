@@ -56,6 +56,30 @@ impl Editor {
                 let KeyEvent { modifiers, code } = key_event;
                 match code {
                     KeyCode::Char('c') if modifiers == KeyModifiers::CONTROL => self.quit = true,
+                    KeyCode::Char('h') => {
+                        self.buffers[self.buffer_index].columns_offset = self.buffers
+                            [self.buffer_index]
+                            .columns_offset
+                            .saturating_sub(1);
+                    }
+                    KeyCode::Char('j') => {
+                        self.buffers[self.buffer_index].lines_offset = self.buffers
+                            [self.buffer_index]
+                            .lines_offset
+                            .saturating_add(1);
+                    }
+                    KeyCode::Char('k') => {
+                        self.buffers[self.buffer_index].lines_offset = self.buffers
+                            [self.buffer_index]
+                            .lines_offset
+                            .saturating_sub(1);
+                    }
+                    KeyCode::Char('l') => {
+                        self.buffers[self.buffer_index].columns_offset = self.buffers
+                            [self.buffer_index]
+                            .columns_offset
+                            .saturating_add(1);
+                    }
                     _ => (),
                 }
             }
