@@ -20,6 +20,8 @@ impl Selection {
 pub struct Buffer {
     contents: Rope,
     selections: Vec<Selection>,
+    lines_offset: usize,
+    columns_offset: usize,
 }
 
 impl Buffer {
@@ -27,6 +29,8 @@ impl Buffer {
         Buffer {
             contents: Rope::new(),
             selections: Vec::new(),
+            lines_offset: 0,
+            columns_offset: 0,
         }
     }
 
@@ -38,6 +42,8 @@ impl Buffer {
         Buffer {
             contents,
             selections: Vec::new(),
+            lines_offset: 0,
+            columns_offset: 0,
         }
     }
 }
