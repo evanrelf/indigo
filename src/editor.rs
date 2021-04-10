@@ -56,30 +56,10 @@ impl Editor {
                 let KeyEvent { modifiers, code } = key_event;
                 match code {
                     KeyCode::Char('c') if modifiers == KeyModifiers::CONTROL => self.quit = true,
-                    KeyCode::Char('h') => {
-                        self.buffers[self.buffer_index].columns_offset = self.buffers
-                            [self.buffer_index]
-                            .columns_offset
-                            .saturating_sub(1);
-                    }
-                    KeyCode::Char('j') => {
-                        self.buffers[self.buffer_index].lines_offset = self.buffers
-                            [self.buffer_index]
-                            .lines_offset
-                            .saturating_add(1);
-                    }
-                    KeyCode::Char('k') => {
-                        self.buffers[self.buffer_index].lines_offset = self.buffers
-                            [self.buffer_index]
-                            .lines_offset
-                            .saturating_sub(1);
-                    }
-                    KeyCode::Char('l') => {
-                        self.buffers[self.buffer_index].columns_offset = self.buffers
-                            [self.buffer_index]
-                            .columns_offset
-                            .saturating_add(1);
-                    }
+                    KeyCode::Char('h') => self.buffers[self.buffer_index].scroll_left(1),
+                    KeyCode::Char('j') => self.buffers[self.buffer_index].scroll_down(1),
+                    KeyCode::Char('k') => self.buffers[self.buffer_index].scroll_up(1),
+                    KeyCode::Char('l') => self.buffers[self.buffer_index].scroll_right(1),
                     _ => (),
                 }
             }
@@ -103,7 +83,7 @@ impl Editor {
         let buffer = &self.buffers[self.buffer_index];
 
         let rope_slice = {
-            let start = buffer.contents.line_to_char(buffer.lines_offset);
+            let start = buffer.contents.line_to_char(buffer.lines_offset());
             let end = buffer.contents.line_to_char(min(
                 start + (self.viewport.lines as usize),
                 buffer.contents.len_lines(),
@@ -116,8 +96,8 @@ impl Editor {
         for line in rope_slice.lines() {
             Terminal::queue(terminal::Clear(terminal::ClearType::CurrentLine));
 
-            if line.len_chars().saturating_sub(buffer.columns_offset) > 0 {
-                let line2 = line.slice(buffer.columns_offset..);
+            if line.len_chars().saturating_sub(buffer.columns_offset()) > 0 {
+                let line2 = line.slice(buffer.columns_offset()..);
                 Terminal::queue(style::Print(line2));
                 Terminal::queue(cursor::MoveToColumn(0));
             } else {

@@ -20,8 +20,8 @@ impl Selection {
 pub struct Buffer {
     pub contents: Rope,
     selections: Vec<Selection>,
-    pub lines_offset: usize,
-    pub columns_offset: usize,
+    lines_offset: usize,
+    columns_offset: usize,
 }
 
 impl Buffer {
@@ -45,5 +45,32 @@ impl Buffer {
             lines_offset: 0,
             columns_offset: 0,
         }
+    }
+
+    pub fn lines_offset(&self) -> usize {
+        self.lines_offset
+    }
+
+    pub fn columns_offset(&self) -> usize {
+        self.columns_offset
+    }
+
+    pub fn scroll_up(&mut self, distance: usize) {
+        self.lines_offset = self.lines_offset.saturating_sub(distance);
+    }
+
+    pub fn scroll_down(&mut self, distance: usize) {
+        let new_lines_offset = self.lines_offset.saturating_add(distance);
+        if new_lines_offset <= self.contents.len_lines() {
+            self.lines_offset = new_lines_offset;
+        }
+    }
+
+    pub fn scroll_left(&mut self, distance: usize) {
+        self.columns_offset = self.columns_offset.saturating_sub(distance);
+    }
+
+    pub fn scroll_right(&mut self, distance: usize) {
+        self.columns_offset = self.columns_offset.saturating_add(distance);
     }
 }
