@@ -18,10 +18,10 @@ impl Selection {
 }
 
 pub struct Buffer {
-    contents: Rope,
+    pub contents: Rope,
     selections: Vec<Selection>,
-    lines_offset: usize,
-    columns_offset: usize,
+    pub lines_offset: usize,
+    pub columns_offset: usize,
 }
 
 impl Buffer {
