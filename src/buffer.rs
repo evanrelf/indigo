@@ -4,8 +4,8 @@ use std::io::BufReader;
 use std::path::Path;
 
 pub struct Selection {
-    anchor_index: usize,
-    cursor_index: usize,
+    pub anchor_index: usize,
+    pub cursor_index: usize,
 }
 
 impl Selection {
@@ -19,8 +19,8 @@ impl Selection {
 
 pub struct Buffer {
     pub contents: Rope,
-    primary_selection_index: usize,
-    selections: Vec<Selection>,
+    pub primary_selection_index: usize,
+    pub selections: Vec<Selection>,
     lines_offset: usize,
     columns_offset: usize,
 }

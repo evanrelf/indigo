@@ -107,11 +107,31 @@ impl Editor {
         }
     }
 
+    fn render_selections(&self) {
+        let buffer = &self.buffers[self.buffer_index];
+
+        for (selection_index, selection) in buffer.selections.iter().enumerate() {
+            let (cursor_line, cursor_column) = buffer.index_to_coordinates(selection.cursor_index);
+
+            if cursor_line >= buffer.lines_offset() && cursor_column >= buffer.columns_offset() {
+                let cursor_line = (cursor_line - buffer.lines_offset()) as u16;
+                let cursor_column = (cursor_column - buffer.columns_offset()) as u16;
+                let cursor_char = buffer.contents.char(selection.cursor_index);
+
+                Terminal::queue(cursor::MoveTo(cursor_column, cursor_line));
+                Terminal::queue(style::PrintStyledContent(
+                    style::style(cursor_char).on(style::Color::Yellow),
+                ));
+            }
+        }
+    }
+
     fn render(&self) {
         Terminal::queue(terminal::Clear(terminal::ClearType::All));
 
         self.render_tildes();
         self.render_buffer();
+        self.render_selections();
 
         Terminal::flush();
     }
