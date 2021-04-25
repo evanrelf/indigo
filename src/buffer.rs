@@ -19,6 +19,7 @@ impl Selection {
 
 pub struct Buffer {
     pub contents: Rope,
+    primary_selection_index: usize,
     selections: Vec<Selection>,
     lines_offset: usize,
     columns_offset: usize,
@@ -28,7 +29,8 @@ impl Buffer {
     pub fn new() -> Buffer {
         Buffer {
             contents: Rope::new(),
-            selections: Vec::new(),
+            primary_selection_index: 0,
+            selections: vec![Selection::new()],
             lines_offset: 0,
             columns_offset: 0,
         }
@@ -41,7 +43,8 @@ impl Buffer {
         let contents = Rope::from_reader(BufReader::new(File::open(path).unwrap())).unwrap();
         Buffer {
             contents,
-            selections: Vec::new(),
+            primary_selection_index: 0,
+            selections: vec![Selection::new()],
             lines_offset: 0,
             columns_offset: 0,
         }
