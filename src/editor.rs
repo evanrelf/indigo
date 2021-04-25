@@ -60,12 +60,12 @@ impl Editor {
                         KeyCode::Char('c') => self.quit = true,
                         _ => (),
                     }
-                } else if modifiers == KeyModifiers::NONE {
+                } else if modifiers == KeyModifiers::SHIFT {
                     match code {
-                        KeyCode::Char('h') => self.buffers[self.buffer_index].scroll_left(1),
-                        KeyCode::Char('j') => self.buffers[self.buffer_index].scroll_down(1),
-                        KeyCode::Char('k') => self.buffers[self.buffer_index].scroll_up(1),
-                        KeyCode::Char('l') => self.buffers[self.buffer_index].scroll_right(1),
+                        KeyCode::Char('H') => self.buffers[self.buffer_index].scroll_left(1),
+                        KeyCode::Char('J') => self.buffers[self.buffer_index].scroll_down(1),
+                        KeyCode::Char('K') => self.buffers[self.buffer_index].scroll_up(1),
+                        KeyCode::Char('L') => self.buffers[self.buffer_index].scroll_right(1),
                         _ => (),
                     }
                 }
