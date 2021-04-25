@@ -116,7 +116,14 @@ impl Editor {
             if cursor_line >= buffer.lines_offset() && cursor_column >= buffer.columns_offset() {
                 let cursor_line = (cursor_line - buffer.lines_offset()) as u16;
                 let cursor_column = (cursor_column - buffer.columns_offset()) as u16;
-                let cursor_char = buffer.contents.char(selection.cursor_index);
+                let cursor_char = {
+                    let char = buffer.contents.char(selection.cursor_index);
+                    if char == '\n' {
+                        ' '
+                    } else {
+                        char
+                    }
+                };
 
                 Terminal::queue(cursor::MoveTo(cursor_column, cursor_line));
                 Terminal::queue(style::PrintStyledContent(
