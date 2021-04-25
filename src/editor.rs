@@ -124,9 +124,34 @@ impl Editor {
         let buffer = &self.buffers[self.buffer_index];
 
         for (selection_index, selection) in buffer.selections.iter().enumerate() {
+            let (anchor_line, anchor_column) = buffer.index_to_coordinates(selection.anchor_index);
             let (cursor_line, cursor_column) = buffer.index_to_coordinates(selection.cursor_index);
 
-            if cursor_line >= buffer.lines_offset() && cursor_column >= buffer.columns_offset() {
+            let overlapping = anchor_line == cursor_line && anchor_column == cursor_column;
+
+            let anchor_visible =
+                anchor_line >= buffer.lines_offset() && anchor_column >= buffer.columns_offset();
+            if anchor_visible && !overlapping {
+                let anchor_line = (anchor_line - buffer.lines_offset()) as u16;
+                let anchor_column = (anchor_column - buffer.columns_offset()) as u16;
+                let anchor_char = {
+                    let char = buffer.contents.char(selection.anchor_index);
+                    if char == '\n' {
+                        ' '
+                    } else {
+                        char
+                    }
+                };
+
+                Terminal::queue(cursor::MoveTo(anchor_column, anchor_line));
+                Terminal::queue(style::PrintStyledContent(
+                    style::style(anchor_char).on(style::Color::Cyan),
+                ));
+            }
+
+            let cursor_visible =
+                cursor_line >= buffer.lines_offset() && cursor_column >= buffer.columns_offset();
+            if cursor_visible {
                 let cursor_line = (cursor_line - buffer.lines_offset()) as u16;
                 let cursor_column = (cursor_column - buffer.columns_offset()) as u16;
                 let cursor_char = {
