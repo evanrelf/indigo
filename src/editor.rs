@@ -54,13 +54,20 @@ impl Editor {
         match event::read().unwrap() {
             Event::Key(key_event) => {
                 let KeyEvent { modifiers, code } = key_event;
-                match code {
-                    KeyCode::Char('c') if modifiers == KeyModifiers::CONTROL => self.quit = true,
-                    KeyCode::Char('h') => self.buffers[self.buffer_index].scroll_left(1),
-                    KeyCode::Char('j') => self.buffers[self.buffer_index].scroll_down(1),
-                    KeyCode::Char('k') => self.buffers[self.buffer_index].scroll_up(1),
-                    KeyCode::Char('l') => self.buffers[self.buffer_index].scroll_right(1),
-                    _ => (),
+
+                if modifiers == KeyModifiers::CONTROL {
+                    match code {
+                        KeyCode::Char('c') => self.quit = true,
+                        _ => (),
+                    }
+                } else if modifiers == KeyModifiers::NONE {
+                    match code {
+                        KeyCode::Char('h') => self.buffers[self.buffer_index].scroll_left(1),
+                        KeyCode::Char('j') => self.buffers[self.buffer_index].scroll_down(1),
+                        KeyCode::Char('k') => self.buffers[self.buffer_index].scroll_up(1),
+                        KeyCode::Char('l') => self.buffers[self.buffer_index].scroll_right(1),
+                        _ => (),
+                    }
                 }
             }
             Event::Resize(columns, lines) => {
