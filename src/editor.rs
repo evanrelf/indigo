@@ -107,9 +107,10 @@ impl Editor {
         let buffer = &self.buffers[self.buffer_index];
 
         let viewport_slice = {
-            let start = buffer.contents.line_to_char(buffer.lines_offset());
+            let lines_offset = buffer.lines_offset();
+            let start = buffer.contents.line_to_char(lines_offset);
             let end = buffer.contents.line_to_char(min(
-                start + (self.viewport.lines as usize),
+                lines_offset + (self.viewport.lines as usize),
                 buffer.contents.len_lines(),
             ));
             buffer.contents.slice(start..end)
