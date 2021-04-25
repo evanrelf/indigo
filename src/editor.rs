@@ -68,6 +68,12 @@ impl Editor {
                         KeyCode::Char('L') => self.buffers[self.buffer_index].scroll_right(1),
                         _ => (),
                     }
+                } else if modifiers == KeyModifiers::NONE {
+                    match code {
+                        KeyCode::Char('h') => self.buffers[self.buffer_index].move_left(1),
+                        KeyCode::Char('l') => self.buffers[self.buffer_index].move_right(1),
+                        _ => (),
+                    }
                 }
             }
             Event::Resize(columns, lines) => {
@@ -105,8 +111,8 @@ impl Editor {
             Terminal::queue(terminal::Clear(terminal::ClearType::CurrentLine));
 
             if line.len_chars().saturating_sub(buffer.columns_offset()) > 0 {
-                let line2 = line.slice(buffer.columns_offset()..);
-                Terminal::queue(style::Print(line2));
+                let line = line.slice(buffer.columns_offset()..);
+                Terminal::queue(style::Print(line));
                 Terminal::queue(cursor::MoveToColumn(0));
             } else {
                 Terminal::queue(cursor::MoveToNextLine(1));
