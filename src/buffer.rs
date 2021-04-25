@@ -58,6 +58,12 @@ impl Buffer {
         self.columns_offset
     }
 
+    pub fn index_to_coordinates(&self, index: usize) -> (usize, usize) {
+        let line_line_index = self.contents.char_to_line(index);
+        let line_char_index = self.contents.line_to_char(line_line_index);
+        (line_line_index, index - line_char_index)
+    }
+
     pub fn scroll_up(&mut self, distance: usize) {
         self.lines_offset = self.lines_offset.saturating_sub(distance);
     }
@@ -75,5 +81,7 @@ impl Buffer {
 
     pub fn scroll_right(&mut self, distance: usize) {
         self.columns_offset = self.columns_offset.saturating_add(distance);
+    }
+
     }
 }
