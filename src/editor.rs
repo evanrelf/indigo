@@ -62,10 +62,10 @@ impl Editor {
                     }
                 } else if modifiers == KeyModifiers::SHIFT {
                     match code {
-                        KeyCode::Char('H') => self.buffers[self.buffer_index].scroll_left(1),
-                        KeyCode::Char('J') => self.buffers[self.buffer_index].scroll_down(1),
-                        KeyCode::Char('K') => self.buffers[self.buffer_index].scroll_up(1),
-                        KeyCode::Char('L') => self.buffers[self.buffer_index].scroll_right(1),
+                        KeyCode::Char('A') => self.buffers[self.buffer_index].scroll_left(1),
+                        KeyCode::Char('S') => self.buffers[self.buffer_index].scroll_down(1),
+                        KeyCode::Char('W') => self.buffers[self.buffer_index].scroll_up(1),
+                        KeyCode::Char('D') => self.buffers[self.buffer_index].scroll_right(1),
                         _ => (),
                     }
                 } else if modifiers == KeyModifiers::NONE {
