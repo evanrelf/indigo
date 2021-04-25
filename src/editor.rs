@@ -49,7 +49,7 @@ impl Editor {
         self.buffer_index += 1;
     }
 
-    pub fn handle_event(&mut self) {
+    fn handle_event(&mut self) {
         use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
         match event::read().unwrap() {
             Event::Key(key_event) => {
@@ -71,18 +71,19 @@ impl Editor {
         }
     }
 
-    pub fn render(&self) {
-        Terminal::queue(terminal::Clear(terminal::ClearType::All));
+    fn render_tildes(&self) {
         Terminal::queue(cursor::MoveTo(0, 0));
 
         for _ in 0..self.viewport.lines {
             Terminal::queue(style::Print("~"));
             Terminal::queue(cursor::MoveToNextLine(1));
         }
+    }
 
+    fn render_buffer(&self) {
         let buffer = &self.buffers[self.buffer_index];
 
-        let rope_slice = {
+        let viewport_slice = {
             let start = buffer.contents.line_to_char(buffer.lines_offset());
             let end = buffer.contents.line_to_char(min(
                 start + (self.viewport.lines as usize),
@@ -93,7 +94,7 @@ impl Editor {
 
         Terminal::queue(cursor::MoveTo(0, 0));
 
-        for line in rope_slice.lines() {
+        for line in viewport_slice.lines() {
             Terminal::queue(terminal::Clear(terminal::ClearType::CurrentLine));
 
             if line.len_chars().saturating_sub(buffer.columns_offset()) > 0 {
@@ -104,6 +105,13 @@ impl Editor {
                 Terminal::queue(cursor::MoveToNextLine(1));
             }
         }
+    }
+
+    fn render(&self) {
+        Terminal::queue(terminal::Clear(terminal::ClearType::All));
+
+        self.render_tildes();
+        self.render_buffer();
 
         Terminal::flush();
     }
