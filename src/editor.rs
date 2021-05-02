@@ -62,18 +62,18 @@ impl Editor {
                     }
                 } else if modifiers == KeyModifiers::SHIFT {
                     match code {
-                        // Scroll
-                        KeyCode::Char('A') => self.buffers[self.buffer_index].scroll_left(1),
-                        KeyCode::Char('S') => self.buffers[self.buffer_index].scroll_down(1),
-                        KeyCode::Char('W') => self.buffers[self.buffer_index].scroll_up(1),
-                        KeyCode::Char('D') => self.buffers[self.buffer_index].scroll_right(1),
-                        // Move
                         KeyCode::Char('H') => self.buffers[self.buffer_index].move_cursor_left(1),
                         KeyCode::Char('L') => self.buffers[self.buffer_index].move_cursor_right(1),
                         _ => (),
                     }
                 } else if modifiers == KeyModifiers::NONE {
                     match code {
+                        // Scroll
+                        KeyCode::Char('a') => self.buffers[self.buffer_index].scroll_left(1),
+                        KeyCode::Char('s') => self.buffers[self.buffer_index].scroll_down(1),
+                        KeyCode::Char('w') => self.buffers[self.buffer_index].scroll_up(1),
+                        KeyCode::Char('d') => self.buffers[self.buffer_index].scroll_right(1),
+                        // Move
                         KeyCode::Char('h') => {
                             self.buffers[self.buffer_index].move_cursor_left(1);
                             self.buffers[self.buffer_index].reduce_selection();
