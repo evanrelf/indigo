@@ -1,8 +1,6 @@
 use crate::buffer::Buffer;
 use crate::terminal::Terminal;
 use crossterm::{cursor, event, style, terminal};
-use std::cmp::min;
-use std::fs::File;
 use std::path::Path;
 
 pub struct Viewport {
@@ -107,26 +105,24 @@ impl Editor {
         let buffer = &self.buffers[self.buffer_index];
 
         let viewport_slice = {
-            let lines_offset = buffer.lines_offset();
-            let start = buffer.contents.line_to_char(lines_offset);
-            let end = buffer.contents.line_to_char(min(
-                lines_offset + (self.viewport.lines as usize),
-                buffer.contents.len_lines(),
-            ));
-            buffer.contents.slice(start..end)
+            let viewport_start_line = buffer.lines_offset();
+            let viewport_end_line = viewport_start_line + (self.viewport.lines as usize);
+            let buffer_end_line = buffer.contents.len_lines();
+            let start = buffer.contents.line_to_char(viewport_start_line);
+            if buffer_end_line <= viewport_end_line {
+                buffer.contents.slice(start..)
+            } else {
+                let end = buffer.contents.line_to_char(viewport_end_line);
+                buffer.contents.slice(start..end)
+            }
         };
 
-        Terminal::queue(cursor::MoveTo(0, 0));
-
-        for line in viewport_slice.lines() {
-            Terminal::queue(terminal::Clear(terminal::ClearType::CurrentLine));
-
+        for (i, line) in viewport_slice.lines().enumerate() {
             if line.len_chars().saturating_sub(buffer.columns_offset()) > 0 {
                 let line = line.slice(buffer.columns_offset()..);
-                Terminal::queue(style::Print(line));
-                Terminal::queue(cursor::MoveToColumn(0));
-            } else {
-                Terminal::queue(cursor::MoveToNextLine(1));
+                Terminal::queue(cursor::MoveTo(0, i as u16));
+                Terminal::queue(terminal::Clear(terminal::ClearType::CurrentLine));
+                Terminal::queue(style::Print(String::from(line).trim_end()));
             }
         }
     }
@@ -134,7 +130,7 @@ impl Editor {
     fn render_selections(&self) {
         let buffer = &self.buffers[self.buffer_index];
 
-        for (selection_index, selection) in buffer.selections.iter().enumerate() {
+        for selection in buffer.selections.iter() {
             let (anchor_line, anchor_column) = buffer.index_to_coordinates(selection.anchor_index);
             let (cursor_line, cursor_column) = buffer.index_to_coordinates(selection.cursor_index);
 
