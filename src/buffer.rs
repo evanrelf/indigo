@@ -83,15 +83,21 @@ impl Buffer {
         self.columns_offset = self.columns_offset.saturating_add(distance);
     }
 
-    pub fn move_left(&mut self, distance: usize) {
+    pub fn move_cursor_left(&mut self, distance: usize) {
         for selection in &mut self.selections {
             selection.cursor_index = selection.cursor_index.saturating_sub(distance);
         }
     }
 
-    pub fn move_right(&mut self, distance: usize) {
+    pub fn move_cursor_right(&mut self, distance: usize) {
         for selection in &mut self.selections {
             selection.cursor_index = selection.cursor_index.saturating_add(distance);
+        }
+    }
+
+    pub fn reduce_selection(&mut self) {
+        for selection in &mut self.selections {
+            selection.anchor_index = selection.cursor_index;
         }
     }
 }
