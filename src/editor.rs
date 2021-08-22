@@ -1,5 +1,6 @@
 use crate::buffer::Buffer;
 use crate::terminal::Terminal;
+use crossterm::style::Stylize;
 use crossterm::{cursor, event, style, terminal};
 use std::path::Path;
 
