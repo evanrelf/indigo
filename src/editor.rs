@@ -24,6 +24,14 @@ impl Editor {
         }
     }
 
+    pub fn load_file<P>(&mut self, path: P)
+    where
+        P: AsRef<Path>,
+    {
+        self.buffers.push(Buffer::from_file(path));
+        self.buffer_index += 1;
+    }
+
     pub fn run(&mut self) {
         Terminal::enter();
         scopeguard::defer!(Terminal::exit());
@@ -35,57 +43,14 @@ impl Editor {
         }
     }
 
-    pub fn load_file<P>(&mut self, path: P)
-    where
-        P: AsRef<Path>,
-    {
-        self.buffers.push(Buffer::from_file(path));
-        self.buffer_index += 1;
-    }
+    fn render(&self) {
+        Terminal::queue(terminal::Clear(terminal::ClearType::All));
 
-    fn handle_event(&mut self) {
-        use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
-        match event::read().unwrap() {
-            Event::Key(key_event) => {
-                let KeyEvent { modifiers, code } = key_event;
+        self.render_tildes();
+        self.render_buffer();
+        self.render_selections();
 
-                if modifiers == KeyModifiers::CONTROL {
-                    match code {
-                        KeyCode::Char('c') => self.quit = true,
-                        _ => (),
-                    }
-                } else if modifiers == KeyModifiers::SHIFT {
-                    match code {
-                        KeyCode::Char('H') => self.buffers[self.buffer_index].move_cursor_left(1),
-                        KeyCode::Char('L') => self.buffers[self.buffer_index].move_cursor_right(1),
-                        _ => (),
-                    }
-                } else if modifiers == KeyModifiers::NONE {
-                    match code {
-                        // Scroll
-                        KeyCode::Char('a') => self.buffers[self.buffer_index].scroll_left(1),
-                        KeyCode::Char('s') => self.buffers[self.buffer_index].scroll_down(1),
-                        KeyCode::Char('w') => self.buffers[self.buffer_index].scroll_up(1),
-                        KeyCode::Char('d') => self.buffers[self.buffer_index].scroll_right(1),
-                        // Move
-                        KeyCode::Char('h') => {
-                            self.buffers[self.buffer_index].move_cursor_left(1);
-                            self.buffers[self.buffer_index].reduce_selection();
-                        }
-                        KeyCode::Char('l') => {
-                            self.buffers[self.buffer_index].move_cursor_right(1);
-                            self.buffers[self.buffer_index].reduce_selection();
-                        }
-                        _ => (),
-                    }
-                }
-            }
-            Event::Resize(columns, lines) => {
-                self.viewport_lines = lines;
-                self.viewport_columns = columns;
-            }
-            _ => (),
-        }
+        Terminal::flush();
     }
 
     fn render_tildes(&self) {
@@ -178,13 +143,48 @@ impl Editor {
         }
     }
 
-    fn render(&self) {
-        Terminal::queue(terminal::Clear(terminal::ClearType::All));
+    fn handle_event(&mut self) {
+        use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+        match event::read().unwrap() {
+            Event::Key(key_event) => {
+                let KeyEvent { modifiers, code } = key_event;
 
-        self.render_tildes();
-        self.render_buffer();
-        self.render_selections();
-
-        Terminal::flush();
+                if modifiers == KeyModifiers::CONTROL {
+                    match code {
+                        KeyCode::Char('c') => self.quit = true,
+                        _ => (),
+                    }
+                } else if modifiers == KeyModifiers::SHIFT {
+                    match code {
+                        KeyCode::Char('H') => self.buffers[self.buffer_index].move_cursor_left(1),
+                        KeyCode::Char('L') => self.buffers[self.buffer_index].move_cursor_right(1),
+                        _ => (),
+                    }
+                } else if modifiers == KeyModifiers::NONE {
+                    match code {
+                        // Scroll
+                        KeyCode::Char('a') => self.buffers[self.buffer_index].scroll_left(1),
+                        KeyCode::Char('s') => self.buffers[self.buffer_index].scroll_down(1),
+                        KeyCode::Char('w') => self.buffers[self.buffer_index].scroll_up(1),
+                        KeyCode::Char('d') => self.buffers[self.buffer_index].scroll_right(1),
+                        // Move
+                        KeyCode::Char('h') => {
+                            self.buffers[self.buffer_index].move_cursor_left(1);
+                            self.buffers[self.buffer_index].reduce_selection();
+                        }
+                        KeyCode::Char('l') => {
+                            self.buffers[self.buffer_index].move_cursor_right(1);
+                            self.buffers[self.buffer_index].reduce_selection();
+                        }
+                        _ => (),
+                    }
+                }
+            }
+            Event::Resize(columns, lines) => {
+                self.viewport_lines = lines;
+                self.viewport_columns = columns;
+            }
+            _ => (),
+        }
     }
 }
