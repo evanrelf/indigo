@@ -1,13 +1,13 @@
 let
-  pkgs = import <nixpkgs> {};
+  pkgs = import ./nixpkgs.nix;
 
 in
-  pkgs.mkShell {
-    buildInputs = with pkgs; [
-      cargo
-      clippy
-      libiconv
-      rustc
-      rustfmt
-    ];
-  }
+pkgs.mkShell {
+  buildInputs = with pkgs; [
+    cargo
+    clippy
+    libiconv
+    rustc
+    rustfmt
+  ];
+}
