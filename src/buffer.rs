@@ -21,8 +21,8 @@ pub struct Buffer {
     pub contents: Rope,
     pub primary_selection_index: usize,
     pub selections: Vec<Selection>,
-    lines_offset: usize,
-    columns_offset: usize,
+    pub lines_offset: usize,
+    pub columns_offset: usize,
 }
 
 impl Buffer {
@@ -48,14 +48,6 @@ impl Buffer {
             lines_offset: 0,
             columns_offset: 0,
         }
-    }
-
-    pub fn lines_offset(&self) -> usize {
-        self.lines_offset
-    }
-
-    pub fn columns_offset(&self) -> usize {
-        self.columns_offset
     }
 
     pub fn index_to_coordinates(&self, index: usize) -> (usize, usize) {
