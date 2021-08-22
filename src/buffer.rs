@@ -21,8 +21,8 @@ pub struct Buffer {
     pub contents: Rope,
     pub primary_selection_index: usize,
     pub selections: Vec<Selection>,
-    pub lines_offset: usize,
-    pub columns_offset: usize,
+    pub viewport_lines_offset: usize,
+    pub viewport_columns_offset: usize,
 }
 
 impl Buffer {
@@ -31,8 +31,8 @@ impl Buffer {
             contents: Rope::new(),
             primary_selection_index: 0,
             selections: vec![Selection::new()],
-            lines_offset: 0,
-            columns_offset: 0,
+            viewport_lines_offset: 0,
+            viewport_columns_offset: 0,
         }
     }
 
@@ -40,13 +40,12 @@ impl Buffer {
     where
         P: AsRef<Path>,
     {
-        let contents = Rope::from_reader(BufReader::new(File::open(path).unwrap())).unwrap();
         Buffer {
-            contents,
+            contents: Rope::from_reader(BufReader::new(File::open(path).unwrap())).unwrap(),
             primary_selection_index: 0,
             selections: vec![Selection::new()],
-            lines_offset: 0,
-            columns_offset: 0,
+            viewport_lines_offset: 0,
+            viewport_columns_offset: 0,
         }
     }
 
@@ -57,22 +56,22 @@ impl Buffer {
     }
 
     pub fn scroll_up(&mut self, distance: usize) {
-        self.lines_offset = self.lines_offset.saturating_sub(distance);
+        self.viewport_lines_offset = self.viewport_lines_offset.saturating_sub(distance);
     }
 
     pub fn scroll_down(&mut self, distance: usize) {
-        let new_lines_offset = self.lines_offset.saturating_add(distance);
-        if new_lines_offset <= self.contents.len_lines() {
-            self.lines_offset = new_lines_offset;
+        let new_viewport_lines_offset = self.viewport_lines_offset.saturating_add(distance);
+        if new_viewport_lines_offset <= self.contents.len_lines() {
+            self.viewport_lines_offset = new_viewport_lines_offset;
         }
     }
 
     pub fn scroll_left(&mut self, distance: usize) {
-        self.columns_offset = self.columns_offset.saturating_sub(distance);
+        self.viewport_columns_offset = self.viewport_columns_offset.saturating_sub(distance);
     }
 
     pub fn scroll_right(&mut self, distance: usize) {
-        self.columns_offset = self.columns_offset.saturating_add(distance);
+        self.viewport_columns_offset = self.viewport_columns_offset.saturating_add(distance);
     }
 
     pub fn move_cursor_left(&mut self, distance: usize) {

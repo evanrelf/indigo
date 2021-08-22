@@ -3,27 +3,24 @@ use crate::terminal::Terminal;
 use crossterm::{cursor, event, style, terminal};
 use std::path::Path;
 
-pub struct Viewport {
-    lines: u16,
-    columns: u16,
-}
-
 pub struct Editor {
     quit: bool,
-    viewport: Viewport,
     buffer_index: usize,
     buffers: Vec<Buffer>,
+    viewport_lines: u16,
+    viewport_columns: u16,
 }
 
 impl Editor {
     pub fn new() -> Editor {
-        let (columns, lines) = Terminal::size();
+        let (viewport_columns, viewport_lines) = Terminal::size();
 
         Editor {
             quit: false,
-            viewport: Viewport { lines, columns },
             buffer_index: 0,
             buffers: vec![Buffer::new()],
+            viewport_lines,
+            viewport_columns,
         }
     }
 
@@ -84,8 +81,8 @@ impl Editor {
                 }
             }
             Event::Resize(columns, lines) => {
-                self.viewport.lines = lines;
-                self.viewport.columns = columns;
+                self.viewport_lines = lines;
+                self.viewport_columns = columns;
             }
             _ => (),
         }
@@ -94,7 +91,7 @@ impl Editor {
     fn render_tildes(&self) {
         Terminal::queue(cursor::MoveTo(0, 0));
 
-        for _ in 0..self.viewport.lines {
+        for _ in 0..self.viewport_lines {
             Terminal::queue(style::Print("~"));
             Terminal::queue(cursor::MoveToNextLine(1));
         }
@@ -104,8 +101,8 @@ impl Editor {
         let buffer = &self.buffers[self.buffer_index];
 
         let viewport_slice = {
-            let viewport_start_line = buffer.lines_offset;
-            let viewport_end_line = viewport_start_line + (self.viewport.lines as usize);
+            let viewport_start_line = buffer.viewport_lines_offset;
+            let viewport_end_line = viewport_start_line + (self.viewport_lines as usize);
             let buffer_end_line = buffer.contents.len_lines();
             let start = buffer.contents.line_to_char(viewport_start_line);
             if buffer_end_line <= viewport_end_line {
@@ -117,8 +114,12 @@ impl Editor {
         };
 
         for (i, line) in viewport_slice.lines().enumerate() {
-            if line.len_chars().saturating_sub(buffer.columns_offset) > 0 {
-                let line = line.slice(buffer.columns_offset..);
+            if line
+                .len_chars()
+                .saturating_sub(buffer.viewport_columns_offset)
+                > 0
+            {
+                let line = line.slice(buffer.viewport_columns_offset..);
                 Terminal::queue(cursor::MoveTo(0, i as u16));
                 Terminal::queue(terminal::Clear(terminal::ClearType::CurrentLine));
                 Terminal::queue(style::Print(String::from(line).trim_end()));
@@ -135,11 +136,11 @@ impl Editor {
 
             let overlapping = anchor_line == cursor_line && anchor_column == cursor_column;
 
-            let anchor_visible =
-                anchor_line >= buffer.lines_offset && anchor_column >= buffer.columns_offset;
+            let anchor_visible = anchor_line >= buffer.viewport_lines_offset
+                && anchor_column >= buffer.viewport_columns_offset;
             if anchor_visible && !overlapping {
-                let anchor_line = (anchor_line - buffer.lines_offset) as u16;
-                let anchor_column = (anchor_column - buffer.columns_offset) as u16;
+                let anchor_line = (anchor_line - buffer.viewport_lines_offset) as u16;
+                let anchor_column = (anchor_column - buffer.viewport_columns_offset) as u16;
                 let anchor_char = {
                     let char = buffer.contents.char(selection.anchor_index);
                     if char == '\n' {
@@ -155,11 +156,11 @@ impl Editor {
                 ));
             }
 
-            let cursor_visible =
-                cursor_line >= buffer.lines_offset && cursor_column >= buffer.columns_offset;
+            let cursor_visible = cursor_line >= buffer.viewport_lines_offset
+                && cursor_column >= buffer.viewport_columns_offset;
             if cursor_visible {
-                let cursor_line = (cursor_line - buffer.lines_offset) as u16;
-                let cursor_column = (cursor_column - buffer.columns_offset) as u16;
+                let cursor_line = (cursor_line - buffer.viewport_lines_offset) as u16;
+                let cursor_column = (cursor_column - buffer.viewport_columns_offset) as u16;
                 let cursor_char = {
                     let char = buffer.contents.char(selection.cursor_index);
                     if char == '\n' {
