@@ -35,7 +35,6 @@ impl Editor {
 
     pub fn run(&mut self) {
         Terminal::enter();
-        scopeguard::defer!(Terminal::exit());
         Terminal::execute(cursor::Hide);
 
         while !self.quit {
