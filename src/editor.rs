@@ -29,14 +29,13 @@ impl Editor {
 
     pub fn run(&mut self) {
         Terminal::enter();
+        scopeguard::defer!(Terminal::exit());
         Terminal::execute(cursor::Hide);
 
         while !self.quit {
             self.render();
             self.handle_event();
         }
-
-        Terminal::exit();
     }
 
     pub fn load_file<P>(&mut self, path: P)
