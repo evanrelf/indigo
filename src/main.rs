@@ -1,5 +1,6 @@
 mod buffer;
 mod editor;
+mod position;
 mod terminal;
 
 use crate::editor::Editor;
