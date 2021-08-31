@@ -1,3 +1,4 @@
+use crate::selection::Selection;
 use ropey::Rope;
 use std::fs::File;
 use std::io::BufReader;
@@ -5,6 +6,10 @@ use std::path::Path;
 
 pub struct Buffer {
     pub contents: Rope,
+
+    pub selections: Vec<Selection>,
+    pub primary_selection: usize,
+
     pub viewport_lines_offset: usize,
     pub viewport_columns_offset: usize,
 }
@@ -13,6 +18,10 @@ impl Buffer {
     pub fn new() -> Buffer {
         Buffer {
             contents: Rope::new(),
+
+            selections: vec![Selection::default()],
+            primary_selection: 0,
+
             viewport_lines_offset: 0,
             viewport_columns_offset: 0,
         }
@@ -22,8 +31,15 @@ impl Buffer {
     where
         P: AsRef<Path>,
     {
+        let file = File::open(path).unwrap();
+        let reader = BufReader::new(file);
+
         Buffer {
-            contents: Rope::from_reader(BufReader::new(File::open(path).unwrap())).unwrap(),
+            contents: Rope::from_reader(reader).unwrap(),
+
+            selections: vec![Selection::default()],
+            primary_selection: 0,
+
             viewport_lines_offset: 0,
             viewport_columns_offset: 0,
         }
