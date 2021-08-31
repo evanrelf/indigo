@@ -1,6 +1,5 @@
 use crate::buffer::Buffer;
 use crate::terminal::Terminal;
-use crossterm::style::Stylize;
 use crossterm::{cursor, event, style, terminal};
 use std::path::Path;
 
@@ -48,7 +47,6 @@ impl Editor {
 
         self.render_tildes();
         self.render_buffer();
-        self.render_selections();
 
         Terminal::flush();
     }
@@ -92,69 +90,6 @@ impl Editor {
         }
     }
 
-    fn render_selections(&self) {
-        let buffer = &self.buffers[self.buffer_index];
-
-        for selection in buffer.selections.iter() {
-            let overlapping = selection.anchor_line == selection.cursor_line
-                && selection.anchor_column == selection.cursor_column;
-
-            let anchor_visible = selection.anchor_line >= buffer.viewport_lines_offset
-                && selection.anchor_column >= buffer.viewport_columns_offset;
-            if anchor_visible && !overlapping {
-                let anchor_line = (selection.anchor_line - buffer.viewport_lines_offset) as u16;
-                let anchor_column =
-                    (selection.anchor_column - buffer.viewport_columns_offset) as u16;
-                let anchor_char = {
-                    let anchor_index = buffer
-                        .coordinates_to_effective_index(
-                            selection.anchor_line,
-                            selection.anchor_column,
-                        )
-                        .unwrap();
-                    let char = buffer.contents.char(anchor_index);
-                    if char == '\n' {
-                        ' '
-                    } else {
-                        char
-                    }
-                };
-
-                Terminal::queue(cursor::MoveTo(anchor_column, anchor_line));
-                Terminal::queue(style::PrintStyledContent(
-                    style::style(anchor_char).on(style::Color::Cyan),
-                ));
-            }
-
-            let cursor_visible = selection.cursor_line >= buffer.viewport_lines_offset
-                && selection.cursor_column >= buffer.viewport_columns_offset;
-            if cursor_visible {
-                let cursor_line = (selection.cursor_line - buffer.viewport_lines_offset) as u16;
-                let cursor_column =
-                    (selection.cursor_column - buffer.viewport_columns_offset) as u16;
-                let cursor_char = {
-                    let cursor_index = buffer
-                        .coordinates_to_effective_index(
-                            selection.cursor_line,
-                            selection.cursor_column,
-                        )
-                        .unwrap();
-                    let char = buffer.contents.char(cursor_index);
-                    if char == '\n' {
-                        ' '
-                    } else {
-                        char
-                    }
-                };
-
-                Terminal::queue(cursor::MoveTo(cursor_column, cursor_line));
-                Terminal::queue(style::PrintStyledContent(
-                    style::style(cursor_char).on(style::Color::Yellow),
-                ));
-            }
-        }
-    }
-
     fn handle_event(&mut self) {
         use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
         match event::read().unwrap() {
@@ -168,26 +103,10 @@ impl Editor {
                     }
                 } else if modifiers == KeyModifiers::SHIFT {
                     match code {
-                        KeyCode::Char('H') => self.buffers[self.buffer_index].move_cursor_left(1),
-                        KeyCode::Char('L') => self.buffers[self.buffer_index].move_cursor_right(1),
                         _ => (),
                     }
                 } else if modifiers == KeyModifiers::NONE {
                     match code {
-                        // Scroll
-                        KeyCode::Char('a') => self.buffers[self.buffer_index].scroll_left(1),
-                        KeyCode::Char('s') => self.buffers[self.buffer_index].scroll_down(1),
-                        KeyCode::Char('w') => self.buffers[self.buffer_index].scroll_up(1),
-                        KeyCode::Char('d') => self.buffers[self.buffer_index].scroll_right(1),
-                        // Move
-                        KeyCode::Char('h') => {
-                            self.buffers[self.buffer_index].move_cursor_left(1);
-                            self.buffers[self.buffer_index].reduce_selection();
-                        }
-                        KeyCode::Char('l') => {
-                            self.buffers[self.buffer_index].move_cursor_right(1);
-                            self.buffers[self.buffer_index].reduce_selection();
-                        }
                         _ => (),
                     }
                 }
