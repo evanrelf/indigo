@@ -96,18 +96,23 @@ impl Editor {
         let buffer = &self.buffers[self.buffer_index];
 
         for selection in buffer.selections.iter() {
-            let (anchor_line, anchor_column) = buffer.index_to_coordinates(selection.anchor_index);
-            let (cursor_line, cursor_column) = buffer.index_to_coordinates(selection.cursor_index);
+            let overlapping = selection.anchor_line == selection.cursor_line
+                && selection.anchor_column == selection.cursor_column;
 
-            let overlapping = anchor_line == cursor_line && anchor_column == cursor_column;
-
-            let anchor_visible = anchor_line >= buffer.viewport_lines_offset
-                && anchor_column >= buffer.viewport_columns_offset;
+            let anchor_visible = selection.anchor_line >= buffer.viewport_lines_offset
+                && selection.anchor_column >= buffer.viewport_columns_offset;
             if anchor_visible && !overlapping {
-                let anchor_line = (anchor_line - buffer.viewport_lines_offset) as u16;
-                let anchor_column = (anchor_column - buffer.viewport_columns_offset) as u16;
+                let anchor_line = (selection.anchor_line - buffer.viewport_lines_offset) as u16;
+                let anchor_column =
+                    (selection.anchor_column - buffer.viewport_columns_offset) as u16;
                 let anchor_char = {
-                    let char = buffer.contents.char(selection.anchor_index);
+                    let anchor_index = buffer
+                        .coordinates_to_effective_index(
+                            selection.anchor_line,
+                            selection.anchor_column,
+                        )
+                        .unwrap();
+                    let char = buffer.contents.char(anchor_index);
                     if char == '\n' {
                         ' '
                     } else {
@@ -121,13 +126,20 @@ impl Editor {
                 ));
             }
 
-            let cursor_visible = cursor_line >= buffer.viewport_lines_offset
-                && cursor_column >= buffer.viewport_columns_offset;
+            let cursor_visible = selection.cursor_line >= buffer.viewport_lines_offset
+                && selection.cursor_column >= buffer.viewport_columns_offset;
             if cursor_visible {
-                let cursor_line = (cursor_line - buffer.viewport_lines_offset) as u16;
-                let cursor_column = (cursor_column - buffer.viewport_columns_offset) as u16;
+                let cursor_line = (selection.cursor_line - buffer.viewport_lines_offset) as u16;
+                let cursor_column =
+                    (selection.cursor_column - buffer.viewport_columns_offset) as u16;
                 let cursor_char = {
-                    let char = buffer.contents.char(selection.cursor_index);
+                    let cursor_index = buffer
+                        .coordinates_to_effective_index(
+                            selection.cursor_line,
+                            selection.cursor_column,
+                        )
+                        .unwrap();
+                    let char = buffer.contents.char(cursor_index);
                     if char == '\n' {
                         ' '
                     } else {
