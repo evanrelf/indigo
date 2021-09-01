@@ -1,3 +1,4 @@
+use crate::position::Position;
 use crate::selection::Selection;
 use ropey::Rope;
 use std::fs::File;
@@ -43,6 +44,22 @@ impl Buffer {
             viewport_lines_offset: 0,
             viewport_columns_offset: 0,
         }
+    }
+
+    pub fn position_to_index(&self, position: &Position) -> Option<usize> {
+        let Position { line, column } = position;
+        let line_index = self.contents.try_line_to_char(*line).ok()?;
+        if self.contents.get_line(*line)?.len_chars() > *column {
+            Some(line_index + column)
+        } else {
+            None
+        }
+    }
+
+    pub fn index_to_position(&self, index: usize) -> Option<Position> {
+        let line = self.contents.try_char_to_line(index).ok()?;
+        let column = index - self.contents.try_line_to_char(line).ok()?;
+        Some(Position { line, column })
     }
 
     pub fn scroll_up(&mut self, distance: usize) {
