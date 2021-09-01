@@ -40,6 +40,8 @@ impl Editor {
             self.render();
             self.handle_event();
         }
+
+        Terminal::exit();
     }
 
     fn render(&self) {
