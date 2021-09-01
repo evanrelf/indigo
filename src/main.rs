@@ -1,3 +1,6 @@
+// TODO: Stop allowing dead code
+#![allow(dead_code)]
+
 mod buffer;
 mod editor;
 mod position;
