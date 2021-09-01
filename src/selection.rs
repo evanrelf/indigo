@@ -78,8 +78,8 @@ impl From<(usize, usize)> for Selection {
 impl From<Position> for Selection {
     fn from(position: Position) -> Selection {
         Selection {
-            anchor: position.clone(),
-            cursor: position.clone(),
+            anchor: position,
+            cursor: position,
         }
     }
 }
