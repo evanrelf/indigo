@@ -5,8 +5,10 @@ use std::path::Path;
 
 pub struct Editor {
     quit: bool,
-    buffer_index: usize,
+
     buffers: Vec<Buffer>,
+    buffer_index: usize,
+
     viewport_lines: u16,
     viewport_columns: u16,
 }
@@ -17,8 +19,10 @@ impl Editor {
 
         Editor {
             quit: false,
-            buffer_index: 0,
+
             buffers: vec![Buffer::new()],
+            buffer_index: 0,
+
             viewport_lines,
             viewport_columns,
         }
@@ -109,6 +113,10 @@ impl Editor {
                     }
                 } else if modifiers == KeyModifiers::NONE {
                     match code {
+                        KeyCode::Up => self.buffers[self.buffer_index].scroll_up(1),
+                        KeyCode::Down => self.buffers[self.buffer_index].scroll_down(1),
+                        KeyCode::Left => self.buffers[self.buffer_index].scroll_left(1),
+                        KeyCode::Right => self.buffers[self.buffer_index].scroll_right(1),
                         _ => (),
                     }
                 }
