@@ -51,6 +51,74 @@ impl Selection {
         }
         self
     }
+
+    pub fn reduce(&mut self) -> &Selection {
+        self.anchor = self.cursor;
+        self
+    }
+
+    /// Combine two selections into one
+    ///
+    /// self:   ##############
+    /// other:        ##############
+    /// result: ####################
+    pub fn union(&mut self, other: &Selection) -> &Selection {
+        let was_backwards = self.is_backwards();
+        self.flip_forwards();
+        let mut other = other.clone();
+        let other = other.flip_forwards();
+
+        self.anchor = min(self.anchor, other.anchor);
+        self.cursor = max(self.cursor, other.cursor);
+
+        if was_backwards {
+            self.flip_backwards();
+        }
+
+        self
+    }
+
+    /// Subtract the second selection from the first
+    ///
+    /// self:   ##############
+    /// other:        ##############
+    /// result: ######
+    pub fn subtract(&mut self, other: &Selection) -> &Selection {
+        let was_backwards = self.is_backwards();
+        self.flip_forwards();
+        let mut other = other.clone();
+        let other = other.flip_forwards();
+
+        self.anchor = todo!();
+        self.cursor = todo!();
+
+        if was_backwards {
+            self.flip_backwards();
+        }
+
+        self
+    }
+
+    /// Find the intersection between two selections
+    ///
+    /// self:   ##############
+    /// other:        ##############
+    /// result:       ########
+    pub fn intersect(&mut self, other: &Selection) -> &Selection {
+        let was_backwards = self.is_backwards();
+        self.flip_forwards();
+        let mut other = other.clone();
+        let other = other.flip_forwards();
+
+        self.anchor = max(self.anchor, other.anchor);
+        self.cursor = min(self.cursor, other.cursor);
+
+        if was_backwards {
+            self.flip_backwards();
+        }
+
+        self
+    }
 }
 
 impl Display for Selection {
@@ -86,4 +154,50 @@ impl From<Position> for Selection {
     }
 }
 
+#[test]
+fn test_union() {
+    let mut x = Selection::new((0, 0), (0, 8));
+    let y = Selection::new((0, 4), (0, 12));
+
+    let expected = Selection::new((0, 0), (0, 12));
+    let actual = *x.union(&y);
+
+    assert!(
+        expected == actual,
+        "\nexpected = {}\nactual = {}\n",
+        expected,
+        actual
+    );
+}
+
+#[test]
+fn test_subtract() {
+    let mut x = Selection::new((0, 0), (0, 8));
+    let y = Selection::new((0, 0), (0, 4));
+
+    let expected = Selection::new((0, 5), (0, 8));
+    let actual = *x.subtract(&y);
+
+    assert!(
+        expected == actual,
+        "\nexpected = {}\nactual = {}\n",
+        expected,
+        actual
+    );
+}
+
+#[test]
+fn test_intersect() {
+    let mut x = Selection::new((0, 0), (0, 8));
+    let y = Selection::new((0, 4), (0, 12));
+
+    let expected = Selection::new((0, 4), (0, 8));
+    let actual = *x.intersect(&y);
+
+    assert!(
+        expected == actual,
+        "\nexpected = {}\nactual = {}\n",
+        expected,
+        actual
+    );
 }
