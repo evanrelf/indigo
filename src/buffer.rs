@@ -93,3 +93,58 @@ impl Buffer {
         self.viewport_columns_offset = self.viewport_columns_offset.saturating_add(distance);
     }
 }
+
+#[test]
+fn test_index_position() {
+    fn case(s: &str, tuple: (usize, usize), expected: char) {
+        let buffer = Buffer::from_str(s);
+        let position = Position::from(tuple);
+        let index = buffer.position_to_index(&position).unwrap();
+        let actual = buffer.contents.char(index);
+        assert!(
+            expected == actual,
+            "\nexpected = {:?}\nactual = {:?}\n",
+            expected,
+            actual
+        );
+    }
+
+    case("abc\nxyz\n", (0, 0), 'a');
+    case("abc\nxyz\n", (0, 3), '\n');
+    case("abc\nxyz\n", (1, 0), 'x');
+    case("abc\nxyz\n", (1, 1), 'y');
+}
+
+#[test]
+fn test_index_position_roundtrip() {
+    enum CaseResult {
+        Pass,
+        Fail,
+    }
+    use CaseResult::*;
+
+    fn case(result: CaseResult, s: &str, tuple: (usize, usize)) {
+        let buffer = Buffer::from_str(s);
+        let position = Position::from(tuple);
+        let expected = Some(position);
+        let actual = buffer
+            .position_to_index(&position)
+            .and_then(|i| buffer.index_to_position(i));
+        assert!(
+            match result {
+                Pass => expected == actual,
+                Fail => None == actual,
+            },
+            "\nexpected = {:?}\nactual = {:?}\n",
+            expected,
+            actual
+        );
+    }
+
+    case(Pass, "abc\nxyz\n", (0, 0));
+    case(Pass, "abc\nxyz\n", (1, 0));
+    case(Pass, "abc\nxyz\n", (1, 1));
+    case(Fail, "abc\nxyz\n", (0, 4));
+    case(Fail, "abc\nxyz\n", (0, 20));
+    case(Fail, "abc\nxyz\n", (2, 2));
+}

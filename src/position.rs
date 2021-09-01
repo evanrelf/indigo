@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-#[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Debug)]
 pub struct Position {
     pub line: usize,
     pub column: usize,
