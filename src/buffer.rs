@@ -46,6 +46,18 @@ impl Buffer {
         }
     }
 
+    fn from_str(s: &str) -> Buffer {
+        Buffer {
+            contents: Rope::from_str(s),
+
+            selections: vec![Selection::default()],
+            primary_selection: 0,
+
+            viewport_lines_offset: 0,
+            viewport_columns_offset: 0,
+        }
+    }
+
     pub fn position_to_index(&self, position: &Position) -> Option<usize> {
         let Position { line, column } = position;
         let line_index = self.contents.try_line_to_char(*line).ok()?;
