@@ -10,6 +10,26 @@ impl Position {
     pub fn new(line: usize, column: usize) -> Position {
         Position { line, column }
     }
+
+    pub fn move_up(&mut self, distance: usize) -> &Position {
+        self.line = self.line.saturating_sub(distance);
+        self
+    }
+
+    pub fn move_down(&mut self, distance: usize) -> &Position {
+        self.line = self.line.saturating_add(distance);
+        self
+    }
+
+    pub fn move_left(&mut self, distance: usize) -> &Position {
+        self.column = self.column.saturating_sub(distance);
+        self
+    }
+
+    pub fn move_right(&mut self, distance: usize) -> &Position {
+        self.column = self.column.saturating_add(distance);
+        self
+    }
 }
 
 impl Display for Position {
