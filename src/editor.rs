@@ -155,6 +155,7 @@ impl Editor {
                 let KeyEvent { modifiers, code } = key_event;
 
                 if modifiers == KeyModifiers::CONTROL {
+                    #[allow(clippy::single_match)]
                     match code {
                         KeyCode::Char('c') => self.quit = true,
                         _ => (),
