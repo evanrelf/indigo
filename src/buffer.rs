@@ -111,6 +111,13 @@ impl Buffer {
             selection.cursor = self.index_to_position(new_index).unwrap();
         }
     }
+
+    pub fn reduce(&mut self) {
+        for selection_mutex in &self.selections {
+            let mut selection = selection_mutex.lock().unwrap();
+            selection.reduce();
+        }
+    }
 }
 
 #[test]

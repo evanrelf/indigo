@@ -49,6 +49,11 @@ impl Selection {
         }
         self
     }
+
+    pub fn reduce(&mut self) -> &Selection {
+        self.anchor = self.cursor;
+        self
+    }
 }
 
 impl Display for Selection {
