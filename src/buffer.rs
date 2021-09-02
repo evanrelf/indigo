@@ -60,9 +60,10 @@ impl Buffer {
     }
 
     pub fn position_to_index(&self, position: &Position) -> Option<usize> {
-        let Position { line, column } = position;
-        let line_index = self.contents.try_line_to_char(*line).ok()?;
-        if self.contents.get_line(*line)?.len_chars() > *column {
+        let Position { line, column } = *position;
+        let line_index = self.contents.try_line_to_char(line).ok()?;
+        let line_length = self.contents.get_line(line)?.len_chars();
+        if line_length > column {
             Some(line_index + column)
         } else {
             None
@@ -73,6 +74,19 @@ impl Buffer {
         let line = self.contents.try_char_to_line(index).ok()?;
         let column = index - self.contents.try_line_to_char(line).ok()?;
         Some(Position { line, column })
+    }
+
+    pub fn effective_position(&self, position: &Position) -> Option<Position> {
+        let Position { line, column } = *position;
+        let line_length = self.contents.get_line(line)?.len_chars();
+        if line_length > column {
+            Some(*position)
+        } else {
+            Some(Position {
+                line,
+                column: line_length - 1,
+            })
+        }
     }
 
     pub fn scroll_up(&mut self, distance: usize) {
@@ -182,4 +196,25 @@ fn test_index_position_roundtrip() {
     case(Fail, "abc\nxyz\n", (0, 4));
     case(Fail, "abc\nxyz\n", (0, 20));
     case(Fail, "abc\nxyz\n", (2, 2));
+}
+
+#[test]
+fn test_effective_position() {
+    fn case(s: &str, original: (usize, usize), effective: (usize, usize)) {
+        let buffer = Buffer::from_str(s);
+        let input = Position::from(original);
+        let expected = Some(Position::from(effective));
+        let actual = buffer.effective_position(&input);
+        assert!(
+            expected == actual,
+            "\nexpected = {:?}\nactual = {:?}\n",
+            expected,
+            actual
+        );
+    }
+
+    case("abc\nx\n", (0, 0), (0, 0));
+    case("abc\nx\n", (0, 99), (0, 3));
+    case("abc\nx\n", (1, 1), (1, 1));
+    case("abc\nx\n", (1, 99), (1, 1));
 }
