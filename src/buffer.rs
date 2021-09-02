@@ -59,8 +59,8 @@ impl Buffer {
         }
     }
 
-    pub fn position_to_index(&self, position: &Position) -> Option<usize> {
-        let Position { line, column } = *position;
+    pub fn position_to_index(&self, position: Position) -> Option<usize> {
+        let Position { line, column } = position;
         let line_index = self.contents.try_line_to_char(line).ok()?;
         let line_length = self.contents.get_line(line)?.len_chars();
         if line_length > column {
@@ -76,11 +76,11 @@ impl Buffer {
         Some(Position { line, column })
     }
 
-    pub fn effective_position(&self, position: &Position) -> Option<Position> {
-        let Position { line, column } = *position;
+    pub fn effective_position(&self, position: Position) -> Option<Position> {
+        let Position { line, column } = position;
         let line_length = self.contents.get_line(line)?.len_chars();
         if line_length > column {
-            Some(*position)
+            Some(position)
         } else {
             Some(Position {
                 line,
@@ -120,7 +120,7 @@ impl Buffer {
 
     pub fn move_left(&mut self, distance: usize) {
         self.for_each_selection(|selection| {
-            let old_index = self.position_to_index(&selection.cursor).unwrap();
+            let old_index = self.position_to_index(selection.cursor).unwrap();
             let new_index = old_index.saturating_sub(distance);
             selection.cursor = self.index_to_position(new_index).unwrap();
         });
@@ -128,7 +128,7 @@ impl Buffer {
 
     pub fn move_right(&mut self, distance: usize) {
         self.for_each_selection(|selection| {
-            let old_index = self.position_to_index(&selection.cursor).unwrap();
+            let old_index = self.position_to_index(selection.cursor).unwrap();
             let new_index = old_index.saturating_add(distance);
             if new_index < self.contents.len_chars() {
                 selection.cursor = self.index_to_position(new_index).unwrap();
@@ -148,7 +148,7 @@ fn test_index_position() {
     fn case(s: &str, tuple: (usize, usize), expected: char) {
         let buffer = Buffer::from_str(s);
         let position = Position::from(tuple);
-        let index = buffer.position_to_index(&position).unwrap();
+        let index = buffer.position_to_index(position).unwrap();
         let actual = buffer.contents.char(index);
         assert!(
             expected == actual,
@@ -177,7 +177,7 @@ fn test_index_position_roundtrip() {
         let position = Position::from(tuple);
         let expected = Some(position);
         let actual = buffer
-            .position_to_index(&position)
+            .position_to_index(position)
             .and_then(|i| buffer.index_to_position(i));
         assert!(
             match result {
@@ -204,7 +204,7 @@ fn test_effective_position() {
         let buffer = Buffer::from_str(s);
         let input = Position::from(original);
         let expected = Some(Position::from(effective));
-        let actual = buffer.effective_position(&input);
+        let actual = buffer.effective_position(input);
         assert!(
             expected == actual,
             "\nexpected = {:?}\nactual = {:?}\n",
