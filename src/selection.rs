@@ -29,48 +29,48 @@ impl Selection {
         self.anchor == self.cursor
     }
 
-    pub fn flip(&mut self) -> &Selection {
+    pub fn flip(&mut self) -> &mut Selection {
         let anchor = self.anchor;
         self.anchor = self.cursor;
         self.cursor = anchor;
         self
     }
 
-    pub fn flip_forwards(&mut self) -> &Selection {
+    pub fn flip_forwards(&mut self) -> &mut Selection {
         if self.is_backwards() {
             self.flip();
         }
         self
     }
 
-    pub fn flip_backwards(&mut self) -> &Selection {
+    pub fn flip_backwards(&mut self) -> &mut Selection {
         if self.is_forwards() {
             self.flip();
         }
         self
     }
 
-    pub fn reduce(&mut self) -> &Selection {
+    pub fn reduce(&mut self) -> &mut Selection {
         self.anchor = self.cursor;
         self
     }
 
-    pub fn move_up(&mut self, distance: usize) -> &Selection {
+    pub fn move_up(&mut self, distance: usize) -> &mut Selection {
         self.cursor.move_up(distance);
         self
     }
 
-    pub fn move_down(&mut self, distance: usize) -> &Selection {
+    pub fn move_down(&mut self, distance: usize) -> &mut Selection {
         self.cursor.move_down(distance);
         self
     }
 
-    pub fn move_left(&mut self, distance: usize) -> &Selection {
+    pub fn move_left(&mut self, distance: usize) -> &mut Selection {
         self.cursor.move_left(distance);
         self
     }
 
-    pub fn move_right(&mut self, distance: usize) -> &Selection {
+    pub fn move_right(&mut self, distance: usize) -> &mut Selection {
         self.cursor.move_right(distance);
         self
     }
