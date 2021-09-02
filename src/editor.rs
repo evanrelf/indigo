@@ -1,5 +1,6 @@
 use crate::buffer::Buffer;
 use crate::terminal::Terminal;
+use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::{cursor, event, style, terminal};
 use std::path::Path;
 
@@ -97,7 +98,6 @@ impl Editor {
     }
 
     fn handle_event(&mut self) {
-        use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
         match event::read().unwrap() {
             Event::Key(key_event) => {
                 let KeyEvent { modifiers, code } = key_event;
