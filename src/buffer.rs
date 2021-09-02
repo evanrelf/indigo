@@ -98,7 +98,7 @@ impl Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let old_index = self.position_to_index(&selection.cursor).unwrap();
-            let new_index = old_index - distance;
+            let new_index = old_index.saturating_sub(distance);
             selection.cursor = self.index_to_position(new_index).unwrap();
         }
     }
@@ -107,8 +107,10 @@ impl Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let old_index = self.position_to_index(&selection.cursor).unwrap();
-            let new_index = old_index + distance;
-            selection.cursor = self.index_to_position(new_index).unwrap();
+            let new_index = old_index.saturating_add(distance);
+            if new_index < self.contents.len_chars() {
+                selection.cursor = self.index_to_position(new_index).unwrap();
+            }
         }
     }
 
