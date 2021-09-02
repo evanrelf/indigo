@@ -165,25 +165,35 @@ impl Editor {
                 } else if modifiers == KeyModifiers::SHIFT {
                     match code {
                         // Move
-                        KeyCode::Char('H') => buffer.move_left(1),
-                        KeyCode::Char('L') => buffer.move_right(1),
+                        KeyCode::Char('H') => {
+                            buffer.move_left(1);
+                        }
+                        KeyCode::Char('L') => {
+                            buffer.move_right(1);
+                        }
                         _ => (),
                     }
                 } else if modifiers == KeyModifiers::NONE {
                     match code {
                         // Scroll
-                        KeyCode::Up => buffer.scroll_up(1),
-                        KeyCode::Down => buffer.scroll_down(1),
-                        KeyCode::Left => buffer.scroll_left(1),
-                        KeyCode::Right => buffer.scroll_right(1),
+                        KeyCode::Up => {
+                            buffer.scroll_up(1);
+                        }
+                        KeyCode::Down => {
+                            buffer.scroll_down(1);
+                        }
+                        KeyCode::Left => {
+                            buffer.scroll_left(1);
+                        }
+                        KeyCode::Right => {
+                            buffer.scroll_right(1);
+                        }
                         // Move
                         KeyCode::Char('h') => {
-                            buffer.move_left(1);
-                            buffer.reduce();
+                            buffer.move_left(1).reduce();
                         }
                         KeyCode::Char('l') => {
-                            buffer.move_right(1);
-                            buffer.reduce();
+                            buffer.move_right(1).reduce();
                         }
                         _ => (),
                     }

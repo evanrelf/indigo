@@ -89,26 +89,30 @@ impl Buffer {
         }
     }
 
-    pub fn scroll_up(&mut self, distance: usize) {
+    pub fn scroll_up(&mut self, distance: usize) -> &mut Buffer {
         self.viewport_lines_offset = self.viewport_lines_offset.saturating_sub(distance);
+        self
     }
 
-    pub fn scroll_down(&mut self, distance: usize) {
+    pub fn scroll_down(&mut self, distance: usize) -> &mut Buffer {
         let new_viewport_lines_offset = self.viewport_lines_offset.saturating_add(distance);
         if new_viewport_lines_offset <= self.contents.len_lines() {
             self.viewport_lines_offset = new_viewport_lines_offset;
         }
+        self
     }
 
-    pub fn scroll_left(&mut self, distance: usize) {
+    pub fn scroll_left(&mut self, distance: usize) -> &mut Buffer {
         self.viewport_columns_offset = self.viewport_columns_offset.saturating_sub(distance);
+        self
     }
 
-    pub fn scroll_right(&mut self, distance: usize) {
+    pub fn scroll_right(&mut self, distance: usize) -> &mut Buffer {
         self.viewport_columns_offset = self.viewport_columns_offset.saturating_add(distance);
+        self
     }
 
-    pub fn for_each_selection<F>(&self, f: F)
+    pub fn for_each_selection<F>(&self, f: F) -> &Buffer
     where
         F: Fn(&mut Selection),
     {
@@ -116,17 +120,19 @@ impl Buffer {
             let mut selection = selection_mutex.lock().unwrap();
             f(&mut selection);
         }
+        self
     }
 
-    pub fn move_left(&mut self, distance: usize) {
+    pub fn move_left(&mut self, distance: usize) -> &mut Buffer {
         self.for_each_selection(|selection| {
             let old_index = self.position_to_index(selection.cursor).unwrap();
             let new_index = old_index.saturating_sub(distance);
             selection.cursor = self.index_to_position(new_index).unwrap();
         });
+        self
     }
 
-    pub fn move_right(&mut self, distance: usize) {
+    pub fn move_right(&mut self, distance: usize) -> &mut Buffer {
         self.for_each_selection(|selection| {
             let old_index = self.position_to_index(selection.cursor).unwrap();
             let new_index = old_index.saturating_add(distance);
@@ -134,12 +140,14 @@ impl Buffer {
                 selection.cursor = self.index_to_position(new_index).unwrap();
             }
         });
+        self
     }
 
-    pub fn reduce(&mut self) {
+    pub fn reduce(&mut self) -> &mut Buffer {
         self.for_each_selection(|selection| {
             selection.reduce();
         });
+        self
     }
 }
 
