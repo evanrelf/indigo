@@ -150,6 +150,8 @@ impl Editor {
     }
 
     fn handle_event(&mut self) {
+        let buffer = &mut self.buffers[self.buffer_index];
+
         match event::read().unwrap() {
             Event::Key(key_event) => {
                 let KeyEvent { modifiers, code } = key_event;
@@ -163,25 +165,25 @@ impl Editor {
                 } else if modifiers == KeyModifiers::SHIFT {
                     match code {
                         // Move
-                        KeyCode::Char('H') => self.buffers[self.buffer_index].move_left(1),
-                        KeyCode::Char('L') => self.buffers[self.buffer_index].move_right(1),
+                        KeyCode::Char('H') => buffer.move_left(1),
+                        KeyCode::Char('L') => buffer.move_right(1),
                         _ => (),
                     }
                 } else if modifiers == KeyModifiers::NONE {
                     match code {
                         // Scroll
-                        KeyCode::Up => self.buffers[self.buffer_index].scroll_up(1),
-                        KeyCode::Down => self.buffers[self.buffer_index].scroll_down(1),
-                        KeyCode::Left => self.buffers[self.buffer_index].scroll_left(1),
-                        KeyCode::Right => self.buffers[self.buffer_index].scroll_right(1),
+                        KeyCode::Up => buffer.scroll_up(1),
+                        KeyCode::Down => buffer.scroll_down(1),
+                        KeyCode::Left => buffer.scroll_left(1),
+                        KeyCode::Right => buffer.scroll_right(1),
                         // Move
                         KeyCode::Char('h') => {
-                            self.buffers[self.buffer_index].move_left(1);
-                            self.buffers[self.buffer_index].reduce();
+                            buffer.move_left(1);
+                            buffer.reduce();
                         }
                         KeyCode::Char('l') => {
-                            self.buffers[self.buffer_index].move_right(1);
-                            self.buffers[self.buffer_index].reduce();
+                            buffer.move_right(1);
+                            buffer.reduce();
                         }
                         _ => (),
                     }
