@@ -161,6 +161,9 @@ impl Editor {
                     }
                 } else if modifiers == KeyModifiers::SHIFT {
                     match code {
+                        // Move
+                        KeyCode::Char('H') => self.buffers[self.buffer_index].move_left(1),
+                        KeyCode::Char('L') => self.buffers[self.buffer_index].move_right(1),
                         _ => (),
                     }
                 } else if modifiers == KeyModifiers::NONE {
