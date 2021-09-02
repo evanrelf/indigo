@@ -54,6 +54,26 @@ impl Selection {
         self.anchor = self.cursor;
         self
     }
+
+    pub fn move_up(&mut self, distance: usize) -> &Selection {
+        self.cursor.move_up(distance);
+        self
+    }
+
+    pub fn move_down(&mut self, distance: usize) -> &Selection {
+        self.cursor.move_down(distance);
+        self
+    }
+
+    pub fn move_left(&mut self, distance: usize) -> &Selection {
+        self.cursor.move_left(distance);
+        self
+    }
+
+    pub fn move_right(&mut self, distance: usize) -> &Selection {
+        self.cursor.move_right(distance);
+        self
+    }
 }
 
 impl Display for Selection {
