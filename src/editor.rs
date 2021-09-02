@@ -113,10 +113,14 @@ impl Editor {
                     }
                 } else if modifiers == KeyModifiers::NONE {
                     match code {
+                        // Scroll
                         KeyCode::Up => self.buffers[self.buffer_index].scroll_up(1),
                         KeyCode::Down => self.buffers[self.buffer_index].scroll_down(1),
                         KeyCode::Left => self.buffers[self.buffer_index].scroll_left(1),
                         KeyCode::Right => self.buffers[self.buffer_index].scroll_right(1),
+                        // Move
+                        KeyCode::Char('h') => self.buffers[self.buffer_index].move_left(1),
+                        KeyCode::Char('l') => self.buffers[self.buffer_index].move_right(1),
                         _ => (),
                     }
                 }

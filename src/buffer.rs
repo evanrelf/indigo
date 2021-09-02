@@ -4,11 +4,12 @@ use ropey::Rope;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
+use std::sync::Mutex;
 
 pub struct Buffer {
     pub contents: Rope,
 
-    pub selections: Vec<Selection>,
+    pub selections: Vec<Mutex<Selection>>,
     pub primary_selection: usize,
 
     pub viewport_lines_offset: usize,
@@ -20,7 +21,7 @@ impl Buffer {
         Buffer {
             contents: Rope::new(),
 
-            selections: vec![Selection::default()],
+            selections: vec![Mutex::new(Selection::default())],
             primary_selection: 0,
 
             viewport_lines_offset: 0,
@@ -38,7 +39,7 @@ impl Buffer {
         Buffer {
             contents: Rope::from_reader(reader).unwrap(),
 
-            selections: vec![Selection::default()],
+            selections: vec![Mutex::new(Selection::default())],
             primary_selection: 0,
 
             viewport_lines_offset: 0,
@@ -50,7 +51,7 @@ impl Buffer {
         Buffer {
             contents: Rope::from_str(s),
 
-            selections: vec![Selection::default()],
+            selections: vec![Mutex::new(Selection::default())],
             primary_selection: 0,
 
             viewport_lines_offset: 0,
@@ -91,6 +92,24 @@ impl Buffer {
 
     pub fn scroll_right(&mut self, distance: usize) {
         self.viewport_columns_offset = self.viewport_columns_offset.saturating_add(distance);
+    }
+
+    pub fn move_left(&mut self, distance: usize) {
+        for selection_mutex in &self.selections {
+            let mut selection = selection_mutex.lock().unwrap();
+            let old_index = self.position_to_index(&selection.cursor).unwrap();
+            let new_index = old_index - distance;
+            selection.cursor = self.index_to_position(new_index).unwrap();
+        }
+    }
+
+    pub fn move_right(&mut self, distance: usize) {
+        for selection_mutex in &self.selections {
+            let mut selection = selection_mutex.lock().unwrap();
+            let old_index = self.position_to_index(&selection.cursor).unwrap();
+            let new_index = old_index + distance;
+            selection.cursor = self.index_to_position(new_index).unwrap();
+        }
     }
 }
 
