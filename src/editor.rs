@@ -119,8 +119,14 @@ impl Editor {
                         KeyCode::Left => self.buffers[self.buffer_index].scroll_left(1),
                         KeyCode::Right => self.buffers[self.buffer_index].scroll_right(1),
                         // Move
-                        KeyCode::Char('h') => self.buffers[self.buffer_index].move_left(1),
-                        KeyCode::Char('l') => self.buffers[self.buffer_index].move_right(1),
+                        KeyCode::Char('h') => {
+                            self.buffers[self.buffer_index].move_left(1);
+                            self.buffers[self.buffer_index].reduce();
+                        }
+                        KeyCode::Char('l') => {
+                            self.buffers[self.buffer_index].move_right(1);
+                            self.buffers[self.buffer_index].reduce();
+                        }
                         _ => (),
                     }
                 }
