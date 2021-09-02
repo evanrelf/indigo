@@ -94,31 +94,38 @@ impl Buffer {
         self.viewport_columns_offset = self.viewport_columns_offset.saturating_add(distance);
     }
 
-    pub fn move_left(&mut self, distance: usize) {
+    pub fn for_each_selection<F>(&self, f: F)
+    where
+        F: Fn(&mut Selection),
+    {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
-            let old_index = self.position_to_index(&selection.cursor).unwrap();
-            let new_index = old_index.saturating_sub(distance);
-            selection.cursor = self.index_to_position(new_index).unwrap();
+            f(&mut selection);
         }
     }
 
+    pub fn move_left(&mut self, distance: usize) {
+        self.for_each_selection(|selection| {
+            let old_index = self.position_to_index(&selection.cursor).unwrap();
+            let new_index = old_index.saturating_sub(distance);
+            selection.cursor = self.index_to_position(new_index).unwrap();
+        });
+    }
+
     pub fn move_right(&mut self, distance: usize) {
-        for selection_mutex in &self.selections {
-            let mut selection = selection_mutex.lock().unwrap();
+        self.for_each_selection(|selection| {
             let old_index = self.position_to_index(&selection.cursor).unwrap();
             let new_index = old_index.saturating_add(distance);
             if new_index < self.contents.len_chars() {
                 selection.cursor = self.index_to_position(new_index).unwrap();
             }
-        }
+        });
     }
 
     pub fn reduce(&mut self) {
-        for selection_mutex in &self.selections {
-            let mut selection = selection_mutex.lock().unwrap();
+        self.for_each_selection(|selection| {
             selection.reduce();
-        }
+        });
     }
 }
 
