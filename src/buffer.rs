@@ -1,5 +1,5 @@
+use crate::buffer_selection::BufferSelection;
 use crate::position::Position;
-use crate::selection::Selection;
 use ropey::Rope;
 use std::fs::File;
 use std::io::BufReader;
@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 pub struct Buffer {
     pub rope: Arc<Mutex<Rope>>,
 
-    pub selections: Vec<Mutex<Selection>>,
+    pub selections: Vec<Mutex<BufferSelection>>,
     pub primary_selection: usize,
 
     pub viewport_lines_offset: usize,
@@ -18,10 +18,14 @@ pub struct Buffer {
 
 impl Buffer {
     pub fn new() -> Buffer {
-        Buffer {
-            rope: Arc::new(Mutex::new(Rope::new())),
+        let rope = Arc::new(Mutex::new(Rope::new()));
 
-            selections: vec![Mutex::new(Selection::default())],
+        let selections = vec![Mutex::new(BufferSelection::new(rope.clone()))];
+
+        Buffer {
+            rope,
+
+            selections,
             primary_selection: 0,
 
             viewport_lines_offset: 0,
@@ -36,10 +40,14 @@ impl Buffer {
         let file = File::open(path).unwrap();
         let reader = BufReader::new(file);
 
-        Buffer {
-            rope: Arc::new(Mutex::new(Rope::from_reader(reader).unwrap())),
+        let rope = Arc::new(Mutex::new(Rope::from_reader(reader).unwrap()));
 
-            selections: vec![Mutex::new(Selection::default())],
+        let selections = vec![Mutex::new(BufferSelection::new(rope.clone()))];
+
+        Buffer {
+            rope,
+
+            selections,
             primary_selection: 0,
 
             viewport_lines_offset: 0,
@@ -48,10 +56,14 @@ impl Buffer {
     }
 
     fn from_str(s: &str) -> Buffer {
-        Buffer {
-            rope: Arc::new(Mutex::new(Rope::from_str(s))),
+        let rope = Arc::new(Mutex::new(Rope::from_str(s)));
 
-            selections: vec![Mutex::new(Selection::default())],
+        let selections = vec![Mutex::new(BufferSelection::new(rope.clone()))];
+
+        Buffer {
+            rope,
+
+            selections,
             primary_selection: 0,
 
             viewport_lines_offset: 0,
@@ -116,7 +128,7 @@ impl Buffer {
 
     pub fn for_each_selection<F>(&self, f: F) -> &Buffer
     where
-        F: Fn(&mut Selection),
+        F: Fn(&mut BufferSelection),
     {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();

@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 
 mod buffer;
+mod buffer_selection;
 mod editor;
 mod position;
 mod selection;
