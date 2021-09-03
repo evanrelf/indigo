@@ -4,10 +4,10 @@ use ropey::Rope;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 pub struct Buffer {
-    pub contents: Rope,
+    pub rope: Arc<Mutex<Rope>>,
 
     pub selections: Vec<Mutex<Selection>>,
     pub primary_selection: usize,
@@ -19,7 +19,7 @@ pub struct Buffer {
 impl Buffer {
     pub fn new() -> Buffer {
         Buffer {
-            contents: Rope::new(),
+            rope: Arc::new(Mutex::new(Rope::new())),
 
             selections: vec![Mutex::new(Selection::default())],
             primary_selection: 0,
@@ -37,7 +37,7 @@ impl Buffer {
         let reader = BufReader::new(file);
 
         Buffer {
-            contents: Rope::from_reader(reader).unwrap(),
+            rope: Arc::new(Mutex::new(Rope::from_reader(reader).unwrap())),
 
             selections: vec![Mutex::new(Selection::default())],
             primary_selection: 0,
@@ -49,7 +49,7 @@ impl Buffer {
 
     fn from_str(s: &str) -> Buffer {
         Buffer {
-            contents: Rope::from_str(s),
+            rope: Arc::new(Mutex::new(Rope::from_str(s))),
 
             selections: vec![Mutex::new(Selection::default())],
             primary_selection: 0,
@@ -61,8 +61,9 @@ impl Buffer {
 
     pub fn position_to_index(&self, position: Position) -> Option<usize> {
         let Position { line, column } = position;
-        let line_index = self.contents.try_line_to_char(line).ok()?;
-        let line_length = self.contents.get_line(line)?.len_chars();
+        let rope = self.rope.lock().unwrap();
+        let line_index = rope.try_line_to_char(line).ok()?;
+        let line_length = rope.get_line(line)?.len_chars();
         if line_length > column {
             Some(line_index + column)
         } else {
@@ -71,14 +72,15 @@ impl Buffer {
     }
 
     pub fn index_to_position(&self, index: usize) -> Option<Position> {
-        let line = self.contents.try_char_to_line(index).ok()?;
-        let column = index - self.contents.try_line_to_char(line).ok()?;
+        let rope = self.rope.lock().unwrap();
+        let line = rope.try_char_to_line(index).ok()?;
+        let column = index - rope.try_line_to_char(line).ok()?;
         Some(Position { line, column })
     }
 
     pub fn effective_position(&self, position: Position) -> Option<Position> {
         let Position { line, column } = position;
-        let line_length = self.contents.get_line(line)?.len_chars();
+        let line_length = self.rope.lock().unwrap().get_line(line)?.len_chars();
         if line_length > column {
             Some(position)
         } else {
@@ -96,7 +98,7 @@ impl Buffer {
 
     pub fn scroll_down(&mut self, distance: usize) -> &mut Buffer {
         let new_viewport_lines_offset = self.viewport_lines_offset.saturating_add(distance);
-        if new_viewport_lines_offset <= self.contents.len_lines() {
+        if new_viewport_lines_offset <= self.rope.lock().unwrap().len_lines() {
             self.viewport_lines_offset = new_viewport_lines_offset;
         }
         self
@@ -136,7 +138,7 @@ impl Buffer {
         self.for_each_selection(|selection| {
             let old_index = self.position_to_index(selection.cursor).unwrap();
             let new_index = old_index.saturating_add(distance);
-            if new_index < self.contents.len_chars() {
+            if new_index < self.rope.lock().unwrap().len_chars() {
                 selection.cursor = self.index_to_position(new_index).unwrap();
             }
         });
@@ -157,7 +159,7 @@ fn test_index_position() {
         let buffer = Buffer::from_str(s);
         let position = Position::from(tuple);
         let index = buffer.position_to_index(position).unwrap();
-        let actual = buffer.contents.char(index);
+        let actual = buffer.rope.lock().unwrap().char(index);
         assert!(
             expected == actual,
             "\nexpected = {:?}\nactual = {:?}\n",
