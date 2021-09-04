@@ -274,6 +274,10 @@ impl Editor {
                         KeyCode::Esc => {
                             buffer.mode = Mode::Normal;
                         }
+                        // Edit
+                        KeyCode::Char(c) => {
+                            buffer.insert(c);
+                        }
                         _ => (),
                     }
                 }

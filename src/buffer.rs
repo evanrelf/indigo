@@ -168,6 +168,26 @@ impl Buffer {
         }
         self
     }
+
+    pub fn insert(&mut self, c: char) -> &mut Buffer {
+        for selection_mutex in &self.selections {
+            // Insert character
+            let mut selection = selection_mutex.lock().unwrap();
+            let anchor_index = selection.anchor.to_index(&self.rope).unwrap();
+            let cursor_index = selection.cursor.to_index(&self.rope).unwrap();
+
+            if selection.is_forwards() {
+                self.rope.insert_char(anchor_index, c);
+            } else {
+                self.rope.insert_char(cursor_index, c);
+            }
+
+            // Shift selection
+            selection.anchor = Position::from_index(&self.rope, anchor_index + 1).unwrap();
+            selection.cursor = Position::from_index(&self.rope, cursor_index + 1).unwrap();
+        }
+        self
+    }
 }
 
 #[test]
