@@ -1,15 +1,15 @@
-use crate::buffer_selection::BufferSelection;
 use crate::position::Position;
+use crate::selection::Selection;
 use ropey::Rope;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 pub struct Buffer {
-    pub rope: Arc<Mutex<Rope>>,
+    pub rope: Rope,
 
-    pub selections: Vec<Mutex<BufferSelection>>,
+    pub selections: Vec<Mutex<Selection>>,
     pub primary_selection: usize,
 
     pub viewport_lines_offset: usize,
@@ -18,9 +18,9 @@ pub struct Buffer {
 
 impl Buffer {
     pub fn new() -> Buffer {
-        let rope = Arc::new(Mutex::new(Rope::new()));
+        let rope = Rope::new();
 
-        let selections = vec![Mutex::new(BufferSelection::new(rope.clone()))];
+        let selections = vec![Mutex::new(Selection::default())];
 
         Buffer {
             rope,
@@ -40,9 +40,9 @@ impl Buffer {
         let file = File::open(path).unwrap();
         let reader = BufReader::new(file);
 
-        let rope = Arc::new(Mutex::new(Rope::from_reader(reader).unwrap()));
+        let rope = Rope::from_reader(reader).unwrap();
 
-        let selections = vec![Mutex::new(BufferSelection::new(rope.clone()))];
+        let selections = vec![Mutex::new(Selection::default())];
 
         Buffer {
             rope,
@@ -56,9 +56,9 @@ impl Buffer {
     }
 
     fn from_str(s: &str) -> Buffer {
-        let rope = Arc::new(Mutex::new(Rope::from_str(s)));
+        let rope = Rope::from_str(s);
 
-        let selections = vec![Mutex::new(BufferSelection::new(rope.clone()))];
+        let selections = vec![Mutex::new(Selection::default())];
 
         Buffer {
             rope,
@@ -78,7 +78,7 @@ impl Buffer {
 
     pub fn scroll_down(&mut self, distance: usize) -> &mut Buffer {
         let new_viewport_lines_offset = self.viewport_lines_offset.saturating_add(distance);
-        if new_viewport_lines_offset <= self.rope.lock().unwrap().len_lines() {
+        if new_viewport_lines_offset <= self.rope.len_lines() {
             self.viewport_lines_offset = new_viewport_lines_offset;
         }
         self
@@ -96,7 +96,7 @@ impl Buffer {
 
     pub fn for_each_selection<F>(&self, f: F) -> &Buffer
     where
-        F: Fn(&mut BufferSelection),
+        F: Fn(&mut Selection),
     {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
@@ -107,21 +107,19 @@ impl Buffer {
 
     pub fn move_left(&mut self, distance: usize) -> &mut Buffer {
         self.for_each_selection(|selection| {
-            let rope = self.rope.lock().unwrap();
-            let old_index = selection.cursor.to_index(&rope).unwrap();
+            let old_index = selection.cursor.to_index(&self.rope).unwrap();
             let new_index = old_index.saturating_sub(distance);
-            selection.cursor = Position::from_index(&rope, new_index).unwrap();
+            selection.cursor = Position::from_index(&self.rope, new_index).unwrap();
         });
         self
     }
 
     pub fn move_right(&mut self, distance: usize) -> &mut Buffer {
         self.for_each_selection(|selection| {
-            let rope = self.rope.lock().unwrap();
-            let old_index = selection.cursor.to_index(&rope).unwrap();
+            let old_index = selection.cursor.to_index(&self.rope).unwrap();
             let new_index = old_index.saturating_add(distance);
-            if new_index < self.rope.lock().unwrap().len_chars() {
-                selection.cursor = Position::from_index(&rope, new_index).unwrap();
+            if new_index < self.rope.len_chars() {
+                selection.cursor = Position::from_index(&self.rope, new_index).unwrap();
             }
         });
         self

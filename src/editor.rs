@@ -71,18 +71,17 @@ impl Editor {
 
     fn render_buffer(&self) {
         let buffer = &self.buffers[self.buffer_index];
-        let rope = buffer.rope.lock().unwrap();
 
         let viewport_slice = {
             let viewport_start_line = buffer.viewport_lines_offset;
             let viewport_end_line = viewport_start_line + (self.viewport_lines as usize);
-            let buffer_end_line = rope.len_lines();
-            let start = rope.line_to_char(viewport_start_line);
+            let buffer_end_line = buffer.rope.len_lines();
+            let start = buffer.rope.line_to_char(viewport_start_line);
             if buffer_end_line <= viewport_end_line {
-                rope.slice(start..)
+                buffer.rope.slice(start..)
             } else {
-                let end = rope.line_to_char(viewport_end_line);
-                rope.slice(start..end)
+                let end = buffer.rope.line_to_char(viewport_end_line);
+                buffer.rope.slice(start..end)
             }
         };
 
@@ -104,7 +103,6 @@ impl Editor {
         let buffer = &self.buffers[self.buffer_index];
 
         for selection_mutex in &buffer.selections {
-            let rope = buffer.rope.lock().unwrap();
             let selection = selection_mutex.lock().unwrap();
 
             let anchor_visible = selection.anchor.line >= buffer.viewport_lines_offset
@@ -115,8 +113,8 @@ impl Editor {
                 let anchor_column =
                     (selection.anchor.column - buffer.viewport_columns_offset) as u16;
                 let anchor_char = {
-                    let anchor_index = selection.anchor.to_index(&rope).unwrap();
-                    let char = rope.char(anchor_index);
+                    let anchor_index = selection.anchor.to_index(&buffer.rope).unwrap();
+                    let char = buffer.rope.char(anchor_index);
                     if char == '\n' {
                         ' '
                     } else {
@@ -136,8 +134,8 @@ impl Editor {
                 let cursor_column =
                     (selection.cursor.column - buffer.viewport_columns_offset) as u16;
                 let cursor_char = {
-                    let cursor_index = selection.cursor.to_index(&rope).unwrap();
-                    let char = rope.char(cursor_index);
+                    let cursor_index = selection.cursor.to_index(&buffer.rope).unwrap();
+                    let char = buffer.rope.char(cursor_index);
                     if char == '\n' {
                         ' '
                     } else {
