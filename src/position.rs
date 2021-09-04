@@ -64,7 +64,9 @@ impl Position {
     pub fn effective(&self, rope: &Rope) -> Option<Position> {
         let Position { line, column } = *self;
         let line_length = rope.get_line(line)?.len_chars();
-        if line_length > column {
+        if line_length == 0 {
+            None
+        } else if line_length > column {
             Some(*self)
         } else {
             Some(Position {

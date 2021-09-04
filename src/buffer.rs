@@ -110,9 +110,8 @@ impl Buffer {
     pub fn move_up(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
-            // TODO: Refuses to move to an invalid position
-            let new_cursor = selection.cursor.move_up(distance);
-            if new_cursor.is_valid(&self.rope) {
+            // TODO: Doesn't remember desired column
+            if let Some(new_cursor) = selection.cursor.move_up(distance).effective(&self.rope) {
                 selection.cursor = new_cursor;
             }
         }
@@ -122,9 +121,8 @@ impl Buffer {
     pub fn move_down(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
-            // TODO: Refuses to move to an invalid position
-            let new_cursor = selection.cursor.move_down(distance);
-            if new_cursor.is_valid(&self.rope) {
+            // TODO: Doesn't remember desired column
+            if let Some(new_cursor) = selection.cursor.move_down(distance).effective(&self.rope) {
                 selection.cursor = new_cursor;
             }
         }
