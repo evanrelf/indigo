@@ -12,24 +12,32 @@ impl Position {
         Position { line, column }
     }
 
-    pub fn move_up(&mut self, distance: usize) -> &mut Position {
-        self.line = self.line.saturating_sub(distance);
-        self
+    pub fn move_up(self, distance: usize) -> Position {
+        Position {
+            line: self.line.saturating_sub(distance),
+            ..self
+        }
     }
 
-    pub fn move_down(&mut self, distance: usize) -> &mut Position {
-        self.line = self.line.saturating_add(distance);
-        self
+    pub fn move_down(self, distance: usize) -> Position {
+        Position {
+            line: self.line.saturating_add(distance),
+            ..self
+        }
     }
 
-    pub fn move_left(&mut self, distance: usize) -> &mut Position {
-        self.column = self.column.saturating_sub(distance);
-        self
+    pub fn move_left(self, distance: usize) -> Position {
+        Position {
+            column: self.column.saturating_sub(distance),
+            ..self
+        }
     }
 
-    pub fn move_right(&mut self, distance: usize) -> &mut Position {
-        self.column = self.column.saturating_add(distance);
-        self
+    pub fn move_right(self, distance: usize) -> Position {
+        Position {
+            column: self.column.saturating_add(distance),
+            ..self
+        }
     }
 
     pub fn to_index(self, rope: &Rope) -> Option<usize> {
