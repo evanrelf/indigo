@@ -111,7 +111,7 @@ impl Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             // TODO: Panics when moving to invalid position
-            selection.cursor = *selection.cursor.move_up(distance);
+            selection.cursor.move_up(distance);
         }
         self
     }
@@ -120,7 +120,7 @@ impl Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             // TODO: Panics when moving to invalid position
-            selection.cursor = *selection.cursor.move_down(distance);
+            selection.cursor.move_down(distance);
         }
         self
     }
