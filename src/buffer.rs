@@ -94,57 +94,51 @@ impl Buffer {
         self
     }
 
-    pub fn for_each_selection<F>(&self, f: F) -> &Buffer
-    where
-        F: Fn(&mut Selection),
-    {
+    pub fn move_up(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
-            f(&mut selection);
+            // TODO: Panics when moving to invalid position
+            selection.cursor = *selection.cursor.move_up(distance);
         }
         self
     }
 
-    pub fn move_up(&mut self, distance: usize) -> &mut Buffer {
-        self.for_each_selection(|selection| {
-            // TODO: Panics when moving to invalid position
-            selection.cursor = *selection.cursor.move_up(distance);
-        });
-        self
-    }
-
     pub fn move_down(&mut self, distance: usize) -> &mut Buffer {
-        self.for_each_selection(|selection| {
+        for selection_mutex in &self.selections {
+            let mut selection = selection_mutex.lock().unwrap();
             // TODO: Panics when moving to invalid position
             selection.cursor = *selection.cursor.move_down(distance);
-        });
+        }
         self
     }
 
     pub fn move_left(&mut self, distance: usize) -> &mut Buffer {
-        self.for_each_selection(|selection| {
+        for selection_mutex in &self.selections {
+            let mut selection = selection_mutex.lock().unwrap();
             let old_index = selection.cursor.to_index(&self.rope).unwrap();
             let new_index = old_index.saturating_sub(distance);
             selection.cursor = Position::from_index(&self.rope, new_index).unwrap();
-        });
+        }
         self
     }
 
     pub fn move_right(&mut self, distance: usize) -> &mut Buffer {
-        self.for_each_selection(|selection| {
+        for selection_mutex in &self.selections {
+            let mut selection = selection_mutex.lock().unwrap();
             let old_index = selection.cursor.to_index(&self.rope).unwrap();
             let new_index = old_index.saturating_add(distance);
             if new_index < self.rope.len_chars() {
                 selection.cursor = Position::from_index(&self.rope, new_index).unwrap();
             }
-        });
+        }
         self
     }
 
     pub fn reduce(&mut self) -> &mut Buffer {
-        self.for_each_selection(|selection| {
+        for selection_mutex in &self.selections {
+            let mut selection = selection_mutex.lock().unwrap();
             selection.reduce();
-        });
+        }
         self
     }
 }
