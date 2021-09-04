@@ -55,7 +55,10 @@ impl Selection {
         self.anchor = self.cursor;
         self
     }
+}
 
+// With rope
+impl Selection {
     pub fn to_slice<'rope>(&self, rope: &'rope Rope) -> Option<RopeSlice<'rope>> {
         let anchor_index = self.anchor.to_index(rope)?;
         let cursor_index = self.cursor.to_index(rope)?;

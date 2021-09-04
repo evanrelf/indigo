@@ -39,7 +39,10 @@ impl Position {
             ..self
         }
     }
+}
 
+// With rope
+impl Position {
     pub fn to_index(self, rope: &Rope) -> Option<usize> {
         let Position { line, column } = self;
         let line_index = rope.try_line_to_char(line).ok()?;
