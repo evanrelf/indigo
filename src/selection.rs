@@ -1,5 +1,5 @@
 use crate::position::Position;
-use ropey::Rope;
+use ropey::{Rope, RopeSlice};
 use std::fmt::Display;
 
 pub struct Selection {
@@ -56,6 +56,12 @@ impl Selection {
         self
     }
 
+    pub fn to_slice<'rope>(&self, rope: &'rope Rope) -> Option<RopeSlice<'rope>> {
+        let anchor_index = self.anchor.to_index(rope)?;
+        let cursor_index = self.cursor.to_index(rope)?;
+        rope.get_slice(anchor_index..=cursor_index)
+    }
+
     pub fn is_valid(&self, rope: &Rope) -> bool {
         self.anchor.is_valid(rope) && self.cursor.is_valid(rope)
     }
@@ -98,4 +104,25 @@ impl From<Position> for Selection {
             cursor: position,
         }
     }
+}
+
+#[test]
+fn test_to_slice() {
+    fn case(s: &str, selection: ((usize, usize), (usize, usize)), expected: &str) {
+        let rope = Rope::from_str(s);
+        let selection = Selection::new(selection.0, selection.1);
+        let expected = Some(expected);
+        let actual = selection.to_slice(&rope).and_then(|slice| slice.as_str());
+        assert!(
+            expected == actual,
+            "\nexpected = {:?}\nactual = {:?}\n",
+            expected,
+            actual
+        );
+    }
+
+    case("Hello, world!", ((0, 0), (0, 4)), "Hello");
+    case("Hello, world!", ((0, 7), (0, 11)), "world");
+    case("Fizz\nBuzz", ((1, 0), (1, 3)), "Buzz");
+    case("Fizz\nBuzz", ((0, 0), (1, 3)), "Fizz\nBuzz");
 }
