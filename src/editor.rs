@@ -1,4 +1,4 @@
-use crate::buffer::Buffer;
+use crate::buffer::{Buffer, Mode};
 use crate::terminal::Terminal;
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::style::Stylize;
@@ -152,7 +152,18 @@ impl Editor {
     fn handle_event(&mut self) {
         let buffer = &mut self.buffers[self.buffer_index];
 
-        match event::read().unwrap() {
+        let event = event::read().unwrap();
+
+        match buffer.mode {
+            Mode::Normal => self.handle_event_normal(event),
+            Mode::Insert => self.handle_event_insert(event),
+        }
+    }
+
+    fn handle_event_normal(&mut self, event: event::Event) {
+        let buffer = &mut self.buffers[self.buffer_index];
+
+        match event {
             Event::Key(key_event) => {
                 let KeyEvent { modifiers, code } = key_event;
 
@@ -210,6 +221,46 @@ impl Editor {
                         // Edit
                         KeyCode::Char('d') => {
                             buffer.delete();
+                        }
+                        _ => (),
+                    }
+                }
+            }
+            Event::Resize(columns, lines) => {
+                self.viewport_lines = lines;
+                self.viewport_columns = columns;
+            }
+            _ => (),
+        }
+    }
+
+    fn handle_event_insert(&mut self, event: event::Event) {
+        let buffer = &mut self.buffers[self.buffer_index];
+
+        match event {
+            Event::Key(key_event) => {
+                let KeyEvent { modifiers, code } = key_event;
+
+                if modifiers == KeyModifiers::CONTROL {
+                    #[allow(clippy::single_match)]
+                    match code {
+                        KeyCode::Char('c') => self.quit = true,
+                        _ => (),
+                    }
+                } else if modifiers == KeyModifiers::NONE {
+                    match code {
+                        // Scroll
+                        KeyCode::Up => {
+                            buffer.scroll_up(1);
+                        }
+                        KeyCode::Down => {
+                            buffer.scroll_down(1);
+                        }
+                        KeyCode::Left => {
+                            buffer.scroll_left(1);
+                        }
+                        KeyCode::Right => {
+                            buffer.scroll_right(1);
                         }
                         _ => (),
                     }
