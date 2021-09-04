@@ -6,11 +6,18 @@ use std::io::BufReader;
 use std::path::Path;
 use std::sync::Mutex;
 
+pub enum Mode {
+    Normal,
+    Insert,
+}
+
 pub struct Buffer {
     pub rope: Rope,
 
     pub selections: Vec<Mutex<Selection>>,
     pub primary_selection: usize,
+
+    pub mode: Mode,
 
     pub viewport_lines_offset: usize,
     pub viewport_columns_offset: usize,
@@ -27,6 +34,8 @@ impl Buffer {
 
             selections,
             primary_selection: 0,
+
+            mode: Mode::Normal,
 
             viewport_lines_offset: 0,
             viewport_columns_offset: 0,
@@ -50,6 +59,8 @@ impl Buffer {
             selections,
             primary_selection: 0,
 
+            mode: Mode::Normal,
+
             viewport_lines_offset: 0,
             viewport_columns_offset: 0,
         }
@@ -65,6 +76,8 @@ impl Buffer {
 
             selections,
             primary_selection: 0,
+
+            mode: Mode::Normal,
 
             viewport_lines_offset: 0,
             viewport_columns_offset: 0,
