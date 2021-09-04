@@ -168,6 +168,12 @@ impl Editor {
                         KeyCode::Char('H') => {
                             buffer.move_left(1);
                         }
+                        KeyCode::Char('J') => {
+                            buffer.move_down(1);
+                        }
+                        KeyCode::Char('K') => {
+                            buffer.move_up(1);
+                        }
                         KeyCode::Char('L') => {
                             buffer.move_right(1);
                         }
@@ -191,6 +197,12 @@ impl Editor {
                         // Move
                         KeyCode::Char('h') => {
                             buffer.move_left(1).reduce();
+                        }
+                        KeyCode::Char('j') => {
+                            buffer.move_down(1).reduce();
+                        }
+                        KeyCode::Char('k') => {
+                            buffer.move_up(1).reduce();
                         }
                         KeyCode::Char('l') => {
                             buffer.move_right(1).reduce();

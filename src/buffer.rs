@@ -105,6 +105,22 @@ impl Buffer {
         self
     }
 
+    pub fn move_up(&mut self, distance: usize) -> &mut Buffer {
+        self.for_each_selection(|selection| {
+            // TODO: Panics when moving to invalid position
+            selection.cursor = *selection.cursor.move_up(distance);
+        });
+        self
+    }
+
+    pub fn move_down(&mut self, distance: usize) -> &mut Buffer {
+        self.for_each_selection(|selection| {
+            // TODO: Panics when moving to invalid position
+            selection.cursor = *selection.cursor.move_down(distance);
+        });
+        self
+    }
+
     pub fn move_left(&mut self, distance: usize) -> &mut Buffer {
         self.for_each_selection(|selection| {
             let old_index = selection.cursor.to_index(&self.rope).unwrap();
