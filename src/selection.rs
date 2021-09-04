@@ -59,7 +59,11 @@ impl Selection {
     pub fn to_slice<'rope>(&self, rope: &'rope Rope) -> Option<RopeSlice<'rope>> {
         let anchor_index = self.anchor.to_index(rope)?;
         let cursor_index = self.cursor.to_index(rope)?;
-        rope.get_slice(anchor_index..=cursor_index)
+        if self.is_forwards() {
+            rope.get_slice(anchor_index..=cursor_index)
+        } else {
+            rope.get_slice(cursor_index..=anchor_index)
+        }
     }
 
     pub fn is_valid(&self, rope: &Rope) -> bool {
