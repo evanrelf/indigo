@@ -10,11 +10,11 @@ pub struct Selection {
 impl Selection {
     pub fn new<P>(anchor: P, cursor: P) -> Selection
     where
-        Position: From<P>,
+        P: Into<Position>,
     {
         Selection {
-            anchor: Position::from(anchor),
-            cursor: Position::from(cursor),
+            anchor: anchor.into(),
+            cursor: cursor.into(),
         }
     }
 
