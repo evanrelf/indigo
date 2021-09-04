@@ -1,4 +1,5 @@
 use crate::position::Position;
+use ropey::Rope;
 use std::fmt::Display;
 
 pub struct Selection {
@@ -53,6 +54,12 @@ impl Selection {
     pub fn reduce(&mut self) -> &mut Selection {
         self.anchor = self.cursor;
         self
+    }
+
+    pub fn effective(&self, rope: &Rope) -> Option<Selection> {
+        let anchor = self.anchor.effective(rope)?;
+        let cursor = self.cursor.effective(rope)?;
+        Some(Selection { anchor, cursor })
     }
 }
 
