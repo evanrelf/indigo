@@ -70,9 +70,9 @@ impl Selection {
         self.anchor.is_valid(rope) && self.cursor.is_valid(rope)
     }
 
-    pub fn effective(&self, rope: &Rope) -> Option<Selection> {
-        let anchor = self.anchor.effective(rope)?;
-        let cursor = self.cursor.effective(rope)?;
+    pub fn corrected(&self, rope: &Rope) -> Option<Selection> {
+        let anchor = self.anchor.corrected(rope)?;
+        let cursor = self.cursor.corrected(rope)?;
         Some(Selection { anchor, cursor })
     }
 }

@@ -111,7 +111,7 @@ impl Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             // TODO: Doesn't remember desired column
-            if let Some(new_cursor) = selection.cursor.move_up(distance).effective(&self.rope) {
+            if let Some(new_cursor) = selection.cursor.move_up(distance).corrected(&self.rope) {
                 selection.cursor = new_cursor;
             }
         }
@@ -122,7 +122,7 @@ impl Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             // TODO: Doesn't remember desired column
-            if let Some(new_cursor) = selection.cursor.move_down(distance).effective(&self.rope) {
+            if let Some(new_cursor) = selection.cursor.move_down(distance).corrected(&self.rope) {
                 selection.cursor = new_cursor;
             }
         }
@@ -268,12 +268,12 @@ fn test_index_position_roundtrip() {
 }
 
 #[test]
-fn test_effective_position() {
-    fn case(s: &str, original: (usize, usize), effective: (usize, usize)) {
+fn test_corrected_position() {
+    fn case(s: &str, original: (usize, usize), corrected: (usize, usize)) {
         let rope = Rope::from_str(s);
         let input = Position::from(original);
-        let expected = Some(Position::from(effective));
-        let actual = input.effective(&rope);
+        let expected = Some(Position::from(corrected));
+        let actual = input.corrected(&rope);
         assert!(
             expected == actual,
             "\nexpected = {:?}\nactual = {:?}\n",
