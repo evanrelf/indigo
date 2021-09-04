@@ -56,6 +56,7 @@ impl Editor {
         self.render_tildes();
         self.render_buffer();
         self.render_selections();
+        self.render_status();
 
         Terminal::flush();
     }
@@ -74,7 +75,7 @@ impl Editor {
 
         let viewport_slice = {
             let viewport_start_line = buffer.viewport_lines_offset;
-            let viewport_end_line = viewport_start_line + (self.viewport_lines as usize);
+            let viewport_end_line = viewport_start_line + (self.viewport_lines as usize - 1);
             let buffer_end_line = buffer.rope.len_lines();
             let start = buffer.rope.line_to_char(viewport_start_line);
             if buffer_end_line <= viewport_end_line {
@@ -147,6 +148,16 @@ impl Editor {
                 Terminal::queue(style::PrintStyledContent(cursor_char.on_yellow()));
             }
         }
+    }
+
+    fn render_status(&self) {
+        let mode = match self.buffers[self.buffer_index].mode {
+            Mode::Normal => "normal",
+            Mode::Insert => "insert",
+        };
+
+        Terminal::queue(cursor::MoveTo(0, self.viewport_lines));
+        Terminal::queue(style::PrintStyledContent(mode.white().on_black()));
     }
 
     fn handle_event(&mut self) {
