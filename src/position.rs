@@ -49,6 +49,10 @@ impl Position {
         Some(Position { line, column })
     }
 
+    pub fn is_valid(&self, rope: &Rope) -> bool {
+        self.to_index(rope).is_some()
+    }
+
     pub fn effective(&self, rope: &Rope) -> Option<Position> {
         let Position { line, column } = *self;
         let line_length = rope.get_line(line)?.len_chars();

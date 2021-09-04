@@ -56,6 +56,10 @@ impl Selection {
         self
     }
 
+    pub fn is_valid(&self, rope: &Rope) -> bool {
+        self.anchor.is_valid(rope) && self.cursor.is_valid(rope)
+    }
+
     pub fn effective(&self, rope: &Rope) -> Option<Selection> {
         let anchor = self.anchor.effective(rope)?;
         let cursor = self.cursor.effective(rope)?;
