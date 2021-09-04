@@ -71,38 +71,6 @@ impl Buffer {
         }
     }
 
-    pub fn position_to_index(&self, position: Position) -> Option<usize> {
-        let Position { line, column } = position;
-        let rope = self.rope.lock().unwrap();
-        let line_index = rope.try_line_to_char(line).ok()?;
-        let line_length = rope.get_line(line)?.len_chars();
-        if line_length > column {
-            Some(line_index + column)
-        } else {
-            None
-        }
-    }
-
-    pub fn index_to_position(&self, index: usize) -> Option<Position> {
-        let rope = self.rope.lock().unwrap();
-        let line = rope.try_char_to_line(index).ok()?;
-        let column = index - rope.try_line_to_char(line).ok()?;
-        Some(Position { line, column })
-    }
-
-    pub fn effective_position(&self, position: Position) -> Option<Position> {
-        let Position { line, column } = position;
-        let line_length = self.rope.lock().unwrap().get_line(line)?.len_chars();
-        if line_length > column {
-            Some(position)
-        } else {
-            Some(Position {
-                line,
-                column: line_length - 1,
-            })
-        }
-    }
-
     pub fn scroll_up(&mut self, distance: usize) -> &mut Buffer {
         self.viewport_lines_offset = self.viewport_lines_offset.saturating_sub(distance);
         self
@@ -139,19 +107,21 @@ impl Buffer {
 
     pub fn move_left(&mut self, distance: usize) -> &mut Buffer {
         self.for_each_selection(|selection| {
-            let old_index = self.position_to_index(selection.cursor).unwrap();
+            let rope = self.rope.lock().unwrap();
+            let old_index = selection.cursor.to_index(&rope).unwrap();
             let new_index = old_index.saturating_sub(distance);
-            selection.cursor = self.index_to_position(new_index).unwrap();
+            selection.cursor = Position::from_index(&rope, new_index).unwrap();
         });
         self
     }
 
     pub fn move_right(&mut self, distance: usize) -> &mut Buffer {
         self.for_each_selection(|selection| {
-            let old_index = self.position_to_index(selection.cursor).unwrap();
+            let rope = self.rope.lock().unwrap();
+            let old_index = selection.cursor.to_index(&rope).unwrap();
             let new_index = old_index.saturating_add(distance);
             if new_index < self.rope.lock().unwrap().len_chars() {
-                selection.cursor = self.index_to_position(new_index).unwrap();
+                selection.cursor = Position::from_index(&rope, new_index).unwrap();
             }
         });
         self
@@ -168,10 +138,10 @@ impl Buffer {
 #[test]
 fn test_index_position() {
     fn case(s: &str, tuple: (usize, usize), expected: char) {
-        let buffer = Buffer::from_str(s);
+        let rope = Rope::from_str(s);
         let position = Position::from(tuple);
-        let index = buffer.position_to_index(position).unwrap();
-        let actual = buffer.rope.lock().unwrap().char(index);
+        let index = position.to_index(&rope).unwrap();
+        let actual = rope.char(index);
         assert!(
             expected == actual,
             "\nexpected = {:?}\nactual = {:?}\n",
@@ -195,12 +165,12 @@ fn test_index_position_roundtrip() {
     use CaseResult::*;
 
     fn case(result: CaseResult, s: &str, tuple: (usize, usize)) {
-        let buffer = Buffer::from_str(s);
+        let rope = Rope::from_str(s);
         let position = Position::from(tuple);
         let expected = Some(position);
-        let actual = buffer
-            .position_to_index(position)
-            .and_then(|i| buffer.index_to_position(i));
+        let actual = position
+            .to_index(&rope)
+            .and_then(|i| Position::from_index(&rope, i));
         assert!(
             match result {
                 Pass => expected == actual,
@@ -223,10 +193,10 @@ fn test_index_position_roundtrip() {
 #[test]
 fn test_effective_position() {
     fn case(s: &str, original: (usize, usize), effective: (usize, usize)) {
-        let buffer = Buffer::from_str(s);
+        let rope = Rope::from_str(s);
         let input = Position::from(original);
         let expected = Some(Position::from(effective));
-        let actual = buffer.effective_position(input);
+        let actual = input.effective(&rope);
         assert!(
             expected == actual,
             "\nexpected = {:?}\nactual = {:?}\n",

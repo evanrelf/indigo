@@ -1,3 +1,4 @@
+use ropey::Rope;
 use std::fmt::Display;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Debug)]
@@ -29,6 +30,36 @@ impl Position {
     pub fn move_right(&mut self, distance: usize) -> &mut Position {
         self.column = self.column.saturating_add(distance);
         self
+    }
+
+    pub fn to_index(self, rope: &Rope) -> Option<usize> {
+        let Position { line, column } = self;
+        let line_index = rope.try_line_to_char(line).ok()?;
+        let line_length = rope.get_line(line)?.len_chars();
+        if line_length > column {
+            Some(line_index + column)
+        } else {
+            None
+        }
+    }
+
+    pub fn from_index(rope: &Rope, index: usize) -> Option<Position> {
+        let line = rope.try_char_to_line(index).ok()?;
+        let column = index - rope.try_line_to_char(line).ok()?;
+        Some(Position { line, column })
+    }
+
+    pub fn effective(&self, rope: &Rope) -> Option<Position> {
+        let Position { line, column } = *self;
+        let line_length = rope.get_line(line)?.len_chars();
+        if line_length > column {
+            Some(*self)
+        } else {
+            Some(Position {
+                line,
+                column: line_length - 1,
+            })
+        }
     }
 }
 

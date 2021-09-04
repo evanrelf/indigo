@@ -1,8 +1,8 @@
 use crate::selection::Selection;
 use ropey::Rope;
+use std::fmt::Display;
 use std::ops::{Deref, DerefMut};
 use std::sync::{Arc, Mutex};
-use std::fmt::Display;
 
 pub struct BufferSelection {
     pub rope: Arc<Mutex<Rope>>,
