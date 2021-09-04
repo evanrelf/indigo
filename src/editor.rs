@@ -218,6 +218,14 @@ impl Editor {
                         KeyCode::Char('l') => {
                             buffer.move_right(1).reduce();
                         }
+                        // Mode
+                        KeyCode::Char('i') => {
+                            buffer.mode = Mode::Insert;
+                            for selection in &buffer.selections {
+                                let mut selection = selection.lock().unwrap();
+                                selection.flip_backwards();
+                            }
+                        }
                         // Edit
                         KeyCode::Char('d') => {
                             buffer.delete();
@@ -261,6 +269,10 @@ impl Editor {
                         }
                         KeyCode::Right => {
                             buffer.scroll_right(1);
+                        }
+                        // Mode
+                        KeyCode::Esc => {
+                            buffer.mode = Mode::Normal;
                         }
                         _ => (),
                     }
