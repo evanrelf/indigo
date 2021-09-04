@@ -278,6 +278,9 @@ impl Editor {
                         KeyCode::Char(c) => {
                             buffer.insert(c);
                         }
+                        KeyCode::Backspace => {
+                            buffer.backspace();
+                        }
                         _ => (),
                     }
                 }

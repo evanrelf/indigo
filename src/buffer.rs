@@ -155,6 +155,24 @@ impl Buffer {
         self
     }
 
+    pub fn backspace(&mut self) -> &mut Buffer {
+        for selection_mutex in &self.selections {
+            let mut selection = selection_mutex.lock().unwrap();
+            let anchor_index = selection.cursor.to_index(&self.rope).unwrap();
+            let cursor_index = selection.cursor.to_index(&self.rope).unwrap();
+            if cursor_index > 0 {
+                // Delete character
+                self.rope.remove(cursor_index - 1..cursor_index);
+
+                // Shift selection
+                selection.anchor = Position::from_index(&self.rope, anchor_index - 1).unwrap();
+                selection.cursor = Position::from_index(&self.rope, cursor_index - 1).unwrap();
+            }
+        }
+
+        self
+    }
+
     pub fn delete(&mut self) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let selection = selection_mutex.lock().unwrap();
