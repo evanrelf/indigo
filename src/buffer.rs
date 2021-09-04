@@ -90,7 +90,7 @@ impl Buffer {
     }
 
     pub fn scroll_down(&mut self, distance: usize) -> &mut Buffer {
-        let new_viewport_lines_offset = self.viewport_lines_offset.saturating_add(distance);
+        let new_viewport_lines_offset = self.viewport_lines_offset + distance;
         if new_viewport_lines_offset <= self.rope.len_lines() {
             self.viewport_lines_offset = new_viewport_lines_offset;
         }
@@ -103,7 +103,7 @@ impl Buffer {
     }
 
     pub fn scroll_right(&mut self, distance: usize) -> &mut Buffer {
-        self.viewport_columns_offset = self.viewport_columns_offset.saturating_add(distance);
+        self.viewport_columns_offset += distance;
         self
     }
 
@@ -143,7 +143,7 @@ impl Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let old_index = selection.cursor.to_index(&self.rope).unwrap();
-            let new_index = old_index.saturating_add(distance);
+            let new_index = old_index + distance;
             if new_index < self.rope.len_chars() {
                 selection.cursor = Position::from_index(&self.rope, new_index).unwrap();
             }

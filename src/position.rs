@@ -21,7 +21,7 @@ impl Position {
 
     pub fn move_down(self, distance: usize) -> Position {
         Position {
-            line: self.line.saturating_add(distance),
+            line: self.line + distance,
             ..self
         }
     }
@@ -35,7 +35,7 @@ impl Position {
 
     pub fn move_right(self, distance: usize) -> Position {
         Position {
-            column: self.column.saturating_add(distance),
+            column: self.column + distance,
             ..self
         }
     }
