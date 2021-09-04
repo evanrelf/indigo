@@ -207,6 +207,10 @@ impl Editor {
                         KeyCode::Char('l') => {
                             buffer.move_right(1).reduce();
                         }
+                        // Edit
+                        KeyCode::Char('d') => {
+                            buffer.delete();
+                        }
                         _ => (),
                     }
                 }
