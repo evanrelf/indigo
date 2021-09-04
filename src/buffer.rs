@@ -179,14 +179,15 @@ impl Buffer {
 
     pub fn delete(&mut self) -> &mut Buffer {
         for selection_mutex in &self.selections {
-            let selection = selection_mutex.lock().unwrap();
+            let mut selection = selection_mutex.lock().unwrap();
+            selection.flip_backwards();
             let anchor_index = selection.anchor.to_index(&self.rope).unwrap();
             let cursor_index = selection.cursor.to_index(&self.rope).unwrap();
-            if selection.is_forwards() {
-                self.rope.remove(anchor_index..=cursor_index);
-            } else {
-                self.rope.remove(cursor_index..=anchor_index);
-            }
+            self.rope.remove(cursor_index..=anchor_index);
+            selection.reduce();
+            if let Some(s) = selection.corrected(&self.rope) {
+                *selection = s;
+            };
         }
         self
     }
