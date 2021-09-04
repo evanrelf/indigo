@@ -255,6 +255,17 @@ impl Editor {
                         KeyCode::Char('c') => self.quit = true,
                         _ => (),
                     }
+                } else if modifiers == KeyModifiers::SHIFT {
+                    match code {
+                        // Edit
+                        KeyCode::Char(c) => {
+                            buffer.insert(c);
+                        }
+                        KeyCode::Enter => {
+                            buffer.insert('\n');
+                        }
+                        _ => (),
+                    }
                 } else if modifiers == KeyModifiers::NONE {
                     match code {
                         // Scroll
@@ -277,6 +288,9 @@ impl Editor {
                         // Edit
                         KeyCode::Char(c) => {
                             buffer.insert(c);
+                        }
+                        KeyCode::Enter => {
+                            buffer.insert('\n');
                         }
                         KeyCode::Backspace => {
                             buffer.backspace();
