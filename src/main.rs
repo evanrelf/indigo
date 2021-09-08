@@ -7,10 +7,8 @@ mod position;
 mod selection;
 mod terminal;
 
-use crate::editor::Editor;
-use crate::terminal::Terminal;
-use std::env;
-use std::panic;
+use crate::{editor::Editor, terminal::Terminal};
+use std::{env, panic};
 
 fn main() {
     panic::set_hook(Box::new(|panic_info| {

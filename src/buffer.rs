@@ -1,10 +1,6 @@
-use crate::position::Position;
-use crate::selection::Selection;
+use crate::{position::Position, selection::Selection};
 use ropey::Rope;
-use std::fs::File;
-use std::io::BufReader;
-use std::path::Path;
-use std::sync::Mutex;
+use std::{fs::File, io::BufReader, path::Path, sync::Mutex};
 
 pub enum Mode {
     Normal,

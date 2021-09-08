@@ -1,8 +1,14 @@
-use crate::buffer::{Buffer, Mode};
-use crate::terminal::Terminal;
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
-use crossterm::style::Stylize;
-use crossterm::{cursor, event, style, terminal};
+use crate::{
+    buffer::{Buffer, Mode},
+    terminal::Terminal,
+};
+use crossterm::{
+    cursor, event,
+    event::{Event, KeyCode, KeyEvent, KeyModifiers},
+    style,
+    style::Stylize,
+    terminal,
+};
 use std::path::Path;
 
 pub struct Editor {
