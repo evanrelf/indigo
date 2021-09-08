@@ -15,6 +15,29 @@ pub struct Editor {
     viewport_columns: u16,
 }
 
+pub enum Operation {
+    Quit,
+    Resize { lines: u16, columns: u16 },
+    ChangeMode(Mode),
+
+    ScrollUp(usize),
+    ScrollDown(usize),
+    ScrollLeft(usize),
+    ScrollRight(usize),
+
+    MoveUp(usize),
+    MoveDown(usize),
+    MoveLeft(usize),
+    MoveRight(usize),
+
+    Reduce,
+    FlipBackwards,
+
+    Insert(char),
+    Delete,
+    Backspace,
+}
+
 impl Editor {
     pub fn new() -> Editor {
         let (viewport_columns, viewport_lines) = Terminal::size();
@@ -161,160 +184,168 @@ impl Editor {
     }
 
     fn handle_event(&mut self) {
-        let buffer = &mut self.buffers[self.buffer_index];
+        let buffer = &self.buffers[self.buffer_index];
 
         let event = event::read().unwrap();
 
-        match buffer.mode {
-            Mode::Normal => self.handle_event_normal(event),
-            Mode::Insert => self.handle_event_insert(event),
+        let operations = match buffer.mode {
+            Mode::Normal => self.event_to_operations_normal(event),
+            Mode::Insert => self.event_to_operations_insert(event),
+        };
+
+        for operation in operations {
+            self.apply_operation(operation);
         }
     }
 
-    fn handle_event_normal(&mut self, event: event::Event) {
-        let buffer = &mut self.buffers[self.buffer_index];
+    fn event_to_operations_normal(&self, event: event::Event) -> Vec<Operation> {
+        use Operation::*;
 
         match event {
             Event::Key(key_event) => {
                 let KeyEvent { modifiers, code } = key_event;
 
                 if modifiers == KeyModifiers::CONTROL {
-                    #[allow(clippy::single_match)]
                     match code {
-                        KeyCode::Char('c') => self.quit = true,
-                        _ => (),
+                        KeyCode::Char('c') => vec![Quit],
+                        _ => Vec::new(),
                     }
                 } else if modifiers == KeyModifiers::SHIFT {
                     match code {
                         // Move
-                        KeyCode::Char('H') => {
-                            buffer.move_left(1);
-                        }
-                        KeyCode::Char('J') => {
-                            buffer.move_down(1);
-                        }
-                        KeyCode::Char('K') => {
-                            buffer.move_up(1);
-                        }
-                        KeyCode::Char('L') => {
-                            buffer.move_right(1);
-                        }
-                        _ => (),
+                        KeyCode::Char('H') => vec![MoveLeft(1)],
+                        KeyCode::Char('J') => vec![MoveDown(1)],
+                        KeyCode::Char('K') => vec![MoveUp(1)],
+                        KeyCode::Char('L') => vec![MoveRight(1)],
+                        _ => Vec::new(),
                     }
                 } else if modifiers == KeyModifiers::NONE {
                     match code {
                         // Scroll
-                        KeyCode::Up => {
-                            buffer.scroll_up(1);
-                        }
-                        KeyCode::Down => {
-                            buffer.scroll_down(1);
-                        }
-                        KeyCode::Left => {
-                            buffer.scroll_left(1);
-                        }
-                        KeyCode::Right => {
-                            buffer.scroll_right(1);
-                        }
+                        KeyCode::Up => vec![ScrollUp(1)],
+                        KeyCode::Down => vec![ScrollDown(1)],
+                        KeyCode::Left => vec![ScrollLeft(1)],
+                        KeyCode::Right => vec![ScrollRight(1)],
                         // Move
-                        KeyCode::Char('h') => {
-                            buffer.move_left(1).reduce();
-                        }
-                        KeyCode::Char('j') => {
-                            buffer.move_down(1).reduce();
-                        }
-                        KeyCode::Char('k') => {
-                            buffer.move_up(1).reduce();
-                        }
-                        KeyCode::Char('l') => {
-                            buffer.move_right(1).reduce();
-                        }
+                        KeyCode::Char('h') => vec![MoveLeft(1), Reduce],
+                        KeyCode::Char('j') => vec![MoveDown(1), Reduce],
+                        KeyCode::Char('k') => vec![MoveUp(1), Reduce],
+                        KeyCode::Char('l') => vec![MoveRight(1), Reduce],
                         // Mode
-                        KeyCode::Char('i') => {
-                            buffer.mode = Mode::Insert;
-                            for selection in &buffer.selections {
-                                let mut selection = selection.lock().unwrap();
-                                selection.flip_backwards();
-                            }
-                        }
+                        KeyCode::Char('i') => vec![ChangeMode(Mode::Insert), FlipBackwards],
                         // Edit
-                        KeyCode::Char('d') => {
-                            buffer.delete();
-                        }
-                        _ => (),
+                        KeyCode::Char('d') => vec![Delete],
+                        _ => Vec::new(),
                     }
+                } else {
+                    Vec::new()
                 }
             }
-            Event::Resize(columns, lines) => {
-                self.viewport_lines = lines;
-                self.viewport_columns = columns;
-            }
-            _ => (),
+            Event::Resize(columns, lines) => vec![Resize { lines, columns }],
+            _ => Vec::new(),
         }
     }
 
-    fn handle_event_insert(&mut self, event: event::Event) {
-        let buffer = &mut self.buffers[self.buffer_index];
+    fn event_to_operations_insert(&self, event: event::Event) -> Vec<Operation> {
+        use Operation::*;
 
         match event {
             Event::Key(key_event) => {
                 let KeyEvent { modifiers, code } = key_event;
 
                 if modifiers == KeyModifiers::CONTROL {
-                    #[allow(clippy::single_match)]
                     match code {
-                        KeyCode::Char('c') => self.quit = true,
-                        _ => (),
+                        KeyCode::Char('c') => vec![Quit],
+                        _ => Vec::new(),
                     }
                 } else if modifiers == KeyModifiers::SHIFT {
                     match code {
                         // Edit
-                        KeyCode::Char(c) => {
-                            buffer.insert(c);
-                        }
-                        KeyCode::Enter => {
-                            buffer.insert('\n');
-                        }
-                        _ => (),
+                        KeyCode::Char(c) => vec![Insert(c)],
+                        KeyCode::Enter => vec![Insert('\n')],
+                        _ => Vec::new(),
                     }
                 } else if modifiers == KeyModifiers::NONE {
                     match code {
                         // Scroll
-                        KeyCode::Up => {
-                            buffer.scroll_up(1);
-                        }
-                        KeyCode::Down => {
-                            buffer.scroll_down(1);
-                        }
-                        KeyCode::Left => {
-                            buffer.scroll_left(1);
-                        }
-                        KeyCode::Right => {
-                            buffer.scroll_right(1);
-                        }
+                        KeyCode::Up => vec![ScrollUp(1)],
+                        KeyCode::Down => vec![ScrollDown(1)],
+                        KeyCode::Left => vec![ScrollLeft(1)],
+                        KeyCode::Right => vec![ScrollRight(1)],
                         // Mode
-                        KeyCode::Esc => {
-                            buffer.mode = Mode::Normal;
-                        }
+                        KeyCode::Esc => vec![ChangeMode(Mode::Normal)],
                         // Edit
-                        KeyCode::Char(c) => {
-                            buffer.insert(c);
-                        }
-                        KeyCode::Enter => {
-                            buffer.insert('\n');
-                        }
-                        KeyCode::Backspace => {
-                            buffer.backspace();
-                        }
-                        _ => (),
+                        KeyCode::Char(c) => vec![Insert(c)],
+                        KeyCode::Enter => vec![Insert('\n')],
+                        KeyCode::Backspace => vec![Backspace],
+                        _ => vec![],
                     }
+                } else {
+                    Vec::new()
                 }
             }
-            Event::Resize(columns, lines) => {
+            Event::Resize(columns, lines) => vec![Resize { lines, columns }],
+            _ => Vec::new(),
+        }
+    }
+
+    fn apply_operation(&mut self, operation: Operation) {
+        use Operation::*;
+
+        let buffer = &mut self.buffers[self.buffer_index];
+
+        match operation {
+            Quit => {
+                self.quit = true;
+            }
+            Resize { lines, columns } => {
                 self.viewport_lines = lines;
                 self.viewport_columns = columns;
             }
-            _ => (),
+            ChangeMode(mode) => {
+                buffer.mode = mode;
+            }
+            ScrollUp(distance) => {
+                buffer.scroll_up(distance);
+            }
+            ScrollDown(distance) => {
+                buffer.scroll_down(distance);
+            }
+            ScrollLeft(distance) => {
+                buffer.scroll_left(distance);
+            }
+            ScrollRight(distance) => {
+                buffer.scroll_right(distance);
+            }
+            MoveUp(distance) => {
+                buffer.move_up(distance);
+            }
+            MoveDown(distance) => {
+                buffer.move_down(distance);
+            }
+            MoveLeft(distance) => {
+                buffer.move_left(distance);
+            }
+            MoveRight(distance) => {
+                buffer.move_right(distance);
+            }
+            Reduce => {
+                buffer.reduce();
+            }
+            FlipBackwards => {
+                for selection in &buffer.selections {
+                    selection.lock().unwrap().flip_backwards();
+                }
+            }
+            Insert(c) => {
+                buffer.insert(c);
+            }
+            Delete => {
+                buffer.delete();
+            }
+            Backspace => {
+                buffer.backspace();
+            }
         }
     }
 }
