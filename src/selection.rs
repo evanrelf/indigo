@@ -2,6 +2,7 @@ use crate::position::Position;
 use ropey::{Rope, RopeSlice};
 use std::fmt::Display;
 
+#[derive(Default)]
 pub struct Selection {
     pub anchor: Position,
     pub cursor: Position,
@@ -81,15 +82,6 @@ impl Selection {
 impl Display for Selection {
     fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(formatter, "{}-{}", self.anchor, self.cursor)
-    }
-}
-
-impl Default for Selection {
-    fn default() -> Selection {
-        Selection {
-            anchor: Position::default(),
-            cursor: Position::default(),
-        }
     }
 }
 

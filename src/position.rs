@@ -1,7 +1,7 @@
 use ropey::Rope;
 use std::fmt::Display;
 
-#[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Debug)]
+#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Position {
     pub line: usize,
     pub column: usize,
@@ -108,16 +108,6 @@ impl Position {
 impl Display for Position {
     fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(formatter, "{}:{}", self.line, self.column)
-    }
-}
-
-impl Default for Position {
-    fn default() -> Position {
-        Position {
-            line: 0,
-            column: 0,
-            old_column: None,
-        }
     }
 }
 
