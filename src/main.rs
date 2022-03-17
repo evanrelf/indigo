@@ -2,8 +2,8 @@
 #![allow(dead_code)]
 
 mod buffer;
+mod cursor;
 mod editor;
-mod position;
 mod selection;
 mod terminal;
 

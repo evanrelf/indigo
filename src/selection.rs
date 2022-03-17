@@ -1,17 +1,17 @@
-use crate::position::Position;
+use crate::cursor::Cursor;
 use ropey::{Rope, RopeSlice};
 use std::fmt::Display;
 
 #[derive(Default)]
 pub(crate) struct Selection {
-    pub(crate) anchor: Position,
-    pub(crate) cursor: Position,
+    pub(crate) anchor: Cursor,
+    pub(crate) cursor: Cursor,
 }
 
 impl Selection {
     pub(crate) fn new<P>(anchor: P, cursor: P) -> Selection
     where
-        P: Into<Position>,
+        P: Into<Cursor>,
     {
         Selection {
             anchor: anchor.into(),
@@ -88,17 +88,17 @@ impl Display for Selection {
 impl From<(usize, usize)> for Selection {
     fn from(tuple: (usize, usize)) -> Selection {
         Selection {
-            anchor: Position::from(tuple),
-            cursor: Position::from(tuple),
+            anchor: Cursor::from(tuple),
+            cursor: Cursor::from(tuple),
         }
     }
 }
 
-impl From<Position> for Selection {
-    fn from(position: Position) -> Selection {
+impl From<Cursor> for Selection {
+    fn from(cursor: Cursor) -> Selection {
         Selection {
-            anchor: position,
-            cursor: position,
+            anchor: cursor,
+            cursor,
         }
     }
 }
