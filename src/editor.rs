@@ -10,7 +10,7 @@ use crossterm::{
 };
 use std::path::Path;
 
-pub struct Editor {
+pub(crate) struct Editor {
     quit: bool,
 
     buffers: Vec<Buffer>,
@@ -20,7 +20,7 @@ pub struct Editor {
     viewport_columns: u16,
 }
 
-pub enum Operation {
+pub(crate) enum Operation {
     Quit,
     Resize { lines: u16, columns: u16 },
     ChangeMode(Mode),
@@ -44,7 +44,7 @@ pub enum Operation {
 }
 
 impl Editor {
-    pub fn new() -> Editor {
+    pub(crate) fn new() -> Editor {
         let (viewport_columns, viewport_lines) = Terminal::size();
 
         Editor {
@@ -58,7 +58,7 @@ impl Editor {
         }
     }
 
-    pub fn load_file<P>(&mut self, path: P)
+    pub(crate) fn load_file<P>(&mut self, path: P)
     where
         P: AsRef<Path>,
     {
@@ -66,7 +66,7 @@ impl Editor {
         self.buffer_index += 1;
     }
 
-    pub fn run(&mut self) {
+    pub(crate) fn run(&mut self) {
         Terminal::enter();
         Terminal::execute(cursor::Hide);
 

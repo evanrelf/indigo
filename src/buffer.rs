@@ -2,25 +2,25 @@ use crate::{position::Position, selection::Selection};
 use ropey::Rope;
 use std::{fs::File, io::BufReader, path::Path, sync::Mutex};
 
-pub enum Mode {
+pub(crate) enum Mode {
     Normal,
     Insert,
 }
 
-pub struct Buffer {
-    pub rope: Rope,
+pub(crate) struct Buffer {
+    pub(crate) rope: Rope,
 
-    pub selections: Vec<Mutex<Selection>>,
-    pub primary_selection: usize,
+    pub(crate) selections: Vec<Mutex<Selection>>,
+    pub(crate) primary_selection: usize,
 
-    pub mode: Mode,
+    pub(crate) mode: Mode,
 
-    pub viewport_lines_offset: usize,
-    pub viewport_columns_offset: usize,
+    pub(crate) viewport_lines_offset: usize,
+    pub(crate) viewport_columns_offset: usize,
 }
 
 impl Buffer {
-    pub fn new() -> Buffer {
+    pub(crate) fn new() -> Buffer {
         let rope = Rope::new();
 
         let selections = vec![Mutex::new(Selection::default())];
@@ -38,7 +38,7 @@ impl Buffer {
         }
     }
 
-    pub fn from_file<P>(path: P) -> Buffer
+    pub(crate) fn from_file<P>(path: P) -> Buffer
     where
         P: AsRef<Path>,
     {
@@ -80,12 +80,12 @@ impl Buffer {
         }
     }
 
-    pub fn scroll_up(&mut self, distance: usize) -> &mut Buffer {
+    pub(crate) fn scroll_up(&mut self, distance: usize) -> &mut Buffer {
         self.viewport_lines_offset = self.viewport_lines_offset.saturating_sub(distance);
         self
     }
 
-    pub fn scroll_down(&mut self, distance: usize) -> &mut Buffer {
+    pub(crate) fn scroll_down(&mut self, distance: usize) -> &mut Buffer {
         let new_viewport_lines_offset = self.viewport_lines_offset + distance;
         if new_viewport_lines_offset <= self.rope.len_lines() {
             self.viewport_lines_offset = new_viewport_lines_offset;
@@ -93,17 +93,17 @@ impl Buffer {
         self
     }
 
-    pub fn scroll_left(&mut self, distance: usize) -> &mut Buffer {
+    pub(crate) fn scroll_left(&mut self, distance: usize) -> &mut Buffer {
         self.viewport_columns_offset = self.viewport_columns_offset.saturating_sub(distance);
         self
     }
 
-    pub fn scroll_right(&mut self, distance: usize) -> &mut Buffer {
+    pub(crate) fn scroll_right(&mut self, distance: usize) -> &mut Buffer {
         self.viewport_columns_offset += distance;
         self
     }
 
-    pub fn move_up(&mut self, distance: usize) -> &mut Buffer {
+    pub(crate) fn move_up(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             // TODO: Doesn't remember desired column
@@ -114,7 +114,7 @@ impl Buffer {
         self
     }
 
-    pub fn move_down(&mut self, distance: usize) -> &mut Buffer {
+    pub(crate) fn move_down(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             // TODO: Doesn't remember desired column
@@ -125,7 +125,7 @@ impl Buffer {
         self
     }
 
-    pub fn move_left(&mut self, distance: usize) -> &mut Buffer {
+    pub(crate) fn move_left(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let old_index = selection.cursor.to_index(&self.rope).unwrap();
@@ -135,7 +135,7 @@ impl Buffer {
         self
     }
 
-    pub fn move_right(&mut self, distance: usize) -> &mut Buffer {
+    pub(crate) fn move_right(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let old_index = selection.cursor.to_index(&self.rope).unwrap();
@@ -147,7 +147,7 @@ impl Buffer {
         self
     }
 
-    pub fn reduce(&mut self) -> &mut Buffer {
+    pub(crate) fn reduce(&mut self) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             selection.reduce();
@@ -155,7 +155,7 @@ impl Buffer {
         self
     }
 
-    pub fn backspace(&mut self) -> &mut Buffer {
+    pub(crate) fn backspace(&mut self) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let anchor_index = selection.cursor.to_index(&self.rope).unwrap();
@@ -173,7 +173,7 @@ impl Buffer {
         self
     }
 
-    pub fn delete(&mut self) -> &mut Buffer {
+    pub(crate) fn delete(&mut self) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             selection.flip_backwards();
@@ -188,7 +188,7 @@ impl Buffer {
         self
     }
 
-    pub fn insert(&mut self, c: char) -> &mut Buffer {
+    pub(crate) fn insert(&mut self, c: char) -> &mut Buffer {
         for selection_mutex in &self.selections {
             // Insert character
             let mut selection = selection_mutex.lock().unwrap();

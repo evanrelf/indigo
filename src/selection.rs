@@ -3,13 +3,13 @@ use ropey::{Rope, RopeSlice};
 use std::fmt::Display;
 
 #[derive(Default)]
-pub struct Selection {
-    pub anchor: Position,
-    pub cursor: Position,
+pub(crate) struct Selection {
+    pub(crate) anchor: Position,
+    pub(crate) cursor: Position,
 }
 
 impl Selection {
-    pub fn new<P>(anchor: P, cursor: P) -> Selection
+    pub(crate) fn new<P>(anchor: P, cursor: P) -> Selection
     where
         P: Into<Position>,
     {
@@ -19,38 +19,38 @@ impl Selection {
         }
     }
 
-    pub fn is_forwards(&self) -> bool {
+    pub(crate) fn is_forwards(&self) -> bool {
         self.anchor <= self.cursor
     }
 
-    pub fn is_backwards(&self) -> bool {
+    pub(crate) fn is_backwards(&self) -> bool {
         self.anchor > self.cursor
     }
 
-    pub fn is_reduced(&self) -> bool {
+    pub(crate) fn is_reduced(&self) -> bool {
         self.anchor == self.cursor
     }
 
-    pub fn flip(&mut self) -> &mut Selection {
+    pub(crate) fn flip(&mut self) -> &mut Selection {
         std::mem::swap(&mut self.anchor, &mut self.cursor);
         self
     }
 
-    pub fn flip_forwards(&mut self) -> &mut Selection {
+    pub(crate) fn flip_forwards(&mut self) -> &mut Selection {
         if self.is_backwards() {
             self.flip();
         }
         self
     }
 
-    pub fn flip_backwards(&mut self) -> &mut Selection {
+    pub(crate) fn flip_backwards(&mut self) -> &mut Selection {
         if self.is_forwards() {
             self.flip();
         }
         self
     }
 
-    pub fn reduce(&mut self) -> &mut Selection {
+    pub(crate) fn reduce(&mut self) -> &mut Selection {
         self.anchor = self.cursor;
         self
     }
@@ -58,7 +58,7 @@ impl Selection {
 
 // With rope
 impl Selection {
-    pub fn to_slice<'rope>(&self, rope: &'rope Rope) -> Option<RopeSlice<'rope>> {
+    pub(crate) fn to_slice<'rope>(&self, rope: &'rope Rope) -> Option<RopeSlice<'rope>> {
         let anchor_index = self.anchor.to_index(rope)?;
         let cursor_index = self.cursor.to_index(rope)?;
         if self.is_forwards() {
@@ -68,11 +68,11 @@ impl Selection {
         }
     }
 
-    pub fn is_valid(&self, rope: &Rope) -> bool {
+    pub(crate) fn is_valid(&self, rope: &Rope) -> bool {
         self.anchor.is_valid(rope) && self.cursor.is_valid(rope)
     }
 
-    pub fn corrected(&self, rope: &Rope) -> Option<Selection> {
+    pub(crate) fn corrected(&self, rope: &Rope) -> Option<Selection> {
         let anchor = self.anchor.corrected(rope)?;
         let cursor = self.cursor.corrected(rope)?;
         Some(Selection { anchor, cursor })

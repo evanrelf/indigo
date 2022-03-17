@@ -2,14 +2,14 @@ use ropey::Rope;
 use std::fmt::Display;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
-pub struct Position {
-    pub line: usize,
-    pub column: usize,
-    pub old_column: Option<usize>,
+pub(crate) struct Position {
+    pub(crate) line: usize,
+    pub(crate) column: usize,
+    pub(crate) old_column: Option<usize>,
 }
 
 impl Position {
-    pub fn new(line: usize, column: usize) -> Position {
+    pub(crate) fn new(line: usize, column: usize) -> Position {
         Position {
             line,
             column,
@@ -17,28 +17,28 @@ impl Position {
         }
     }
 
-    pub fn move_up(self, distance: usize) -> Position {
+    pub(crate) fn move_up(self, distance: usize) -> Position {
         Position {
             line: self.line.saturating_sub(distance),
             ..self
         }
     }
 
-    pub fn move_down(self, distance: usize) -> Position {
+    pub(crate) fn move_down(self, distance: usize) -> Position {
         Position {
             line: self.line + distance,
             ..self
         }
     }
 
-    pub fn move_left(self, distance: usize) -> Position {
+    pub(crate) fn move_left(self, distance: usize) -> Position {
         Position {
             column: self.column.saturating_sub(distance),
             ..self
         }
     }
 
-    pub fn move_right(self, distance: usize) -> Position {
+    pub(crate) fn move_right(self, distance: usize) -> Position {
         Position {
             column: self.column + distance,
             ..self
@@ -48,7 +48,7 @@ impl Position {
 
 // With rope
 impl Position {
-    pub fn to_index(self, rope: &Rope) -> Option<usize> {
+    pub(crate) fn to_index(self, rope: &Rope) -> Option<usize> {
         let Position { line, column, .. } = self;
         let line_index = rope.try_line_to_char(line).ok()?;
         let line_length = rope.get_line(line)?.len_chars();
@@ -59,7 +59,7 @@ impl Position {
         }
     }
 
-    pub fn from_index(rope: &Rope, index: usize) -> Option<Position> {
+    pub(crate) fn from_index(rope: &Rope, index: usize) -> Option<Position> {
         let line = rope.try_char_to_line(index).ok()?;
         let column = index - rope.try_line_to_char(line).ok()?;
         Some(Position {
@@ -69,11 +69,11 @@ impl Position {
         })
     }
 
-    pub fn is_valid(&self, rope: &Rope) -> bool {
+    pub(crate) fn is_valid(&self, rope: &Rope) -> bool {
         self.to_index(rope).is_some()
     }
 
-    pub fn corrected(&self, rope: &Rope) -> Option<Position> {
+    pub(crate) fn corrected(&self, rope: &Rope) -> Option<Position> {
         let Position {
             line,
             column,

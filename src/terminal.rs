@@ -1,15 +1,15 @@
 use crossterm::{cursor, terminal, Command, ExecutableCommand, QueueableCommand};
 use std::io::{stdout, Write};
 
-pub struct Terminal {}
+pub(crate) struct Terminal {}
 
 impl Terminal {
-    pub fn enter() {
+    pub(crate) fn enter() {
         terminal::enable_raw_mode().unwrap();
         stdout().execute(terminal::EnterAlternateScreen).unwrap();
     }
 
-    pub fn exit() {
+    pub(crate) fn exit() {
         let mut stdout = stdout();
         stdout.queue(cursor::Show).unwrap();
         stdout.queue(terminal::LeaveAlternateScreen).unwrap();
@@ -17,25 +17,25 @@ impl Terminal {
         terminal::disable_raw_mode().unwrap();
     }
 
-    pub fn execute<C>(command: C)
+    pub(crate) fn execute<C>(command: C)
     where
         C: Command,
     {
         stdout().execute(command).unwrap();
     }
 
-    pub fn queue<C>(command: C)
+    pub(crate) fn queue<C>(command: C)
     where
         C: Command,
     {
         stdout().queue(command).unwrap();
     }
 
-    pub fn flush() {
+    pub(crate) fn flush() {
         stdout().flush().unwrap();
     }
 
-    pub fn size() -> (u16, u16) {
+    pub(crate) fn size() -> (u16, u16) {
         terminal::size().unwrap()
     }
 }
