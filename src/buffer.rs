@@ -112,27 +112,34 @@ impl Buffer {
 
     pub(crate) fn corrected_cursor(&self, cursor: &Cursor) -> Option<Cursor> {
         let line_length = self.rope.get_line(cursor.line)?.len_chars();
-
         if line_length == 0 {
             return None;
         }
 
-        match cursor.target_column {
-            Some(target_column) if line_length > target_column => Some(Cursor {
-                column: target_column,
-                target_column: None,
-                ..*cursor
-            }),
-            Some(_) => Some(Cursor {
-                column: line_length - 1,
-                ..*cursor
-            }),
-            None if line_length > cursor.column => Some(Cursor { ..*cursor }),
-            None => Some(Cursor {
-                column: line_length - 1,
-                target_column: Some(cursor.column),
-                ..*cursor
-            }),
+        #[allow(clippy::collapsible_else_if)]
+        if let Some(target_column) = cursor.target_column {
+            if line_length > target_column {
+                Some(Cursor {
+                    column: target_column,
+                    target_column: None,
+                    ..*cursor
+                })
+            } else {
+                Some(Cursor {
+                    column: line_length - 1,
+                    ..*cursor
+                })
+            }
+        } else {
+            if line_length > cursor.column {
+                Some(*cursor)
+            } else {
+                Some(Cursor {
+                    column: line_length - 1,
+                    target_column: Some(cursor.column),
+                    ..*cursor
+                })
+            }
         }
     }
 
