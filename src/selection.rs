@@ -31,9 +31,7 @@ impl Selection {
     }
 
     pub fn flip(&mut self) -> &mut Selection {
-        let anchor = self.anchor;
-        self.anchor = self.cursor;
-        self.cursor = anchor;
+        std::mem::swap(&mut self.anchor, &mut self.cursor);
         self
     }
 
