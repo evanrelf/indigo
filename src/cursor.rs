@@ -1,4 +1,3 @@
-use ropey::Rope;
 use std::fmt::Display;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
@@ -42,65 +41,6 @@ impl Cursor {
         Cursor {
             column: self.column + distance,
             ..self
-        }
-    }
-}
-
-// With rope
-impl Cursor {
-    pub(crate) fn to_index(self, rope: &Rope) -> Option<usize> {
-        let Cursor { line, column, .. } = self;
-        let line_index = rope.try_line_to_char(line).ok()?;
-        let line_length = rope.get_line(line)?.len_chars();
-        if line_length > column {
-            Some(line_index + column)
-        } else {
-            None
-        }
-    }
-
-    pub(crate) fn from_index(rope: &Rope, index: usize) -> Option<Cursor> {
-        let line = rope.try_char_to_line(index).ok()?;
-        let column = index - rope.try_line_to_char(line).ok()?;
-        Some(Cursor {
-            line,
-            column,
-            target_column: None,
-        })
-    }
-
-    pub(crate) fn is_valid(&self, rope: &Rope) -> bool {
-        self.to_index(rope).is_some()
-    }
-
-    pub(crate) fn corrected(&self, rope: &Rope) -> Option<Cursor> {
-        let Cursor {
-            line,
-            column,
-            target_column,
-        } = *self;
-        let line_length = rope.get_line(line)?.len_chars();
-
-        if line_length == 0 {
-            return None;
-        }
-
-        match target_column {
-            Some(target_column) if line_length > target_column => Some(Cursor {
-                column: target_column,
-                target_column: None,
-                ..*self
-            }),
-            Some(_) => Some(Cursor {
-                column: line_length - 1,
-                ..*self
-            }),
-            None if line_length > column => Some(Cursor { ..*self }),
-            None => Some(Cursor {
-                column: line_length - 1,
-                target_column: Some(column),
-                ..*self
-            }),
         }
     }
 }
