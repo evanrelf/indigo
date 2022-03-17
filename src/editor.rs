@@ -3,10 +3,9 @@ use crate::{
     terminal::Terminal,
 };
 use crossterm::{
-    cursor, event,
-    event::{Event, KeyCode, KeyEvent, KeyModifiers},
-    style,
-    style::Stylize,
+    cursor,
+    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
+    style::{self, Stylize},
     terminal,
 };
 use std::path::Path;
