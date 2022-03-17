@@ -5,7 +5,7 @@ use std::fmt::Display;
 pub(crate) struct Position {
     pub(crate) line: usize,
     pub(crate) column: usize,
-    pub(crate) old_column: Option<usize>,
+    pub(crate) target_column: Option<usize>,
 }
 
 impl Position {
@@ -13,7 +13,7 @@ impl Position {
         Position {
             line,
             column,
-            old_column: None,
+            target_column: None,
         }
     }
 
@@ -65,7 +65,7 @@ impl Position {
         Some(Position {
             line,
             column,
-            old_column: None,
+            target_column: None,
         })
     }
 
@@ -77,7 +77,7 @@ impl Position {
         let Position {
             line,
             column,
-            old_column,
+            target_column,
         } = *self;
         let line_length = rope.get_line(line)?.len_chars();
 
@@ -85,10 +85,10 @@ impl Position {
             return None;
         }
 
-        match old_column {
-            Some(old_column) if line_length > old_column => Some(Position {
-                column: old_column,
-                old_column: None,
+        match target_column {
+            Some(target_column) if line_length > target_column => Some(Position {
+                column: target_column,
+                target_column: None,
                 ..*self
             }),
             Some(_) => Some(Position {
@@ -98,7 +98,7 @@ impl Position {
             None if line_length > column => Some(Position { ..*self }),
             None => Some(Position {
                 column: line_length - 1,
-                old_column: Some(column),
+                target_column: Some(column),
                 ..*self
             }),
         }
@@ -116,7 +116,7 @@ impl From<(usize, usize)> for Position {
         Position {
             line,
             column,
-            old_column: None,
+            target_column: None,
         }
     }
 }
