@@ -322,11 +322,22 @@ fn test_index_cursor_roundtrip() {
 
 #[test]
 fn test_corrected_cursor() {
-    fn case(s: &str, original: (usize, usize), corrected: (usize, usize)) {
+    fn case(
+        s: &str,
+        original: (usize, usize, Option<usize>),
+        corrected: (usize, usize, Option<usize>),
+    ) {
         let buffer = Buffer::from_str(s);
-        let input = Cursor::from(original);
-        let expected = Some(Cursor::from(corrected));
-        let actual = buffer.corrected_cursor(&input);
+        let expected = Some(Cursor {
+            line: corrected.0,
+            column: corrected.1,
+            target_column: corrected.2,
+        });
+        let actual = buffer.corrected_cursor(&Cursor {
+            line: original.0,
+            column: original.1,
+            target_column: original.2,
+        });
         assert!(
             expected == actual,
             "\nexpected = {:?}\nactual = {:?}\n",
@@ -335,10 +346,10 @@ fn test_corrected_cursor() {
         );
     }
 
-    case("abc\nx\n", (0, 0), (0, 0));
-    case("abc\nx\n", (0, 99), (0, 3));
-    case("abc\nx\n", (1, 1), (1, 1));
-    case("abc\nx\n", (1, 99), (1, 1));
+    case("abc\nx\n", (0, 0, None), (0, 0, None));
+    case("abc\nx\n", (0, 99, None), (0, 3, Some(99)));
+    case("abc\nx\n", (1, 0, Some(1)), (1, 1, None));
+    case("abc\nx\n", (1, 99, None), (1, 1, Some(99)));
 }
 
 #[test]
