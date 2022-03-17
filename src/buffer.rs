@@ -168,10 +168,7 @@ impl Buffer {
     pub(crate) fn move_up(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
-            // TODO: Doesn't remember target column
-            if let Some(new_cursor) = selection.cursor.move_up(distance).corrected(&self.rope) {
-                selection.cursor = new_cursor;
-            }
+            todo!();
         }
         self
     }
@@ -179,10 +176,7 @@ impl Buffer {
     pub(crate) fn move_down(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
-            // TODO: Doesn't remember target column
-            if let Some(new_cursor) = selection.cursor.move_down(distance).corrected(&self.rope) {
-                selection.cursor = new_cursor;
-            }
+            todo!();
         }
         self
     }

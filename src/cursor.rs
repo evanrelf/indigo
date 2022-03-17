@@ -15,34 +15,6 @@ impl Cursor {
             target_column: None,
         }
     }
-
-    pub(crate) fn move_up(self, distance: usize) -> Cursor {
-        Cursor {
-            line: self.line.saturating_sub(distance),
-            ..self
-        }
-    }
-
-    pub(crate) fn move_down(self, distance: usize) -> Cursor {
-        Cursor {
-            line: self.line + distance,
-            ..self
-        }
-    }
-
-    pub(crate) fn move_left(self, distance: usize) -> Cursor {
-        Cursor {
-            column: self.column.saturating_sub(distance),
-            ..self
-        }
-    }
-
-    pub(crate) fn move_right(self, distance: usize) -> Cursor {
-        Cursor {
-            column: self.column + distance,
-            ..self
-        }
-    }
 }
 
 impl Display for Cursor {
