@@ -15,6 +15,7 @@ pub(crate) enum Mode {
 pub(crate) struct Editor {
     quit: bool,
     mode: Mode,
+    count: usize,
 
     buffers: Vec<Buffer>,
     buffer_index: usize,
@@ -27,6 +28,7 @@ pub(crate) enum Operation {
     Quit,
     Resize { lines: u16, columns: u16 },
     ChangeMode(Mode),
+    SetCount(usize),
 
     ScrollUp(usize),
     ScrollDown(usize),
@@ -44,6 +46,8 @@ pub(crate) enum Operation {
     Insert(char),
     Delete,
     Backspace,
+
+    NoOp,
 }
 
 impl Editor {
@@ -53,6 +57,7 @@ impl Editor {
         Editor {
             quit: false,
             mode: Mode::Normal,
+            count: 0,
 
             buffers: vec![Buffer::new()],
             buffer_index: 0,
@@ -183,13 +188,17 @@ impl Editor {
     }
 
     fn render_status(&self) {
+        Terminal::queue(cursor::MoveTo(0, self.viewport_lines));
+
         let mode = match self.mode {
             Mode::Normal => "normal",
             Mode::Insert => "insert",
         };
-
-        Terminal::queue(cursor::MoveTo(0, self.viewport_lines));
         Terminal::queue(style::PrintStyledContent(mode.white().on_black()));
+
+        if self.count > 0 {
+            Terminal::queue(style::Print(format!(" {}", self.count)));
+        }
     }
 
     fn handle_event(&mut self) {
@@ -208,49 +217,67 @@ impl Editor {
     fn event_to_operations_normal(&self, event: event::Event) -> Vec<Operation> {
         use Operation::*;
 
-        match event {
+        let count = if self.count == 0 { 1 } else { self.count };
+
+        let operations = match event {
             Event::Key(key_event) => {
                 let KeyEvent { modifiers, code } = key_event;
 
                 if modifiers == KeyModifiers::CONTROL {
                     match code {
                         KeyCode::Char('c') => vec![Quit],
-                        _ => Vec::new(),
+                        _ => vec![NoOp],
                     }
                 } else if modifiers == KeyModifiers::SHIFT {
                     match code {
                         // Move
-                        KeyCode::Char('H') => vec![MoveLeft(1)],
-                        KeyCode::Char('J') => vec![MoveDown(1)],
-                        KeyCode::Char('K') => vec![MoveUp(1)],
-                        KeyCode::Char('L') => vec![MoveRight(1)],
-                        _ => Vec::new(),
+                        KeyCode::Char('H') => vec![MoveLeft(count)],
+                        KeyCode::Char('J') => vec![MoveDown(count)],
+                        KeyCode::Char('K') => vec![MoveUp(count)],
+                        KeyCode::Char('L') => vec![MoveRight(count)],
+                        _ => vec![NoOp],
                     }
                 } else if modifiers == KeyModifiers::NONE {
                     match code {
+                        // Count
+                        KeyCode::Char(c) if ('0'..='9').contains(&c) => {
+                            let n = c.to_string().parse().unwrap();
+                            let new_count = if self.count == 0 {
+                                n
+                            } else {
+                                (self.count * 10) + n
+                            };
+                            vec![SetCount(new_count)]
+                        }
                         // Scroll
-                        KeyCode::Up => vec![ScrollUp(1)],
-                        KeyCode::Down => vec![ScrollDown(1)],
-                        KeyCode::Left => vec![ScrollLeft(1)],
-                        KeyCode::Right => vec![ScrollRight(1)],
+                        KeyCode::Up => vec![ScrollUp(count)],
+                        KeyCode::Down => vec![ScrollDown(count)],
+                        KeyCode::Left => vec![ScrollLeft(count)],
+                        KeyCode::Right => vec![ScrollRight(count)],
                         // Move
-                        KeyCode::Char('h') => vec![MoveLeft(1), Reduce],
-                        KeyCode::Char('j') => vec![MoveDown(1), Reduce],
-                        KeyCode::Char('k') => vec![MoveUp(1), Reduce],
-                        KeyCode::Char('l') => vec![MoveRight(1), Reduce],
+                        KeyCode::Char('h') => vec![MoveLeft(count), Reduce],
+                        KeyCode::Char('j') => vec![MoveDown(count), Reduce],
+                        KeyCode::Char('k') => vec![MoveUp(count), Reduce],
+                        KeyCode::Char('l') => vec![MoveRight(count), Reduce],
                         // Mode
                         KeyCode::Char('i') => vec![ChangeMode(Mode::Insert), FlipBackwards],
                         // Edit
                         KeyCode::Char('d') => vec![Delete],
-                        _ => Vec::new(),
+                        _ => vec![NoOp],
                     }
                 } else {
-                    Vec::new()
+                    vec![NoOp]
                 }
             }
             Event::Resize(columns, lines) => vec![Resize { lines, columns }],
-            _ => Vec::new(),
-        }
+            _ => vec![NoOp],
+        };
+
+        // Must always perform an operation, so the count can be reset properly. If no work needs
+        // to be done, use `vec![NoOp]`.
+        assert!(!operations.is_empty());
+
+        operations
     }
 
     fn event_to_operations_insert(&self, event: event::Event) -> Vec<Operation> {
@@ -301,6 +328,8 @@ impl Editor {
 
         let buffer = &mut self.buffers[self.buffer_index];
 
+        let old_count = self.count;
+
         match operation {
             Quit => {
                 self.quit = true;
@@ -311,6 +340,9 @@ impl Editor {
             }
             ChangeMode(mode) => {
                 self.mode = mode;
+            }
+            SetCount(new_count) => {
+                self.count = new_count;
             }
             ScrollUp(distance) => {
                 buffer.scroll_up(distance);
@@ -353,6 +385,13 @@ impl Editor {
             Backspace => {
                 buffer.backspace();
             }
+            NoOp => {}
+        }
+
+        let new_count = self.count;
+
+        if old_count == new_count {
+            self.count = 0;
         }
     }
 }
