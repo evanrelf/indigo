@@ -12,6 +12,25 @@ pub(crate) struct Buffer {
     pub(crate) viewport_columns_offset: usize,
 }
 
+pub(crate) enum Operation {
+    ScrollUp(usize),
+    ScrollDown(usize),
+    ScrollLeft(usize),
+    ScrollRight(usize),
+
+    MoveUp(usize),
+    MoveDown(usize),
+    MoveLeft(usize),
+    MoveRight(usize),
+
+    Reduce,
+    FlipBackwards,
+
+    Insert(char),
+    Delete,
+    Backspace,
+}
+
 impl Buffer {
     pub(crate) fn new() -> Buffer {
         let rope = Rope::new();
@@ -276,6 +295,54 @@ impl Buffer {
             selection.cursor = self.index_to_cursor(cursor_index + 1).unwrap();
         }
         self
+    }
+
+    pub(crate) fn apply_operation(&mut self, operation: Operation) {
+        use Operation::*;
+
+        match operation {
+            ScrollUp(distance) => {
+                self.scroll_up(distance);
+            }
+            ScrollDown(distance) => {
+                self.scroll_down(distance);
+            }
+            ScrollLeft(distance) => {
+                self.scroll_left(distance);
+            }
+            ScrollRight(distance) => {
+                self.scroll_right(distance);
+            }
+            MoveUp(distance) => {
+                self.move_up(distance);
+            }
+            MoveDown(distance) => {
+                self.move_down(distance);
+            }
+            MoveLeft(distance) => {
+                self.move_left(distance);
+            }
+            MoveRight(distance) => {
+                self.move_right(distance);
+            }
+            Reduce => {
+                self.reduce();
+            }
+            FlipBackwards => {
+                for selection in &self.selections {
+                    selection.lock().unwrap().flip_backwards();
+                }
+            }
+            Insert(c) => {
+                self.insert(c);
+            }
+            Delete => {
+                self.delete();
+            }
+            Backspace => {
+                self.backspace();
+            }
+        }
     }
 }
 

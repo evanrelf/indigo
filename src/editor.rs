@@ -1,4 +1,7 @@
-use crate::{buffer::Buffer, terminal::Terminal};
+use crate::{
+    buffer::{self, Buffer},
+    terminal::Terminal,
+};
 use crossterm::{
     cursor,
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
@@ -29,24 +32,7 @@ pub(crate) enum Operation {
     Resize { lines: u16, columns: u16 },
     ChangeMode(Mode),
     SetCount(usize),
-
-    ScrollUp(usize),
-    ScrollDown(usize),
-    ScrollLeft(usize),
-    ScrollRight(usize),
-
-    MoveUp(usize),
-    MoveDown(usize),
-    MoveLeft(usize),
-    MoveRight(usize),
-
-    Reduce,
-    FlipBackwards,
-
-    Insert(char),
-    Delete,
-    Backspace,
-
+    Buffer(buffer::Operation),
     NoOp,
 }
 
@@ -215,6 +201,7 @@ impl Editor {
     }
 
     fn event_to_operations_normal(&self, event: event::Event) -> Vec<Operation> {
+        use buffer::Operation::*;
         use Operation::*;
 
         let count = if self.count == 0 { 1 } else { self.count };
@@ -231,10 +218,10 @@ impl Editor {
                 } else if modifiers == KeyModifiers::SHIFT {
                     match code {
                         // Move
-                        KeyCode::Char('H') => vec![MoveLeft(count)],
-                        KeyCode::Char('J') => vec![MoveDown(count)],
-                        KeyCode::Char('K') => vec![MoveUp(count)],
-                        KeyCode::Char('L') => vec![MoveRight(count)],
+                        KeyCode::Char('H') => vec![Buffer(MoveLeft(count))],
+                        KeyCode::Char('J') => vec![Buffer(MoveDown(count))],
+                        KeyCode::Char('K') => vec![Buffer(MoveUp(count))],
+                        KeyCode::Char('L') => vec![Buffer(MoveRight(count))],
                         _ => vec![NoOp],
                     }
                 } else if modifiers == KeyModifiers::NONE {
@@ -250,19 +237,19 @@ impl Editor {
                             vec![SetCount(new_count)]
                         }
                         // Scroll
-                        KeyCode::Up => vec![ScrollUp(count)],
-                        KeyCode::Down => vec![ScrollDown(count)],
-                        KeyCode::Left => vec![ScrollLeft(count)],
-                        KeyCode::Right => vec![ScrollRight(count)],
+                        KeyCode::Up => vec![Buffer(ScrollUp(count))],
+                        KeyCode::Down => vec![Buffer(ScrollDown(count))],
+                        KeyCode::Left => vec![Buffer(ScrollLeft(count))],
+                        KeyCode::Right => vec![Buffer(ScrollRight(count))],
                         // Move
-                        KeyCode::Char('h') => vec![MoveLeft(count), Reduce],
-                        KeyCode::Char('j') => vec![MoveDown(count), Reduce],
-                        KeyCode::Char('k') => vec![MoveUp(count), Reduce],
-                        KeyCode::Char('l') => vec![MoveRight(count), Reduce],
+                        KeyCode::Char('h') => vec![Buffer(MoveLeft(count)), Buffer(Reduce)],
+                        KeyCode::Char('j') => vec![Buffer(MoveDown(count)), Buffer(Reduce)],
+                        KeyCode::Char('k') => vec![Buffer(MoveUp(count)), Buffer(Reduce)],
+                        KeyCode::Char('l') => vec![Buffer(MoveRight(count)), Buffer(Reduce)],
                         // Mode
-                        KeyCode::Char('i') => vec![ChangeMode(Mode::Insert), FlipBackwards],
+                        KeyCode::Char('i') => vec![ChangeMode(Mode::Insert), Buffer(FlipBackwards)],
                         // Edit
-                        KeyCode::Char('d') => vec![Delete],
+                        KeyCode::Char('d') => vec![Buffer(Delete)],
                         _ => vec![NoOp],
                     }
                 } else {
@@ -281,6 +268,7 @@ impl Editor {
     }
 
     fn event_to_operations_insert(&self, event: event::Event) -> Vec<Operation> {
+        use buffer::Operation::*;
         use Operation::*;
 
         match event {
@@ -295,23 +283,23 @@ impl Editor {
                 } else if modifiers == KeyModifiers::SHIFT {
                     match code {
                         // Edit
-                        KeyCode::Char(c) => vec![Insert(c)],
-                        KeyCode::Enter => vec![Insert('\n')],
+                        KeyCode::Char(c) => vec![Buffer(Insert(c))],
+                        KeyCode::Enter => vec![Buffer(Insert('\n'))],
                         _ => Vec::new(),
                     }
                 } else if modifiers == KeyModifiers::NONE {
                     match code {
                         // Scroll
-                        KeyCode::Up => vec![ScrollUp(1)],
-                        KeyCode::Down => vec![ScrollDown(1)],
-                        KeyCode::Left => vec![ScrollLeft(1)],
-                        KeyCode::Right => vec![ScrollRight(1)],
+                        KeyCode::Up => vec![Buffer(ScrollUp(1))],
+                        KeyCode::Down => vec![Buffer(ScrollDown(1))],
+                        KeyCode::Left => vec![Buffer(ScrollLeft(1))],
+                        KeyCode::Right => vec![Buffer(ScrollRight(1))],
                         // Mode
                         KeyCode::Esc => vec![ChangeMode(Mode::Normal)],
                         // Edit
-                        KeyCode::Char(c) => vec![Insert(c)],
-                        KeyCode::Enter => vec![Insert('\n')],
-                        KeyCode::Backspace => vec![Backspace],
+                        KeyCode::Char(c) => vec![Buffer(Insert(c))],
+                        KeyCode::Enter => vec![Buffer(Insert('\n'))],
+                        KeyCode::Backspace => vec![Buffer(Backspace)],
                         _ => vec![],
                     }
                 } else {
@@ -325,8 +313,6 @@ impl Editor {
 
     fn apply_operation(&mut self, operation: Operation) {
         use Operation::*;
-
-        let buffer = &mut self.buffers[self.buffer_index];
 
         let old_count = self.count;
 
@@ -344,46 +330,9 @@ impl Editor {
             SetCount(new_count) => {
                 self.count = new_count;
             }
-            ScrollUp(distance) => {
-                buffer.scroll_up(distance);
-            }
-            ScrollDown(distance) => {
-                buffer.scroll_down(distance);
-            }
-            ScrollLeft(distance) => {
-                buffer.scroll_left(distance);
-            }
-            ScrollRight(distance) => {
-                buffer.scroll_right(distance);
-            }
-            MoveUp(distance) => {
-                buffer.move_up(distance);
-            }
-            MoveDown(distance) => {
-                buffer.move_down(distance);
-            }
-            MoveLeft(distance) => {
-                buffer.move_left(distance);
-            }
-            MoveRight(distance) => {
-                buffer.move_right(distance);
-            }
-            Reduce => {
-                buffer.reduce();
-            }
-            FlipBackwards => {
-                for selection in &buffer.selections {
-                    selection.lock().unwrap().flip_backwards();
-                }
-            }
-            Insert(c) => {
-                buffer.insert(c);
-            }
-            Delete => {
-                buffer.delete();
-            }
-            Backspace => {
-                buffer.backspace();
+            Buffer(operation) => {
+                let buffer = &mut self.buffers[self.buffer_index];
+                buffer.apply_operation(operation);
             }
             NoOp => {}
         }
