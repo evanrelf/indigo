@@ -50,7 +50,7 @@ impl Selection {
     }
 
     pub(crate) fn reduce(&mut self) -> &mut Selection {
-        self.anchor = self.cursor;
+        self.anchor = self.cursor.clone();
         self
     }
 }
@@ -73,7 +73,7 @@ impl From<(usize, usize)> for Selection {
 impl From<Cursor> for Selection {
     fn from(cursor: Cursor) -> Selection {
         Selection {
-            anchor: cursor,
+            anchor: cursor.clone(),
             cursor,
         }
     }

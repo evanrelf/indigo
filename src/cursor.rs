@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub(crate) struct Cursor {
     pub(crate) line: usize,
     pub(crate) column: usize,

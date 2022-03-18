@@ -80,7 +80,7 @@ impl Buffer {
         }
     }
 
-    pub(crate) fn cursor_to_index(&self, cursor: Cursor) -> Option<usize> {
+    pub(crate) fn cursor_to_index(&self, cursor: &Cursor) -> Option<usize> {
         let line_index = self.rope.try_line_to_char(cursor.line).ok()?;
         let line_length = self.rope.get_line(cursor.line)?.len_chars();
         if line_length > cursor.column {
@@ -101,8 +101,8 @@ impl Buffer {
     }
 
     pub(crate) fn selection_to_slice(&self, selection: &Selection) -> Option<RopeSlice> {
-        let anchor_index = self.cursor_to_index(selection.anchor)?;
-        let cursor_index = self.cursor_to_index(selection.cursor)?;
+        let anchor_index = self.cursor_to_index(&selection.anchor)?;
+        let cursor_index = self.cursor_to_index(&selection.cursor)?;
         if selection.is_forwards() {
             self.rope.get_slice(anchor_index..=cursor_index)
         } else {
@@ -122,22 +122,22 @@ impl Buffer {
                 Some(Cursor {
                     column: target_column,
                     target_column: None,
-                    ..*cursor
+                    ..cursor.clone()
                 })
             } else {
                 Some(Cursor {
                     column: line_length - 1,
-                    ..*cursor
+                    ..cursor.clone()
                 })
             }
         } else {
             if line_length > cursor.column {
-                Some(*cursor)
+                Some(cursor.clone())
             } else {
                 Some(Cursor {
                     column: line_length - 1,
                     target_column: Some(cursor.column),
-                    ..*cursor
+                    ..cursor.clone()
                 })
             }
         }
@@ -191,7 +191,7 @@ impl Buffer {
     pub(crate) fn move_left(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
-            let old_index = self.cursor_to_index(selection.cursor).unwrap();
+            let old_index = self.cursor_to_index(&selection.cursor).unwrap();
             let new_index = old_index.saturating_sub(distance);
             selection.cursor = self.index_to_cursor(new_index).unwrap();
         }
@@ -201,7 +201,7 @@ impl Buffer {
     pub(crate) fn move_right(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
-            let old_index = self.cursor_to_index(selection.cursor).unwrap();
+            let old_index = self.cursor_to_index(&selection.cursor).unwrap();
             let new_index = old_index + distance;
             if new_index < self.rope.len_chars() {
                 selection.cursor = self.index_to_cursor(new_index).unwrap();
@@ -221,8 +221,8 @@ impl Buffer {
     pub(crate) fn backspace(&mut self) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
-            let anchor_index = self.cursor_to_index(selection.cursor).unwrap();
-            let cursor_index = self.cursor_to_index(selection.cursor).unwrap();
+            let anchor_index = self.cursor_to_index(&selection.cursor).unwrap();
+            let cursor_index = self.cursor_to_index(&selection.cursor).unwrap();
             if cursor_index > 0 {
                 // Delete character
                 self.rope.remove(cursor_index - 1..cursor_index);
@@ -240,8 +240,8 @@ impl Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             selection.flip_backwards();
-            let anchor_index = self.cursor_to_index(selection.anchor).unwrap();
-            let cursor_index = self.cursor_to_index(selection.cursor).unwrap();
+            let anchor_index = self.cursor_to_index(&selection.anchor).unwrap();
+            let cursor_index = self.cursor_to_index(&selection.cursor).unwrap();
             self.rope.remove(cursor_index..=anchor_index);
             selection.reduce();
             if let Some(s) = self.corrected_selection(&selection) {
@@ -255,8 +255,8 @@ impl Buffer {
         for selection_mutex in &self.selections {
             // Insert character
             let mut selection = selection_mutex.lock().unwrap();
-            let anchor_index = self.cursor_to_index(selection.anchor).unwrap();
-            let cursor_index = self.cursor_to_index(selection.cursor).unwrap();
+            let anchor_index = self.cursor_to_index(&selection.anchor).unwrap();
+            let cursor_index = self.cursor_to_index(&selection.cursor).unwrap();
 
             if selection.is_forwards() {
                 self.rope.insert_char(anchor_index, c);
@@ -277,7 +277,7 @@ fn test_index_cursor() {
     fn case(s: &str, tuple: (usize, usize), expected: char) {
         let buffer = Buffer::from_str(s);
         let cursor = Cursor::from(tuple);
-        let index = buffer.cursor_to_index(cursor).unwrap();
+        let index = buffer.cursor_to_index(&cursor).unwrap();
         let actual = buffer.rope.char(index);
         assert!(
             expected == actual,
@@ -304,10 +304,10 @@ fn test_index_cursor_roundtrip() {
     fn case(result: CaseResult, s: &str, tuple: (usize, usize)) {
         let buffer = Buffer::from_str(s);
         let cursor = Cursor::from(tuple);
-        let expected = Some(cursor);
         let actual = buffer
-            .cursor_to_index(cursor)
+            .cursor_to_index(&cursor)
             .and_then(|i| buffer.index_to_cursor(i));
+        let expected = Some(cursor);
         assert!(
             match result {
                 Pass => expected == actual,

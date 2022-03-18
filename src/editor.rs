@@ -142,7 +142,7 @@ impl Editor {
                 let anchor_column =
                     (selection.anchor.column - buffer.viewport_columns_offset) as u16;
                 let anchor_char = {
-                    let anchor_index = buffer.cursor_to_index(selection.anchor).unwrap();
+                    let anchor_index = buffer.cursor_to_index(&selection.anchor).unwrap();
                     let char = buffer.rope.char(anchor_index);
                     if char == '\n' {
                         ' '
@@ -163,7 +163,7 @@ impl Editor {
                 let cursor_column =
                     (selection.cursor.column - buffer.viewport_columns_offset) as u16;
                 let cursor_char = {
-                    let cursor_index = buffer.cursor_to_index(selection.cursor).unwrap();
+                    let cursor_index = buffer.cursor_to_index(&selection.cursor).unwrap();
                     let char = buffer.rope.char(cursor_index);
                     if char == '\n' {
                         ' '
