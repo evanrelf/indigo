@@ -1,7 +1,4 @@
-use crate::{
-    buffer::{Buffer, Mode},
-    terminal::Terminal,
-};
+use crate::{buffer::Buffer, terminal::Terminal};
 use crossterm::{
     cursor,
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
@@ -10,8 +7,14 @@ use crossterm::{
 };
 use std::path::Path;
 
+pub(crate) enum Mode {
+    Normal,
+    Insert,
+}
+
 pub(crate) struct Editor {
     quit: bool,
+    mode: Mode,
 
     buffers: Vec<Buffer>,
     buffer_index: usize,
@@ -49,6 +52,7 @@ impl Editor {
 
         Editor {
             quit: false,
+            mode: Mode::Normal,
 
             buffers: vec![Buffer::new()],
             buffer_index: 0,
@@ -179,7 +183,7 @@ impl Editor {
     }
 
     fn render_status(&self) {
-        let mode = match self.buffers[self.buffer_index].mode {
+        let mode = match self.mode {
             Mode::Normal => "normal",
             Mode::Insert => "insert",
         };
@@ -189,11 +193,9 @@ impl Editor {
     }
 
     fn handle_event(&mut self) {
-        let buffer = &self.buffers[self.buffer_index];
-
         let event = event::read().unwrap();
 
-        let operations = match buffer.mode {
+        let operations = match self.mode {
             Mode::Normal => self.event_to_operations_normal(event),
             Mode::Insert => self.event_to_operations_insert(event),
         };
@@ -308,7 +310,7 @@ impl Editor {
                 self.viewport_columns = columns;
             }
             ChangeMode(mode) => {
-                buffer.mode = mode;
+                self.mode = mode;
             }
             ScrollUp(distance) => {
                 buffer.scroll_up(distance);

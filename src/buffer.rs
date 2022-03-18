@@ -2,18 +2,11 @@ use crate::{cursor::Cursor, selection::Selection};
 use ropey::{Rope, RopeSlice};
 use std::{fs::File, io::BufReader, path::Path, sync::Mutex};
 
-pub(crate) enum Mode {
-    Normal,
-    Insert,
-}
-
 pub(crate) struct Buffer {
     pub(crate) rope: Rope,
 
     pub(crate) selections: Vec<Mutex<Selection>>,
     pub(crate) primary_selection: usize,
-
-    pub(crate) mode: Mode,
 
     pub(crate) viewport_lines_offset: usize,
     pub(crate) viewport_columns_offset: usize,
@@ -30,8 +23,6 @@ impl Buffer {
 
             selections,
             primary_selection: 0,
-
-            mode: Mode::Normal,
 
             viewport_lines_offset: 0,
             viewport_columns_offset: 0,
@@ -55,8 +46,6 @@ impl Buffer {
             selections,
             primary_selection: 0,
 
-            mode: Mode::Normal,
-
             viewport_lines_offset: 0,
             viewport_columns_offset: 0,
         }
@@ -72,8 +61,6 @@ impl Buffer {
 
             selections,
             primary_selection: 0,
-
-            mode: Mode::Normal,
 
             viewport_lines_offset: 0,
             viewport_columns_offset: 0,
