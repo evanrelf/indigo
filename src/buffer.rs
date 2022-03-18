@@ -87,6 +87,10 @@ impl Buffer {
         })
     }
 
+    pub(crate) fn is_valid_cursor(&self, cursor: &Cursor) -> bool {
+        self.cursor_to_index(cursor).is_some()
+    }
+
     pub(crate) fn selection_to_slice(&self, selection: &Selection) -> Option<RopeSlice> {
         let anchor_index = self.cursor_to_index(&selection.anchor)?;
         let cursor_index = self.cursor_to_index(&selection.cursor)?;
@@ -162,7 +166,14 @@ impl Buffer {
     pub(crate) fn move_up(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
-            todo!();
+            let cursor = self.corrected_cursor(&Cursor {
+                line: selection.cursor.line.saturating_sub(distance),
+                ..selection.cursor
+            });
+            match cursor {
+                Some(cursor) if self.is_valid_cursor(&cursor) => selection.cursor = cursor,
+                _ => {}
+            }
         }
         self
     }
@@ -170,7 +181,14 @@ impl Buffer {
     pub(crate) fn move_down(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
-            todo!();
+            let cursor = self.corrected_cursor(&Cursor {
+                line: selection.cursor.line + distance,
+                ..selection.cursor
+            });
+            match cursor {
+                Some(cursor) if self.is_valid_cursor(&cursor) => selection.cursor = cursor,
+                _ => {}
+            }
         }
         self
     }
