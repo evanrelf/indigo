@@ -192,6 +192,8 @@ impl Buffer {
             let new_index = old_index + distance;
             if new_index < self.rope.len_chars() {
                 selection.cursor = self.index_to_cursor(new_index).unwrap();
+            } else {
+                selection.cursor = self.index_to_cursor(self.rope.len_chars() - 1).unwrap();
             }
         }
         self
