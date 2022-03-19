@@ -1,5 +1,6 @@
 use crate::{
     buffer::{self, Buffer},
+    operand::Operand,
     selection,
     terminal::Terminal,
 };
@@ -33,6 +34,42 @@ pub(crate) enum Operation {
     SetCount(usize),
     Buffer(buffer::Operation),
     NoOp,
+}
+
+impl Operand for Editor {
+    type Operation = Operation;
+
+    fn apply(&mut self, operation: Self::Operation) {
+        use Operation::*;
+
+        let old_count = self.count;
+
+        match operation {
+            Quit => {
+                self.quit = true;
+            }
+            Resize { lines, columns } => {
+                self.viewport_lines = lines;
+                self.viewport_columns = columns;
+            }
+            ChangeMode(mode) => {
+                self.mode = mode;
+            }
+            SetCount(new_count) => {
+                self.count = new_count;
+            }
+            Buffer(operation) => {
+                self.buffers[self.buffer_index].apply(operation);
+            }
+            NoOp => {}
+        }
+
+        let new_count = self.count;
+
+        if old_count == new_count {
+            self.count = 0;
+        }
+    }
 }
 
 impl Editor {
@@ -193,7 +230,7 @@ impl Editor {
         };
 
         for operation in operations {
-            self.apply_operation(operation);
+            self.apply(operation);
         }
     }
 
@@ -319,38 +356,6 @@ impl Editor {
             }
             Event::Resize(columns, lines) => vec![Resize { lines, columns }],
             _ => Vec::new(),
-        }
-    }
-
-    pub(crate) fn apply_operation(&mut self, operation: Operation) {
-        use Operation::*;
-
-        let old_count = self.count;
-
-        match operation {
-            Quit => {
-                self.quit = true;
-            }
-            Resize { lines, columns } => {
-                self.viewport_lines = lines;
-                self.viewport_columns = columns;
-            }
-            ChangeMode(mode) => {
-                self.mode = mode;
-            }
-            SetCount(new_count) => {
-                self.count = new_count;
-            }
-            Buffer(operation) => {
-                self.buffers[self.buffer_index].apply_operation(operation);
-            }
-            NoOp => {}
-        }
-
-        let new_count = self.count;
-
-        if old_count == new_count {
-            self.count = 0;
         }
     }
 }

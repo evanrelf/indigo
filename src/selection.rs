@@ -1,4 +1,5 @@
 use crate::cursor::Cursor;
+use crate::operand::Operand;
 use std::fmt::Display;
 
 #[derive(Default)]
@@ -15,18 +16,10 @@ pub(crate) enum Operation {
     Reduce,
 }
 
-impl Selection {
-    pub(crate) fn new<P>(anchor: P, cursor: P) -> Self
-    where
-        P: Into<Cursor>,
-    {
-        Selection {
-            anchor: anchor.into(),
-            cursor: cursor.into(),
-        }
-    }
+impl Operand for Selection {
+    type Operation = Operation;
 
-    pub(crate) fn apply_operation(&mut self, operation: Operation) {
+    fn apply(&mut self, operation: Self::Operation) {
         use Operation::*;
 
         match operation {
@@ -42,6 +35,18 @@ impl Selection {
             Reduce => {
                 self.reduce();
             }
+        }
+    }
+}
+
+impl Selection {
+    pub(crate) fn new<P>(anchor: P, cursor: P) -> Self
+    where
+        P: Into<Cursor>,
+    {
+        Selection {
+            anchor: anchor.into(),
+            cursor: cursor.into(),
         }
     }
 

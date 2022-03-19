@@ -1,5 +1,6 @@
 use crate::{
     cursor::Cursor,
+    operand::Operand,
     selection::{self, Selection},
 };
 use ropey::{Rope, RopeSlice};
@@ -31,53 +32,10 @@ pub(crate) enum Operation {
     Backspace,
 }
 
-impl Buffer {
-    pub(crate) fn new() -> Self {
-        let rope = Rope::new();
-        let selections = vec![Mutex::new(Selection::default())];
+impl Operand for Buffer {
+    type Operation = Operation;
 
-        Buffer {
-            rope,
-            selections,
-            primary_selection_index: 0,
-            viewport_lines_offset: 0,
-            viewport_columns_offset: 0,
-        }
-    }
-
-    pub(crate) fn from_file<P>(path: P) -> Self
-    where
-        P: AsRef<Path>,
-    {
-        let file = File::open(path).unwrap();
-        let reader = BufReader::new(file);
-
-        let rope = Rope::from_reader(reader).unwrap();
-        let selections = vec![Mutex::new(Selection::default())];
-
-        Buffer {
-            rope,
-            selections,
-            primary_selection_index: 0,
-            viewport_lines_offset: 0,
-            viewport_columns_offset: 0,
-        }
-    }
-
-    fn from_str(s: &str) -> Self {
-        let rope = Rope::from_str(s);
-        let selections = vec![Mutex::new(Selection::default())];
-
-        Buffer {
-            rope,
-            selections,
-            primary_selection_index: 0,
-            viewport_lines_offset: 0,
-            viewport_columns_offset: 0,
-        }
-    }
-
-    pub(crate) fn apply_operation(&mut self, operation: Operation) {
+    fn apply(&mut self, operation: Self::Operation) {
         use Operation::*;
 
         match operation {
@@ -123,14 +81,11 @@ impl Buffer {
                 self.selections[self.primary_selection_index]
                     .get_mut()
                     .unwrap()
-                    .apply_operation(operation);
+                    .apply(operation);
             }
             AllSelections(operation) => {
                 for selection in &mut self.selections {
-                    selection
-                        .get_mut()
-                        .unwrap()
-                        .apply_operation(operation.clone());
+                    selection.get_mut().unwrap().apply(operation.clone());
                 }
             }
             Insert(c) => {
@@ -142,6 +97,53 @@ impl Buffer {
             Delete => {
                 self.delete();
             }
+        }
+    }
+}
+
+impl Buffer {
+    pub(crate) fn new() -> Self {
+        let rope = Rope::new();
+        let selections = vec![Mutex::new(Selection::default())];
+
+        Buffer {
+            rope,
+            selections,
+            primary_selection_index: 0,
+            viewport_lines_offset: 0,
+            viewport_columns_offset: 0,
+        }
+    }
+
+    pub(crate) fn from_file<P>(path: P) -> Self
+    where
+        P: AsRef<Path>,
+    {
+        let file = File::open(path).unwrap();
+        let reader = BufReader::new(file);
+
+        let rope = Rope::from_reader(reader).unwrap();
+        let selections = vec![Mutex::new(Selection::default())];
+
+        Buffer {
+            rope,
+            selections,
+            primary_selection_index: 0,
+            viewport_lines_offset: 0,
+            viewport_columns_offset: 0,
+        }
+    }
+
+    fn from_str(s: &str) -> Self {
+        let rope = Rope::from_str(s);
+        let selections = vec![Mutex::new(Selection::default())];
+
+        Buffer {
+            rope,
+            selections,
+            primary_selection_index: 0,
+            viewport_lines_offset: 0,
+            viewport_columns_offset: 0,
         }
     }
 
