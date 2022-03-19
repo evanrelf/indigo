@@ -307,7 +307,7 @@ impl Editor {
         }
     }
 
-    fn apply_operation(&mut self, operation: Operation) {
+    pub(crate) fn apply_operation(&mut self, operation: Operation) {
         use Operation::*;
 
         let old_count = self.count;
