@@ -6,7 +6,7 @@ pub(crate) struct Buffer {
     rope: Rope,
 
     selections: Vec<Mutex<Selection>>,
-    primary_selection: usize,
+    primary_selection_index: usize,
 
     viewport_lines_offset: usize,
     viewport_columns_offset: usize,
@@ -43,7 +43,7 @@ impl Buffer {
             rope,
 
             selections,
-            primary_selection: 0,
+            primary_selection_index: 0,
 
             viewport_lines_offset: 0,
             viewport_columns_offset: 0,
@@ -65,7 +65,7 @@ impl Buffer {
             rope,
 
             selections,
-            primary_selection: 0,
+            primary_selection_index: 0,
 
             viewport_lines_offset: 0,
             viewport_columns_offset: 0,
@@ -81,7 +81,7 @@ impl Buffer {
             rope,
 
             selections,
-            primary_selection: 0,
+            primary_selection_index: 0,
 
             viewport_lines_offset: 0,
             viewport_columns_offset: 0,
@@ -148,8 +148,8 @@ impl Buffer {
         &self.selections
     }
 
-    pub(crate) fn primary_selection(&self) -> usize {
-        self.primary_selection
+    pub(crate) fn primary_selection_index(&self) -> usize {
+        self.primary_selection_index
     }
 
     pub(crate) fn viewport_lines_offset(&self) -> usize {
