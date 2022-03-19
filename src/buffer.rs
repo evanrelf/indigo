@@ -22,7 +22,8 @@ pub(crate) enum Operation {
     MoveDown(usize),
     MoveLeft(usize),
     MoveRight(usize),
-    Selections(selection::Operation),
+    PrimarySelection(selection::Operation),
+    AllSelections(selection::Operation),
     Insert(char),
     Delete,
     Backspace,
@@ -102,7 +103,13 @@ impl Buffer {
             MoveRight(distance) => {
                 self.move_right(distance);
             }
-            Selections(operation) => {
+            PrimarySelection(operation) => {
+                self.selections[self.primary_selection_index]
+                    .lock()
+                    .unwrap()
+                    .apply_operation(operation);
+            }
+            AllSelections(operation) => {
                 for selection in &self.selections {
                     selection.lock().unwrap().apply_operation(operation.clone());
                 }

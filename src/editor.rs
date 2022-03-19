@@ -241,20 +241,23 @@ impl Editor {
                         KeyCode::Right => vec![Buffer(ScrollRight(count))],
                         // Move
                         KeyCode::Char('h') => {
-                            vec![Buffer(MoveLeft(count)), Buffer(Selections(Reduce))]
+                            vec![Buffer(MoveLeft(count)), Buffer(AllSelections(Reduce))]
                         }
                         KeyCode::Char('j') => {
-                            vec![Buffer(MoveDown(count)), Buffer(Selections(Reduce))]
+                            vec![Buffer(MoveDown(count)), Buffer(AllSelections(Reduce))]
                         }
                         KeyCode::Char('k') => {
-                            vec![Buffer(MoveUp(count)), Buffer(Selections(Reduce))]
+                            vec![Buffer(MoveUp(count)), Buffer(AllSelections(Reduce))]
                         }
                         KeyCode::Char('l') => {
-                            vec![Buffer(MoveRight(count)), Buffer(Selections(Reduce))]
+                            vec![Buffer(MoveRight(count)), Buffer(AllSelections(Reduce))]
                         }
                         // Mode
                         KeyCode::Char('i') => {
-                            vec![ChangeMode(Mode::Insert), Buffer(Selections(FlipBackwards))]
+                            vec![
+                                ChangeMode(Mode::Insert),
+                                Buffer(AllSelections(FlipBackwards)),
+                            ]
                         }
                         // Edit
                         KeyCode::Char('d') => vec![Buffer(Delete)],
