@@ -1,5 +1,6 @@
 use crate::{
     buffer::{self, Buffer},
+    selection,
     terminal::Terminal,
 };
 use crossterm::{
@@ -198,6 +199,7 @@ impl Editor {
 
     fn event_to_operations_normal(&self, event: event::Event) -> Vec<Operation> {
         use buffer::Operation::*;
+        use selection::Operation::*;
         use Operation::*;
 
         let count = if self.count == 0 { 1 } else { self.count };
@@ -238,12 +240,22 @@ impl Editor {
                         KeyCode::Left => vec![Buffer(ScrollLeft(count))],
                         KeyCode::Right => vec![Buffer(ScrollRight(count))],
                         // Move
-                        KeyCode::Char('h') => vec![Buffer(MoveLeft(count)), Buffer(Reduce)],
-                        KeyCode::Char('j') => vec![Buffer(MoveDown(count)), Buffer(Reduce)],
-                        KeyCode::Char('k') => vec![Buffer(MoveUp(count)), Buffer(Reduce)],
-                        KeyCode::Char('l') => vec![Buffer(MoveRight(count)), Buffer(Reduce)],
+                        KeyCode::Char('h') => {
+                            vec![Buffer(MoveLeft(count)), Buffer(Selections(Reduce))]
+                        }
+                        KeyCode::Char('j') => {
+                            vec![Buffer(MoveDown(count)), Buffer(Selections(Reduce))]
+                        }
+                        KeyCode::Char('k') => {
+                            vec![Buffer(MoveUp(count)), Buffer(Selections(Reduce))]
+                        }
+                        KeyCode::Char('l') => {
+                            vec![Buffer(MoveRight(count)), Buffer(Selections(Reduce))]
+                        }
                         // Mode
-                        KeyCode::Char('i') => vec![ChangeMode(Mode::Insert), Buffer(FlipBackwards)],
+                        KeyCode::Char('i') => {
+                            vec![ChangeMode(Mode::Insert), Buffer(Selections(FlipBackwards))]
+                        }
                         // Edit
                         KeyCode::Char('d') => vec![Buffer(Delete)],
                         _ => vec![NoOp],

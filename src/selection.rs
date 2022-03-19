@@ -7,6 +7,14 @@ pub(crate) struct Selection {
     pub(crate) cursor: Cursor,
 }
 
+#[derive(Clone)]
+pub(crate) enum Operation {
+    Flip,
+    FlipForwards,
+    FlipBackwards,
+    Reduce,
+}
+
 impl Selection {
     pub(crate) fn new<P>(anchor: P, cursor: P) -> Selection
     where
@@ -15,6 +23,25 @@ impl Selection {
         Selection {
             anchor: anchor.into(),
             cursor: cursor.into(),
+        }
+    }
+
+    pub(crate) fn apply_operation(&mut self, operation: Operation) {
+        use Operation::*;
+
+        match operation {
+            Flip => {
+                self.flip();
+            }
+            FlipForwards => {
+                self.flip_forwards();
+            }
+            FlipBackwards => {
+                self.flip_backwards();
+            }
+            Reduce => {
+                self.reduce();
+            }
         }
     }
 

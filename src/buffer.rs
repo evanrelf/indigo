@@ -1,4 +1,7 @@
-use crate::{cursor::Cursor, selection::Selection};
+use crate::{
+    cursor::Cursor,
+    selection::{self, Selection},
+};
 use ropey::{Rope, RopeSlice};
 use std::{fs::File, io::BufReader, path::Path, sync::Mutex};
 
@@ -19,10 +22,7 @@ pub(crate) enum Operation {
     MoveDown(usize),
     MoveLeft(usize),
     MoveRight(usize),
-    Flip,
-    FlipForwards,
-    FlipBackwards,
-    Reduce,
+    Selections(selection::Operation),
     Insert(char),
     Delete,
     Backspace,
@@ -102,17 +102,10 @@ impl Buffer {
             MoveRight(distance) => {
                 self.move_right(distance);
             }
-            Flip => {
-                self.flip();
-            }
-            FlipForwards => {
-                self.flip_forwards();
-            }
-            FlipBackwards => {
-                self.flip_backwards();
-            }
-            Reduce => {
-                self.reduce();
+            Selections(operation) => {
+                for selection in &self.selections {
+                    selection.lock().unwrap().apply_operation(operation.clone());
+                }
             }
             Insert(c) => {
                 self.insert(c);
@@ -292,27 +285,6 @@ impl Buffer {
             } else {
                 selection.cursor = self.index_to_cursor(self.rope.len_chars() - 1).unwrap();
             }
-        }
-        self
-    }
-
-    fn flip(&mut self) -> &mut Buffer {
-        for selection in &self.selections {
-            selection.lock().unwrap().flip();
-        }
-        self
-    }
-
-    fn flip_forwards(&mut self) -> &mut Buffer {
-        for selection in &self.selections {
-            selection.lock().unwrap().flip_forwards();
-        }
-        self
-    }
-
-    fn flip_backwards(&mut self) -> &mut Buffer {
-        for selection in &self.selections {
-            selection.lock().unwrap().flip_backwards();
         }
         self
     }
