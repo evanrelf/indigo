@@ -121,13 +121,16 @@ impl Buffer {
             }
             PrimarySelection(operation) => {
                 self.selections[self.primary_selection_index]
-                    .lock()
+                    .get_mut()
                     .unwrap()
                     .apply_operation(operation);
             }
             AllSelections(operation) => {
-                for selection in &self.selections {
-                    selection.lock().unwrap().apply_operation(operation.clone());
+                for selection in &mut self.selections {
+                    selection
+                        .get_mut()
+                        .unwrap()
+                        .apply_operation(operation.clone());
                 }
             }
             Insert(c) => {
@@ -305,8 +308,8 @@ impl Buffer {
     }
 
     fn reduce(&mut self) {
-        for selection_mutex in &self.selections {
-            let mut selection = selection_mutex.lock().unwrap();
+        for selection_mutex in &mut self.selections {
+            let selection = selection_mutex.get_mut().unwrap();
             selection.reduce();
         }
     }
