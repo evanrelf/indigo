@@ -3,13 +3,13 @@ use ropey::{Rope, RopeSlice};
 use std::{fs::File, io::BufReader, path::Path, sync::Mutex};
 
 pub(crate) struct Buffer {
-    pub(crate) rope: Rope,
+    rope: Rope,
 
-    pub(crate) selections: Vec<Mutex<Selection>>,
-    pub(crate) primary_selection: usize,
+    selections: Vec<Mutex<Selection>>,
+    primary_selection: usize,
 
-    pub(crate) viewport_lines_offset: usize,
-    pub(crate) viewport_columns_offset: usize,
+    viewport_lines_offset: usize,
+    viewport_columns_offset: usize,
 }
 
 pub(crate) enum Operation {
@@ -132,6 +132,26 @@ impl Buffer {
                 self.backspace();
             }
         }
+    }
+
+    pub(crate) fn rope(&self) -> &Rope {
+        &self.rope
+    }
+
+    pub(crate) fn selections(&self) -> &Vec<Mutex<Selection>> {
+        &self.selections
+    }
+
+    pub(crate) fn primary_selection(&self) -> usize {
+        self.primary_selection
+    }
+
+    pub(crate) fn viewport_lines_offset(&self) -> usize {
+        self.viewport_lines_offset
+    }
+
+    pub(crate) fn viewport_columns_offset(&self) -> usize {
+        self.viewport_columns_offset
     }
 
     pub(crate) fn cursor_to_index(&self, cursor: &Cursor) -> Option<usize> {
