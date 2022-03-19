@@ -23,8 +23,10 @@ pub(crate) enum Operation {
     MoveLeft(usize),
     MoveRight(usize),
 
-    Reduce,
+    Flip,
+    FlipForwards,
     FlipBackwards,
+    Reduce,
 
     Insert(char),
     Delete,
@@ -114,13 +116,17 @@ impl Buffer {
             MoveRight(distance) => {
                 self.move_right(distance);
             }
-            Reduce => {
-                self.reduce();
+            Flip => {
+                self.flip();
+            }
+            FlipForwards => {
+                self.flip_forwards();
             }
             FlipBackwards => {
-                for selection in &self.selections {
-                    selection.lock().unwrap().flip_backwards();
-                }
+                self.flip_backwards();
+            }
+            Reduce => {
+                self.reduce();
             }
             Insert(c) => {
                 self.insert(c);
@@ -300,6 +306,27 @@ impl Buffer {
             } else {
                 selection.cursor = self.index_to_cursor(self.rope.len_chars() - 1).unwrap();
             }
+        }
+        self
+    }
+
+    fn flip(&mut self) -> &mut Buffer {
+        for selection in &self.selections {
+            selection.lock().unwrap().flip();
+        }
+        self
+    }
+
+    fn flip_forwards(&mut self) -> &mut Buffer {
+        for selection in &self.selections {
+            selection.lock().unwrap().flip_forwards();
+        }
+        self
+    }
+
+    fn flip_backwards(&mut self) -> &mut Buffer {
+        for selection in &self.selections {
+            selection.lock().unwrap().flip_backwards();
         }
         self
     }
