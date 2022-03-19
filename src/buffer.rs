@@ -86,6 +86,54 @@ impl Buffer {
         }
     }
 
+    pub(crate) fn apply_operation(&mut self, operation: Operation) {
+        use Operation::*;
+
+        match operation {
+            ScrollUp(distance) => {
+                self.scroll_up(distance);
+            }
+            ScrollDown(distance) => {
+                self.scroll_down(distance);
+            }
+            ScrollLeft(distance) => {
+                self.scroll_left(distance);
+            }
+            ScrollRight(distance) => {
+                self.scroll_right(distance);
+            }
+            MoveUp(distance) => {
+                self.move_up(distance);
+            }
+            MoveDown(distance) => {
+                self.move_down(distance);
+            }
+            MoveLeft(distance) => {
+                self.move_left(distance);
+            }
+            MoveRight(distance) => {
+                self.move_right(distance);
+            }
+            Reduce => {
+                self.reduce();
+            }
+            FlipBackwards => {
+                for selection in &self.selections {
+                    selection.lock().unwrap().flip_backwards();
+                }
+            }
+            Insert(c) => {
+                self.insert(c);
+            }
+            Delete => {
+                self.delete();
+            }
+            Backspace => {
+                self.backspace();
+            }
+        }
+    }
+
     pub(crate) fn cursor_to_index(&self, cursor: &Cursor) -> Option<usize> {
         let line_index = self.rope.try_line_to_char(cursor.line).ok()?;
         let line_length = self.rope.get_line(cursor.line)?.len_chars();
@@ -159,12 +207,12 @@ impl Buffer {
         Some(Selection { anchor, cursor })
     }
 
-    pub(crate) fn scroll_up(&mut self, distance: usize) -> &mut Buffer {
+    fn scroll_up(&mut self, distance: usize) -> &mut Buffer {
         self.viewport_lines_offset = self.viewport_lines_offset.saturating_sub(distance);
         self
     }
 
-    pub(crate) fn scroll_down(&mut self, distance: usize) -> &mut Buffer {
+    fn scroll_down(&mut self, distance: usize) -> &mut Buffer {
         let new_viewport_lines_offset = self.viewport_lines_offset + distance;
         if new_viewport_lines_offset <= self.rope.len_lines() {
             self.viewport_lines_offset = new_viewport_lines_offset;
@@ -172,17 +220,17 @@ impl Buffer {
         self
     }
 
-    pub(crate) fn scroll_left(&mut self, distance: usize) -> &mut Buffer {
+    fn scroll_left(&mut self, distance: usize) -> &mut Buffer {
         self.viewport_columns_offset = self.viewport_columns_offset.saturating_sub(distance);
         self
     }
 
-    pub(crate) fn scroll_right(&mut self, distance: usize) -> &mut Buffer {
+    fn scroll_right(&mut self, distance: usize) -> &mut Buffer {
         self.viewport_columns_offset += distance;
         self
     }
 
-    pub(crate) fn move_up(&mut self, distance: usize) -> &mut Buffer {
+    fn move_up(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let cursor = self.corrected_cursor(&Cursor {
@@ -197,7 +245,7 @@ impl Buffer {
         self
     }
 
-    pub(crate) fn move_down(&mut self, distance: usize) -> &mut Buffer {
+    fn move_down(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let cursor = self.corrected_cursor(&Cursor {
@@ -212,7 +260,7 @@ impl Buffer {
         self
     }
 
-    pub(crate) fn move_left(&mut self, distance: usize) -> &mut Buffer {
+    fn move_left(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let old_index = self.cursor_to_index(&selection.cursor).unwrap();
@@ -222,7 +270,7 @@ impl Buffer {
         self
     }
 
-    pub(crate) fn move_right(&mut self, distance: usize) -> &mut Buffer {
+    fn move_right(&mut self, distance: usize) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let old_index = self.cursor_to_index(&selection.cursor).unwrap();
@@ -236,7 +284,7 @@ impl Buffer {
         self
     }
 
-    pub(crate) fn reduce(&mut self) -> &mut Buffer {
+    fn reduce(&mut self) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             selection.reduce();
@@ -244,7 +292,7 @@ impl Buffer {
         self
     }
 
-    pub(crate) fn backspace(&mut self) -> &mut Buffer {
+    fn backspace(&mut self) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let anchor_index = self.cursor_to_index(&selection.cursor).unwrap();
@@ -262,7 +310,7 @@ impl Buffer {
         self
     }
 
-    pub(crate) fn delete(&mut self) -> &mut Buffer {
+    fn delete(&mut self) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             selection.flip_backwards();
@@ -277,7 +325,7 @@ impl Buffer {
         self
     }
 
-    pub(crate) fn insert(&mut self, c: char) -> &mut Buffer {
+    fn insert(&mut self, c: char) -> &mut Buffer {
         for selection_mutex in &self.selections {
             // Insert character
             let mut selection = selection_mutex.lock().unwrap();
@@ -295,54 +343,6 @@ impl Buffer {
             selection.cursor = self.index_to_cursor(cursor_index + 1).unwrap();
         }
         self
-    }
-
-    pub(crate) fn apply_operation(&mut self, operation: Operation) {
-        use Operation::*;
-
-        match operation {
-            ScrollUp(distance) => {
-                self.scroll_up(distance);
-            }
-            ScrollDown(distance) => {
-                self.scroll_down(distance);
-            }
-            ScrollLeft(distance) => {
-                self.scroll_left(distance);
-            }
-            ScrollRight(distance) => {
-                self.scroll_right(distance);
-            }
-            MoveUp(distance) => {
-                self.move_up(distance);
-            }
-            MoveDown(distance) => {
-                self.move_down(distance);
-            }
-            MoveLeft(distance) => {
-                self.move_left(distance);
-            }
-            MoveRight(distance) => {
-                self.move_right(distance);
-            }
-            Reduce => {
-                self.reduce();
-            }
-            FlipBackwards => {
-                for selection in &self.selections {
-                    selection.lock().unwrap().flip_backwards();
-                }
-            }
-            Insert(c) => {
-                self.insert(c);
-            }
-            Delete => {
-                self.delete();
-            }
-            Backspace => {
-                self.backspace();
-            }
-        }
     }
 }
 
