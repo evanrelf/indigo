@@ -23,8 +23,8 @@ pub(crate) enum Operation {
     MoveDown(usize),
     MoveLeft(usize),
     MoveRight(usize),
-    NextSelection,
-    PreviousSelection,
+    NextSelection(usize),
+    PreviousSelection(usize),
     PrimarySelection(selection::Operation),
     AllSelections(selection::Operation),
     Insert(char),
@@ -63,18 +63,18 @@ impl Operand for Buffer {
             MoveRight(distance) => {
                 self.move_right(distance);
             }
-            NextSelection => {
+            NextSelection(count) => {
                 if self.primary_selection_index >= self.selections.len() {
                     self.primary_selection_index = 0;
                 } else {
-                    self.primary_selection_index += 1;
+                    self.primary_selection_index += count;
                 }
             }
-            PreviousSelection => {
+            PreviousSelection(count) => {
                 if self.primary_selection_index == 0 {
-                    self.primary_selection_index = self.selections.len() - 1;
+                    self.primary_selection_index = self.selections.len() - count;
                 } else {
-                    self.primary_selection_index -= 1;
+                    self.primary_selection_index -= count;
                 }
             }
             PrimarySelection(operation) => {
