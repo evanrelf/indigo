@@ -32,7 +32,7 @@ pub(crate) enum Operation {
 }
 
 impl Buffer {
-    pub(crate) fn new() -> Buffer {
+    pub(crate) fn new() -> Self {
         let rope = Rope::new();
         let selections = vec![Mutex::new(Selection::default())];
 
@@ -45,7 +45,7 @@ impl Buffer {
         }
     }
 
-    pub(crate) fn from_file<P>(path: P) -> Buffer
+    pub(crate) fn from_file<P>(path: P) -> Self
     where
         P: AsRef<Path>,
     {
@@ -64,7 +64,7 @@ impl Buffer {
         }
     }
 
-    fn from_str(s: &str) -> Buffer {
+    fn from_str(s: &str) -> Self {
         let rope = Rope::from_str(s);
         let selections = vec![Mutex::new(Selection::default())];
 
@@ -77,7 +77,7 @@ impl Buffer {
         }
     }
 
-    pub(crate) fn apply_operation(&mut self, operation: Operation) -> &mut Buffer {
+    pub(crate) fn apply_operation(&mut self, operation: Operation) -> &mut Self {
         use Operation::*;
 
         match operation {
@@ -237,12 +237,12 @@ impl Buffer {
         Some(Selection { anchor, cursor })
     }
 
-    fn scroll_up(&mut self, distance: usize) -> &mut Buffer {
+    fn scroll_up(&mut self, distance: usize) -> &mut Self {
         self.viewport_lines_offset = self.viewport_lines_offset.saturating_sub(distance);
         self
     }
 
-    fn scroll_down(&mut self, distance: usize) -> &mut Buffer {
+    fn scroll_down(&mut self, distance: usize) -> &mut Self {
         let new_viewport_lines_offset = self.viewport_lines_offset + distance;
         if new_viewport_lines_offset <= self.rope.len_lines() {
             self.viewport_lines_offset = new_viewport_lines_offset;
@@ -250,17 +250,17 @@ impl Buffer {
         self
     }
 
-    fn scroll_left(&mut self, distance: usize) -> &mut Buffer {
+    fn scroll_left(&mut self, distance: usize) -> &mut Self {
         self.viewport_columns_offset = self.viewport_columns_offset.saturating_sub(distance);
         self
     }
 
-    fn scroll_right(&mut self, distance: usize) -> &mut Buffer {
+    fn scroll_right(&mut self, distance: usize) -> &mut Self {
         self.viewport_columns_offset += distance;
         self
     }
 
-    fn move_up(&mut self, distance: usize) -> &mut Buffer {
+    fn move_up(&mut self, distance: usize) -> &mut Self {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let cursor = self.corrected_cursor(&Cursor {
@@ -275,7 +275,7 @@ impl Buffer {
         self
     }
 
-    fn move_down(&mut self, distance: usize) -> &mut Buffer {
+    fn move_down(&mut self, distance: usize) -> &mut Self {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let cursor = self.corrected_cursor(&Cursor {
@@ -290,7 +290,7 @@ impl Buffer {
         self
     }
 
-    fn move_left(&mut self, distance: usize) -> &mut Buffer {
+    fn move_left(&mut self, distance: usize) -> &mut Self {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let old_index = self.cursor_to_index(&selection.cursor).unwrap();
@@ -300,7 +300,7 @@ impl Buffer {
         self
     }
 
-    fn move_right(&mut self, distance: usize) -> &mut Buffer {
+    fn move_right(&mut self, distance: usize) -> &mut Self {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let old_index = self.cursor_to_index(&selection.cursor).unwrap();
@@ -314,7 +314,7 @@ impl Buffer {
         self
     }
 
-    fn reduce(&mut self) -> &mut Buffer {
+    fn reduce(&mut self) -> &mut Self {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             selection.reduce();
@@ -322,7 +322,7 @@ impl Buffer {
         self
     }
 
-    fn insert(&mut self, c: char) -> &mut Buffer {
+    fn insert(&mut self, c: char) -> &mut Self {
         for selection_mutex in &self.selections {
             // Insert character
             let mut selection = selection_mutex.lock().unwrap();
@@ -342,7 +342,7 @@ impl Buffer {
         self
     }
 
-    fn backspace(&mut self) -> &mut Buffer {
+    fn backspace(&mut self) -> &mut Self {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let anchor_index = self.cursor_to_index(&selection.cursor).unwrap();
@@ -360,7 +360,7 @@ impl Buffer {
         self
     }
 
-    fn delete(&mut self) -> &mut Buffer {
+    fn delete(&mut self) -> &mut Self {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             selection.flip_backwards();

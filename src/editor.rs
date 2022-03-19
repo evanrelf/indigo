@@ -36,7 +36,7 @@ pub(crate) enum Operation {
 }
 
 impl Editor {
-    pub(crate) fn new() -> Editor {
+    pub(crate) fn new() -> Self {
         let (viewport_columns, viewport_lines) = Terminal::size();
 
         Editor {
@@ -322,7 +322,7 @@ impl Editor {
         }
     }
 
-    pub(crate) fn apply_operation(&mut self, operation: Operation) -> &mut Editor {
+    pub(crate) fn apply_operation(&mut self, operation: Operation) -> &mut Self {
         use Operation::*;
 
         let old_count = self.count;

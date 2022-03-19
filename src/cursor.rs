@@ -8,7 +8,7 @@ pub(crate) struct Cursor {
 }
 
 impl Cursor {
-    pub(crate) fn new(line: usize, column: usize) -> Cursor {
+    pub(crate) fn new(line: usize, column: usize) -> Self {
         Cursor {
             line,
             column,
@@ -24,7 +24,7 @@ impl Display for Cursor {
 }
 
 impl From<(usize, usize)> for Cursor {
-    fn from((line, column): (usize, usize)) -> Cursor {
+    fn from((line, column): (usize, usize)) -> Self {
         Cursor {
             line,
             column,

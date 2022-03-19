@@ -16,7 +16,7 @@ pub(crate) enum Operation {
 }
 
 impl Selection {
-    pub(crate) fn new<P>(anchor: P, cursor: P) -> Selection
+    pub(crate) fn new<P>(anchor: P, cursor: P) -> Self
     where
         P: Into<Cursor>,
     {
@@ -26,7 +26,7 @@ impl Selection {
         }
     }
 
-    pub(crate) fn apply_operation(&mut self, operation: Operation) -> &mut Selection {
+    pub(crate) fn apply_operation(&mut self, operation: Operation) -> &mut Self {
         use Operation::*;
 
         match operation {
@@ -59,26 +59,26 @@ impl Selection {
         self.anchor == self.cursor
     }
 
-    pub(crate) fn flip(&mut self) -> &mut Selection {
+    pub(crate) fn flip(&mut self) -> &mut Self {
         std::mem::swap(&mut self.anchor, &mut self.cursor);
         self
     }
 
-    pub(crate) fn flip_forwards(&mut self) -> &mut Selection {
+    pub(crate) fn flip_forwards(&mut self) -> &mut Self {
         if self.is_backwards() {
             self.flip();
         }
         self
     }
 
-    pub(crate) fn flip_backwards(&mut self) -> &mut Selection {
+    pub(crate) fn flip_backwards(&mut self) -> &mut Self {
         if self.is_forwards() {
             self.flip();
         }
         self
     }
 
-    pub(crate) fn reduce(&mut self) -> &mut Selection {
+    pub(crate) fn reduce(&mut self) -> &mut Self {
         self.anchor = self.cursor.clone();
         self
     }
@@ -91,7 +91,7 @@ impl Display for Selection {
 }
 
 impl From<(usize, usize)> for Selection {
-    fn from(tuple: (usize, usize)) -> Selection {
+    fn from(tuple: (usize, usize)) -> Self {
         Selection {
             anchor: Cursor::from(tuple),
             cursor: Cursor::from(tuple),
@@ -100,7 +100,7 @@ impl From<(usize, usize)> for Selection {
 }
 
 impl From<Cursor> for Selection {
-    fn from(cursor: Cursor) -> Selection {
+    fn from(cursor: Cursor) -> Self {
         Selection {
             anchor: cursor.clone(),
             cursor,
