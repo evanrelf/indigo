@@ -322,7 +322,7 @@ impl Editor {
         }
     }
 
-    pub(crate) fn apply_operation(&mut self, operation: Operation) -> &mut Self {
+    pub(crate) fn apply_operation(&mut self, operation: Operation) {
         use Operation::*;
 
         let old_count = self.count;
@@ -352,7 +352,5 @@ impl Editor {
         if old_count == new_count {
             self.count = 0;
         }
-
-        self
     }
 }

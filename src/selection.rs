@@ -26,7 +26,7 @@ impl Selection {
         }
     }
 
-    pub(crate) fn apply_operation(&mut self, operation: Operation) -> &mut Self {
+    pub(crate) fn apply_operation(&mut self, operation: Operation) {
         use Operation::*;
 
         match operation {
@@ -43,8 +43,6 @@ impl Selection {
                 self.reduce();
             }
         }
-
-        self
     }
 
     pub(crate) fn is_forwards(&self) -> bool {
@@ -59,28 +57,24 @@ impl Selection {
         self.anchor == self.cursor
     }
 
-    pub(crate) fn flip(&mut self) -> &mut Self {
+    pub(crate) fn flip(&mut self) {
         std::mem::swap(&mut self.anchor, &mut self.cursor);
-        self
     }
 
-    pub(crate) fn flip_forwards(&mut self) -> &mut Self {
+    pub(crate) fn flip_forwards(&mut self) {
         if self.is_backwards() {
             self.flip();
         }
-        self
     }
 
-    pub(crate) fn flip_backwards(&mut self) -> &mut Self {
+    pub(crate) fn flip_backwards(&mut self) {
         if self.is_forwards() {
             self.flip();
         }
-        self
     }
 
-    pub(crate) fn reduce(&mut self) -> &mut Self {
+    pub(crate) fn reduce(&mut self) {
         self.anchor = self.cursor.clone();
-        self
     }
 }
 

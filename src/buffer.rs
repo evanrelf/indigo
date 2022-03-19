@@ -77,7 +77,7 @@ impl Buffer {
         }
     }
 
-    pub(crate) fn apply_operation(&mut self, operation: Operation) -> &mut Self {
+    pub(crate) fn apply_operation(&mut self, operation: Operation) {
         use Operation::*;
 
         match operation {
@@ -140,8 +140,6 @@ impl Buffer {
                 self.delete();
             }
         }
-
-        self
     }
 
     pub(crate) fn rope(&self) -> &Rope {
@@ -237,30 +235,26 @@ impl Buffer {
         Some(Selection { anchor, cursor })
     }
 
-    fn scroll_up(&mut self, distance: usize) -> &mut Self {
+    fn scroll_up(&mut self, distance: usize) {
         self.viewport_lines_offset = self.viewport_lines_offset.saturating_sub(distance);
-        self
     }
 
-    fn scroll_down(&mut self, distance: usize) -> &mut Self {
+    fn scroll_down(&mut self, distance: usize) {
         let new_viewport_lines_offset = self.viewport_lines_offset + distance;
         if new_viewport_lines_offset <= self.rope.len_lines() {
             self.viewport_lines_offset = new_viewport_lines_offset;
         }
-        self
     }
 
-    fn scroll_left(&mut self, distance: usize) -> &mut Self {
+    fn scroll_left(&mut self, distance: usize) {
         self.viewport_columns_offset = self.viewport_columns_offset.saturating_sub(distance);
-        self
     }
 
-    fn scroll_right(&mut self, distance: usize) -> &mut Self {
+    fn scroll_right(&mut self, distance: usize) {
         self.viewport_columns_offset += distance;
-        self
     }
 
-    fn move_up(&mut self, distance: usize) -> &mut Self {
+    fn move_up(&mut self, distance: usize) {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let cursor = self.corrected_cursor(&Cursor {
@@ -272,10 +266,9 @@ impl Buffer {
                 _ => {}
             }
         }
-        self
     }
 
-    fn move_down(&mut self, distance: usize) -> &mut Self {
+    fn move_down(&mut self, distance: usize) {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let cursor = self.corrected_cursor(&Cursor {
@@ -287,20 +280,18 @@ impl Buffer {
                 _ => {}
             }
         }
-        self
     }
 
-    fn move_left(&mut self, distance: usize) -> &mut Self {
+    fn move_left(&mut self, distance: usize) {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let old_index = self.cursor_to_index(&selection.cursor).unwrap();
             let new_index = old_index.saturating_sub(distance);
             selection.cursor = self.index_to_cursor(new_index).unwrap();
         }
-        self
     }
 
-    fn move_right(&mut self, distance: usize) -> &mut Self {
+    fn move_right(&mut self, distance: usize) {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let old_index = self.cursor_to_index(&selection.cursor).unwrap();
@@ -311,18 +302,16 @@ impl Buffer {
                 selection.cursor = self.index_to_cursor(self.rope.len_chars() - 1).unwrap();
             }
         }
-        self
     }
 
-    fn reduce(&mut self) -> &mut Self {
+    fn reduce(&mut self) {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             selection.reduce();
         }
-        self
     }
 
-    fn insert(&mut self, c: char) -> &mut Self {
+    fn insert(&mut self, c: char) {
         for selection_mutex in &self.selections {
             // Insert character
             let mut selection = selection_mutex.lock().unwrap();
@@ -339,10 +328,9 @@ impl Buffer {
             selection.anchor = self.index_to_cursor(anchor_index + 1).unwrap();
             selection.cursor = self.index_to_cursor(cursor_index + 1).unwrap();
         }
-        self
     }
 
-    fn backspace(&mut self) -> &mut Self {
+    fn backspace(&mut self) {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             let anchor_index = self.cursor_to_index(&selection.cursor).unwrap();
@@ -356,11 +344,9 @@ impl Buffer {
                 selection.cursor = self.index_to_cursor(cursor_index - 1).unwrap();
             }
         }
-
-        self
     }
 
-    fn delete(&mut self) -> &mut Self {
+    fn delete(&mut self) {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
             selection.flip_backwards();
@@ -372,7 +358,6 @@ impl Buffer {
                 *selection = s;
             };
         }
-        self
     }
 }
 
