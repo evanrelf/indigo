@@ -3,8 +3,9 @@ use crate::{
     operand::Operand,
     selection::{self, Selection},
 };
+use parking_lot::Mutex;
 use ropey::{Rope, RopeSlice};
-use std::{fs::File, io::BufReader, path::Path, sync::Mutex};
+use std::{fs::File, io::BufReader, path::Path};
 
 pub(crate) struct Buffer {
     rope: Rope,
@@ -80,12 +81,11 @@ impl Operand for Buffer {
             PrimarySelection(operation) => {
                 self.selections[self.primary_selection_index]
                     .get_mut()
-                    .unwrap()
                     .apply(operation);
             }
             AllSelections(operation) => {
                 for selection in &mut self.selections {
-                    selection.get_mut().unwrap().apply(operation.clone());
+                    selection.get_mut().apply(operation.clone());
                 }
             }
             Insert(c) => {
@@ -261,7 +261,7 @@ impl Buffer {
 
     fn move_up(&mut self, distance: usize) {
         for selection_mutex in &self.selections {
-            let mut selection = selection_mutex.lock().unwrap();
+            let mut selection = selection_mutex.lock();
             let cursor = self.corrected_cursor(&Cursor {
                 line: selection.cursor.line.saturating_sub(distance),
                 ..selection.cursor
@@ -275,7 +275,7 @@ impl Buffer {
 
     fn move_down(&mut self, distance: usize) {
         for selection_mutex in &self.selections {
-            let mut selection = selection_mutex.lock().unwrap();
+            let mut selection = selection_mutex.lock();
             let cursor = self.corrected_cursor(&Cursor {
                 line: selection.cursor.line + distance,
                 ..selection.cursor
@@ -289,7 +289,7 @@ impl Buffer {
 
     fn move_left(&mut self, distance: usize) {
         for selection_mutex in &self.selections {
-            let mut selection = selection_mutex.lock().unwrap();
+            let mut selection = selection_mutex.lock();
             let old_index = self.cursor_to_index(&selection.cursor).unwrap();
             let new_index = old_index.saturating_sub(distance);
             selection.cursor = self.index_to_cursor(new_index).unwrap();
@@ -298,7 +298,7 @@ impl Buffer {
 
     fn move_right(&mut self, distance: usize) {
         for selection_mutex in &self.selections {
-            let mut selection = selection_mutex.lock().unwrap();
+            let mut selection = selection_mutex.lock();
             let old_index = self.cursor_to_index(&selection.cursor).unwrap();
             let new_index = old_index + distance;
             if new_index < self.rope.len_chars() {
@@ -311,7 +311,7 @@ impl Buffer {
 
     fn reduce(&mut self) {
         for selection_mutex in &mut self.selections {
-            let selection = selection_mutex.get_mut().unwrap();
+            let selection = selection_mutex.get_mut();
             selection.reduce();
         }
     }
@@ -319,7 +319,7 @@ impl Buffer {
     fn insert(&mut self, c: char) {
         for selection_mutex in &self.selections {
             // Insert character
-            let mut selection = selection_mutex.lock().unwrap();
+            let mut selection = selection_mutex.lock();
             let anchor_index = self.cursor_to_index(&selection.anchor).unwrap();
             let cursor_index = self.cursor_to_index(&selection.cursor).unwrap();
 
@@ -337,7 +337,7 @@ impl Buffer {
 
     fn backspace(&mut self) {
         for selection_mutex in &self.selections {
-            let mut selection = selection_mutex.lock().unwrap();
+            let mut selection = selection_mutex.lock();
             let anchor_index = self.cursor_to_index(&selection.cursor).unwrap();
             let cursor_index = self.cursor_to_index(&selection.cursor).unwrap();
             if cursor_index > 0 {
@@ -353,7 +353,7 @@ impl Buffer {
 
     fn delete(&mut self) {
         for selection_mutex in &self.selections {
-            let mut selection = selection_mutex.lock().unwrap();
+            let mut selection = selection_mutex.lock();
             selection.flip_backwards();
             let anchor_index = self.cursor_to_index(&selection.anchor).unwrap();
             let cursor_index = self.cursor_to_index(&selection.cursor).unwrap();

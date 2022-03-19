@@ -161,7 +161,7 @@ impl Editor {
         let buffer = &self.buffers[self.buffer_index];
 
         for selection_mutex in buffer.selections() {
-            let selection = selection_mutex.lock().unwrap();
+            let selection = selection_mutex.lock();
 
             let anchor_visible = selection.anchor.line >= buffer.viewport_lines_offset()
                 && selection.anchor.column >= buffer.viewport_columns_offset();
