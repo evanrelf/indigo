@@ -64,18 +64,18 @@ impl Operand for Buffer {
                 self.move_right(distance);
             }
             NextSelection(count) => {
-                if self.primary_selection_index >= self.selections.len() {
-                    self.primary_selection_index = 0;
-                } else {
-                    self.primary_selection_index += count;
-                }
+                self.primary_selection_index = wrap_around(
+                    self.selections.len(),
+                    self.primary_selection_index,
+                    count as isize,
+                );
             }
             PreviousSelection(count) => {
-                if self.primary_selection_index == 0 {
-                    self.primary_selection_index = self.selections.len() - count;
-                } else {
-                    self.primary_selection_index -= count;
-                }
+                self.primary_selection_index = wrap_around(
+                    self.selections.len(),
+                    self.primary_selection_index,
+                    -(count as isize),
+                );
             }
             PrimarySelection(operation) => {
                 self.selections[self.primary_selection_index]
@@ -364,6 +364,33 @@ impl Buffer {
             };
         }
     }
+}
+
+// Modified version of https://stackoverflow.com/a/39740009
+fn wrap_around(length: usize, value: usize, delta: isize) -> usize {
+    let length = length as isize;
+    if length == 0 {
+        0
+    } else {
+        let value = value as isize;
+        let result = if delta >= 0 {
+            (value + delta) % length
+        } else {
+            ((value + delta) - (delta * length)) % length
+        };
+        result as usize
+    }
+}
+
+#[test]
+fn test_wrap_around() {
+    assert_eq!(wrap_around(0, 0, 0), 0);
+    assert_eq!(wrap_around(0, 0, 4), 0);
+    assert_eq!(wrap_around(2, 0, 0), 0);
+    assert_eq!(wrap_around(2, 0, 3), 1);
+    assert_eq!(wrap_around(2, 0, 4), 0);
+    assert_eq!(wrap_around(2, 0, -3), 1);
+    assert_eq!(wrap_around(2, 0, -4), 0);
 }
 
 #[test]
