@@ -19,10 +19,8 @@ pub(crate) struct Editor {
     quit: bool,
     mode: Mode,
     count: usize,
-
     buffers: Vec<Buffer>,
     buffer_index: usize,
-
     viewport_lines: u16,
     viewport_columns: u16,
 }
@@ -44,10 +42,8 @@ impl Editor {
             quit: false,
             mode: Mode::Normal,
             count: 0,
-
             buffers: vec![Buffer::new()],
             buffer_index: 0,
-
             viewport_lines,
             viewport_columns,
         }
@@ -331,8 +327,7 @@ impl Editor {
                 self.count = new_count;
             }
             Buffer(operation) => {
-                let buffer = &mut self.buffers[self.buffer_index];
-                buffer.apply_operation(operation);
+                self.buffers[self.buffer_index].apply_operation(operation);
             }
             NoOp => {}
         }

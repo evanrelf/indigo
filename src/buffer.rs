@@ -4,10 +4,8 @@ use std::{fs::File, io::BufReader, path::Path, sync::Mutex};
 
 pub(crate) struct Buffer {
     rope: Rope,
-
     selections: Vec<Mutex<Selection>>,
     primary_selection_index: usize,
-
     viewport_lines_offset: usize,
     viewport_columns_offset: usize,
 }
@@ -17,17 +15,14 @@ pub(crate) enum Operation {
     ScrollDown(usize),
     ScrollLeft(usize),
     ScrollRight(usize),
-
     MoveUp(usize),
     MoveDown(usize),
     MoveLeft(usize),
     MoveRight(usize),
-
     Flip,
     FlipForwards,
     FlipBackwards,
     Reduce,
-
     Insert(char),
     Delete,
     Backspace,
@@ -36,15 +31,12 @@ pub(crate) enum Operation {
 impl Buffer {
     pub(crate) fn new() -> Buffer {
         let rope = Rope::new();
-
         let selections = vec![Mutex::new(Selection::default())];
 
         Buffer {
             rope,
-
             selections,
             primary_selection_index: 0,
-
             viewport_lines_offset: 0,
             viewport_columns_offset: 0,
         }
@@ -58,15 +50,12 @@ impl Buffer {
         let reader = BufReader::new(file);
 
         let rope = Rope::from_reader(reader).unwrap();
-
         let selections = vec![Mutex::new(Selection::default())];
 
         Buffer {
             rope,
-
             selections,
             primary_selection_index: 0,
-
             viewport_lines_offset: 0,
             viewport_columns_offset: 0,
         }
@@ -74,15 +63,12 @@ impl Buffer {
 
     fn from_str(s: &str) -> Buffer {
         let rope = Rope::from_str(s);
-
         let selections = vec![Mutex::new(Selection::default())];
 
         Buffer {
             rope,
-
             selections,
             primary_selection_index: 0,
-
             viewport_lines_offset: 0,
             viewport_columns_offset: 0,
         }
@@ -131,11 +117,11 @@ impl Buffer {
             Insert(c) => {
                 self.insert(c);
             }
-            Delete => {
-                self.delete();
-            }
             Backspace => {
                 self.backspace();
+            }
+            Delete => {
+                self.delete();
             }
         }
     }
@@ -339,6 +325,26 @@ impl Buffer {
         self
     }
 
+    fn insert(&mut self, c: char) -> &mut Buffer {
+        for selection_mutex in &self.selections {
+            // Insert character
+            let mut selection = selection_mutex.lock().unwrap();
+            let anchor_index = self.cursor_to_index(&selection.anchor).unwrap();
+            let cursor_index = self.cursor_to_index(&selection.cursor).unwrap();
+
+            if selection.is_forwards() {
+                self.rope.insert_char(anchor_index, c);
+            } else {
+                self.rope.insert_char(cursor_index, c);
+            }
+
+            // Shift selection
+            selection.anchor = self.index_to_cursor(anchor_index + 1).unwrap();
+            selection.cursor = self.index_to_cursor(cursor_index + 1).unwrap();
+        }
+        self
+    }
+
     fn backspace(&mut self) -> &mut Buffer {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock().unwrap();
@@ -368,26 +374,6 @@ impl Buffer {
             if let Some(s) = self.corrected_selection(&selection) {
                 *selection = s;
             };
-        }
-        self
-    }
-
-    fn insert(&mut self, c: char) -> &mut Buffer {
-        for selection_mutex in &self.selections {
-            // Insert character
-            let mut selection = selection_mutex.lock().unwrap();
-            let anchor_index = self.cursor_to_index(&selection.anchor).unwrap();
-            let cursor_index = self.cursor_to_index(&selection.cursor).unwrap();
-
-            if selection.is_forwards() {
-                self.rope.insert_char(anchor_index, c);
-            } else {
-                self.rope.insert_char(cursor_index, c);
-            }
-
-            // Shift selection
-            selection.anchor = self.index_to_cursor(anchor_index + 1).unwrap();
-            selection.cursor = self.index_to_cursor(cursor_index + 1).unwrap();
         }
         self
     }
