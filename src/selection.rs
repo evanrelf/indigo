@@ -26,7 +26,7 @@ impl Selection {
         }
     }
 
-    pub(crate) fn apply_operation(&mut self, operation: Operation) {
+    pub(crate) fn apply_operation(&mut self, operation: Operation) -> &mut Selection {
         use Operation::*;
 
         match operation {
@@ -43,6 +43,8 @@ impl Selection {
                 self.reduce();
             }
         }
+
+        self
     }
 
     pub(crate) fn is_forwards(&self) -> bool {

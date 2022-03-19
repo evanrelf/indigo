@@ -74,7 +74,7 @@ impl Buffer {
         }
     }
 
-    pub(crate) fn apply_operation(&mut self, operation: Operation) {
+    pub(crate) fn apply_operation(&mut self, operation: Operation) -> &mut Buffer {
         use Operation::*;
 
         match operation {
@@ -117,6 +117,8 @@ impl Buffer {
                 self.delete();
             }
         }
+
+        self
     }
 
     pub(crate) fn rope(&self) -> &Rope {
