@@ -10,7 +10,7 @@ use crossterm::{
     style::{self, Stylize},
     terminal,
 };
-use std::{io::Stdout, path::Path};
+use std::path::Path;
 
 pub(crate) enum Mode {
     Normal,
@@ -95,10 +95,10 @@ impl Editor {
         self.buffer_index += 1;
     }
 
-    pub(crate) fn run(
-        &mut self,
-        terminal: &mut tui::Terminal<tui::backend::CrosstermBackend<Stdout>>,
-    ) {
+    pub(crate) fn run<B>(&mut self, terminal: &mut tui::Terminal<B>)
+    where
+        B: tui::backend::Backend,
+    {
         while !self.quit {
             self.render();
             self.handle_event();
