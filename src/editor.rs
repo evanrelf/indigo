@@ -4,13 +4,9 @@ use crate::{
     selection,
     terminal::Terminal,
 };
-use crossterm::{
-    cursor,
-    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
-    style::{self, Stylize},
-    terminal,
-};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use std::path::Path;
+use tui::widgets::Widget;
 
 pub(crate) enum Mode {
     Normal,
@@ -100,122 +96,10 @@ impl Editor {
         B: tui::backend::Backend,
     {
         while !self.quit {
-            self.render();
+            terminal
+                .draw(|frame| frame.render_widget(&*self, frame.size()))
+                .unwrap();
             self.handle_event();
-        }
-    }
-
-    fn render(&self) {
-        Terminal::queue(terminal::Clear(terminal::ClearType::All));
-
-        self.render_tildes();
-        self.render_buffer();
-        self.render_selections();
-        self.render_status();
-
-        Terminal::flush();
-    }
-
-    fn render_tildes(&self) {
-        Terminal::queue(cursor::MoveTo(0, 0));
-
-        for _ in 0..self.viewport_lines {
-            Terminal::queue(style::Print("~"));
-            Terminal::queue(cursor::MoveToNextLine(1));
-        }
-    }
-
-    fn render_buffer(&self) {
-        let buffer = &self.buffers[self.buffer_index];
-
-        let viewport_slice = {
-            let viewport_start_line = buffer.viewport_lines_offset();
-            let viewport_end_line = viewport_start_line + (self.viewport_lines as usize - 1);
-            let buffer_end_line = buffer.rope().len_lines();
-            let start = buffer.rope().line_to_char(viewport_start_line);
-            if buffer_end_line <= viewport_end_line {
-                buffer.rope().slice(start..)
-            } else {
-                let end = buffer.rope().line_to_char(viewport_end_line);
-                buffer.rope().slice(start..end)
-            }
-        };
-
-        for (i, line) in viewport_slice.lines().enumerate() {
-            if line
-                .len_chars()
-                .saturating_sub(buffer.viewport_columns_offset())
-                > 0
-            {
-                let line = line.slice(buffer.viewport_columns_offset()..);
-                Terminal::queue(cursor::MoveTo(0, i as u16));
-                Terminal::queue(terminal::Clear(terminal::ClearType::CurrentLine));
-                Terminal::queue(style::Print(String::from(line).trim_end()));
-            }
-        }
-    }
-
-    fn render_selections(&self) {
-        let buffer = &self.buffers[self.buffer_index];
-
-        for selection_mutex in buffer.selections() {
-            let selection = selection_mutex.lock();
-
-            let anchor_visible = selection.anchor.line >= buffer.viewport_lines_offset()
-                && selection.anchor.column >= buffer.viewport_columns_offset();
-
-            if anchor_visible && !selection.is_reduced() {
-                let anchor_line = (selection.anchor.line - buffer.viewport_lines_offset()) as u16;
-                let anchor_column =
-                    (selection.anchor.column - buffer.viewport_columns_offset()) as u16;
-                let anchor_char = {
-                    let anchor_index = buffer.cursor_to_index(&selection.anchor).unwrap();
-                    let char = buffer.rope().char(anchor_index);
-                    if char == '\n' {
-                        ' '
-                    } else {
-                        char
-                    }
-                };
-
-                Terminal::queue(cursor::MoveTo(anchor_column, anchor_line));
-                Terminal::queue(style::PrintStyledContent(anchor_char.on_cyan()));
-            }
-
-            let head_visible = selection.head.line >= buffer.viewport_lines_offset()
-                && selection.head.column >= buffer.viewport_columns_offset();
-
-            if head_visible {
-                let head_line = (selection.head.line - buffer.viewport_lines_offset()) as u16;
-                let head_column =
-                    (selection.head.column - buffer.viewport_columns_offset()) as u16;
-                let head_char = {
-                    let head_index = buffer.cursor_to_index(&selection.head).unwrap();
-                    let char = buffer.rope().char(head_index);
-                    if char == '\n' {
-                        ' '
-                    } else {
-                        char
-                    }
-                };
-
-                Terminal::queue(cursor::MoveTo(head_column, head_line));
-                Terminal::queue(style::PrintStyledContent(head_char.on_yellow()));
-            }
-        }
-    }
-
-    fn render_status(&self) {
-        Terminal::queue(cursor::MoveTo(0, self.viewport_lines));
-
-        let mode = match self.mode {
-            Mode::Normal => "normal",
-            Mode::Insert => "insert",
-        };
-        Terminal::queue(style::PrintStyledContent(mode.white().on_black()));
-
-        if self.count > 0 {
-            Terminal::queue(style::Print(format!(" {}", self.count)));
         }
     }
 
@@ -355,5 +239,49 @@ impl Editor {
             Event::Resize(columns, lines) => vec![Resize { lines, columns }],
             _ => Vec::new(),
         }
+    }
+}
+
+impl Widget for &Editor {
+    fn render(self, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
+        use tui::{
+            buffer::Buffer,
+            layout::{Constraint, Direction, Layout, Rect},
+            style::{Color, Style},
+            widgets::Block,
+        };
+
+        let render_tildes = |area: Rect, buffer: &mut Buffer| {
+            for y in area.top()..=area.bottom() {
+                buffer.get_mut(0, y).set_char('~');
+            }
+        };
+
+        let render_status = |area: Rect, buffer: &mut Buffer| {
+            let mode = match self.mode {
+                Mode::Normal => "normal",
+                Mode::Insert => "insert",
+            };
+
+            let count = if self.count > 0 {
+                format!(" {}", self.count)
+            } else {
+                "".to_string()
+            };
+
+            Block::default()
+                .title(format!("{}{}", mode, count))
+                .style(Style::default().bg(Color::White))
+                .render(area, buffer)
+        };
+
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Min(1), Constraint::Max(1)].as_ref())
+            .split(area);
+
+        render_tildes(chunks[0], buffer);
+        render_status(chunks[1], buffer);
+        self.buffers[self.buffer_index].render(chunks[0], buffer);
     }
 }

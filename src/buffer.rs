@@ -6,6 +6,7 @@ use crate::{
 use parking_lot::Mutex;
 use ropey::{Rope, RopeSlice};
 use std::{fs::File, io::BufReader, path::Path};
+use tui::widgets::Widget;
 
 pub(crate) struct Buffer {
     rope: Rope,
@@ -363,6 +364,12 @@ impl Buffer {
                 *selection = s;
             };
         }
+    }
+}
+
+impl Widget for &Buffer {
+    fn render(self, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
+        // TODO
     }
 }
 
