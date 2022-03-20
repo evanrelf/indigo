@@ -8,20 +8,14 @@ mod operand;
 mod selection;
 mod terminal;
 
-use crate::{editor::Editor, terminal::Terminal};
-use std::{env, panic};
+use crate::{editor::Editor, terminal::with_terminal};
 
 fn main() {
-    panic::set_hook(Box::new(|panic_info| {
-        Terminal::exit();
-        eprintln!("{}", panic_info);
-    }));
-
     let mut editor = Editor::new();
 
-    if let Some(path) = env::args().nth(1) {
+    if let Some(path) = std::env::args().nth(1) {
         editor.load_file(path);
     }
 
-    editor.run();
+    with_terminal(|terminal| editor.run(terminal));
 }

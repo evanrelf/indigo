@@ -1,22 +1,12 @@
-use crossterm::{cursor, terminal, Command, ExecutableCommand, QueueableCommand};
-use std::io::{stdout, Write};
+use crossterm::{terminal, Command, ExecutableCommand, QueueableCommand};
+use std::{
+    io::{stdout, Stdout, Write},
+    panic,
+};
 
 pub(crate) struct Terminal {}
 
 impl Terminal {
-    pub(crate) fn enter() {
-        terminal::enable_raw_mode().unwrap();
-        stdout().execute(terminal::EnterAlternateScreen).unwrap();
-    }
-
-    pub(crate) fn exit() {
-        let mut stdout = stdout();
-        stdout.queue(cursor::Show).unwrap();
-        stdout.queue(terminal::LeaveAlternateScreen).unwrap();
-        stdout.flush().unwrap();
-        terminal::disable_raw_mode().unwrap();
-    }
-
     pub(crate) fn execute<C>(command: C)
     where
         C: Command,
@@ -37,5 +27,48 @@ impl Terminal {
 
     pub(crate) fn size() -> (u16, u16) {
         terminal::size().unwrap()
+    }
+}
+
+pub(crate) fn with_terminal<F>(f: F)
+where
+    F: FnOnce(&mut tui::Terminal<tui::backend::CrosstermBackend<Stdout>>),
+{
+    let mut terminal = {
+        let stdout = std::io::stdout();
+        let backend = tui::backend::CrosstermBackend::new(stdout);
+        tui::Terminal::new(backend).unwrap()
+    };
+
+    enter_terminal();
+
+    f(&mut terminal);
+
+    exit_terminal(false);
+}
+
+fn enter_terminal() {
+    let mut stdout = std::io::stdout();
+    crossterm::terminal::enable_raw_mode().unwrap();
+    stdout
+        .execute(crossterm::terminal::EnterAlternateScreen)
+        .unwrap();
+    stdout.execute(crossterm::cursor::Hide).unwrap();
+    panic::set_hook(Box::new(|panic_info| {
+        exit_terminal(true);
+        eprintln!("{}", panic_info);
+    }));
+}
+
+fn exit_terminal(panicking: bool) {
+    let mut stdout = std::io::stdout();
+    stdout.queue(crossterm::cursor::Show).unwrap();
+    stdout
+        .queue(crossterm::terminal::LeaveAlternateScreen)
+        .unwrap();
+    stdout.flush().unwrap();
+    crossterm::terminal::disable_raw_mode().unwrap();
+    if !panicking {
+        let _ = panic::take_hook();
     }
 }
