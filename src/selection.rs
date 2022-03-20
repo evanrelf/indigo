@@ -5,7 +5,7 @@ use std::fmt::Display;
 #[derive(Default)]
 pub(crate) struct Selection {
     pub(crate) anchor: Cursor,
-    pub(crate) cursor: Cursor,
+    pub(crate) head: Cursor,
 }
 
 #[derive(Clone)]
@@ -40,30 +40,30 @@ impl Operand for Selection {
 }
 
 impl Selection {
-    pub(crate) fn new<P>(anchor: P, cursor: P) -> Self
+    pub(crate) fn new<P>(anchor: P, head: P) -> Self
     where
         P: Into<Cursor>,
     {
         Selection {
             anchor: anchor.into(),
-            cursor: cursor.into(),
+            head: head.into(),
         }
     }
 
     pub(crate) fn is_forwards(&self) -> bool {
-        self.anchor <= self.cursor
+        self.anchor <= self.head
     }
 
     pub(crate) fn is_backwards(&self) -> bool {
-        self.anchor > self.cursor
+        self.anchor > self.head
     }
 
     pub(crate) fn is_reduced(&self) -> bool {
-        self.anchor == self.cursor
+        self.anchor == self.head
     }
 
     pub(crate) fn flip(&mut self) {
-        std::mem::swap(&mut self.anchor, &mut self.cursor);
+        std::mem::swap(&mut self.anchor, &mut self.head);
     }
 
     pub(crate) fn flip_forwards(&mut self) {
@@ -79,13 +79,13 @@ impl Selection {
     }
 
     pub(crate) fn reduce(&mut self) {
-        self.anchor = self.cursor.clone();
+        self.anchor = self.head.clone();
     }
 }
 
 impl Display for Selection {
     fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "{}-{}", self.anchor, self.cursor)
+        write!(formatter, "{}-{}", self.anchor, self.head)
     }
 }
 
@@ -93,16 +93,16 @@ impl From<(usize, usize)> for Selection {
     fn from(tuple: (usize, usize)) -> Self {
         Selection {
             anchor: Cursor::from(tuple),
-            cursor: Cursor::from(tuple),
+            head: Cursor::from(tuple),
         }
     }
 }
 
 impl From<Cursor> for Selection {
-    fn from(cursor: Cursor) -> Self {
+    fn from(head: Cursor) -> Self {
         Selection {
-            anchor: cursor.clone(),
-            cursor,
+            anchor: head.clone(),
+            head,
         }
     }
 }

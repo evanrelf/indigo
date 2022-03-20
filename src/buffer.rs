@@ -193,11 +193,11 @@ impl Buffer {
 
     pub(crate) fn selection_to_slice(&self, selection: &Selection) -> Option<RopeSlice> {
         let anchor_index = self.cursor_to_index(&selection.anchor)?;
-        let cursor_index = self.cursor_to_index(&selection.cursor)?;
+        let head_index = self.cursor_to_index(&selection.head)?;
         if selection.is_forwards() {
-            self.rope.get_slice(anchor_index..=cursor_index)
+            self.rope.get_slice(anchor_index..=head_index)
         } else {
-            self.rope.get_slice(cursor_index..=anchor_index)
+            self.rope.get_slice(head_index..=anchor_index)
         }
     }
 
@@ -236,8 +236,8 @@ impl Buffer {
 
     pub(crate) fn corrected_selection(&self, selection: &Selection) -> Option<Selection> {
         let anchor = self.corrected_cursor(&selection.anchor)?;
-        let cursor = self.corrected_cursor(&selection.cursor)?;
-        Some(Selection { anchor, cursor })
+        let head = self.corrected_cursor(&selection.head)?;
+        Some(Selection { anchor, head })
     }
 
     fn scroll_up(&mut self, distance: usize) {
@@ -262,12 +262,12 @@ impl Buffer {
     fn move_up(&mut self, distance: usize) {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock();
-            let cursor = self.corrected_cursor(&Cursor {
-                line: selection.cursor.line.saturating_sub(distance),
-                ..selection.cursor
+            let head = self.corrected_cursor(&Cursor {
+                line: selection.head.line.saturating_sub(distance),
+                ..selection.head
             });
-            match cursor {
-                Some(cursor) if self.is_valid_cursor(&cursor) => selection.cursor = cursor,
+            match head {
+                Some(head) if self.is_valid_cursor(&head) => selection.head = head,
                 _ => {}
             }
         }
@@ -276,12 +276,12 @@ impl Buffer {
     fn move_down(&mut self, distance: usize) {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock();
-            let cursor = self.corrected_cursor(&Cursor {
-                line: selection.cursor.line + distance,
-                ..selection.cursor
+            let head = self.corrected_cursor(&Cursor {
+                line: selection.head.line + distance,
+                ..selection.head
             });
-            match cursor {
-                Some(cursor) if self.is_valid_cursor(&cursor) => selection.cursor = cursor,
+            match head {
+                Some(head) if self.is_valid_cursor(&head) => selection.head = head,
                 _ => {}
             }
         }
@@ -290,21 +290,21 @@ impl Buffer {
     fn move_left(&mut self, distance: usize) {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock();
-            let old_index = self.cursor_to_index(&selection.cursor).unwrap();
+            let old_index = self.cursor_to_index(&selection.head).unwrap();
             let new_index = old_index.saturating_sub(distance);
-            selection.cursor = self.index_to_cursor(new_index).unwrap();
+            selection.head = self.index_to_cursor(new_index).unwrap();
         }
     }
 
     fn move_right(&mut self, distance: usize) {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock();
-            let old_index = self.cursor_to_index(&selection.cursor).unwrap();
+            let old_index = self.cursor_to_index(&selection.head).unwrap();
             let new_index = old_index + distance;
             if new_index < self.rope.len_chars() {
-                selection.cursor = self.index_to_cursor(new_index).unwrap();
+                selection.head = self.index_to_cursor(new_index).unwrap();
             } else {
-                selection.cursor = self.index_to_cursor(self.rope.len_chars() - 1).unwrap();
+                selection.head = self.index_to_cursor(self.rope.len_chars() - 1).unwrap();
             }
         }
     }
@@ -321,32 +321,32 @@ impl Buffer {
             // Insert character
             let mut selection = selection_mutex.lock();
             let anchor_index = self.cursor_to_index(&selection.anchor).unwrap();
-            let cursor_index = self.cursor_to_index(&selection.cursor).unwrap();
+            let head_index = self.cursor_to_index(&selection.head).unwrap();
 
             if selection.is_forwards() {
                 self.rope.insert_char(anchor_index, c);
             } else {
-                self.rope.insert_char(cursor_index, c);
+                self.rope.insert_char(head_index, c);
             }
 
             // Shift selection
             selection.anchor = self.index_to_cursor(anchor_index + 1).unwrap();
-            selection.cursor = self.index_to_cursor(cursor_index + 1).unwrap();
+            selection.head = self.index_to_cursor(head_index + 1).unwrap();
         }
     }
 
     fn backspace(&mut self) {
         for selection_mutex in &self.selections {
             let mut selection = selection_mutex.lock();
-            let anchor_index = self.cursor_to_index(&selection.cursor).unwrap();
-            let cursor_index = self.cursor_to_index(&selection.cursor).unwrap();
-            if cursor_index > 0 {
+            let anchor_index = self.cursor_to_index(&selection.head).unwrap();
+            let head_index = self.cursor_to_index(&selection.head).unwrap();
+            if head_index > 0 {
                 // Delete character
-                self.rope.remove(cursor_index - 1..cursor_index);
+                self.rope.remove(head_index - 1..head_index);
 
                 // Shift selection
                 selection.anchor = self.index_to_cursor(anchor_index - 1).unwrap();
-                selection.cursor = self.index_to_cursor(cursor_index - 1).unwrap();
+                selection.head = self.index_to_cursor(head_index - 1).unwrap();
             }
         }
     }
@@ -356,8 +356,8 @@ impl Buffer {
             let mut selection = selection_mutex.lock();
             selection.flip_backwards();
             let anchor_index = self.cursor_to_index(&selection.anchor).unwrap();
-            let cursor_index = self.cursor_to_index(&selection.cursor).unwrap();
-            self.rope.remove(cursor_index..=anchor_index);
+            let head_index = self.cursor_to_index(&selection.head).unwrap();
+            self.rope.remove(head_index..=anchor_index);
             selection.reduce();
             if let Some(s) = self.corrected_selection(&selection) {
                 *selection = s;

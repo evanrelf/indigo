@@ -182,16 +182,16 @@ impl Editor {
                 Terminal::queue(style::PrintStyledContent(anchor_char.on_cyan()));
             }
 
-            let cursor_visible = selection.cursor.line >= buffer.viewport_lines_offset()
-                && selection.cursor.column >= buffer.viewport_columns_offset();
+            let head_visible = selection.head.line >= buffer.viewport_lines_offset()
+                && selection.head.column >= buffer.viewport_columns_offset();
 
-            if cursor_visible {
-                let cursor_line = (selection.cursor.line - buffer.viewport_lines_offset()) as u16;
-                let cursor_column =
-                    (selection.cursor.column - buffer.viewport_columns_offset()) as u16;
-                let cursor_char = {
-                    let cursor_index = buffer.cursor_to_index(&selection.cursor).unwrap();
-                    let char = buffer.rope().char(cursor_index);
+            if head_visible {
+                let head_line = (selection.head.line - buffer.viewport_lines_offset()) as u16;
+                let head_column =
+                    (selection.head.column - buffer.viewport_columns_offset()) as u16;
+                let head_char = {
+                    let head_index = buffer.cursor_to_index(&selection.head).unwrap();
+                    let char = buffer.rope().char(head_index);
                     if char == '\n' {
                         ' '
                     } else {
@@ -199,8 +199,8 @@ impl Editor {
                     }
                 };
 
-                Terminal::queue(cursor::MoveTo(cursor_column, cursor_line));
-                Terminal::queue(style::PrintStyledContent(cursor_char.on_yellow()));
+                Terminal::queue(cursor::MoveTo(head_column, head_line));
+                Terminal::queue(style::PrintStyledContent(head_char.on_yellow()));
             }
         }
     }
