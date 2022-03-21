@@ -245,43 +245,39 @@ impl Editor {
 impl Widget for &Editor {
     fn render(self, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
         use tui::{
-            buffer::Buffer,
-            layout::{Constraint, Direction, Layout, Rect},
+            layout::{Constraint, Direction, Layout},
             style::{Color, Style},
             widgets::Block,
         };
 
-        let render_tildes = |area: Rect, buffer: &mut Buffer| {
-            for y in area.top()..=area.bottom() {
-                buffer.get_mut(0, y).set_char('~');
-            }
-        };
-
-        let render_status = |area: Rect, buffer: &mut Buffer| {
-            let mode = match self.mode {
-                Mode::Normal => "normal",
-                Mode::Insert => "insert",
-            };
-
-            let count = if self.count > 0 {
-                format!(" {}", self.count)
-            } else {
-                "".to_string()
-            };
-
-            Block::default()
-                .title(format!("{}{}", mode, count))
-                .style(Style::default().bg(Color::White))
-                .render(area, buffer)
-        };
-
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Min(1), Constraint::Max(1)].as_ref())
+            .constraints([Constraint::Min(0), Constraint::Length(1)].as_ref())
             .split(area);
 
-        render_tildes(chunks[0], buffer);
-        render_status(chunks[1], buffer);
+        // Render tildes
+        for y in chunks[0].top()..chunks[0].bottom() {
+            buffer.get_mut(area.x, y).set_char('~');
+        }
+
+        // Render status
+        let mode = match self.mode {
+            Mode::Normal => "normal",
+            Mode::Insert => "insert",
+        };
+
+        let count = if self.count > 0 {
+            format!(" {}", self.count)
+        } else {
+            "".to_string()
+        };
+
+        Block::default()
+            .title(format!("{}{}", mode, count))
+            .style(Style::default().bg(Color::White))
+            .render(chunks[1], buffer);
+
+        // Render buffer
         self.buffers[self.buffer_index].render(chunks[0], buffer);
     }
 }

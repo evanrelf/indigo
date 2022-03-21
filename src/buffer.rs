@@ -5,7 +5,7 @@ use crate::{
 };
 use parking_lot::Mutex;
 use ropey::{Rope, RopeSlice};
-use std::{fs::File, io::BufReader, path::Path};
+use std::{borrow::Cow, fs::File, io::BufReader, path::Path};
 use tui::widgets::Widget;
 
 pub(crate) struct Buffer {
@@ -369,7 +369,52 @@ impl Buffer {
 
 impl Widget for &Buffer {
     fn render(self, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
-        // TODO
+        use tui::buffer::Buffer;
+        use tui::layout::Rect;
+        use tui::style::Style;
+
+        let height = std::cmp::min(
+            area.height - 10,
+            (self.rope.len_lines() - self.viewport_lines_offset) as u16,
+        );
+
+        let blank = Buffer::empty(Rect { height, ..area });
+        buffer.merge(&blank);
+
+        let viewport_slice = {
+            let viewport_start_line = self.viewport_lines_offset;
+            let viewport_end_line = viewport_start_line + (area.height as usize - 1);
+            let buffer_end_line = self.rope().len_lines();
+            let start_char_index = self.rope().line_to_char(viewport_start_line);
+            if buffer_end_line <= viewport_end_line {
+                self.rope().slice(start_char_index..)
+            } else {
+                let end_char_index = self.rope().line_to_char(viewport_end_line);
+                self.rope().slice(start_char_index..end_char_index)
+            }
+        };
+
+        for (i, line) in viewport_slice.lines().enumerate() {
+            let line = if line
+                .len_chars()
+                .saturating_sub(self.viewport_columns_offset)
+                > 0
+            {
+                Cow::from(line.slice(self.viewport_columns_offset..))
+                    .trim_end()
+                    .to_string()
+            } else {
+                "".to_string()
+            };
+
+            buffer.set_stringn(
+                area.left(),
+                area.top() + i as u16,
+                format!("{:>2}|{}", self.viewport_lines_offset + i + 1, line),
+                area.width as usize,
+                Style::default(),
+            );
+        }
     }
 }
 
