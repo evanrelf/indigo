@@ -5,6 +5,7 @@ mod buffer;
 mod cursor;
 mod editor;
 mod operand;
+mod ot;
 mod selection;
 mod terminal;
 
