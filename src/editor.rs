@@ -274,7 +274,7 @@ impl Widget for &Editor {
 
         Block::default()
             .title(format!("{}{}", mode, count))
-            .style(Style::default().bg(Color::White))
+            .style(Style::default().bg(Color::Rgb(0xEE, 0xEE, 0xEE)))
             .render(chunks[1], buffer);
 
         // Render buffer

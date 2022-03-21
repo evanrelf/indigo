@@ -370,8 +370,10 @@ impl Buffer {
 impl Widget for &Buffer {
     fn render(self, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
         use tui::buffer::Buffer;
-        use tui::layout::Rect;
-        use tui::style::Style;
+        use tui::{
+            layout::{Constraint, Direction, Layout, Rect},
+            style::{Color, Style},
+        };
 
         let height = std::cmp::min(
             area.height - 10,
@@ -394,6 +396,11 @@ impl Widget for &Buffer {
             }
         };
 
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Length(4), Constraint::Min(0)].as_ref())
+            .split(area);
+
         for (i, line) in viewport_slice.lines().enumerate() {
             let line = if line
                 .len_chars()
@@ -408,10 +415,18 @@ impl Widget for &Buffer {
             };
 
             buffer.set_stringn(
-                area.left(),
-                area.top() + i as u16,
-                format!("{:>2}|{}", self.viewport_lines_offset + i + 1, line),
-                area.width as usize,
+                chunks[0].left(),
+                chunks[0].top() + i as u16,
+                format!("{:>3} ", self.viewport_lines_offset + i + 1),
+                chunks[0].width as usize,
+                Style::default().bg(Color::Rgb(0xEE, 0xEE, 0xEE)),
+            );
+
+            buffer.set_stringn(
+                chunks[1].left(),
+                chunks[1].top() + i as u16,
+                line,
+                chunks[1].width as usize,
                 Style::default(),
             );
         }
