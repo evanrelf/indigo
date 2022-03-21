@@ -22,6 +22,34 @@ impl Operations {
         }
     }
 
+    pub(crate) fn from_changes(rope: &Rope, changes: Vec<(usize, usize, Option<&str>)>) -> Self {
+        let length = rope.len_chars();
+        let mut operations = Self::new();
+        let mut last = 0;
+
+        for (from, to, change) in changes {
+            assert!(from <= to);
+            assert!(last <= from);
+
+            operations = operations.retain(from - last);
+
+            match change {
+                Some(s) => {
+                    operations = operations.insert(s).delete(to - from);
+                }
+                None => {
+                    operations = operations.delete(to - from);
+                }
+            }
+
+            last = to;
+        }
+
+        operations = operations.retain(length - last);
+
+        operations
+    }
+
     pub(crate) fn retain(mut self, n: usize) -> Self {
         if n == 0 {
             return self;
@@ -155,4 +183,17 @@ fn test_operations_invert() {
     let evan_to_world = world_to_evan.invert(&hello_world_0).unwrap();
     let hello_world_1 = evan_to_world.apply(&hello_evan).unwrap();
     assert_eq!(hello_world_0, hello_world_1);
+}
+
+#[test]
+fn test_operations_from_changes() {
+    let hello_world = Rope::from("Hello, world!");
+    let world_to_evan = Operations::from_changes(&hello_world, vec![(7, 12, Some("Evan"))]);
+    let hello_evan = world_to_evan.apply(&hello_world).unwrap();
+    assert_eq!(hello_evan, "Hello, Evan!");
+
+    let empty = Rope::from("");
+    let empty_to_full = Operations::from_changes(&empty, vec![(0, 0, Some("Full"))]);
+    let full = empty_to_full.apply(&empty).unwrap();
+    assert_eq!(full, "Full");
 }
