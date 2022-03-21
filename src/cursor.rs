@@ -1,14 +1,14 @@
 use std::fmt::Display;
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
-pub(crate) struct Cursor {
-    pub(crate) line: usize,
-    pub(crate) column: usize,
-    pub(crate) target_column: Option<usize>,
+pub struct Cursor {
+    pub line: usize,
+    pub column: usize,
+    pub target_column: Option<usize>,
 }
 
 impl Cursor {
-    pub(crate) fn new(line: usize, column: usize) -> Self {
+    pub fn new(line: usize, column: usize) -> Self {
         Cursor {
             line,
             column,
@@ -33,9 +33,14 @@ impl From<(usize, usize)> for Cursor {
     }
 }
 
-#[test]
-fn test_partial_ord() {
-    assert!(Cursor::from((0, 0)) < Cursor::from((1, 0)));
-    assert!(Cursor::from((0, 99)) < Cursor::from((1, 0)));
-    assert!(Cursor::from((1, 0)) < Cursor::from((1, 1)));
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_partial_ord() {
+        assert!(Cursor::from((0, 0)) < Cursor::from((1, 0)));
+        assert!(Cursor::from((0, 99)) < Cursor::from((1, 0)));
+        assert!(Cursor::from((1, 0)) < Cursor::from((1, 1)));
+    }
 }

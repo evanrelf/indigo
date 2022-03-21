@@ -3,13 +3,13 @@ use crate::operand::Operand;
 use std::fmt::Display;
 
 #[derive(Default)]
-pub(crate) struct Selection {
-    pub(crate) anchor: Cursor,
-    pub(crate) head: Cursor,
+pub struct Selection {
+    pub anchor: Cursor,
+    pub head: Cursor,
 }
 
 #[derive(Clone)]
-pub(crate) enum Operation {
+pub enum Operation {
     Flip,
     FlipForwards,
     FlipBackwards,
@@ -40,7 +40,7 @@ impl Operand for Selection {
 }
 
 impl Selection {
-    pub(crate) fn new<P>(anchor: P, head: P) -> Self
+    pub fn new<P>(anchor: P, head: P) -> Self
     where
         P: Into<Cursor>,
     {
@@ -50,35 +50,35 @@ impl Selection {
         }
     }
 
-    pub(crate) fn is_forwards(&self) -> bool {
+    pub fn is_forwards(&self) -> bool {
         self.anchor <= self.head
     }
 
-    pub(crate) fn is_backwards(&self) -> bool {
+    pub fn is_backwards(&self) -> bool {
         self.anchor > self.head
     }
 
-    pub(crate) fn is_reduced(&self) -> bool {
+    pub fn is_reduced(&self) -> bool {
         self.anchor == self.head
     }
 
-    pub(crate) fn flip(&mut self) {
+    pub fn flip(&mut self) {
         std::mem::swap(&mut self.anchor, &mut self.head);
     }
 
-    pub(crate) fn flip_forwards(&mut self) {
+    pub fn flip_forwards(&mut self) {
         if self.is_backwards() {
             self.flip();
         }
     }
 
-    pub(crate) fn flip_backwards(&mut self) {
+    pub fn flip_backwards(&mut self) {
         if self.is_forwards() {
             self.flip();
         }
     }
 
-    pub(crate) fn reduce(&mut self) {
+    pub fn reduce(&mut self) {
         self.anchor = self.head.clone();
     }
 }

@@ -4,33 +4,33 @@ use std::{
     panic,
 };
 
-pub(crate) struct Terminal {}
+pub struct Terminal {}
 
 impl Terminal {
-    pub(crate) fn execute<C>(command: C)
+    pub fn execute<C>(command: C)
     where
         C: Command,
     {
         stdout().execute(command).unwrap();
     }
 
-    pub(crate) fn queue<C>(command: C)
+    pub fn queue<C>(command: C)
     where
         C: Command,
     {
         stdout().queue(command).unwrap();
     }
 
-    pub(crate) fn flush() {
+    pub fn flush() {
         stdout().flush().unwrap();
     }
 
-    pub(crate) fn size() -> (u16, u16) {
+    pub fn size() -> (u16, u16) {
         terminal::size().unwrap()
     }
 }
 
-pub(crate) fn with_terminal<F>(f: F)
+pub fn with_terminal<F>(f: F)
 where
     F: FnOnce(&mut tui::Terminal<tui::backend::CrosstermBackend<Stdout>>),
 {

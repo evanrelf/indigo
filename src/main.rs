@@ -1,15 +1,4 @@
-// TODO: Stop allowing dead code
-#![allow(dead_code)]
-
-mod buffer;
-mod cursor;
-mod editor;
-mod operand;
-mod ot;
-mod selection;
-mod terminal;
-
-use crate::{editor::Editor, terminal::with_terminal};
+use indigo::{editor::Editor, terminal::with_terminal};
 
 fn main() {
     let mut editor = Editor::new();

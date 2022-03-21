@@ -8,12 +8,12 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use std::path::Path;
 use tui::widgets::Widget;
 
-pub(crate) enum Mode {
+pub enum Mode {
     Normal,
     Insert,
 }
 
-pub(crate) struct Editor {
+pub struct Editor {
     quit: bool,
     mode: Mode,
     count: usize,
@@ -23,7 +23,7 @@ pub(crate) struct Editor {
     viewport_columns: u16,
 }
 
-pub(crate) enum Operation {
+pub enum Operation {
     Quit,
     Resize { lines: u16, columns: u16 },
     ChangeMode(Mode),
@@ -69,7 +69,7 @@ impl Operand for Editor {
 }
 
 impl Editor {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         let (viewport_columns, viewport_lines) = Terminal::size();
 
         Editor {
@@ -83,7 +83,7 @@ impl Editor {
         }
     }
 
-    pub(crate) fn load_file<P>(&mut self, path: P)
+    pub fn load_file<P>(&mut self, path: P)
     where
         P: AsRef<Path>,
     {
@@ -91,7 +91,7 @@ impl Editor {
         self.buffer_index += 1;
     }
 
-    pub(crate) fn run<B>(&mut self, terminal: &mut tui::Terminal<B>)
+    pub fn run<B>(&mut self, terminal: &mut tui::Terminal<B>)
     where
         B: tui::backend::Backend,
     {
@@ -239,6 +239,12 @@ impl Editor {
             Event::Resize(columns, lines) => vec![Resize { lines, columns }],
             _ => Vec::new(),
         }
+    }
+}
+
+impl Default for Editor {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
