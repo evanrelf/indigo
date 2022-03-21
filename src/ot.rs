@@ -30,12 +30,20 @@ impl Operations {
     }
 
     pub(crate) fn delete(mut self, n: usize) -> Self {
+        if n == 0 {
+            return self;
+        }
+
         self.operations.push(Operation::Delete(n));
         self.length_before += n;
         self
     }
 
     pub(crate) fn insert(mut self, s: &str) -> Self {
+        if s.is_empty() {
+            return self;
+        }
+
         self.operations.push(Operation::Insert(s.to_string()));
         self.length_after += s.chars().count();
         self
