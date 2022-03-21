@@ -31,28 +31,29 @@ impl Operations {
             assert!(from <= to);
             assert!(last <= from);
 
-            operations = operations.retain(from - last);
+            operations.retain(from - last);
 
             match change {
                 Some(s) => {
-                    operations = operations.insert(s).delete(to - from);
+                    operations.insert(s);
+                    operations.delete(to - from);
                 }
                 None => {
-                    operations = operations.delete(to - from);
+                    operations.delete(to - from);
                 }
             }
 
             last = to;
         }
 
-        operations = operations.retain(length - last);
+        operations.retain(length - last);
 
         operations
     }
 
-    pub fn retain(mut self, n: usize) -> Self {
+    pub fn retain(&mut self, n: usize) {
         if n == 0 {
-            return self;
+            return;
         }
 
         self.length_before += n;
@@ -63,13 +64,11 @@ impl Operations {
         } else {
             self.operations.push(Operation::Retain(n));
         }
-
-        self
     }
 
-    pub fn delete(mut self, n: usize) -> Self {
+    pub fn delete(&mut self, n: usize) {
         if n == 0 {
-            return self;
+            return;
         }
 
         self.length_before += n;
@@ -79,13 +78,11 @@ impl Operations {
         } else {
             self.operations.push(Operation::Delete(n));
         }
-
-        self
     }
 
-    pub fn insert(mut self, s: &str) -> Self {
+    pub fn insert(&mut self, s: &str) {
         if s.is_empty() {
-            return self;
+            return;
         }
 
         self.length_after += s.chars().count();
@@ -95,19 +92,16 @@ impl Operations {
         } else {
             self.operations.push(Operation::Insert(s.to_string()));
         }
-
-        self
     }
 
     #[allow(unused_variables)]
     #[allow(unused_mut)]
-    pub fn compose(mut self, other: Self) -> Option<Self> {
+    pub fn compose(self, other: Self) -> Option<Self> {
         todo!()
     }
 
     #[allow(unused_variables)]
-    #[allow(unused_mut)]
-    pub fn transform(mut self, other: Self) -> Option<Self> {
+    pub fn transform(&self, other: &Self) -> Option<Self> {
         todo!()
     }
 
@@ -154,16 +148,16 @@ impl Operations {
         for operation in &self.operations {
             match operation {
                 Operation::Retain(n) => {
-                    operations = operations.retain(*n);
+                    operations.retain(*n);
                     position += n;
                 }
                 Operation::Delete(n) => {
                     let s = Cow::from(rope.slice(position..position + n));
-                    operations = operations.insert(s.as_ref());
+                    operations.insert(s.as_ref());
                     position += n;
                 }
                 Operation::Insert(s) => {
-                    operations = operations.delete(s.chars().count());
+                    operations.delete(s.chars().count());
                 }
             }
         }
@@ -185,7 +179,13 @@ mod test {
     #[test]
     fn test_operations_apply() {
         let hello_world = Rope::from("Hello, world!");
-        let world_to_evan = Operations::new().retain(7).delete(6).insert("Evan!");
+        let world_to_evan = {
+            let mut operations = Operations::new();
+            operations.retain(7);
+            operations.delete(6);
+            operations.insert("Evan!");
+            operations
+        };
         let hello_evan = world_to_evan.apply(&hello_world).unwrap();
         assert_eq!(hello_evan, "Hello, Evan!");
     }
@@ -193,7 +193,13 @@ mod test {
     #[test]
     fn test_operations_invert() {
         let hello_world_0 = Rope::from("Hello, world!");
-        let world_to_evan = Operations::new().retain(7).delete(6).insert("Evan!");
+        let world_to_evan = {
+            let mut operations = Operations::new();
+            operations.retain(7);
+            operations.delete(6);
+            operations.insert("Evan!");
+            operations
+        };
         let hello_evan = world_to_evan.apply(&hello_world_0).unwrap();
         let evan_to_world = world_to_evan.invert(&hello_world_0).unwrap();
         let hello_world_1 = evan_to_world.apply(&hello_evan).unwrap();
