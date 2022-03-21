@@ -23,9 +23,19 @@ impl Operations {
     }
 
     pub(crate) fn retain(mut self, n: usize) -> Self {
-        self.operations.push(Operation::Retain(n));
+        if n == 0 {
+            return self;
+        }
+
         self.length_before += n;
         self.length_after += n;
+
+        if let Some(Operation::Retain(last_n)) = self.operations.last_mut() {
+            *last_n += n;
+        } else {
+            self.operations.push(Operation::Retain(n));
+        }
+
         self
     }
 
@@ -34,8 +44,14 @@ impl Operations {
             return self;
         }
 
-        self.operations.push(Operation::Delete(n));
         self.length_before += n;
+
+        if let Some(Operation::Delete(last_n)) = self.operations.last_mut() {
+            *last_n += n;
+        } else {
+            self.operations.push(Operation::Delete(n));
+        }
+
         self
     }
 
@@ -44,8 +60,14 @@ impl Operations {
             return self;
         }
 
-        self.operations.push(Operation::Insert(s.to_string()));
         self.length_after += s.chars().count();
+
+        if let Some(Operation::Insert(last_s)) = self.operations.last_mut() {
+            *last_s += s;
+        } else {
+            self.operations.push(Operation::Insert(s.to_string()));
+        }
+
         self
     }
 
