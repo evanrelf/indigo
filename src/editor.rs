@@ -99,9 +99,9 @@ impl Editor {
         let event = event::read().unwrap();
 
         let operations = match self.mode {
-            Mode::Normal => self.event_to_operations_normal(event),
-            Mode::Command => self.event_to_operations_command(event),
-            Mode::Insert => self.event_to_operations_insert(event),
+            Mode::Normal => self.handle_event_normal(event),
+            Mode::Command => self.handle_event_command(event),
+            Mode::Insert => self.handle_event_insert(event),
         };
 
         for operation in operations {
@@ -109,7 +109,7 @@ impl Editor {
         }
     }
 
-    fn event_to_operations_normal(&self, event: event::Event) -> Vec<Operation> {
+    fn handle_event_normal(&self, event: Event) -> Vec<Operation> {
         use buffer::Operation::*;
         use selection::Operation::*;
         use Operation::*;
@@ -189,7 +189,7 @@ impl Editor {
         operations
     }
 
-    fn event_to_operations_command(&self, event: event::Event) -> Vec<Operation> {
+    fn handle_event_command(&self, event: event::Event) -> Vec<Operation> {
         use Operation::*;
 
         match event {
@@ -209,7 +209,7 @@ impl Editor {
         }
     }
 
-    fn event_to_operations_insert(&self, event: event::Event) -> Vec<Operation> {
+    fn handle_event_insert(&self, event: Event) -> Vec<Operation> {
         use buffer::Operation::*;
         use Operation::*;
 
