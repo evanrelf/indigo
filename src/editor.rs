@@ -187,7 +187,7 @@ impl Editor {
                 }
             }
             Event::Resize(columns, lines) => vec![Resize { lines, columns }],
-            _ => vec![NoOp],
+            Event::Mouse(_) => vec![NoOp],
         };
 
         // Must always perform an operation, so the count can be reset properly. If no work needs
@@ -237,7 +237,7 @@ impl Editor {
                 }
             }
             Event::Resize(columns, lines) => vec![Resize { lines, columns }],
-            _ => Vec::new(),
+            Event::Mouse(_) => Vec::new(),
         }
     }
 }

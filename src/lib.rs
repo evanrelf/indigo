@@ -1,3 +1,8 @@
+// TODO
+// #![warn(clippy::cast_possible_truncation)]
+// #![warn(clippy::cast_possible_wrap)]
+// #![warn(clippy::cast_sign_loss)]
+
 pub mod buffer;
 pub mod cursor;
 pub mod editor;
