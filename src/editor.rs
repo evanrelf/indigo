@@ -252,7 +252,14 @@ impl Widget for &Editor {
 
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Min(0), Constraint::Length(1)].as_ref())
+            .constraints(
+                [
+                    Constraint::Min(0),
+                    Constraint::Length(1),
+                    Constraint::Length(1),
+                ]
+                .as_ref(),
+            )
             .split(area);
 
         // Render tildes
@@ -277,6 +284,13 @@ impl Widget for &Editor {
             .title(format!("{}{}", mode, count))
             .style(Style::default().bg(Color::Rgb(0xEE, 0xEE, 0xEE)))
             .render(chunks[1], buffer);
+
+        // Render command line
+        if let Mode::Command = self.mode {
+            Block::default()
+                .title(":".to_string())
+                .render(chunks[2], buffer);
+        }
 
         // Render buffer
         self.buffers[self.buffer_index].render(chunks[0], buffer);
