@@ -12,8 +12,8 @@ pub struct Buffer {
     rope: Rope,
     selections: Vec<Mutex<Selection>>,
     primary_selection_index: usize,
-    viewport_lines_offset: usize,
-    viewport_columns_offset: usize,
+    view_lines_offset: usize,
+    view_columns_offset: usize,
 }
 
 pub enum Operation {
@@ -111,8 +111,8 @@ impl Buffer {
             rope,
             selections,
             primary_selection_index: 0,
-            viewport_lines_offset: 0,
-            viewport_columns_offset: 0,
+            view_lines_offset: 0,
+            view_columns_offset: 0,
         }
     }
 
@@ -130,8 +130,8 @@ impl Buffer {
             rope,
             selections,
             primary_selection_index: 0,
-            viewport_lines_offset: 0,
-            viewport_columns_offset: 0,
+            view_lines_offset: 0,
+            view_columns_offset: 0,
         }
     }
 
@@ -147,12 +147,12 @@ impl Buffer {
         self.primary_selection_index
     }
 
-    pub fn viewport_lines_offset(&self) -> usize {
-        self.viewport_lines_offset
+    pub fn view_lines_offset(&self) -> usize {
+        self.view_lines_offset
     }
 
-    pub fn viewport_columns_offset(&self) -> usize {
-        self.viewport_columns_offset
+    pub fn view_columns_offset(&self) -> usize {
+        self.view_columns_offset
     }
 
     pub fn cursor_to_index(&self, cursor: &Cursor) -> Option<usize> {
@@ -229,22 +229,22 @@ impl Buffer {
     }
 
     fn scroll_up(&mut self, distance: usize) {
-        self.viewport_lines_offset = self.viewport_lines_offset.saturating_sub(distance);
+        self.view_lines_offset = self.view_lines_offset.saturating_sub(distance);
     }
 
     fn scroll_down(&mut self, distance: usize) {
-        let new_viewport_lines_offset = self.viewport_lines_offset + distance;
-        if new_viewport_lines_offset <= self.rope.len_lines() {
-            self.viewport_lines_offset = new_viewport_lines_offset;
+        let new_view_lines_offset = self.view_lines_offset + distance;
+        if new_view_lines_offset <= self.rope.len_lines() {
+            self.view_lines_offset = new_view_lines_offset;
         }
     }
 
     fn scroll_left(&mut self, distance: usize) {
-        self.viewport_columns_offset = self.viewport_columns_offset.saturating_sub(distance);
+        self.view_columns_offset = self.view_columns_offset.saturating_sub(distance);
     }
 
     fn scroll_right(&mut self, distance: usize) {
-        self.viewport_columns_offset += distance;
+        self.view_columns_offset += distance;
     }
 
     fn move_up(&mut self, distance: usize) {
@@ -364,8 +364,8 @@ impl FromStr for Buffer {
             rope,
             selections,
             primary_selection_index: 0,
-            viewport_lines_offset: 0,
-            viewport_columns_offset: 0,
+            view_lines_offset: 0,
+            view_columns_offset: 0,
         })
     }
 }
@@ -380,21 +380,21 @@ impl Widget for &Buffer {
 
         let height = std::cmp::min(
             area.height - 10,
-            (self.rope.len_lines() - self.viewport_lines_offset) as u16,
+            (self.rope.len_lines() - self.view_lines_offset) as u16,
         );
 
         let blank = Buffer::empty(Rect { height, ..area });
         buffer.merge(&blank);
 
-        let viewport_slice = {
-            let viewport_start_line = self.viewport_lines_offset;
-            let viewport_end_line = viewport_start_line + (area.height as usize - 1);
+        let view_slice = {
+            let view_start_line = self.view_lines_offset;
+            let view_end_line = view_start_line + (area.height as usize - 1);
             let buffer_end_line = self.rope().len_lines();
-            let start_char_index = self.rope().line_to_char(viewport_start_line);
-            if buffer_end_line <= viewport_end_line {
+            let start_char_index = self.rope().line_to_char(view_start_line);
+            if buffer_end_line <= view_end_line {
                 self.rope().slice(start_char_index..)
             } else {
-                let end_char_index = self.rope().line_to_char(viewport_end_line);
+                let end_char_index = self.rope().line_to_char(view_end_line);
                 self.rope().slice(start_char_index..end_char_index)
             }
         };
@@ -404,13 +404,9 @@ impl Widget for &Buffer {
             .constraints([Constraint::Length(4), Constraint::Min(0)].as_ref())
             .split(area);
 
-        for (i, line) in viewport_slice.lines().enumerate() {
-            let line = if line
-                .len_chars()
-                .saturating_sub(self.viewport_columns_offset)
-                > 0
-            {
-                Cow::from(line.slice(self.viewport_columns_offset..))
+        for (i, line) in view_slice.lines().enumerate() {
+            let line = if line.len_chars().saturating_sub(self.view_columns_offset) > 0 {
+                Cow::from(line.slice(self.view_columns_offset..))
                     .trim_end()
                     .to_string()
             } else {
@@ -420,7 +416,7 @@ impl Widget for &Buffer {
             buffer.set_stringn(
                 chunks[0].left(),
                 chunks[0].top() + i as u16,
-                format!("{:>3} ", self.viewport_lines_offset + i + 1),
+                format!("{:>3} ", self.view_lines_offset + i + 1),
                 chunks[0].width as usize,
                 Style::default().bg(Color::Rgb(0xEE, 0xEE, 0xEE)),
             );
@@ -443,14 +439,14 @@ impl Widget for &Buffer {
             for (cursor, style) in [anchor_cursor, head_cursor] {
                 let buffer_line = cursor.line;
                 let buffer_column = cursor.column;
-                let viewport_line = buffer_line.saturating_sub(self.viewport_lines_offset);
-                let viewport_column = buffer_column.saturating_sub(self.viewport_columns_offset);
+                let view_line = buffer_line.saturating_sub(self.view_lines_offset);
+                let view_column = buffer_column.saturating_sub(self.view_columns_offset);
 
                 let cursor_visible = [
-                    buffer_line >= self.viewport_lines_offset,
-                    buffer_column >= self.viewport_columns_offset,
-                    viewport_line < chunks[1].bottom() as usize,
-                    viewport_column < chunks[1].right() as usize,
+                    buffer_line >= self.view_lines_offset,
+                    buffer_column >= self.view_columns_offset,
+                    view_line < chunks[1].bottom() as usize,
+                    view_column < chunks[1].right() as usize,
                 ]
                 .iter()
                 .all(|x| *x);
@@ -458,8 +454,8 @@ impl Widget for &Buffer {
                 if cursor_visible {
                     buffer
                         .get_mut(
-                            chunks[1].left() + viewport_column as u16,
-                            chunks[1].top() + viewport_line as u16,
+                            chunks[1].left() + view_column as u16,
+                            chunks[1].top() + view_line as u16,
                         )
                         .set_style(style);
                 }
