@@ -26,6 +26,7 @@ pub struct Editor {
 pub enum Operation {
     Quit,
     ChangeMode(Mode),
+    RunCommand(String),
     SetCount(usize),
     Buffer(buffer::Operation),
     NoOp,
@@ -46,6 +47,15 @@ impl Operand for Editor {
             ChangeMode(mode) => {
                 self.mode = mode;
             }
+            RunCommand(command) => match command.as_str() {
+                "" => {}
+                "quit" | "q" => {
+                    self.quit = true;
+                }
+                _ => {
+                    unimplemented!("Unknown command: {}", command);
+                }
+            },
             SetCount(new_count) => {
                 self.count = new_count;
             }

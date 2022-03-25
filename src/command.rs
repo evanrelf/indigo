@@ -44,6 +44,13 @@ impl CommandLine {
                                 self.command.clear();
                                 vec![editor::Operation::ChangeMode(editor::Mode::Normal)]
                             }
+                        },
+                        KeyCode::Enter => {
+                            self.command.clear();
+                            vec![
+                                ChangeMode(editor::Mode::Normal),
+                                RunCommand(self.command.clone()),
+                            ]
                         }
                         _ => Vec::new(),
                     }
