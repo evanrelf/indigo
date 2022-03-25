@@ -2,7 +2,6 @@ use crate::{
     buffer::{self, Buffer},
     operand::Operand,
     selection,
-    terminal::Terminal,
 };
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use std::path::Path;
@@ -19,13 +18,10 @@ pub struct Editor {
     count: usize,
     buffers: Vec<Buffer>,
     buffer_index: usize,
-    viewport_lines: u16,
-    viewport_columns: u16,
 }
 
 pub enum Operation {
     Quit,
-    Resize { lines: u16, columns: u16 },
     ChangeMode(Mode),
     SetCount(usize),
     Buffer(buffer::Operation),
@@ -43,10 +39,6 @@ impl Operand for Editor {
         match operation {
             Quit => {
                 self.quit = true;
-            }
-            Resize { lines, columns } => {
-                self.viewport_lines = lines;
-                self.viewport_columns = columns;
             }
             ChangeMode(mode) => {
                 self.mode = mode;
@@ -70,16 +62,12 @@ impl Operand for Editor {
 
 impl Editor {
     pub fn new() -> Self {
-        let (viewport_columns, viewport_lines) = Terminal::size();
-
         Editor {
             quit: false,
             mode: Mode::Normal,
             count: 0,
             buffers: vec![Buffer::new()],
             buffer_index: 0,
-            viewport_lines,
-            viewport_columns,
         }
     }
 
@@ -186,7 +174,7 @@ impl Editor {
                     vec![NoOp]
                 }
             }
-            Event::Resize(columns, lines) => vec![Resize { lines, columns }],
+            Event::Resize(_, _) => vec![NoOp],
             Event::Mouse(_) => vec![NoOp],
         };
 
@@ -236,7 +224,7 @@ impl Editor {
                     Vec::new()
                 }
             }
-            Event::Resize(columns, lines) => vec![Resize { lines, columns }],
+            Event::Resize(_, _) => Vec::new(),
             Event::Mouse(_) => Vec::new(),
         }
     }

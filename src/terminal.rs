@@ -1,4 +1,4 @@
-use crossterm::{terminal, Command, ExecutableCommand, QueueableCommand};
+use crossterm::{Command, ExecutableCommand, QueueableCommand};
 use std::{
     io::{stdout, Stdout, Write},
     panic,
@@ -23,10 +23,6 @@ impl Terminal {
 
     pub fn flush() {
         stdout().flush().unwrap();
-    }
-
-    pub fn size() -> (u16, u16) {
-        terminal::size().unwrap()
     }
 }
 
