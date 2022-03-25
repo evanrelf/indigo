@@ -1,5 +1,6 @@
 use crate::{
     buffer::{self, Buffer},
+    command::CommandLine,
     operand::Operand,
     selection,
 };
@@ -16,6 +17,7 @@ pub enum Mode {
 pub struct Editor {
     quit: bool,
     mode: Mode,
+    command_line: CommandLine,
     count: usize,
     buffers: Vec<Buffer>,
     buffer_index: usize,
@@ -66,6 +68,7 @@ impl Editor {
         Editor {
             quit: false,
             mode: Mode::Normal,
+            command_line: CommandLine::new(),
             count: 0,
             buffers: vec![Buffer::new()],
             buffer_index: 0,
@@ -302,9 +305,7 @@ impl Widget for &Editor {
 
         // Render command line
         if let Mode::Command = self.mode {
-            Block::default()
-                .title(":".to_string())
-                .render(chunks[2], buffer);
+            self.command_line.render(chunks[2], buffer);
         }
 
         // Render buffer
