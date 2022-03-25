@@ -1,5 +1,5 @@
 use ropey::Rope;
-use std::borrow::Cow;
+use std::{borrow::Cow, cmp::Ordering};
 
 enum Operation {
     Retain(usize),
@@ -99,10 +99,121 @@ impl Operations {
         }
     }
 
-    #[allow(unused_variables)]
-    #[allow(unused_mut)]
     pub fn compose(self, other: Self) -> Option<Self> {
-        todo!()
+        if self.length_after != other.length_before {
+            return None;
+        }
+
+        if self.operations.is_empty() {
+            return Some(other);
+        }
+
+        if other.operations.is_empty() {
+            return Some(self);
+        }
+
+        let mut left_iter = self.operations.into_iter();
+        let mut right_iter = other.operations.into_iter();
+
+        let mut left_head = left_iter.next();
+        let mut right_head = right_iter.next();
+
+        let mut composition = Self::new();
+
+        loop {
+            match (left_head, right_head) {
+                (Some(Operation::Delete(n)), right) => {
+                    composition.delete(n);
+                    left_head = left_iter.next();
+                    right_head = right;
+                }
+                (left, Some(Operation::Insert(s))) => {
+                    composition.insert(&s);
+                    left_head = left;
+                    right_head = right_iter.next();
+                }
+                (Some(Operation::Retain(left_n)), Some(Operation::Retain(right_n))) => {
+                    match left_n.cmp(&right_n) {
+                        Ordering::Less => {
+                            composition.retain(left_n);
+                            left_head = left_iter.next();
+                            right_head = Some(Operation::Retain(right_n - left_n));
+                        }
+                        Ordering::Equal => {
+                            composition.retain(left_n);
+                            left_head = left_iter.next();
+                            right_head = right_iter.next();
+                        }
+                        Ordering::Greater => {
+                            composition.retain(right_n);
+                            left_head = Some(Operation::Retain(left_n - right_n));
+                            right_head = right_iter.next();
+                        }
+                    }
+                }
+                (Some(Operation::Insert(s)), Some(Operation::Delete(n))) => {
+                    let length = s.chars().count();
+                    match length.cmp(&n) {
+                        Ordering::Less => {
+                            left_head = left_iter.next();
+                            right_head = Some(Operation::Delete(n - length));
+                        }
+                        Ordering::Equal => {
+                            left_head = left_iter.next();
+                            right_head = right_iter.next();
+                        }
+                        Ordering::Greater => {
+                            todo!();
+                        }
+                    }
+                }
+                (Some(Operation::Insert(s)), Some(Operation::Retain(n))) => {
+                    let length = s.chars().count();
+                    match length.cmp(&n) {
+                        Ordering::Less => {
+                            composition.insert(&s);
+                            left_head = left_iter.next();
+                            right_head = Some(Operation::Retain(n - length));
+                        }
+                        Ordering::Equal => {
+                            composition.insert(&s);
+                            left_head = left_iter.next();
+                            right_head = right_iter.next();
+                        }
+                        Ordering::Greater => {
+                            todo!();
+                        }
+                    }
+                }
+                (Some(Operation::Retain(left_n)), Some(Operation::Delete(right_n))) => {
+                    match left_n.cmp(&right_n) {
+                        Ordering::Less => {
+                            composition.delete(left_n);
+                            left_head = left_iter.next();
+                            right_head = Some(Operation::Delete(right_n - left_n));
+                        }
+                        Ordering::Equal => {
+                            composition.delete(left_n);
+                            left_head = left_iter.next();
+                            right_head = right_iter.next();
+                        }
+                        Ordering::Greater => {
+                            composition.delete(right_n);
+                            left_head = Some(Operation::Retain(left_n - right_n));
+                            right_head = right_iter.next();
+                        }
+                    }
+                }
+                (None, None) => {
+                    break;
+                }
+                (None, _) | (_, None) => {
+                    unreachable!();
+                }
+            }
+        }
+
+        Some(composition)
     }
 
     #[allow(unused_variables)]
