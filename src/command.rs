@@ -14,7 +14,7 @@ impl CommandLine {
     }
 
     pub fn handle_event(&mut self, event: Event) -> Vec<editor::Operation> {
-        use editor::Operation::*;
+        use editor::{Mode::*, Operation::*};
 
         match event {
             Event::Key(key_event) => {
@@ -24,7 +24,7 @@ impl CommandLine {
                     match code {
                         KeyCode::Char('c') => {
                             self.command.clear();
-                            vec![editor::Operation::ChangeMode(editor::Mode::Normal)]
+                            vec![ChangeMode(Normal)]
                         }
                         _ => Vec::new(),
                     }
@@ -32,7 +32,7 @@ impl CommandLine {
                     match code {
                         KeyCode::Esc => {
                             self.command.clear();
-                            vec![editor::Operation::ChangeMode(editor::Mode::Normal)]
+                            vec![ChangeMode(Normal)]
                         }
                         KeyCode::Char(c) => {
                             self.command.push(c);
@@ -42,13 +42,13 @@ impl CommandLine {
                             Some(_) => Vec::new(),
                             None => {
                                 self.command.clear();
-                                vec![editor::Operation::ChangeMode(editor::Mode::Normal)]
+                                vec![ChangeMode(Normal)]
                             }
                         },
                         KeyCode::Enter => {
                             self.command.clear();
                             vec![
-                                ChangeMode(editor::Mode::Normal),
+                                ChangeMode(Normal),
                                 RunCommand(self.command.clone()),
                             ]
                         }
