@@ -100,7 +100,7 @@ impl Editor {
 
         let operations = match self.mode {
             Mode::Normal => self.handle_event_normal(event),
-            Mode::Command => self.handle_event_command(event),
+            Mode::Command => self.command_line.handle_event(event),
             Mode::Insert => self.handle_event_insert(event),
         };
 
@@ -187,26 +187,6 @@ impl Editor {
         assert!(!operations.is_empty());
 
         operations
-    }
-
-    fn handle_event_command(&self, event: event::Event) -> Vec<Operation> {
-        use Operation::*;
-
-        match event {
-            Event::Key(key_event) => {
-                let KeyEvent { modifiers, code } = key_event;
-
-                if modifiers == KeyModifiers::NONE {
-                    match code {
-                        KeyCode::Esc => vec![ChangeMode(Mode::Normal)],
-                        _ => Vec::new(),
-                    }
-                } else {
-                    Vec::new()
-                }
-            }
-            _ => Vec::new(),
-        }
     }
 
     fn handle_event_insert(&self, event: Event) -> Vec<Operation> {

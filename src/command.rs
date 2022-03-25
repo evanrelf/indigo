@@ -1,3 +1,5 @@
+use crate::editor;
+use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tui::widgets::Widget;
 
 pub struct CommandLine {
@@ -8,6 +10,48 @@ impl CommandLine {
     pub fn new() -> Self {
         Self {
             command: String::new(),
+        }
+    }
+
+    pub fn handle_event(&mut self, event: Event) -> Vec<editor::Operation> {
+        use editor::Operation::*;
+
+        match event {
+            Event::Key(key_event) => {
+                let KeyEvent { modifiers, code } = key_event;
+
+                if modifiers == KeyModifiers::CONTROL {
+                    match code {
+                        KeyCode::Char('c') => {
+                            self.command.clear();
+                            vec![editor::Operation::ChangeMode(editor::Mode::Normal)]
+                        }
+                        _ => Vec::new(),
+                    }
+                } else if modifiers == KeyModifiers::NONE {
+                    match code {
+                        KeyCode::Esc => {
+                            self.command.clear();
+                            vec![editor::Operation::ChangeMode(editor::Mode::Normal)]
+                        }
+                        KeyCode::Char(c) => {
+                            self.command.push(c);
+                            Vec::new()
+                        }
+                        KeyCode::Backspace => match self.command.pop() {
+                            Some(_) => Vec::new(),
+                            None => {
+                                self.command.clear();
+                                vec![editor::Operation::ChangeMode(editor::Mode::Normal)]
+                            }
+                        }
+                        _ => Vec::new(),
+                    }
+                } else {
+                    Vec::new()
+                }
+            }
+            _ => Vec::new(),
         }
     }
 }
