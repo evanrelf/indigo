@@ -9,6 +9,7 @@ use tui::widgets::Widget;
 
 pub enum Mode {
     Normal,
+    Command,
     Insert,
 }
 
@@ -96,6 +97,7 @@ impl Editor {
 
         let operations = match self.mode {
             Mode::Normal => self.event_to_operations_normal(event),
+            Mode::Command => self.event_to_operations_command(event),
             Mode::Insert => self.event_to_operations_insert(event),
         };
 
@@ -185,6 +187,10 @@ impl Editor {
         operations
     }
 
+    fn event_to_operations_command(&self, _event: event::Event) -> Vec<Operation> {
+        Vec::new()
+    }
+
     fn event_to_operations_insert(&self, event: event::Event) -> Vec<Operation> {
         use buffer::Operation::*;
         use Operation::*;
@@ -257,6 +263,7 @@ impl Widget for &Editor {
         // Render status
         let mode = match self.mode {
             Mode::Normal => "normal",
+            Mode::Command => "command",
             Mode::Insert => "insert",
         };
 
