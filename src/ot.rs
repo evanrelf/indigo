@@ -7,6 +7,11 @@ enum Operation {
     Insert(String),
 }
 
+pub enum Affinity {
+    Before,
+    After,
+}
+
 pub struct Operations {
     operations: Vec<Operation>,
     length_before: usize,
@@ -106,7 +111,7 @@ impl Operations {
     }
 
     #[allow(unused_variables)]
-    pub fn transform_index(&self, index: usize) -> usize {
+    pub fn transform_index(&self, index: usize, affinity: Affinity) -> usize {
         todo!()
     }
 
