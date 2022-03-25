@@ -46,11 +46,9 @@ impl CommandLine {
                             }
                         },
                         KeyCode::Enter => {
+                            let operations = self.run_command();
                             self.command.clear();
-                            vec![
-                                ChangeMode(Normal),
-                                RunCommand(self.command.clone()),
-                            ]
+                            operations
                         }
                         _ => Vec::new(),
                     }
@@ -59,6 +57,20 @@ impl CommandLine {
                 }
             }
             _ => Vec::new(),
+        }
+    }
+
+    fn run_command(&self) -> Vec<editor::Operation> {
+        use editor::{Mode::*, Operation::*};
+
+        match self.command.as_str() {
+            "quit" | "q" => {
+                vec![Quit]
+            }
+            "" => vec![ChangeMode(Normal)],
+            _ => {
+                unimplemented!("Unknown command: {}", self.command);
+            }
         }
     }
 }
