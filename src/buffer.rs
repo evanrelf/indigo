@@ -437,55 +437,32 @@ impl Widget for &Buffer {
         for selection_mutex in &self.selections {
             let selection = selection_mutex.lock();
 
-            let anchor_visible = {
-                let buffer_line = selection.anchor.line;
-                let buffer_column = selection.anchor.column;
+            let anchor_cursor = (&selection.anchor, Style::default().bg(Color::LightCyan));
+            let head_cursor = (&selection.head, Style::default().bg(Color::LightYellow));
+
+            for (cursor, style) in [anchor_cursor, head_cursor] {
+                let buffer_line = cursor.line;
+                let buffer_column = cursor.column;
                 let viewport_line = buffer_line.saturating_sub(self.viewport_lines_offset);
                 let viewport_column = buffer_column.saturating_sub(self.viewport_columns_offset);
 
-                [
+                let cursor_visible = [
                     buffer_line >= self.viewport_lines_offset,
                     buffer_column >= self.viewport_columns_offset,
                     viewport_line < chunks[1].bottom() as usize,
                     viewport_column < chunks[1].right() as usize,
                 ]
                 .iter()
-                .all(|x| *x)
-            };
+                .all(|x| *x);
 
-            if anchor_visible && !selection.is_reduced() {
-                let anchor_line = (selection.anchor.line - self.viewport_lines_offset) as u16;
-                let anchor_column = (selection.anchor.column - self.viewport_columns_offset) as u16;
-                buffer
-                    .get_mut(
-                        chunks[1].left() + anchor_column,
-                        chunks[1].top() + anchor_line,
-                    )
-                    .set_style(Style::default().bg(Color::LightCyan));
-            }
-
-            let head_visible = {
-                let buffer_line = selection.head.line;
-                let buffer_column = selection.head.column;
-                let viewport_line = buffer_line.saturating_sub(self.viewport_lines_offset);
-                let viewport_column = buffer_column.saturating_sub(self.viewport_columns_offset);
-
-                [
-                    buffer_line >= self.viewport_lines_offset,
-                    buffer_column >= self.viewport_columns_offset,
-                    viewport_line < chunks[1].bottom() as usize,
-                    viewport_column < chunks[1].right() as usize,
-                ]
-                .iter()
-                .all(|x| *x)
-            };
-
-            if head_visible {
-                let head_line = (selection.head.line - self.viewport_lines_offset) as u16;
-                let head_column = (selection.head.column - self.viewport_columns_offset) as u16;
-                buffer
-                    .get_mut(chunks[1].left() + head_column, chunks[1].top() + head_line)
-                    .set_style(Style::default().bg(Color::LightYellow));
+                if cursor_visible {
+                    buffer
+                        .get_mut(
+                            chunks[1].left() + viewport_column as u16,
+                            chunks[1].top() + viewport_line as u16,
+                        )
+                        .set_style(style);
+                }
             }
         }
     }
