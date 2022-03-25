@@ -28,6 +28,9 @@ fn enter_terminal() {
         .execute(crossterm::terminal::EnterAlternateScreen)
         .unwrap();
     stdout.execute(crossterm::cursor::Hide).unwrap();
+    stdout
+        .execute(crossterm::event::EnableMouseCapture)
+        .unwrap();
     panic::set_hook(Box::new(|panic_info| {
         exit_terminal(true);
         eprintln!("{}", panic_info);
@@ -36,6 +39,9 @@ fn enter_terminal() {
 
 fn exit_terminal(panicking: bool) {
     let mut stdout = std::io::stdout();
+    stdout
+        .execute(crossterm::event::DisableMouseCapture)
+        .unwrap();
     stdout.execute(crossterm::cursor::Show).unwrap();
     stdout
         .execute(crossterm::terminal::LeaveAlternateScreen)
