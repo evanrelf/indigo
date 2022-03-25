@@ -162,12 +162,11 @@ impl Editor {
                             vec![Buffer(MoveRight(count)), Buffer(AllSelections(Reduce))]
                         }
                         // Mode
-                        KeyCode::Char('i') => {
-                            vec![
-                                ChangeMode(Mode::Insert),
-                                Buffer(AllSelections(FlipBackwards)),
-                            ]
-                        }
+                        KeyCode::Char(':') => vec![ChangeMode(Mode::Command)],
+                        KeyCode::Char('i') => vec![
+                            ChangeMode(Mode::Insert),
+                            Buffer(AllSelections(FlipBackwards)),
+                        ],
                         // Edit
                         KeyCode::Char('d') => vec![Buffer(Delete)],
                         _ => vec![NoOp],
@@ -187,8 +186,24 @@ impl Editor {
         operations
     }
 
-    fn event_to_operations_command(&self, _event: event::Event) -> Vec<Operation> {
-        Vec::new()
+    fn event_to_operations_command(&self, event: event::Event) -> Vec<Operation> {
+        use Operation::*;
+
+        match event {
+            Event::Key(key_event) => {
+                let KeyEvent { modifiers, code } = key_event;
+
+                if modifiers == KeyModifiers::NONE {
+                    match code {
+                        KeyCode::Esc => vec![ChangeMode(Mode::Normal)],
+                        _ => Vec::new(),
+                    }
+                } else {
+                    Vec::new()
+                }
+            }
+            _ => Vec::new(),
+        }
     }
 
     fn event_to_operations_insert(&self, event: event::Event) -> Vec<Operation> {
