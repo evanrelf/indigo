@@ -1,30 +1,8 @@
-use crossterm::{Command, ExecutableCommand, QueueableCommand};
+use crossterm::ExecutableCommand;
 use std::{
-    io::{stdout, Stdout, Write},
+    io::{Stdout, Write},
     panic,
 };
-
-pub struct Terminal {}
-
-impl Terminal {
-    pub fn execute<C>(command: C)
-    where
-        C: Command,
-    {
-        stdout().execute(command).unwrap();
-    }
-
-    pub fn queue<C>(command: C)
-    where
-        C: Command,
-    {
-        stdout().queue(command).unwrap();
-    }
-
-    pub fn flush() {
-        stdout().flush().unwrap();
-    }
-}
 
 pub fn with_terminal<F>(f: F)
 where
@@ -58,9 +36,9 @@ fn enter_terminal() {
 
 fn exit_terminal(panicking: bool) {
     let mut stdout = std::io::stdout();
-    stdout.queue(crossterm::cursor::Show).unwrap();
+    stdout.execute(crossterm::cursor::Show).unwrap();
     stdout
-        .queue(crossterm::terminal::LeaveAlternateScreen)
+        .execute(crossterm::terminal::LeaveAlternateScreen)
         .unwrap();
     stdout.flush().unwrap();
     crossterm::terminal::disable_raw_mode().unwrap();
