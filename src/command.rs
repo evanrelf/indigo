@@ -1,10 +1,14 @@
 use tui::widgets::Widget;
 
-pub struct CommandLine {}
+pub struct CommandLine {
+    command: String,
+}
 
 impl CommandLine {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            command: String::new(),
+        }
     }
 }
 
@@ -16,9 +20,15 @@ impl Default for CommandLine {
 
 impl Widget for &CommandLine {
     fn render(self, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
+        use tui::style::Color;
         use tui::widgets::Block;
 
         Block::default()
-            .title(":{}".to_string())
+            .title(format!(":{}", self.command))
             .render(area, buffer);
+
+        buffer
+            .get_mut(area.left() + self.command.len() as u16 + 1, area.top())
+            .set_bg(Color::White);
+    }
 }
