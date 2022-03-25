@@ -4,7 +4,7 @@ use crate::{
     operand::Operand,
     selection,
 };
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers, MouseEvent, MouseEventKind};
 use std::path::Path;
 use tui::widgets::Widget;
 
@@ -178,8 +178,16 @@ impl Editor {
                     vec![NoOp]
                 }
             }
+            Event::Mouse(mouse_event) => {
+                let MouseEvent { kind, .. } = mouse_event;
+
+                match kind {
+                    MouseEventKind::ScrollUp => vec![Buffer(ScrollUp(3))],
+                    MouseEventKind::ScrollDown => vec![Buffer(ScrollDown(3))],
+                    _ => vec![NoOp],
+                }
+            }
             Event::Resize(_, _) => vec![NoOp],
-            Event::Mouse(_) => vec![NoOp],
         };
 
         // Must always perform an operation, so the count can be reset properly. If no work needs
@@ -228,8 +236,16 @@ impl Editor {
                     Vec::new()
                 }
             }
+            Event::Mouse(mouse_event) => {
+                let MouseEvent { kind, .. } = mouse_event;
+
+                match kind {
+                    MouseEventKind::ScrollUp => vec![Buffer(ScrollUp(3))],
+                    MouseEventKind::ScrollDown => vec![Buffer(ScrollDown(3))],
+                    _ => vec![],
+                }
+            }
             Event::Resize(_, _) => Vec::new(),
-            Event::Mouse(_) => Vec::new(),
         }
     }
 }
