@@ -12,6 +12,7 @@ pub mod cursor;
 pub mod editor;
 pub mod operand;
 pub mod ot;
+pub mod range;
 pub mod rope;
 pub mod selection;
 pub mod terminal;

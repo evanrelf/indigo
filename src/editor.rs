@@ -2,7 +2,7 @@ use crate::{
     buffer::{self, Buffer},
     command::CommandLine,
     operand::Operand,
-    selection,
+    range, selection,
 };
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
 use std::path::Path;
@@ -111,7 +111,8 @@ impl Editor {
 
     fn handle_event_normal(&self, event: Event) -> Vec<Operation> {
         use buffer::Operation::*;
-        use selection::{Operation::*, RangeOperation::*};
+        use range::Operation::*;
+        use selection::Operation::*;
         use Operation::*;
 
         let count = if self.count == 0 { 1 } else { self.count };

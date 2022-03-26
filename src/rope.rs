@@ -1,4 +1,4 @@
-use crate::{cursor::Cursor, selection::Range};
+use crate::{cursor::Cursor, range::Range};
 use std::ops::{Deref, DerefMut};
 
 pub struct Rope {
