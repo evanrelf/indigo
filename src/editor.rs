@@ -299,6 +299,12 @@ impl Widget for &Editor {
             Mode::Insert => "insert",
         };
 
+        let cursor = {
+            let selection = self.buffers[self.buffer_index].selection();
+            let range = &selection.ranges[selection.primary_range_index];
+            range.head.to_string()
+        };
+
         let count = if self.count > 0 {
             format!(" {}", self.count)
         } else {
@@ -306,7 +312,7 @@ impl Widget for &Editor {
         };
 
         Block::default()
-            .title(format!("{}{}", mode, count))
+            .title(format!("{} {}{}", mode, cursor, count))
             .style(Style::default().bg(Color::Rgb(0xEE, 0xEE, 0xEE)))
             .render(chunks[1], buffer);
 

@@ -20,7 +20,7 @@ impl Cursor {
 
 impl Display for Cursor {
     fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "{}:{}", self.line, self.column)
+        write!(formatter, "{}:{}", self.line + 1, self.column + 1)
     }
 }
 
