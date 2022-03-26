@@ -23,10 +23,7 @@ pub enum Operation {
     MoveDown(usize),
     MoveLeft(usize),
     MoveRight(usize),
-    NextRange(usize),
-    PreviousRange(usize),
-    PrimaryRange(selection::RangeOperation),
-    AllRanges(selection::RangeOperation),
+    Selection(selection::Operation),
     Insert(char),
     Delete,
     Backspace,
@@ -63,29 +60,8 @@ impl Operand for Buffer {
             MoveRight(distance) => {
                 self.move_right(distance);
             }
-            NextRange(count) => {
-                self.selection.primary_range_index = wrap_around(
-                    self.selection.ranges.len(),
-                    self.selection.primary_range_index,
-                    count as isize,
-                );
-            }
-            PreviousRange(count) => {
-                self.selection.primary_range_index = wrap_around(
-                    self.selection.ranges.len(),
-                    self.selection.primary_range_index,
-                    -(count as isize),
-                );
-            }
-            PrimaryRange(operation) => {
-                self.selection.ranges[self.selection.primary_range_index]
-                    .get_mut()
-                    .apply(operation);
-            }
-            AllRanges(operation) => {
-                for range in &mut self.selection.ranges {
-                    range.get_mut().apply(operation.clone());
-                }
+            Selection(operation) => {
+                self.selection.apply(operation);
             }
             Insert(c) => {
                 self.insert(c);
@@ -455,36 +431,9 @@ impl Widget for &Buffer {
     }
 }
 
-// Modified version of https://stackoverflow.com/a/39740009
-fn wrap_around(length: usize, value: usize, delta: isize) -> usize {
-    let length = length as isize;
-    if length == 0 {
-        0
-    } else {
-        let value = value as isize;
-        let result = if delta >= 0 {
-            (value + delta) % length
-        } else {
-            ((value + delta) - (delta * length)) % length
-        };
-        result as usize
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
-
-    #[test]
-    fn test_wrap_around() {
-        assert_eq!(wrap_around(0, 0, 0), 0);
-        assert_eq!(wrap_around(0, 0, 4), 0);
-        assert_eq!(wrap_around(2, 0, 0), 0);
-        assert_eq!(wrap_around(2, 0, 3), 1);
-        assert_eq!(wrap_around(2, 0, 4), 0);
-        assert_eq!(wrap_around(2, 0, -3), 1);
-        assert_eq!(wrap_around(2, 0, -4), 0);
-    }
 
     #[test]
     fn test_index_cursor() {

@@ -111,7 +111,7 @@ impl Editor {
 
     fn handle_event_normal(&self, event: Event) -> Vec<Operation> {
         use buffer::Operation::*;
-        use selection::RangeOperation::*;
+        use selection::{Operation::*, RangeOperation::*};
         use Operation::*;
 
         let count = if self.count == 0 { 1 } else { self.count };
@@ -153,23 +153,34 @@ impl Editor {
                         KeyCode::Right => vec![Buffer(ScrollRight(count))],
                         // Move
                         KeyCode::Char('h') => {
-                            vec![Buffer(MoveLeft(count)), Buffer(AllRanges(Reduce))]
+                            vec![
+                                Buffer(MoveLeft(count)),
+                                Buffer(Selection(AllRanges(Reduce))),
+                            ]
                         }
                         KeyCode::Char('j') => {
-                            vec![Buffer(MoveDown(count)), Buffer(AllRanges(Reduce))]
+                            vec![
+                                Buffer(MoveDown(count)),
+                                Buffer(Selection(AllRanges(Reduce))),
+                            ]
                         }
                         KeyCode::Char('k') => {
-                            vec![Buffer(MoveUp(count)), Buffer(AllRanges(Reduce))]
+                            vec![Buffer(MoveUp(count)), Buffer(Selection(AllRanges(Reduce)))]
                         }
                         KeyCode::Char('l') => {
-                            vec![Buffer(MoveRight(count)), Buffer(AllRanges(Reduce))]
+                            vec![
+                                Buffer(MoveRight(count)),
+                                Buffer(Selection(AllRanges(Reduce))),
+                            ]
                         }
                         // Mode
                         KeyCode::Char(':') => vec![ChangeMode(Mode::Command)],
-                        KeyCode::Char('i') => vec![
-                            ChangeMode(Mode::Insert),
-                            Buffer(AllRanges(FlipBackwards)),
-                        ],
+                        KeyCode::Char('i') => {
+                            vec![
+                                ChangeMode(Mode::Insert),
+                                Buffer(Selection(AllRanges(FlipBackwards))),
+                            ]
+                        }
                         // Edit
                         KeyCode::Char('d') => vec![Buffer(Delete)],
                         _ => vec![NoOp],

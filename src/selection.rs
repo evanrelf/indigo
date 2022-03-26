@@ -154,6 +154,61 @@ impl Selection {
     }
 }
 
+pub enum Operation {
+    NextRange(usize),
+    PreviousRange(usize),
+    PrimaryRange(RangeOperation),
+    AllRanges(RangeOperation),
+}
+
+impl Operand for Selection {
+    type Operation = Operation;
+
+    fn apply(&mut self, operation: Self::Operation) {
+        use Operation::*;
+
+        match operation {
+            NextRange(count) => {
+                self.primary_range_index =
+                    wrap_around(self.ranges.len(), self.primary_range_index, count as isize);
+            }
+            PreviousRange(count) => {
+                self.primary_range_index = wrap_around(
+                    self.ranges.len(),
+                    self.primary_range_index,
+                    -(count as isize),
+                );
+            }
+            PrimaryRange(operation) => {
+                self.ranges[self.primary_range_index]
+                    .get_mut()
+                    .apply(operation);
+            }
+            AllRanges(operation) => {
+                for range in &mut self.ranges {
+                    range.get_mut().apply(operation.clone());
+                }
+            }
+        }
+    }
+}
+
+// Modified version of https://stackoverflow.com/a/39740009
+fn wrap_around(length: usize, value: usize, delta: isize) -> usize {
+    let length = length as isize;
+    if length == 0 {
+        0
+    } else {
+        let value = value as isize;
+        let result = if delta >= 0 {
+            (value + delta) % length
+        } else {
+            ((value + delta) - (delta * length)) % length
+        };
+        result as usize
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -163,5 +218,16 @@ mod test {
         assert!(Cursor::from((0, 0)) < Cursor::from((1, 0)));
         assert!(Cursor::from((0, 99)) < Cursor::from((1, 0)));
         assert!(Cursor::from((1, 0)) < Cursor::from((1, 1)));
+    }
+
+    #[test]
+    fn test_wrap_around() {
+        assert_eq!(wrap_around(0, 0, 0), 0);
+        assert_eq!(wrap_around(0, 0, 4), 0);
+        assert_eq!(wrap_around(2, 0, 0), 0);
+        assert_eq!(wrap_around(2, 0, 3), 1);
+        assert_eq!(wrap_around(2, 0, 4), 0);
+        assert_eq!(wrap_around(2, 0, -3), 1);
+        assert_eq!(wrap_around(2, 0, -4), 0);
     }
 }
