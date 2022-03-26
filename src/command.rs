@@ -1,5 +1,5 @@
 use crate::editor;
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{Event, KeyCode, KeyModifiers};
 use tui::widgets::Widget;
 
 pub struct CommandLine {
@@ -17,46 +17,41 @@ impl CommandLine {
         use editor::{Mode::*, Operation::*};
 
         match event {
-            Event::Key(key_event) => {
-                let KeyEvent { modifiers, code } = key_event;
-
-                if modifiers == KeyModifiers::CONTROL {
-                    match code {
-                        KeyCode::Char('c') => {
-                            self.command.clear();
-                            vec![ChangeMode(Normal)]
-                        }
-                        _ => Vec::new(),
+            Event::Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL => {
+                match key_event.code {
+                    KeyCode::Char('c') => {
+                        self.command.clear();
+                        vec![ChangeMode(Normal)]
                     }
-                } else if modifiers == KeyModifiers::NONE {
-                    match code {
-                        KeyCode::Esc => {
-                            self.command.clear();
-                            vec![ChangeMode(Normal)]
-                        }
-                        KeyCode::Char(c) => {
-                            self.command.push(c);
-                            Vec::new()
-                        }
-                        KeyCode::Backspace => match self.command.pop() {
-                            Some(_) => Vec::new(),
-                            None => {
-                                self.command.clear();
-                                vec![ChangeMode(Normal)]
-                            }
-                        },
-                        KeyCode::Enter => {
-                            let operations = self.run_command();
-                            self.command.clear();
-                            operations
-                        }
-                        _ => Vec::new(),
-                    }
-                } else {
-                    Vec::new()
+                    _ => Vec::new(),
                 }
             }
-            _ => Vec::new(),
+            Event::Key(key_event) if key_event.modifiers == KeyModifiers::NONE => {
+                match key_event.code {
+                    KeyCode::Esc => {
+                        self.command.clear();
+                        vec![ChangeMode(Normal)]
+                    }
+                    KeyCode::Char(c) => {
+                        self.command.push(c);
+                        Vec::new()
+                    }
+                    KeyCode::Backspace => match self.command.pop() {
+                        Some(_) => Vec::new(),
+                        None => {
+                            self.command.clear();
+                            vec![ChangeMode(Normal)]
+                        }
+                    },
+                    KeyCode::Enter => {
+                        let operations = self.run_command();
+                        self.command.clear();
+                        operations
+                    }
+                    _ => Vec::new(),
+                }
+            }
+            Event::Key(_) | Event::Mouse(_) | Event::Resize(_, _) => Vec::new(),
         }
     }
 
