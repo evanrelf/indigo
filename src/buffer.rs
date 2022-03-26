@@ -1,5 +1,6 @@
 use crate::{
     cursor::Cursor,
+    direction::Direction,
     operand::Operand,
     range::Range,
     rope::Rope,
@@ -16,14 +17,8 @@ pub struct Buffer {
 }
 
 pub enum Operation {
-    ScrollUp(usize),
-    ScrollDown(usize),
-    ScrollLeft(usize),
-    ScrollRight(usize),
-    MoveUp(usize),
-    MoveDown(usize),
-    MoveLeft(usize),
-    MoveRight(usize),
+    Scroll(Direction, usize),
+    Move(Direction, usize),
     Insert(char),
     Delete,
     Backspace,
@@ -37,30 +32,18 @@ impl Operand for Buffer {
         use Operation::*;
 
         match operation {
-            ScrollUp(distance) => {
-                self.scroll_up(distance);
-            }
-            ScrollDown(distance) => {
-                self.scroll_down(distance);
-            }
-            ScrollLeft(distance) => {
-                self.scroll_left(distance);
-            }
-            ScrollRight(distance) => {
-                self.scroll_right(distance);
-            }
-            MoveUp(distance) => {
-                self.move_up(distance);
-            }
-            MoveDown(distance) => {
-                self.move_down(distance);
-            }
-            MoveLeft(distance) => {
-                self.move_left(distance);
-            }
-            MoveRight(distance) => {
-                self.move_right(distance);
-            }
+            Scroll(direction, distance) => match direction {
+                Direction::Up => self.scroll_up(distance),
+                Direction::Down => self.scroll_down(distance),
+                Direction::Left => self.scroll_left(distance),
+                Direction::Right => self.scroll_right(distance),
+            },
+            Move(direction, distance) => match direction {
+                Direction::Up => self.move_up(distance),
+                Direction::Down => self.move_down(distance),
+                Direction::Left => self.move_left(distance),
+                Direction::Right => self.move_right(distance),
+            },
             Insert(c) => {
                 self.insert(c);
             }

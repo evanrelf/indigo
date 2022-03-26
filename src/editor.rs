@@ -1,6 +1,7 @@
 use crate::{
     buffer::{self, Buffer},
     command::CommandLine,
+    direction,
     operand::Operand,
     range, selection,
 };
@@ -111,6 +112,7 @@ impl Editor {
 
     fn handle_event_normal(&self, event: Event) -> Vec<Operation> {
         use buffer::Operation::*;
+        use direction::Direction::*;
         use range::Operation::*;
         use selection::Operation::*;
         use Operation::*;
@@ -127,10 +129,10 @@ impl Editor {
             Event::Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
                 match key_event.code {
                     // Move
-                    KeyCode::Char('H') => vec![InBuffer(MoveLeft(count))],
-                    KeyCode::Char('J') => vec![InBuffer(MoveDown(count))],
-                    KeyCode::Char('K') => vec![InBuffer(MoveUp(count))],
-                    KeyCode::Char('L') => vec![InBuffer(MoveRight(count))],
+                    KeyCode::Char('H') => vec![InBuffer(Move(Left, count))],
+                    KeyCode::Char('J') => vec![InBuffer(Move(Down, count))],
+                    KeyCode::Char('K') => vec![InBuffer(Move(Up, count))],
+                    KeyCode::Char('L') => vec![InBuffer(Move(Right, count))],
                     _ => vec![NoOp],
                 }
             }
@@ -147,25 +149,25 @@ impl Editor {
                         vec![SetCount(new_count)]
                     }
                     // Scroll
-                    KeyCode::Up => vec![InBuffer(ScrollUp(count))],
-                    KeyCode::Down => vec![InBuffer(ScrollDown(count))],
-                    KeyCode::Left => vec![InBuffer(ScrollLeft(count))],
-                    KeyCode::Right => vec![InBuffer(ScrollRight(count))],
+                    KeyCode::Up => vec![InBuffer(Scroll(Up, count))],
+                    KeyCode::Down => vec![InBuffer(Scroll(Down, count))],
+                    KeyCode::Left => vec![InBuffer(Scroll(Left, count))],
+                    KeyCode::Right => vec![InBuffer(Scroll(Right, count))],
                     // Move
                     KeyCode::Char('h') => vec![
-                        InBuffer(MoveLeft(count)),
+                        InBuffer(Move(Left, count)),
                         InBuffer(InSelection(InAllRanges(Reduce))),
                     ],
                     KeyCode::Char('j') => vec![
-                        InBuffer(MoveDown(count)),
+                        InBuffer(Move(Down, count)),
                         InBuffer(InSelection(InAllRanges(Reduce))),
                     ],
                     KeyCode::Char('k') => vec![
-                        InBuffer(MoveUp(count)),
+                        InBuffer(Move(Up, count)),
                         InBuffer(InSelection(InAllRanges(Reduce))),
                     ],
                     KeyCode::Char('l') => vec![
-                        InBuffer(MoveRight(count)),
+                        InBuffer(Move(Right, count)),
                         InBuffer(InSelection(InAllRanges(Reduce))),
                     ],
                     // Mode
@@ -180,8 +182,8 @@ impl Editor {
                 }
             }
             Event::Mouse(mouse_event) => match mouse_event.kind {
-                MouseEventKind::ScrollUp => vec![InBuffer(ScrollUp(3))],
-                MouseEventKind::ScrollDown => vec![InBuffer(ScrollDown(3))],
+                MouseEventKind::ScrollUp => vec![InBuffer(Scroll(Up, 3))],
+                MouseEventKind::ScrollDown => vec![InBuffer(Scroll(Down, 3))],
                 _ => vec![NoOp],
             },
             Event::Key(_) | Event::Resize(_, _) => vec![NoOp],
@@ -196,6 +198,7 @@ impl Editor {
 
     fn handle_event_insert(&self, event: Event) -> Vec<Operation> {
         use buffer::Operation::*;
+        use direction::Direction::*;
         use Operation::*;
 
         match event {
@@ -216,10 +219,10 @@ impl Editor {
             Event::Key(key_event) if key_event.modifiers == KeyModifiers::NONE => {
                 match key_event.code {
                     // Scroll
-                    KeyCode::Up => vec![InBuffer(ScrollUp(1))],
-                    KeyCode::Down => vec![InBuffer(ScrollDown(1))],
-                    KeyCode::Left => vec![InBuffer(ScrollLeft(1))],
-                    KeyCode::Right => vec![InBuffer(ScrollRight(1))],
+                    KeyCode::Up => vec![InBuffer(Scroll(Up, 1))],
+                    KeyCode::Down => vec![InBuffer(Scroll(Down, 1))],
+                    KeyCode::Left => vec![InBuffer(Scroll(Left, 1))],
+                    KeyCode::Right => vec![InBuffer(Scroll(Right, 1))],
                     // Mode
                     KeyCode::Esc => vec![ChangeMode(Mode::Normal)],
                     // Edit
@@ -230,8 +233,8 @@ impl Editor {
                 }
             }
             Event::Mouse(mouse_event) => match mouse_event.kind {
-                MouseEventKind::ScrollUp => vec![InBuffer(ScrollUp(3))],
-                MouseEventKind::ScrollDown => vec![InBuffer(ScrollDown(3))],
+                MouseEventKind::ScrollUp => vec![InBuffer(Scroll(Up, 3))],
+                MouseEventKind::ScrollDown => vec![InBuffer(Scroll(Down, 3))],
                 _ => vec![],
             },
             Event::Key(_) | Event::Resize(_, _) => Vec::new(),
