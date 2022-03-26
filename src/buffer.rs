@@ -63,7 +63,7 @@ impl Operand for Buffer {
 impl Buffer {
     pub fn new() -> Self {
         let rope = ropey::Rope::new().into();
-        let selection = Selection::new(vec![Range::default()]);
+        let selection = Selection::new(&[Range::default()]);
 
         Self {
             rope,
@@ -81,7 +81,7 @@ impl Buffer {
         let reader = BufReader::new(file);
 
         let rope = ropey::Rope::from_reader(reader).unwrap().into();
-        let selection = Selection::new(vec![Range::default()]);
+        let selection = Selection::new(&[Range::default()]);
 
         Self {
             rope,
@@ -233,7 +233,7 @@ impl FromStr for Buffer {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let rope = ropey::Rope::from_str(s).into();
-        let selection = Selection::new(vec![Range::default()]);
+        let selection = Selection::new(&[Range::default()]);
 
         Ok(Self {
             rope,

@@ -27,14 +27,14 @@ impl Operations {
         }
     }
 
-    pub fn from_changes(rope: &Rope, changes: Vec<(usize, usize, Option<&str>)>) -> Self {
+    pub fn from_changes(rope: &Rope, changes: &[(usize, usize, Option<&str>)]) -> Self {
         let length = rope.len_chars();
         let mut operations = Self::new();
         let mut last = 0;
 
         for (from, to, change) in changes {
-            assert!(from <= to);
-            assert!(last <= from);
+            assert!(*from <= *to);
+            assert!(last <= *from);
 
             operations.retain(from - last);
 
@@ -48,7 +48,7 @@ impl Operations {
                 }
             }
 
-            last = to;
+            last = *to;
         }
 
         operations.retain(length - last);
@@ -214,12 +214,12 @@ mod test {
     #[test]
     fn test_operations_from_changes() {
         let hello_world = Rope::from("Hello, world!");
-        let world_to_evan = Operations::from_changes(&hello_world, vec![(7, 12, Some("Evan"))]);
+        let world_to_evan = Operations::from_changes(&hello_world, &[(7, 12, Some("Evan"))]);
         let hello_evan = world_to_evan.apply(&hello_world).unwrap();
         assert_eq!(hello_evan, "Hello, Evan!");
 
         let empty = Rope::from("");
-        let empty_to_full = Operations::from_changes(&empty, vec![(0, 0, Some("Full"))]);
+        let empty_to_full = Operations::from_changes(&empty, &[(0, 0, Some("Full"))]);
         let full = empty_to_full.apply(&empty).unwrap();
         assert_eq!(full, "Full");
     }

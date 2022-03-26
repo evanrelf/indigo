@@ -9,9 +9,9 @@ pub struct Selection {
 }
 
 impl Selection {
-    pub fn new(ranges: Vec<Range>) -> Self {
+    pub fn new(ranges: &[Range]) -> Self {
         Self {
-            ranges,
+            ranges: ranges.to_vec(),
             primary_range_index: 0,
         }
     }
