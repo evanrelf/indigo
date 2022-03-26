@@ -1,4 +1,5 @@
 use crate::operand::Operand;
+use parking_lot::Mutex;
 use std::fmt::Display;
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
@@ -135,6 +136,20 @@ impl From<Cursor> for Range {
         Self {
             anchor: head.clone(),
             head,
+        }
+    }
+}
+
+pub struct Selection {
+    pub ranges: Vec<Mutex<Range>>,
+    pub primary_range_index: usize,
+}
+
+impl Selection {
+    pub fn new(ranges: Vec<Mutex<Range>>) -> Self {
+        Self {
+            ranges,
+            primary_range_index: 0,
         }
     }
 }
