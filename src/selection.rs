@@ -130,6 +130,23 @@ impl Range {
         (self_start <= other_start && other_start <= self_end)
             || (other_start <= self_start && self_start <= other_end)
     }
+
+    // https://help.figma.com/hc/en-us/articles/360039957534-Boolean-Operations
+
+    #[allow(unused_variables)]
+    pub fn union(self, other: Self) -> Self {
+        todo!()
+    }
+
+    #[allow(unused_variables)]
+    pub fn subtract(self, other: Self) -> Self {
+        todo!()
+    }
+
+    #[allow(unused_variables)]
+    pub fn intersect(self, other: Self) -> Self {
+        todo!()
+    }
 }
 
 impl Display for Range {
@@ -193,6 +210,26 @@ impl Selection {
         }
 
         false
+    }
+
+    #[allow(unused_variables)]
+    pub fn union(self, other: Self) -> Self {
+        todo!()
+    }
+
+    #[allow(unused_variables)]
+    pub fn subtract(self, other: Self) -> Self {
+        todo!()
+    }
+
+    #[allow(unused_variables)]
+    pub fn intersect(self, other: Self) -> Self {
+        todo!()
+    }
+
+    #[allow(unused_variables)]
+    pub fn exclude(self, other: Self) -> Self {
+        todo!()
     }
 }
 
