@@ -156,8 +156,8 @@ impl Selection {
 pub enum Operation {
     NextRange(usize),
     PreviousRange(usize),
-    PrimaryRange(RangeOperation),
-    AllRanges(RangeOperation),
+    InPrimaryRange(RangeOperation),
+    InAllRanges(RangeOperation),
 }
 
 impl Operand for Selection {
@@ -178,10 +178,10 @@ impl Operand for Selection {
                     -(count as isize),
                 );
             }
-            PrimaryRange(operation) => {
+            InPrimaryRange(operation) => {
                 self.ranges[self.primary_range_index].apply(operation);
             }
-            AllRanges(operation) => {
+            InAllRanges(operation) => {
                 for range in &mut self.ranges {
                     range.apply(operation.clone());
                 }

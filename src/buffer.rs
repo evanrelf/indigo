@@ -22,10 +22,10 @@ pub enum Operation {
     MoveDown(usize),
     MoveLeft(usize),
     MoveRight(usize),
-    Selection(selection::Operation),
     Insert(char),
     Delete,
     Backspace,
+    InSelection(selection::Operation),
 }
 
 impl Operand for Buffer {
@@ -59,9 +59,6 @@ impl Operand for Buffer {
             MoveRight(distance) => {
                 self.move_right(distance);
             }
-            Selection(operation) => {
-                self.selection.apply(operation);
-            }
             Insert(c) => {
                 self.insert(c);
             }
@@ -70,6 +67,9 @@ impl Operand for Buffer {
             }
             Delete => {
                 self.delete();
+            }
+            InSelection(operation) => {
+                self.selection.apply(operation);
             }
         }
     }
