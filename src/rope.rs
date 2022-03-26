@@ -1,5 +1,5 @@
-use std::ops::{Deref, DerefMut};
 use crate::selection::{Cursor, Range};
+use std::ops::{Deref, DerefMut};
 
 pub struct Rope {
     pub ropey: ropey::Rope,

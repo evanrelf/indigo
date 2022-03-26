@@ -3,7 +3,6 @@ use crate::{
     rope::Rope,
     selection::{self, Cursor, Range, Selection},
 };
-use parking_lot::Mutex;
 use std::{borrow::Cow, fs::File, io::BufReader, path::Path, str::FromStr};
 use tui::widgets::Widget;
 
@@ -79,7 +78,7 @@ impl Operand for Buffer {
 impl Buffer {
     pub fn new() -> Self {
         let rope = ropey::Rope::new().into();
-        let selection = Selection::new(vec![Mutex::new(Range::default())]);
+        let selection = Selection::new(vec![Range::default()]);
 
         Self {
             rope,
@@ -97,7 +96,7 @@ impl Buffer {
         let reader = BufReader::new(file);
 
         let rope = ropey::Rope::from_reader(reader).unwrap().into();
-        let selection = Selection::new(vec![Mutex::new(Range::default())]);
+        let selection = Selection::new(vec![Range::default()]);
 
         Self {
             rope,
@@ -143,8 +142,7 @@ impl Buffer {
     }
 
     fn move_up(&mut self, distance: usize) {
-        for range_mutex in &self.selection.ranges {
-            let mut range = range_mutex.lock();
+        for range in &mut self.selection.ranges {
             let head = self.rope.corrected_cursor(&Cursor {
                 line: range.head.line.saturating_sub(distance),
                 ..range.head
@@ -157,8 +155,7 @@ impl Buffer {
     }
 
     fn move_down(&mut self, distance: usize) {
-        for range_mutex in &self.selection.ranges {
-            let mut range = range_mutex.lock();
+        for range in &mut self.selection.ranges {
             let head = self.rope.corrected_cursor(&Cursor {
                 line: range.head.line + distance,
                 ..range.head
@@ -171,8 +168,7 @@ impl Buffer {
     }
 
     fn move_left(&mut self, distance: usize) {
-        for range_mutex in &self.selection.ranges {
-            let mut range = range_mutex.lock();
+        for range in &mut self.selection.ranges {
             let old_index = self.rope.cursor_to_index(&range.head).unwrap();
             let new_index = old_index.saturating_sub(distance);
             range.head = self.rope.index_to_cursor(new_index).unwrap();
@@ -180,22 +176,23 @@ impl Buffer {
     }
 
     fn move_right(&mut self, distance: usize) {
-        for range_mutex in &self.selection.ranges {
-            let mut range = range_mutex.lock();
+        for range in &mut self.selection.ranges {
             let old_index = self.rope.cursor_to_index(&range.head).unwrap();
             let new_index = old_index + distance;
             if new_index < self.rope.len_chars() {
                 range.head = self.rope.index_to_cursor(new_index).unwrap();
             } else {
-                range.head = self.rope.index_to_cursor(self.rope.len_chars() - 1).unwrap();
+                range.head = self
+                    .rope
+                    .index_to_cursor(self.rope.len_chars() - 1)
+                    .unwrap();
             }
         }
     }
 
     fn insert(&mut self, c: char) {
-        for range_mutex in &self.selection.ranges {
+        for range in &mut self.selection.ranges {
             // Insert character
-            let mut range = range_mutex.lock();
             let anchor_index = self.rope.cursor_to_index(&range.anchor).unwrap();
             let head_index = self.rope.cursor_to_index(&range.head).unwrap();
 
@@ -212,8 +209,7 @@ impl Buffer {
     }
 
     fn backspace(&mut self) {
-        for range_mutex in &self.selection.ranges {
-            let mut range = range_mutex.lock();
+        for range in &mut self.selection.ranges {
             let anchor_index = self.rope.cursor_to_index(&range.head).unwrap();
             let head_index = self.rope.cursor_to_index(&range.head).unwrap();
             if head_index > 0 {
@@ -228,14 +224,13 @@ impl Buffer {
     }
 
     fn delete(&mut self) {
-        for range_mutex in &self.selection.ranges {
-            let mut range = range_mutex.lock();
+        for range in &mut self.selection.ranges {
             range.flip_backwards();
             let anchor_index = self.rope.cursor_to_index(&range.anchor).unwrap();
             let head_index = self.rope.cursor_to_index(&range.head).unwrap();
             self.rope.remove(head_index..=anchor_index);
             range.reduce();
-            if let Some(s) = self.rope.corrected_range(&range) {
+            if let Some(s) = self.rope.corrected_range(range) {
                 *range = s;
             };
         }
@@ -253,7 +248,7 @@ impl FromStr for Buffer {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let rope = ropey::Rope::from_str(s).into();
-        let selection = Selection::new(vec![Mutex::new(Range::default())]);
+        let selection = Selection::new(vec![Range::default()]);
 
         Ok(Self {
             rope,
@@ -324,9 +319,7 @@ impl Widget for &Buffer {
             );
         }
 
-        for range_mutex in &self.selection.ranges {
-            let range = range_mutex.lock();
-
+        for range in &self.selection.ranges {
             let anchor_cursor = (&range.anchor, Style::default().bg(Color::LightCyan));
             let head_cursor = (&range.head, Style::default().bg(Color::LightYellow));
 
