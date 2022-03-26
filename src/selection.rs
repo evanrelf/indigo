@@ -113,6 +113,23 @@ impl Range {
     pub fn reduce(&mut self) {
         self.anchor = self.head.clone();
     }
+
+    pub fn is_overlapping(&self, other: &Self) -> bool {
+        let (self_start, self_end) = if self.is_forwards() {
+            (&self.anchor, &self.head)
+        } else {
+            (&self.head, &self.anchor)
+        };
+
+        let (other_start, other_end) = if other.is_forwards() {
+            (&other.anchor, &other.head)
+        } else {
+            (&other.head, &other.anchor)
+        };
+
+        (self_start <= other_start && other_start <= self_end)
+            || (other_start <= self_start && self_start <= other_end)
+    }
 }
 
 impl Display for Range {
@@ -126,6 +143,20 @@ impl From<(usize, usize)> for Range {
         Self {
             anchor: Cursor::from(tuple),
             head: Cursor::from(tuple),
+        }
+    }
+}
+
+impl<T> From<(T, T)> for Range
+where
+    T: Into<Cursor>,
+{
+    fn from(tuple: (T, T)) -> Self {
+        let (anchor, head) = tuple;
+
+        Self {
+            anchor: anchor.into(),
+            head: head.into(),
         }
     }
 }
@@ -150,6 +181,18 @@ impl Selection {
             ranges,
             primary_range_index: 0,
         }
+    }
+
+    pub fn is_overlapping(&self, other: &Self) -> bool {
+        for self_range in &self.ranges {
+            for other_range in &other.ranges {
+                if self_range.is_overlapping(other_range) {
+                    return true;
+                }
+            }
+        }
+
+        false
     }
 }
 
@@ -226,6 +269,35 @@ mod test {
         assert!(Cursor::from((0, 0)) < Cursor::from((1, 0)));
         assert!(Cursor::from((0, 99)) < Cursor::from((1, 0)));
         assert!(Cursor::from((1, 0)) < Cursor::from((1, 1)));
+    }
+
+    #[test]
+    fn test_range_is_overlapping() {
+        {
+            let x: Range = ((0, 0), (0, 0)).into();
+            let y: Range = ((0, 0), (0, 0)).into();
+            assert!(x.is_overlapping(&y))
+        }
+        {
+            let x: Range = ((0, 0), (10, 10)).into();
+            let y: Range = ((5, 5), (15, 15)).into();
+            assert!(x.is_overlapping(&y))
+        }
+        {
+            let x: Range = ((10, 10), (0, 0)).into();
+            let y: Range = ((5, 5), (15, 15)).into();
+            assert!(x.is_overlapping(&y))
+        }
+        {
+            let x: Range = ((10, 10), (0, 0)).into();
+            let y: Range = ((10, 10), (20, 20)).into();
+            assert!(x.is_overlapping(&y))
+        }
+        {
+            let x: Range = ((10, 10), (0, 0)).into();
+            let y: Range = ((10, 11), (20, 20)).into();
+            assert!(!x.is_overlapping(&y))
+        }
     }
 
     #[test]
