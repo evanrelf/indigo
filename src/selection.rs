@@ -34,7 +34,7 @@ impl From<(usize, usize)> for Cursor {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Range {
     pub anchor: Cursor,
     pub head: Cursor,
@@ -156,6 +156,7 @@ impl Selection {
 pub enum Operation {
     NextRange(usize),
     PreviousRange(usize),
+    FilterRanges(fn(usize, &Range) -> bool),
     InPrimaryRange(RangeOperation),
     InAllRanges(RangeOperation),
 }
@@ -177,6 +178,16 @@ impl Operand for Selection {
                     self.primary_range_index,
                     -(count as isize),
                 );
+            }
+            FilterRanges(filter) => {
+                self.ranges = self
+                    .ranges
+                    .iter()
+                    .enumerate()
+                    .filter(|(i, r)| filter(*i, r))
+                    .map(|(_, r)| r)
+                    .cloned()
+                    .collect();
             }
             InPrimaryRange(operation) => {
                 self.ranges[self.primary_range_index].apply(operation);
