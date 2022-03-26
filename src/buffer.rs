@@ -1,6 +1,6 @@
 use crate::{
     operand::Operand,
-    selection::{self, Cursor, Selection},
+    selection::{self, Cursor, Range},
 };
 use parking_lot::Mutex;
 use ropey::{Rope, RopeSlice};
@@ -9,7 +9,7 @@ use tui::widgets::Widget;
 
 pub struct Buffer {
     rope: Rope,
-    selections: Vec<Mutex<Selection>>,
+    selections: Vec<Mutex<Range>>,
     primary_selection_index: usize,
     view_lines_offset: usize,
     view_columns_offset: usize,
@@ -24,10 +24,10 @@ pub enum Operation {
     MoveDown(usize),
     MoveLeft(usize),
     MoveRight(usize),
-    NextSelection(usize),
-    PreviousSelection(usize),
-    PrimarySelection(selection::Operation),
-    AllSelections(selection::Operation),
+    NextRange(usize),
+    PreviousRange(usize),
+    PrimaryRange(selection::RangeOperation),
+    AllRanges(selection::RangeOperation),
     Insert(char),
     Delete,
     Backspace,
@@ -64,26 +64,26 @@ impl Operand for Buffer {
             MoveRight(distance) => {
                 self.move_right(distance);
             }
-            NextSelection(count) => {
+            NextRange(count) => {
                 self.primary_selection_index = wrap_around(
                     self.selections.len(),
                     self.primary_selection_index,
                     count as isize,
                 );
             }
-            PreviousSelection(count) => {
+            PreviousRange(count) => {
                 self.primary_selection_index = wrap_around(
                     self.selections.len(),
                     self.primary_selection_index,
                     -(count as isize),
                 );
             }
-            PrimarySelection(operation) => {
+            PrimaryRange(operation) => {
                 self.selections[self.primary_selection_index]
                     .get_mut()
                     .apply(operation);
             }
-            AllSelections(operation) => {
+            AllRanges(operation) => {
                 for selection in &mut self.selections {
                     selection.get_mut().apply(operation.clone());
                 }
@@ -104,7 +104,7 @@ impl Operand for Buffer {
 impl Buffer {
     pub fn new() -> Self {
         let rope = Rope::new();
-        let selections = vec![Mutex::new(Selection::default())];
+        let selections = vec![Mutex::new(Range::default())];
 
         Self {
             rope,
@@ -123,7 +123,7 @@ impl Buffer {
         let reader = BufReader::new(file);
 
         let rope = Rope::from_reader(reader).unwrap();
-        let selections = vec![Mutex::new(Selection::default())];
+        let selections = vec![Mutex::new(Range::default())];
 
         Self {
             rope,
@@ -138,7 +138,7 @@ impl Buffer {
         &self.rope
     }
 
-    pub fn selections(&self) -> &Vec<Mutex<Selection>> {
+    pub fn selections(&self) -> &Vec<Mutex<Range>> {
         &self.selections
     }
 
@@ -178,7 +178,7 @@ impl Buffer {
         self.cursor_to_index(cursor).is_some()
     }
 
-    pub fn selection_to_slice(&self, selection: &Selection) -> Option<RopeSlice> {
+    pub fn selection_to_slice(&self, selection: &Range) -> Option<RopeSlice> {
         let anchor_index = self.cursor_to_index(&selection.anchor)?;
         let head_index = self.cursor_to_index(&selection.head)?;
         if selection.is_forwards() {
@@ -221,10 +221,10 @@ impl Buffer {
         }
     }
 
-    pub fn corrected_selection(&self, selection: &Selection) -> Option<Selection> {
+    pub fn corrected_selection(&self, selection: &Range) -> Option<Range> {
         let anchor = self.corrected_cursor(&selection.anchor)?;
         let head = self.corrected_cursor(&selection.head)?;
-        Some(Selection { anchor, head })
+        Some(Range { anchor, head })
     }
 
     fn scroll_up(&mut self, distance: usize) {
@@ -357,7 +357,7 @@ impl FromStr for Buffer {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let rope = Rope::from_str(s);
-        let selections = vec![Mutex::new(Selection::default())];
+        let selections = vec![Mutex::new(Range::default())];
 
         Ok(Self {
             rope,
@@ -585,7 +585,7 @@ mod test {
     fn test_selection_to_slice() {
         fn case(s: &str, selection: ((usize, usize), (usize, usize)), expected: &str) {
             let buffer = Buffer::from_str(s).unwrap();
-            let selection = Selection::new(selection.0, selection.1);
+            let selection = Range::new(selection.0, selection.1);
             let expected = Some(expected);
             let actual = buffer
                 .selection_to_slice(&selection)

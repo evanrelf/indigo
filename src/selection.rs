@@ -35,24 +35,24 @@ impl From<(usize, usize)> for Cursor {
 }
 
 #[derive(Default)]
-pub struct Selection {
+pub struct Range {
     pub anchor: Cursor,
     pub head: Cursor,
 }
 
 #[derive(Clone)]
-pub enum Operation {
+pub enum RangeOperation {
     Flip,
     FlipForwards,
     FlipBackwards,
     Reduce,
 }
 
-impl Operand for Selection {
-    type Operation = Operation;
+impl Operand for Range {
+    type Operation = RangeOperation;
 
     fn apply(&mut self, operation: Self::Operation) {
-        use Operation::*;
+        use RangeOperation::*;
 
         match operation {
             Flip => {
@@ -115,13 +115,13 @@ impl Range {
     }
 }
 
-impl Display for Selection {
+impl Display for Range {
     fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(formatter, "{}-{}", self.anchor, self.head)
     }
 }
 
-impl From<(usize, usize)> for Selection {
+impl From<(usize, usize)> for Range {
     fn from(tuple: (usize, usize)) -> Self {
         Self {
             anchor: Cursor::from(tuple),
@@ -130,7 +130,7 @@ impl From<(usize, usize)> for Selection {
     }
 }
 
-impl From<Cursor> for Selection {
+impl From<Cursor> for Range {
     fn from(head: Cursor) -> Self {
         Self {
             anchor: head.clone(),
