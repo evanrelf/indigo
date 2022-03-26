@@ -71,12 +71,12 @@ impl Operand for Selection {
     }
 }
 
-impl Selection {
+impl Range {
     pub fn new<P>(anchor: P, head: P) -> Self
     where
         P: Into<Cursor>,
     {
-        Selection {
+        Self {
             anchor: anchor.into(),
             head: head.into(),
         }
@@ -123,7 +123,7 @@ impl Display for Selection {
 
 impl From<(usize, usize)> for Selection {
     fn from(tuple: (usize, usize)) -> Self {
-        Selection {
+        Self {
             anchor: Cursor::from(tuple),
             head: Cursor::from(tuple),
         }
@@ -132,7 +132,7 @@ impl From<(usize, usize)> for Selection {
 
 impl From<Cursor> for Selection {
     fn from(head: Cursor) -> Self {
-        Selection {
+        Self {
             anchor: head.clone(),
             head,
         }

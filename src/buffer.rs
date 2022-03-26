@@ -106,7 +106,7 @@ impl Buffer {
         let rope = Rope::new();
         let selections = vec![Mutex::new(Selection::default())];
 
-        Buffer {
+        Self {
             rope,
             selections,
             primary_selection_index: 0,
@@ -125,7 +125,7 @@ impl Buffer {
         let rope = Rope::from_reader(reader).unwrap();
         let selections = vec![Mutex::new(Selection::default())];
 
-        Buffer {
+        Self {
             rope,
             selections,
             primary_selection_index: 0,

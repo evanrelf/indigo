@@ -65,7 +65,7 @@ impl Operand for Editor {
 
 impl Editor {
     pub fn new() -> Self {
-        Editor {
+        Self {
             quit: false,
             mode: Mode::Normal,
             command_line: CommandLine::new(),
