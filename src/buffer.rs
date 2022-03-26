@@ -1,7 +1,8 @@
 use crate::{
+    cursor::Cursor,
     operand::Operand,
     rope::Rope,
-    selection::{self, Cursor, Range, Selection},
+    selection::{self, Range, Selection},
 };
 use std::{borrow::Cow, fs::File, io::BufReader, path::Path, str::FromStr};
 use tui::widgets::Widget;

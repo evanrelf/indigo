@@ -8,6 +8,7 @@
 
 pub mod buffer;
 pub mod command;
+pub mod cursor;
 pub mod editor;
 pub mod operand;
 pub mod ot;
