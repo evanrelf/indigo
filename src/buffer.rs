@@ -1,7 +1,6 @@
 use crate::{
-    cursor::Cursor,
     operand::Operand,
-    selection::{self, Selection},
+    selection::{self, Cursor, Selection},
 };
 use parking_lot::Mutex;
 use ropey::{Rope, RopeSlice};
