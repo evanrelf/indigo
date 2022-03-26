@@ -1,9 +1,9 @@
 use crate::{
     operand::Operand,
+    rope::Rope,
     selection::{self, Cursor, Range, Selection},
 };
 use parking_lot::Mutex;
-use ropey::{Rope, RopeSlice};
 use std::{borrow::Cow, fs::File, io::BufReader, path::Path, str::FromStr};
 use tui::widgets::Widget;
 
@@ -78,7 +78,7 @@ impl Operand for Buffer {
 
 impl Buffer {
     pub fn new() -> Self {
-        let rope = Rope::new();
+        let rope = ropey::Rope::new().into();
         let selection = Selection::new(vec![Mutex::new(Range::default())]);
 
         Self {
@@ -96,7 +96,7 @@ impl Buffer {
         let file = File::open(path).unwrap();
         let reader = BufReader::new(file);
 
-        let rope = Rope::from_reader(reader).unwrap();
+        let rope = ropey::Rope::from_reader(reader).unwrap().into();
         let selection = Selection::new(vec![Mutex::new(Range::default())]);
 
         Self {
@@ -123,79 +123,6 @@ impl Buffer {
         self.view_columns_offset
     }
 
-    pub fn cursor_to_index(&self, cursor: &Cursor) -> Option<usize> {
-        let line_index = self.rope.try_line_to_char(cursor.line).ok()?;
-        let line_length = self.rope.get_line(cursor.line)?.len_chars();
-        if line_length > cursor.column {
-            Some(line_index + cursor.column)
-        } else {
-            None
-        }
-    }
-
-    pub fn index_to_cursor(&self, index: usize) -> Option<Cursor> {
-        let line = self.rope.try_char_to_line(index).ok()?;
-        let column = index - self.rope.try_line_to_char(line).ok()?;
-        Some(Cursor {
-            line,
-            column,
-            target_column: None,
-        })
-    }
-
-    pub fn is_valid_cursor(&self, cursor: &Cursor) -> bool {
-        self.cursor_to_index(cursor).is_some()
-    }
-
-    pub fn range_to_slice(&self, range: &Range) -> Option<RopeSlice> {
-        let anchor_index = self.cursor_to_index(&range.anchor)?;
-        let head_index = self.cursor_to_index(&range.head)?;
-        if range.is_forwards() {
-            self.rope.get_slice(anchor_index..=head_index)
-        } else {
-            self.rope.get_slice(head_index..=anchor_index)
-        }
-    }
-
-    pub fn corrected_cursor(&self, cursor: &Cursor) -> Option<Cursor> {
-        let line_length = self.rope.get_line(cursor.line)?.len_chars();
-        if line_length == 0 {
-            return None;
-        }
-
-        #[allow(clippy::collapsible_else_if)]
-        if let Some(target_column) = cursor.target_column {
-            if line_length > target_column {
-                Some(Cursor {
-                    column: target_column,
-                    target_column: None,
-                    ..cursor.clone()
-                })
-            } else {
-                Some(Cursor {
-                    column: line_length - 1,
-                    ..cursor.clone()
-                })
-            }
-        } else {
-            if line_length > cursor.column {
-                Some(cursor.clone())
-            } else {
-                Some(Cursor {
-                    column: line_length - 1,
-                    target_column: Some(cursor.column),
-                    ..cursor.clone()
-                })
-            }
-        }
-    }
-
-    pub fn corrected_range(&self, range: &Range) -> Option<Range> {
-        let anchor = self.corrected_cursor(&range.anchor)?;
-        let head = self.corrected_cursor(&range.head)?;
-        Some(Range { anchor, head })
-    }
-
     fn scroll_up(&mut self, distance: usize) {
         self.view_lines_offset = self.view_lines_offset.saturating_sub(distance);
     }
@@ -218,12 +145,12 @@ impl Buffer {
     fn move_up(&mut self, distance: usize) {
         for range_mutex in &self.selection.ranges {
             let mut range = range_mutex.lock();
-            let head = self.corrected_cursor(&Cursor {
+            let head = self.rope.corrected_cursor(&Cursor {
                 line: range.head.line.saturating_sub(distance),
                 ..range.head
             });
             match head {
-                Some(head) if self.is_valid_cursor(&head) => range.head = head,
+                Some(head) if self.rope.is_valid_cursor(&head) => range.head = head,
                 _ => {}
             }
         }
@@ -232,12 +159,12 @@ impl Buffer {
     fn move_down(&mut self, distance: usize) {
         for range_mutex in &self.selection.ranges {
             let mut range = range_mutex.lock();
-            let head = self.corrected_cursor(&Cursor {
+            let head = self.rope.corrected_cursor(&Cursor {
                 line: range.head.line + distance,
                 ..range.head
             });
             match head {
-                Some(head) if self.is_valid_cursor(&head) => range.head = head,
+                Some(head) if self.rope.is_valid_cursor(&head) => range.head = head,
                 _ => {}
             }
         }
@@ -246,21 +173,21 @@ impl Buffer {
     fn move_left(&mut self, distance: usize) {
         for range_mutex in &self.selection.ranges {
             let mut range = range_mutex.lock();
-            let old_index = self.cursor_to_index(&range.head).unwrap();
+            let old_index = self.rope.cursor_to_index(&range.head).unwrap();
             let new_index = old_index.saturating_sub(distance);
-            range.head = self.index_to_cursor(new_index).unwrap();
+            range.head = self.rope.index_to_cursor(new_index).unwrap();
         }
     }
 
     fn move_right(&mut self, distance: usize) {
         for range_mutex in &self.selection.ranges {
             let mut range = range_mutex.lock();
-            let old_index = self.cursor_to_index(&range.head).unwrap();
+            let old_index = self.rope.cursor_to_index(&range.head).unwrap();
             let new_index = old_index + distance;
             if new_index < self.rope.len_chars() {
-                range.head = self.index_to_cursor(new_index).unwrap();
+                range.head = self.rope.index_to_cursor(new_index).unwrap();
             } else {
-                range.head = self.index_to_cursor(self.rope.len_chars() - 1).unwrap();
+                range.head = self.rope.index_to_cursor(self.rope.len_chars() - 1).unwrap();
             }
         }
     }
@@ -269,8 +196,8 @@ impl Buffer {
         for range_mutex in &self.selection.ranges {
             // Insert character
             let mut range = range_mutex.lock();
-            let anchor_index = self.cursor_to_index(&range.anchor).unwrap();
-            let head_index = self.cursor_to_index(&range.head).unwrap();
+            let anchor_index = self.rope.cursor_to_index(&range.anchor).unwrap();
+            let head_index = self.rope.cursor_to_index(&range.head).unwrap();
 
             if range.is_forwards() {
                 self.rope.insert_char(anchor_index, c);
@@ -279,23 +206,23 @@ impl Buffer {
             }
 
             // Shift selection
-            range.anchor = self.index_to_cursor(anchor_index + 1).unwrap();
-            range.head = self.index_to_cursor(head_index + 1).unwrap();
+            range.anchor = self.rope.index_to_cursor(anchor_index + 1).unwrap();
+            range.head = self.rope.index_to_cursor(head_index + 1).unwrap();
         }
     }
 
     fn backspace(&mut self) {
         for range_mutex in &self.selection.ranges {
             let mut range = range_mutex.lock();
-            let anchor_index = self.cursor_to_index(&range.head).unwrap();
-            let head_index = self.cursor_to_index(&range.head).unwrap();
+            let anchor_index = self.rope.cursor_to_index(&range.head).unwrap();
+            let head_index = self.rope.cursor_to_index(&range.head).unwrap();
             if head_index > 0 {
                 // Delete character
                 self.rope.remove(head_index - 1..head_index);
 
                 // Shift selection
-                range.anchor = self.index_to_cursor(anchor_index - 1).unwrap();
-                range.head = self.index_to_cursor(head_index - 1).unwrap();
+                range.anchor = self.rope.index_to_cursor(anchor_index - 1).unwrap();
+                range.head = self.rope.index_to_cursor(head_index - 1).unwrap();
             }
         }
     }
@@ -304,11 +231,11 @@ impl Buffer {
         for range_mutex in &self.selection.ranges {
             let mut range = range_mutex.lock();
             range.flip_backwards();
-            let anchor_index = self.cursor_to_index(&range.anchor).unwrap();
-            let head_index = self.cursor_to_index(&range.head).unwrap();
+            let anchor_index = self.rope.cursor_to_index(&range.anchor).unwrap();
+            let head_index = self.rope.cursor_to_index(&range.head).unwrap();
             self.rope.remove(head_index..=anchor_index);
             range.reduce();
-            if let Some(s) = self.corrected_range(&range) {
+            if let Some(s) = self.rope.corrected_range(&range) {
                 *range = s;
             };
         }
@@ -325,7 +252,7 @@ impl FromStr for Buffer {
     type Err = std::convert::Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let rope = Rope::from_str(s);
+        let rope = ropey::Rope::from_str(s).into();
         let selection = Selection::new(vec![Mutex::new(Range::default())]);
 
         Ok(Self {
@@ -440,7 +367,7 @@ mod test {
         fn case(s: &str, tuple: (usize, usize), expected: char) {
             let buffer = Buffer::from_str(s).unwrap();
             let cursor = Cursor::from(tuple);
-            let index = buffer.cursor_to_index(&cursor).unwrap();
+            let index = buffer.rope.cursor_to_index(&cursor).unwrap();
             let actual = buffer.rope.char(index);
             assert!(
                 expected == actual,
@@ -468,8 +395,9 @@ mod test {
             let buffer = Buffer::from_str(s).unwrap();
             let cursor = Cursor::from(tuple);
             let actual = buffer
+                .rope
                 .cursor_to_index(&cursor)
-                .and_then(|i| buffer.index_to_cursor(i));
+                .and_then(|i| buffer.rope.index_to_cursor(i));
             let expected = Some(cursor);
             assert!(
                 match result {
@@ -503,7 +431,7 @@ mod test {
                 column: corrected.1,
                 target_column: corrected.2,
             });
-            let actual = buffer.corrected_cursor(&Cursor {
+            let actual = buffer.rope.corrected_cursor(&Cursor {
                 line: original.0,
                 column: original.1,
                 target_column: original.2,
@@ -529,6 +457,7 @@ mod test {
             let range = Range::new(range.0, range.1);
             let expected = Some(expected);
             let actual = buffer
+                .rope
                 .range_to_slice(&range)
                 .and_then(|slice| slice.as_str());
             assert!(
