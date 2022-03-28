@@ -8,6 +8,7 @@ use crate::{
 use std::{borrow::Cow, fs::File, io::BufReader, path::Path, str::FromStr};
 use tui::widgets::Widget;
 
+#[derive(Default)]
 pub struct Buffer {
     rope: Rope,
     selection: Selection,
@@ -17,12 +18,7 @@ pub struct Buffer {
 
 impl Buffer {
     pub fn new() -> Self {
-        Self {
-            rope: ropey::Rope::new().into(),
-            selection: Selection::default(),
-            view_lines_offset: 0,
-            view_columns_offset: 0,
-        }
+        Self::default()
     }
 
     pub fn from_file<P>(path: P) -> Self
@@ -168,12 +164,6 @@ impl Buffer {
                 *range = s;
             };
         }
-    }
-}
-
-impl Default for Buffer {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

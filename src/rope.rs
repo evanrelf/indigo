@@ -1,6 +1,7 @@
 use crate::{cursor::Cursor, range::Range};
 use std::ops::{Deref, DerefMut};
 
+#[derive(Default)]
 pub struct Rope {
     pub ropey: ropey::Rope,
 }
