@@ -5,10 +5,16 @@ use crate::{
     rope::Rope,
     selection::{self, Selection},
 };
-use std::{fs::File, io::BufReader, path::Path, str::FromStr};
+use std::{
+    fs::File,
+    io::BufReader,
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 #[derive(Default)]
 pub struct Buffer {
+    path: Option<PathBuf>,
     rope: Rope,
     selection: Selection,
     view_lines_offset: usize,
@@ -24,15 +30,21 @@ impl Buffer {
     where
         P: AsRef<Path>,
     {
+        let path_buf = path.as_ref().to_path_buf();
         let file = File::open(path).unwrap();
         let reader = BufReader::new(file);
 
         Self {
+            path: Some(path_buf),
             rope: ropey::Rope::from_reader(reader).unwrap().into(),
             selection: Selection::default(),
             view_lines_offset: 0,
             view_columns_offset: 0,
         }
+    }
+
+    pub fn path(&self) -> &Option<PathBuf> {
+        &self.path
     }
 
     pub fn rope(&self) -> &Rope {
@@ -171,6 +183,7 @@ impl FromStr for Buffer {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self {
+            path: None,
             rope: ropey::Rope::from_str(s).into(),
             selection: Selection::default(),
             view_lines_offset: 0,
