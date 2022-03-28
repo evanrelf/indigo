@@ -30,8 +30,8 @@ impl Operations {
         let mut last = 0;
 
         for (from, to, change) in changes {
-            assert!(*from <= *to);
-            assert!(last <= *from);
+            debug_assert!(*from <= *to);
+            debug_assert!(last <= *from);
 
             operations.retain(from - last);
 

@@ -151,7 +151,7 @@ impl Editor {
 
         // Must always perform an operation, so the count can be reset properly. If no work needs
         // to be done, use `vec![NoOp]`.
-        assert!(!operations.is_empty());
+        debug_assert!(!operations.is_empty());
 
         operations
     }
