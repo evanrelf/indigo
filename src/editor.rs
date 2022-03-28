@@ -6,12 +6,26 @@ use crate::{
     range, selection,
 };
 use crossterm::event::{KeyCode, KeyModifiers, MouseEventKind};
-use std::path::Path;
+use std::{fmt::Display, path::Path};
 
 pub enum Mode {
     Normal,
     Command,
     Insert,
+}
+
+impl Display for Mode {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            formatter,
+            "{}",
+            match self {
+                Self::Normal => "normal",
+                Self::Command => "command",
+                Self::Insert => "insert",
+            }
+        )
+    }
 }
 
 pub struct Editor {

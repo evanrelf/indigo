@@ -115,12 +115,6 @@ impl Widget for &Editor {
         }
 
         // Render status
-        let mode = match self.mode() {
-            Mode::Normal => "normal",
-            Mode::Command => "command",
-            Mode::Insert => "insert",
-        };
-
         let cursor = {
             let selection = self.buffers()[self.buffer_index()].selection();
             let range = &selection.ranges[selection.primary_range_index];
@@ -134,7 +128,7 @@ impl Widget for &Editor {
         };
 
         Block::default()
-            .title(format!("{} {}{}", mode, cursor, count))
+            .title(format!("{} {}{}", self.mode(), cursor, count))
             .style(Style::default().bg(Color::Rgb(0xEE, 0xEE, 0xEE)))
             .render(chunks[1], buffer);
 
