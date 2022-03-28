@@ -127,8 +127,16 @@ impl Widget for &Editor {
             "".to_string()
         };
 
+        let path = self.buffers()[self.buffer_index()]
+            .path()
+            .clone()
+            .map(|path_buf| path_buf.into_os_string())
+            .and_then(|os_string| os_string.into_string().ok())
+            .map(|string| format!(" | {}", string))
+            .unwrap_or_default();
+
         Block::default()
-            .title(format!("{} {}{}", self.mode(), cursor, count))
+            .title(format!("{} {}{}{}", self.mode(), cursor, count, path))
             .style(Style::default().bg(Color::Rgb(0xEE, 0xEE, 0xEE)))
             .render(chunks[1], buffer);
 
