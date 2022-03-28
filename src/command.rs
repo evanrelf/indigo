@@ -2,15 +2,14 @@ use crate::editor;
 use crossterm::event::{Event, KeyCode, KeyModifiers};
 use tui::widgets::Widget;
 
+#[derive(Default)]
 pub struct CommandLine {
     command: String,
 }
 
 impl CommandLine {
     pub fn new() -> Self {
-        Self {
-            command: String::new(),
-        }
+        Self::default()
     }
 
     pub fn handle_event(&mut self, event: Event) -> Vec<editor::Operation> {
@@ -67,12 +66,6 @@ impl CommandLine {
                 unimplemented!("Unknown command: {}", self.command);
             }
         }
-    }
-}
-
-impl Default for CommandLine {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

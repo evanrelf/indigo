@@ -12,6 +12,7 @@ pub enum Affinity {
     After,
 }
 
+#[derive(Default)]
 pub struct Operations {
     operations: Vec<Operation>,
     length_before: usize,
@@ -20,11 +21,7 @@ pub struct Operations {
 
 impl Operations {
     pub fn new() -> Self {
-        Self {
-            operations: Vec::new(),
-            length_before: 0,
-            length_after: 0,
-        }
+        Self::default()
     }
 
     pub fn from_changes(rope: &Rope, changes: &[(usize, usize, Option<&str>)]) -> Self {
@@ -279,12 +276,6 @@ impl Operations {
         }
 
         Some(operations)
-    }
-}
-
-impl Default for Operations {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
