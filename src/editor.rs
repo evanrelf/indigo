@@ -83,7 +83,7 @@ impl Editor {
             Event::Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL => {
                 match key_event.code {
                     KeyCode::Char('c') => vec![Quit],
-                    _ => vec![NoOp],
+                    _ => Vec::new(),
                 }
             }
             Event::Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
@@ -93,7 +93,7 @@ impl Editor {
                     KeyCode::Char('J') => vec![InBuffer(Move(Down, count))],
                     KeyCode::Char('K') => vec![InBuffer(Move(Up, count))],
                     KeyCode::Char('L') => vec![InBuffer(Move(Right, count))],
-                    _ => vec![NoOp],
+                    _ => Vec::new(),
                 }
             }
             Event::Key(key_event) if key_event.modifiers == KeyModifiers::NONE => {
@@ -138,22 +138,24 @@ impl Editor {
                     ],
                     // Edit
                     KeyCode::Char('d') => vec![InBuffer(Delete)],
-                    _ => vec![NoOp],
+                    _ => Vec::new(),
                 }
             }
             Event::Mouse(mouse_event) => match mouse_event.kind {
                 MouseEventKind::ScrollUp => vec![InBuffer(Scroll(Up, 3))],
                 MouseEventKind::ScrollDown => vec![InBuffer(Scroll(Down, 3))],
-                _ => vec![NoOp],
+                _ => Vec::new(),
             },
-            Event::Key(_) | Event::Resize(_, _) => vec![NoOp],
+            Event::Key(_) | Event::Resize(_, _) => Vec::new(),
         };
 
-        // Must always perform an operation, so the count can be reset properly. If no work needs
-        // to be done, use `vec![NoOp]`.
-        debug_assert!(!operations.is_empty());
-
-        operations
+        if operations.is_empty() {
+            // Must always perform an operation, so the count can be reset properly. If no work
+            // needs to be done, we use `vec![NoOp]`.
+            vec![NoOp]
+        } else {
+            operations
+        }
     }
 
     fn handle_event_insert(&self, event: Event) -> Vec<Operation> {
