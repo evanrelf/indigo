@@ -24,46 +24,6 @@ pub struct Editor {
     buffer_index: usize,
 }
 
-pub enum Operation {
-    Quit,
-    ChangeMode(Mode),
-    SetCount(usize),
-    NoOp,
-    InBuffer(buffer::Operation),
-}
-
-impl Operand for Editor {
-    type Operation = Operation;
-
-    fn apply(&mut self, operation: Self::Operation) {
-        use Operation::*;
-
-        let old_count = self.count;
-
-        match operation {
-            Quit => {
-                self.quit = true;
-            }
-            ChangeMode(mode) => {
-                self.mode = mode;
-            }
-            SetCount(new_count) => {
-                self.count = new_count;
-            }
-            NoOp => {}
-            InBuffer(operation) => {
-                self.buffers[self.buffer_index].apply(operation);
-            }
-        }
-
-        let new_count = self.count;
-
-        if old_count == new_count {
-            self.count = 0;
-        }
-    }
-}
-
 impl Editor {
     pub fn new() -> Self {
         Self {
@@ -304,5 +264,45 @@ impl Widget for &Editor {
 
         // Render buffer
         self.buffers[self.buffer_index].render(chunks[0], buffer);
+    }
+}
+
+pub enum Operation {
+    Quit,
+    ChangeMode(Mode),
+    SetCount(usize),
+    NoOp,
+    InBuffer(buffer::Operation),
+}
+
+impl Operand for Editor {
+    type Operation = Operation;
+
+    fn apply(&mut self, operation: Self::Operation) {
+        use Operation::*;
+
+        let old_count = self.count;
+
+        match operation {
+            Quit => {
+                self.quit = true;
+            }
+            ChangeMode(mode) => {
+                self.mode = mode;
+            }
+            SetCount(new_count) => {
+                self.count = new_count;
+            }
+            NoOp => {}
+            InBuffer(operation) => {
+                self.buffers[self.buffer_index].apply(operation);
+            }
+        }
+
+        let new_count = self.count;
+
+        if old_count == new_count {
+            self.count = 0;
+        }
     }
 }

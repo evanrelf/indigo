@@ -16,50 +16,6 @@ pub struct Buffer {
     view_columns_offset: usize,
 }
 
-pub enum Operation {
-    Scroll(Direction, usize),
-    Move(Direction, usize),
-    Insert(char),
-    Delete,
-    Backspace,
-    InSelection(selection::Operation),
-}
-
-impl Operand for Buffer {
-    type Operation = Operation;
-
-    fn apply(&mut self, operation: Self::Operation) {
-        use Operation::*;
-
-        match operation {
-            Scroll(direction, distance) => match direction {
-                Direction::Up => self.scroll_up(distance),
-                Direction::Down => self.scroll_down(distance),
-                Direction::Left => self.scroll_left(distance),
-                Direction::Right => self.scroll_right(distance),
-            },
-            Move(direction, distance) => match direction {
-                Direction::Up => self.move_up(distance),
-                Direction::Down => self.move_down(distance),
-                Direction::Left => self.move_left(distance),
-                Direction::Right => self.move_right(distance),
-            },
-            Insert(c) => {
-                self.insert(c);
-            }
-            Backspace => {
-                self.backspace();
-            }
-            Delete => {
-                self.delete();
-            }
-            InSelection(operation) => {
-                self.selection.apply(operation);
-            }
-        }
-    }
-}
-
 impl Buffer {
     pub fn new() -> Self {
         let rope = ropey::Rope::new().into();
@@ -331,6 +287,50 @@ impl Widget for &Buffer {
                         )
                         .set_style(style);
                 }
+            }
+        }
+    }
+}
+
+pub enum Operation {
+    Scroll(Direction, usize),
+    Move(Direction, usize),
+    Insert(char),
+    Delete,
+    Backspace,
+    InSelection(selection::Operation),
+}
+
+impl Operand for Buffer {
+    type Operation = Operation;
+
+    fn apply(&mut self, operation: Self::Operation) {
+        use Operation::*;
+
+        match operation {
+            Scroll(direction, distance) => match direction {
+                Direction::Up => self.scroll_up(distance),
+                Direction::Down => self.scroll_down(distance),
+                Direction::Left => self.scroll_left(distance),
+                Direction::Right => self.scroll_right(distance),
+            },
+            Move(direction, distance) => match direction {
+                Direction::Up => self.move_up(distance),
+                Direction::Down => self.move_down(distance),
+                Direction::Left => self.move_left(distance),
+                Direction::Right => self.move_right(distance),
+            },
+            Insert(c) => {
+                self.insert(c);
+            }
+            Backspace => {
+                self.backspace();
+            }
+            Delete => {
+                self.delete();
+            }
+            InSelection(operation) => {
+                self.selection.apply(operation);
             }
         }
     }

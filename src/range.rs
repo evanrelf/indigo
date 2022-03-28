@@ -7,37 +7,6 @@ pub struct Range {
     pub head: Cursor,
 }
 
-#[derive(Clone)]
-pub enum Operation {
-    Flip,
-    FlipForwards,
-    FlipBackwards,
-    Reduce,
-}
-
-impl Operand for Range {
-    type Operation = Operation;
-
-    fn apply(&mut self, operation: Self::Operation) {
-        use Operation::*;
-
-        match operation {
-            Flip => {
-                self.flip();
-            }
-            FlipForwards => {
-                self.flip_forwards();
-            }
-            FlipBackwards => {
-                self.flip_backwards();
-            }
-            Reduce => {
-                self.reduce();
-            }
-        }
-    }
-}
-
 impl Range {
     pub fn new<P>(anchor: P, head: P) -> Self
     where
@@ -150,6 +119,37 @@ impl From<Cursor> for Range {
         Self {
             anchor: head.clone(),
             head,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub enum Operation {
+    Flip,
+    FlipForwards,
+    FlipBackwards,
+    Reduce,
+}
+
+impl Operand for Range {
+    type Operation = Operation;
+
+    fn apply(&mut self, operation: Self::Operation) {
+        use Operation::*;
+
+        match operation {
+            Flip => {
+                self.flip();
+            }
+            FlipForwards => {
+                self.flip_forwards();
+            }
+            FlipBackwards => {
+                self.flip_backwards();
+            }
+            Reduce => {
+                self.reduce();
+            }
         }
     }
 }
