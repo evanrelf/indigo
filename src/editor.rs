@@ -245,6 +245,8 @@ pub enum Operation {
     ChangeMode(Mode),
     SetCount(usize),
     NoOp,
+    NextBuffer,
+    PreviousBuffer,
     InBuffer(buffer::Operation),
 }
 
@@ -265,6 +267,12 @@ impl Operand for Editor {
             }
             SetCount(new_count) => {
                 self.count = new_count;
+            }
+            NextBuffer => {
+                self.buffer_index += 1;
+            }
+            PreviousBuffer => {
+                self.buffer_index -= 1;
             }
             NoOp => {}
             InBuffer(operation) => {

@@ -59,6 +59,12 @@ impl CommandLine {
         use editor::{Mode::*, Operation::*};
 
         match self.command.split_ascii_whitespace().collect::<Vec<_>>()[..] {
+            ["buffer-next" | "bn"] => {
+                vec![ChangeMode(Normal), NextBuffer]
+            }
+            ["buffer-prev" | "bp"] => {
+                vec![ChangeMode(Normal), PreviousBuffer]
+            }
             ["quit" | "q"] => {
                 vec![Quit]
             }
