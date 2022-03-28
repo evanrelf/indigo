@@ -6,7 +6,7 @@ fn main() {
 
     let mut editor = Editor::new();
 
-    if let Some(path) = std::env::args().nth(1) {
+    for path in std::env::args().skip(1) {
         editor.load_file(path);
     }
 
