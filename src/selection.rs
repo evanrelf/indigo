@@ -49,6 +49,15 @@ impl Selection {
     }
 }
 
+impl Default for Selection {
+    fn default() -> Self {
+        Self {
+            ranges: vec![Range::default()],
+            primary_range_index: 0,
+        }
+    }
+}
+
 pub enum Operation {
     NextRange(usize),
     PreviousRange(usize),

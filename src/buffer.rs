@@ -2,7 +2,6 @@ use crate::{
     cursor::Cursor,
     direction::Direction,
     operand::Operand,
-    range::Range,
     rope::Rope,
     selection::{self, Selection},
 };
@@ -18,12 +17,9 @@ pub struct Buffer {
 
 impl Buffer {
     pub fn new() -> Self {
-        let rope = ropey::Rope::new().into();
-        let selection = Selection::new(&[Range::default()]);
-
         Self {
-            rope,
-            selection,
+            rope: ropey::Rope::new().into(),
+            selection: Selection::default(),
             view_lines_offset: 0,
             view_columns_offset: 0,
         }
@@ -36,12 +32,9 @@ impl Buffer {
         let file = File::open(path).unwrap();
         let reader = BufReader::new(file);
 
-        let rope = ropey::Rope::from_reader(reader).unwrap().into();
-        let selection = Selection::new(&[Range::default()]);
-
         Self {
-            rope,
-            selection,
+            rope: ropey::Rope::from_reader(reader).unwrap().into(),
+            selection: Selection::default(),
             view_lines_offset: 0,
             view_columns_offset: 0,
         }
@@ -188,12 +181,9 @@ impl FromStr for Buffer {
     type Err = std::convert::Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let rope = ropey::Rope::from_str(s).into();
-        let selection = Selection::new(&[Range::default()]);
-
         Ok(Self {
-            rope,
-            selection,
+            rope: ropey::Rope::from_str(s).into(),
+            selection: Selection::default(),
             view_lines_offset: 0,
             view_columns_offset: 0,
         })
@@ -339,6 +329,7 @@ impl Operand for Buffer {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::range::Range;
 
     #[test]
     fn test_index_cursor() {
