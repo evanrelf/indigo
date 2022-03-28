@@ -1,6 +1,5 @@
 use crate::editor;
 use crossterm::event::{Event, KeyCode, KeyModifiers};
-use tui::widgets::Widget;
 
 #[derive(Default)]
 pub struct CommandLine {
@@ -10,6 +9,10 @@ pub struct CommandLine {
 impl CommandLine {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn command(&self) -> &String {
+        &self.command
     }
 
     pub fn handle_event(&mut self, event: Event) -> Vec<editor::Operation> {
@@ -66,20 +69,5 @@ impl CommandLine {
                 unimplemented!("Unknown command: {}", self.command);
             }
         }
-    }
-}
-
-impl Widget for &CommandLine {
-    fn render(self, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
-        use tui::style::Color;
-        use tui::widgets::Block;
-
-        Block::default()
-            .title(format!(":{}", self.command))
-            .render(area, buffer);
-
-        buffer
-            .get_mut(area.left() + self.command.len() as u16 + 1, area.top())
-            .set_bg(Color::White);
     }
 }

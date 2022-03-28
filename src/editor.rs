@@ -7,7 +7,6 @@ use crate::{
 };
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
 use std::path::Path;
-use tui::widgets::Widget;
 
 pub enum Mode {
     Normal,
@@ -42,6 +41,30 @@ impl Editor {
     {
         self.buffers.push(Buffer::from_file(path));
         self.buffer_index += 1;
+    }
+
+    pub fn quit(&self) -> bool {
+        self.quit
+    }
+
+    pub fn mode(&self) -> &Mode {
+        &self.mode
+    }
+
+    pub fn command_line(&self) -> &CommandLine {
+        &self.command_line
+    }
+
+    pub fn count(&self) -> usize {
+        self.count
+    }
+
+    pub fn buffers(&self) -> &Vec<Buffer> {
+        &self.buffers
+    }
+
+    pub fn buffer_index(&self) -> usize {
+        self.buffer_index
     }
 
     pub fn run<B>(&mut self, terminal: &mut tui::Terminal<B>)
@@ -207,65 +230,6 @@ impl Editor {
 impl Default for Editor {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-impl Widget for &Editor {
-    fn render(self, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
-        use tui::{
-            layout::{Constraint, Direction, Layout},
-            style::{Color, Style},
-            widgets::Block,
-        };
-
-        let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(
-                [
-                    Constraint::Min(0),
-                    Constraint::Length(1),
-                    Constraint::Length(1),
-                ]
-                .as_ref(),
-            )
-            .split(area);
-
-        // Render tildes
-        for y in chunks[0].top()..chunks[0].bottom() {
-            buffer.get_mut(area.x, y).set_char('~');
-        }
-
-        // Render status
-        let mode = match self.mode {
-            Mode::Normal => "normal",
-            Mode::Command => "command",
-            Mode::Insert => "insert",
-        };
-
-        let cursor = {
-            let selection = self.buffers[self.buffer_index].selection();
-            let range = &selection.ranges[selection.primary_range_index];
-            range.head.to_string()
-        };
-
-        let count = if self.count > 0 {
-            format!(" {}", self.count)
-        } else {
-            "".to_string()
-        };
-
-        Block::default()
-            .title(format!("{} {}{}", mode, cursor, count))
-            .style(Style::default().bg(Color::Rgb(0xEE, 0xEE, 0xEE)))
-            .render(chunks[1], buffer);
-
-        // Render command line
-        if let Mode::Command = self.mode {
-            self.command_line.render(chunks[2], buffer);
-        }
-
-        // Render buffer
-        self.buffers[self.buffer_index].render(chunks[0], buffer);
     }
 }
 
