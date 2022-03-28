@@ -118,7 +118,7 @@ impl Widget for &Editor {
         let cursor = {
             let selection = self.buffers()[self.buffer_index()].selection();
             let range = &selection.ranges[selection.primary_range_index];
-            range.head.to_string()
+            &range.head
         };
 
         let count = if self.count() > 0 {
