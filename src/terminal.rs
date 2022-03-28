@@ -11,7 +11,11 @@ use std::{
 };
 use tui::widgets::Widget;
 
-pub fn run<B>(mut editor: Editor, terminal: &mut tui::Terminal<B>)
+pub fn run(editor: Editor) {
+    with_terminal(|terminal| run_with_terminal(editor, terminal));
+}
+
+fn run_with_terminal<B>(mut editor: Editor, terminal: &mut tui::Terminal<B>)
 where
     B: tui::backend::Backend,
 {
@@ -34,7 +38,7 @@ where
     }
 }
 
-pub fn with_terminal<F>(f: F)
+fn with_terminal<F>(f: F)
 where
     F: FnOnce(&mut tui::Terminal<tui::backend::CrosstermBackend<Stdout>>),
 {
