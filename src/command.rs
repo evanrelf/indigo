@@ -58,11 +58,11 @@ impl CommandLine {
     fn run_command(&self) -> Vec<editor::Operation> {
         use editor::{Mode::*, Operation::*};
 
-        match self.command.as_str() {
-            "quit" | "q" => {
+        match self.command.split_ascii_whitespace().collect::<Vec<_>>()[..] {
+            ["quit" | "q"] => {
                 vec![Quit]
             }
-            "" => vec![ChangeMode(Normal)],
+            [] => vec![ChangeMode(Normal)],
             _ => {
                 unimplemented!("Unknown command: {}", self.command);
             }
