@@ -49,11 +49,11 @@ impl Editor {
         }
     }
 
-    pub fn load_file<P>(&mut self, path: P)
+    pub fn open<P>(&mut self, path: P)
     where
         P: AsRef<Path>,
     {
-        self.buffers.push(Buffer::from_file(path));
+        self.buffers.push(Buffer::open(path));
         self.buffer_index += 1;
     }
 

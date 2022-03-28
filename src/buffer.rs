@@ -20,7 +20,7 @@ impl Buffer {
         Self::default()
     }
 
-    pub fn from_file<P>(path: P) -> Self
+    pub fn open<P>(path: P) -> Self
     where
         P: AsRef<Path>,
     {

@@ -7,7 +7,7 @@ fn main() {
     let mut editor = Editor::new();
 
     for path in std::env::args().skip(1) {
-        editor.load_file(path);
+        editor.open(path);
     }
 
     run(editor);
