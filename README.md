@@ -21,6 +21,12 @@ A text editor
   - UI freezes when piping text to/from other processes
   - Not interested in forking or contributing upstream because I don't like
     using C++
+  - Can't work with individual selections one at a time (plugins exist but are
+    buggy)
+      - [occivink/kakoune-phantom-selection](https://github.com/occivink/kakoune-phantom-selection)
+      - [alexherbo2/phantom.kak](https://web.archive.org/web/20200916163344/https://github.com/alexherbo2/phantom.kak) (deleted)
+  - Can't undo/redo selection changes (Vim has basics like `gv` but nothing
+    comprehensive/first class)
 
 #### [Helix](https://github.com/helix-editor/helix)
 
