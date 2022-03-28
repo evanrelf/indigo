@@ -67,6 +67,17 @@ A text editor
   - Small [`xmonad`](https://hackage.haskell.org/package/xmonad) core library
   - Monolithic [`xmonad-contrib`](https://hackage.haskell.org/package/xmonad-contrib) "userspace" library
 
+#### [Bevy](https://bevyengine.org/)
+
+- Game engine written in Rust
+- Like
+  - "Turtles all the way down": the game engine is written in the same language
+    the games are, so there's no translation or bad abstractions from crossing
+    a language boundary
+  - [`bevy_ecs`](https://lib.rs/crates/bevy_ecs) crate makes great use of
+    existential types and dynamic dispatch, to provide ergonomic extensibility,
+    and reduce compile times by avoiding monomorphization
+
 ### Interesting Topics
 
 (a.k.a. how to spend my novelty budget)
