@@ -65,9 +65,11 @@ fn enter_terminal() {
     stdout
         .execute(crossterm::event::EnableMouseCapture)
         .unwrap();
+
+    let default_hook = Box::leak(panic::take_hook());
     panic::set_hook(Box::new(|panic_info| {
         exit_terminal(true);
-        eprintln!("{}", panic_info);
+        default_hook(panic_info);
     }));
 }
 
