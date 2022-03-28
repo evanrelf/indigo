@@ -1,4 +1,7 @@
-use indigo::{editor::Editor, terminal::with_terminal};
+use indigo::{
+    editor::Editor,
+    terminal::{run, with_terminal},
+};
 
 fn main() {
     let mut editor = Editor::new();
@@ -7,5 +10,5 @@ fn main() {
         editor.load_file(path);
     }
 
-    with_terminal(|terminal| editor.run(terminal));
+    with_terminal(|terminal| run(editor, terminal));
 }

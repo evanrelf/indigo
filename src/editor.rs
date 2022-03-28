@@ -5,7 +5,7 @@ use crate::{
     operand::Operand,
     range, selection,
 };
-use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
+use crossterm::event::{KeyCode, KeyModifiers, MouseEventKind};
 use std::path::Path;
 
 pub enum Mode {
@@ -67,21 +67,7 @@ impl Editor {
         self.buffer_index
     }
 
-    pub fn run<B>(&mut self, terminal: &mut tui::Terminal<B>)
-    where
-        B: tui::backend::Backend,
-    {
-        while !self.quit {
-            terminal
-                .draw(|frame| frame.render_widget(&*self, frame.size()))
-                .unwrap();
-            self.handle_event();
-        }
-    }
-
-    fn handle_event(&mut self) {
-        let event = event::read().unwrap();
-
+    pub fn handle_event(&mut self, event: Event) {
         let operations = match self.mode {
             Mode::Normal => self.handle_event_normal(event),
             Mode::Command => self.command_line.handle_event(event),
@@ -98,18 +84,19 @@ impl Editor {
         use direction::Direction::*;
         use range::Operation::*;
         use selection::Operation::*;
+        use Event::*;
         use Operation::*;
 
         let count = if self.count == 0 { 1 } else { self.count };
 
         let operations = match event {
-            Event::Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL => {
+            Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL => {
                 match key_event.code {
                     KeyCode::Char('c') => vec![Quit],
                     _ => Vec::new(),
                 }
             }
-            Event::Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
+            Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
                 match key_event.code {
                     // Move
                     KeyCode::Char('H') => vec![InBuffer(Move(Left, count))],
@@ -119,7 +106,7 @@ impl Editor {
                     _ => Vec::new(),
                 }
             }
-            Event::Key(key_event) if key_event.modifiers == KeyModifiers::NONE => {
+            Key(key_event) if key_event.modifiers == KeyModifiers::NONE => {
                 match key_event.code {
                     // Count
                     KeyCode::Char(c) if ('0'..='9').contains(&c) => {
@@ -164,12 +151,12 @@ impl Editor {
                     _ => Vec::new(),
                 }
             }
-            Event::Mouse(mouse_event) => match mouse_event.kind {
+            Mouse(mouse_event) => match mouse_event.kind {
                 MouseEventKind::ScrollUp => vec![InBuffer(Scroll(Up, 3))],
                 MouseEventKind::ScrollDown => vec![InBuffer(Scroll(Down, 3))],
                 _ => Vec::new(),
             },
-            Event::Key(_) | Event::Resize(_, _) => Vec::new(),
+            Key(_) => Vec::new(),
         };
 
         if operations.is_empty() {
@@ -184,16 +171,17 @@ impl Editor {
     fn handle_event_insert(&self, event: Event) -> Vec<Operation> {
         use buffer::Operation::*;
         use direction::Direction::*;
+        use Event::*;
         use Operation::*;
 
         match event {
-            Event::Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL => {
+            Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL => {
                 match key_event.code {
                     KeyCode::Char('c') => vec![Quit],
                     _ => Vec::new(),
                 }
             }
-            Event::Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
+            Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
                 match key_event.code {
                     // Edit
                     KeyCode::Char(c) => vec![InBuffer(Insert(c))],
@@ -201,7 +189,7 @@ impl Editor {
                     _ => Vec::new(),
                 }
             }
-            Event::Key(key_event) if key_event.modifiers == KeyModifiers::NONE => {
+            Key(key_event) if key_event.modifiers == KeyModifiers::NONE => {
                 match key_event.code {
                     // Scroll
                     KeyCode::Up => vec![InBuffer(Scroll(Up, 1))],
@@ -217,12 +205,12 @@ impl Editor {
                     _ => vec![],
                 }
             }
-            Event::Mouse(mouse_event) => match mouse_event.kind {
+            Mouse(mouse_event) => match mouse_event.kind {
                 MouseEventKind::ScrollUp => vec![InBuffer(Scroll(Up, 3))],
                 MouseEventKind::ScrollDown => vec![InBuffer(Scroll(Down, 3))],
                 _ => vec![],
             },
-            Event::Key(_) | Event::Resize(_, _) => Vec::new(),
+            Key(_) => Vec::new(),
         }
     }
 }
@@ -231,6 +219,11 @@ impl Default for Editor {
     fn default() -> Self {
         Self::new()
     }
+}
+
+pub enum Event {
+    Key(crossterm::event::KeyEvent),
+    Mouse(crossterm::event::MouseEvent),
 }
 
 pub enum Operation {

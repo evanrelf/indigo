@@ -17,4 +17,3 @@ pub mod range;
 pub mod rope;
 pub mod selection;
 pub mod terminal;
-pub mod ui;

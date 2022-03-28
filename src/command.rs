@@ -1,5 +1,5 @@
-use crate::editor;
-use crossterm::event::{Event, KeyCode, KeyModifiers};
+use crate::editor::{self, Event};
+use crossterm::event::{KeyCode, KeyModifiers};
 
 #[derive(Default)]
 pub struct CommandLine {
@@ -16,10 +16,10 @@ impl CommandLine {
     }
 
     pub fn handle_event(&mut self, event: Event) -> Vec<editor::Operation> {
-        use editor::{Mode::*, Operation::*};
+        use editor::{Event::*, Mode::*, Operation::*};
 
         match event {
-            Event::Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL => {
+            Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL => {
                 match key_event.code {
                     KeyCode::Char('c') => {
                         self.command.clear();
@@ -28,32 +28,30 @@ impl CommandLine {
                     _ => Vec::new(),
                 }
             }
-            Event::Key(key_event) if key_event.modifiers == KeyModifiers::NONE => {
-                match key_event.code {
-                    KeyCode::Esc => {
+            Key(key_event) if key_event.modifiers == KeyModifiers::NONE => match key_event.code {
+                KeyCode::Esc => {
+                    self.command.clear();
+                    vec![ChangeMode(Normal)]
+                }
+                KeyCode::Char(c) => {
+                    self.command.push(c);
+                    Vec::new()
+                }
+                KeyCode::Backspace => match self.command.pop() {
+                    Some(_) => Vec::new(),
+                    None => {
                         self.command.clear();
                         vec![ChangeMode(Normal)]
                     }
-                    KeyCode::Char(c) => {
-                        self.command.push(c);
-                        Vec::new()
-                    }
-                    KeyCode::Backspace => match self.command.pop() {
-                        Some(_) => Vec::new(),
-                        None => {
-                            self.command.clear();
-                            vec![ChangeMode(Normal)]
-                        }
-                    },
-                    KeyCode::Enter => {
-                        let operations = self.run_command();
-                        self.command.clear();
-                        operations
-                    }
-                    _ => Vec::new(),
+                },
+                KeyCode::Enter => {
+                    let operations = self.run_command();
+                    self.command.clear();
+                    operations
                 }
-            }
-            Event::Key(_) | Event::Mouse(_) | Event::Resize(_, _) => Vec::new(),
+                _ => Vec::new(),
+            },
+            Key(_) | Mouse(_) => Vec::new(),
         }
     }
 
