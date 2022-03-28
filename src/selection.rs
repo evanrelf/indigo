@@ -10,6 +10,8 @@ pub struct Selection {
 
 impl Selection {
     pub fn new(ranges: &[Range]) -> Self {
+        debug_assert!(!ranges.is_empty());
+
         Self {
             ranges: ranges.to_vec(),
             primary_range_index: 0,
