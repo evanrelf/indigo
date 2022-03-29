@@ -10,7 +10,6 @@ pub mod buffer;
 pub mod cursor;
 pub mod direction;
 pub mod editor;
-pub mod operand;
 pub mod ot;
 pub mod range;
 pub mod rope;
