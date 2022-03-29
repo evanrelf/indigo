@@ -1,4 +1,5 @@
 use crate::cursor::Cursor;
+use ropey::{Rope, RopeSlice};
 use std::fmt::Display;
 
 #[derive(Clone, Default)]
@@ -83,6 +84,21 @@ impl Range {
     pub fn intersect(self, other: Self) -> Self {
         todo!()
     }
+
+    pub fn to_rope_slice<'rope>(&self, rope: &'rope Rope) -> Option<RopeSlice<'rope>> {
+        let anchor_index = self.anchor.to_rope_index(rope)?;
+        let head_index = self.head.to_rope_index(rope)?;
+        if self.is_forwards() {
+            rope.get_slice(anchor_index..=head_index)
+        } else {
+            rope.get_slice(head_index..=anchor_index)
+        }
+    }
+
+    #[allow(unused_variables)]
+    pub fn to_rope_slice_lossy<'rope>(&self, rope: &'rope Rope) -> RopeSlice<'rope> {
+        todo!()
+    }
 }
 
 impl Display for Range {
@@ -120,5 +136,31 @@ impl From<Cursor> for Range {
             anchor: head.clone(),
             head,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_to_rope_slice() {
+        fn case(s: &str, range: ((usize, usize), (usize, usize)), expected: &str) {
+            let rope = Rope::from_str(s);
+            let range = Range::new(range.0, range.1);
+            let expected = Some(expected);
+            let actual = range.to_rope_slice(&rope).and_then(|slice| slice.as_str());
+            assert!(
+                expected == actual,
+                "\nexpected = {:?}\nactual = {:?}\n",
+                expected,
+                actual
+            );
+        }
+
+        case("Hello, world!", ((0, 0), (0, 4)), "Hello");
+        case("Hello, world!", ((0, 7), (0, 11)), "world");
+        case("Fizz\nBuzz", ((1, 0), (1, 3)), "Buzz");
+        case("Fizz\nBuzz", ((0, 0), (1, 3)), "Fizz\nBuzz");
     }
 }
