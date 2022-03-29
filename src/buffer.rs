@@ -189,7 +189,6 @@ impl FromStr for Buffer {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::range::Range;
 
     #[test]
     fn test_index_cursor() {
@@ -277,29 +276,5 @@ mod test {
         case("abc\nx\n", (0, 99, None), (0, 3, Some(99)));
         case("abc\nx\n", (1, 0, Some(1)), (1, 1, None));
         case("abc\nx\n", (1, 99, None), (1, 1, Some(99)));
-    }
-
-    #[test]
-    fn test_range_to_slice() {
-        fn case(s: &str, range: ((usize, usize), (usize, usize)), expected: &str) {
-            let buffer = Buffer::from_str(s).unwrap();
-            let range = Range::new(range.0, range.1);
-            let expected = Some(expected);
-            let actual = buffer
-                .rope
-                .range_to_slice(&range)
-                .and_then(|slice| slice.as_str());
-            assert!(
-                expected == actual,
-                "\nexpected = {:?}\nactual = {:?}\n",
-                expected,
-                actual
-            );
-        }
-
-        case("Hello, world!", ((0, 0), (0, 4)), "Hello");
-        case("Hello, world!", ((0, 7), (0, 11)), "world");
-        case("Fizz\nBuzz", ((1, 0), (1, 3)), "Buzz");
-        case("Fizz\nBuzz", ((0, 0), (1, 3)), "Fizz\nBuzz");
     }
 }

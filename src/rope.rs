@@ -100,3 +100,29 @@ impl DerefMut for Rope {
         &mut self.ropey
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_range_to_slice() {
+        fn case(s: &str, range: ((usize, usize), (usize, usize)), expected: &str) {
+            let rope: Rope = ropey::Rope::from_str(s).into();
+            let range = Range::new(range.0, range.1);
+            let expected = Some(expected);
+            let actual = rope.range_to_slice(&range).and_then(|slice| slice.as_str());
+            assert!(
+                expected == actual,
+                "\nexpected = {:?}\nactual = {:?}\n",
+                expected,
+                actual
+            );
+        }
+
+        case("Hello, world!", ((0, 0), (0, 4)), "Hello");
+        case("Hello, world!", ((0, 7), (0, 11)), "world");
+        case("Fizz\nBuzz", ((1, 0), (1, 3)), "Buzz");
+        case("Fizz\nBuzz", ((0, 0), (1, 3)), "Fizz\nBuzz");
+    }
+}
