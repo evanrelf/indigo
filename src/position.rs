@@ -1,12 +1,12 @@
 use crate::{cursor::Cursor, range::Range};
 use ropey::Rope;
 
-// TODO: Delete
+// TODO: Delete these functions after replacing their uses with equivalent `*_lossy` functions
+
 pub fn is_valid_cursor(rope: &Rope, cursor: &Cursor) -> bool {
     cursor.to_rope_index(rope).is_some()
 }
 
-// TODO: Delete
 pub fn corrected_cursor(rope: &Rope, cursor: &Cursor) -> Option<Cursor> {
     let line_length = rope.get_line(cursor.line)?.len_chars();
     if line_length == 0 {
