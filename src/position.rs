@@ -1,38 +1,9 @@
 use crate::{cursor::Cursor, range::Range};
 use ropey::{Rope, RopeSlice};
 
-pub fn cursor_to_index(rope: &Rope, cursor: &Cursor) -> Option<usize> {
-    let bol_char_index = rope.try_line_to_char(cursor.line).ok()?;
-    let line_length = rope.get_line(cursor.line)?.len_chars();
-    if line_length < cursor.column {
-        return None;
-    }
-    Some(bol_char_index + cursor.column)
-}
-
-#[allow(unused_variables)]
-pub fn cursor_to_index_lossy(rope: &Rope, cursor: &Cursor) -> usize {
-    todo!()
-}
-
-pub fn index_to_cursor(rope: &Rope, index: usize) -> Option<Cursor> {
-    let line = rope.try_char_to_line(index).ok()?;
-    let column = index - rope.try_line_to_char(line).ok()?;
-    Some(Cursor {
-        line,
-        column,
-        target_column: None,
-    })
-}
-
-#[allow(unused_variables)]
-pub fn index_to_cursor_lossy(rope: &Rope, index: usize) -> Cursor {
-    todo!()
-}
-
 pub fn range_to_slice<'rope>(rope: &'rope Rope, range: &Range) -> Option<RopeSlice<'rope>> {
-    let anchor_index = cursor_to_index(rope, &range.anchor)?;
-    let head_index = cursor_to_index(rope, &range.head)?;
+    let anchor_index = range.anchor.to_rope_index(rope)?;
+    let head_index = range.head.to_rope_index(rope)?;
     if range.is_forwards() {
         rope.get_slice(anchor_index..=head_index)
     } else {
@@ -45,10 +16,9 @@ pub fn range_to_slice_lossy<'rope>(rope: &'rope Rope, range: &Range) -> RopeSlic
     todo!()
 }
 
-
 // TODO: Delete
 pub fn is_valid_cursor(rope: &Rope, cursor: &Cursor) -> bool {
-    cursor_to_index(rope, cursor).is_some()
+    cursor.to_rope_index(rope).is_some()
 }
 
 // TODO: Delete
