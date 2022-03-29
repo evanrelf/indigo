@@ -1,4 +1,4 @@
-use crate::{buffer::Buffer, operand::Operand};
+use crate::buffer::Buffer;
 use crossterm::event::{KeyCode, KeyModifiers, MouseEventKind};
 use std::{fmt::Display, path::Path};
 
@@ -76,38 +76,35 @@ impl Editor {
     }
 
     pub fn handle_event(&mut self, event: Event) {
-        let operations = match self.mode {
+        match self.mode {
             Mode::Normal => self.handle_event_normal(event),
             Mode::Command => self.handle_event_command(event),
             Mode::Insert => self.handle_event_insert(event),
-        };
-
-        for operation in operations {
-            self.apply(operation);
         }
     }
 
-    fn handle_event_normal(&mut self, event: Event) -> Vec<Operation> {
+    fn handle_event_normal(&mut self, event: Event) {
         use Event::*;
-        use Operation::*;
 
         let count = if self.count == 0 { 1 } else { self.count };
 
-        let operations = match event {
-            Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL => {
+        match event {
+            Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL =>
+            {
+                #[allow(clippy::single_match)]
                 match key_event.code {
-                    KeyCode::Char('c') => vec![Quit],
-                    _ => Vec::new(),
+                    KeyCode::Char('c') => self.quit = true,
+                    _ => {}
                 }
             }
             Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
                 match key_event.code {
                     // Move
-                    KeyCode::Char('H') => vec![InBuffer(Box::new(move |buffer| buffer.move_left(count)))],
-                    KeyCode::Char('J') => vec![InBuffer(Box::new(move |buffer| buffer.move_down(count)))],
-                    KeyCode::Char('K') => vec![InBuffer(Box::new(move |buffer| buffer.move_up(count)))],
-                    KeyCode::Char('L') => vec![InBuffer(Box::new(move |buffer| buffer.move_right(count)))],
-                    _ => Vec::new(),
+                    KeyCode::Char('H') => self.buffers[self.buffer_index].move_left(count),
+                    KeyCode::Char('J') => self.buffers[self.buffer_index].move_down(count),
+                    KeyCode::Char('K') => self.buffers[self.buffer_index].move_up(count),
+                    KeyCode::Char('L') => self.buffers[self.buffer_index].move_right(count),
+                    _ => {}
                 }
             }
             Key(key_event) if key_event.modifiers == KeyModifiers::NONE => {
@@ -120,163 +117,163 @@ impl Editor {
                         } else {
                             (self.count * 10) + n
                         };
-                        vec![SetCount(new_count)]
+                        self.count = new_count;
                     }
                     // Scroll
-                    KeyCode::Up => vec![InBuffer(Box::new(move |buffer| buffer.scroll_up(count)))],
-                    KeyCode::Down => vec![InBuffer(Box::new(move |buffer| buffer.scroll_down(count)))],
-                    KeyCode::Left => vec![InBuffer(Box::new(move |buffer| buffer.scroll_left(count)))],
-                    KeyCode::Right => vec![InBuffer(Box::new(move |buffer| buffer.scroll_right(count)))],
+                    KeyCode::Up => self.buffers[self.buffer_index].scroll_up(count),
+                    KeyCode::Down => self.buffers[self.buffer_index].scroll_down(count),
+                    KeyCode::Left => self.buffers[self.buffer_index].scroll_left(count),
+                    KeyCode::Right => self.buffers[self.buffer_index].scroll_right(count),
                     // Move
-                    KeyCode::Char('h') => vec![
-                        InBuffer(Box::new(move |buffer| buffer.move_left(count))),
-                        InBuffer(Box::new(move |buffer| buffer.selection.in_all_ranges(|range| range.reduce()))),
-                    ],
-                    KeyCode::Char('j') => vec![
-                        InBuffer(Box::new(move |buffer| buffer.move_down(count))),
-                        InBuffer(Box::new(move |buffer| buffer.selection.in_all_ranges(|range| range.reduce()))),
-                    ],
-                    KeyCode::Char('k') => vec![
-                        InBuffer(Box::new(move |buffer| buffer.move_up(count))),
-                        InBuffer(Box::new(move |buffer| buffer.selection.in_all_ranges(|range| range.reduce()))),
-                    ],
-                    KeyCode::Char('l') => vec![
-                        InBuffer(Box::new(move |buffer| buffer.move_right(count))),
-                        InBuffer(Box::new(move |buffer| buffer.selection.in_all_ranges(|range| range.reduce()))),
-                    ],
+                    KeyCode::Char('h') => {
+                        self.buffers[self.buffer_index].move_left(count);
+                        self.buffers[self.buffer_index]
+                            .selection
+                            .in_all_ranges(|range| range.reduce());
+                    }
+                    KeyCode::Char('j') => {
+                        self.buffers[self.buffer_index].move_down(count);
+                        self.buffers[self.buffer_index]
+                            .selection
+                            .in_all_ranges(|range| range.reduce());
+                    }
+                    KeyCode::Char('k') => {
+                        self.buffers[self.buffer_index].move_up(count);
+                        self.buffers[self.buffer_index]
+                            .selection
+                            .in_all_ranges(|range| range.reduce());
+                    }
+                    KeyCode::Char('l') => {
+                        self.buffers[self.buffer_index].move_right(count);
+                        self.buffers[self.buffer_index]
+                            .selection
+                            .in_all_ranges(|range| range.reduce());
+                    }
                     // Mode
-                    KeyCode::Char(':') => vec![ChangeMode(Mode::Command)],
-                    KeyCode::Char('i') => vec![
-                        ChangeMode(Mode::Insert),
-                        InBuffer(Box::new(move |buffer| {
-                            buffer
-                                .selection
-                                .in_all_ranges(|range| range.flip_backwards())
-                        })),
-                    ],
+                    KeyCode::Char(':') => self.mode = Mode::Command,
+                    KeyCode::Char('i') => {
+                        self.mode = Mode::Insert;
+
+                        self.buffers[self.buffer_index]
+                            .selection
+                            .in_all_ranges(|range| range.flip_backwards())
+                    }
                     // Edit
-                    KeyCode::Char('d') => vec![InBuffer(Box::new(move |buffer| buffer.delete()))],
-                    _ => Vec::new(),
+                    KeyCode::Char('d') => self.buffers[self.buffer_index].delete(),
+                    _ => {}
                 }
             }
             Mouse(mouse_event) => match mouse_event.kind {
-                MouseEventKind::ScrollUp => vec![InBuffer(Box::new(move |buffer| buffer.scroll_up(3)))],
-                MouseEventKind::ScrollDown => vec![InBuffer(Box::new(move |buffer| buffer.scroll_down(3)))],
-                _ => Vec::new(),
+                MouseEventKind::ScrollUp => self.buffers[self.buffer_index].scroll_up(3),
+                MouseEventKind::ScrollDown => self.buffers[self.buffer_index].scroll_down(3),
+                _ => {}
             },
-            Key(_) => Vec::new(),
+            Key(_) => {}
         };
 
-        if operations.is_empty() {
-            // Must always perform an operation, so the count can be reset properly. If no work
-            // needs to be done, we use `vec![NoOp]`.
-            vec![NoOp]
-        } else {
-            operations
-        }
+        // TODO: Restore count resetting
+        // Must always perform an operation, so the count can be reset properly. If no work
+        // needs to be done, we use `vec![NoOp]`.
     }
 
-    pub fn handle_event_command(&mut self, event: Event) -> Vec<Operation> {
+    pub fn handle_event_command(&mut self, event: Event) {
         use Event::*;
-        use Mode::*;
-        use Operation::*;
 
         match event {
-            Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL => {
+            Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL =>
+            {
+                #[allow(clippy::single_match)]
                 match key_event.code {
                     KeyCode::Char('c') => {
                         self.command.clear();
-                        vec![ChangeMode(Normal)]
+                        self.mode = Mode::Normal;
                     }
-                    _ => Vec::new(),
+                    _ => {}
                 }
             }
             Key(key_event) if key_event.modifiers == KeyModifiers::NONE => match key_event.code {
                 KeyCode::Esc => {
                     self.command.clear();
-                    vec![ChangeMode(Normal)]
+                    self.mode = Mode::Normal;
                 }
                 KeyCode::Char(c) => {
                     self.command.push(c);
-                    Vec::new()
                 }
-                KeyCode::Backspace => match self.command.pop() {
-                    Some(_) => Vec::new(),
-                    None => {
+                KeyCode::Backspace => {
+                    if self.command.pop().is_none() {
                         self.command.clear();
-                        vec![ChangeMode(Normal)]
+                        self.mode = Mode::Normal;
                     }
-                },
-                KeyCode::Enter => {
-                    let operations = self.run_command();
-                    self.command.clear();
-                    operations
                 }
-                _ => Vec::new(),
+                KeyCode::Enter => {
+                    self.run_command();
+                    self.command.clear();
+                }
+                _ => {}
             },
-            Key(_) | Mouse(_) => Vec::new(),
+            Key(_) | Mouse(_) => {}
         }
     }
 
-    fn handle_event_insert(&self, event: Event) -> Vec<Operation> {
+    fn handle_event_insert(&mut self, event: Event) {
         use Event::*;
-        use Operation::*;
 
         match event {
-            Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL => {
+            Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL =>
+            {
+                #[allow(clippy::single_match)]
                 match key_event.code {
-                    KeyCode::Char('c') => vec![Quit],
-                    _ => Vec::new(),
+                    KeyCode::Char('c') => self.quit = true,
+                    _ => {}
                 }
             }
             Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
                 match key_event.code {
                     // Edit
-                    KeyCode::Char(c) => vec![InBuffer(Box::new(move |buffer| buffer.insert(c)))],
-                    KeyCode::Enter => vec![InBuffer(Box::new(move |buffer| buffer.insert('\n')))],
-                    _ => Vec::new(),
+                    KeyCode::Char(c) => self.buffers[self.buffer_index].insert(c),
+                    KeyCode::Enter => self.buffers[self.buffer_index].insert('\n'),
+                    _ => {}
                 }
             }
             Key(key_event) if key_event.modifiers == KeyModifiers::NONE => {
                 match key_event.code {
                     // Scroll
-                    KeyCode::Up => vec![InBuffer(Box::new(move |buffer| buffer.scroll_up(1)))],
-                    KeyCode::Down => vec![InBuffer(Box::new(move |buffer| buffer.scroll_down(1)))],
-                    KeyCode::Left => vec![InBuffer(Box::new(move |buffer| buffer.scroll_left(1)))],
-                    KeyCode::Right => vec![InBuffer(Box::new(move |buffer| buffer.scroll_right(1)))],
+                    KeyCode::Up => self.buffers[self.buffer_index].scroll_up(1),
+                    KeyCode::Down => self.buffers[self.buffer_index].scroll_down(1),
+                    KeyCode::Left => self.buffers[self.buffer_index].scroll_left(1),
+                    KeyCode::Right => self.buffers[self.buffer_index].scroll_right(1),
                     // Mode
-                    KeyCode::Esc => vec![ChangeMode(Mode::Normal)],
+                    KeyCode::Esc => self.mode = Mode::Normal,
                     // Edit
-                    KeyCode::Char(c) => vec![InBuffer(Box::new(move |buffer| buffer.insert(c)))],
-                    KeyCode::Enter => vec![InBuffer(Box::new(move |buffer| buffer.insert('\n')))],
-                    KeyCode::Backspace => vec![InBuffer(Box::new(move |buffer| buffer.backspace()))],
-                    _ => vec![],
+                    KeyCode::Char(c) => self.buffers[self.buffer_index].insert(c),
+                    KeyCode::Enter => self.buffers[self.buffer_index].insert('\n'),
+                    KeyCode::Backspace => self.buffers[self.buffer_index].backspace(),
+                    _ => {}
                 }
             }
             Mouse(mouse_event) => match mouse_event.kind {
-                MouseEventKind::ScrollUp => vec![InBuffer(Box::new(move |buffer| buffer.scroll_up(3)))],
-                MouseEventKind::ScrollDown => vec![InBuffer(Box::new(move |buffer| buffer.scroll_down(3)))],
-                _ => vec![],
+                MouseEventKind::ScrollUp => self.buffers[self.buffer_index].scroll_up(3),
+                MouseEventKind::ScrollDown => self.buffers[self.buffer_index].scroll_down(3),
+                _ => {}
             },
-            Key(_) => Vec::new(),
+            Key(_) => {}
         }
     }
 
-    fn run_command(&self) -> Vec<Operation> {
-        use Mode::*;
-        use Operation::*;
-
+    fn run_command(&mut self) {
         match self.command.split_ascii_whitespace().collect::<Vec<_>>()[..] {
             ["buffer-next" | "bn"] => {
-                vec![ChangeMode(Normal), NextBuffer]
+                self.mode = Mode::Normal;
+                self.buffer_index += 1;
             }
             ["buffer-prev" | "bp"] => {
-                vec![ChangeMode(Normal), PreviousBuffer]
+                self.mode = Mode::Normal;
+                self.buffer_index -= 1;
             }
             ["quit" | "q"] => {
-                vec![Quit]
+                self.quit = true;
             }
-            [] => vec![ChangeMode(Normal)],
+            [] => self.mode = Mode::Normal,
             _ => {
                 unimplemented!("Unknown command: {}", self.command);
             }
@@ -293,52 +290,4 @@ impl Default for Editor {
 pub enum Event {
     Key(crossterm::event::KeyEvent),
     Mouse(crossterm::event::MouseEvent),
-}
-
-pub enum Operation {
-    Quit,
-    ChangeMode(Mode),
-    SetCount(usize),
-    NoOp,
-    NextBuffer,
-    PreviousBuffer,
-    InBuffer(Box<dyn Fn(&mut Buffer)>),
-}
-
-impl Operand for Editor {
-    type Operation = Operation;
-
-    fn apply(&mut self, operation: Self::Operation) {
-        use Operation::*;
-
-        let old_count = self.count;
-
-        match operation {
-            Quit => {
-                self.quit = true;
-            }
-            ChangeMode(mode) => {
-                self.mode = mode;
-            }
-            SetCount(new_count) => {
-                self.count = new_count;
-            }
-            NextBuffer => {
-                self.buffer_index += 1;
-            }
-            PreviousBuffer => {
-                self.buffer_index -= 1;
-            }
-            NoOp => {}
-            InBuffer(_) => {
-                // f(&mut self.buffers[self.buffer_index]);
-            }
-        }
-
-        let new_count = self.count;
-
-        if old_count == new_count {
-            self.count = 0;
-        }
-    }
 }
