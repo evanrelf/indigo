@@ -1,4 +1,5 @@
-use crate::{cursor::Cursor, rope::Rope, selection::Selection};
+use crate::{cursor::Cursor, position, selection::Selection};
+use ropey::Rope;
 use std::{
     fs::File,
     io::BufReader,
@@ -30,7 +31,7 @@ impl Buffer {
 
         Self {
             path: Some(path_buf),
-            rope: ropey::Rope::from_reader(reader).unwrap().into(),
+            rope: Rope::from_reader(reader).unwrap(),
             selection: Selection::default(),
             view_lines_offset: 0,
             view_columns_offset: 0,
@@ -78,12 +79,15 @@ impl Buffer {
 
     pub fn move_up(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            let head = self.rope.corrected_cursor(&Cursor {
-                line: range.head.line.saturating_sub(distance),
-                ..range.head
-            });
+            let head = position::corrected_cursor(
+                &self.rope,
+                &Cursor {
+                    line: range.head.line.saturating_sub(distance),
+                    ..range.head
+                },
+            );
             match head {
-                Some(head) if self.rope.is_valid_cursor(&head) => range.head = head,
+                Some(head) if position::is_valid_cursor(&self.rope, &head) => range.head = head,
                 _ => {}
             }
         }
@@ -91,12 +95,15 @@ impl Buffer {
 
     pub fn move_down(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            let head = self.rope.corrected_cursor(&Cursor {
-                line: range.head.line + distance,
-                ..range.head
-            });
+            let head = position::corrected_cursor(
+                &self.rope,
+                &Cursor {
+                    line: range.head.line + distance,
+                    ..range.head
+                },
+            );
             match head {
-                Some(head) if self.rope.is_valid_cursor(&head) => range.head = head,
+                Some(head) if position::is_valid_cursor(&self.rope, &head) => range.head = head,
                 _ => {}
             }
         }
@@ -104,23 +111,21 @@ impl Buffer {
 
     pub fn move_left(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            let old_index = self.rope.cursor_to_index(&range.head).unwrap();
+            let old_index = position::cursor_to_index(&self.rope, &range.head).unwrap();
             let new_index = old_index.saturating_sub(distance);
-            range.head = self.rope.index_to_cursor(new_index).unwrap();
+            range.head = position::index_to_cursor(&self.rope, new_index).unwrap();
         }
     }
 
     pub fn move_right(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            let old_index = self.rope.cursor_to_index(&range.head).unwrap();
+            let old_index = position::cursor_to_index(&self.rope, &range.head).unwrap();
             let new_index = old_index + distance;
             if new_index < self.rope.len_chars() {
-                range.head = self.rope.index_to_cursor(new_index).unwrap();
+                range.head = position::index_to_cursor(&self.rope, new_index).unwrap();
             } else {
-                range.head = self
-                    .rope
-                    .index_to_cursor(self.rope.len_chars() - 1)
-                    .unwrap();
+                range.head =
+                    position::index_to_cursor(&self.rope, self.rope.len_chars() - 1).unwrap();
             }
         }
     }
@@ -128,8 +133,8 @@ impl Buffer {
     pub fn insert(&mut self, c: char) {
         for range in &mut self.selection.ranges {
             // Insert character
-            let anchor_index = self.rope.cursor_to_index(&range.anchor).unwrap();
-            let head_index = self.rope.cursor_to_index(&range.head).unwrap();
+            let anchor_index = position::cursor_to_index(&self.rope, &range.anchor).unwrap();
+            let head_index = position::cursor_to_index(&self.rope, &range.head).unwrap();
 
             if range.is_forwards() {
                 self.rope.insert_char(anchor_index, c);
@@ -138,22 +143,22 @@ impl Buffer {
             }
 
             // Shift selection
-            range.anchor = self.rope.index_to_cursor(anchor_index + 1).unwrap();
-            range.head = self.rope.index_to_cursor(head_index + 1).unwrap();
+            range.anchor = position::index_to_cursor(&self.rope, anchor_index + 1).unwrap();
+            range.head = position::index_to_cursor(&self.rope, head_index + 1).unwrap();
         }
     }
 
     pub fn backspace(&mut self) {
         for range in &mut self.selection.ranges {
-            let anchor_index = self.rope.cursor_to_index(&range.head).unwrap();
-            let head_index = self.rope.cursor_to_index(&range.head).unwrap();
+            let anchor_index = position::cursor_to_index(&self.rope, &range.head).unwrap();
+            let head_index = position::cursor_to_index(&self.rope, &range.head).unwrap();
             if head_index > 0 {
                 // Delete character
                 self.rope.remove(head_index - 1..head_index);
 
                 // Shift selection
-                range.anchor = self.rope.index_to_cursor(anchor_index - 1).unwrap();
-                range.head = self.rope.index_to_cursor(head_index - 1).unwrap();
+                range.anchor = position::index_to_cursor(&self.rope, anchor_index - 1).unwrap();
+                range.head = position::index_to_cursor(&self.rope, head_index - 1).unwrap();
             }
         }
     }
@@ -161,11 +166,11 @@ impl Buffer {
     pub fn delete(&mut self) {
         for range in &mut self.selection.ranges {
             range.flip_backwards();
-            let anchor_index = self.rope.cursor_to_index(&range.anchor).unwrap();
-            let head_index = self.rope.cursor_to_index(&range.head).unwrap();
+            let anchor_index = position::cursor_to_index(&self.rope, &range.anchor).unwrap();
+            let head_index = position::cursor_to_index(&self.rope, &range.head).unwrap();
             self.rope.remove(head_index..=anchor_index);
             range.reduce();
-            if let Some(s) = self.rope.corrected_range(range) {
+            if let Some(s) = position::corrected_range(&self.rope, range) {
                 *range = s;
             };
         }
@@ -178,7 +183,7 @@ impl FromStr for Buffer {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self {
             path: None,
-            rope: ropey::Rope::from_str(s).into(),
+            rope: Rope::from_str(s),
             selection: Selection::default(),
             view_lines_offset: 0,
             view_columns_offset: 0,
@@ -195,7 +200,7 @@ mod test {
         fn case(s: &str, tuple: (usize, usize), expected: char) {
             let buffer = Buffer::from_str(s).unwrap();
             let cursor = Cursor::from(tuple);
-            let index = buffer.rope.cursor_to_index(&cursor).unwrap();
+            let index = position::cursor_to_index(&buffer.rope, &cursor).unwrap();
             let actual = buffer.rope.char(index);
             assert!(
                 expected == actual,
@@ -222,10 +227,8 @@ mod test {
         fn case(result: CaseResult, s: &str, tuple: (usize, usize)) {
             let buffer = Buffer::from_str(s).unwrap();
             let cursor = Cursor::from(tuple);
-            let actual = buffer
-                .rope
-                .cursor_to_index(&cursor)
-                .and_then(|i| buffer.rope.index_to_cursor(i));
+            let actual = position::cursor_to_index(&buffer.rope, &cursor)
+                .and_then(|i| position::index_to_cursor(&buffer.rope, i));
             let expected = Some(cursor);
             assert!(
                 match result {
@@ -259,11 +262,14 @@ mod test {
                 column: corrected.1,
                 target_column: corrected.2,
             });
-            let actual = buffer.rope.corrected_cursor(&Cursor {
-                line: original.0,
-                column: original.1,
-                target_column: original.2,
-            });
+            let actual = position::corrected_cursor(
+                &buffer.rope,
+                &Cursor {
+                    line: original.0,
+                    column: original.1,
+                    target_column: original.2,
+                },
+            );
             assert!(
                 expected == actual,
                 "\nexpected = {:?}\nactual = {:?}\n",

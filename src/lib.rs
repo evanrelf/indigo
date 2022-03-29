@@ -10,7 +10,7 @@ pub mod buffer;
 pub mod cursor;
 pub mod editor;
 pub mod ot;
+pub mod position;
 pub mod range;
-pub mod rope;
 pub mod selection;
 pub mod terminal;
