@@ -1,6 +1,4 @@
-use crate::{
-    cursor::Cursor, direction::Direction, operand::Operand, rope::Rope, selection::Selection,
-};
+use crate::{cursor::Cursor, rope::Rope, selection::Selection};
 use std::{
     fs::File,
     io::BufReader,
@@ -12,7 +10,7 @@ use std::{
 pub struct Buffer {
     path: Option<PathBuf>,
     rope: Rope,
-    selection: Selection,
+    pub selection: Selection,
     view_lines_offset: usize,
     view_columns_offset: usize,
 }
@@ -59,26 +57,26 @@ impl Buffer {
         self.view_columns_offset
     }
 
-    fn scroll_up(&mut self, distance: usize) {
+    pub fn scroll_up(&mut self, distance: usize) {
         self.view_lines_offset = self.view_lines_offset.saturating_sub(distance);
     }
 
-    fn scroll_down(&mut self, distance: usize) {
+    pub fn scroll_down(&mut self, distance: usize) {
         let new_view_lines_offset = self.view_lines_offset + distance;
         if new_view_lines_offset <= self.rope.len_lines() {
             self.view_lines_offset = new_view_lines_offset;
         }
     }
 
-    fn scroll_left(&mut self, distance: usize) {
+    pub fn scroll_left(&mut self, distance: usize) {
         self.view_columns_offset = self.view_columns_offset.saturating_sub(distance);
     }
 
-    fn scroll_right(&mut self, distance: usize) {
+    pub fn scroll_right(&mut self, distance: usize) {
         self.view_columns_offset += distance;
     }
 
-    fn move_up(&mut self, distance: usize) {
+    pub fn move_up(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
             let head = self.rope.corrected_cursor(&Cursor {
                 line: range.head.line.saturating_sub(distance),
@@ -91,7 +89,7 @@ impl Buffer {
         }
     }
 
-    fn move_down(&mut self, distance: usize) {
+    pub fn move_down(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
             let head = self.rope.corrected_cursor(&Cursor {
                 line: range.head.line + distance,
@@ -104,7 +102,7 @@ impl Buffer {
         }
     }
 
-    fn move_left(&mut self, distance: usize) {
+    pub fn move_left(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
             let old_index = self.rope.cursor_to_index(&range.head).unwrap();
             let new_index = old_index.saturating_sub(distance);
@@ -112,7 +110,7 @@ impl Buffer {
         }
     }
 
-    fn move_right(&mut self, distance: usize) {
+    pub fn move_right(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
             let old_index = self.rope.cursor_to_index(&range.head).unwrap();
             let new_index = old_index + distance;
@@ -127,7 +125,7 @@ impl Buffer {
         }
     }
 
-    fn insert(&mut self, c: char) {
+    pub fn insert(&mut self, c: char) {
         for range in &mut self.selection.ranges {
             // Insert character
             let anchor_index = self.rope.cursor_to_index(&range.anchor).unwrap();
@@ -145,7 +143,7 @@ impl Buffer {
         }
     }
 
-    fn backspace(&mut self) {
+    pub fn backspace(&mut self) {
         for range in &mut self.selection.ranges {
             let anchor_index = self.rope.cursor_to_index(&range.head).unwrap();
             let head_index = self.rope.cursor_to_index(&range.head).unwrap();
@@ -160,7 +158,7 @@ impl Buffer {
         }
     }
 
-    fn delete(&mut self) {
+    pub fn delete(&mut self) {
         for range in &mut self.selection.ranges {
             range.flip_backwards();
             let anchor_index = self.rope.cursor_to_index(&range.anchor).unwrap();
@@ -185,50 +183,6 @@ impl FromStr for Buffer {
             view_lines_offset: 0,
             view_columns_offset: 0,
         })
-    }
-}
-
-pub enum Operation {
-    Scroll(Direction, usize),
-    Move(Direction, usize),
-    Insert(char),
-    Delete,
-    Backspace,
-    InSelection(fn(&mut Selection)),
-}
-
-impl Operand for Buffer {
-    type Operation = Operation;
-
-    fn apply(&mut self, operation: Self::Operation) {
-        use Operation::*;
-
-        match operation {
-            Scroll(direction, distance) => match direction {
-                Direction::Up => self.scroll_up(distance),
-                Direction::Down => self.scroll_down(distance),
-                Direction::Left => self.scroll_left(distance),
-                Direction::Right => self.scroll_right(distance),
-            },
-            Move(direction, distance) => match direction {
-                Direction::Up => self.move_up(distance),
-                Direction::Down => self.move_down(distance),
-                Direction::Left => self.move_left(distance),
-                Direction::Right => self.move_right(distance),
-            },
-            Insert(c) => {
-                self.insert(c);
-            }
-            Backspace => {
-                self.backspace();
-            }
-            Delete => {
-                self.delete();
-            }
-            InSelection(f) => {
-                f(&mut self.selection);
-            }
-        }
     }
 }
 

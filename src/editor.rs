@@ -1,8 +1,4 @@
-use crate::{
-    buffer::{self, Buffer},
-    direction,
-    operand::Operand,
-};
+use crate::{buffer::Buffer, operand::Operand};
 use crossterm::event::{KeyCode, KeyModifiers, MouseEventKind};
 use std::{fmt::Display, path::Path};
 
@@ -91,9 +87,7 @@ impl Editor {
         }
     }
 
-    fn handle_event_normal(&self, event: Event) -> Vec<Operation> {
-        use buffer::Operation::*;
-        use direction::Direction::*;
+    fn handle_event_normal(&mut self, event: Event) -> Vec<Operation> {
         use Event::*;
         use Operation::*;
 
@@ -109,10 +103,10 @@ impl Editor {
             Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
                 match key_event.code {
                     // Move
-                    KeyCode::Char('H') => vec![InBuffer(Move(Left, count))],
-                    KeyCode::Char('J') => vec![InBuffer(Move(Down, count))],
-                    KeyCode::Char('K') => vec![InBuffer(Move(Up, count))],
-                    KeyCode::Char('L') => vec![InBuffer(Move(Right, count))],
+                    KeyCode::Char('H') => vec![InBuffer(Box::new(move |buffer| buffer.move_left(count)))],
+                    KeyCode::Char('J') => vec![InBuffer(Box::new(move |buffer| buffer.move_down(count)))],
+                    KeyCode::Char('K') => vec![InBuffer(Box::new(move |buffer| buffer.move_up(count)))],
+                    KeyCode::Char('L') => vec![InBuffer(Box::new(move |buffer| buffer.move_right(count)))],
                     _ => Vec::new(),
                 }
             }
@@ -129,51 +123,45 @@ impl Editor {
                         vec![SetCount(new_count)]
                     }
                     // Scroll
-                    KeyCode::Up => vec![InBuffer(Scroll(Up, count))],
-                    KeyCode::Down => vec![InBuffer(Scroll(Down, count))],
-                    KeyCode::Left => vec![InBuffer(Scroll(Left, count))],
-                    KeyCode::Right => vec![InBuffer(Scroll(Right, count))],
+                    KeyCode::Up => vec![InBuffer(Box::new(move |buffer| buffer.scroll_up(count)))],
+                    KeyCode::Down => vec![InBuffer(Box::new(move |buffer| buffer.scroll_down(count)))],
+                    KeyCode::Left => vec![InBuffer(Box::new(move |buffer| buffer.scroll_left(count)))],
+                    KeyCode::Right => vec![InBuffer(Box::new(move |buffer| buffer.scroll_right(count)))],
                     // Move
                     KeyCode::Char('h') => vec![
-                        InBuffer(Move(Left, count)),
-                        InBuffer(InSelection(|selection| {
-                            selection.in_all_ranges(|range| range.reduce())
-                        })),
+                        InBuffer(Box::new(move |buffer| buffer.move_left(count))),
+                        InBuffer(Box::new(move |buffer| buffer.selection.in_all_ranges(|range| range.reduce()))),
                     ],
                     KeyCode::Char('j') => vec![
-                        InBuffer(Move(Down, count)),
-                        InBuffer(InSelection(|selection| {
-                            selection.in_all_ranges(|range| range.reduce())
-                        })),
+                        InBuffer(Box::new(move |buffer| buffer.move_down(count))),
+                        InBuffer(Box::new(move |buffer| buffer.selection.in_all_ranges(|range| range.reduce()))),
                     ],
                     KeyCode::Char('k') => vec![
-                        InBuffer(Move(Up, count)),
-                        InBuffer(InSelection(|selection| {
-                            selection.in_all_ranges(|range| range.reduce())
-                        })),
+                        InBuffer(Box::new(move |buffer| buffer.move_up(count))),
+                        InBuffer(Box::new(move |buffer| buffer.selection.in_all_ranges(|range| range.reduce()))),
                     ],
                     KeyCode::Char('l') => vec![
-                        InBuffer(Move(Right, count)),
-                        InBuffer(InSelection(|selection| {
-                            selection.in_all_ranges(|range| range.reduce())
-                        })),
+                        InBuffer(Box::new(move |buffer| buffer.move_right(count))),
+                        InBuffer(Box::new(move |buffer| buffer.selection.in_all_ranges(|range| range.reduce()))),
                     ],
                     // Mode
                     KeyCode::Char(':') => vec![ChangeMode(Mode::Command)],
                     KeyCode::Char('i') => vec![
                         ChangeMode(Mode::Insert),
-                        InBuffer(InSelection(|selection| {
-                            selection.in_all_ranges(|range| range.flip_backwards())
+                        InBuffer(Box::new(move |buffer| {
+                            buffer
+                                .selection
+                                .in_all_ranges(|range| range.flip_backwards())
                         })),
                     ],
                     // Edit
-                    KeyCode::Char('d') => vec![InBuffer(Delete)],
+                    KeyCode::Char('d') => vec![InBuffer(Box::new(move |buffer| buffer.delete()))],
                     _ => Vec::new(),
                 }
             }
             Mouse(mouse_event) => match mouse_event.kind {
-                MouseEventKind::ScrollUp => vec![InBuffer(Scroll(Up, 3))],
-                MouseEventKind::ScrollDown => vec![InBuffer(Scroll(Down, 3))],
+                MouseEventKind::ScrollUp => vec![InBuffer(Box::new(move |buffer| buffer.scroll_up(3)))],
+                MouseEventKind::ScrollDown => vec![InBuffer(Box::new(move |buffer| buffer.scroll_down(3)))],
                 _ => Vec::new(),
             },
             Key(_) => Vec::new(),
@@ -231,8 +219,6 @@ impl Editor {
     }
 
     fn handle_event_insert(&self, event: Event) -> Vec<Operation> {
-        use buffer::Operation::*;
-        use direction::Direction::*;
         use Event::*;
         use Operation::*;
 
@@ -246,30 +232,30 @@ impl Editor {
             Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
                 match key_event.code {
                     // Edit
-                    KeyCode::Char(c) => vec![InBuffer(Insert(c))],
-                    KeyCode::Enter => vec![InBuffer(Insert('\n'))],
+                    KeyCode::Char(c) => vec![InBuffer(Box::new(move |buffer| buffer.insert(c)))],
+                    KeyCode::Enter => vec![InBuffer(Box::new(move |buffer| buffer.insert('\n')))],
                     _ => Vec::new(),
                 }
             }
             Key(key_event) if key_event.modifiers == KeyModifiers::NONE => {
                 match key_event.code {
                     // Scroll
-                    KeyCode::Up => vec![InBuffer(Scroll(Up, 1))],
-                    KeyCode::Down => vec![InBuffer(Scroll(Down, 1))],
-                    KeyCode::Left => vec![InBuffer(Scroll(Left, 1))],
-                    KeyCode::Right => vec![InBuffer(Scroll(Right, 1))],
+                    KeyCode::Up => vec![InBuffer(Box::new(move |buffer| buffer.scroll_up(1)))],
+                    KeyCode::Down => vec![InBuffer(Box::new(move |buffer| buffer.scroll_down(1)))],
+                    KeyCode::Left => vec![InBuffer(Box::new(move |buffer| buffer.scroll_left(1)))],
+                    KeyCode::Right => vec![InBuffer(Box::new(move |buffer| buffer.scroll_right(1)))],
                     // Mode
                     KeyCode::Esc => vec![ChangeMode(Mode::Normal)],
                     // Edit
-                    KeyCode::Char(c) => vec![InBuffer(Insert(c))],
-                    KeyCode::Enter => vec![InBuffer(Insert('\n'))],
-                    KeyCode::Backspace => vec![InBuffer(Backspace)],
+                    KeyCode::Char(c) => vec![InBuffer(Box::new(move |buffer| buffer.insert(c)))],
+                    KeyCode::Enter => vec![InBuffer(Box::new(move |buffer| buffer.insert('\n')))],
+                    KeyCode::Backspace => vec![InBuffer(Box::new(move |buffer| buffer.backspace()))],
                     _ => vec![],
                 }
             }
             Mouse(mouse_event) => match mouse_event.kind {
-                MouseEventKind::ScrollUp => vec![InBuffer(Scroll(Up, 3))],
-                MouseEventKind::ScrollDown => vec![InBuffer(Scroll(Down, 3))],
+                MouseEventKind::ScrollUp => vec![InBuffer(Box::new(move |buffer| buffer.scroll_up(3)))],
+                MouseEventKind::ScrollDown => vec![InBuffer(Box::new(move |buffer| buffer.scroll_down(3)))],
                 _ => vec![],
             },
             Key(_) => Vec::new(),
@@ -316,7 +302,7 @@ pub enum Operation {
     NoOp,
     NextBuffer,
     PreviousBuffer,
-    InBuffer(buffer::Operation),
+    InBuffer(Box<dyn Fn(&mut Buffer)>),
 }
 
 impl Operand for Editor {
@@ -344,8 +330,8 @@ impl Operand for Editor {
                 self.buffer_index -= 1;
             }
             NoOp => {}
-            InBuffer(operation) => {
-                self.buffers[self.buffer_index].apply(operation);
+            InBuffer(_) => {
+                // f(&mut self.buffers[self.buffer_index]);
             }
         }
 
