@@ -1,4 +1,4 @@
-use crate::{cursor::Cursor, operand::Operand};
+use crate::cursor::Cursor;
 use std::fmt::Display;
 
 #[derive(Clone, Default)]
@@ -119,37 +119,6 @@ impl From<Cursor> for Range {
         Self {
             anchor: head.clone(),
             head,
-        }
-    }
-}
-
-#[derive(Clone)]
-pub enum Operation {
-    Flip,
-    FlipForwards,
-    FlipBackwards,
-    Reduce,
-}
-
-impl Operand for Range {
-    type Operation = Operation;
-
-    fn apply(&mut self, operation: Self::Operation) {
-        use Operation::*;
-
-        match operation {
-            Flip => {
-                self.flip();
-            }
-            FlipForwards => {
-                self.flip_forwards();
-            }
-            FlipBackwards => {
-                self.flip_backwards();
-            }
-            Reduce => {
-                self.reduce();
-            }
         }
     }
 }

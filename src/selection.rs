@@ -1,7 +1,4 @@
-use crate::{
-    operand::Operand,
-    range::{self, Range},
-};
+use crate::{operand::Operand, range::Range};
 
 pub struct Selection {
     pub ranges: Vec<Range>,
@@ -28,6 +25,10 @@ impl Selection {
         }
 
         false
+    }
+
+    pub fn primary_range(&mut self) -> &mut Range {
+        &mut self.ranges[self.primary_range_index]
     }
 
     #[allow(unused_variables)]
@@ -64,8 +65,7 @@ pub enum Operation {
     NextRange(usize),
     PreviousRange(usize),
     FilterRanges(fn(usize, &Range) -> bool),
-    InPrimaryRange(range::Operation),
-    InAllRanges(range::Operation),
+    InAllRanges(fn(&mut Range)),
 }
 
 impl Operand for Selection {
@@ -96,12 +96,9 @@ impl Operand for Selection {
                     .cloned()
                     .collect();
             }
-            InPrimaryRange(operation) => {
-                self.ranges[self.primary_range_index].apply(operation);
-            }
-            InAllRanges(operation) => {
+            InAllRanges(f) => {
                 for range in &mut self.ranges {
-                    range.apply(operation.clone());
+                    f(range);
                 }
             }
         }
