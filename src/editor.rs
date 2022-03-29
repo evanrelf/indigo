@@ -3,7 +3,6 @@ use crate::{
     command::CommandLine,
     direction,
     operand::Operand,
-    selection,
 };
 use crossterm::event::{KeyCode, KeyModifiers, MouseEventKind};
 use std::{fmt::Display, path::Path};
@@ -96,7 +95,6 @@ impl Editor {
     fn handle_event_normal(&self, event: Event) -> Vec<Operation> {
         use buffer::Operation::*;
         use direction::Direction::*;
-        use selection::Operation::*;
         use Event::*;
         use Operation::*;
 
@@ -139,25 +137,35 @@ impl Editor {
                     // Move
                     KeyCode::Char('h') => vec![
                         InBuffer(Move(Left, count)),
-                        InBuffer(InSelection(InAllRanges(|range| range.reduce()))),
+                        InBuffer(InSelection(|selection| {
+                            selection.in_all_ranges(|range| range.reduce())
+                        })),
                     ],
                     KeyCode::Char('j') => vec![
                         InBuffer(Move(Down, count)),
-                        InBuffer(InSelection(InAllRanges(|range| range.reduce()))),
+                        InBuffer(InSelection(|selection| {
+                            selection.in_all_ranges(|range| range.reduce())
+                        })),
                     ],
                     KeyCode::Char('k') => vec![
                         InBuffer(Move(Up, count)),
-                        InBuffer(InSelection(InAllRanges(|range| range.reduce()))),
+                        InBuffer(InSelection(|selection| {
+                            selection.in_all_ranges(|range| range.reduce())
+                        })),
                     ],
                     KeyCode::Char('l') => vec![
                         InBuffer(Move(Right, count)),
-                        InBuffer(InSelection(InAllRanges(|range| range.reduce()))),
+                        InBuffer(InSelection(|selection| {
+                            selection.in_all_ranges(|range| range.reduce())
+                        })),
                     ],
                     // Mode
                     KeyCode::Char(':') => vec![ChangeMode(Mode::Command)],
                     KeyCode::Char('i') => vec![
                         ChangeMode(Mode::Insert),
-                        InBuffer(InSelection(InAllRanges(|range| range.flip_backwards()))),
+                        InBuffer(InSelection(|selection| {
+                            selection.in_all_ranges(|range| range.flip_backwards())
+                        })),
                     ],
                     // Edit
                     KeyCode::Char('d') => vec![InBuffer(Delete)],

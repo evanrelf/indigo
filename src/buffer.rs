@@ -1,9 +1,5 @@
 use crate::{
-    cursor::Cursor,
-    direction::Direction,
-    operand::Operand,
-    rope::Rope,
-    selection::{self, Selection},
+    cursor::Cursor, direction::Direction, operand::Operand, rope::Rope, selection::Selection,
 };
 use std::{
     fs::File,
@@ -198,7 +194,7 @@ pub enum Operation {
     Insert(char),
     Delete,
     Backspace,
-    InSelection(selection::Operation),
+    InSelection(fn(&mut Selection)),
 }
 
 impl Operand for Buffer {
@@ -229,8 +225,8 @@ impl Operand for Buffer {
             Delete => {
                 self.delete();
             }
-            InSelection(operation) => {
-                self.selection.apply(operation);
+            InSelection(f) => {
+                f(&mut self.selection);
             }
         }
     }

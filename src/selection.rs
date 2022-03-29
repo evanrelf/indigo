@@ -1,4 +1,4 @@
-use crate::{operand::Operand, range::Range};
+use crate::range::Range;
 
 pub struct Selection {
     pub ranges: Vec<Range>,
@@ -27,8 +27,38 @@ impl Selection {
         false
     }
 
+    pub fn next_range(&mut self, count: usize) {
+        self.primary_range_index =
+            wrap_around(self.ranges.len(), self.primary_range_index, count as isize);
+    }
+
+    pub fn previous_range(&mut self, count: usize) {
+        self.primary_range_index = wrap_around(
+            self.ranges.len(),
+            self.primary_range_index,
+            -(count as isize),
+        );
+    }
+
+    pub fn filter_ranges(&mut self, filter: fn(usize, &Range) -> bool) {
+        self.ranges = self
+            .ranges
+            .iter()
+            .enumerate()
+            .filter(|(i, r)| filter(*i, r))
+            .map(|(_, r)| r)
+            .cloned()
+            .collect();
+    }
+
     pub fn primary_range(&mut self) -> &mut Range {
         &mut self.ranges[self.primary_range_index]
+    }
+
+    pub fn in_all_ranges(&mut self, f: fn(&mut Range)) {
+        for range in &mut self.ranges {
+            f(range);
+        }
     }
 
     #[allow(unused_variables)]
@@ -57,50 +87,6 @@ impl Default for Selection {
         Self {
             ranges: vec![Range::default()],
             primary_range_index: 0,
-        }
-    }
-}
-
-pub enum Operation {
-    NextRange(usize),
-    PreviousRange(usize),
-    FilterRanges(fn(usize, &Range) -> bool),
-    InAllRanges(fn(&mut Range)),
-}
-
-impl Operand for Selection {
-    type Operation = Operation;
-
-    fn apply(&mut self, operation: Self::Operation) {
-        use Operation::*;
-
-        match operation {
-            NextRange(count) => {
-                self.primary_range_index =
-                    wrap_around(self.ranges.len(), self.primary_range_index, count as isize);
-            }
-            PreviousRange(count) => {
-                self.primary_range_index = wrap_around(
-                    self.ranges.len(),
-                    self.primary_range_index,
-                    -(count as isize),
-                );
-            }
-            FilterRanges(filter) => {
-                self.ranges = self
-                    .ranges
-                    .iter()
-                    .enumerate()
-                    .filter(|(i, r)| filter(*i, r))
-                    .map(|(_, r)| r)
-                    .cloned()
-                    .collect();
-            }
-            InAllRanges(f) => {
-                for range in &mut self.ranges {
-                    f(range);
-                }
-            }
         }
     }
 }
