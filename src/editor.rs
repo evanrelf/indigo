@@ -1,6 +1,5 @@
 use crate::{
     buffer::{self, Buffer},
-    command::CommandLine,
     direction,
     operand::Operand,
 };
@@ -30,7 +29,7 @@ impl Display for Mode {
 pub struct Editor {
     quit: bool,
     mode: Mode,
-    command_line: CommandLine,
+    command: String,
     count: usize,
     buffers: Vec<Buffer>,
     buffer_index: usize,
@@ -41,7 +40,7 @@ impl Editor {
         Self {
             quit: false,
             mode: Mode::Normal,
-            command_line: CommandLine::new(),
+            command: String::new(),
             count: 0,
             buffers: vec![Buffer::new()],
             buffer_index: 0,
@@ -64,8 +63,8 @@ impl Editor {
         &self.mode
     }
 
-    pub fn command_line(&self) -> &CommandLine {
-        &self.command_line
+    pub fn command(&self) -> &String {
+        &self.command
     }
 
     pub fn count(&self) -> usize {
@@ -83,7 +82,7 @@ impl Editor {
     pub fn handle_event(&mut self, event: Event) {
         let operations = match self.mode {
             Mode::Normal => self.handle_event_normal(event),
-            Mode::Command => self.command_line.handle_event(event),
+            Mode::Command => self.handle_event_command(event),
             Mode::Insert => self.handle_event_insert(event),
         };
 
@@ -189,6 +188,48 @@ impl Editor {
         }
     }
 
+    pub fn handle_event_command(&mut self, event: Event) -> Vec<Operation> {
+        use Event::*;
+        use Mode::*;
+        use Operation::*;
+
+        match event {
+            Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL => {
+                match key_event.code {
+                    KeyCode::Char('c') => {
+                        self.command.clear();
+                        vec![ChangeMode(Normal)]
+                    }
+                    _ => Vec::new(),
+                }
+            }
+            Key(key_event) if key_event.modifiers == KeyModifiers::NONE => match key_event.code {
+                KeyCode::Esc => {
+                    self.command.clear();
+                    vec![ChangeMode(Normal)]
+                }
+                KeyCode::Char(c) => {
+                    self.command.push(c);
+                    Vec::new()
+                }
+                KeyCode::Backspace => match self.command.pop() {
+                    Some(_) => Vec::new(),
+                    None => {
+                        self.command.clear();
+                        vec![ChangeMode(Normal)]
+                    }
+                },
+                KeyCode::Enter => {
+                    let operations = self.run_command();
+                    self.command.clear();
+                    operations
+                }
+                _ => Vec::new(),
+            },
+            Key(_) | Mouse(_) => Vec::new(),
+        }
+    }
+
     fn handle_event_insert(&self, event: Event) -> Vec<Operation> {
         use buffer::Operation::*;
         use direction::Direction::*;
@@ -232,6 +273,27 @@ impl Editor {
                 _ => vec![],
             },
             Key(_) => Vec::new(),
+        }
+    }
+
+    fn run_command(&self) -> Vec<Operation> {
+        use Mode::*;
+        use Operation::*;
+
+        match self.command.split_ascii_whitespace().collect::<Vec<_>>()[..] {
+            ["buffer-next" | "bn"] => {
+                vec![ChangeMode(Normal), NextBuffer]
+            }
+            ["buffer-prev" | "bp"] => {
+                vec![ChangeMode(Normal), PreviousBuffer]
+            }
+            ["quit" | "q"] => {
+                vec![Quit]
+            }
+            [] => vec![ChangeMode(Normal)],
+            _ => {
+                unimplemented!("Unknown command: {}", self.command);
+            }
         }
     }
 }

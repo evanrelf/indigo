@@ -1,6 +1,5 @@
 use crate::{
     buffer::Buffer,
-    command::CommandLine,
     editor::{self, Editor, Mode},
 };
 use crossterm::ExecutableCommand;
@@ -142,7 +141,16 @@ impl Widget for &Editor {
 
         // Render command line
         if let Mode::Command = self.mode() {
-            self.command_line().render(chunks[2], buffer);
+            Block::default()
+                .title(format!(":{}", self.command()))
+                .render(chunks[2], buffer);
+
+            buffer
+                .get_mut(
+                    chunks[2].left() + self.command().len() as u16 + 1,
+                    chunks[2].top(),
+                )
+                .set_bg(Color::White);
         }
 
         // Render buffer
@@ -239,20 +247,5 @@ impl Widget for &Buffer {
                 }
             }
         }
-    }
-}
-
-impl Widget for &CommandLine {
-    fn render(self, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
-        use tui::style::Color;
-        use tui::widgets::Block;
-
-        Block::default()
-            .title(format!(":{}", self.command()))
-            .render(area, buffer);
-
-        buffer
-            .get_mut(area.left() + self.command().len() as u16 + 1, area.top())
-            .set_bg(Color::White);
     }
 }
