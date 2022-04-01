@@ -98,7 +98,8 @@
 - [Wikipedia article][ot]
 - [CodeMirror 6 System Guide](https://codemirror.net/6/docs/guide/) (architecture and design)
 - [CodeMirror 6 Reference Manual](https://codemirror.net/6/docs/ref) (implementation details)
-- [`helix-core::transaction`](https://github.com/helix-editor/helix/blob/master/helix-core/src/transaction.rs)
+- [`helix`'s `transaction` module](https://github.com/helix-editor/helix/blob/master/helix-core/src/transaction.rs)
+- [`led`'s `transaction` module](https://github.com/cessen/led/blob/master/sub_crates/backend/src/transaction.rs)
 - [`operational-transform` crate](https://github.com/spebern/operational-transform-rs)
 - When not used in a distributed or peer-to-peer situation, the implementation
   is surprisingly manageable
