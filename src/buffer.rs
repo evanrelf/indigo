@@ -1,5 +1,6 @@
 use crate::{
     cursor::{self, Cursor},
+    position::Position,
     range,
     selection::Selection,
 };
@@ -86,7 +87,10 @@ impl Buffer {
             let head = cursor::corrected_cursor(
                 &self.rope,
                 &Cursor {
-                    line: range.head.line.saturating_sub(distance),
+                    position: Position {
+                        line: range.head.position.line.saturating_sub(distance),
+                        ..range.head.position
+                    },
                     ..range.head
                 },
             );
@@ -102,7 +106,10 @@ impl Buffer {
             let head = cursor::corrected_cursor(
                 &self.rope,
                 &Cursor {
-                    line: range.head.line + distance,
+                    position: Position {
+                        line: range.head.position.line + distance,
+                        ..range.head.position
+                    },
                     ..range.head
                 },
             );

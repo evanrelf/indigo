@@ -1,63 +1,57 @@
+use crate::position::Position;
 use ropey::Rope;
 use std::fmt::Display;
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Cursor {
-    pub line: usize,
-    pub column: usize,
+    pub position: Position,
     pub target_column: Option<usize>,
 }
 
 impl Cursor {
     pub fn new(line: usize, column: usize) -> Self {
         Self {
-            line,
-            column,
+            position: Position { line, column },
             target_column: None,
         }
     }
 
     pub fn to_rope_index(&self, rope: &Rope) -> Option<usize> {
-        let bol_char_index = rope.try_line_to_char(self.line).ok()?;
-        let line_length = rope.get_line(self.line)?.len_chars();
-        if line_length < self.column {
-            return None;
-        }
-        Some(bol_char_index + self.column)
+        self.position.to_rope_index(rope)
     }
 
-    #[allow(unused_variables)]
     pub fn to_rope_index_lossy(&self, rope: &Rope) -> usize {
-        todo!()
+        self.position.to_rope_index_lossy(rope)
     }
 
     pub fn from_rope_index(rope: &Rope, index: usize) -> Option<Self> {
-        let line = rope.try_char_to_line(index).ok()?;
-        let column = index - rope.try_line_to_char(line).ok()?;
+        let position = Position::from_rope_index(rope, index)?;
         Some(Self {
-            line,
-            column,
+            position,
             target_column: None,
         })
     }
 
-    #[allow(unused_variables)]
     pub fn from_rope_index_lossy(rope: &Rope, index: usize) -> Self {
-        todo!()
+        let position = Position::from_rope_index_lossy(rope, index);
+        Self {
+            position,
+            target_column: None,
+        }
     }
 }
 
 impl Display for Cursor {
     fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "{}:{}", self.line + 1, self.column + 1)
+        let Position { line, column } = self.position;
+        write!(formatter, "{}:{}", line + 1, column + 1)
     }
 }
 
 impl From<(usize, usize)> for Cursor {
     fn from((line, column): (usize, usize)) -> Self {
         Self {
-            line,
-            column,
+            position: Position { line, column },
             target_column: None,
         }
     }
@@ -66,11 +60,11 @@ impl From<(usize, usize)> for Cursor {
 // TODO: Delete these functions after replacing their uses with equivalent `*_lossy` functions
 
 pub fn is_valid_cursor(rope: &Rope, cursor: &Cursor) -> bool {
-    cursor.to_rope_index(rope).is_some()
+    cursor.position.to_rope_index(rope).is_some()
 }
 
 pub fn corrected_cursor(rope: &Rope, cursor: &Cursor) -> Option<Cursor> {
-    let line_length = rope.get_line(cursor.line)?.len_chars();
+    let line_length = rope.get_line(cursor.position.line)?.len_chars();
     if line_length == 0 {
         return None;
     }
@@ -79,24 +73,33 @@ pub fn corrected_cursor(rope: &Rope, cursor: &Cursor) -> Option<Cursor> {
     if let Some(target_column) = cursor.target_column {
         if line_length > target_column {
             Some(Cursor {
-                column: target_column,
+                position: Position {
+                    column: target_column,
+                    ..cursor.position.clone()
+                },
                 target_column: None,
-                ..cursor.clone()
             })
         } else {
+            let cursor = cursor.clone();
             Some(Cursor {
-                column: line_length - 1,
-                ..cursor.clone()
+                position: Position {
+                    column: line_length - 1,
+                    ..cursor.position
+                },
+                ..cursor
             })
         }
     } else {
-        if line_length > cursor.column {
+        if line_length > cursor.position.column {
             Some(cursor.clone())
         } else {
+            let cursor = cursor.clone();
             Some(Cursor {
-                column: line_length - 1,
-                target_column: Some(cursor.column),
-                ..cursor.clone()
+                position: Position {
+                    column: line_length - 1,
+                    ..cursor.position
+                },
+                target_column: Some(cursor.position.column),
             })
         }
     }

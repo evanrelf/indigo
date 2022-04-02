@@ -223,8 +223,8 @@ impl Widget for &Buffer {
             let head_cursor = (&range.head, Style::default().bg(Color::LightYellow));
 
             for (cursor, style) in [anchor_cursor, head_cursor] {
-                let buffer_line = cursor.line;
-                let buffer_column = cursor.column;
+                let buffer_line = cursor.position.line;
+                let buffer_column = cursor.position.column;
                 let view_line = buffer_line.saturating_sub(self.view_lines_offset());
                 let view_column = buffer_column.saturating_sub(self.view_columns_offset());
 
