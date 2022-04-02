@@ -1,4 +1,8 @@
-use crate::{cursor::Cursor, position, selection::Selection};
+use crate::{
+    cursor::{self, Cursor},
+    range,
+    selection::Selection,
+};
 use ropey::Rope;
 use std::{
     fs::File,
@@ -79,7 +83,7 @@ impl Buffer {
 
     pub fn move_up(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            let head = position::corrected_cursor(
+            let head = cursor::corrected_cursor(
                 &self.rope,
                 &Cursor {
                     line: range.head.line.saturating_sub(distance),
@@ -87,7 +91,7 @@ impl Buffer {
                 },
             );
             match head {
-                Some(head) if position::is_valid_cursor(&self.rope, &head) => range.head = head,
+                Some(head) if cursor::is_valid_cursor(&self.rope, &head) => range.head = head,
                 _ => {}
             }
         }
@@ -95,7 +99,7 @@ impl Buffer {
 
     pub fn move_down(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            let head = position::corrected_cursor(
+            let head = cursor::corrected_cursor(
                 &self.rope,
                 &Cursor {
                     line: range.head.line + distance,
@@ -103,7 +107,7 @@ impl Buffer {
                 },
             );
             match head {
-                Some(head) if position::is_valid_cursor(&self.rope, &head) => range.head = head,
+                Some(head) if cursor::is_valid_cursor(&self.rope, &head) => range.head = head,
                 _ => {}
             }
         }
@@ -170,7 +174,7 @@ impl Buffer {
             let head_index = range.head.to_rope_index(&self.rope).unwrap();
             self.rope.remove(head_index..=anchor_index);
             range.reduce();
-            if let Some(s) = position::corrected_range(&self.rope, range) {
+            if let Some(s) = range::corrected_range(&self.rope, range) {
                 *range = s;
             };
         }
@@ -248,40 +252,5 @@ mod test {
         case(Fail, "abc\nxyz\n", (0, 4));
         case(Fail, "abc\nxyz\n", (0, 20));
         case(Fail, "abc\nxyz\n", (2, 2));
-    }
-
-    #[test]
-    fn test_corrected_cursor() {
-        fn case(
-            s: &str,
-            original: (usize, usize, Option<usize>),
-            corrected: (usize, usize, Option<usize>),
-        ) {
-            let buffer = Buffer::from_str(s).unwrap();
-            let expected = Some(Cursor {
-                line: corrected.0,
-                column: corrected.1,
-                target_column: corrected.2,
-            });
-            let actual = position::corrected_cursor(
-                &buffer.rope,
-                &Cursor {
-                    line: original.0,
-                    column: original.1,
-                    target_column: original.2,
-                },
-            );
-            assert!(
-                expected == actual,
-                "\nexpected = {:?}\nactual = {:?}\n",
-                expected,
-                actual
-            );
-        }
-
-        case("abc\nx\n", (0, 0, None), (0, 0, None));
-        case("abc\nx\n", (0, 99, None), (0, 3, Some(99)));
-        case("abc\nx\n", (1, 0, Some(1)), (1, 1, None));
-        case("abc\nx\n", (1, 99, None), (1, 1, Some(99)));
     }
 }

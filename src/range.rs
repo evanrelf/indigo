@@ -1,4 +1,4 @@
-use crate::cursor::Cursor;
+use crate::cursor::{self, Cursor};
 use ropey::{Rope, RopeSlice};
 use std::fmt::Display;
 
@@ -137,6 +137,13 @@ impl From<Cursor> for Range {
             head,
         }
     }
+}
+
+// TODO: Delete
+pub fn corrected_range(rope: &Rope, range: &Range) -> Option<Range> {
+    let anchor = cursor::corrected_cursor(rope, &range.anchor)?;
+    let head = cursor::corrected_cursor(rope, &range.head)?;
+    Some(Range { anchor, head })
 }
 
 #[cfg(test)]
