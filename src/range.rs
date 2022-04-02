@@ -95,9 +95,14 @@ impl Range {
         }
     }
 
-    #[allow(unused_variables)]
     pub fn to_rope_slice_lossy<'rope>(&self, rope: &'rope Rope) -> RopeSlice<'rope> {
-        todo!()
+        let anchor_index = self.anchor.to_rope_index_lossy(rope);
+        let head_index = self.head.to_rope_index_lossy(rope);
+        if self.is_forwards() {
+            rope.slice(anchor_index..=head_index)
+        } else {
+            rope.slice(head_index..=anchor_index)
+        }
     }
 }
 

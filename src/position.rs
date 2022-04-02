@@ -21,9 +21,26 @@ impl Position {
         Some(rope.line_to_char(self.line) + self.column)
     }
 
-    #[allow(unused_variables)]
     pub fn to_rope_index_lossy(&self, rope: &Rope) -> usize {
-        todo!()
+        // Get valid line
+        let lines = rope.len_lines();
+        let line = if lines <= self.line {
+            // When line goes beyond end of rope, use last line
+            lines.saturating_sub(1)
+        } else {
+            self.line
+        };
+
+        // Get valid column
+        let columns = rope.line(line).len_chars();
+        let column = if columns <= self.column {
+            // When column goes beyond end of line, use last column
+            columns.saturating_sub(1)
+        } else {
+            self.column
+        };
+
+        rope.line_to_char(line) + column
     }
 
     pub fn from_rope_index(rope: &Rope, index: usize) -> Option<Self> {
@@ -39,9 +56,20 @@ impl Position {
         Some(Self { line, column })
     }
 
-    #[allow(unused_variables)]
     pub fn from_rope_index_lossy(rope: &Rope, index: usize) -> Self {
-        todo!()
+        // Get valid index
+        let index = if rope.len_chars() <= index {
+            // When index goes beyond end of rope, use last index
+            rope.len_chars().saturating_sub(1)
+        } else {
+            index
+        };
+
+        let line = rope.char_to_line(index);
+
+        let column = index - rope.line_to_char(line);
+
+        Self { line, column }
     }
 }
 
@@ -67,5 +95,32 @@ mod test {
         case(1, 4);
         case(1, 5);
         case(2, 0);
+    }
+
+    #[test]
+    fn test_rope_index_lossy() {
+        let rope = Rope::from_str("hello\nworld\n!\n");
+
+        let case = |before: (usize, usize), after: (usize, usize)| {
+            let before_position = Position {
+                line: before.0,
+                column: before.1,
+            };
+            let expected_after_position = Position {
+                line: after.0,
+                column: after.1,
+            };
+            let actual_after_position =
+                Position::from_rope_index_lossy(&rope, before_position.to_rope_index_lossy(&rope));
+
+            assert_eq!(expected_after_position, actual_after_position,);
+        };
+
+        case((0, 0), (0, 0));
+        case((1, 4), (1, 4));
+        case((1, 5), (1, 5));
+        case((2, 0), (2, 0));
+        case((0, 99), (0, 5));
+        case((99, 99), (2, 1));
     }
 }
