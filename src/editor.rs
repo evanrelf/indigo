@@ -4,6 +4,7 @@ use std::{fmt::Display, path::Path};
 
 pub enum Mode {
     Normal,
+    Goto,
     Command,
     Insert,
 }
@@ -15,6 +16,7 @@ impl Display for Mode {
             "{}",
             match self {
                 Self::Normal => "normal",
+                Self::Goto => "goto",
                 Self::Command => "command",
                 Self::Insert => "insert",
             }
@@ -78,6 +80,7 @@ impl Editor {
     pub fn handle_event(&mut self, event: Event) {
         match self.mode {
             Mode::Normal => self.handle_event_normal(event),
+            Mode::Goto => self.handle_event_goto(event),
             Mode::Command => self.handle_event_command(event),
             Mode::Insert => self.handle_event_insert(event),
         }
@@ -130,10 +133,10 @@ impl Editor {
                     KeyCode::Char('k') => self.buffers[self.buffer_index].move_up(count),
                     KeyCode::Char('l') => self.buffers[self.buffer_index].move_right(count),
                     // Mode
+                    KeyCode::Char('g') => self.mode = Mode::Goto,
                     KeyCode::Char(':') => self.mode = Mode::Command,
                     KeyCode::Char('i') => {
                         self.mode = Mode::Insert;
-
                         self.buffers[self.buffer_index]
                             .selection
                             .in_all_ranges(|range| range.flip_backwards())
@@ -154,6 +157,39 @@ impl Editor {
         // TODO: Restore count resetting
         // Must always perform an operation, so the count can be reset properly. If no work
         // needs to be done, we use `vec![NoOp]`.
+    }
+
+    fn handle_event_goto(&mut self, event: Event) {
+        use Event::*;
+
+        match event {
+            Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL =>
+            {
+                #[allow(clippy::single_match)]
+                match key_event.code {
+                    KeyCode::Char('c') => self.quit = true,
+                    _ => {}
+                }
+            }
+            Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
+                match key_event.code {
+                    // Move
+                    KeyCode::Char('J') => self.buffers[self.buffer_index].extend_bottom(),
+                    KeyCode::Char('K') => self.buffers[self.buffer_index].extend_top(),
+                    _ => {}
+                }
+            }
+            Key(key_event) if key_event.modifiers == KeyModifiers::NONE => match key_event.code {
+                KeyCode::Esc => self.mode = Mode::Normal,
+                KeyCode::Char('j') => self.buffers[self.buffer_index].move_bottom(),
+                KeyCode::Char('k') => self.buffers[self.buffer_index].move_top(),
+                _ => {}
+            },
+            Mouse(_) => {}
+            Key(_) => {}
+        };
+
+        self.mode = Mode::Normal;
     }
 
     pub fn handle_event_command(&mut self, event: Event) {

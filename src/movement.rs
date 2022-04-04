@@ -120,3 +120,49 @@ fn horizontally(
         target_column: None,
     }
 }
+
+pub fn move_top(range: &Range) -> Range {
+    top(range, Behavior::Move)
+}
+
+pub fn move_bottom(rope: &Rope, range: &Range) -> Range {
+    bottom(rope, range, Behavior::Move)
+}
+
+pub fn extend_top(range: &Range) -> Range {
+    top(range, Behavior::Extend)
+}
+
+pub fn extend_bottom(rope: &Rope, range: &Range) -> Range {
+    bottom(rope, range, Behavior::Extend)
+}
+
+fn top(range: &Range, behavior: Behavior) -> Range {
+    let head = Position::from((0, 0));
+
+    let anchor = match behavior {
+        Behavior::Move => head.clone(),
+        Behavior::Extend => range.anchor.clone(),
+    };
+
+    Range {
+        anchor,
+        head,
+        target_column: None,
+    }
+}
+
+fn bottom(rope: &Rope, range: &Range, behavior: Behavior) -> Range {
+    let head = Position::from_rope_index(rope, rope.len_chars().saturating_sub(1)).unwrap();
+
+    let anchor = match behavior {
+        Behavior::Move => head.clone(),
+        Behavior::Extend => range.anchor.clone(),
+    };
+
+    Range {
+        anchor,
+        head,
+        target_column: None,
+    }
+}

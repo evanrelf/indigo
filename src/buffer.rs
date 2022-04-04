@@ -128,6 +128,30 @@ impl Buffer {
         }
     }
 
+    pub fn move_top(&mut self) {
+        for range in &mut self.selection.ranges {
+            *range = movement::move_top(range);
+        }
+    }
+
+    pub fn move_bottom(&mut self) {
+        for range in &mut self.selection.ranges {
+            *range = movement::move_bottom(&self.rope, range);
+        }
+    }
+
+    pub fn extend_top(&mut self) {
+        for range in &mut self.selection.ranges {
+            *range = movement::extend_top(range);
+        }
+    }
+
+    pub fn extend_bottom(&mut self) {
+        for range in &mut self.selection.ranges {
+            *range = movement::extend_bottom(&self.rope, range);
+        }
+    }
+
     pub fn insert(&mut self, c: char) {
         for range in &mut self.selection.ranges {
             // Insert character
