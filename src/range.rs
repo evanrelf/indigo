@@ -95,14 +95,15 @@ impl Range {
         }
     }
 
-    pub fn to_rope_slice_lossy<'rope>(&self, rope: &'rope Rope) -> RopeSlice<'rope> {
-        let anchor_index = self.anchor.to_rope_index_lossy(rope);
-        let head_index = self.head.to_rope_index_lossy(rope);
-        if self.is_forwards() {
+    pub fn to_rope_slice_lossy<'rope>(&self, rope: &'rope Rope) -> (RopeSlice<'rope>, bool) {
+        let (anchor_index, anchor_lossy) = self.anchor.to_rope_index_lossy(rope);
+        let (head_index, head_lossy) = self.head.to_rope_index_lossy(rope);
+        let rope_slice = if self.is_forwards() {
             rope.slice(anchor_index..=head_index)
         } else {
             rope.slice(head_index..=anchor_index)
-        }
+        };
+        (rope_slice, anchor_lossy || head_lossy)
     }
 }
 

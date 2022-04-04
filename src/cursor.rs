@@ -20,7 +20,7 @@ impl Cursor {
         self.position.to_rope_index(rope)
     }
 
-    pub fn to_rope_index_lossy(&self, rope: &Rope) -> usize {
+    pub fn to_rope_index_lossy(&self, rope: &Rope) -> (usize, bool) {
         self.position.to_rope_index_lossy(rope)
     }
 
@@ -32,12 +32,13 @@ impl Cursor {
         })
     }
 
-    pub fn from_rope_index_lossy(rope: &Rope, index: usize) -> Self {
-        let position = Position::from_rope_index_lossy(rope, index);
-        Self {
+    pub fn from_rope_index_lossy(rope: &Rope, index: usize) -> (Self, bool) {
+        let (position, lossy) = Position::from_rope_index_lossy(rope, index);
+        let cursor = Self {
             position,
             target_column: None,
-        }
+        };
+        (cursor, lossy)
     }
 }
 
