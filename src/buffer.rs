@@ -80,30 +80,6 @@ impl Buffer {
         self.view_columns_offset += distance;
     }
 
-    pub fn move_up(&mut self, distance: usize) {
-        for range in &mut self.selection.ranges {
-            *range = movement::move_up(&self.rope, range, distance);
-        }
-    }
-
-    pub fn move_down(&mut self, distance: usize) {
-        for range in &mut self.selection.ranges {
-            *range = movement::move_down(&self.rope, range, distance);
-        }
-    }
-
-    pub fn move_left(&mut self, distance: usize) {
-        for range in &mut self.selection.ranges {
-            *range = movement::move_left(&self.rope, range, distance);
-        }
-    }
-
-    pub fn move_right(&mut self, distance: usize) {
-        for range in &mut self.selection.ranges {
-            *range = movement::move_right(&self.rope, range, distance);
-        }
-    }
-
     pub fn extend_up(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
             *range = movement::extend_up(&self.rope, range, distance);
@@ -128,21 +104,27 @@ impl Buffer {
         }
     }
 
-    pub fn move_top(&mut self) {
+    pub fn move_up(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            *range = movement::move_top(range);
+            *range = movement::move_up(&self.rope, range, distance);
         }
     }
 
-    pub fn move_bottom(&mut self) {
+    pub fn move_down(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            *range = movement::move_bottom(&self.rope, range);
+            *range = movement::move_down(&self.rope, range, distance);
         }
     }
 
-    pub fn move_end(&mut self) {
+    pub fn move_left(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            *range = movement::move_end(&self.rope, range);
+            *range = movement::move_left(&self.rope, range, distance);
+        }
+    }
+
+    pub fn move_right(&mut self, distance: usize) {
+        for range in &mut self.selection.ranges {
+            *range = movement::move_right(&self.rope, range, distance);
         }
     }
 
@@ -161,6 +143,25 @@ impl Buffer {
     pub fn extend_end(&mut self) {
         for range in &mut self.selection.ranges {
             *range = movement::extend_end(&self.rope, range);
+        }
+    }
+
+
+    pub fn move_top(&mut self) {
+        for range in &mut self.selection.ranges {
+            *range = movement::move_top(range);
+        }
+    }
+
+    pub fn move_bottom(&mut self) {
+        for range in &mut self.selection.ranges {
+            *range = movement::move_bottom(&self.rope, range);
+        }
+    }
+
+    pub fn move_end(&mut self) {
+        for range in &mut self.selection.ranges {
+            *range = movement::move_end(&self.rope, range);
         }
     }
 

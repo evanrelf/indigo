@@ -2,6 +2,22 @@ use crate::{position::Position, range::Range};
 use ropey::Rope;
 use std::cmp::{max, min};
 
+pub fn extend_up(rope: &Rope, range: &Range, distance: usize) -> Range {
+    vertically(rope, range, Direction::Backward, distance)
+}
+
+pub fn extend_down(rope: &Rope, range: &Range, distance: usize) -> Range {
+    vertically(rope, range, Direction::Forward, distance)
+}
+
+pub fn extend_left(rope: &Rope, range: &Range, distance: usize) -> Range {
+    horizontally(rope, range, Direction::Backward, distance)
+}
+
+pub fn extend_right(rope: &Rope, range: &Range, distance: usize) -> Range {
+    horizontally(rope, range, Direction::Forward, distance)
+}
+
 pub fn move_up(rope: &Rope, range: &Range, distance: usize) -> Range {
     let mut range = extend_up(rope, range, distance);
     range.reduce();
@@ -24,22 +40,6 @@ pub fn move_right(rope: &Rope, range: &Range, distance: usize) -> Range {
     let mut range = extend_right(rope, range, distance);
     range.reduce();
     range
-}
-
-pub fn extend_up(rope: &Rope, range: &Range, distance: usize) -> Range {
-    vertically(rope, range, Direction::Backward, distance)
-}
-
-pub fn extend_down(rope: &Rope, range: &Range, distance: usize) -> Range {
-    vertically(rope, range, Direction::Forward, distance)
-}
-
-pub fn extend_left(rope: &Rope, range: &Range, distance: usize) -> Range {
-    horizontally(rope, range, Direction::Backward, distance)
-}
-
-pub fn extend_right(rope: &Rope, range: &Range, distance: usize) -> Range {
-    horizontally(rope, range, Direction::Forward, distance)
 }
 
 enum Direction {
@@ -106,6 +106,18 @@ fn horizontally(rope: &Rope, range: &Range, direction: Direction, distance: usiz
     }
 }
 
+pub fn extend_top(range: &Range) -> Range {
+    top(range)
+}
+
+pub fn extend_bottom(rope: &Rope, range: &Range) -> Range {
+    bottom(rope, range)
+}
+
+pub fn extend_end(rope: &Rope, range: &Range) -> Range {
+    end(rope, range)
+}
+
 pub fn move_top(range: &Range) -> Range {
     let mut range = extend_top(range);
     range.reduce();
@@ -122,18 +134,6 @@ pub fn move_end(rope: &Rope, range: &Range) -> Range {
     let mut range = extend_end(rope, range);
     range.reduce();
     range
-}
-
-pub fn extend_top(range: &Range) -> Range {
-    top(range)
-}
-
-pub fn extend_bottom(rope: &Rope, range: &Range) -> Range {
-    bottom(rope, range)
-}
-
-pub fn extend_end(rope: &Rope, range: &Range) -> Range {
-    end(rope, range)
 }
 
 fn top(range: &Range) -> Range {
