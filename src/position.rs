@@ -80,6 +80,12 @@ impl Display for Position {
     }
 }
 
+impl From<(usize, usize)> for Position {
+    fn from((line, column): (usize, usize)) -> Self {
+        Self { line, column }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

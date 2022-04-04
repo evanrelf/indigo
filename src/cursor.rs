@@ -47,12 +47,18 @@ impl Display for Cursor {
     }
 }
 
-impl From<(usize, usize)> for Cursor {
-    fn from((line, column): (usize, usize)) -> Self {
+impl From<Position> for Cursor {
+    fn from(position: Position) -> Self {
         Self {
-            position: Position { line, column },
+            position,
             target_column: None,
         }
+    }
+}
+
+impl From<(usize, usize)> for Cursor {
+    fn from(x: (usize, usize)) -> Self {
+        Self::from(Position::from(x))
     }
 }
 
