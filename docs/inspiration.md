@@ -89,6 +89,7 @@
 ### Event sourcing
 
 - [Wikipedia article](https://en.wikipedia.org/wiki/Domain-driven_design#Event_sourcing)
+- [Redux JavaScript library](https://redux.js.org/)
 - Representing the editor and its subsystems' operations as data
 - Save operations to disk to be replayed later
 - Fuzz testing by generating arbitrary sequences of editor operations
@@ -96,6 +97,12 @@
 - Plugins could hook on specific operations
 - Plugins could act like middleware transforming streams of operations
 - If operations can be inverted, they could be undone 
+
+### Functional core, imperative shell
+
+- [Talk by Gary Bernhardt](https://www.destroyallsoftware.com/screencasts/catalog/functional-core-imperative-shell)
+- Immutable data structures
+- [Immer JavaScript library](https://immerjs.github.io/immer/)
 
 ### Operational transformation (OT)
 
