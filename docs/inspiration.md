@@ -82,6 +82,10 @@
 
 ## Topics
 
+### Extensions
+
+- [Extensible Extension Mechanisms](https://marijnhaverbeke.nl/blog/extensibility.html)
+
 ### Event sourcing
 
 - [Wikipedia article](https://en.wikipedia.org/wiki/Domain-driven_design#Event_sourcing)
