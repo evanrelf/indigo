@@ -1,9 +1,6 @@
 use crate::position::Position;
 use ropey::{Rope, RopeSlice};
-use std::{
-    cmp::{max, min},
-    fmt::Display,
-};
+use std::fmt::Display;
 
 #[derive(Clone, Default)]
 pub struct Range {
@@ -120,67 +117,6 @@ impl Range {
             target_column: None,
         };
         (position, anchor_lossy || head_lossy)
-    }
-
-    pub fn move_up(&mut self, rope: &Rope, distance: usize) {
-        // Prevent `corrected` from moving us to the first index in the rope if
-        // we try to go above the first line
-        let desired_position = Position {
-            line: max(0, self.head.line.saturating_sub(distance)),
-            column: self.target_column.unwrap_or(self.head.column),
-        };
-
-        let (corrected_position, _) = desired_position.corrected(rope);
-
-        if corrected_position.column == desired_position.column {
-            self.target_column = None;
-        } else {
-            self.target_column = Some(desired_position.column);
-        }
-
-        self.head = corrected_position;
-    }
-
-    pub fn move_down(&mut self, rope: &Rope, distance: usize) {
-        let last_line = rope.len_lines().saturating_sub(2);
-
-        let desired_position = Position {
-            // Prevent `corrected` from moving us to the last index in the rope
-            // if we try to go below the last line
-            line: min(self.head.line + distance, last_line),
-            column: self.target_column.unwrap_or(self.head.column),
-        };
-
-        let (corrected_position, _) = desired_position.corrected(rope);
-
-        if corrected_position.column == desired_position.column {
-            self.target_column = None;
-        } else {
-            self.target_column = Some(desired_position.column);
-        }
-
-        self.head = corrected_position;
-    }
-
-    pub fn move_left(&mut self, rope: &Rope, distance: usize) {
-        let (index, _) = self.head.to_rope_index_lossy(rope);
-
-        let (new_position, _) =
-            Position::from_rope_index_lossy(rope, index.saturating_sub(distance));
-
-        self.target_column = None;
-
-        self.head = new_position;
-    }
-
-    pub fn move_right(&mut self, rope: &Rope, distance: usize) {
-        let (index, _) = self.head.to_rope_index_lossy(rope);
-
-        let (new_position, _) = Position::from_rope_index_lossy(rope, index + distance);
-
-        self.target_column = None;
-
-        self.head = new_position;
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::range::Range;
+use crate::{movement, range::Range};
 use ropey::Rope;
 
 pub struct Selection {
@@ -84,25 +84,25 @@ impl Selection {
 
     pub fn move_up(&mut self, rope: &Rope, distance: usize) {
         for range in &mut self.ranges {
-            range.move_up(rope, distance);
+            *range = movement::move_up(range, rope, distance);
         }
     }
 
     pub fn move_down(&mut self, rope: &Rope, distance: usize) {
         for range in &mut self.ranges {
-            range.move_down(rope, distance);
+            *range = movement::move_down(range, rope, distance);
         }
     }
 
     pub fn move_left(&mut self, rope: &Rope, distance: usize) {
         for range in &mut self.ranges {
-            range.move_left(rope, distance);
+            *range = movement::move_left(range, rope, distance);
         }
     }
 
     pub fn move_right(&mut self, rope: &Rope, distance: usize) {
         for range in &mut self.ranges {
-            range.move_right(rope, distance);
+            *range = movement::move_right(range, rope, distance);
         }
     }
 }
