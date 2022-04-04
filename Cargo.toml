@@ -2,6 +2,7 @@
 name = "indigo"
 version = "0.1.0"
 authors = ["Evan Relf <evan@evanrelf.com>"]
+license = "ISC"
 edition = "2021"
 
 [[bin]]
