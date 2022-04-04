@@ -100,10 +100,10 @@ impl Editor {
             Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
                 match key_event.code {
                     // Move
-                    KeyCode::Char('H') => self.buffers[self.buffer_index].move_left(count),
-                    KeyCode::Char('J') => self.buffers[self.buffer_index].move_down(count),
-                    KeyCode::Char('K') => self.buffers[self.buffer_index].move_up(count),
-                    KeyCode::Char('L') => self.buffers[self.buffer_index].move_right(count),
+                    KeyCode::Char('H') => self.buffers[self.buffer_index].extend_left(count),
+                    KeyCode::Char('J') => self.buffers[self.buffer_index].extend_down(count),
+                    KeyCode::Char('K') => self.buffers[self.buffer_index].extend_up(count),
+                    KeyCode::Char('L') => self.buffers[self.buffer_index].extend_right(count),
                     _ => {}
                 }
             }
@@ -125,30 +125,10 @@ impl Editor {
                     KeyCode::Left => self.buffers[self.buffer_index].scroll_left(count),
                     KeyCode::Right => self.buffers[self.buffer_index].scroll_right(count),
                     // Move
-                    KeyCode::Char('h') => {
-                        self.buffers[self.buffer_index].move_left(count);
-                        self.buffers[self.buffer_index]
-                            .selection
-                            .in_all_ranges(|range| range.reduce());
-                    }
-                    KeyCode::Char('j') => {
-                        self.buffers[self.buffer_index].move_down(count);
-                        self.buffers[self.buffer_index]
-                            .selection
-                            .in_all_ranges(|range| range.reduce());
-                    }
-                    KeyCode::Char('k') => {
-                        self.buffers[self.buffer_index].move_up(count);
-                        self.buffers[self.buffer_index]
-                            .selection
-                            .in_all_ranges(|range| range.reduce());
-                    }
-                    KeyCode::Char('l') => {
-                        self.buffers[self.buffer_index].move_right(count);
-                        self.buffers[self.buffer_index]
-                            .selection
-                            .in_all_ranges(|range| range.reduce());
-                    }
+                    KeyCode::Char('h') => self.buffers[self.buffer_index].move_left(count),
+                    KeyCode::Char('j') => self.buffers[self.buffer_index].move_down(count),
+                    KeyCode::Char('k') => self.buffers[self.buffer_index].move_up(count),
+                    KeyCode::Char('l') => self.buffers[self.buffer_index].move_right(count),
                     // Mode
                     KeyCode::Char(':') => self.mode = Mode::Command,
                     KeyCode::Char('i') => {
