@@ -167,8 +167,9 @@ impl Widget for &Buffer {
         };
 
         let height = std::cmp::min(
-            area.height - 10,
-            (self.rope().len_lines() - self.view_lines_offset()) as u16,
+            area.height,
+            // Subtracting 1 to remove ropey's mysterious empty final line
+            (self.rope().len_lines().saturating_sub(1) - self.view_lines_offset()) as u16,
         );
 
         let blank = Buffer::empty(Rect { height, ..area });
@@ -179,12 +180,12 @@ impl Widget for &Buffer {
             let view_end_line = view_start_line + (area.height as usize - 1);
             let buffer_end_line = self.rope().len_lines();
             let start_char_index = self.rope().line_to_char(view_start_line);
-            if buffer_end_line <= view_end_line {
-                self.rope().slice(start_char_index..)
+            let end_char_index = if buffer_end_line <= view_end_line {
+                self.rope().line_to_char(buffer_end_line).saturating_sub(1)
             } else {
-                let end_char_index = self.rope().line_to_char(view_end_line);
-                self.rope().slice(start_char_index..end_char_index)
-            }
+                self.rope().line_to_char(view_end_line)
+            };
+            self.rope().slice(start_char_index..end_char_index)
         };
 
         let chunks = Layout::default()
