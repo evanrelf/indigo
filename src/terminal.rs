@@ -114,7 +114,7 @@ impl Widget for &Editor {
         }
 
         // Render status
-        let cursor = {
+        let position = {
             let selection = self.buffers()[self.buffer_index()].selection();
             let range = &selection.ranges[selection.primary_range_index];
             &range.head
@@ -135,7 +135,7 @@ impl Widget for &Editor {
             .unwrap_or_default();
 
         Block::default()
-            .title(format!("{} {}{}{}", self.mode(), cursor, count, path))
+            .title(format!("{} {}{}{}", self.mode(), position, count, path))
             .style(Style::default().bg(Color::Rgb(0xEE, 0xEE, 0xEE)))
             .render(chunks[1], buffer);
 
@@ -220,16 +220,16 @@ impl Widget for &Buffer {
         }
 
         for range in &self.selection().ranges {
-            let anchor_cursor = (&range.anchor, Style::default().bg(Color::LightCyan));
-            let head_cursor = (&range.head, Style::default().bg(Color::LightYellow));
+            let anchor_position = (&range.anchor, Style::default().bg(Color::LightCyan));
+            let head_position = (&range.head, Style::default().bg(Color::LightYellow));
 
-            for (cursor, style) in [anchor_cursor, head_cursor] {
-                let buffer_line = cursor.position.line;
-                let buffer_column = cursor.position.column;
+            for (position, style) in [anchor_position, head_position] {
+                let buffer_line = position.line;
+                let buffer_column = position.column;
                 let view_line = buffer_line.saturating_sub(self.view_lines_offset());
                 let view_column = buffer_column.saturating_sub(self.view_columns_offset());
 
-                let cursor_visible = [
+                let position_visible = [
                     buffer_line >= self.view_lines_offset(),
                     buffer_column >= self.view_columns_offset(),
                     view_line < chunks[1].bottom() as usize,
@@ -238,7 +238,7 @@ impl Widget for &Buffer {
                 .iter()
                 .all(|x| *x);
 
-                if cursor_visible {
+                if position_visible {
                     buffer
                         .get_mut(
                             chunks[1].left() + view_column as u16,

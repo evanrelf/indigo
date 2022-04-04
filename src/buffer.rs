@@ -1,4 +1,4 @@
-use crate::{cursor::Cursor, range, selection::Selection};
+use crate::{position::Position, selection::Selection};
 use ropey::Rope;
 use std::{
     fs::File,
@@ -106,8 +106,8 @@ impl Buffer {
             }
 
             // Shift selection
-            range.anchor = Cursor::from_rope_index(&self.rope, anchor_index + 1).unwrap();
-            range.head = Cursor::from_rope_index(&self.rope, head_index + 1).unwrap();
+            range.anchor = Position::from_rope_index(&self.rope, anchor_index + 1).unwrap();
+            range.head = Position::from_rope_index(&self.rope, head_index + 1).unwrap();
         }
     }
 
@@ -120,8 +120,8 @@ impl Buffer {
                 self.rope.remove(head_index - 1..head_index);
 
                 // Shift selection
-                range.anchor = Cursor::from_rope_index(&self.rope, anchor_index - 1).unwrap();
-                range.head = Cursor::from_rope_index(&self.rope, head_index - 1).unwrap();
+                range.anchor = Position::from_rope_index(&self.rope, anchor_index - 1).unwrap();
+                range.head = Position::from_rope_index(&self.rope, head_index - 1).unwrap();
             }
         }
     }
@@ -133,9 +133,7 @@ impl Buffer {
             let head_index = range.head.to_rope_index(&self.rope).unwrap();
             self.rope.remove(head_index..=anchor_index);
             range.reduce();
-            if let Some(s) = range::corrected_range(&self.rope, range) {
-                *range = s;
-            };
+            *range = range.corrected(&self.rope).0;
         }
     }
 }
@@ -159,11 +157,11 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_index_cursor() {
+    fn test_index_position() {
         fn case(s: &str, tuple: (usize, usize), expected: char) {
             let buffer = Buffer::from_str(s).unwrap();
-            let cursor = Cursor::from(tuple);
-            let index = cursor.to_rope_index(&buffer.rope).unwrap();
+            let position = Position::from(tuple);
+            let index = position.to_rope_index(&buffer.rope).unwrap();
             let actual = buffer.rope.char(index);
             assert!(
                 expected == actual,
@@ -180,7 +178,7 @@ mod test {
     }
 
     #[test]
-    fn test_index_cursor_roundtrip() {
+    fn test_index_position_roundtrip() {
         enum CaseResult {
             Pass,
             Fail,
@@ -189,11 +187,11 @@ mod test {
 
         fn case(result: CaseResult, s: &str, tuple: (usize, usize)) {
             let buffer = Buffer::from_str(s).unwrap();
-            let cursor = Cursor::from(tuple);
-            let actual = cursor
+            let position = Position::from(tuple);
+            let actual = position
                 .to_rope_index(&buffer.rope)
-                .and_then(|i| Cursor::from_rope_index(&buffer.rope, i));
-            let expected = Some(cursor);
+                .and_then(|i| Position::from_rope_index(&buffer.rope, i));
+            let expected = Some(position);
             assert!(
                 match result {
                     Pass => expected == actual,

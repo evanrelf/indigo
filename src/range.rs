@@ -1,4 +1,3 @@
-use crate::cursor::{self, Cursor};
 use crate::position::Position;
 use ropey::{Rope, RopeSlice};
 use std::{
@@ -8,15 +7,15 @@ use std::{
 
 #[derive(Clone, Default)]
 pub struct Range {
-    pub anchor: Cursor,
-    pub head: Cursor,
+    pub anchor: Position,
+    pub head: Position,
     pub target_column: Option<usize>,
 }
 
 impl Range {
     pub fn new<P>(anchor: P, head: P) -> Self
     where
-        P: Into<Cursor>,
+        P: Into<Position>,
     {
         Self {
             anchor: anchor.into(),
@@ -112,23 +111,34 @@ impl Range {
         (rope_slice, anchor_lossy || head_lossy)
     }
 
+    pub fn corrected(&self, rope: &Rope) -> (Self, bool) {
+        let (anchor, anchor_lossy) = self.anchor.corrected(rope);
+        let (head, head_lossy) = self.head.corrected(rope);
+        let position = Self {
+            anchor,
+            head,
+            target_column: None,
+        };
+        (position, anchor_lossy || head_lossy)
+    }
+
     pub fn move_up(&mut self, rope: &Rope, distance: usize) {
         // Prevent `corrected` from moving us to the first index in the rope if
         // we try to go above the first line
         let desired_position = Position {
-            line: max(0, self.head.position.line.saturating_sub(distance)),
-            column: self.head.target_column.unwrap_or(self.head.position.column),
+            line: max(0, self.head.line.saturating_sub(distance)),
+            column: self.target_column.unwrap_or(self.head.column),
         };
 
         let (corrected_position, _) = desired_position.corrected(rope);
 
         if corrected_position.column == desired_position.column {
-            self.head.target_column = None;
+            self.target_column = None;
         } else {
-            self.head.target_column = Some(desired_position.column);
+            self.target_column = Some(desired_position.column);
         }
 
-        self.head.position = corrected_position;
+        self.head = corrected_position;
     }
 
     pub fn move_down(&mut self, rope: &Rope, distance: usize) {
@@ -137,40 +147,40 @@ impl Range {
         let desired_position = Position {
             // Prevent `corrected` from moving us to the last index in the rope
             // if we try to go below the last line
-            line: min(self.head.position.line + distance, last_line),
-            column: self.head.target_column.unwrap_or(self.head.position.column),
+            line: min(self.head.line + distance, last_line),
+            column: self.target_column.unwrap_or(self.head.column),
         };
 
         let (corrected_position, _) = desired_position.corrected(rope);
 
         if corrected_position.column == desired_position.column {
-            self.head.target_column = None;
+            self.target_column = None;
         } else {
-            self.head.target_column = Some(desired_position.column);
+            self.target_column = Some(desired_position.column);
         }
 
-        self.head.position = corrected_position;
+        self.head = corrected_position;
     }
 
     pub fn move_left(&mut self, rope: &Rope, distance: usize) {
-        let (index, _) = self.head.position.to_rope_index_lossy(rope);
+        let (index, _) = self.head.to_rope_index_lossy(rope);
 
         let (new_position, _) =
             Position::from_rope_index_lossy(rope, index.saturating_sub(distance));
 
-        self.head.target_column = None;
+        self.target_column = None;
 
-        self.head.position = new_position;
+        self.head = new_position;
     }
 
     pub fn move_right(&mut self, rope: &Rope, distance: usize) {
-        let (index, _) = self.head.position.to_rope_index_lossy(rope);
+        let (index, _) = self.head.to_rope_index_lossy(rope);
 
         let (new_position, _) = Position::from_rope_index_lossy(rope, index + distance);
 
-        self.head.target_column = None;
+        self.target_column = None;
 
-        self.head.position = new_position;
+        self.head = new_position;
     }
 }
 
@@ -183,8 +193,18 @@ impl Display for Range {
 impl From<(usize, usize)> for Range {
     fn from(tuple: (usize, usize)) -> Self {
         Self {
-            anchor: Cursor::from(tuple),
-            head: Cursor::from(tuple),
+            anchor: Position::from(tuple),
+            head: Position::from(tuple),
+            target_column: None,
+        }
+    }
+}
+
+impl From<Position> for Range {
+    fn from(head: Position) -> Self {
+        Self {
+            anchor: head.clone(),
+            head,
             target_column: None,
         }
     }
@@ -192,7 +212,7 @@ impl From<(usize, usize)> for Range {
 
 impl<T> From<(T, T)> for Range
 where
-    T: Into<Cursor>,
+    T: Into<Position>,
 {
     fn from(tuple: (T, T)) -> Self {
         let (anchor, head) = tuple;
@@ -203,27 +223,6 @@ where
             target_column: None,
         }
     }
-}
-
-impl From<Cursor> for Range {
-    fn from(head: Cursor) -> Self {
-        Self {
-            anchor: head.clone(),
-            head,
-            target_column: None,
-        }
-    }
-}
-
-// TODO: Delete
-pub fn corrected_range(rope: &Rope, range: &Range) -> Option<Range> {
-    let anchor = cursor::corrected_cursor(rope, &range.anchor)?;
-    let head = cursor::corrected_cursor(rope, &range.head)?;
-    Some(Range {
-        anchor,
-        head,
-        target_column: None,
-    })
 }
 
 #[cfg(test)]
