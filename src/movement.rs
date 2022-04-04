@@ -107,15 +107,31 @@ fn horizontally(rope: &Rope, range: &Range, direction: Direction, distance: usiz
 }
 
 pub fn extend_buffer_top(range: &Range) -> Range {
-    top(range)
+    Range {
+        anchor: range.anchor.clone(),
+        head: (0, 0).into(),
+        target_column: None,
+    }
 }
 
 pub fn extend_buffer_bottom(rope: &Rope, range: &Range) -> Range {
-    bottom(rope, range)
+    Range {
+        anchor: range.anchor.clone(),
+        head: Position::from_rope_index(
+            rope,
+            rope.line_to_char(rope.len_lines().saturating_sub(2)),
+        )
+        .unwrap(),
+        target_column: None,
+    }
 }
 
 pub fn extend_buffer_end(rope: &Rope, range: &Range) -> Range {
-    end(rope, range)
+    Range {
+        anchor: range.anchor.clone(),
+        head: Position::from_rope_index(rope, rope.len_chars().saturating_sub(1)).unwrap(),
+        target_column: None,
+    }
 }
 
 pub fn move_buffer_top(range: &Range) -> Range {
@@ -134,32 +150,4 @@ pub fn move_buffer_end(rope: &Rope, range: &Range) -> Range {
     let mut range = extend_buffer_end(rope, range);
     range.reduce();
     range
-}
-
-fn top(range: &Range) -> Range {
-    Range {
-        anchor: range.anchor.clone(),
-        head: (0, 0).into(),
-        target_column: None,
-    }
-}
-
-fn bottom(rope: &Rope, range: &Range) -> Range {
-    Range {
-        anchor: range.anchor.clone(),
-        head: Position::from_rope_index(
-            rope,
-            rope.line_to_char(rope.len_lines().saturating_sub(2)),
-        )
-        .unwrap(),
-        target_column: None,
-    }
-}
-
-fn end(rope: &Rope, range: &Range) -> Range {
-    Range {
-        anchor: range.anchor.clone(),
-        head: Position::from_rope_index(rope, rope.len_chars().saturating_sub(1)).unwrap(),
-        target_column: None,
-    }
 }
