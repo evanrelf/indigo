@@ -2,36 +2,36 @@ use crate::{position::Position, range::Range};
 use ropey::Rope;
 use std::cmp::{max, min};
 
-pub fn move_up(range: &Range, rope: &Rope, distance: usize) -> Range {
-    vertically(range, rope, Behavior::Move, Direction::Backward, distance)
+pub fn move_up(rope: &Rope, range: &Range, distance: usize) -> Range {
+    vertically(rope, range, Behavior::Move, Direction::Backward, distance)
 }
 
-pub fn move_down(range: &Range, rope: &Rope, distance: usize) -> Range {
-    vertically(range, rope, Behavior::Move, Direction::Forward, distance)
+pub fn move_down(rope: &Rope, range: &Range, distance: usize) -> Range {
+    vertically(rope, range, Behavior::Move, Direction::Forward, distance)
 }
 
-pub fn move_left(range: &Range, rope: &Rope, distance: usize) -> Range {
-    horizontally(range, rope, Behavior::Move, Direction::Backward, distance)
+pub fn move_left(rope: &Rope, range: &Range, distance: usize) -> Range {
+    horizontally(rope, range, Behavior::Move, Direction::Backward, distance)
 }
 
-pub fn move_right(range: &Range, rope: &Rope, distance: usize) -> Range {
-    horizontally(range, rope, Behavior::Move, Direction::Forward, distance)
+pub fn move_right(rope: &Rope, range: &Range, distance: usize) -> Range {
+    horizontally(rope, range, Behavior::Move, Direction::Forward, distance)
 }
 
-pub fn extend_up(range: &Range, rope: &Rope, distance: usize) -> Range {
-    vertically(range, rope, Behavior::Extend, Direction::Backward, distance)
+pub fn extend_up(rope: &Rope, range: &Range, distance: usize) -> Range {
+    vertically(rope, range, Behavior::Extend, Direction::Backward, distance)
 }
 
-pub fn extend_down(range: &Range, rope: &Rope, distance: usize) -> Range {
-    vertically(range, rope, Behavior::Extend, Direction::Forward, distance)
+pub fn extend_down(rope: &Rope, range: &Range, distance: usize) -> Range {
+    vertically(rope, range, Behavior::Extend, Direction::Forward, distance)
 }
 
-pub fn extend_left(range: &Range, rope: &Rope, distance: usize) -> Range {
-    horizontally(range, rope, Behavior::Extend, Direction::Backward, distance)
+pub fn extend_left(rope: &Rope, range: &Range, distance: usize) -> Range {
+    horizontally(rope, range, Behavior::Extend, Direction::Backward, distance)
 }
 
-pub fn extend_right(range: &Range, rope: &Rope, distance: usize) -> Range {
-    horizontally(range, rope, Behavior::Extend, Direction::Forward, distance)
+pub fn extend_right(rope: &Rope, range: &Range, distance: usize) -> Range {
+    horizontally(rope, range, Behavior::Extend, Direction::Forward, distance)
 }
 
 enum Direction {
@@ -45,8 +45,8 @@ enum Behavior {
 }
 
 fn vertically(
-    range: &Range,
     rope: &Rope,
+    range: &Range,
     behavior: Behavior,
     direction: Direction,
     distance: usize,
@@ -92,8 +92,8 @@ fn vertically(
 }
 
 fn horizontally(
-    range: &Range,
     rope: &Rope,
+    range: &Range,
     behavior: Behavior,
     direction: Direction,
     distance: usize,

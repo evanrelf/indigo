@@ -82,49 +82,49 @@ impl Buffer {
 
     pub fn move_up(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            *range = movement::move_up(range, &self.rope, distance);
+            *range = movement::move_up(&self.rope, range, distance);
         }
     }
 
     pub fn move_down(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            *range = movement::move_down(range, &self.rope, distance);
+            *range = movement::move_down(&self.rope, range, distance);
         }
     }
 
     pub fn move_left(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            *range = movement::move_left(range, &self.rope, distance);
+            *range = movement::move_left(&self.rope, range, distance);
         }
     }
 
     pub fn move_right(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            *range = movement::move_right(range, &self.rope, distance);
+            *range = movement::move_right(&self.rope, range, distance);
         }
     }
 
     pub fn extend_up(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            *range = movement::extend_up(range, &self.rope, distance);
+            *range = movement::extend_up(&self.rope, range, distance);
         }
     }
 
     pub fn extend_down(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            *range = movement::extend_down(range, &self.rope, distance);
+            *range = movement::extend_down(&self.rope, range, distance);
         }
     }
 
     pub fn extend_left(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            *range = movement::extend_left(range, &self.rope, distance);
+            *range = movement::extend_left(&self.rope, range, distance);
         }
     }
 
     pub fn extend_right(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            *range = movement::extend_right(range, &self.rope, distance);
+            *range = movement::extend_right(&self.rope, range, distance);
         }
     }
 
