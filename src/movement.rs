@@ -32,6 +32,8 @@ fn move_vertically(range: &Range, rope: &Rope, direction: Direction, distance: u
             column: range.target_column.unwrap_or(range.head.column),
         },
         Direction::Forward => {
+            // Subtracting 1 to convert to zero-based index, subtracting another 1 to remove ropey's
+            // mysterious empty final line
             let last_line = rope.len_lines().saturating_sub(2);
             Position {
                 // Prevent `corrected` from moving us to the last index in the rope
