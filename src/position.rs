@@ -72,6 +72,10 @@ impl Position {
 
         Self { line, column }
     }
+
+    pub fn corrected(&self, rope: &Rope) -> Self {
+        Self::from_rope_index(rope, self.to_rope_index_lossy(rope)).unwrap()
+    }
 }
 
 impl Display for Position {
@@ -111,7 +115,7 @@ mod test {
     }
 
     #[test]
-    fn test_rope_index_lossy() {
+    fn test_corrected() {
         let rope = Rope::from_str("hello\nworld\n!\n");
 
         let case = |before: (usize, usize), after: (usize, usize)| {
@@ -123,8 +127,7 @@ mod test {
                 line: after.0,
                 column: after.1,
             };
-            let actual_after_position =
-                Position::from_rope_index_lossy(&rope, before_position.to_rope_index_lossy(&rope));
+            let actual_after_position = before_position.corrected(&rope);
 
             assert_eq!(expected_after_position, actual_after_position,);
         };
