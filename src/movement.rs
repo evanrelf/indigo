@@ -151,3 +151,66 @@ pub fn move_buffer_end(rope: &Rope, range: &Range) -> Range {
     range.reduce();
     range
 }
+
+pub fn extend_line_begin(range: &Range) -> Range {
+    let mut head = range.head.clone();
+    head.column = 0;
+
+    Range {
+        anchor: range.anchor.clone(),
+        head,
+        target_column: None,
+    }
+}
+
+pub fn extend_line_first_non_blank(rope: &Rope, range: &Range) -> Range {
+    let blanks = [' '];
+
+    let first_non_blank = rope
+        .line(range.head.line)
+        .chars()
+        .enumerate()
+        .find(|(_, c)| !blanks.contains(c));
+
+    let mut head = range.head.clone();
+    head.column = match first_non_blank {
+        // Behave like `extend_line_end` if there are no non-blank characters on this line
+        None => rope.line(head.line).len_chars().saturating_sub(1),
+        Some((i, _)) => i,
+    };
+
+    Range {
+        anchor: range.anchor.clone(),
+        head,
+        target_column: None,
+    }
+}
+
+pub fn extend_line_end(rope: &Rope, range: &Range) -> Range {
+    let (mut head, _) = range.head.clone().corrected(rope);
+    head.column = rope.line(head.line).len_chars().saturating_sub(1);
+
+    Range {
+        anchor: range.anchor.clone(),
+        head,
+        target_column: None,
+    }
+}
+
+pub fn move_line_begin(range: &Range) -> Range {
+    let mut range = extend_line_begin(range);
+    range.reduce();
+    range
+}
+
+pub fn move_line_first_non_blank(rope: &Rope, range: &Range) -> Range {
+    let mut range = extend_line_first_non_blank(rope, range);
+    range.reduce();
+    range
+}
+
+pub fn move_line_end(rope: &Rope, range: &Range) -> Range {
+    let mut range = extend_line_end(rope, range);
+    range.reduce();
+    range
+}

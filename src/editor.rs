@@ -179,6 +179,11 @@ impl Editor {
                     KeyCode::Char('K') => self.buffers[self.buffer_index].extend_buffer_top(),
                     KeyCode::Char('J') => self.buffers[self.buffer_index].extend_buffer_bottom(),
                     KeyCode::Char('E') => self.buffers[self.buffer_index].extend_buffer_end(),
+                    KeyCode::Char('H') => self.buffers[self.buffer_index].extend_line_begin(),
+                    KeyCode::Char('I') => {
+                        self.buffers[self.buffer_index].extend_line_first_non_blank()
+                    }
+                    KeyCode::Char('L') => self.buffers[self.buffer_index].extend_line_end(),
                     _ => {}
                 }
             }
@@ -187,6 +192,9 @@ impl Editor {
                 KeyCode::Char('k') => self.buffers[self.buffer_index].move_buffer_top(),
                 KeyCode::Char('j') => self.buffers[self.buffer_index].move_buffer_bottom(),
                 KeyCode::Char('e') => self.buffers[self.buffer_index].move_buffer_end(),
+                KeyCode::Char('h') => self.buffers[self.buffer_index].move_line_begin(),
+                KeyCode::Char('i') => self.buffers[self.buffer_index].move_line_first_non_blank(),
+                KeyCode::Char('l') => self.buffers[self.buffer_index].move_line_end(),
                 _ => {}
             },
             Mouse(_) => {}

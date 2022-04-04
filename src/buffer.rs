@@ -164,6 +164,42 @@ impl Buffer {
         }
     }
 
+    pub fn extend_line_begin(&mut self) {
+        for range in &mut self.selection.ranges {
+            *range = movement::extend_line_begin(range);
+        }
+    }
+
+    pub fn extend_line_first_non_blank(&mut self) {
+        for range in &mut self.selection.ranges {
+            *range = movement::extend_line_first_non_blank(&self.rope, range);
+        }
+    }
+
+    pub fn extend_line_end(&mut self) {
+        for range in &mut self.selection.ranges {
+            *range = movement::extend_line_end(&self.rope, range);
+        }
+    }
+
+    pub fn move_line_begin(&mut self) {
+        for range in &mut self.selection.ranges {
+            *range = movement::move_line_begin(range);
+        }
+    }
+
+    pub fn move_line_first_non_blank(&mut self) {
+        for range in &mut self.selection.ranges {
+            *range = movement::move_line_first_non_blank(&self.rope, range);
+        }
+    }
+
+    pub fn move_line_end(&mut self) {
+        for range in &mut self.selection.ranges {
+            *range = movement::move_line_end(&self.rope, range);
+        }
+    }
+
     pub fn insert(&mut self, c: char) {
         for range in &mut self.selection.ranges {
             // Insert character
