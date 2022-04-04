@@ -1,6 +1,7 @@
 use crate::{position::Position, selection::Selection};
 use ropey::Rope;
 use std::{
+    cmp::min,
     fs::File,
     io::BufReader,
     path::{Path, PathBuf},
@@ -63,10 +64,12 @@ impl Buffer {
     }
 
     pub fn scroll_down(&mut self, distance: usize) {
-        let new_view_lines_offset = self.view_lines_offset + distance;
-        if new_view_lines_offset <= self.rope.len_lines() {
-            self.view_lines_offset = new_view_lines_offset;
-        }
+        self.view_lines_offset = min(
+            // Subtracting 1 to convert to zero-based index, subtracting another 1 to account for
+            // ropey's mysterious empty final line
+            self.rope.len_lines().saturating_sub(2),
+            self.view_lines_offset + distance,
+        );
     }
 
     pub fn scroll_left(&mut self, distance: usize) {

@@ -30,8 +30,8 @@ impl Position {
         let line = if lines <= self.line {
             // When line goes beyond end of rope, use last line
             lossy = true;
-            // Subtracting 1 to convert to zero-based index, subtracting another 1 to remove
-            // ropey's mysterious empty final line
+            // Subtracting 1 to convert to zero-based index, subtracting another 1 to remove ropey's
+            // mysterious empty final line
             lines.saturating_sub(2)
         } else {
             self.line
