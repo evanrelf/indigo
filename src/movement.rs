@@ -47,12 +47,7 @@ enum Direction {
     Forward,
 }
 
-fn vertically(
-    rope: &Rope,
-    range: &Range,
-    direction: Direction,
-    distance: usize,
-) -> Range {
+fn vertically(rope: &Rope, range: &Range, direction: Direction, distance: usize) -> Range {
     let anchor = range.anchor.clone();
 
     let desired_head = match direction {
@@ -90,12 +85,7 @@ fn vertically(
     }
 }
 
-fn horizontally(
-    rope: &Rope,
-    range: &Range,
-    direction: Direction,
-    distance: usize,
-) -> Range {
+fn horizontally(rope: &Rope, range: &Range, direction: Direction, distance: usize) -> Range {
     let anchor = range.anchor.clone();
 
     let index = match direction {
@@ -117,13 +107,19 @@ fn horizontally(
 }
 
 pub fn move_top(range: &Range) -> Range {
-    let mut range = top(range);
+    let mut range = extend_top(range);
     range.reduce();
     range
 }
 
 pub fn move_bottom(rope: &Rope, range: &Range) -> Range {
-    let mut range = bottom(rope, range);
+    let mut range = extend_bottom(rope, range);
+    range.reduce();
+    range
+}
+
+pub fn move_end(rope: &Rope, range: &Range) -> Range {
+    let mut range = extend_end(rope, range);
     range.reduce();
     range
 }
@@ -136,6 +132,10 @@ pub fn extend_bottom(rope: &Rope, range: &Range) -> Range {
     bottom(rope, range)
 }
 
+pub fn extend_end(rope: &Rope, range: &Range) -> Range {
+    end(rope, range)
+}
+
 fn top(range: &Range) -> Range {
     Range {
         anchor: range.anchor.clone(),
@@ -145,6 +145,18 @@ fn top(range: &Range) -> Range {
 }
 
 fn bottom(rope: &Rope, range: &Range) -> Range {
+    Range {
+        anchor: range.anchor.clone(),
+        head: Position::from_rope_index(
+            rope,
+            rope.line_to_char(rope.len_lines().saturating_sub(2)),
+        )
+        .unwrap(),
+        target_column: None,
+    }
+}
+
+fn end(rope: &Rope, range: &Range) -> Range {
     Range {
         anchor: range.anchor.clone(),
         head: Position::from_rope_index(rope, rope.len_chars().saturating_sub(1)).unwrap(),

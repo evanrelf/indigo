@@ -140,6 +140,12 @@ impl Buffer {
         }
     }
 
+    pub fn move_end(&mut self) {
+        for range in &mut self.selection.ranges {
+            *range = movement::move_end(&self.rope, range);
+        }
+    }
+
     pub fn extend_top(&mut self) {
         for range in &mut self.selection.ranges {
             *range = movement::extend_top(range);
@@ -149,6 +155,12 @@ impl Buffer {
     pub fn extend_bottom(&mut self) {
         for range in &mut self.selection.ranges {
             *range = movement::extend_bottom(&self.rope, range);
+        }
+    }
+
+    pub fn extend_end(&mut self) {
+        for range in &mut self.selection.ranges {
+            *range = movement::extend_end(&self.rope, range);
         }
     }
 
