@@ -89,6 +89,8 @@ impl Editor {
     fn handle_event_normal(&mut self, event: Event) {
         use Event::*;
 
+        let old_count = self.count;
+
         let count = if self.count == 0 { 1 } else { self.count };
 
         match event {
@@ -156,9 +158,11 @@ impl Editor {
             Key(_) => {}
         };
 
-        // TODO: Restore count resetting
-        // Must always perform an operation, so the count can be reset properly. If no work
-        // needs to be done, we use `vec![NoOp]`.
+        let new_count = self.count;
+
+        if old_count == new_count {
+            self.count = 0;
+        }
     }
 
     fn handle_event_goto(&mut self, event: Event) {
