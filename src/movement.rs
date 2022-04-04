@@ -2,28 +2,55 @@ use crate::{position::Position, range::Range};
 use ropey::Rope;
 use std::cmp::{max, min};
 
+pub fn move_up(range: &Range, rope: &Rope, distance: usize) -> Range {
+    vertically(range, rope, Behavior::Move, Direction::Backward, distance)
+}
+
+pub fn move_down(range: &Range, rope: &Rope, distance: usize) -> Range {
+    vertically(range, rope, Behavior::Move, Direction::Forward, distance)
+}
+
+pub fn move_left(range: &Range, rope: &Rope, distance: usize) -> Range {
+    horizontally(range, rope, Behavior::Move, Direction::Backward, distance)
+}
+
+pub fn move_right(range: &Range, rope: &Rope, distance: usize) -> Range {
+    horizontally(range, rope, Behavior::Move, Direction::Forward, distance)
+}
+
+pub fn extend_up(range: &Range, rope: &Rope, distance: usize) -> Range {
+    vertically(range, rope, Behavior::Extend, Direction::Backward, distance)
+}
+
+pub fn extend_down(range: &Range, rope: &Rope, distance: usize) -> Range {
+    vertically(range, rope, Behavior::Extend, Direction::Forward, distance)
+}
+
+pub fn extend_left(range: &Range, rope: &Rope, distance: usize) -> Range {
+    horizontally(range, rope, Behavior::Extend, Direction::Backward, distance)
+}
+
+pub fn extend_right(range: &Range, rope: &Rope, distance: usize) -> Range {
+    horizontally(range, rope, Behavior::Extend, Direction::Forward, distance)
+}
+
 enum Direction {
     Backward,
     Forward,
 }
 
-pub fn move_up(range: &Range, rope: &Rope, distance: usize) -> Range {
-    move_vertically(range, rope, Direction::Backward, distance)
+enum Behavior {
+    Move,
+    Extend,
 }
 
-pub fn move_down(range: &Range, rope: &Rope, distance: usize) -> Range {
-    move_vertically(range, rope, Direction::Forward, distance)
-}
-
-pub fn move_left(range: &Range, rope: &Rope, distance: usize) -> Range {
-    move_horizontally(range, rope, Direction::Backward, distance)
-}
-
-pub fn move_right(range: &Range, rope: &Rope, distance: usize) -> Range {
-    move_horizontally(range, rope, Direction::Forward, distance)
-}
-
-fn move_vertically(range: &Range, rope: &Rope, direction: Direction, distance: usize) -> Range {
+fn vertically(
+    range: &Range,
+    rope: &Rope,
+    behavior: Behavior,
+    direction: Direction,
+    distance: usize,
+) -> Range {
     let desired_head = match direction {
         Direction::Backward => Position {
             // Prevent `corrected` from moving us to the first index in the rope if
@@ -44,22 +71,33 @@ fn move_vertically(range: &Range, rope: &Rope, direction: Direction, distance: u
         }
     };
 
-    let (corrected_head, _) = desired_head.corrected(rope);
+    let (head, _) = desired_head.corrected(rope);
 
-    let target_column = if corrected_head.column == desired_head.column {
+    let anchor = match behavior {
+        Behavior::Move => head.clone(),
+        Behavior::Extend => range.anchor.clone(),
+    };
+
+    let target_column = if head.column == desired_head.column {
         None
     } else {
         Some(desired_head.column)
     };
 
     Range {
-        anchor: range.anchor.clone(),
-        head: corrected_head,
+        anchor,
+        head,
         target_column,
     }
 }
 
-fn move_horizontally(range: &Range, rope: &Rope, direction: Direction, distance: usize) -> Range {
+fn horizontally(
+    range: &Range,
+    rope: &Rope,
+    behavior: Behavior,
+    direction: Direction,
+    distance: usize,
+) -> Range {
     let index = match direction {
         Direction::Backward => range
             .head
@@ -69,11 +107,16 @@ fn move_horizontally(range: &Range, rope: &Rope, direction: Direction, distance:
         Direction::Forward => range.head.to_rope_index_lossy(rope).0 + distance,
     };
 
-    let (new_head, _) = Position::from_rope_index_lossy(rope, index);
+    let (head, _) = Position::from_rope_index_lossy(rope, index);
+
+    let anchor = match behavior {
+        Behavior::Move => head.clone(),
+        Behavior::Extend => range.anchor.clone(),
+    };
 
     Range {
-        anchor: range.anchor.clone(),
-        head: new_head,
+        anchor,
+        head,
         target_column: None,
     }
 }
