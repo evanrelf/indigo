@@ -1,4 +1,5 @@
 use crate::cursor::{self, Cursor};
+use crate::position::Position;
 use ropey::{Rope, RopeSlice};
 use std::fmt::Display;
 
@@ -106,6 +107,61 @@ impl Range {
             rope.slice(head_index..=anchor_index)
         };
         (rope_slice, anchor_lossy || head_lossy)
+    }
+
+    pub fn move_up(&mut self, rope: &Rope, distance: usize) {
+        let desired_position = Position {
+            line: self.head.position.line.saturating_sub(distance),
+            column: self.head.target_column.unwrap_or(self.head.position.column),
+        };
+
+        let (corrected_position, _) = desired_position.corrected(rope);
+
+        if corrected_position.column == desired_position.column {
+            self.head.target_column = None;
+        } else {
+            self.head.target_column = Some(desired_position.column);
+        }
+
+        self.head.position = corrected_position;
+    }
+
+    pub fn move_down(&mut self, rope: &Rope, distance: usize) {
+        let desired_position = Position {
+            line: self.head.position.line + distance,
+            column: self.head.target_column.unwrap_or(self.head.position.column),
+        };
+
+        let (corrected_position, _) = desired_position.corrected(rope);
+
+        if corrected_position.column == desired_position.column {
+            self.head.target_column = None;
+        } else {
+            self.head.target_column = Some(desired_position.column);
+        }
+
+        self.head.position = corrected_position;
+    }
+
+    pub fn move_left(&mut self, rope: &Rope, distance: usize) {
+        let (index, _) = self.head.position.to_rope_index_lossy(rope);
+
+        let (new_position, _) =
+            Position::from_rope_index_lossy(rope, index.saturating_sub(distance));
+
+        self.head.target_column = None;
+
+        self.head.position = new_position;
+    }
+
+    pub fn move_right(&mut self, rope: &Rope, distance: usize) {
+        let (index, _) = self.head.position.to_rope_index_lossy(rope);
+
+        let (new_position, _) = Position::from_rope_index_lossy(rope, index + distance);
+
+        self.head.target_column = None;
+
+        self.head.position = new_position;
     }
 }
 

@@ -1,9 +1,4 @@
-use crate::{
-    cursor::{self, Cursor},
-    position::Position,
-    range,
-    selection::Selection,
-};
+use crate::{cursor::Cursor, range, selection::Selection};
 use ropey::Rope;
 use std::{
     fs::File,
@@ -84,60 +79,25 @@ impl Buffer {
 
     pub fn move_up(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            let head = cursor::corrected_cursor(
-                &self.rope,
-                &Cursor {
-                    position: Position {
-                        line: range.head.position.line.saturating_sub(distance),
-                        ..range.head.position
-                    },
-                    ..range.head
-                },
-            );
-            match head {
-                Some(head) if cursor::is_valid_cursor(&self.rope, &head) => range.head = head,
-                _ => {}
-            }
+            range.move_up(&self.rope, distance);
         }
     }
 
     pub fn move_down(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            let head = cursor::corrected_cursor(
-                &self.rope,
-                &Cursor {
-                    position: Position {
-                        line: range.head.position.line + distance,
-                        ..range.head.position
-                    },
-                    ..range.head
-                },
-            );
-            match head {
-                Some(head) if cursor::is_valid_cursor(&self.rope, &head) => range.head = head,
-                _ => {}
-            }
+            range.move_down(&self.rope, distance);
         }
     }
 
     pub fn move_left(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            let old_index = range.head.to_rope_index(&self.rope).unwrap();
-            let new_index = old_index.saturating_sub(distance);
-            range.head = Cursor::from_rope_index(&self.rope, new_index).unwrap();
+            range.move_left(&self.rope, distance);
         }
     }
 
     pub fn move_right(&mut self, distance: usize) {
         for range in &mut self.selection.ranges {
-            let old_index = range.head.to_rope_index(&self.rope).unwrap();
-            let new_index = old_index + distance;
-            if new_index < self.rope.len_chars() {
-                range.head = Cursor::from_rope_index(&self.rope, new_index).unwrap();
-            } else {
-                range.head =
-                    Cursor::from_rope_index(&self.rope, self.rope.len_chars() - 1).unwrap();
-            }
+            range.move_right(&self.rope, distance);
         }
     }
 
