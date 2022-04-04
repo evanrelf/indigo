@@ -30,7 +30,9 @@ impl Position {
         let line = if lines <= self.line {
             // When line goes beyond end of rope, use last line
             lossy = true;
-            lines.saturating_sub(1)
+            // Subtracting 1 to convert to zero-based index, subtracting another 1 to remove
+            // ropey's mysterious empty final line
+            lines.saturating_sub(2)
         } else {
             self.line
         };
@@ -82,6 +84,7 @@ impl Position {
 
     pub fn corrected(&self, rope: &Rope) -> (Self, bool) {
         let (index, lossy) = self.to_rope_index_lossy(rope);
+        // `unwrap` is safe here because `to_rope_index_lossy` returns a valid rope index
         let position = Self::from_rope_index(rope, index).unwrap();
         (position, lossy)
     }

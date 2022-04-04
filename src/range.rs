@@ -1,7 +1,10 @@
 use crate::cursor::{self, Cursor};
 use crate::position::Position;
 use ropey::{Rope, RopeSlice};
-use std::fmt::Display;
+use std::{
+    cmp::{max, min},
+    fmt::Display,
+};
 
 #[derive(Clone, Default)]
 pub struct Range {
@@ -110,8 +113,10 @@ impl Range {
     }
 
     pub fn move_up(&mut self, rope: &Rope, distance: usize) {
+        // Prevent `corrected` from moving us to the first index in the rope if
+        // we try to go above the first line
         let desired_position = Position {
-            line: self.head.position.line.saturating_sub(distance),
+            line: max(0, self.head.position.line.saturating_sub(distance)),
             column: self.head.target_column.unwrap_or(self.head.position.column),
         };
 
@@ -127,8 +132,12 @@ impl Range {
     }
 
     pub fn move_down(&mut self, rope: &Rope, distance: usize) {
+        let last_line = rope.len_lines().saturating_sub(2);
+
         let desired_position = Position {
-            line: self.head.position.line + distance,
+            // Prevent `corrected` from moving us to the last index in the rope
+            // if we try to go below the last line
+            line: min(self.head.position.line + distance, last_line),
             column: self.head.target_column.unwrap_or(self.head.position.column),
         };
 
