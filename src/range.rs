@@ -6,6 +6,7 @@ use std::fmt::Display;
 pub struct Range {
     pub anchor: Cursor,
     pub head: Cursor,
+    pub target_column: Option<usize>,
 }
 
 impl Range {
@@ -16,6 +17,7 @@ impl Range {
         Self {
             anchor: anchor.into(),
             head: head.into(),
+            target_column: None,
         }
     }
 
@@ -118,6 +120,7 @@ impl From<(usize, usize)> for Range {
         Self {
             anchor: Cursor::from(tuple),
             head: Cursor::from(tuple),
+            target_column: None,
         }
     }
 }
@@ -132,6 +135,7 @@ where
         Self {
             anchor: anchor.into(),
             head: head.into(),
+            target_column: None,
         }
     }
 }
@@ -141,6 +145,7 @@ impl From<Cursor> for Range {
         Self {
             anchor: head.clone(),
             head,
+            target_column: None,
         }
     }
 }
@@ -149,7 +154,11 @@ impl From<Cursor> for Range {
 pub fn corrected_range(rope: &Rope, range: &Range) -> Option<Range> {
     let anchor = cursor::corrected_cursor(rope, &range.anchor)?;
     let head = cursor::corrected_cursor(rope, &range.head)?;
-    Some(Range { anchor, head })
+    Some(Range {
+        anchor,
+        head,
+        target_column: None,
+    })
 }
 
 #[cfg(test)]
