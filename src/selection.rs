@@ -135,43 +135,6 @@ fn wrap_around(length: usize, value: usize, delta: isize) -> usize {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::cursor::Cursor;
-
-    #[test]
-    fn test_cursor_partialord() {
-        assert!(Cursor::from((0, 0)) < Cursor::from((1, 0)));
-        assert!(Cursor::from((0, 99)) < Cursor::from((1, 0)));
-        assert!(Cursor::from((1, 0)) < Cursor::from((1, 1)));
-    }
-
-    #[test]
-    fn test_range_is_overlapping() {
-        {
-            let x: Range = ((0, 0), (0, 0)).into();
-            let y: Range = ((0, 0), (0, 0)).into();
-            assert!(x.is_overlapping(&y))
-        }
-        {
-            let x: Range = ((0, 0), (10, 10)).into();
-            let y: Range = ((5, 5), (15, 15)).into();
-            assert!(x.is_overlapping(&y))
-        }
-        {
-            let x: Range = ((10, 10), (0, 0)).into();
-            let y: Range = ((5, 5), (15, 15)).into();
-            assert!(x.is_overlapping(&y))
-        }
-        {
-            let x: Range = ((10, 10), (0, 0)).into();
-            let y: Range = ((10, 10), (20, 20)).into();
-            assert!(x.is_overlapping(&y))
-        }
-        {
-            let x: Range = ((10, 10), (0, 0)).into();
-            let y: Range = ((10, 11), (20, 20)).into();
-            assert!(!x.is_overlapping(&y))
-        }
-    }
 
     #[test]
     fn test_wrap_around() {

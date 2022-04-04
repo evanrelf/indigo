@@ -231,6 +231,35 @@ mod test {
     use super::*;
 
     #[test]
+    fn test_is_overlapping() {
+        {
+            let x: Range = ((0, 0), (0, 0)).into();
+            let y: Range = ((0, 0), (0, 0)).into();
+            assert!(x.is_overlapping(&y))
+        }
+        {
+            let x: Range = ((0, 0), (10, 10)).into();
+            let y: Range = ((5, 5), (15, 15)).into();
+            assert!(x.is_overlapping(&y))
+        }
+        {
+            let x: Range = ((10, 10), (0, 0)).into();
+            let y: Range = ((5, 5), (15, 15)).into();
+            assert!(x.is_overlapping(&y))
+        }
+        {
+            let x: Range = ((10, 10), (0, 0)).into();
+            let y: Range = ((10, 10), (20, 20)).into();
+            assert!(x.is_overlapping(&y))
+        }
+        {
+            let x: Range = ((10, 10), (0, 0)).into();
+            let y: Range = ((10, 11), (20, 20)).into();
+            assert!(!x.is_overlapping(&y))
+        }
+    }
+
+    #[test]
     fn test_to_rope_slice() {
         fn case(s: &str, range: ((usize, usize), (usize, usize)), expected: &str) {
             let rope = Rope::from_str(s);

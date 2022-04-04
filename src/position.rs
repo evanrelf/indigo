@@ -107,6 +107,13 @@ mod test {
     use super::*;
 
     #[test]
+    fn test_partialord() {
+        assert!(Position::from((0, 0)) < Position::from((1, 0)));
+        assert!(Position::from((0, 99)) < Position::from((1, 0)));
+        assert!(Position::from((1, 0)) < Position::from((1, 1)));
+    }
+
+    #[test]
     fn test_rope_index_roundtrip() {
         let rope = Rope::from_str("hello\nworld\n!\n");
 
