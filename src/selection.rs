@@ -1,4 +1,5 @@
 use crate::range::Range;
+use ropey::Rope;
 
 pub struct Selection {
     pub ranges: Vec<Range>,
@@ -79,6 +80,30 @@ impl Selection {
     #[allow(unused_variables)]
     pub fn exclude(self, other: Self) -> Self {
         todo!()
+    }
+
+    pub fn move_up(&mut self, rope: &Rope, distance: usize) {
+        for range in &mut self.ranges {
+            range.move_up(rope, distance);
+        }
+    }
+
+    pub fn move_down(&mut self, rope: &Rope, distance: usize) {
+        for range in &mut self.ranges {
+            range.move_down(rope, distance);
+        }
+    }
+
+    pub fn move_left(&mut self, rope: &Rope, distance: usize) {
+        for range in &mut self.ranges {
+            range.move_left(rope, distance);
+        }
+    }
+
+    pub fn move_right(&mut self, rope: &Rope, distance: usize) {
+        for range in &mut self.ranges {
+            range.move_right(rope, distance);
+        }
     }
 }
 

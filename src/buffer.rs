@@ -78,27 +78,19 @@ impl Buffer {
     }
 
     pub fn move_up(&mut self, distance: usize) {
-        for range in &mut self.selection.ranges {
-            range.move_up(&self.rope, distance);
-        }
+        self.selection.move_up(&self.rope, distance);
     }
 
     pub fn move_down(&mut self, distance: usize) {
-        for range in &mut self.selection.ranges {
-            range.move_down(&self.rope, distance);
-        }
+        self.selection.move_down(&self.rope, distance);
     }
 
     pub fn move_left(&mut self, distance: usize) {
-        for range in &mut self.selection.ranges {
-            range.move_left(&self.rope, distance);
-        }
+        self.selection.move_left(&self.rope, distance);
     }
 
     pub fn move_right(&mut self, distance: usize) {
-        for range in &mut self.selection.ranges {
-            range.move_right(&self.rope, distance);
-        }
+        self.selection.move_right(&self.rope, distance);
     }
 
     pub fn insert(&mut self, c: char) {
