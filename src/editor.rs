@@ -139,7 +139,7 @@ impl Editor {
                         self.mode = Mode::Insert;
                         self.buffers[self.buffer_index]
                             .selection
-                            .in_all_ranges(|range| range.flip_backwards())
+                            .in_all_ranges(|range| { range.flip_backwards(); });
                     }
                     // Edit
                     KeyCode::Char('d') => self.buffers[self.buffer_index].delete(),

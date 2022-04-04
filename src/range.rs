@@ -33,24 +33,28 @@ impl Range {
         self.anchor == self.head
     }
 
-    pub fn flip(&mut self) {
+    pub fn flip(&mut self) -> &mut Self {
         std::mem::swap(&mut self.anchor, &mut self.head);
+        self
     }
 
-    pub fn flip_forwards(&mut self) {
+    pub fn flip_forwards(&mut self) -> &mut Self {
         if self.is_backwards() {
             self.flip();
         }
+        self
     }
 
-    pub fn flip_backwards(&mut self) {
+    pub fn flip_backwards(&mut self) -> &mut Self {
         if self.is_forwards() {
             self.flip();
         }
+        self
     }
 
-    pub fn reduce(&mut self) {
+    pub fn reduce(&mut self) -> &mut Self {
         self.anchor = self.head.clone();
+        self
     }
 
     pub fn is_overlapping(&self, other: &Self) -> bool {
