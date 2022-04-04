@@ -1,6 +1,7 @@
 use crate::{
     buffer::Buffer,
     editor::{self, Editor, Mode},
+    position::Position,
 };
 use crossterm::ExecutableCommand;
 use std::borrow::Cow;
@@ -219,24 +220,40 @@ impl Widget for &Buffer {
             );
         }
 
-        for range in &self.selection().ranges {
-            let anchor_position = (&range.anchor, Style::default().bg(Color::LightCyan));
-            let head_position = (&range.head, Style::default().bg(Color::LightYellow));
+        let yellow = Color::Rgb(0xFF, 0xD3, 0x3D);
+        let light_yellow = Color::Rgb(0xFF, 0xF5, 0xB1);
 
-            for (position, style) in [anchor_position, head_position] {
-                let buffer_line = position.line;
-                let buffer_column = position.column;
+        for range in &self.selection().ranges {
+            let range_slice = range.to_rope_slice(self.rope()).unwrap();
+
+            for (i, _) in range_slice.chars().enumerate() {
+                let i = if range.is_forwards() {
+                    i + range.anchor.to_rope_index(self.rope()).unwrap()
+                } else {
+                    i + range.head.to_rope_index(self.rope()).unwrap()
+                };
+
+                let buffer_position = Position::from_rope_index(self.rope(), i).unwrap();
+                let buffer_line = buffer_position.line;
+                let buffer_column = buffer_position.column;
+
                 let view_line = buffer_line.saturating_sub(self.view_lines_offset());
                 let view_column = buffer_column.saturating_sub(self.view_columns_offset());
 
                 let position_visible = [
                     buffer_line >= self.view_lines_offset(),
                     buffer_column >= self.view_columns_offset(),
-                    view_line < chunks[1].bottom() as usize,
-                    view_column < chunks[1].right() as usize,
+                    view_line < chunks[1].height as usize,
+                    view_column < chunks[1].width as usize,
                 ]
                 .iter()
                 .all(|x| *x);
+
+                let style = if buffer_position == range.head {
+                    Style::default().bg(yellow)
+                } else {
+                    Style::default().bg(light_yellow)
+                };
 
                 if position_visible {
                     buffer
