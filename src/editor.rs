@@ -176,17 +176,17 @@ impl Editor {
             Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
                 match key_event.code {
                     // Move
-                    KeyCode::Char('K') => self.buffers[self.buffer_index].extend_top(),
-                    KeyCode::Char('J') => self.buffers[self.buffer_index].extend_bottom(),
-                    KeyCode::Char('E') => self.buffers[self.buffer_index].extend_end(),
+                    KeyCode::Char('K') => self.buffers[self.buffer_index].extend_buffer_top(),
+                    KeyCode::Char('J') => self.buffers[self.buffer_index].extend_buffer_bottom(),
+                    KeyCode::Char('E') => self.buffers[self.buffer_index].extend_buffer_end(),
                     _ => {}
                 }
             }
             Key(key_event) if key_event.modifiers == KeyModifiers::NONE => match key_event.code {
                 KeyCode::Esc => self.mode = Mode::Normal,
-                KeyCode::Char('k') => self.buffers[self.buffer_index].move_top(),
-                KeyCode::Char('j') => self.buffers[self.buffer_index].move_bottom(),
-                KeyCode::Char('e') => self.buffers[self.buffer_index].move_end(),
+                KeyCode::Char('k') => self.buffers[self.buffer_index].move_buffer_top(),
+                KeyCode::Char('j') => self.buffers[self.buffer_index].move_buffer_bottom(),
+                KeyCode::Char('e') => self.buffers[self.buffer_index].move_buffer_end(),
                 _ => {}
             },
             Mouse(_) => {}

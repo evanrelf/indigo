@@ -106,32 +106,32 @@ fn horizontally(rope: &Rope, range: &Range, direction: Direction, distance: usiz
     }
 }
 
-pub fn extend_top(range: &Range) -> Range {
+pub fn extend_buffer_top(range: &Range) -> Range {
     top(range)
 }
 
-pub fn extend_bottom(rope: &Rope, range: &Range) -> Range {
+pub fn extend_buffer_bottom(rope: &Rope, range: &Range) -> Range {
     bottom(rope, range)
 }
 
-pub fn extend_end(rope: &Rope, range: &Range) -> Range {
+pub fn extend_buffer_end(rope: &Rope, range: &Range) -> Range {
     end(rope, range)
 }
 
-pub fn move_top(range: &Range) -> Range {
-    let mut range = extend_top(range);
+pub fn move_buffer_top(range: &Range) -> Range {
+    let mut range = extend_buffer_top(range);
     range.reduce();
     range
 }
 
-pub fn move_bottom(rope: &Rope, range: &Range) -> Range {
-    let mut range = extend_bottom(rope, range);
+pub fn move_buffer_bottom(rope: &Rope, range: &Range) -> Range {
+    let mut range = extend_buffer_bottom(rope, range);
     range.reduce();
     range
 }
 
-pub fn move_end(rope: &Rope, range: &Range) -> Range {
-    let mut range = extend_end(rope, range);
+pub fn move_buffer_end(rope: &Rope, range: &Range) -> Range {
+    let mut range = extend_buffer_end(rope, range);
     range.reduce();
     range
 }
