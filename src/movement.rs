@@ -3,35 +3,43 @@ use ropey::Rope;
 use std::cmp::{max, min};
 
 pub fn move_up(rope: &Rope, range: &Range, distance: usize) -> Range {
-    vertically(rope, range, Behavior::Move, Direction::Backward, distance)
+    let mut range = extend_up(rope, range, distance);
+    range.reduce();
+    range
 }
 
 pub fn move_down(rope: &Rope, range: &Range, distance: usize) -> Range {
-    vertically(rope, range, Behavior::Move, Direction::Forward, distance)
+    let mut range = extend_down(rope, range, distance);
+    range.reduce();
+    range
 }
 
 pub fn move_left(rope: &Rope, range: &Range, distance: usize) -> Range {
-    horizontally(rope, range, Behavior::Move, Direction::Backward, distance)
+    let mut range = extend_left(rope, range, distance);
+    range.reduce();
+    range
 }
 
 pub fn move_right(rope: &Rope, range: &Range, distance: usize) -> Range {
-    horizontally(rope, range, Behavior::Move, Direction::Forward, distance)
+    let mut range = extend_right(rope, range, distance);
+    range.reduce();
+    range
 }
 
 pub fn extend_up(rope: &Rope, range: &Range, distance: usize) -> Range {
-    vertically(rope, range, Behavior::Extend, Direction::Backward, distance)
+    vertically(rope, range, Direction::Backward, distance)
 }
 
 pub fn extend_down(rope: &Rope, range: &Range, distance: usize) -> Range {
-    vertically(rope, range, Behavior::Extend, Direction::Forward, distance)
+    vertically(rope, range, Direction::Forward, distance)
 }
 
 pub fn extend_left(rope: &Rope, range: &Range, distance: usize) -> Range {
-    horizontally(rope, range, Behavior::Extend, Direction::Backward, distance)
+    horizontally(rope, range, Direction::Backward, distance)
 }
 
 pub fn extend_right(rope: &Rope, range: &Range, distance: usize) -> Range {
-    horizontally(rope, range, Behavior::Extend, Direction::Forward, distance)
+    horizontally(rope, range, Direction::Forward, distance)
 }
 
 enum Direction {
@@ -39,18 +47,14 @@ enum Direction {
     Forward,
 }
 
-enum Behavior {
-    Move,
-    Extend,
-}
-
 fn vertically(
     rope: &Rope,
     range: &Range,
-    behavior: Behavior,
     direction: Direction,
     distance: usize,
 ) -> Range {
+    let anchor = range.anchor.clone();
+
     let desired_head = match direction {
         Direction::Backward => Position {
             // Prevent `corrected` from moving us to the first index in the rope if
@@ -73,11 +77,6 @@ fn vertically(
 
     let (head, _) = desired_head.corrected(rope);
 
-    let anchor = match behavior {
-        Behavior::Move => head.clone(),
-        Behavior::Extend => range.anchor.clone(),
-    };
-
     let target_column = if head.column == desired_head.column {
         None
     } else {
@@ -94,10 +93,11 @@ fn vertically(
 fn horizontally(
     rope: &Rope,
     range: &Range,
-    behavior: Behavior,
     direction: Direction,
     distance: usize,
 ) -> Range {
+    let anchor = range.anchor.clone();
+
     let index = match direction {
         Direction::Backward => range
             .head
@@ -109,11 +109,6 @@ fn horizontally(
 
     let (head, _) = Position::from_rope_index_lossy(rope, index);
 
-    let anchor = match behavior {
-        Behavior::Move => head.clone(),
-        Behavior::Extend => range.anchor.clone(),
-    };
-
     Range {
         anchor,
         head,
@@ -122,47 +117,37 @@ fn horizontally(
 }
 
 pub fn move_top(range: &Range) -> Range {
-    top(range, Behavior::Move)
+    let mut range = top(range);
+    range.reduce();
+    range
 }
 
 pub fn move_bottom(rope: &Rope, range: &Range) -> Range {
-    bottom(rope, range, Behavior::Move)
+    let mut range = bottom(rope, range);
+    range.reduce();
+    range
 }
 
 pub fn extend_top(range: &Range) -> Range {
-    top(range, Behavior::Extend)
+    top(range)
 }
 
 pub fn extend_bottom(rope: &Rope, range: &Range) -> Range {
-    bottom(rope, range, Behavior::Extend)
+    bottom(rope, range)
 }
 
-fn top(range: &Range, behavior: Behavior) -> Range {
-    let head = Position::from((0, 0));
-
-    let anchor = match behavior {
-        Behavior::Move => head.clone(),
-        Behavior::Extend => range.anchor.clone(),
-    };
-
+fn top(range: &Range) -> Range {
     Range {
-        anchor,
-        head,
+        anchor: range.anchor.clone(),
+        head: (0, 0).into(),
         target_column: None,
     }
 }
 
-fn bottom(rope: &Rope, range: &Range, behavior: Behavior) -> Range {
-    let head = Position::from_rope_index(rope, rope.len_chars().saturating_sub(1)).unwrap();
-
-    let anchor = match behavior {
-        Behavior::Move => head.clone(),
-        Behavior::Extend => range.anchor.clone(),
-    };
-
+fn bottom(rope: &Rope, range: &Range) -> Range {
     Range {
-        anchor,
-        head,
+        anchor: range.anchor.clone(),
+        head: Position::from_rope_index(rope, rope.len_chars().saturating_sub(1)).unwrap(),
         target_column: None,
     }
 }
