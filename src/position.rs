@@ -1,4 +1,5 @@
 use ropey::Rope;
+use std::fmt::Display;
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Position {
@@ -70,6 +71,12 @@ impl Position {
         let column = index - rope.line_to_char(line);
 
         Self { line, column }
+    }
+}
+
+impl Display for Position {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "{}:{}", self.line + 1, self.column + 1)
     }
 }
 

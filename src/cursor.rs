@@ -43,8 +43,7 @@ impl Cursor {
 
 impl Display for Cursor {
     fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let Position { line, column } = self.position;
-        write!(formatter, "{}:{}", line + 1, column + 1)
+        write!(formatter, "{}", self.position)
     }
 }
 
