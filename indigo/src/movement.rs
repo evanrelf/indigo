@@ -91,13 +91,13 @@ fn horizontally(rope: &Rope, range: &Range, direction: Direction, distance: usiz
     let index = match direction {
         Direction::Backward => range
             .head
-            .to_rope_index_lossy(rope)
+            .to_rope_index_corrected(rope)
             .0
             .saturating_sub(distance),
-        Direction::Forward => range.head.to_rope_index_lossy(rope).0 + distance,
+        Direction::Forward => range.head.to_rope_index_corrected(rope).0 + distance,
     };
 
-    let (head, _) = Position::from_rope_index_lossy(rope, index);
+    let (head, _) = Position::from_rope_index_corrected(rope, index);
 
     Range {
         anchor,

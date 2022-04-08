@@ -22,14 +22,14 @@ impl Position {
         Some(rope.line_to_char(self.line) + self.column)
     }
 
-    pub fn to_rope_index_lossy(&self, rope: &Rope) -> (usize, bool) {
-        let mut lossy = false;
+    pub fn to_rope_index_corrected(&self, rope: &Rope) -> (usize, bool) {
+        let mut corrected = false;
 
         // Get valid line
         let lines = rope.len_lines();
         let line = if lines <= self.line {
             // When line goes beyond end of rope, use last line
-            lossy = true;
+            corrected = true;
             // Subtracting 1 to convert to zero-based index, subtracting another 1 to remove ropey's
             // mysterious empty final line
             lines.saturating_sub(2)
@@ -41,13 +41,13 @@ impl Position {
         let columns = rope.line(line).len_chars();
         let column = if columns <= self.column {
             // When column goes beyond end of line, use last column
-            lossy = true;
+            corrected = true;
             columns.saturating_sub(1)
         } else {
             self.column
         };
 
-        (rope.line_to_char(line) + column, lossy)
+        (rope.line_to_char(line) + column, corrected)
     }
 
     pub fn from_rope_index(rope: &Rope, index: usize) -> Option<Self> {
@@ -63,13 +63,13 @@ impl Position {
         Some(Self { line, column })
     }
 
-    pub fn from_rope_index_lossy(rope: &Rope, index: usize) -> (Self, bool) {
-        let mut lossy = false;
+    pub fn from_rope_index_corrected(rope: &Rope, index: usize) -> (Self, bool) {
+        let mut corrected = false;
 
         // Get valid index
         let index = if rope.len_chars() <= index {
             // When index goes beyond end of rope, use last index
-            lossy = true;
+            corrected = true;
             rope.len_chars().saturating_sub(1)
         } else {
             index
@@ -79,14 +79,14 @@ impl Position {
 
         let column = index - rope.line_to_char(line);
 
-        (Self { line, column }, lossy)
+        (Self { line, column }, corrected)
     }
 
     pub fn corrected(&self, rope: &Rope) -> (Self, bool) {
-        let (index, lossy) = self.to_rope_index_lossy(rope);
-        // `unwrap` is safe here because `to_rope_index_lossy` returns a valid rope index
+        let (index, corrected) = self.to_rope_index_corrected(rope);
+        // `unwrap` is safe here because `to_rope_index_corrected` returns a valid rope index
         let position = Self::from_rope_index(rope, index).unwrap();
-        (position, lossy)
+        (position, corrected)
     }
 }
 

@@ -101,26 +101,26 @@ impl Range {
         }
     }
 
-    pub fn to_rope_slice_lossy<'rope>(&self, rope: &'rope Rope) -> (RopeSlice<'rope>, bool) {
-        let (anchor_index, anchor_lossy) = self.anchor.to_rope_index_lossy(rope);
-        let (head_index, head_lossy) = self.head.to_rope_index_lossy(rope);
+    pub fn to_rope_slice_corrected<'rope>(&self, rope: &'rope Rope) -> (RopeSlice<'rope>, bool) {
+        let (anchor_index, anchor_corrected) = self.anchor.to_rope_index_corrected(rope);
+        let (head_index, head_corrected) = self.head.to_rope_index_corrected(rope);
         let rope_slice = if self.is_forwards() {
             rope.slice(anchor_index..=head_index)
         } else {
             rope.slice(head_index..=anchor_index)
         };
-        (rope_slice, anchor_lossy || head_lossy)
+        (rope_slice, anchor_corrected || head_corrected)
     }
 
     pub fn corrected(&self, rope: &Rope) -> (Self, bool) {
-        let (anchor, anchor_lossy) = self.anchor.corrected(rope);
-        let (head, head_lossy) = self.head.corrected(rope);
+        let (anchor, anchor_corrected) = self.anchor.corrected(rope);
+        let (head, head_corrected) = self.head.corrected(rope);
         let position = Self {
             anchor,
             head,
             target_column: None,
         };
-        (position, anchor_lossy || head_lossy)
+        (position, anchor_corrected || head_corrected)
     }
 }
 
