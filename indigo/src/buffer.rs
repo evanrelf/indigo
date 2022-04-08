@@ -240,7 +240,7 @@ impl Buffer {
             let head_index = range.head.to_rope_index(&self.rope).unwrap();
             self.rope.remove(head_index..=anchor_index);
             range.reduce();
-            *range = range.corrected(&self.rope).0;
+            *range = range.corrected(&self.rope);
         }
     }
 }

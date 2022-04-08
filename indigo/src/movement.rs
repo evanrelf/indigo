@@ -70,7 +70,7 @@ fn vertically(rope: &Rope, range: &Range, direction: Direction, distance: usize)
         }
     };
 
-    let (head, _) = desired_head.corrected(rope);
+    let head = desired_head.corrected(rope);
 
     let target_column = if head.column == desired_head.column {
         None
@@ -92,12 +92,11 @@ fn horizontally(rope: &Rope, range: &Range, direction: Direction, distance: usiz
         Direction::Backward => range
             .head
             .to_rope_index_corrected(rope)
-            .0
             .saturating_sub(distance),
-        Direction::Forward => range.head.to_rope_index_corrected(rope).0 + distance,
+        Direction::Forward => range.head.to_rope_index_corrected(rope) + distance,
     };
 
-    let (head, _) = Position::from_rope_index_corrected(rope, index);
+    let head = Position::from_rope_index_corrected(rope, index);
 
     Range {
         anchor,
@@ -187,7 +186,7 @@ pub fn extend_line_first_non_blank(rope: &Rope, range: &Range) -> Range {
 }
 
 pub fn extend_line_end(rope: &Rope, range: &Range) -> Range {
-    let (mut head, _) = range.head.clone().corrected(rope);
+    let mut head = range.head.clone().corrected(rope);
     head.column = rope.line(head.line).len_chars().saturating_sub(1);
 
     Range {
