@@ -30,7 +30,10 @@ impl Selection {
         );
     }
 
-    pub fn filter_ranges(&mut self, filter: fn(usize, &Range) -> bool) {
+    pub fn filter_ranges<F>(&mut self, filter: F)
+    where
+        F: Fn(usize, &Range) -> bool,
+    {
         self.ranges = self
             .ranges
             .iter()

@@ -158,6 +158,10 @@ impl Editor {
                             range.reduce_mut();
                         });
                     }
+                    KeyCode::Char(',') => {
+                        let primary = buffer.selection.primary_range_index;
+                        buffer.selection.filter_ranges(|i, _| i == primary);
+                    }
                     // Edit
                     KeyCode::Char('d') => buffer.delete(),
                     _ => {}
