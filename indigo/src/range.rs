@@ -33,55 +33,6 @@ impl Range {
         self.anchor == self.head
     }
 
-    pub fn flip(&mut self) -> &mut Self {
-        std::mem::swap(&mut self.anchor, &mut self.head);
-        self.target_column = None;
-        self
-    }
-
-    pub fn flipped(&self) -> Self {
-        let mut new = self.clone();
-        new.flip();
-        new
-    }
-
-    pub fn flip_forwards(&mut self) -> &mut Self {
-        if self.is_backwards() {
-            self.flip();
-        }
-        self
-    }
-
-    pub fn flipped_forwards(&self) -> Self {
-        let mut new = self.clone();
-        new.flip_forwards();
-        new
-    }
-
-    pub fn flip_backwards(&mut self) -> &mut Self {
-        if self.is_forwards() {
-            self.flip();
-        }
-        self
-    }
-
-    pub fn flipped_backwards(&self) -> Self {
-        let mut new = self.clone();
-        new.flip_backwards();
-        new
-    }
-
-    pub fn reduce(&mut self) -> &mut Self {
-        self.anchor = self.head.clone();
-        self
-    }
-
-    pub fn reduced(&self) -> Self {
-        let mut new = self.clone();
-        new.reduce();
-        new
-    }
-
     pub fn is_overlapping(&self, other: &Self) -> bool {
         let (self_start, self_end) = if self.is_forwards() {
             (&self.anchor, &self.head)
@@ -99,7 +50,56 @@ impl Range {
             || (other_start <= self_start && self_start <= other_end)
     }
 
-    pub fn merge(&mut self, mut other: Self) -> &mut Self {
+    pub fn flip_mut(&mut self) -> &mut Self {
+        std::mem::swap(&mut self.anchor, &mut self.head);
+        self.target_column = None;
+        self
+    }
+
+    pub fn flip(&self) -> Self {
+        let mut new = self.clone();
+        new.flip_mut();
+        new
+    }
+
+    pub fn flip_forwards_mut(&mut self) -> &mut Self {
+        if self.is_backwards() {
+            self.flip();
+        }
+        self
+    }
+
+    pub fn flip_forwards(&self) -> Self {
+        let mut new = self.clone();
+        new.flip_forwards_mut();
+        new
+    }
+
+    pub fn flip_backwards_mut(&mut self) -> &mut Self {
+        if self.is_forwards() {
+            self.flip();
+        }
+        self
+    }
+
+    pub fn flip_backwards(&self) -> Self {
+        let mut new = self.clone();
+        new.flip_backwards_mut();
+        new
+    }
+
+    pub fn reduce_mut(&mut self) -> &mut Self {
+        self.anchor = self.head.clone();
+        self
+    }
+
+    pub fn reduce(&self) -> Self {
+        let mut new = self.clone();
+        new.reduce_mut();
+        new
+    }
+
+    pub fn merge_mut(&mut self, other: Self) -> &mut Self {
         match (self.is_forwards(), other.is_forwards()) {
             (true, true) => {
                 // Forwards
@@ -123,17 +123,16 @@ impl Range {
             }
             _ => {
                 // Mixed
-                other.flip();
-                self.merge(other);
+                self.merge_mut(other.flip());
             }
         }
 
         self
     }
 
-    pub fn merged(&self, other: &Self) -> Self {
+    pub fn merge(&self, other: &Self) -> Self {
         let mut new = self.clone();
-        new.merge(other.clone());
+        new.merge_mut(other.clone());
         new
     }
 

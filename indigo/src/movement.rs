@@ -19,27 +19,19 @@ pub fn extend_right(rope: &Rope, range: &Range, distance: usize) -> Range {
 }
 
 pub fn move_up(rope: &Rope, range: &Range, distance: usize) -> Range {
-    let mut range = extend_up(rope, range, distance);
-    range.reduce();
-    range
+    extend_up(rope, range, distance).reduce()
 }
 
 pub fn move_down(rope: &Rope, range: &Range, distance: usize) -> Range {
-    let mut range = extend_down(rope, range, distance);
-    range.reduce();
-    range
+    extend_down(rope, range, distance).reduce()
 }
 
 pub fn move_left(rope: &Rope, range: &Range, distance: usize) -> Range {
-    let mut range = extend_left(rope, range, distance);
-    range.reduce();
-    range
+    extend_left(rope, range, distance).reduce()
 }
 
 pub fn move_right(rope: &Rope, range: &Range, distance: usize) -> Range {
-    let mut range = extend_right(rope, range, distance);
-    range.reduce();
-    range
+    extend_right(rope, range, distance).reduce()
 }
 
 enum Direction {
@@ -134,21 +126,15 @@ pub fn extend_buffer_end(rope: &Rope, range: &Range) -> Range {
 }
 
 pub fn move_buffer_top(range: &Range) -> Range {
-    let mut range = extend_buffer_top(range);
-    range.reduce();
-    range
+    extend_buffer_top(range).reduce()
 }
 
 pub fn move_buffer_bottom(rope: &Rope, range: &Range) -> Range {
-    let mut range = extend_buffer_bottom(rope, range);
-    range.reduce();
-    range
+    extend_buffer_bottom(rope, range).reduce()
 }
 
 pub fn move_buffer_end(rope: &Rope, range: &Range) -> Range {
-    let mut range = extend_buffer_end(rope, range);
-    range.reduce();
-    range
+    extend_buffer_end(rope, range).reduce()
 }
 
 pub fn extend_line_begin(range: &Range) -> Range {
@@ -197,19 +183,13 @@ pub fn extend_line_end(rope: &Rope, range: &Range) -> Range {
 }
 
 pub fn move_line_begin(range: &Range) -> Range {
-    let mut range = extend_line_begin(range);
-    range.reduce();
-    range
+    extend_line_begin(range).reduce()
 }
 
 pub fn move_line_first_non_blank(rope: &Rope, range: &Range) -> Range {
-    let mut range = extend_line_first_non_blank(rope, range);
-    range.reduce();
-    range
+    extend_line_first_non_blank(rope, range).reduce()
 }
 
 pub fn move_line_end(rope: &Rope, range: &Range) -> Range {
-    let mut range = extend_line_end(rope, range);
-    range.reduce();
-    range
+    extend_line_end(rope, range).reduce()
 }
