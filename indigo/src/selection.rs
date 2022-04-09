@@ -1,5 +1,6 @@
 use crate::range::Range;
 
+// TODO: Hide fields, add methods that keep `ranges` sorted and non-overlapping
 pub struct Selection {
     pub ranges: Vec<Range>,
     pub primary_range_index: usize,
@@ -13,18 +14,6 @@ impl Selection {
             ranges: ranges.to_vec(),
             primary_range_index: 0,
         }
-    }
-
-    pub fn is_overlapping(&self, other: &Self) -> bool {
-        for self_range in &self.ranges {
-            for other_range in &other.ranges {
-                if self_range.is_overlapping(other_range) {
-                    return true;
-                }
-            }
-        }
-
-        false
     }
 
     pub fn next_range(&mut self, count: usize) {
@@ -59,26 +48,6 @@ impl Selection {
         for range in &mut self.ranges {
             f(range);
         }
-    }
-
-    #[allow(unused_variables)]
-    pub fn union(self, other: Self) -> Self {
-        todo!()
-    }
-
-    #[allow(unused_variables)]
-    pub fn subtract(self, other: Self) -> Self {
-        todo!()
-    }
-
-    #[allow(unused_variables)]
-    pub fn intersect(self, other: Self) -> Self {
-        todo!()
-    }
-
-    #[allow(unused_variables)]
-    pub fn exclude(self, other: Self) -> Self {
-        todo!()
     }
 }
 

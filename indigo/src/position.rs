@@ -1,7 +1,7 @@
 use ropey::Rope;
 use std::fmt::Display;
 
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Position {
     pub line: usize,
     pub column: usize,

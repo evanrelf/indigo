@@ -1,6 +1,9 @@
 use crate::position::Position;
 use ropey::{Rope, RopeSlice};
-use std::fmt::Display;
+use std::{
+    cmp::{max, min},
+    fmt::Display,
+};
 
 #[derive(Clone, Default)]
 pub struct Range {
@@ -74,21 +77,30 @@ impl Range {
             || (other_start <= self_start && self_start <= other_end)
     }
 
-    // https://help.figma.com/hc/en-us/articles/360039957534-Boolean-Operations
-
-    #[allow(unused_variables)]
-    pub fn union(self, other: Self) -> Self {
-        todo!()
-    }
-
-    #[allow(unused_variables)]
-    pub fn subtract(self, other: Self) -> Self {
-        todo!()
-    }
-
-    #[allow(unused_variables)]
-    pub fn intersect(self, other: Self) -> Self {
-        todo!()
+    pub fn merged(self, mut other: Self) -> Self {
+        match (self.is_forwards(), other.is_forwards()) {
+            (true, true) => {
+                // Forwards
+                Self {
+                    anchor: min(self.anchor, other.anchor),
+                    head: max(self.head, other.head),
+                    target_column: None, // TODO: Evaluate
+                }
+            }
+            (false, false) => {
+                // Backwards
+                Self {
+                    anchor: max(self.anchor, other.anchor),
+                    head: min(self.head, other.head),
+                    target_column: None, // TODO: Evaluate
+                }
+            }
+            _ => {
+                // Mixed
+                other.flip();
+                self.merged(other)
+            }
+        }
     }
 
     pub fn to_rope_slice<'rope>(&self, rope: &'rope Rope) -> Option<RopeSlice<'rope>> {
