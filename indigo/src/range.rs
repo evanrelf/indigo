@@ -1,9 +1,6 @@
 use crate::position::Position;
 use ropey::{Rope, RopeSlice};
-use std::{
-    cmp::{max, min},
-    fmt::Display,
-};
+use std::fmt::Display;
 
 #[derive(Clone, Default)]
 pub struct Range {
@@ -38,7 +35,14 @@ impl Range {
 
     pub fn flip(&mut self) -> &mut Self {
         std::mem::swap(&mut self.anchor, &mut self.head);
+        self.target_column = None;
         self
+    }
+
+    pub fn flipped(&self) -> Self {
+        let mut new = self.clone();
+        new.flip();
+        new
     }
 
     pub fn flip_forwards(&mut self) -> &mut Self {
@@ -48,6 +52,12 @@ impl Range {
         self
     }
 
+    pub fn flipped_forwards(&self) -> Self {
+        let mut new = self.clone();
+        new.flip_forwards();
+        new
+    }
+
     pub fn flip_backwards(&mut self) -> &mut Self {
         if self.is_forwards() {
             self.flip();
@@ -55,9 +65,21 @@ impl Range {
         self
     }
 
+    pub fn flipped_backwards(&self) -> Self {
+        let mut new = self.clone();
+        new.flip_backwards();
+        new
+    }
+
     pub fn reduce(&mut self) -> &mut Self {
         self.anchor = self.head.clone();
         self
+    }
+
+    pub fn reduced(&self) -> Self {
+        let mut new = self.clone();
+        new.reduce();
+        new
     }
 
     pub fn is_overlapping(&self, other: &Self) -> bool {
@@ -77,30 +99,42 @@ impl Range {
             || (other_start <= self_start && self_start <= other_end)
     }
 
-    pub fn merged(self, mut other: Self) -> Self {
+    pub fn merge(&mut self, mut other: Self) -> &mut Self {
         match (self.is_forwards(), other.is_forwards()) {
             (true, true) => {
                 // Forwards
-                Self {
-                    anchor: min(self.anchor, other.anchor),
-                    head: max(self.head, other.head),
-                    target_column: None, // TODO: Evaluate
+                if other.anchor < self.anchor {
+                    self.anchor = other.anchor;
                 }
+                if other.head > self.head {
+                    self.head = other.head;
+                }
+                self.target_column = None; // TODO: Evaluate
             }
             (false, false) => {
                 // Backwards
-                Self {
-                    anchor: max(self.anchor, other.anchor),
-                    head: min(self.head, other.head),
-                    target_column: None, // TODO: Evaluate
+                if other.anchor > self.anchor {
+                    self.anchor = other.anchor;
                 }
+                if other.head < self.head {
+                    self.head = other.head;
+                }
+                self.target_column = None; // TODO: Evaluate
             }
             _ => {
                 // Mixed
                 other.flip();
-                self.merged(other)
+                self.merge(other);
             }
         }
+
+        self
+    }
+
+    pub fn merged(&self, other: &Self) -> Self {
+        let mut new = self.clone();
+        new.merge(other.clone());
+        new
     }
 
     pub fn to_rope_slice<'rope>(&self, rope: &'rope Rope) -> Option<RopeSlice<'rope>> {
