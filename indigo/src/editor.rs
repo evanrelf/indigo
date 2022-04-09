@@ -100,6 +100,8 @@ impl Editor {
 
         let count = if self.count == 0 { 1 } else { self.count };
 
+        let buffer = &mut self.buffers[self.buffer_index];
+
         match event {
             Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL =>
             {
@@ -112,10 +114,10 @@ impl Editor {
             Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
                 match key_event.code {
                     // Move
-                    KeyCode::Char('H') => self.buffers[self.buffer_index].extend_left(count),
-                    KeyCode::Char('J') => self.buffers[self.buffer_index].extend_down(count),
-                    KeyCode::Char('K') => self.buffers[self.buffer_index].extend_up(count),
-                    KeyCode::Char('L') => self.buffers[self.buffer_index].extend_right(count),
+                    KeyCode::Char('H') => buffer.extend_left(count),
+                    KeyCode::Char('J') => buffer.extend_down(count),
+                    KeyCode::Char('K') => buffer.extend_up(count),
+                    KeyCode::Char('L') => buffer.extend_right(count),
                     _ => {}
                 }
             }
@@ -132,34 +134,38 @@ impl Editor {
                         self.count = new_count;
                     }
                     // Scroll
-                    KeyCode::Up => self.buffers[self.buffer_index].scroll_up(count),
-                    KeyCode::Down => self.buffers[self.buffer_index].scroll_down(count),
-                    KeyCode::Left => self.buffers[self.buffer_index].scroll_left(count),
-                    KeyCode::Right => self.buffers[self.buffer_index].scroll_right(count),
+                    KeyCode::Up => buffer.scroll_up(count),
+                    KeyCode::Down => buffer.scroll_down(count),
+                    KeyCode::Left => buffer.scroll_left(count),
+                    KeyCode::Right => buffer.scroll_right(count),
                     // Move
-                    KeyCode::Char('h') => self.buffers[self.buffer_index].move_left(count),
-                    KeyCode::Char('j') => self.buffers[self.buffer_index].move_down(count),
-                    KeyCode::Char('k') => self.buffers[self.buffer_index].move_up(count),
-                    KeyCode::Char('l') => self.buffers[self.buffer_index].move_right(count),
+                    KeyCode::Char('h') => buffer.move_left(count),
+                    KeyCode::Char('j') => buffer.move_down(count),
+                    KeyCode::Char('k') => buffer.move_up(count),
+                    KeyCode::Char('l') => buffer.move_right(count),
                     // Mode
                     KeyCode::Char('g') => self.mode = Mode::Goto,
                     KeyCode::Char(':') => self.mode = Mode::Command,
                     KeyCode::Char('i') => {
                         self.mode = Mode::Insert;
-                        self.buffers[self.buffer_index]
-                            .selection
-                            .in_all_ranges(|range| {
-                                range.flip_backwards_mut();
-                            });
+                        buffer.selection.in_all_ranges(|range| {
+                            range.flip_backwards_mut();
+                        });
+                    }
+                    // Selection
+                    KeyCode::Char(';') => {
+                        buffer.selection.in_all_ranges(|range| {
+                            range.reduce_mut();
+                        });
                     }
                     // Edit
-                    KeyCode::Char('d') => self.buffers[self.buffer_index].delete(),
+                    KeyCode::Char('d') => buffer.delete(),
                     _ => {}
                 }
             }
             Mouse(mouse_event) => match mouse_event.kind {
-                MouseEventKind::ScrollUp => self.buffers[self.buffer_index].scroll_up(3),
-                MouseEventKind::ScrollDown => self.buffers[self.buffer_index].scroll_down(3),
+                MouseEventKind::ScrollUp => buffer.scroll_up(3),
+                MouseEventKind::ScrollDown => buffer.scroll_down(3),
                 _ => {}
             },
             Key(_) => {}
