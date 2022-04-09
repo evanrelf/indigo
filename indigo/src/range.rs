@@ -108,8 +108,8 @@ impl Range {
                 }
                 if other.head > self.head {
                     self.head = other.head;
+                    self.target_column = other.target_column;
                 }
-                self.target_column = None; // TODO: Evaluate
             }
             (false, false) => {
                 // Backwards
@@ -118,8 +118,8 @@ impl Range {
                 }
                 if other.head < self.head {
                     self.head = other.head;
+                    self.target_column = other.target_column;
                 }
-                self.target_column = None; // TODO: Evaluate
             }
             _ => {
                 // Mixed
