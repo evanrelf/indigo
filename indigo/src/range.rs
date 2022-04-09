@@ -10,6 +10,7 @@ pub struct Range {
 }
 
 impl Range {
+    #[must_use]
     pub fn new<P>(anchor: P, head: P) -> Self
     where
         P: Into<Position>,
@@ -21,18 +22,22 @@ impl Range {
         }
     }
 
+    #[must_use]
     pub fn is_forwards(&self) -> bool {
         self.anchor <= self.head
     }
 
+    #[must_use]
     pub fn is_backwards(&self) -> bool {
         self.anchor > self.head
     }
 
+    #[must_use]
     pub fn is_reduced(&self) -> bool {
         self.anchor == self.head
     }
 
+    #[must_use]
     pub fn is_overlapping(&self, other: &Self) -> bool {
         let (self_start, self_end) = if self.is_forwards() {
             (&self.anchor, &self.head)
@@ -56,6 +61,7 @@ impl Range {
         self
     }
 
+    #[must_use]
     pub fn flip(&self) -> Self {
         let mut new = self.clone();
         new.flip_mut();
@@ -64,11 +70,12 @@ impl Range {
 
     pub fn flip_forwards_mut(&mut self) -> &mut Self {
         if self.is_backwards() {
-            self.flip();
+            self.flip_mut();
         }
         self
     }
 
+    #[must_use]
     pub fn flip_forwards(&self) -> Self {
         let mut new = self.clone();
         new.flip_forwards_mut();
@@ -77,11 +84,12 @@ impl Range {
 
     pub fn flip_backwards_mut(&mut self) -> &mut Self {
         if self.is_forwards() {
-            self.flip();
+            self.flip_mut();
         }
         self
     }
 
+    #[must_use]
     pub fn flip_backwards(&self) -> Self {
         let mut new = self.clone();
         new.flip_backwards_mut();
@@ -93,6 +101,7 @@ impl Range {
         self
     }
 
+    #[must_use]
     pub fn reduce(&self) -> Self {
         let mut new = self.clone();
         new.reduce_mut();
@@ -130,12 +139,14 @@ impl Range {
         self
     }
 
+    #[must_use]
     pub fn merge(&self, other: &Self) -> Self {
         let mut new = self.clone();
         new.merge_mut(other.clone());
         new
     }
 
+    #[must_use]
     pub fn to_rope_slice<'rope>(&self, rope: &'rope Rope) -> Option<RopeSlice<'rope>> {
         let anchor_index = self.anchor.to_rope_index(rope)?;
         let head_index = self.head.to_rope_index(rope)?;
@@ -146,6 +157,7 @@ impl Range {
         }
     }
 
+    #[must_use]
     pub fn to_rope_slice_corrected<'rope>(&self, rope: &'rope Rope) -> RopeSlice<'rope> {
         let anchor_index = self.anchor.to_rope_index_corrected(rope);
         let head_index = self.head.to_rope_index_corrected(rope);
@@ -157,6 +169,7 @@ impl Range {
         rope_slice
     }
 
+    #[must_use]
     pub fn corrected(&self, rope: &Rope) -> Self {
         let anchor = self.anchor.corrected(rope);
         let head = self.head.corrected(rope);

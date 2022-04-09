@@ -142,7 +142,7 @@ impl Editor {
                         self.buffers[self.buffer_index]
                             .selection
                             .in_all_ranges(|range| {
-                                range.flip_backwards();
+                                range.flip_backwards_mut();
                             });
                     }
                     // Edit

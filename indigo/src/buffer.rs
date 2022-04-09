@@ -235,11 +235,11 @@ impl Buffer {
 
     pub fn delete(&mut self) {
         for range in &mut self.selection.ranges {
-            range.flip_backwards();
+            range.flip_backwards_mut();
             let anchor_index = range.anchor.to_rope_index(&self.rope).unwrap();
             let head_index = range.head.to_rope_index(&self.rope).unwrap();
             self.rope.remove(head_index..=anchor_index);
-            range.reduce();
+            range.reduce_mut();
             *range = range.corrected(&self.rope);
         }
     }
