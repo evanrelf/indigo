@@ -18,10 +18,12 @@ pub struct Buffer {
 }
 
 impl Buffer {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    #[must_use]
     pub fn open<P>(path: P) -> Self
     where
         P: AsRef<Path>,
@@ -39,22 +41,27 @@ impl Buffer {
         }
     }
 
+    #[must_use]
     pub fn path(&self) -> &Option<PathBuf> {
         &self.path
     }
 
+    #[must_use]
     pub fn rope(&self) -> &Rope {
         &self.rope
     }
 
+    #[must_use]
     pub fn selection(&self) -> &Selection {
         &self.selection
     }
 
+    #[must_use]
     pub fn view_lines_offset(&self) -> usize {
         self.view_lines_offset
     }
 
+    #[must_use]
     pub fn view_columns_offset(&self) -> usize {
         self.view_columns_offset
     }

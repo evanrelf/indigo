@@ -7,6 +7,7 @@ pub struct Selection {
 }
 
 impl Selection {
+    #[must_use]
     pub fn new(ranges: &[Range]) -> Self {
         debug_assert!(!ranges.is_empty());
 

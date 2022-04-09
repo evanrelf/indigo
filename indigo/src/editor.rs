@@ -34,6 +34,7 @@ pub struct Editor {
 }
 
 impl Editor {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             quit: false,
@@ -53,26 +54,32 @@ impl Editor {
         self.buffer_index += 1;
     }
 
+    #[must_use]
     pub fn quit(&self) -> bool {
         self.quit
     }
 
+    #[must_use]
     pub fn mode(&self) -> &Mode {
         &self.mode
     }
 
+    #[must_use]
     pub fn command(&self) -> &String {
         &self.command
     }
 
+    #[must_use]
     pub fn count(&self) -> usize {
         self.count
     }
 
+    #[must_use]
     pub fn buffers(&self) -> &Vec<Buffer> {
         &self.buffers
     }
 
+    #[must_use]
     pub fn buffer_index(&self) -> usize {
         self.buffer_index
     }

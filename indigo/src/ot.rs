@@ -20,10 +20,12 @@ pub struct Operations {
 }
 
 impl Operations {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    #[must_use]
     pub fn from_changes(rope: &Rope, changes: &[(usize, usize, Option<&str>)]) -> Self {
         let length = rope.len_chars();
         let mut operations = Self::new();
@@ -96,6 +98,7 @@ impl Operations {
         }
     }
 
+    #[must_use]
     pub fn compose(self, other: Self) -> Option<Self> {
         if self.length_after != other.length_before {
             return None;
@@ -214,15 +217,18 @@ impl Operations {
     }
 
     #[allow(unused_variables)]
+    #[must_use]
     pub fn transform(&self, other: &Self) -> Option<Self> {
         todo!()
     }
 
     #[allow(unused_variables)]
+    #[must_use]
     pub fn transform_index(&self, index: usize, affinity: Affinity) -> usize {
         todo!()
     }
 
+    #[must_use]
     pub fn apply(&self, rope: &Rope) -> Option<Rope> {
         if rope.len_chars() != self.length_before {
             return None;
@@ -250,6 +256,7 @@ impl Operations {
     }
 
     // Must be called on original rope, before these operations were applied
+    #[must_use]
     pub fn invert(&self, rope: &Rope) -> Option<Self> {
         if rope.len_chars() != self.length_before {
             return None;

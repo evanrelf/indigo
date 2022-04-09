@@ -8,6 +8,7 @@ pub struct Position {
 }
 
 impl Position {
+    #[must_use]
     pub fn to_rope_index(&self, rope: &Rope) -> Option<usize> {
         // Assert line is valid
         if rope.len_lines() <= self.line {
@@ -22,6 +23,7 @@ impl Position {
         Some(rope.line_to_char(self.line) + self.column)
     }
 
+    #[must_use]
     pub fn to_rope_index_corrected(&self, rope: &Rope) -> usize {
         // Get valid line
         let lines = rope.len_lines();
@@ -46,6 +48,7 @@ impl Position {
         rope.line_to_char(line) + column
     }
 
+    #[must_use]
     pub fn from_rope_index(rope: &Rope, index: usize) -> Option<Self> {
         // Assert index is valid
         if rope.len_chars() <= index {
@@ -59,6 +62,7 @@ impl Position {
         Some(Self { line, column })
     }
 
+    #[must_use]
     pub fn from_rope_index_corrected(rope: &Rope, index: usize) -> Self {
         // Get valid index
         let index = if rope.len_chars() <= index {
@@ -75,6 +79,7 @@ impl Position {
         Self { line, column }
     }
 
+    #[must_use]
     pub fn corrected(&self, rope: &Rope) -> Self {
         let index = self.to_rope_index_corrected(rope);
         // `unwrap` is safe here because `to_rope_index_corrected` returns a valid rope index

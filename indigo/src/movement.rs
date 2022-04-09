@@ -2,34 +2,42 @@ use crate::{position::Position, range::Range};
 use ropey::Rope;
 use std::cmp::{max, min};
 
+#[must_use]
 pub fn extend_up(rope: &Rope, range: &Range, distance: usize) -> Range {
     vertically(rope, range, Direction::Backward, distance)
 }
 
+#[must_use]
 pub fn extend_down(rope: &Rope, range: &Range, distance: usize) -> Range {
     vertically(rope, range, Direction::Forward, distance)
 }
 
+#[must_use]
 pub fn extend_left(rope: &Rope, range: &Range, distance: usize) -> Range {
     horizontally(rope, range, Direction::Backward, distance)
 }
 
+#[must_use]
 pub fn extend_right(rope: &Rope, range: &Range, distance: usize) -> Range {
     horizontally(rope, range, Direction::Forward, distance)
 }
 
+#[must_use]
 pub fn move_up(rope: &Rope, range: &Range, distance: usize) -> Range {
     extend_up(rope, range, distance).reduce()
 }
 
+#[must_use]
 pub fn move_down(rope: &Rope, range: &Range, distance: usize) -> Range {
     extend_down(rope, range, distance).reduce()
 }
 
+#[must_use]
 pub fn move_left(rope: &Rope, range: &Range, distance: usize) -> Range {
     extend_left(rope, range, distance).reduce()
 }
 
+#[must_use]
 pub fn move_right(rope: &Rope, range: &Range, distance: usize) -> Range {
     extend_right(rope, range, distance).reduce()
 }
@@ -39,6 +47,7 @@ enum Direction {
     Forward,
 }
 
+#[must_use]
 fn vertically(rope: &Rope, range: &Range, direction: Direction, distance: usize) -> Range {
     let anchor = range.anchor.clone();
 
@@ -77,6 +86,7 @@ fn vertically(rope: &Rope, range: &Range, direction: Direction, distance: usize)
     }
 }
 
+#[must_use]
 fn horizontally(rope: &Rope, range: &Range, direction: Direction, distance: usize) -> Range {
     let anchor = range.anchor.clone();
 
@@ -97,6 +107,7 @@ fn horizontally(rope: &Rope, range: &Range, direction: Direction, distance: usiz
     }
 }
 
+#[must_use]
 pub fn extend_buffer_top(range: &Range) -> Range {
     Range {
         anchor: range.anchor.clone(),
@@ -105,6 +116,7 @@ pub fn extend_buffer_top(range: &Range) -> Range {
     }
 }
 
+#[must_use]
 pub fn extend_buffer_bottom(rope: &Rope, range: &Range) -> Range {
     Range {
         anchor: range.anchor.clone(),
@@ -117,6 +129,7 @@ pub fn extend_buffer_bottom(rope: &Rope, range: &Range) -> Range {
     }
 }
 
+#[must_use]
 pub fn extend_buffer_end(rope: &Rope, range: &Range) -> Range {
     Range {
         anchor: range.anchor.clone(),
@@ -125,18 +138,22 @@ pub fn extend_buffer_end(rope: &Rope, range: &Range) -> Range {
     }
 }
 
+#[must_use]
 pub fn move_buffer_top(range: &Range) -> Range {
     extend_buffer_top(range).reduce()
 }
 
+#[must_use]
 pub fn move_buffer_bottom(rope: &Rope, range: &Range) -> Range {
     extend_buffer_bottom(rope, range).reduce()
 }
 
+#[must_use]
 pub fn move_buffer_end(rope: &Rope, range: &Range) -> Range {
     extend_buffer_end(rope, range).reduce()
 }
 
+#[must_use]
 pub fn extend_line_begin(range: &Range) -> Range {
     let mut head = range.head.clone();
     head.column = 0;
@@ -148,6 +165,7 @@ pub fn extend_line_begin(range: &Range) -> Range {
     }
 }
 
+#[must_use]
 pub fn extend_line_first_non_blank(rope: &Rope, range: &Range) -> Range {
     let blanks = [' '];
 
@@ -171,6 +189,7 @@ pub fn extend_line_first_non_blank(rope: &Rope, range: &Range) -> Range {
     }
 }
 
+#[must_use]
 pub fn extend_line_end(rope: &Rope, range: &Range) -> Range {
     let mut head = range.head.clone().corrected(rope);
     head.column = rope.line(head.line).len_chars().saturating_sub(1);
@@ -182,14 +201,17 @@ pub fn extend_line_end(rope: &Rope, range: &Range) -> Range {
     }
 }
 
+#[must_use]
 pub fn move_line_begin(range: &Range) -> Range {
     extend_line_begin(range).reduce()
 }
 
+#[must_use]
 pub fn move_line_first_non_blank(rope: &Rope, range: &Range) -> Range {
     extend_line_first_non_blank(rope, range).reduce()
 }
 
+#[must_use]
 pub fn move_line_end(rope: &Rope, range: &Range) -> Range {
     extend_line_end(rope, range).reduce()
 }
