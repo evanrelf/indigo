@@ -12,5 +12,6 @@ pub mod movement;
 pub mod ot;
 pub mod position;
 pub mod range;
+pub mod regex;
 pub mod selection;
 pub mod terminal;

@@ -163,6 +163,11 @@ impl Editor {
                         });
                     }
                     // Selection
+                    KeyCode::Char('s') => {
+                        let rope = (*buffer.rope()).clone(); // TODO
+                        let regex = regex::Regex::new(r"\bbut\b").unwrap();
+                        buffer.selection.select(&rope, &regex);
+                    }
                     KeyCode::Char(';') => {
                         buffer.selection.in_all_ranges(|range| {
                             range.reduce_mut();

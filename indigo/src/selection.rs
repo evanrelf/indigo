@@ -1,4 +1,6 @@
-use crate::range::Range;
+use crate::{range::Range, regex::select};
+use regex::Regex;
+use ropey::Rope;
 
 // TODO: Hide fields, add methods that keep `ranges` sorted and non-overlapping
 pub struct Selection {
@@ -48,10 +50,22 @@ impl Selection {
         &mut self.ranges[self.primary_range_index]
     }
 
-    pub fn in_all_ranges(&mut self, f: fn(&mut Range)) {
+    pub fn in_all_ranges<F>(&mut self, f: F)
+    where
+        F: Fn(&mut Range),
+    {
         for range in &mut self.ranges {
             f(range);
         }
+    }
+
+    pub fn select(&mut self, rope: &Rope, regex: &Regex) {
+        self.ranges = self
+            .ranges
+            .iter()
+            .flat_map(|range| select(rope, range, regex))
+            .collect();
+        self.primary_range_index = 0; // TODO
     }
 }
 
