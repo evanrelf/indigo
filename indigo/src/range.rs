@@ -104,7 +104,11 @@ impl Range {
         new
     }
 
-    pub fn merge_mut(&mut self, other: Self) {
+    pub fn merge_mut(&mut self, other: Self) -> bool {
+        if !self.is_overlapping(&other) {
+            return false;
+        }
+
         match (self.is_forwards(), other.is_forwards()) {
             (true, true) => {
                 // Forwards
@@ -131,13 +135,18 @@ impl Range {
                 self.merge_mut(other.flip());
             }
         }
+
+        true
     }
 
     #[must_use]
-    pub fn merge(&self, other: &Self) -> Self {
+    pub fn merge(&self, other: &Self) -> Option<Self> {
         let mut new = self.clone();
-        new.merge_mut(other.clone());
-        new
+        if new.merge_mut(other.clone()) {
+            Some(new)
+        } else {
+            None
+        }
     }
 
     #[must_use]
