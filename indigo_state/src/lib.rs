@@ -1,31 +1,31 @@
 #[derive(Default)]
-pub struct Store<State> {
-    state: State,
+pub struct Store<S> {
+    state: S,
 }
 
-impl<State> Store<State> {
+impl<S> Store<S> {
     pub fn new() -> Self
     where
-        State: Default,
+        S: Default,
     {
         Self::default()
     }
 
-    pub fn state(&self) -> &State {
+    pub fn state(&self) -> &S {
         &self.state
     }
 
-    pub fn dispatch<Event>(&mut self, event: Event)
+    pub fn dispatch<E>(&mut self, event: E)
     where
-        State: Reducer<Event>,
+        S: Reducer<E>,
     {
         self.state = self.state.reduce(event);
     }
 }
 
-pub trait Reducer<Event> {
+pub trait Reducer<E> {
     #[must_use]
-    fn reduce(&self, event: Event) -> Self;
+    fn reduce(&self, event: E) -> Self;
 }
 
 #[cfg(test)]
@@ -34,8 +34,11 @@ mod test {
 
     #[derive(Default)]
     struct State {
-        count: isize,
+        count: Count,
     }
+
+    #[derive(Debug, Default, PartialEq)]
+    struct Count(isize);
 
     enum CountEvent {
         Increment,
@@ -44,15 +47,19 @@ mod test {
 
     impl Reducer<CountEvent> for State {
         fn reduce(&self, event: CountEvent) -> Self {
+            Self {
+                count: self.count.reduce(event),
+            }
+        }
+    }
+
+    impl Reducer<CountEvent> for Count {
+        fn reduce(&self, event: CountEvent) -> Self {
             use CountEvent::*;
 
             match event {
-                Increment => Self {
-                    count: self.count + 1,
-                },
-                Decrement => Self {
-                    count: self.count - 1,
-                },
+                Increment => Self(self.0 + 1),
+                Decrement => Self(self.0 - 1),
             }
         }
     }
@@ -65,6 +72,6 @@ mod test {
         store.dispatch(CountEvent::Increment);
         store.dispatch(CountEvent::Decrement);
 
-        assert_eq!(store.state().count, 1);
+        assert_eq!(store.state().count, Count(1));
     }
 }
