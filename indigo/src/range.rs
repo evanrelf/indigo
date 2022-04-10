@@ -55,10 +55,9 @@ impl Range {
             || (other_start <= self_start && self_start <= other_end)
     }
 
-    pub fn flip_mut(&mut self) -> &mut Self {
+    pub fn flip_mut(&mut self) {
         std::mem::swap(&mut self.anchor, &mut self.head);
         self.target_column = None;
-        self
     }
 
     #[must_use]
@@ -68,11 +67,10 @@ impl Range {
         new
     }
 
-    pub fn flip_forwards_mut(&mut self) -> &mut Self {
+    pub fn flip_forwards_mut(&mut self) {
         if self.is_backwards() {
             self.flip_mut();
         }
-        self
     }
 
     #[must_use]
@@ -82,11 +80,10 @@ impl Range {
         new
     }
 
-    pub fn flip_backwards_mut(&mut self) -> &mut Self {
+    pub fn flip_backwards_mut(&mut self) {
         if self.is_forwards() {
             self.flip_mut();
         }
-        self
     }
 
     #[must_use]
@@ -96,9 +93,8 @@ impl Range {
         new
     }
 
-    pub fn reduce_mut(&mut self) -> &mut Self {
+    pub fn reduce_mut(&mut self) {
         self.anchor = self.head.clone();
-        self
     }
 
     #[must_use]
@@ -108,7 +104,7 @@ impl Range {
         new
     }
 
-    pub fn merge_mut(&mut self, other: Self) -> &mut Self {
+    pub fn merge_mut(&mut self, other: Self) {
         match (self.is_forwards(), other.is_forwards()) {
             (true, true) => {
                 // Forwards
@@ -135,8 +131,6 @@ impl Range {
                 self.merge_mut(other.flip());
             }
         }
-
-        self
     }
 
     #[must_use]
