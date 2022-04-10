@@ -1,17 +1,17 @@
-pub struct Store<'store, State, Event> {
+#![allow(clippy::bool_assert_comparison)]
+#![allow(clippy::new_without_default)]
+
+pub struct Store<State> {
     state: State,
-    reducer: Box<dyn 'store + Fn(&State, Event) -> State>,
 }
 
-impl<'store, State, Event> Store<'store, State, Event> {
-    pub fn new<F>(reducer: F) -> Self
+impl<State> Store<State> {
+    pub fn new() -> Self
     where
         State: Default,
-        F: 'store + Fn(&State, Event) -> State,
     {
         Self {
             state: State::default(),
-            reducer: Box::new(reducer),
         }
     }
 
@@ -19,43 +19,76 @@ impl<'store, State, Event> Store<'store, State, Event> {
         &self.state
     }
 
-    pub fn dispatch(&mut self, event: Event) {
-        self.state = (self.reducer)(&self.state, event);
+    pub fn dispatch(&mut self, event: impl Event<State>) {
+        self.state = Event::<State>::reduce(&self.state, event);
     }
+}
+
+pub trait Event<State> {
+    fn reduce(state: &State, event: Self) -> State;
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Clone, Debug, Default)]
     struct State {
+        light_switch: bool,
         count: isize,
     }
 
-    enum Event {
+    enum LightSwitchEvent {
+        TurnOn,
+        TurnOff,
+    }
+
+    impl Event<State> for LightSwitchEvent {
+        fn reduce(state: &State, event: Self) -> State {
+            let mut state = state.clone();
+
+            match event {
+                Self::TurnOn => state.light_switch = true,
+                Self::TurnOff => state.light_switch = false,
+            }
+
+            state
+        }
+    }
+
+    enum CounterEvent {
         Incremented,
         Decremented,
     }
 
-    fn reducer(state: &State, event: Event) -> State {
-        match event {
-            Event::Incremented => State {
-                count: state.count + 1,
-            },
-            Event::Decremented => State {
-                count: state.count - 1,
-            },
+    impl Event<State> for CounterEvent {
+        fn reduce(state: &State, event: Self) -> State {
+            match event {
+                Self::Incremented => State {
+                    count: state.count + 1,
+                    ..state.clone()
+                },
+                Self::Decremented => State {
+                    count: state.count - 1,
+                    ..state.clone()
+                },
+            }
         }
     }
 
     #[test]
     fn main() {
-        let mut store = Store::new(reducer);
+        let mut store = Store::new();
 
-        store.dispatch(Event::Incremented);
-        store.dispatch(Event::Incremented);
-        store.dispatch(Event::Decremented);
+        store.dispatch(LightSwitchEvent::TurnOn);
+        store.dispatch(LightSwitchEvent::TurnOff);
+        store.dispatch(LightSwitchEvent::TurnOn);
+
+        assert_eq!(store.get_state().light_switch, true);
+
+        store.dispatch(CounterEvent::Incremented);
+        store.dispatch(CounterEvent::Incremented);
+        store.dispatch(CounterEvent::Decremented);
 
         assert_eq!(store.get_state().count, 1);
     }
