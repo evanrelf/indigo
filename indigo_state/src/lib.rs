@@ -1,13 +1,13 @@
-pub struct Store<'store, State, Action> {
+pub struct Store<'store, State, Event> {
     state: State,
-    reducer: Box<dyn 'store + Fn(&State, Action) -> State>,
+    reducer: Box<dyn 'store + Fn(&State, Event) -> State>,
 }
 
-impl<'store, State, Action> Store<'store, State, Action> {
+impl<'store, State, Event> Store<'store, State, Event> {
     pub fn new<F>(reducer: F) -> Self
     where
         State: Default,
-        F: 'store + Fn(&State, Action) -> State,
+        F: 'store + Fn(&State, Event) -> State,
     {
         Self {
             state: State::default(),
@@ -19,8 +19,8 @@ impl<'store, State, Action> Store<'store, State, Action> {
         &self.state
     }
 
-    pub fn dispatch(&mut self, action: Action) {
-        self.state = (self.reducer)(&self.state, action);
+    pub fn dispatch(&mut self, event: Event) {
+        self.state = (self.reducer)(&self.state, event);
     }
 }
 
@@ -33,17 +33,17 @@ mod test {
         count: isize,
     }
 
-    enum Action {
+    enum Event {
         Incremented,
         Decremented,
     }
 
-    fn reducer(state: &State, action: Action) -> State {
-        match action {
-            Action::Incremented => State {
+    fn reducer(state: &State, event: Event) -> State {
+        match event {
+            Event::Incremented => State {
                 count: state.count + 1,
             },
-            Action::Decremented => State {
+            Event::Decremented => State {
                 count: state.count - 1,
             },
         }
@@ -53,9 +53,9 @@ mod test {
     fn main() {
         let mut store = Store::new(reducer);
 
-        store.dispatch(Action::Incremented);
-        store.dispatch(Action::Incremented);
-        store.dispatch(Action::Decremented);
+        store.dispatch(Event::Incremented);
+        store.dispatch(Event::Incremented);
+        store.dispatch(Event::Decremented);
 
         assert_eq!(store.get_state().count, 1);
     }
