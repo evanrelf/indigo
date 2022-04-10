@@ -103,6 +103,16 @@ impl Editor {
         let buffer = &mut self.buffers[self.buffer_index];
 
         match event {
+            Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
+                match key_event.code {
+                    // Move
+                    KeyCode::Char('H') => buffer.extend_left(count),
+                    KeyCode::Char('J') => buffer.extend_down(count),
+                    KeyCode::Char('K') => buffer.extend_up(count),
+                    KeyCode::Char('L') => buffer.extend_right(count),
+                    _ => {}
+                }
+            }
             Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL =>
             {
                 #[allow(clippy::single_match)]
@@ -111,13 +121,13 @@ impl Editor {
                     _ => {}
                 }
             }
-            Key(key_event) if key_event.modifiers == KeyModifiers::SHIFT => {
+            Key(key_event) if key_event.modifiers == KeyModifiers::ALT =>
+            {
+                #[allow(clippy::single_match)]
                 match key_event.code {
-                    // Move
-                    KeyCode::Char('H') => buffer.extend_left(count),
-                    KeyCode::Char('J') => buffer.extend_down(count),
-                    KeyCode::Char('K') => buffer.extend_up(count),
-                    KeyCode::Char('L') => buffer.extend_right(count),
+                    KeyCode::Char(';') => buffer.selection.in_all_ranges(|range| {
+                        range.flip_mut();
+                    }),
                     _ => {}
                 }
             }
