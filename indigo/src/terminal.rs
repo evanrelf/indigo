@@ -140,6 +140,20 @@ impl Widget for &Editor {
             .style(Style::default().bg(Color::Rgb(0xEE, 0xEE, 0xEE)))
             .render(chunks[1], buffer);
 
+        // Render select prompt
+        if let Mode::Select = self.mode() {
+            Block::default()
+                .title(format!("select:{}", self.select_regex()))
+                .render(chunks[2], buffer);
+
+            buffer
+                .get_mut(
+                    chunks[2].left() + self.select_regex().len() as u16 + 7,
+                    chunks[2].top(),
+                )
+                .set_bg(Color::White);
+        }
+
         // Render command line
         if let Mode::Command = self.mode() {
             Block::default()

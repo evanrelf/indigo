@@ -5,6 +5,7 @@ use std::{fmt::Display, path::Path};
 pub enum Mode {
     Normal,
     Goto,
+    Select,
     Command,
     Insert,
 }
@@ -17,6 +18,7 @@ impl Display for Mode {
             match self {
                 Self::Normal => "normal",
                 Self::Goto => "goto",
+                Self::Select => "select",
                 Self::Command => "command",
                 Self::Insert => "insert",
             }
@@ -28,6 +30,7 @@ pub struct Editor {
     quit: bool,
     mode: Mode,
     command: String,
+    select_regex: String,
     count: usize,
     buffers: Vec<Buffer>,
     buffer_index: usize,
@@ -40,6 +43,7 @@ impl Editor {
             quit: false,
             mode: Mode::Normal,
             command: String::new(),
+            select_regex: String::new(),
             count: 0,
             buffers: vec![Buffer::new()],
             buffer_index: 0,
@@ -70,6 +74,11 @@ impl Editor {
     }
 
     #[must_use]
+    pub fn select_regex(&self) -> &String {
+        &self.select_regex
+    }
+
+    #[must_use]
     pub fn count(&self) -> usize {
         self.count
     }
@@ -88,6 +97,7 @@ impl Editor {
         match self.mode {
             Mode::Normal => self.handle_event_normal(event),
             Mode::Goto => self.handle_event_goto(event),
+            Mode::Select => self.handle_event_select(event),
             Mode::Command => self.handle_event_command(event),
             Mode::Insert => self.handle_event_insert(event),
         }
@@ -163,11 +173,7 @@ impl Editor {
                         });
                     }
                     // Selection
-                    KeyCode::Char('s') => {
-                        let rope = (*buffer.rope()).clone(); // TODO
-                        let regex = regex::Regex::new(r"\bbut\b").unwrap();
-                        buffer.selection.select(&rope, &regex);
-                    }
+                    KeyCode::Char('s') => self.mode = Mode::Select,
                     KeyCode::Char(';') => {
                         buffer.selection.in_all_ranges(|range| {
                             range.reduce_mut();
@@ -238,6 +244,50 @@ impl Editor {
         };
 
         self.mode = Mode::Normal;
+    }
+
+    pub fn handle_event_select(&mut self, event: Event) {
+        use Event::*;
+
+        match event {
+            Key(key_event) if key_event.modifiers == KeyModifiers::CONTROL =>
+            {
+                #[allow(clippy::single_match)]
+                match key_event.code {
+                    KeyCode::Char('c') => {
+                        self.select_regex.clear();
+                        self.mode = Mode::Normal;
+                    }
+                    _ => {}
+                }
+            }
+            Key(key_event) if key_event.modifiers == KeyModifiers::NONE => match key_event.code {
+                KeyCode::Esc => {
+                    self.select_regex.clear();
+                    self.mode = Mode::Normal;
+                }
+                KeyCode::Char(c) => {
+                    self.select_regex.push(c);
+                }
+                KeyCode::Backspace => {
+                    if self.select_regex.pop().is_none() {
+                        self.select_regex.clear();
+                        self.mode = Mode::Normal;
+                    }
+                }
+                KeyCode::Enter => {
+                    // TODO
+                    let buffer = &mut self.buffers[self.buffer_index];
+                    let rope = (*buffer.rope()).clone(); // TODO
+                    let regex = regex::Regex::new(&self.select_regex).unwrap();
+                    buffer.selection.select(&rope, &regex);
+                    self.select_regex.clear();
+                    self.mode = Mode::Normal;
+                }
+                _ => {}
+            },
+            Key(_) | Mouse(_) => {}
+        }
     }
 
     pub fn handle_event_command(&mut self, event: Event) {
