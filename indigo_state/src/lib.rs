@@ -1,6 +1,4 @@
-#![allow(clippy::bool_assert_comparison)]
-#![allow(clippy::new_without_default)]
-
+#[derive(Default)]
 pub struct Store<State> {
     state: State,
 }
@@ -10,67 +8,50 @@ impl<State> Store<State> {
     where
         State: Default,
     {
-        Self {
-            state: State::default(),
-        }
+        Self::default()
     }
 
-    pub fn get_state(&self) -> &State {
+    pub fn state(&self) -> &State {
         &self.state
     }
 
-    pub fn dispatch(&mut self, event: impl Event<State>) {
-        self.state = Event::<State>::reduce(&self.state, event);
+    pub fn dispatch<Event>(&mut self, event: Event)
+    where
+        State: Reducer<Event>,
+    {
+        self.state = self.state.reduce(event);
     }
 }
 
-pub trait Event<State> {
-    fn reduce(state: &State, event: Self) -> State;
+pub trait Reducer<Event> {
+    #[must_use]
+    fn reduce(&self, event: Event) -> Self;
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
 
-    #[derive(Clone, Debug, Default)]
+    #[derive(Default)]
     struct State {
-        light_switch: bool,
         count: isize,
     }
 
-    enum LightSwitchEvent {
-        TurnOn,
-        TurnOff,
+    enum CountEvent {
+        Increment,
+        Decrement,
     }
 
-    impl Event<State> for LightSwitchEvent {
-        fn reduce(state: &State, event: Self) -> State {
-            let mut state = state.clone();
+    impl Reducer<CountEvent> for State {
+        fn reduce(&self, event: CountEvent) -> Self {
+            use CountEvent::*;
 
             match event {
-                Self::TurnOn => state.light_switch = true,
-                Self::TurnOff => state.light_switch = false,
-            }
-
-            state
-        }
-    }
-
-    enum CounterEvent {
-        Incremented,
-        Decremented,
-    }
-
-    impl Event<State> for CounterEvent {
-        fn reduce(state: &State, event: Self) -> State {
-            match event {
-                Self::Incremented => State {
-                    count: state.count + 1,
-                    ..state.clone()
+                Increment => Self {
+                    count: self.count + 1,
                 },
-                Self::Decremented => State {
-                    count: state.count - 1,
-                    ..state.clone()
+                Decrement => Self {
+                    count: self.count - 1,
                 },
             }
         }
@@ -78,18 +59,12 @@ mod test {
 
     #[test]
     fn main() {
-        let mut store = Store::new();
+        let mut store: Store<State> = Store::new();
 
-        store.dispatch(LightSwitchEvent::TurnOn);
-        store.dispatch(LightSwitchEvent::TurnOff);
-        store.dispatch(LightSwitchEvent::TurnOn);
+        store.dispatch(CountEvent::Increment);
+        store.dispatch(CountEvent::Increment);
+        store.dispatch(CountEvent::Decrement);
 
-        assert_eq!(store.get_state().light_switch, true);
-
-        store.dispatch(CounterEvent::Incremented);
-        store.dispatch(CounterEvent::Incremented);
-        store.dispatch(CounterEvent::Decremented);
-
-        assert_eq!(store.get_state().count, 1);
+        assert_eq!(store.state().count, 1);
     }
 }
