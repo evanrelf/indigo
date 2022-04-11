@@ -49,3 +49,20 @@ impl TypeMap {
             .and_then(|b| b.downcast().ok())
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test() {
+        let mut type_map = TypeMap::new();
+        type_map.insert(42u32);
+        type_map.insert(true);
+        type_map.insert(String::default());
+        assert_eq!(type_map.remove::<u32>(), Some(Box::new(42)));
+        assert_eq!(type_map.remove::<bool>(), Some(Box::new(true)));
+        assert_eq!(type_map.remove::<String>(), Some(Box::new("".to_string())));
+        assert_eq!(type_map.remove::<i32>(), None);
+    }
+}
