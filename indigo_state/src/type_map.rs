@@ -22,6 +22,13 @@ impl TypeMap {
             .and_then(|b| b.downcast().ok())
     }
 
+    pub fn contains<T>(&self) -> bool
+    where
+        T: 'static,
+    {
+        self.hash_map.contains_key(&TypeId::of::<T>())
+    }
+
     pub fn get<T>(&self) -> Option<&T>
     where
         T: 'static,
