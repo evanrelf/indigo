@@ -1,9 +1,10 @@
 #[derive(Default)]
-pub struct Store<S> {
+pub struct Store<'store, S> {
     state: S,
+    listeners: Vec<Box<dyn 'store + Fn(&S)>>,
 }
 
-impl<S> Store<S> {
+impl<'store, S> Store<'store, S> {
     pub fn new() -> Self
     where
         S: Default,
@@ -20,6 +21,17 @@ impl<S> Store<S> {
         S: Reducer<E>,
     {
         self.state.reduce(event);
+
+        for listener in &self.listeners {
+            listener(&self.state);
+        }
+    }
+
+    pub fn subscribe<F>(&mut self, listener: F)
+    where
+        F: 'store + Fn(&S),
+    {
+        self.listeners.push(Box::new(listener));
     }
 }
 
@@ -31,7 +43,7 @@ pub trait Reducer<E> {
 mod test {
     use super::*;
 
-    #[derive(Default)]
+    #[derive(Debug, Default)]
     struct State {
         count: isize,
     }
@@ -55,6 +67,10 @@ mod test {
     #[test]
     fn main() {
         let mut store: Store<State> = Store::new();
+
+        store.subscribe(|state| {
+            println!("{:?}", state);
+        });
 
         store.dispatch(CountEvent::Increment);
         store.dispatch(CountEvent::Increment);
