@@ -49,8 +49,8 @@ mod test {
     }
 
     enum CountEvent {
-        Increment,
-        Decrement,
+        Incremented,
+        Decremented,
     }
 
     impl Reducer<CountEvent> for State {
@@ -58,8 +58,8 @@ mod test {
             use CountEvent::*;
 
             match event {
-                Increment => self.count += 1,
-                Decrement => self.count -= 1,
+                Incremented => self.count += 1,
+                Decremented => self.count -= 1,
             }
         }
     }
@@ -72,9 +72,9 @@ mod test {
             println!("{:?}", state);
         });
 
-        store.dispatch(CountEvent::Increment);
-        store.dispatch(CountEvent::Increment);
-        store.dispatch(CountEvent::Decrement);
+        store.dispatch(CountEvent::Incremented);
+        store.dispatch(CountEvent::Incremented);
+        store.dispatch(CountEvent::Decremented);
 
         assert_eq!(store.state().count, 1);
     }
