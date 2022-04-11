@@ -14,7 +14,7 @@ pub trait Reducer {
     fn action_type_id() -> TypeId {
         TypeId::of::<Self::Action>()
     }
-    fn run(&self, state: &mut Self::State, action: &Self::Action);
+    fn reduce(&self, state: &mut Self::State, action: &Self::Action);
 }
 
 pub trait IntoReducer<S, A> {
@@ -36,7 +36,7 @@ where
 {
     type State = S;
     type Action = A;
-    fn run(&self, state: &mut Self::State, action: &Self::Action) {
+    fn reduce(&self, state: &mut Self::State, action: &Self::Action) {
         (self.function)(state, action);
     }
 }
@@ -83,7 +83,7 @@ mod test {
         let mut state = Counter(0);
         let action = CounterAction::Incremented;
         let reducer = counter_reducer.into_reducer();
-        reducer.run(&mut state, &action);
+        reducer.reduce(&mut state, &action);
         assert_eq!(state.0, 1);
     }
 }
