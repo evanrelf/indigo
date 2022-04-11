@@ -1,8 +1,19 @@
-use std::marker::PhantomData;
+use std::{any::TypeId, marker::PhantomData};
+
+// Problems to solve:
+// - Store reducers for calling in the future
+// - Get values from `TypeMap` to give to reducer functions
+// - Dispatch actions to reducers that can handle them
 
 pub trait Reducer {
-    type State;
-    type Action;
+    type State: 'static;
+    type Action: 'static;
+    fn state_type_id() -> TypeId {
+        TypeId::of::<Self::State>()
+    }
+    fn action_type_id() -> TypeId {
+        TypeId::of::<Self::Action>()
+    }
     fn run(&self, state: &mut Self::State, action: &Self::Action);
 }
 
@@ -19,6 +30,8 @@ pub struct FunctionReducer<S, A, F> {
 
 impl<S, A, F> Reducer for FunctionReducer<S, A, F>
 where
+    S: 'static,
+    A: 'static,
     F: Fn(&mut S, &A),
 {
     type State = S;
@@ -28,10 +41,10 @@ where
     }
 }
 
-/******************************************************************************/
-
 impl<S, A, F> IntoReducer<S, A> for F
 where
+    S: 'static,
+    A: 'static,
     F: Fn(&mut S, &A),
 {
     type Reducer = FunctionReducer<S, A, F>;
@@ -74,3 +87,5 @@ mod test {
         assert_eq!(state.0, 1);
     }
 }
+
+/******************************************************************************/
