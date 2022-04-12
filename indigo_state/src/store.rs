@@ -80,7 +80,6 @@ impl Store {
 trait StoreReducer {
     fn reduce(&self, state: &mut HashMap<TypeId, Box<dyn Any>>, action: &dyn Any) -> bool;
     fn state_type_id(&self) -> TypeId;
-    fn action_type_id(&self) -> TypeId;
 }
 
 impl<R> StoreReducer for R
@@ -105,14 +104,10 @@ where
     fn state_type_id(&self) -> TypeId {
         TypeId::of::<R::State>()
     }
-    fn action_type_id(&self) -> TypeId {
-        TypeId::of::<R::Action>()
-    }
 }
 
 trait StoreListener {
     fn listen(&mut self, state: &HashMap<TypeId, Box<dyn Any>>);
-    fn state_type_id(&self) -> TypeId;
 }
 
 impl<L> StoreListener for L
@@ -128,9 +123,6 @@ where
             Some(s) => s,
         };
         self.listen(state);
-    }
-    fn state_type_id(&self) -> TypeId {
-        TypeId::of::<L::State>()
     }
 }
 
