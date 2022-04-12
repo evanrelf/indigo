@@ -1,3 +1,4 @@
+use crate::store::Store;
 use std::{any::TypeId, marker::PhantomData};
 
 // Problems to solve:
@@ -5,49 +6,45 @@ use std::{any::TypeId, marker::PhantomData};
 // - Get values from `TypeMap` to give to reducer functions
 // - Dispatch actions to reducers that can handle them
 
+/******************************************************************************/
+
 pub trait Reducer {
     type State: 'static;
     type Action: 'static;
-    fn state_type_id() -> TypeId {
-        TypeId::of::<Self::State>()
-    }
-    fn action_type_id() -> TypeId {
-        TypeId::of::<Self::Action>()
-    }
     fn reduce(&self, state: &mut Self::State, action: &Self::Action);
 }
 
-pub trait IntoReducer<S, A> {
-    type Reducer: Reducer<State = S, Action = A>;
+pub trait IntoReducer<State, Action> {
+    type Reducer: Reducer<State = State, Action = Action>;
     fn into_reducer(self) -> Self::Reducer;
 }
 
-pub struct FunctionReducer<S, A, F> {
+pub struct FunctionReducer<State, Action, F> {
     function: F,
     #[allow(clippy::type_complexity)]
-    marker: PhantomData<fn() -> (S, A, F)>,
+    marker: PhantomData<fn() -> (State, Action, F)>,
 }
 
-impl<S, A, F> Reducer for FunctionReducer<S, A, F>
+impl<State, Action, F> Reducer for FunctionReducer<State, Action, F>
 where
-    S: 'static,
-    A: 'static,
-    F: Fn(&mut S, &A),
+    State: 'static,
+    Action: 'static,
+    F: Fn(&mut State, &Action),
 {
-    type State = S;
-    type Action = A;
+    type State = State;
+    type Action = Action;
     fn reduce(&self, state: &mut Self::State, action: &Self::Action) {
         (self.function)(state, action);
     }
 }
 
-impl<S, A, F> IntoReducer<S, A> for F
+impl<State, Action, F> IntoReducer<State, Action> for F
 where
-    S: 'static,
-    A: 'static,
-    F: Fn(&mut S, &A),
+    State: 'static,
+    Action: 'static,
+    F: Fn(&mut State, &Action),
 {
-    type Reducer = FunctionReducer<S, A, F>;
+    type Reducer = FunctionReducer<State, Action, F>;
     fn into_reducer(self) -> Self::Reducer {
         FunctionReducer {
             function: self,
