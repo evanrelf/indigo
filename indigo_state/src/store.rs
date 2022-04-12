@@ -138,6 +138,10 @@ mod test {
             }
         });
 
+        store.dispatch(CountAction::Incremented);
+        store.dispatch(CountAction::Incremented);
+        store.dispatch(CountAction::Decremented);
+
         assert_eq!(*store.get_state::<Count>().unwrap(), Count(1));
     }
 
