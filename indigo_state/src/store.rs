@@ -105,7 +105,7 @@ mod test {
     }
 
     #[test]
-    fn test1() {
+    fn test_general_use() {
         let mut store = Store::new();
 
         store.add_state(Count(0));
@@ -125,8 +125,25 @@ mod test {
     }
 
     #[test]
+    fn test_reducer_closure() {
+        let mut store = Store::new();
+
+        store.add_state(Count(0));
+        store.add_reducer(|state: &mut Count, action: &CountAction| {
+            use CountAction::*;
+
+            match action {
+                Incremented => state.0 += 1,
+                Decremented => state.0 -= 1,
+            }
+        });
+
+        assert_eq!(*store.get_state::<Count>().unwrap(), Count(1));
+    }
+
+    #[test]
     #[should_panic]
-    fn test2() {
+    fn test_missing_state() {
         let mut store = Store::new();
 
         store.add_reducer(count_reducer);
