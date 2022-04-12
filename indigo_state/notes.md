@@ -1,5 +1,7 @@
 ## `indigo_state` Notes
 
+- Add middleware? See [this](https://docs.rs/redux-rs/latest/redux_rs/trait.MiddleWare.html)
+  for an example.
 - Allow reducers to request multiple pieces of state?
   - Separate `StoreQuery` trait for handling `Query<(Foo, Bar, Baz)>`?
   - Allow requesting context? (e.g. read-only access to another field)
@@ -26,3 +28,8 @@
   - Maybe simply `indigo_state::Store`: `type Store = StoreImpl<Any>`,
     `indigo_state::sync::Store`: `type Store = StoreImpl<Any + Send + Sync>`?
   - Might require rewriting with things from `std::sync`
+- Multiple implementations (e.g. `Store` and `sync::Store`) could implement a
+  `Store` trait with methods like `new`, `dispatch`, etc.
+- `redux-rs` has a cool `Selector` trait that allows querying for arbitrary
+  things in the store (not just one or many fields, but could combine fields or
+  derive values, etc.)
