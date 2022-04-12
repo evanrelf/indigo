@@ -44,7 +44,7 @@ impl Store {
 }
 
 trait StoreReducer {
-    fn reduce(&self, type_map: &mut TypeMap, action: &dyn Any);
+    fn reduce(&self, type_map: &mut TypeMap, action: &dyn Any) -> bool;
     fn state_type_id(&self) -> TypeId;
     fn action_type_id(&self) -> TypeId;
 }
@@ -53,16 +53,17 @@ impl<R> StoreReducer for R
 where
     R: Reducer,
 {
-    fn reduce(&self, type_map: &mut TypeMap, action: &dyn Any) {
+    fn reduce(&self, type_map: &mut TypeMap, action: &dyn Any) -> bool {
         let state = match type_map.get_mut() {
             None => panic!("Reducer references state not present in store"),
             Some(s) => s,
         };
         let action = match action.downcast_ref() {
-            None => return,
+            None => return false,
             Some(a) => a,
         };
         self.reduce(state, action);
+        true
     }
     fn state_type_id(&self) -> TypeId {
         TypeId::of::<R::State>()
