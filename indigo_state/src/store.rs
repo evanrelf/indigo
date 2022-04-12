@@ -1,10 +1,13 @@
 use crate::{reducer::*, type_map::TypeMap};
-use std::any::{Any, TypeId};
+use std::{
+    any::{Any, TypeId},
+    collections::HashMap,
+};
 
 #[derive(Default)]
 pub struct Store {
     state: TypeMap,
-    reducers: Vec<Box<dyn StoreReducer>>,
+    reducers: HashMap<TypeId, Vec<Box<dyn StoreReducer>>>,
 }
 
 impl Store {
@@ -28,18 +31,26 @@ impl Store {
 
     pub fn add_reducer<S, A, R>(&mut self, reducer: R)
     where
+        A: 'static,
         R: IntoReducer<S, A>,
     {
-        self.reducers.push(Box::new(reducer.into_reducer()));
+        self.reducers
+            .entry(TypeId::of::<A>())
+            .or_default()
+            .push(Box::new(reducer.into_reducer()));
     }
 
     pub fn dispatch<A>(&mut self, action: A)
     where
         A: 'static,
     {
-        for reducer in &self.reducers {
-            reducer.reduce(&mut self.state, &action);
-        }
+        self.reducers
+            .get(&TypeId::of::<A>())
+            .into_iter()
+            .flatten()
+            .for_each(|reducer| {
+                reducer.reduce(&mut self.state, &action);
+            });
     }
 }
 
