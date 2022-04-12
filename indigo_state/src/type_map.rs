@@ -19,7 +19,7 @@ impl TypeMap {
     {
         self.hash_map
             .insert(value.type_id(), Box::new(value))
-            .and_then(|b| b.downcast().ok())
+            .map(|b| b.downcast().unwrap())
     }
 
     pub fn contains<T>(&self) -> bool
@@ -35,7 +35,7 @@ impl TypeMap {
     {
         self.hash_map
             .get(&TypeId::of::<T>())
-            .and_then(|b| b.downcast_ref())
+            .map(|b| b.downcast_ref().unwrap())
     }
 
     pub fn get_mut<T>(&mut self) -> Option<&mut T>
@@ -44,7 +44,7 @@ impl TypeMap {
     {
         self.hash_map
             .get_mut(&TypeId::of::<T>())
-            .and_then(|b| b.downcast_mut())
+            .map(|b| b.downcast_mut().unwrap())
     }
 
     pub fn remove<T>(&mut self) -> Option<Box<T>>
@@ -53,7 +53,7 @@ impl TypeMap {
     {
         self.hash_map
             .remove(&TypeId::of::<T>())
-            .and_then(|b| b.downcast().ok())
+            .map(|b| b.downcast().unwrap())
     }
 }
 
