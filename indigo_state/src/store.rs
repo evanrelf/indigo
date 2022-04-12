@@ -1,4 +1,4 @@
-use crate::{reducer::*, type_map::TypeMap};
+use crate::{listener::*, reducer::*, type_map::TypeMap};
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
@@ -8,6 +8,7 @@ use std::{
 pub struct Store {
     state: TypeMap,
     reducers: HashMap<TypeId, Vec<Box<dyn StoreReducer>>>,
+    listeners: HashMap<TypeId, Vec<Box<dyn StoreListener>>>,
 }
 
 impl Store {
@@ -40,6 +41,17 @@ impl Store {
             .push(Box::new(reducer.into_reducer()));
     }
 
+    pub fn add_listener<S, L>(&mut self, listener: L)
+    where
+        S: 'static,
+        L: IntoListener<S>,
+    {
+        self.listeners
+            .entry(TypeId::of::<S>())
+            .or_default()
+            .push(Box::new(listener.into_listener()));
+    }
+
     pub fn dispatch<A>(&mut self, action: A)
     where
         A: 'static,
@@ -49,7 +61,16 @@ impl Store {
             .into_iter()
             .flatten()
             .for_each(|reducer| {
-                reducer.reduce(&mut self.state, &action);
+                let changed = reducer.reduce(&mut self.state, &action);
+                if changed {
+                    self.listeners
+                        .get_mut(&reducer.state_type_id())
+                        .into_iter()
+                        .flatten()
+                        .for_each(|listener| {
+                            listener.as_mut().listen(&self.state);
+                        });
+                }
             });
     }
 }
@@ -84,11 +105,33 @@ where
     }
 }
 
+trait StoreListener {
+    fn listen(&mut self, type_map: &TypeMap);
+    fn state_type_id(&self) -> TypeId;
+}
+
+impl<L> StoreListener for L
+where
+    L: Listener,
+{
+    fn listen(&mut self, type_map: &TypeMap) {
+        let state = match type_map.get() {
+            None => panic!("Listener references state not present in store"),
+            Some(s) => s,
+        };
+        self.listen(state);
+    }
+    fn state_type_id(&self) -> TypeId {
+        TypeId::of::<L::State>()
+    }
+}
+
 #[cfg(test)]
 mod test {
     #![allow(dead_code)]
 
     use super::*;
+    use std::sync::{Arc, Mutex};
 
     #[derive(Debug, PartialEq)]
     struct Name(String);
@@ -131,6 +174,12 @@ mod test {
         store.add_state(Count(0));
         store.add_reducer(count_reducer);
 
+        let count_changes = Arc::new(Mutex::new(0u8));
+        let listener_count_changes = Arc::clone(&count_changes);
+        store.add_listener(move |_: &Count| {
+            *listener_count_changes.lock().unwrap() += 1;
+        });
+
         store.add_state(Name("Alice".to_string()));
         store.add_reducer(name_reducer);
 
@@ -141,6 +190,7 @@ mod test {
         store.dispatch(NameAction::Renamed("Bob".to_string()));
 
         assert_eq!(*store.get_state::<Count>().unwrap(), Count(1));
+        assert_eq!(*count_changes.lock().unwrap(), 3);
         assert_eq!(*store.get_state::<Name>().unwrap(), Name("Bob".to_string()));
     }
 
