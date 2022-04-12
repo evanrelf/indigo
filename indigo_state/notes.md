@@ -21,3 +21,8 @@
 - Allow removing state?
   - Could cause panic due to lingering reducer depending on that state, so
     probably not a good idea. What does `bevy_ecs` do?
+- Can/should implement `Send` and `Sync` for `Store`?
+  - Probably forget about it until the need comes up in practice
+  - Maybe simply `indigo_state::Store`: `type Store = StoreImpl<Any>`,
+    `indigo_state::sync::Store`: `type Store = StoreImpl<Any + Send + Sync>`?
+  - Might require rewriting with things from `std::sync`
