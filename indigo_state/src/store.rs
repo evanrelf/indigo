@@ -1,23 +1,6 @@
 use crate::{reducer::*, type_map::TypeMap};
 use std::any::Any;
 
-// Ideas:
-// - Allow reducers to request multiple pieces of state?
-//   - Separate `StoreQuery` trait for handling `Query<(Foo, Bar, Baz)>`?
-//   - Allow requesting context? (e.g. read-only access to another field)
-// - Allow reducers to handle multiple different events?
-// - Panic when action isn't handled by any reducers?
-// - Priorities for reducers?
-//   - Levels
-//     - Override (don't let anything else handle this action)
-//     - Before{High,Medium,Low} (handle action before the default)
-//     - Default
-//     - After{High,Medium,Low} (handle action after the default)
-//     - Fallback (only run if nothing else handled this action)
-//   - Panic when priority is ambiguous? (e.g. multiple "override" or
-//     "fallback"-level reducers)
-// - Add more helpful panic message(s)? (e.g. using `std::any::type_name`)
-
 #[derive(Default)]
 pub struct Store {
     state: TypeMap,
@@ -60,7 +43,7 @@ impl Store {
     }
 }
 
-pub trait StoreReducer {
+trait StoreReducer {
     fn reduce(&self, type_map: &mut TypeMap, action: &dyn Any);
 }
 
