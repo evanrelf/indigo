@@ -79,6 +79,7 @@ impl Store {
 
 trait StoreReducer {
     fn reduce(&self, state: &mut HashMap<TypeId, Box<dyn Any>>, action: &dyn Any) -> bool;
+
     fn state_type_id(&self) -> TypeId;
 }
 
@@ -91,16 +92,20 @@ where
             .get_mut(&TypeId::of::<R::State>())
             .map(|b| b.downcast_mut().unwrap())
         {
-            None => panic!("Reducer references state not present in store"),
+            None => panic!("Reducer requires state not present in store"),
             Some(s) => s,
         };
+
         let action = match action.downcast_ref() {
             None => return false,
             Some(a) => a,
         };
+
         self.reduce(state, action);
+
         true
     }
+
     fn state_type_id(&self) -> TypeId {
         TypeId::of::<R::State>()
     }
@@ -119,9 +124,10 @@ where
             .get(&TypeId::of::<L::State>())
             .map(|b| b.downcast_ref().unwrap())
         {
-            None => panic!("Listener references state not present in store"),
+            None => panic!("Listener requires state not present in store"),
             Some(s) => s,
         };
+
         self.listen(state);
     }
 }

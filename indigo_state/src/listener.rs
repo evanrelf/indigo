@@ -2,11 +2,13 @@ use std::marker::PhantomData;
 
 pub trait Listener {
     type State: 'static;
+
     fn listen(&mut self, state: &Self::State);
 }
 
 pub trait IntoListener<S> {
     type Listener: 'static + Listener<State = S>;
+
     fn into_listener(self) -> Self::Listener;
 }
 
@@ -21,6 +23,7 @@ where
     F: FnMut(&S),
 {
     type State = S;
+
     fn listen(&mut self, state: &Self::State) {
         (self.function)(state);
     }
@@ -32,6 +35,7 @@ where
     F: 'static + FnMut(&S),
 {
     type Listener = FunctionListener<S, F>;
+
     fn into_listener(self) -> Self::Listener {
         FunctionListener {
             function: self,
