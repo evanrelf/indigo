@@ -1,4 +1,4 @@
-use crate::{listener::*, reducer::*, type_map::TypeMap};
+use crate::{listener::*, reducer::*};
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
@@ -6,7 +6,7 @@ use std::{
 
 #[derive(Default)]
 pub struct Store {
-    state: TypeMap,
+    state: HashMap<TypeId, Box<dyn Any>>,
     reducers: HashMap<TypeId, Vec<Box<dyn StoreReducer>>>,
     listeners: HashMap<TypeId, Vec<Box<dyn StoreListener>>>,
 }
@@ -20,14 +20,16 @@ impl Store {
     where
         S: 'static,
     {
-        self.state.insert(state);
+        self.state.insert(state.type_id(), Box::new(state));
     }
 
     pub fn get_state<S>(&self) -> Option<&S>
     where
         S: 'static,
     {
-        self.state.get()
+        self.state
+            .get(&TypeId::of::<S>())
+            .map(|b| b.downcast_ref().unwrap())
     }
 
     pub fn add_reducer<S, A, R>(&mut self, reducer: R)
@@ -76,7 +78,7 @@ impl Store {
 }
 
 trait StoreReducer {
-    fn reduce(&self, type_map: &mut TypeMap, action: &dyn Any) -> bool;
+    fn reduce(&self, state: &mut HashMap<TypeId, Box<dyn Any>>, action: &dyn Any) -> bool;
     fn state_type_id(&self) -> TypeId;
     fn action_type_id(&self) -> TypeId;
 }
@@ -85,8 +87,11 @@ impl<R> StoreReducer for R
 where
     R: Reducer,
 {
-    fn reduce(&self, type_map: &mut TypeMap, action: &dyn Any) -> bool {
-        let state = match type_map.get_mut() {
+    fn reduce(&self, state: &mut HashMap<TypeId, Box<dyn Any>>, action: &dyn Any) -> bool {
+        let state = match state
+            .get_mut(&TypeId::of::<R::State>())
+            .map(|b| b.downcast_mut().unwrap())
+        {
             None => panic!("Reducer references state not present in store"),
             Some(s) => s,
         };
@@ -106,7 +111,7 @@ where
 }
 
 trait StoreListener {
-    fn listen(&mut self, type_map: &TypeMap);
+    fn listen(&mut self, state: &HashMap<TypeId, Box<dyn Any>>);
     fn state_type_id(&self) -> TypeId;
 }
 
@@ -114,8 +119,11 @@ impl<L> StoreListener for L
 where
     L: Listener,
 {
-    fn listen(&mut self, type_map: &TypeMap) {
-        let state = match type_map.get() {
+    fn listen(&mut self, state: &HashMap<TypeId, Box<dyn Any>>) {
+        let state = match state
+            .get(&TypeId::of::<L::State>())
+            .map(|b| b.downcast_ref().unwrap())
+        {
             None => panic!("Listener references state not present in store"),
             Some(s) => s,
         };
