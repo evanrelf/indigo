@@ -1,12 +1,4 @@
-use crate::store::Store;
-use std::{any::TypeId, marker::PhantomData};
-
-// Problems to solve:
-// - Store reducers for calling in the future
-// - Get values from `TypeMap` to give to reducer functions
-// - Dispatch actions to reducers that can handle them
-
-/******************************************************************************/
+use std::marker::PhantomData;
 
 pub trait Reducer {
     type State: 'static;
@@ -14,37 +6,37 @@ pub trait Reducer {
     fn reduce(&self, state: &mut Self::State, action: &Self::Action);
 }
 
-pub trait IntoReducer<State, Action> {
-    type Reducer: Reducer<State = State, Action = Action>;
+pub trait IntoReducer<S, A> {
+    type Reducer: 'static + Reducer<State = S, Action = A>;
     fn into_reducer(self) -> Self::Reducer;
 }
 
-pub struct FunctionReducer<State, Action, F> {
+pub struct FunctionReducer<S, A, F> {
     function: F,
     #[allow(clippy::type_complexity)]
-    marker: PhantomData<fn() -> (State, Action, F)>,
+    marker: PhantomData<fn() -> (S, A, F)>,
 }
 
-impl<State, Action, F> Reducer for FunctionReducer<State, Action, F>
+impl<S, A, F> Reducer for FunctionReducer<S, A, F>
 where
-    State: 'static,
-    Action: 'static,
-    F: Fn(&mut State, &Action),
+    S: 'static,
+    A: 'static,
+    F: Fn(&mut S, &A),
 {
-    type State = State;
-    type Action = Action;
+    type State = S;
+    type Action = A;
     fn reduce(&self, state: &mut Self::State, action: &Self::Action) {
         (self.function)(state, action);
     }
 }
 
-impl<State, Action, F> IntoReducer<State, Action> for F
+impl<S, A, F> IntoReducer<S, A> for F
 where
-    State: 'static,
-    Action: 'static,
-    F: Fn(&mut State, &Action),
+    S: 'static,
+    A: 'static,
+    F: 'static + Fn(&mut S, &A),
 {
-    type Reducer = FunctionReducer<State, Action, F>;
+    type Reducer = FunctionReducer<S, A, F>;
     fn into_reducer(self) -> Self::Reducer {
         FunctionReducer {
             function: self,
@@ -52,37 +44,3 @@ where
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    #![allow(dead_code)]
-
-    use super::*;
-
-    struct Counter(isize);
-
-    enum CounterAction {
-        Incremented,
-        Decremented,
-    }
-
-    fn counter_reducer(state: &mut Counter, action: &CounterAction) {
-        use CounterAction::*;
-
-        match action {
-            Incremented => state.0 += 1,
-            Decremented => state.0 -= 1,
-        }
-    }
-
-    #[test]
-    fn test() {
-        let mut state = Counter(0);
-        let action = CounterAction::Incremented;
-        let reducer = counter_reducer.into_reducer();
-        reducer.reduce(&mut state, &action);
-        assert_eq!(state.0, 1);
-    }
-}
-
-/******************************************************************************/
