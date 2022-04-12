@@ -1,5 +1,5 @@
 use crate::{reducer::*, type_map::TypeMap};
-use std::any::Any;
+use std::any::{Any, TypeId};
 
 #[derive(Default)]
 pub struct Store {
@@ -45,6 +45,8 @@ impl Store {
 
 trait StoreReducer {
     fn reduce(&self, type_map: &mut TypeMap, action: &dyn Any);
+    fn state_type_id(&self) -> TypeId;
+    fn action_type_id(&self) -> TypeId;
 }
 
 impl<R> StoreReducer for R
@@ -61,6 +63,12 @@ where
             Some(a) => a,
         };
         self.reduce(state, action);
+    }
+    fn state_type_id(&self) -> TypeId {
+        TypeId::of::<R::State>()
+    }
+    fn action_type_id(&self) -> TypeId {
+        TypeId::of::<R::Action>()
     }
 }
 
