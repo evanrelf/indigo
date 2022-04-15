@@ -23,15 +23,6 @@ impl Store {
         self.state.insert(state.type_id(), Box::new(state));
     }
 
-    pub fn get_state<S>(&self) -> Option<&S>
-    where
-        S: Any,
-    {
-        self.state
-            .get(&TypeId::of::<S>())
-            .map(|b| b.downcast_ref().unwrap())
-    }
-
     pub fn add_reducer<S, A, R>(&mut self, reducer: R)
     where
         A: Any,
@@ -54,6 +45,15 @@ impl Store {
             .entry(TypeId::of::<S>())
             .or_default()
             .push(Box::new(listener.into_listener()));
+    }
+
+    pub fn get_state<S>(&self) -> Option<&S>
+    where
+        S: Any,
+    {
+        self.state
+            .get(&TypeId::of::<S>())
+            .map(|b| b.downcast_ref().unwrap())
     }
 
     pub fn dispatch<A>(&mut self, action: A)
