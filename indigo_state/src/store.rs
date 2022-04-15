@@ -4,18 +4,92 @@ use std::{
     collections::HashMap,
 };
 
+/// A `Store` holds arbitrary state, reducer functions which change that state in response to
+/// actions, and listeners which perform effects in response to state changes.
+///
+/// # Examples
+///
+/// ```
+/// use std::sync::{Arc, Mutex};
+/// use indigo_state::Store;
+///
+/// #[derive(Debug, PartialEq)]
+/// struct Name(String);
+///
+/// enum NameAction {
+///     Renamed(String),
+///     Cleared,
+/// }
+///
+/// fn name_reducer(state: &mut Name, action: &NameAction) {
+///     match action {
+///         NameAction::Renamed(name) => state.0 = name.clone(),
+///         NameAction::Cleared => state.0.clear(),
+///     }
+/// }
+///
+/// #[derive(Debug, PartialEq)]
+/// struct Count(isize);
+///
+/// enum CountAction {
+///     Incremented,
+///     Decremented,
+/// }
+///
+/// fn count_reducer(state: &mut Count, action: &CountAction) {
+///     match action {
+///         CountAction::Incremented => state.0 += 1,
+///         CountAction::Decremented => state.0 -= 1,
+///     }
+/// }
+///
+/// let mut store = Store::new();
+///
+/// // Add `Count` to the store
+/// store.add_state(Count(0));
+/// // Add a reducer function to modify `Count` in response to `CountAction`
+/// store.add_reducer(count_reducer);
+///
+/// // Add a listener function to perform effects in response to changes to `Count`
+/// let count_changes = Arc::new(Mutex::new(0u8));
+/// let listener_count_changes = Arc::clone(&count_changes);
+/// store.add_listener(move |_: &Count| {
+///     *listener_count_changes.lock().unwrap() += 1;
+/// });
+///
+/// // Add `Name` to the store
+/// store.add_state(Name("Alice".to_string()));
+/// // Add a reducer function to modify `Name` in response to `NameAction`
+/// store.add_reducer(name_reducer);
+///
+/// // Dispatch `CountAction`s to modify `Count`
+/// store.dispatch(CountAction::Incremented);
+/// store.dispatch(CountAction::Incremented);
+/// store.dispatch(CountAction::Decremented);
+///
+/// // Dispatch `NameAction`s to modify `Name`
+/// store.dispatch(NameAction::Renamed("Bob".to_string()));
+///
+/// assert_eq!(*store.get_state::<Count>().unwrap(), Count(1));
+/// assert_eq!(*count_changes.lock().unwrap(), 3);
+/// assert_eq!(*store.get_state::<Name>().unwrap(), Name("Bob".to_string()));
+/// ```
 #[derive(Default)]
 pub struct Store {
     state: HashMap<TypeId, Box<dyn Any>>,
+    // Map from action type ID to vector of reducer functions
     reducers: HashMap<TypeId, Vec<Box<dyn StoreReducer>>>,
+    // Map from state type ID to vector of listener functions
     listeners: HashMap<TypeId, Vec<Box<dyn StoreListener>>>,
 }
 
 impl Store {
+    /// Creates an empty store.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Adds a piece of state to the store.
     pub fn add_state<S>(&mut self, state: S)
     where
         S: Any,
@@ -23,6 +97,7 @@ impl Store {
         self.state.insert(state.type_id(), Box::new(state));
     }
 
+    /// Adds a reducer to the store.
     pub fn add_reducer<S, A, R>(&mut self, reducer: R)
     where
         A: Any,
@@ -35,6 +110,7 @@ impl Store {
             .push(Box::new(reducer.into_reducer()));
     }
 
+    /// Adds a listener to the store.
     pub fn add_listener<S, L>(&mut self, listener: L)
     where
         S: Any,
@@ -47,15 +123,22 @@ impl Store {
             .push(Box::new(listener.into_listener()));
     }
 
+    /// Returns a reference to a piece of state from the store.
     pub fn get_state<S>(&self) -> Option<&S>
     where
         S: Any,
     {
         self.state
             .get(&TypeId::of::<S>())
+            // `unwrap` is safe because `add_state` uses the value's type ID as the key
             .map(|b| b.downcast_ref().unwrap())
     }
 
+    /// Dispatches an action to reducers in the store.
+    ///
+    /// # Panics
+    ///
+    /// Panics if a reducer or listener requires state not present in the store.
     pub fn dispatch<A>(&mut self, action: A)
     where
         A: Any,
@@ -92,6 +175,7 @@ where
     fn reduce(&self, state: &mut HashMap<TypeId, Box<dyn Any>>, action: &dyn Any) -> bool {
         let state = match state
             .get_mut(&TypeId::of::<R::State>())
+            // `unwrap` is safe because `add_state` uses the value's type ID as the key
             .map(|b| b.downcast_mut().unwrap())
         {
             None => panic!("Reducer requires state not present in store"),
@@ -124,6 +208,7 @@ where
     fn listen(&mut self, state: &HashMap<TypeId, Box<dyn Any>>) {
         let state = match state
             .get(&TypeId::of::<L::State>())
+            // `unwrap` is safe because `add_state` uses the value's type ID as the key
             .map(|b| b.downcast_ref().unwrap())
         {
             None => panic!("Listener requires state not present in store"),
@@ -139,97 +224,18 @@ mod test {
     #![allow(dead_code)]
 
     use super::*;
-    use std::sync::{Arc, Mutex};
-
-    #[derive(Debug, PartialEq)]
-    struct Name(String);
-
-    enum NameAction {
-        Renamed(String),
-        Cleared,
-    }
-
-    fn name_reducer(state: &mut Name, action: &NameAction) {
-        use NameAction::*;
-
-        match action {
-            Renamed(name) => state.0 = name.clone(),
-            Cleared => state.0.clear(),
-        }
-    }
-
-    #[derive(Debug, PartialEq)]
-    struct Count(isize);
-
-    enum CountAction {
-        Incremented,
-        Decremented,
-    }
-
-    fn count_reducer(state: &mut Count, action: &CountAction) {
-        use CountAction::*;
-
-        match action {
-            Incremented => state.0 += 1,
-            Decremented => state.0 -= 1,
-        }
-    }
-
-    #[test]
-    fn test_general_use() {
-        let mut store = Store::new();
-
-        store.add_state(Count(0));
-        store.add_reducer(count_reducer);
-
-        let count_changes = Arc::new(Mutex::new(0u8));
-        let listener_count_changes = Arc::clone(&count_changes);
-        store.add_listener(move |_: &Count| {
-            *listener_count_changes.lock().unwrap() += 1;
-        });
-
-        store.add_state(Name("Alice".to_string()));
-        store.add_reducer(name_reducer);
-
-        store.dispatch(CountAction::Incremented);
-        store.dispatch(CountAction::Incremented);
-        store.dispatch(CountAction::Decremented);
-
-        store.dispatch(NameAction::Renamed("Bob".to_string()));
-
-        assert_eq!(*store.get_state::<Count>().unwrap(), Count(1));
-        assert_eq!(*count_changes.lock().unwrap(), 3);
-        assert_eq!(*store.get_state::<Name>().unwrap(), Name("Bob".to_string()));
-    }
-
-    #[test]
-    fn test_reducer_closure() {
-        let mut store = Store::new();
-
-        store.add_state(Count(0));
-        store.add_reducer(|state: &mut Count, action: &CountAction| {
-            use CountAction::*;
-
-            match action {
-                Incremented => state.0 += 1,
-                Decremented => state.0 -= 1,
-            }
-        });
-
-        store.dispatch(CountAction::Incremented);
-        store.dispatch(CountAction::Incremented);
-        store.dispatch(CountAction::Decremented);
-
-        assert_eq!(*store.get_state::<Count>().unwrap(), Count(1));
-    }
 
     #[test]
     #[should_panic]
     fn test_missing_state() {
+        struct Count(i32);
+        enum CountAction {
+            Incremented,
+            Decremented,
+        }
+
         let mut store = Store::new();
-
-        store.add_reducer(count_reducer);
-
+        store.add_reducer(|_state: &mut Count, _action: &CountAction| {});
         store.dispatch(CountAction::Incremented);
     }
 }
