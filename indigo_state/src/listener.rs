@@ -1,4 +1,8 @@
-use std::marker::PhantomData;
+use std::{
+    any::{Any, TypeId},
+    collections::HashMap,
+    marker::PhantomData,
+};
 
 pub trait Listener {
     type State;
@@ -39,5 +43,27 @@ where
             function: self,
             marker: PhantomData,
         }
+    }
+}
+
+pub trait StoreListener {
+    fn listen(&mut self, state: &HashMap<TypeId, Box<dyn Any>>);
+}
+
+impl<L> StoreListener for L
+where
+    L: 'static + Listener,
+{
+    fn listen(&mut self, state: &HashMap<TypeId, Box<dyn Any>>) {
+        let state = match state
+            .get(&TypeId::of::<L::State>())
+            // `unwrap` is safe because `add_state` uses the value's type ID as the key
+            .map(|b| b.downcast_ref().unwrap())
+        {
+            None => panic!("Listener requires state not present in store"),
+            Some(s) => s,
+        };
+
+        self.listen(state);
     }
 }

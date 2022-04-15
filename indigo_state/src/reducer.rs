@@ -1,4 +1,8 @@
-use std::marker::PhantomData;
+use std::{
+    any::{Any, TypeId},
+    collections::HashMap,
+    marker::PhantomData,
+};
 
 pub trait Reducer {
     type State;
@@ -44,5 +48,40 @@ where
             function: self,
             marker: PhantomData,
         }
+    }
+}
+
+pub trait StoreReducer {
+    fn reduce(&self, state: &mut HashMap<TypeId, Box<dyn Any>>, action: &dyn Any) -> bool;
+
+    fn state_type_id(&self) -> TypeId;
+}
+
+impl<R> StoreReducer for R
+where
+    R: 'static + Reducer,
+{
+    fn reduce(&self, state: &mut HashMap<TypeId, Box<dyn Any>>, action: &dyn Any) -> bool {
+        let state = match state
+            .get_mut(&TypeId::of::<R::State>())
+            // `unwrap` is safe because `add_state` uses the value's type ID as the key
+            .map(|b| b.downcast_mut().unwrap())
+        {
+            None => panic!("Reducer requires state not present in store"),
+            Some(s) => s,
+        };
+
+        let action = match action.downcast_ref() {
+            None => return false,
+            Some(a) => a,
+        };
+
+        self.reduce(state, action);
+
+        true
+    }
+
+    fn state_type_id(&self) -> TypeId {
+        TypeId::of::<R::State>()
     }
 }
