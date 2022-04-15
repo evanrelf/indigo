@@ -17,8 +17,6 @@
   - Panic when priority is ambiguous? (e.g. multiple `Override` or
     `Fallback`-level reducers)
 - Add more helpful panic message(s)? (e.g. using `std::any::type_name`)
-- Allow listener functions to subscribe to state changes?
-  - Should they subscribe to specific pieces of state?
 - Allow removing reducers?
 - Allow removing state?
   - Could cause panic due to lingering reducer depending on that state, so
