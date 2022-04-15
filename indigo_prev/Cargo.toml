@@ -1,5 +1,5 @@
 [package]
-name = "indigo"
+name = "indigo_prev"
 version = "0.1.0"
 authors = ["Evan Relf <evan@evanrelf.com>"]
 license = "ISC"
