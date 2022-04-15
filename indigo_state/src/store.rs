@@ -18,14 +18,14 @@ impl Store {
 
     pub fn add_state<S>(&mut self, state: S)
     where
-        S: 'static,
+        S: Any,
     {
         self.state.insert(state.type_id(), Box::new(state));
     }
 
     pub fn get_state<S>(&self) -> Option<&S>
     where
-        S: 'static,
+        S: Any,
     {
         self.state
             .get(&TypeId::of::<S>())
@@ -34,8 +34,9 @@ impl Store {
 
     pub fn add_reducer<S, A, R>(&mut self, reducer: R)
     where
-        A: 'static,
+        A: Any,
         R: IntoReducer<S, A>,
+        R::Reducer: 'static,
     {
         self.reducers
             .entry(TypeId::of::<A>())
@@ -45,8 +46,9 @@ impl Store {
 
     pub fn add_listener<S, L>(&mut self, listener: L)
     where
-        S: 'static,
+        S: Any,
         L: IntoListener<S>,
+        L::Listener: 'static,
     {
         self.listeners
             .entry(TypeId::of::<S>())
@@ -56,7 +58,7 @@ impl Store {
 
     pub fn dispatch<A>(&mut self, action: A)
     where
-        A: 'static,
+        A: Any,
     {
         self.reducers
             .get(&TypeId::of::<A>())
@@ -85,7 +87,7 @@ trait StoreReducer {
 
 impl<R> StoreReducer for R
 where
-    R: Reducer,
+    R: 'static + Reducer,
 {
     fn reduce(&self, state: &mut HashMap<TypeId, Box<dyn Any>>, action: &dyn Any) -> bool {
         let state = match state
@@ -117,7 +119,7 @@ trait StoreListener {
 
 impl<L> StoreListener for L
 where
-    L: Listener,
+    L: 'static + Listener,
 {
     fn listen(&mut self, state: &HashMap<TypeId, Box<dyn Any>>) {
         let state = match state

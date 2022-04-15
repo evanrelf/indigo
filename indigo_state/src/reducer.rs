@@ -1,15 +1,15 @@
 use std::marker::PhantomData;
 
 pub trait Reducer {
-    type State: 'static;
+    type State;
 
-    type Action: 'static;
+    type Action;
 
     fn reduce(&self, state: &mut Self::State, action: &Self::Action);
 }
 
 pub trait IntoReducer<S, A> {
-    type Reducer: 'static + Reducer<State = S, Action = A>;
+    type Reducer: Reducer<State = S, Action = A>;
 
     fn into_reducer(self) -> Self::Reducer;
 }
@@ -22,8 +22,6 @@ pub struct FunctionReducer<S, A, F> {
 
 impl<S, A, F> Reducer for FunctionReducer<S, A, F>
 where
-    S: 'static,
-    A: 'static,
     F: Fn(&mut S, &A),
 {
     type State = S;
@@ -37,9 +35,7 @@ where
 
 impl<S, A, F> IntoReducer<S, A> for F
 where
-    S: 'static,
-    A: 'static,
-    F: 'static + Fn(&mut S, &A),
+    F: Fn(&mut S, &A),
 {
     type Reducer = FunctionReducer<S, A, F>;
 
