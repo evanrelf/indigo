@@ -61,6 +61,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "indigo"
+version = "0.1.0"
+dependencies = [
+ "crossterm",
+ "regex",
+ "ropey",
+ "tui",
+]
+
+[[package]]
 name = "indigo_prev"
 version = "0.1.0"
 dependencies = [
