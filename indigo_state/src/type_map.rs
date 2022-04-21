@@ -9,6 +9,10 @@ pub struct TypeMap {
 }
 
 impl TypeMap {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn insert<T>(&mut self, value: T)
     where
         T: Any,
@@ -34,5 +38,26 @@ impl TypeMap {
             .get_mut(&TypeId::of::<T>())
             // `unwrap` is safe because `add_state` uses the value's type ID as the key
             .map(|b| b.downcast_mut().unwrap())
+    }
+}
+
+#[macro_export]
+macro_rules! type_map {
+    () => {
+        $crate::type_map::TypeMap::new();
+    };
+    ($($value:expr),+ $(,)?) => {{
+        let mut type_map = $crate::type_map::TypeMap::new();
+        $(type_map.insert($value);)*
+        type_map
+    }};
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn test_type_map() {
+        let type_map = type_map!["hello world", 'q', 42u32];
+        assert_eq!(type_map.get::<u32>(), Some(&42));
     }
 }
