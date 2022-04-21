@@ -1,11 +1,11 @@
 #![allow(dead_code)]
 
-use indigo_state::{Field, Store};
+use indigo_state::{type_map, Field, Store, TypeMap};
 use std::sync::{Arc, Mutex};
 
 struct State {
     name: Name,
-    count: Count,
+    extras: TypeMap,
 }
 
 #[derive(Debug, PartialEq)]
@@ -38,11 +38,11 @@ struct Count(isize);
 
 impl Field<Count> for State {
     fn get(&self) -> Option<&Count> {
-        Some(&self.count)
+        self.extras.get()
     }
 
     fn get_mut(&mut self) -> Option<&mut Count> {
-        Some(&mut self.count)
+        self.extras.get_mut()
     }
 }
 
@@ -60,8 +60,8 @@ fn count_reducer(state: &mut Count, action: &CountAction) {
 
 fn main() {
     let mut store = Store::new(State {
-        count: Count(0),
         name: Name("Alice".to_string()),
+        extras: type_map![Count(0)],
     });
 
     // Add a reducer function to modify `Count` in response to `CountAction`
@@ -85,7 +85,7 @@ fn main() {
     // Dispatch `NameAction`s to modify `Name`
     store.dispatch(NameAction::Renamed("Bob".to_string()));
 
-    assert_eq!(store.get_state().count, Count(1));
+    assert_eq!(store.get_field::<Count>().unwrap(), &Count(1));
     assert_eq!(*count_changes.lock().unwrap(), 3);
     assert_eq!(store.get_state().name, Name("Bob".to_string()));
 }
