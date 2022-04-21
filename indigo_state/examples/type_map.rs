@@ -57,7 +57,7 @@ fn main() {
     // Dispatch `NameAction`s to modify `Name`
     store.dispatch(NameAction::Renamed("Bob".to_string()));
 
-    assert_eq!(*store.get_field::<Count>().unwrap(), Count(1));
+    assert_eq!(*store.get::<Count>().unwrap(), Count(1));
     assert_eq!(*count_changes.lock().unwrap(), 3);
-    assert_eq!(*store.get_field::<Name>().unwrap(), Name("Bob".to_string()));
+    assert_eq!(*store.get::<Name>().unwrap(), Name("Bob".to_string()));
 }

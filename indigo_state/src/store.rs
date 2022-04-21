@@ -1,7 +1,8 @@
-use crate::{field::*, listener::*, reducer::*};
+use crate::{listener::*, reducer::*};
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
+    ops::Deref,
 };
 
 /// A `Store` holds arbitrary state, reducer functions which change that state in response to
@@ -23,19 +24,6 @@ impl<S> Store<S> {
             reducers: Default::default(),
             listeners: Default::default(),
         }
-    }
-
-    /// Returns a reference to the store's state.
-    pub fn get_state(&self) -> &S {
-        &self.state
-    }
-
-    /// Returns a reference to a field in the store's state.
-    pub fn get_field<F>(&self) -> Option<&F>
-    where
-        S: Field<F>,
-    {
-        self.state.get()
     }
 
     /// Adds a reducer to the store.
@@ -88,6 +76,14 @@ impl<S> Store<S> {
                         });
                 }
             });
+    }
+}
+
+impl<S> Deref for Store<S> {
+    type Target = S;
+
+    fn deref(&self) -> &Self::Target {
+        &self.state
     }
 }
 
