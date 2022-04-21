@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use indigo_state::Store;
+use indigo_state::{Field, Store};
 use std::sync::{Arc, Mutex};
 
 struct State {
@@ -10,6 +10,16 @@ struct State {
 
 #[derive(Debug, PartialEq)]
 struct Name(String);
+
+impl Field<Name> for State {
+    fn get(&self) -> Option<&Name> {
+        Some(&self.name)
+    }
+
+    fn get_mut(&mut self) -> Option<&mut Name> {
+        Some(&mut self.name)
+    }
+}
 
 enum NameAction {
     Renamed(String),
@@ -25,6 +35,16 @@ fn name_reducer(state: &mut Name, action: &NameAction) {
 
 #[derive(Debug, PartialEq)]
 struct Count(isize);
+
+impl Field<Count> for State {
+    fn get(&self) -> Option<&Count> {
+        Some(&self.count)
+    }
+
+    fn get_mut(&mut self) -> Option<&mut Count> {
+        Some(&mut self.count)
+    }
+}
 
 enum CountAction {
     Incremented,
@@ -43,8 +63,6 @@ fn main() {
         count: Count(0),
         name: Name("Alice".to_string()),
     });
-
-    /* TODO
 
     // Add a reducer function to modify `Count` in response to `CountAction`
     store.add_reducer(count_reducer);
@@ -67,9 +85,7 @@ fn main() {
     // Dispatch `NameAction`s to modify `Name`
     store.dispatch(NameAction::Renamed("Bob".to_string()));
 
-    assert_eq!(*store.get_state::<Count>().unwrap(), Count(1));
+    assert_eq!(*store.get_field::<Count>().unwrap(), Count(1));
     assert_eq!(*count_changes.lock().unwrap(), 3);
-    assert_eq!(*store.get_state::<Name>().unwrap(), Name("Bob".to_string()));
-
-    */
+    assert_eq!(*store.get_field::<Name>().unwrap(), Name("Bob".to_string()));
 }

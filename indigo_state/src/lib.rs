@@ -6,4 +6,5 @@ pub mod reducer;
 pub mod store;
 pub mod type_map;
 
+pub use crate::field::Field;
 pub use crate::store::Store;
