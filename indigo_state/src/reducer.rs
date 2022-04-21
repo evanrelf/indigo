@@ -1,4 +1,4 @@
-use crate::type_map::TypeMap;
+use crate::{field::Field, type_map::TypeMap};
 use std::{
     any::{Any, TypeId},
     marker::PhantomData,
@@ -57,12 +57,15 @@ pub trait StoreReducer<S> {
     fn state_type_id(&self) -> TypeId;
 }
 
-impl<R> StoreReducer<TypeMap> for R
+impl<S, R> StoreReducer<S> for R
 where
-    R: 'static + Reducer,
+    S: Field<R::State>,
+    R: Reducer,
+    R::State: Any,
+    R::Action: Any,
 {
-    fn reduce(&self, state: &mut TypeMap, action: &dyn Any) -> bool {
-        let state = match state.get_mut::<R::State>() {
+    fn reduce(&self, state: &mut S, action: &dyn Any) -> bool {
+        let state = match state.get_mut() {
             None => panic!("Reducer requires state not present in store"),
             Some(s) => s,
         };

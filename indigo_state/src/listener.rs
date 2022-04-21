@@ -1,4 +1,4 @@
-use crate::type_map::TypeMap;
+use crate::{field::Field, type_map::TypeMap};
 use std::marker::PhantomData;
 
 pub trait Listener {
@@ -47,12 +47,13 @@ pub trait StoreListener<S> {
     fn listen(&mut self, state: &S);
 }
 
-impl<L> StoreListener<TypeMap> for L
+impl<S, L> StoreListener<S> for L
 where
-    L: 'static + Listener,
+    S: Field<L::State>,
+    L: Listener,
 {
-    fn listen(&mut self, state: &TypeMap) {
-        let state = match state.get::<L::State>() {
+    fn listen(&mut self, state: &S) {
+        let state = match state.get() {
             None => panic!("Listener requires state not present in store"),
             Some(s) => s,
         };

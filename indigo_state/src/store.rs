@@ -44,6 +44,7 @@ impl Store<TypeMap> {
     /// Adds a reducer to the store.
     pub fn add_reducer<S, A, R>(&mut self, reducer: R)
     where
+        S: 'static,
         A: Any,
         R: IntoReducer<S, A>,
         R::Reducer: 'static,

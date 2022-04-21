@@ -1,3 +1,4 @@
+use crate::field::Field;
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
@@ -38,6 +39,19 @@ impl TypeMap {
             .get_mut(&TypeId::of::<T>())
             // `unwrap` is safe because `add_state` uses the value's type ID as the key
             .map(|b| b.downcast_mut().unwrap())
+    }
+}
+
+impl<T> Field<T> for TypeMap
+where
+    T: Any,
+{
+    fn get(&self) -> Option<&T> {
+        self.get()
+    }
+
+    fn get_mut(&mut self) -> Option<&mut T> {
+        self.get_mut()
     }
 }
 
