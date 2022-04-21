@@ -1,5 +1,5 @@
 use crate::field::Field;
-use std::marker::PhantomData;
+use std::{any::Any, marker::PhantomData};
 
 pub trait Listener {
     type State;
@@ -59,5 +59,21 @@ where
         };
 
         self.listen(state);
+    }
+}
+
+pub trait IntoStoreListener<S, F> {
+    fn into_store_listener(self) -> Box<dyn StoreListener<S>>;
+}
+
+impl<S, F, L> IntoStoreListener<S, F> for L
+where
+    S: Field<F>,
+    F: Any,
+    L: IntoListener<F>,
+    L::Listener: 'static,
+{
+    fn into_store_listener(self) -> Box<dyn StoreListener<S>> {
+        Box::new(self.into_listener())
     }
 }

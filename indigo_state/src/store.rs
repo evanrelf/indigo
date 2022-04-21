@@ -47,30 +47,25 @@ impl<S> Store<S> {
     /// Adds a reducer to the store.
     pub fn add_reducer<F, A, R>(&mut self, reducer: R)
     where
-        S: Field<F>,
-        F: Any,
         A: Any,
-        R: IntoReducer<F, A>,
-        R::Reducer: 'static,
+        R: IntoStoreReducer<S, F, A>,
     {
         self.reducers
             .entry(TypeId::of::<A>())
             .or_default()
-            .push(Box::new(reducer.into_reducer()));
+            .push(reducer.into_store_reducer());
     }
 
     /// Adds a listener to the store.
     pub fn add_listener<F, L>(&mut self, listener: L)
     where
-        S: Field<F>,
         F: Any,
-        L: IntoListener<F>,
-        L::Listener: 'static,
+        L: IntoStoreListener<S, F>,
     {
         self.listeners
             .entry(TypeId::of::<F>())
             .or_default()
-            .push(Box::new(listener.into_listener()));
+            .push(listener.into_store_listener());
     }
 
     /// Dispatches an action to reducers in the store.

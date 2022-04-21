@@ -84,3 +84,20 @@ where
         TypeId::of::<R::State>()
     }
 }
+
+pub trait IntoStoreReducer<S, F, A> {
+    fn into_store_reducer(self) -> Box<dyn StoreReducer<S>>;
+}
+
+impl<S, F, A, R> IntoStoreReducer<S, F, A> for R
+where
+    S: Field<F>,
+    F: Any,
+    A: Any,
+    R: IntoReducer<F, A>,
+    R::Reducer: 'static,
+{
+    fn into_store_reducer(self) -> Box<dyn StoreReducer<S>> {
+        Box::new(self.into_reducer())
+    }
+}
