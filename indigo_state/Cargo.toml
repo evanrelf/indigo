@@ -9,3 +9,6 @@ edition = "2021"
 
 [[example]]
 name = "basic"
+
+[[example]]
+name = "custom-state"
