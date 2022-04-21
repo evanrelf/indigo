@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 
 [[example]]
-name = "example"
+name = "basic"
