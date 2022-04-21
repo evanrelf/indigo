@@ -28,6 +28,3 @@
   - Might require rewriting with things from `std::sync`
 - Multiple implementations (e.g. `Store` and `sync::Store`) could implement a
   `Store` trait with methods like `new`, `dispatch`, etc.
-- `redux-rs` has a cool `Selector` trait that allows querying for arbitrary
-  things in the store (not just one or many fields, but could combine fields or
-  derive values, etc.)
