@@ -1,5 +1,5 @@
 pub trait Field<T> {
-    fn get(&self) -> Option<&T>;
+    fn field(&self) -> Option<&T>;
 
-    fn get_mut(&mut self) -> Option<&mut T>;
+    fn field_mut(&mut self) -> Option<&mut T>;
 }

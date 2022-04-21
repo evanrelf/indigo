@@ -12,11 +12,11 @@ struct State {
 struct Name(String);
 
 impl Field<Name> for State {
-    fn get(&self) -> Option<&Name> {
+    fn field(&self) -> Option<&Name> {
         Some(&self.name)
     }
 
-    fn get_mut(&mut self) -> Option<&mut Name> {
+    fn field_mut(&mut self) -> Option<&mut Name> {
         Some(&mut self.name)
     }
 }
@@ -37,12 +37,12 @@ fn name_reducer(state: &mut Name, action: &NameAction) {
 struct Count(isize);
 
 impl Field<Count> for State {
-    fn get(&self) -> Option<&Count> {
-        self.extras.get()
+    fn field(&self) -> Option<&Count> {
+        self.extras.field()
     }
 
-    fn get_mut(&mut self) -> Option<&mut Count> {
-        self.extras.get_mut()
+    fn field_mut(&mut self) -> Option<&mut Count> {
+        self.extras.field_mut()
     }
 }
 
@@ -85,7 +85,7 @@ fn main() {
     // Dispatch `NameAction`s to modify `Name`
     store.dispatch(NameAction::Renamed("Bob".to_string()));
 
-    assert_eq!(store.get().unwrap() as &Count, &Count(1));
+    assert_eq!(store.field().unwrap() as &Count, &Count(1));
     assert_eq!(*count_changes.lock().unwrap(), 3);
     assert_eq!(store.name, Name("Bob".to_string()));
 }

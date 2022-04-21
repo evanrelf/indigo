@@ -65,7 +65,7 @@ where
     R::Action: Any,
 {
     fn reduce(&self, state: &mut S, action: &dyn Any) -> bool {
-        let state = match state.get_mut() {
+        let state = match state.field_mut() {
             None => panic!("Reducer requires state not present in store"),
             Some(s) => s,
         };

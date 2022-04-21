@@ -46,11 +46,11 @@ impl<T> Field<T> for TypeMap
 where
     T: Any,
 {
-    fn get(&self) -> Option<&T> {
+    fn field(&self) -> Option<&T> {
         self.get()
     }
 
-    fn get_mut(&mut self) -> Option<&mut T> {
+    fn field_mut(&mut self) -> Option<&mut T> {
         self.get_mut()
     }
 }
