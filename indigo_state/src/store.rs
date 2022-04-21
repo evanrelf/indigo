@@ -72,7 +72,8 @@ impl<S> Store<S> {
     ///
     /// # Panics
     ///
-    /// Panics if a reducer or listener requires state not present in the store.
+    /// Panics if a reducer or listener requires a field not present in the
+    /// store's state.
     pub fn dispatch<A>(&mut self, action: A)
     where
         A: Any,
