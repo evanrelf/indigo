@@ -43,11 +43,11 @@ where
     }
 }
 
-pub trait StoreListener<S = TypeMap> {
+pub trait StoreListener<S> {
     fn listen(&mut self, state: &S);
 }
 
-impl<L> StoreListener for L
+impl<L> StoreListener<TypeMap> for L
 where
     L: 'static + Listener,
 {

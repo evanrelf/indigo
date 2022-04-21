@@ -51,13 +51,13 @@ where
     }
 }
 
-pub trait StoreReducer<S = TypeMap> {
+pub trait StoreReducer<S> {
     fn reduce(&self, state: &mut S, action: &dyn Any) -> bool;
 
     fn state_type_id(&self) -> TypeId;
 }
 
-impl<R> StoreReducer for R
+impl<R> StoreReducer<TypeMap> for R
 where
     R: 'static + Reducer,
 {
