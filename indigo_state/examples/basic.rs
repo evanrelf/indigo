@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use indigo_state::Store;
+use indigo_state::{type_map, Store};
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug, PartialEq)]
@@ -34,10 +34,8 @@ fn count_reducer(state: &mut Count, action: &CountAction) {
 }
 
 fn main() {
-    let mut store = Store::default();
+    let mut store = Store::new(type_map![Count(0), Name("Alice".to_string())]);
 
-    // Add `Count` to the store
-    store.add_state(Count(0));
     // Add a reducer function to modify `Count` in response to `CountAction`
     store.add_reducer(count_reducer);
 
@@ -48,8 +46,6 @@ fn main() {
         *listener_count_changes.lock().unwrap() += 1;
     });
 
-    // Add `Name` to the store
-    store.add_state(Name("Alice".to_string()));
     // Add a reducer function to modify `Name` in response to `NameAction`
     store.add_reducer(name_reducer);
 
@@ -61,7 +57,7 @@ fn main() {
     // Dispatch `NameAction`s to modify `Name`
     store.dispatch(NameAction::Renamed("Bob".to_string()));
 
-    assert_eq!(*store.get_state::<Count>().unwrap(), Count(1));
+    assert_eq!(*store.get_field::<Count>().unwrap(), Count(1));
     assert_eq!(*count_changes.lock().unwrap(), 3);
-    assert_eq!(*store.get_state::<Name>().unwrap(), Name("Bob".to_string()));
+    assert_eq!(*store.get_field::<Name>().unwrap(), Name("Bob".to_string()));
 }

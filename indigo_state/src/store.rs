@@ -1,4 +1,4 @@
-use crate::{listener::*, reducer::*, type_map::*, field::*};
+use crate::{field::*, listener::*, reducer::*};
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
@@ -13,7 +13,7 @@ use std::{
 #[doc = include_str!("../examples/basic.rs")]
 /// ```
 #[derive(Default)]
-pub struct Store<S = TypeMap> {
+pub struct Store<S> {
     state: S,
     // Map from action type ID to vector of reducer functions
     reducers: HashMap<TypeId, Vec<Box<dyn StoreReducer<S>>>>,
@@ -29,6 +29,19 @@ impl<S> Store<S> {
             reducers: Default::default(),
             listeners: Default::default(),
         }
+    }
+
+    /// Returns a reference to the store's state.
+    pub fn get_state(&self) -> &S {
+        &self.state
+    }
+
+    /// Returns a reference to a field in the store's state.
+    pub fn get_field<F>(&self) -> Option<&F>
+    where
+        S: Field<F>,
+    {
+        self.state.get()
     }
 
     /// Adds a reducer to the store.
@@ -88,29 +101,12 @@ impl<S> Store<S> {
     }
 }
 
-impl Store<TypeMap> {
-    /// Adds a piece of state to the store.
-    pub fn add_state<S>(&mut self, state: S)
-    where
-        S: Any,
-    {
-        self.state.insert(state);
-    }
-
-    /// Returns a reference to a piece of state from the store.
-    pub fn get_state<S>(&self) -> Option<&S>
-    where
-        S: Any,
-    {
-        self.state.get()
-    }
-}
-
 #[cfg(test)]
 mod test {
     #![allow(dead_code)]
 
     use super::*;
+    use crate::type_map::TypeMap;
 
     #[test]
     #[should_panic]
