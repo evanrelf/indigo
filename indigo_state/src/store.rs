@@ -6,12 +6,6 @@ use std::{
 
 /// A `Store` holds arbitrary state, reducer functions which change that state in response to
 /// actions, and listeners which perform effects in response to state changes.
-///
-/// # Examples
-///
-/// ```
-#[doc = include_str!("../examples/type_map.rs")]
-/// ```
 #[derive(Default)]
 pub struct Store<S> {
     state: S,
