@@ -22,12 +22,13 @@ pub struct Store<S = TypeMap> {
 }
 
 impl<S> Store<S> {
-    /// Creates an empty store.
-    pub fn new() -> Self
-    where
-        S: Default,
-    {
-        Self::default()
+    /// Creates a new store holding the given state.
+    pub fn new(state: S) -> Self {
+        Self {
+            state,
+            reducers: Default::default(),
+            listeners: Default::default(),
+        }
     }
 }
 
@@ -117,7 +118,7 @@ mod test {
             Decremented,
         }
 
-        let mut store = Store::new();
+        let mut store = Store::default();
         store.add_reducer(|_state: &mut Count, _action: &CountAction| {});
         store.dispatch(CountAction::Incremented);
     }

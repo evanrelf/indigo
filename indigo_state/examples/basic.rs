@@ -34,7 +34,7 @@ fn count_reducer(state: &mut Count, action: &CountAction) {
 }
 
 fn main() {
-    let mut store = Store::new();
+    let mut store = Store::default();
 
     // Add `Count` to the store
     store.add_state(Count(0));
