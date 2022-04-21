@@ -1,4 +1,4 @@
-use crate::{listener::*, reducer::*, type_map::*};
+use crate::{listener::*, reducer::*, type_map::*, field::*};
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
@@ -30,23 +30,14 @@ impl<S> Store<S> {
             listeners: Default::default(),
         }
     }
-}
-
-impl Store<TypeMap> {
-    /// Adds a piece of state to the store.
-    pub fn add_state<S>(&mut self, state: S)
-    where
-        S: Any,
-    {
-        self.state.insert(state);
-    }
 
     /// Adds a reducer to the store.
-    pub fn add_reducer<S, A, R>(&mut self, reducer: R)
+    pub fn add_reducer<F, A, R>(&mut self, reducer: R)
     where
-        S: 'static,
+        S: Field<F>,
+        F: Any,
         A: Any,
-        R: IntoReducer<S, A>,
+        R: IntoReducer<F, A>,
         R::Reducer: 'static,
     {
         self.reducers
@@ -56,24 +47,17 @@ impl Store<TypeMap> {
     }
 
     /// Adds a listener to the store.
-    pub fn add_listener<S, L>(&mut self, listener: L)
+    pub fn add_listener<F, L>(&mut self, listener: L)
     where
-        S: Any,
-        L: IntoListener<S>,
+        S: Field<F>,
+        F: Any,
+        L: IntoListener<F>,
         L::Listener: 'static,
     {
         self.listeners
-            .entry(TypeId::of::<S>())
+            .entry(TypeId::of::<F>())
             .or_default()
             .push(Box::new(listener.into_listener()));
-    }
-
-    /// Returns a reference to a piece of state from the store.
-    pub fn get_state<S>(&self) -> Option<&S>
-    where
-        S: Any,
-    {
-        self.state.get()
     }
 
     /// Dispatches an action to reducers in the store.
@@ -104,6 +88,24 @@ impl Store<TypeMap> {
     }
 }
 
+impl Store<TypeMap> {
+    /// Adds a piece of state to the store.
+    pub fn add_state<S>(&mut self, state: S)
+    where
+        S: Any,
+    {
+        self.state.insert(state);
+    }
+
+    /// Returns a reference to a piece of state from the store.
+    pub fn get_state<S>(&self) -> Option<&S>
+    where
+        S: Any,
+    {
+        self.state.get()
+    }
+}
+
 #[cfg(test)]
 mod test {
     #![allow(dead_code)]
@@ -119,7 +121,7 @@ mod test {
             Decremented,
         }
 
-        let mut store = Store::default();
+        let mut store: Store<TypeMap> = Store::default();
         store.add_reducer(|_state: &mut Count, _action: &CountAction| {});
         store.dispatch(CountAction::Incremented);
     }

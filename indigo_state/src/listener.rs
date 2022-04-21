@@ -1,4 +1,4 @@
-use crate::{field::Field, type_map::TypeMap};
+use crate::field::Field;
 use std::marker::PhantomData;
 
 pub trait Listener {
