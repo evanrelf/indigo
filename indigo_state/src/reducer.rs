@@ -66,8 +66,8 @@ where
 {
     fn reduce(&self, state: &mut S, action: &dyn Any) -> bool {
         let state = match state.field_mut() {
-            None => panic!("Reducer requires state not present in store"),
-            Some(s) => s,
+            Err(_) => panic!("Reducer requires state not present in store"),
+            Ok(s) => s,
         };
 
         let action = match action.downcast_ref() {

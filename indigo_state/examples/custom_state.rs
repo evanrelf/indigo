@@ -1,7 +1,10 @@
 #![allow(dead_code)]
 
 use indigo_state::{type_map, Field, Store, TypeMap};
-use std::sync::{Arc, Mutex};
+use std::{
+    convert::Infallible,
+    sync::{Arc, Mutex},
+};
 
 struct State {
     name: Name,
@@ -12,12 +15,14 @@ struct State {
 struct Name(String);
 
 impl Field<Name> for State {
-    fn field(&self) -> Option<&Name> {
-        Some(&self.name)
+    type Error = Infallible;
+
+    fn field(&self) -> Result<&Name, Self::Error> {
+        Ok(&self.name)
     }
 
-    fn field_mut(&mut self) -> Option<&mut Name> {
-        Some(&mut self.name)
+    fn field_mut(&mut self) -> Result<&mut Name, Self::Error> {
+        Ok(&mut self.name)
     }
 }
 
@@ -37,11 +42,13 @@ fn name_reducer(state: &mut Name, action: &NameAction) {
 struct Count(isize);
 
 impl Field<Count> for State {
-    fn field(&self) -> Option<&Count> {
+    type Error = ();
+
+    fn field(&self) -> Result<&Count, Self::Error> {
         self.extras.field()
     }
 
-    fn field_mut(&mut self) -> Option<&mut Count> {
+    fn field_mut(&mut self) -> Result<&mut Count, Self::Error> {
         self.extras.field_mut()
     }
 }

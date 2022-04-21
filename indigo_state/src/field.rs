@@ -1,5 +1,7 @@
 pub trait Field<T> {
-    fn field(&self) -> Option<&T>;
+    type Error;
 
-    fn field_mut(&mut self) -> Option<&mut T>;
+    fn field(&self) -> Result<&T, Self::Error>;
+
+    fn field_mut(&mut self) -> Result<&mut T, Self::Error>;
 }

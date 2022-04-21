@@ -46,12 +46,14 @@ impl<T> Field<T> for TypeMap
 where
     T: Any,
 {
-    fn field(&self) -> Option<&T> {
-        self.get()
+    type Error = ();
+
+    fn field(&self) -> Result<&T, Self::Error> {
+        self.get().ok_or(())
     }
 
-    fn field_mut(&mut self) -> Option<&mut T> {
-        self.get_mut()
+    fn field_mut(&mut self) -> Result<&mut T, Self::Error> {
+        self.get_mut().ok_or(())
     }
 }
 
