@@ -10,7 +10,7 @@ use std::{
 /// # Examples
 ///
 /// ```
-#[doc = include_str!("../examples/basic.rs")]
+#[doc = include_str!("../examples/type_map.rs")]
 /// ```
 #[derive(Default)]
 pub struct Store<S> {
