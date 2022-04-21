@@ -37,7 +37,7 @@ impl Store<TypeMap> {
     where
         S: Any,
     {
-        self.state.insert(state.type_id(), Box::new(state));
+        self.state.insert(state);
     }
 
     /// Adds a reducer to the store.
@@ -71,10 +71,7 @@ impl Store<TypeMap> {
     where
         S: Any,
     {
-        self.state
-            .get(&TypeId::of::<S>())
-            // `unwrap` is safe because `add_state` uses the value's type ID as the key
-            .map(|b| b.downcast_ref().unwrap())
+        self.state.get()
     }
 
     /// Dispatches an action to reducers in the store.

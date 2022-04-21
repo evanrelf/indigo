@@ -62,11 +62,7 @@ where
     R: 'static + Reducer,
 {
     fn reduce(&self, state: &mut TypeMap, action: &dyn Any) -> bool {
-        let state = match state
-            .get_mut(&TypeId::of::<R::State>())
-            // `unwrap` is safe because `add_state` uses the value's type ID as the key
-            .map(|b| b.downcast_mut().unwrap())
-        {
+        let state = match state.get_mut::<R::State>() {
             None => panic!("Reducer requires state not present in store"),
             Some(s) => s,
         };

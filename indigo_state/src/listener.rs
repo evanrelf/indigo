@@ -1,5 +1,5 @@
 use crate::type_map::TypeMap;
-use std::{any::TypeId, marker::PhantomData};
+use std::marker::PhantomData;
 
 pub trait Listener {
     type State;
@@ -52,11 +52,7 @@ where
     L: 'static + Listener,
 {
     fn listen(&mut self, state: &TypeMap) {
-        let state = match state
-            .get(&TypeId::of::<L::State>())
-            // `unwrap` is safe because `add_state` uses the value's type ID as the key
-            .map(|b| b.downcast_ref().unwrap())
-        {
+        let state = match state.get::<L::State>() {
             None => panic!("Listener requires state not present in store"),
             Some(s) => s,
         };
