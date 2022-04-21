@@ -1,8 +1,5 @@
-use std::{
-    any::{Any, TypeId},
-    collections::HashMap,
-    marker::PhantomData,
-};
+use crate::type_map::TypeMap;
+use std::{any::TypeId, marker::PhantomData};
 
 pub trait Listener {
     type State;
@@ -46,15 +43,15 @@ where
     }
 }
 
-pub trait StoreListener {
-    fn listen(&mut self, state: &HashMap<TypeId, Box<dyn Any>>);
+pub trait StoreListener<S = TypeMap> {
+    fn listen(&mut self, state: &S);
 }
 
 impl<L> StoreListener for L
 where
     L: 'static + Listener,
 {
-    fn listen(&mut self, state: &HashMap<TypeId, Box<dyn Any>>) {
+    fn listen(&mut self, state: &TypeMap) {
         let state = match state
             .get(&TypeId::of::<L::State>())
             // `unwrap` is safe because `add_state` uses the value's type ID as the key

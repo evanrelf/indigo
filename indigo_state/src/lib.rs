@@ -1,6 +1,6 @@
 #![warn(clippy::use_self)]
 
-use crate::{listener::*, reducer::*};
+use crate::{listener::*, reducer::*, type_map::*};
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
@@ -8,6 +8,7 @@ use std::{
 
 pub mod listener;
 pub mod reducer;
+pub mod type_map;
 
 /// A `Store` holds arbitrary state, reducer functions which change that state in response to
 /// actions, and listeners which perform effects in response to state changes.
@@ -18,20 +19,25 @@ pub mod reducer;
 #[doc = include_str!("../examples/example.rs")]
 /// ```
 #[derive(Default)]
-pub struct Store {
-    state: HashMap<TypeId, Box<dyn Any>>,
+pub struct Store<S = TypeMap> {
+    state: S,
     // Map from action type ID to vector of reducer functions
-    reducers: HashMap<TypeId, Vec<Box<dyn StoreReducer>>>,
+    reducers: HashMap<TypeId, Vec<Box<dyn StoreReducer<S>>>>,
     // Map from state type ID to vector of listener functions
-    listeners: HashMap<TypeId, Vec<Box<dyn StoreListener>>>,
+    listeners: HashMap<TypeId, Vec<Box<dyn StoreListener<S>>>>,
 }
 
-impl Store {
+impl<S> Store<S> {
     /// Creates an empty store.
-    pub fn new() -> Self {
+    pub fn new() -> Self
+    where
+        S: Default,
+    {
         Self::default()
     }
+}
 
+impl Store<TypeMap> {
     /// Adds a piece of state to the store.
     pub fn add_state<S>(&mut self, state: S)
     where

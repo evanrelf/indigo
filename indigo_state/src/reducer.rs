@@ -1,6 +1,6 @@
+use crate::type_map::TypeMap;
 use std::{
     any::{Any, TypeId},
-    collections::HashMap,
     marker::PhantomData,
 };
 
@@ -51,8 +51,8 @@ where
     }
 }
 
-pub trait StoreReducer {
-    fn reduce(&self, state: &mut HashMap<TypeId, Box<dyn Any>>, action: &dyn Any) -> bool;
+pub trait StoreReducer<S = TypeMap> {
+    fn reduce(&self, state: &mut S, action: &dyn Any) -> bool;
 
     fn state_type_id(&self) -> TypeId;
 }
@@ -61,7 +61,7 @@ impl<R> StoreReducer for R
 where
     R: 'static + Reducer,
 {
-    fn reduce(&self, state: &mut HashMap<TypeId, Box<dyn Any>>, action: &dyn Any) -> bool {
+    fn reduce(&self, state: &mut TypeMap, action: &dyn Any) -> bool {
         let state = match state
             .get_mut(&TypeId::of::<R::State>())
             // `unwrap` is safe because `add_state` uses the value's type ID as the key
