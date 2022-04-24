@@ -1,3 +1,4 @@
+use crate::selection::Selection;
 use ropey::Rope;
 use std::{
     fs::File,
@@ -5,10 +6,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
+// INVARIANTS:
+// - Selection must be valid in the rope
 #[derive(Default)]
 pub struct Buffer {
-    pub path: Option<PathBuf>,
-    pub contents: Rope,
+    path: Option<PathBuf>,
+    contents: Rope,
+    selection: Selection,
 }
 
 impl Buffer {
@@ -27,6 +31,7 @@ impl Buffer {
         Ok(Self {
             path: Some(path_buf),
             contents: Rope::from_reader(reader)?,
+            ..Self::default()
         })
     }
 
