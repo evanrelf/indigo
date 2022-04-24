@@ -1,9 +1,5 @@
 use crate::range::Range;
 
-// INVARIANTS:
-// - Must have at least one range
-// - Ranges must be sorted
-// - Ranges must not overlap
 pub struct Selection {
     ranges: Vec<Range>,
     primary_range: usize,
@@ -18,6 +14,43 @@ impl Selection {
     #[must_use]
     pub fn primary_range(&self) -> usize {
         self.primary_range
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn assert_invariants(&self) {
+        debug_assert!(!self.ranges.is_empty(), "Must have at least one range");
+
+        debug_assert!(
+            {
+                let mut sorted = self.ranges.clone();
+                sorted.sort_by(|left, right| {
+                    let left = left.flip_forwards();
+                    let right = right.flip_forwards();
+                    left.anchor().cmp(&right.anchor())
+                });
+                self.ranges == sorted
+            },
+            "Ranges must be sorted"
+        );
+
+        debug_assert!(
+            {
+                let mut overlapping = false;
+                for (outer_index, outer_range) in self.ranges.iter().enumerate() {
+                    for (inner_index, inner_range) in self.ranges.iter().enumerate() {
+                        if outer_index == inner_index {
+                            continue;
+                        }
+                        if outer_range.is_overlapping(inner_range) {
+                            overlapping = true;
+                            break;
+                        }
+                    }
+                }
+                !overlapping
+            },
+            "Ranges must not overlap"
+        );
     }
 }
 

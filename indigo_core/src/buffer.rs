@@ -6,8 +6,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-// INVARIANTS:
-// - Selection must be valid in the rope
 #[derive(Default)]
 pub struct Buffer {
     pub path: Option<PathBuf>,
@@ -54,5 +52,22 @@ impl Buffer {
                 "no path associated with buffer",
             ))
         }
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn assert_invariants(&self) {
+        debug_assert!(
+            {
+                let mut valid = true;
+                for range in self.selection().ranges() {
+                    if range.to_rope_slice(&self.contents).is_none() {
+                        valid = false;
+                        break;
+                    }
+                }
+                valid
+            },
+            "Selection must be valid in the rope"
+        )
     }
 }

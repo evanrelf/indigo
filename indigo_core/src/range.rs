@@ -5,9 +5,7 @@ use std::{
     num::NonZeroUsize,
 };
 
-// INVARIANTS:
-// - Target column must be greater than head's column
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, PartialEq)]
 pub struct Range {
     anchor: Position,
     head: Position,
@@ -158,6 +156,14 @@ impl Range {
             anchor,
             head,
             target_column: None,
+        }
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn assert_invariants(&self) {
+        // Target column must be greater than head's column
+        if let Some(column) = self.target_column {
+            debug_assert!(column > self.head.column);
         }
     }
 }
