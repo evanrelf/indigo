@@ -1,7 +1,7 @@
 use ropey::Rope;
 use std::num::NonZeroUsize;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct Position {
     pub line: NonZeroUsize,
     pub column: NonZeroUsize,
