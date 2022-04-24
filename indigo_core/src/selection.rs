@@ -1,7 +1,7 @@
 use crate::range::Range;
 
 // INVARIANTS:
-// - Must be at least one range
+// - Must have at least one range
 // - Ranges must be sorted
 // - Ranges must not overlap
 pub struct Selection {

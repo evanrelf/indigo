@@ -7,7 +7,6 @@ use std::{
 
 // INVARIANTS:
 // - Target column must be greater than head's column
-// - Target column must be cleared when swapping anchor and head
 #[derive(Copy, Clone, Default)]
 pub struct Range {
     anchor: Position,
