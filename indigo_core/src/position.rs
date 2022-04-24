@@ -3,8 +3,8 @@ use std::num::NonZeroUsize;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Position {
-    line: NonZeroUsize,
-    column: NonZeroUsize,
+    pub line: NonZeroUsize,
+    pub column: NonZeroUsize,
 }
 
 impl Position {
