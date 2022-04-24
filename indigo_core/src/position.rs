@@ -1,7 +1,7 @@
 use ropey::Rope;
 use std::num::NonZeroUsize;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Position {
     line: NonZeroUsize,
     column: NonZeroUsize,
@@ -123,5 +123,33 @@ impl TryFrom<(usize, usize)> for Position {
             line: NonZeroUsize::new(line).ok_or(())?,
             column: NonZeroUsize::new(column).ok_or(())?,
         })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_conversions() {
+        let rope = Rope::from("Hello\nworld\n");
+
+        let position = Position::try_from((1, 1)).unwrap();
+        let rope_index = 0;
+        assert_eq!(position.to_rope_index(&rope), Some(rope_index));
+        assert_eq!(Position::from_rope_index(&rope, rope_index), Some(position));
+
+        let position = Position::try_from((2, 1)).unwrap();
+        let rope_index = 6;
+        assert_eq!(position.to_rope_index(&rope), Some(rope_index));
+        assert_eq!(Position::from_rope_index(&rope, rope_index), Some(position));
+
+        let position = Position::try_from((99, 99)).unwrap();
+        assert_eq!(position.to_rope_index(&rope), None);
+        assert_eq!(Position::from_rope_index(&rope, 999), None);
+
+        let position = Position::try_from((99, 99)).unwrap();
+        let rope_index = 11;
+        assert_eq!(position.to_rope_index_corrected(&rope), rope_index);
     }
 }
