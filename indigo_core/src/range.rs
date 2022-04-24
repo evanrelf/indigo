@@ -14,6 +14,21 @@ pub struct Range {
 
 impl Range {
     #[must_use]
+    pub fn anchor(&self) -> Position {
+        self.anchor
+    }
+
+    #[must_use]
+    pub fn head(&self) -> Position {
+        self.head
+    }
+
+    #[must_use]
+    pub fn target_column(&self) -> Option<NonZeroUsize> {
+        self.target_column
+    }
+
+    #[must_use]
     pub fn is_forwards(&self) -> bool {
         self.anchor <= self.head
     }

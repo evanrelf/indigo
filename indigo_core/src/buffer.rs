@@ -10,12 +10,20 @@ use std::{
 // - Selection must be valid in the rope
 #[derive(Default)]
 pub struct Buffer {
-    path: Option<PathBuf>,
+    pub path: Option<PathBuf>,
     contents: Rope,
     selection: Selection,
 }
 
 impl Buffer {
+    pub fn contents(&self) -> &Rope {
+        &self.contents
+    }
+
+    pub fn selection(&self) -> &Selection {
+        &self.selection
+    }
+
     pub fn new() -> Self {
         Self::default()
     }

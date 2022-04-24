@@ -8,6 +8,13 @@ pub struct Selection {
     ranges: Vec<Range>,
 }
 
+impl Selection {
+    #[must_use]
+    pub fn ranges(&self) -> &Vec<Range> {
+        &self.ranges
+    }
+}
+
 impl Default for Selection {
     fn default() -> Self {
         Self {
