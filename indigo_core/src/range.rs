@@ -61,6 +61,7 @@ impl Range {
             || (other_start <= self_start && self_start <= other_end)
     }
 
+    #[must_use]
     pub fn flip(&self) -> Self {
         Self {
             anchor: self.head,
@@ -69,6 +70,7 @@ impl Range {
         }
     }
 
+    #[must_use]
     pub fn flip_forwards(&self) -> Self {
         if self.is_backwards() {
             self.flip()
@@ -77,6 +79,7 @@ impl Range {
         }
     }
 
+    #[must_use]
     pub fn flip_backwards(&self) -> Self {
         if self.is_forwards() {
             self.flip()
@@ -85,6 +88,7 @@ impl Range {
         }
     }
 
+    #[must_use]
     pub fn reduce(&self) -> Self {
         Self {
             anchor: self.head,
@@ -92,6 +96,7 @@ impl Range {
         }
     }
 
+    #[must_use]
     pub fn merge(&self, other: &Self) -> Self {
         match (self.is_forwards(), other.is_forwards()) {
             (true, true) => {

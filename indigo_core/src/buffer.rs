@@ -14,14 +14,17 @@ pub struct Buffer {
 }
 
 impl Buffer {
+    #[must_use]
     pub fn contents(&self) -> &Rope {
         &self.contents
     }
 
+    #[must_use]
     pub fn selection(&self) -> &Selection {
         &self.selection
     }
 
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
