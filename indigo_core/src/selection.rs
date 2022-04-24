@@ -15,3 +15,11 @@ impl Default for Selection {
         }
     }
 }
+
+impl From<Range> for Selection {
+    fn from(range: Range) -> Self {
+        Self {
+            ranges: vec![range],
+        }
+    }
+}
