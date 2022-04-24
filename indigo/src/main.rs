@@ -1,4 +1,4 @@
-use indigo_prev::{editor::Editor, terminal::run};
+use indigo::{editor::Editor, terminal::run};
 
 fn main() {
     #[cfg(debug_assertions)]
