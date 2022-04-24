@@ -1,5 +1,6 @@
 [workspace]
 members = [
   "indigo",
+  "indigo_core",
   "indigo_state",
 ]

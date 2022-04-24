@@ -71,6 +71,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "indigo_core"
+version = "0.1.0"
+dependencies = [
+ "ropey",
+]
+
+[[package]]
 name = "indigo_state"
 version = "0.1.0"
 
