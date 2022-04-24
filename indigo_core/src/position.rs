@@ -1,5 +1,6 @@
 use std::num::NonZeroUsize;
 
+#[derive(Clone, Copy)]
 pub struct Position {
     line: NonZeroUsize,
     column: NonZeroUsize,
