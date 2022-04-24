@@ -1,6 +1,9 @@
 use crate::position::Position;
 use ropey::{Rope, RopeSlice};
-use std::num::NonZeroUsize;
+use std::{
+    cmp::{max, min},
+    num::NonZeroUsize,
+};
 
 // INVARIANTS:
 // - Target column must be greater than head's column
@@ -61,61 +64,68 @@ impl Range {
             || (other_start <= self_start && self_start <= other_end)
     }
 
-    pub fn flip(&mut self) {
-        std::mem::swap(&mut self.anchor, &mut self.head);
-        self.target_column = None;
+    pub fn flip(&self) -> Self {
+        Self {
+            anchor: self.head,
+            head: self.anchor,
+            target_column: None,
+        }
     }
 
-    pub fn flip_forwards(&mut self) {
+    pub fn flip_forwards(&self) -> Self {
         if self.is_backwards() {
-            self.flip();
+            self.flip()
+        } else {
+            *self
         }
     }
 
-    pub fn flip_backwards(&mut self) {
+    pub fn flip_backwards(&self) -> Self {
         if self.is_forwards() {
-            self.flip();
+            self.flip()
+        } else {
+            *self
         }
     }
 
-    pub fn reduce(&mut self) {
-        self.anchor = self.head;
+    pub fn reduce(&self) -> Self {
+        Self {
+            anchor: self.head,
+            ..*self
+        }
     }
 
-    pub fn merge(&mut self, mut other: Self) -> bool {
-        if !self.is_overlapping(&other) {
-            return false;
-        }
-
+    pub fn merge(&self, other: &Self) -> Self {
         match (self.is_forwards(), other.is_forwards()) {
             (true, true) => {
                 // Forwards
-                if other.anchor < self.anchor {
-                    self.anchor = other.anchor;
-                }
-                if other.head > self.head {
-                    self.head = other.head;
-                    self.target_column = other.target_column;
+                Self {
+                    anchor: min(self.anchor, other.anchor),
+                    head: max(self.head, other.head),
+                    target_column: if other.head > self.head {
+                        other.target_column
+                    } else {
+                        self.target_column
+                    },
                 }
             }
             (false, false) => {
                 // Backwards
-                if other.anchor > self.anchor {
-                    self.anchor = other.anchor;
-                }
-                if other.head < self.head {
-                    self.head = other.head;
-                    self.target_column = other.target_column;
+                Self {
+                    anchor: max(self.anchor, other.anchor),
+                    head: min(self.head, other.head),
+                    target_column: if other.head < self.head {
+                        other.target_column
+                    } else {
+                        self.target_column
+                    },
                 }
             }
             _ => {
                 // Mixed
-                other.flip();
-                self.merge(other);
+                self.merge(&other.flip())
             }
         }
-
-        true
     }
 
     #[must_use]
