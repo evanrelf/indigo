@@ -31,12 +31,17 @@ impl Editor {
         Ok(())
     }
 
-    pub fn close(&mut self, buffer_index: Index) {
-        self.buffers.remove(buffer_index);
-        self.current_buffer_index = match self.buffers.iter().last() {
-            None => self.buffers.insert(Buffer::default()),
-            Some((last_buffer_index, _)) => last_buffer_index,
+    pub fn close(&mut self, buffer_index: Index, discard_modifications: bool) {
+        if let Some(buffer) = self.buffers.get(buffer_index) {
+            if !buffer.is_modified() || discard_modifications {
+                self.buffers.remove(buffer_index);
+                self.current_buffer_index = match self.buffers.iter().last() {
+                    None => self.buffers.insert(Buffer::default()),
+                    Some((last_buffer_index, _)) => last_buffer_index,
+                }
+            }
         }
+
     }
 
     #[cfg(debug_assertions)]
