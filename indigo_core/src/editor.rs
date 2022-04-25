@@ -16,10 +16,10 @@ impl Editor {
 
     #[cfg(debug_assertions)]
     pub fn assert_invariants(&self) {
-        debug_assert!(!self.buffers.is_empty(), "Must have at least one buffer");
+        debug_assert!(!self.buffers.is_empty(), "must have at least one buffer");
         debug_assert!(
             self.buffers.get(self.current_buffer).is_some(),
-            "Current buffer index must be valid"
+            "current buffer index must be valid"
         );
     }
 }

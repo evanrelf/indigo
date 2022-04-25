@@ -18,11 +18,11 @@ impl Selection {
 
     #[cfg(debug_assertions)]
     pub fn assert_invariants(&self) {
-        debug_assert!(!self.ranges.is_empty(), "Must have at least one range");
+        debug_assert!(!self.ranges.is_empty(), "must have at least one range");
 
         debug_assert!(
             self.ranges.get(self.primary_range).is_some(),
-            "Primary range index must be valid"
+            "primary range index must be valid"
         );
 
         debug_assert!(
@@ -35,7 +35,7 @@ impl Selection {
                 });
                 self.ranges == sorted
             },
-            "Ranges must be sorted"
+            "ranges must be sorted"
         );
 
         debug_assert!(
@@ -54,7 +54,7 @@ impl Selection {
                 }
                 !overlapping
             },
-            "Ranges must not overlap"
+            "ranges must not overlap"
         );
     }
 }

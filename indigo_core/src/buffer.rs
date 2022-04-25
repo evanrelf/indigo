@@ -70,7 +70,7 @@ impl Buffer {
                 }
                 valid
             },
-            "Selection must be valid in the rope"
+            "selection must be valid in the rope"
         )
     }
 }
