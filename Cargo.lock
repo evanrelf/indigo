@@ -95,6 +95,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "indigo_tui"
+version = "0.1.0"
+dependencies = [
+ "crossterm",
+ "indigo_core",
+ "tui",
+]
+
+[[package]]
 name = "instant"
 version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -2,4 +2,5 @@
 members = [
   "indigo_core",
   "indigo_prev",
+  "indigo_tui",
 ]
