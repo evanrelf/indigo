@@ -192,3 +192,20 @@ impl From<(Position, Position)> for Range {
         }
     }
 }
+
+impl TryFrom<(Position, Position, Option<NonZeroUsize>)> for Range {
+    type Error = ();
+
+    fn try_from(
+        (anchor, head, target_column): (Position, Position, Option<NonZeroUsize>),
+    ) -> Result<Self, Self::Error> {
+        match target_column {
+            Some(column) if column <= head.column => Err(()),
+            _ => Ok(Self {
+                anchor,
+                head,
+                target_column,
+            }),
+        }
+    }
+}
