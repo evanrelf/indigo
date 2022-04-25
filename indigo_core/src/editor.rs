@@ -23,3 +23,12 @@ impl Editor {
         );
     }
 }
+
+impl Default for Editor {
+    fn default() -> Self {
+        Self {
+            buffers: vec![Buffer::default()],
+            current_buffer: 0,
+        }
+    }
+}
