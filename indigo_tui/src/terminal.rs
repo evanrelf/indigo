@@ -30,8 +30,8 @@ fn enter_terminal() {
     stdout.execute(cursor::Hide).unwrap();
     stdout.execute(event::EnableMouseCapture).unwrap();
 
-    let default_hook = Box::leak(panic::take_hook());
-    panic::set_hook(Box::new(|panic_info| {
+    let default_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |panic_info| {
         exit_terminal(true);
         default_hook(panic_info);
     }));
