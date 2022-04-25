@@ -8,6 +8,8 @@ pub struct Selection {
     primary_range_index: usize,
 }
 
+// TODO: Merge overlapping ranges
+
 impl Selection {
     #[must_use]
     pub fn ranges(&self) -> &Vec<Range> {
@@ -58,6 +60,186 @@ impl Selection {
                 ranges,
             })
         }
+    }
+
+    #[must_use]
+    pub fn move_up(&self, rope: &Rope, distance: usize) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.move_up(rope, distance);
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn move_down(&self, rope: &Rope, distance: usize) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.move_down(rope, distance);
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn move_left(&self, rope: &Rope, distance: usize) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.move_left(rope, distance);
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn move_right(&self, rope: &Rope, distance: usize) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.move_right(rope, distance);
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn move_top(&self) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.move_top();
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn move_bottom(&self, rope: &Rope) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.move_bottom(rope);
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn move_end(&self, rope: &Rope) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.move_end(rope);
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn move_line_begin(&self) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.move_line_begin();
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn move_line_first_non_blank(&self, rope: &Rope) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.move_line_first_non_blank(rope);
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn move_line_end(&self, rope: &Rope) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.move_line_end(rope);
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn extend_up(&self, rope: &Rope, distance: usize) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.extend_up(rope, distance);
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn extend_down(&self, rope: &Rope, distance: usize) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.extend_down(rope, distance);
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn extend_left(&self, rope: &Rope, distance: usize) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.extend_left(rope, distance);
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn extend_right(&self, rope: &Rope, distance: usize) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.extend_right(rope, distance);
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn extend_top(&self) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.extend_top();
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn extend_bottom(&self, rope: &Rope) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.extend_bottom(rope);
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn extend_end(&self, rope: &Rope) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.extend_end(rope);
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn extend_line_begin(&self) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.extend_line_begin();
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn extend_line_first_non_blank(&self, rope: &Rope) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.extend_line_first_non_blank(rope);
+        }
+        selection
+    }
+
+    #[must_use]
+    pub fn extend_line_end(&self, rope: &Rope) -> Self {
+        let mut selection = self.clone();
+        for range in &mut selection.ranges {
+            *range = range.extend_line_end(rope);
+        }
+        selection
     }
 
     #[cfg(debug_assertions)]
