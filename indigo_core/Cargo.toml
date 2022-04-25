@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 generational-arena = "0.2.8"
+regex = "1.5.5"
 ropey = { version = "1.4.1", default-features = false }

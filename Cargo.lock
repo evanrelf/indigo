@@ -90,6 +90,7 @@ name = "indigo_core"
 version = "0.1.0"
 dependencies = [
  "generational-arena",
+ "regex",
  "ropey",
 ]
 

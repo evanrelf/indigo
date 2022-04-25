@@ -1,6 +1,8 @@
 use crate::position::Position;
+use regex::Regex;
 use ropey::{Rope, RopeSlice};
 use std::{
+    borrow::Cow,
     cmp::{max, min},
     num::NonZeroUsize,
 };
@@ -128,6 +130,80 @@ impl Range {
                 self.merge(&other.flip())
             }
         }
+    }
+
+    #[must_use]
+    pub fn select(&self, rope: &Rope, regex: &Regex) -> Option<Vec<Self>> {
+        let offset = if self.is_forwards() {
+            self.anchor.to_rope_index(rope)?
+        } else {
+            self.head.to_rope_index(rope)?
+        };
+
+        let rope_slice = self.to_rope_slice(rope)?;
+
+        let cow = Cow::<str>::from(rope_slice);
+
+        let str = if let Some(str) = rope_slice.as_str() {
+            str
+        } else {
+            cow.as_ref()
+        };
+
+        Some(
+            regex
+                .find_iter(str)
+                .map(|match_| {
+                    let start_index = offset + rope.byte_to_char(match_.start());
+                    let start_position = Position::from_rope_index(rope, start_index).unwrap();
+
+                    let end_index = offset + rope.byte_to_char(match_.end()).saturating_sub(1);
+                    let end_position = Position::from_rope_index(rope, end_index).unwrap();
+
+                    if self.is_forwards() {
+                        Self::from((start_position, end_position))
+                    } else {
+                        Self::from((end_position, start_position))
+                    }
+                })
+                .collect(),
+        )
+    }
+
+    #[must_use]
+    pub fn select_corrected(&self, rope: &Rope, regex: &Regex) -> Vec<Self> {
+        let offset = if self.is_forwards() {
+            self.anchor.to_rope_index_corrected(rope)
+        } else {
+            self.head.to_rope_index_corrected(rope)
+        };
+
+        let rope_slice = self.to_rope_slice_corrected(rope);
+
+        let cow = Cow::<str>::from(rope_slice);
+
+        let str = if let Some(str) = rope_slice.as_str() {
+            str
+        } else {
+            cow.as_ref()
+        };
+
+        regex
+            .find_iter(str)
+            .map(|match_| {
+                let start_index = offset + rope.byte_to_char(match_.start());
+                let start_position = Position::from_rope_index(rope, start_index).unwrap();
+
+                let end_index = offset + rope.byte_to_char(match_.end()).saturating_sub(1);
+                let end_position = Position::from_rope_index(rope, end_index).unwrap();
+
+                if self.is_forwards() {
+                    Self::from((start_position, end_position))
+                } else {
+                    Self::from((end_position, start_position))
+                }
+            })
+            .collect()
     }
 
     #[must_use]
