@@ -61,5 +61,8 @@ fn update(model: &mut Model, event: crossterm::event::Event) {
 }
 
 fn view(model: &Model, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
-    // TODO
+    // Tildes
+    for y in area.top()..area.bottom() {
+        buffer.get_mut(area.x, y).set_char('~');
+    }
 }
