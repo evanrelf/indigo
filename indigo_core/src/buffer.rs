@@ -10,6 +10,7 @@ use std::{
 pub struct Buffer {
     pub path: Option<PathBuf>,
     contents: Rope,
+    is_modified: bool,
     selection: Selection,
 }
 
@@ -17,6 +18,11 @@ impl Buffer {
     #[must_use]
     pub fn contents(&self) -> &Rope {
         &self.contents
+    }
+
+    #[must_use]
+    pub fn is_modified(&self) -> bool {
+        self.is_modified
     }
 
     #[must_use]
@@ -44,11 +50,15 @@ impl Buffer {
         })
     }
 
-    pub fn save(&self) -> Result<(), io::Error> {
+    pub fn save(&mut self) -> Result<(), io::Error> {
         if let Some(path) = &self.path {
             let file = File::open(path)?;
             let writer = BufWriter::new(file);
-            self.contents.write_to(writer)
+            let result = self.contents.write_to(writer);
+            if result.is_ok() {
+                self.is_modified = false;
+            }
+            result
         } else {
             Err(io::Error::new(
                 io::ErrorKind::Other,
