@@ -126,10 +126,10 @@ impl Selection {
     }
 
     #[must_use]
-    pub fn move_line_begin(&self) -> Self {
+    pub fn move_line_begin(&self, rope: &Rope) -> Self {
         let mut selection = self.clone();
         for range in &mut selection.ranges {
-            *range = range.move_line_begin();
+            *range = range.move_line_begin(rope);
         }
         selection
     }
@@ -216,10 +216,10 @@ impl Selection {
     }
 
     #[must_use]
-    pub fn extend_line_begin(&self) -> Self {
+    pub fn extend_line_begin(&self, rope: &Rope) -> Self {
         let mut selection = self.clone();
         for range in &mut selection.ranges {
-            *range = range.extend_line_begin();
+            *range = range.extend_line_begin(rope);
         }
         selection
     }

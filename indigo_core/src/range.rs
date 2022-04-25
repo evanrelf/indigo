@@ -325,8 +325,8 @@ impl Range {
     }
 
     #[must_use]
-    pub fn move_line_begin(&self) -> Self {
-        self.extend_line_begin().reduce()
+    pub fn move_line_begin(&self, rope: &Rope) -> Self {
+        self.extend_line_begin(rope).reduce()
     }
 
     #[must_use]
@@ -380,10 +380,10 @@ impl Range {
     }
 
     #[must_use]
-    pub fn extend_line_begin(&self) -> Self {
+    pub fn extend_line_begin(&self, rope: &Rope) -> Self {
         let mut head = self.head();
         head.column = NonZeroUsize::new(1).unwrap();
-        Self::from((self.anchor(), head))
+        Self::from((self.anchor(), head)).corrected(rope)
     }
 
     #[must_use]
