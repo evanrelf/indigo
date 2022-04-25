@@ -21,6 +21,11 @@ impl Selection {
         debug_assert!(!self.ranges.is_empty(), "Must have at least one range");
 
         debug_assert!(
+            self.ranges.get(self.primary_range).is_some(),
+            "Primary range index must be valid"
+        );
+
+        debug_assert!(
             {
                 let mut sorted = self.ranges.clone();
                 sorted.sort_by(|left, right| {
