@@ -41,7 +41,6 @@ impl Editor {
                 }
             }
         }
-
     }
 
     #[cfg(debug_assertions)]

@@ -459,3 +459,13 @@ impl TryFrom<(Position, Position, Option<NonZeroUsize>)> for Range {
         }
     }
 }
+
+impl TryFrom<(Position, Position, NonZeroUsize)> for Range {
+    type Error = ();
+
+    fn try_from(
+        (anchor, head, target_column): (Position, Position, NonZeroUsize),
+    ) -> Result<Self, Self::Error> {
+        Self::try_from((anchor, head, Some(target_column)))
+    }
+}
