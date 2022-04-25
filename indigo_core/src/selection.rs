@@ -2,7 +2,7 @@ use crate::range::Range;
 
 pub struct Selection {
     ranges: Vec<Range>,
-    primary_range: usize,
+    primary_range_index: usize,
 }
 
 impl Selection {
@@ -13,7 +13,7 @@ impl Selection {
 
     #[must_use]
     pub fn primary_range(&self) -> &Range {
-        &self.ranges[self.primary_range]
+        &self.ranges[self.primary_range_index]
     }
 
     #[cfg(debug_assertions)]
@@ -21,7 +21,7 @@ impl Selection {
         debug_assert!(!self.ranges.is_empty(), "must have at least one range");
 
         debug_assert!(
-            self.ranges.get(self.primary_range).is_some(),
+            self.ranges.get(self.primary_range_index).is_some(),
             "primary range index must be valid"
         );
 
@@ -63,7 +63,7 @@ impl Default for Selection {
     fn default() -> Self {
         Self {
             ranges: vec![Range::default()],
-            primary_range: 0,
+            primary_range_index: 0,
         }
     }
 }
@@ -72,7 +72,7 @@ impl From<Range> for Selection {
     fn from(range: Range) -> Self {
         Self {
             ranges: vec![range],
-            primary_range: 0,
+            primary_range_index: 0,
         }
     }
 }
