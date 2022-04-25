@@ -101,6 +101,7 @@ pub fn extend_buffer_top(range: &Range) -> Range {
 
 #[must_use]
 pub fn extend_buffer_bottom(rope: &Rope, range: &Range) -> Range {
+    // Subtracting 1 to remove ropey's mysterious empty final line
     let index = rope.line_to_char(rope.len_lines().saturating_sub(2));
     let head = Position::from_rope_index(rope, index).unwrap();
     Range::from((range.anchor(), head))
@@ -137,7 +138,7 @@ pub fn extend_line_begin(range: &Range) -> Range {
 
 #[must_use]
 pub fn extend_line_first_non_blank(rope: &Rope, range: &Range) -> Range {
-    let blanks = [' '];
+    let blanks = [' ', '\t'];
 
     let first_non_blank = rope
         .line(range.head().line.get())
