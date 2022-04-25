@@ -1,5 +1,6 @@
 use crate::buffer::Buffer;
 use generational_arena::{Arena, Index};
+use std::{io, path::Path};
 
 pub struct Editor {
     buffers: Arena<Buffer>,
@@ -20,6 +21,14 @@ impl Editor {
     #[must_use]
     pub fn current_buffer(&self) -> &Buffer {
         &self.buffers[self.current_buffer_index]
+    }
+
+    pub fn open<P>(&mut self, path: P) -> Result<(), io::Error>
+    where
+        P: AsRef<Path>,
+    {
+        self.current_buffer_index = self.buffers.insert(Buffer::open(path)?);
+        Ok(())
     }
 
     #[cfg(debug_assertions)]
