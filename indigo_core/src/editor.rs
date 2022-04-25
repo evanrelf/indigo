@@ -13,4 +13,9 @@ impl Editor {
     pub fn current_buffer(&self) -> &Buffer {
         &self.buffers[self.current_buffer]
     }
+
+    #[cfg(debug_assertions)]
+    pub fn assert_invariants(&self) {
+        debug_assert!(!self.buffers.is_empty(), "Must have at least one buffer");
+    }
 }
