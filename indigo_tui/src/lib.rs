@@ -47,9 +47,19 @@ impl Widget for &Model {
 }
 
 fn update(model: &mut Model, event: crossterm::event::Event) {
-    todo!();
+    use crossterm::event::{Event, KeyCode, KeyModifiers};
+
+    match event {
+        #[allow(clippy::single_match)]
+        Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+            (KeyModifiers::CONTROL, KeyCode::Char('c')) => model.quit = true,
+            _ => {}
+        },
+        Event::Mouse(_) => {}
+        Event::Resize(_, _) => {}
+    }
 }
 
 fn view(model: &Model, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
-    todo!();
+    // TODO
 }
