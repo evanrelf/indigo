@@ -31,6 +31,14 @@ impl Editor {
         Ok(())
     }
 
+    pub fn close(&mut self, buffer_index: Index) {
+        self.buffers.remove(buffer_index);
+        self.current_buffer_index = match self.buffers.iter().last() {
+            None => self.buffers.insert(Buffer::default()),
+            Some((last_buffer_index, _)) => last_buffer_index,
+        }
+    }
+
     #[cfg(debug_assertions)]
     pub fn assert_invariants(&self) {
         debug_assert!(!self.buffers.is_empty(), "must have at least one buffer");
