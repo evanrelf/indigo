@@ -23,12 +23,12 @@ impl Editor {
         &self.buffers[self.current_buffer_index]
     }
 
-    pub fn open_buffer<P>(&mut self, path: P) -> Result<(), io::Error>
+    pub fn open_buffer<P>(&mut self, path: P) -> Result<&Buffer, io::Error>
     where
         P: AsRef<Path>,
     {
         self.current_buffer_index = self.buffers.insert(Buffer::open(path)?);
-        Ok(())
+        Ok(self.buffers.get(self.current_buffer_index).unwrap())
     }
 
     pub fn close_buffer(&mut self, buffer_index: Index, discard_modifications: bool) {
