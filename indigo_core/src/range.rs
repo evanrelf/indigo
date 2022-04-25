@@ -330,12 +330,12 @@ impl Range {
     }
 
     #[must_use]
-    pub fn extend_buffer_top(&self) -> Self {
+    pub fn extend_top(&self) -> Self {
         Self::from((self.anchor(), (1, 1).try_into().unwrap()))
     }
 
     #[must_use]
-    pub fn extend_buffer_bottom(&self, rope: &Rope) -> Self {
+    pub fn extend_bottom(&self, rope: &Rope) -> Self {
         // Subtracting 1 to remove ropey's mysterious empty final line
         let index = rope.line_to_char(rope.len_lines().saturating_sub(2));
         let head = Position::from_rope_index(rope, index).unwrap();
@@ -343,25 +343,25 @@ impl Range {
     }
 
     #[must_use]
-    pub fn extend_buffer_end(&self, rope: &Rope) -> Self {
+    pub fn extend_end(&self, rope: &Rope) -> Self {
         let index = rope.len_chars().saturating_sub(1);
         let head = Position::from_rope_index(rope, index).unwrap();
         Self::from((self.anchor(), head))
     }
 
     #[must_use]
-    pub fn move_buffer_top(&self) -> Self {
-        self.extend_buffer_top().reduce()
+    pub fn move_top(&self) -> Self {
+        self.extend_top().reduce()
     }
 
     #[must_use]
-    pub fn move_buffer_bottom(&self, rope: &Rope) -> Self {
-        self.extend_buffer_bottom(rope).reduce()
+    pub fn move_bottom(&self, rope: &Rope) -> Self {
+        self.extend_bottom(rope).reduce()
     }
 
     #[must_use]
-    pub fn move_buffer_end(&self, rope: &Rope) -> Self {
-        self.extend_buffer_end(rope).reduce()
+    pub fn move_end(&self, rope: &Rope) -> Self {
+        self.extend_end(rope).reduce()
     }
 
     #[must_use]
