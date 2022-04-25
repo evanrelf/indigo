@@ -12,8 +12,8 @@ impl Selection {
     }
 
     #[must_use]
-    pub fn primary_range(&self) -> usize {
-        self.primary_range
+    pub fn primary_range(&self) -> &Range {
+        &self.ranges[self.primary_range]
     }
 
     #[cfg(debug_assertions)]
