@@ -10,3 +10,7 @@ pub mod editor;
 pub mod position;
 pub mod range;
 pub mod selection;
+
+pub use crate::{
+    buffer::Buffer, editor::Editor, position::Position, range::Range, selection::Selection,
+};
