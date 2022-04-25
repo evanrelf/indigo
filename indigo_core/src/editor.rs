@@ -23,7 +23,7 @@ impl Editor {
         &self.buffers[self.current_buffer_index]
     }
 
-    pub fn open<P>(&mut self, path: P) -> Result<(), io::Error>
+    pub fn open_buffer<P>(&mut self, path: P) -> Result<(), io::Error>
     where
         P: AsRef<Path>,
     {
@@ -31,7 +31,7 @@ impl Editor {
         Ok(())
     }
 
-    pub fn close(&mut self, buffer_index: Index, discard_modifications: bool) {
+    pub fn close_buffer(&mut self, buffer_index: Index, discard_modifications: bool) {
         if let Some(buffer) = self.buffers.get(buffer_index) {
             if !buffer.is_modified() || discard_modifications {
                 self.buffers.remove(buffer_index);
