@@ -1,5 +1,8 @@
 use crate::range::Range;
+use regex::Regex;
+use ropey::Rope;
 
+#[derive(Clone)]
 pub struct Selection {
     ranges: Vec<Range>,
     primary_range_index: usize,
@@ -19,6 +22,42 @@ impl Selection {
     #[must_use]
     pub fn primary_range(&self) -> &Range {
         &self.ranges[self.primary_range_index]
+    }
+
+    #[must_use]
+    pub fn select(&self, rope: &Rope, regex: &Regex) -> Option<Self> {
+        let mut ranges = Vec::new();
+
+        for range in &self.ranges {
+            ranges.append(&mut range.select(rope, regex)?);
+        }
+
+        if ranges.is_empty() {
+            None
+        } else {
+            Some(Self {
+                primary_range_index: ranges.len() - 1,
+                ranges,
+            })
+        }
+    }
+
+    #[must_use]
+    pub fn select_corrected(&self, rope: &Rope, regex: &Regex) -> Option<Self> {
+        let mut ranges = Vec::new();
+
+        for range in &self.ranges {
+            ranges.append(&mut range.select_corrected(rope, regex));
+        }
+
+        if ranges.is_empty() {
+            None
+        } else {
+            Some(Self {
+                primary_range_index: ranges.len() - 1,
+                ranges,
+            })
+        }
     }
 
     #[cfg(debug_assertions)]
