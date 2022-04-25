@@ -6,10 +6,12 @@ pub struct Editor {
 }
 
 impl Editor {
+    #[must_use]
     pub fn buffers(&self) -> &Vec<Buffer> {
         &self.buffers
     }
 
+    #[must_use]
     pub fn current_buffer(&self) -> &Buffer {
         &self.buffers[self.current_buffer]
     }
