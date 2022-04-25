@@ -246,46 +246,6 @@ impl Range {
     }
 
     #[must_use]
-    pub fn extend_up(&self, rope: &Rope, distance: usize) -> Self {
-        self.vertically(rope, Direction::Backward, distance)
-    }
-
-    #[must_use]
-    pub fn extend_down(&self, rope: &Rope, distance: usize) -> Self {
-        self.vertically(rope, Direction::Forward, distance)
-    }
-
-    #[must_use]
-    pub fn extend_left(&self, rope: &Rope, distance: usize) -> Self {
-        self.horizontally(rope, Direction::Backward, distance)
-    }
-
-    #[must_use]
-    pub fn extend_right(&self, rope: &Rope, distance: usize) -> Self {
-        self.horizontally(rope, Direction::Forward, distance)
-    }
-
-    #[must_use]
-    pub fn move_up(&self, rope: &Rope, distance: usize) -> Self {
-        self.extend_up(rope, distance).reduce()
-    }
-
-    #[must_use]
-    pub fn move_down(&self, rope: &Rope, distance: usize) -> Self {
-        self.extend_down(rope, distance).reduce()
-    }
-
-    #[must_use]
-    pub fn move_left(&self, rope: &Rope, distance: usize) -> Self {
-        self.extend_left(rope, distance).reduce()
-    }
-
-    #[must_use]
-    pub fn move_right(&self, rope: &Rope, distance: usize) -> Self {
-        self.extend_right(rope, distance).reduce()
-    }
-
-    #[must_use]
     fn vertically(&self, rope: &Rope, direction: Direction, distance: usize) -> Self {
         let desired_head = Position {
             line: NonZeroUsize::new(max(1, {
@@ -330,6 +290,76 @@ impl Range {
     }
 
     #[must_use]
+    pub fn move_up(&self, rope: &Rope, distance: usize) -> Self {
+        self.extend_up(rope, distance).reduce()
+    }
+
+    #[must_use]
+    pub fn move_down(&self, rope: &Rope, distance: usize) -> Self {
+        self.extend_down(rope, distance).reduce()
+    }
+
+    #[must_use]
+    pub fn move_left(&self, rope: &Rope, distance: usize) -> Self {
+        self.extend_left(rope, distance).reduce()
+    }
+
+    #[must_use]
+    pub fn move_right(&self, rope: &Rope, distance: usize) -> Self {
+        self.extend_right(rope, distance).reduce()
+    }
+
+    #[must_use]
+    pub fn move_top(&self) -> Self {
+        self.extend_top().reduce()
+    }
+
+    #[must_use]
+    pub fn move_bottom(&self, rope: &Rope) -> Self {
+        self.extend_bottom(rope).reduce()
+    }
+
+    #[must_use]
+    pub fn move_end(&self, rope: &Rope) -> Self {
+        self.extend_end(rope).reduce()
+    }
+
+    #[must_use]
+    pub fn move_line_begin(&self) -> Self {
+        self.extend_line_begin().reduce()
+    }
+
+    #[must_use]
+    pub fn move_line_first_non_blank(&self, rope: &Rope) -> Self {
+        self.extend_line_first_non_blank(rope).reduce()
+    }
+
+    #[must_use]
+    pub fn move_line_end(&self, rope: &Rope) -> Self {
+        self.extend_line_end(rope).reduce()
+    }
+
+    #[must_use]
+    pub fn extend_up(&self, rope: &Rope, distance: usize) -> Self {
+        self.vertically(rope, Direction::Backward, distance)
+    }
+
+    #[must_use]
+    pub fn extend_down(&self, rope: &Rope, distance: usize) -> Self {
+        self.vertically(rope, Direction::Forward, distance)
+    }
+
+    #[must_use]
+    pub fn extend_left(&self, rope: &Rope, distance: usize) -> Self {
+        self.horizontally(rope, Direction::Backward, distance)
+    }
+
+    #[must_use]
+    pub fn extend_right(&self, rope: &Rope, distance: usize) -> Self {
+        self.horizontally(rope, Direction::Forward, distance)
+    }
+
+    #[must_use]
     pub fn extend_top(&self) -> Self {
         Self::from((self.anchor(), (1, 1).try_into().unwrap()))
     }
@@ -347,21 +377,6 @@ impl Range {
         let index = rope.len_chars().saturating_sub(1);
         let head = Position::from_rope_index(rope, index).unwrap();
         Self::from((self.anchor(), head))
-    }
-
-    #[must_use]
-    pub fn move_top(&self) -> Self {
-        self.extend_top().reduce()
-    }
-
-    #[must_use]
-    pub fn move_bottom(&self, rope: &Rope) -> Self {
-        self.extend_bottom(rope).reduce()
-    }
-
-    #[must_use]
-    pub fn move_end(&self, rope: &Rope) -> Self {
-        self.extend_end(rope).reduce()
     }
 
     #[must_use]
@@ -397,21 +412,6 @@ impl Range {
         let mut head = self.head().corrected(rope);
         head.column = NonZeroUsize::new(rope.line(head.line.get()).len_chars()).unwrap();
         Self::from((self.anchor(), head))
-    }
-
-    #[must_use]
-    pub fn move_line_begin(&self) -> Self {
-        self.extend_line_begin().reduce()
-    }
-
-    #[must_use]
-    pub fn move_line_first_non_blank(&self, rope: &Rope) -> Self {
-        self.extend_line_first_non_blank(rope).reduce()
-    }
-
-    #[must_use]
-    pub fn move_line_end(&self, rope: &Rope) -> Self {
-        self.extend_line_end(rope).reduce()
     }
 
     #[cfg(debug_assertions)]
