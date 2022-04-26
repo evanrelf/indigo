@@ -144,11 +144,11 @@ impl Range {
         let offset = if self.is_forwards() {
             let (anchor_index, anchor_corrected) = self.anchor.to_rope_index(rope);
             corrected |= anchor_corrected;
-            anchor_index
+            anchor_index.unwrap_valid()
         } else {
             let (head_index, head_corrected) = self.head.to_rope_index(rope);
             corrected |= head_corrected;
-            head_index
+            head_index.unwrap_valid()
         };
 
         let rope_slice = {
@@ -171,10 +171,12 @@ impl Range {
                 let start_index = offset + rope.byte_to_char(match_.start());
                 let (start_position, start_corrected) =
                     Position::from_rope_index(rope, start_index);
+                let start_position = start_position.unwrap_valid();
                 debug_assert!(!start_corrected);
 
                 let end_index = offset + rope.byte_to_char(match_.end()).saturating_sub(1);
                 let (end_position, end_corrected) = Position::from_rope_index(rope, end_index);
+                let end_position = end_position.unwrap_valid();
                 debug_assert!(!end_corrected);
 
                 if self.is_forwards() {
@@ -195,8 +197,8 @@ impl Range {
 
     #[must_use]
     pub fn corrected(&self, rope: &Rope) -> Self {
-        let anchor = self.anchor.corrected(rope);
-        let head = self.head.corrected(rope);
+        let anchor = self.anchor.corrected(rope).unwrap_valid();
+        let head = self.head.corrected(rope).unwrap_valid();
         Self {
             anchor,
             head,
@@ -207,7 +209,9 @@ impl Range {
     #[must_use]
     pub fn to_rope_slice<'rope>(&self, rope: &'rope Rope) -> (RopeSlice<'rope>, bool) {
         let (anchor_index, anchor_corrected) = self.anchor.to_rope_index(rope);
+        let anchor_index = anchor_index.unwrap_valid();
         let (head_index, head_corrected) = self.head.to_rope_index(rope);
+        let head_index = head_index.unwrap_valid();
 
         let slice = if self.is_forwards() {
             rope.get_slice(anchor_index..=head_index).unwrap()
@@ -237,7 +241,7 @@ impl Range {
             column: self.target_column().unwrap_or(self.head().column),
         };
 
-        let head = desired_head.corrected(rope);
+        let head = desired_head.corrected(rope).unwrap_valid();
 
         let target_column = if head.column == desired_head.column {
             None
@@ -250,14 +254,16 @@ impl Range {
 
     #[must_use]
     fn horizontally(&self, rope: &Rope, direction: Direction, distance: usize) -> Self {
-        let (index, _) = self.head().to_rope_index(rope);
+        let index = self.head().to_rope_index(rope).0.unwrap_valid();
 
         let desired_index = match direction {
             Direction::Backward => index.saturating_sub(distance),
             Direction::Forward => index + distance,
         };
 
-        let (head, _) = Position::from_rope_index(rope, desired_index);
+        let head = Position::from_rope_index(rope, desired_index)
+            .0
+            .unwrap_valid();
 
         Self::from((self.anchor(), head))
     }
@@ -341,14 +347,14 @@ impl Range {
     pub fn extend_bottom(&self, rope: &Rope) -> Self {
         // Subtracting 1 to remove ropey's mysterious empty final line
         let index = rope.line_to_char(rope.len_lines().saturating_sub(2));
-        let (head, _) = Position::from_rope_index(rope, index);
+        let head = Position::from_rope_index(rope, index).0.unwrap_valid();
         Self::from((self.anchor(), head))
     }
 
     #[must_use]
     pub fn extend_end(&self, rope: &Rope) -> Self {
         let index = rope.len_chars().saturating_sub(1);
-        let (head, _) = Position::from_rope_index(rope, index);
+        let head = Position::from_rope_index(rope, index).0.unwrap_valid();
         Self::from((self.anchor(), head))
     }
 
@@ -382,7 +388,7 @@ impl Range {
 
     #[must_use]
     pub fn extend_line_end(&self, rope: &Rope) -> Self {
-        let mut head = self.head().corrected(rope);
+        let mut head = self.head().corrected(rope).unwrap_valid();
         head.column = NonZeroUsize::new(rope.line(head.line.get()).len_chars()).unwrap();
         Self::from((self.anchor(), head))
     }

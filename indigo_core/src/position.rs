@@ -1,3 +1,4 @@
+use crate::valid::{Valid, ValidFor as _};
 use ropey::Rope;
 use std::num::NonZeroUsize;
 
@@ -28,13 +29,13 @@ impl Position {
     }
 
     #[must_use]
-    pub fn corrected(&self, rope: &Rope) -> Self {
-        let (index, _) = self.to_rope_index(rope);
+    pub fn corrected<'rope>(&self, rope: &'rope Rope) -> Valid<'rope, Self> {
+        let index = self.to_rope_index(rope).0.unwrap_valid();
         Self::from_rope_index(rope, index).0
     }
 
     #[must_use]
-    pub fn to_rope_index(&self, rope: &Rope) -> (usize, bool) {
+    pub fn to_rope_index<'rope>(&self, rope: &'rope Rope) -> (Valid<'rope, usize>, bool) {
         let mut corrected = false;
 
         let rope_line = self.line.get() - 1;
@@ -63,11 +64,13 @@ impl Position {
             rope_column
         };
 
-        (rope.line_to_char(line) + column, corrected)
+        let index = (rope.line_to_char(line) + column).valid_for(rope);
+
+        (index, corrected)
     }
 
     #[must_use]
-    pub fn from_rope_index(rope: &Rope, index: usize) -> (Self, bool) {
+    pub fn from_rope_index(rope: &Rope, index: usize) -> (Valid<'_, Self>, bool) {
         let mut corrected = false;
 
         // Get valid index
@@ -88,7 +91,7 @@ impl Position {
             column: NonZeroUsize::new(rope_column + 1).unwrap(),
         };
 
-        (position, corrected)
+        (position.valid_for(rope), corrected)
     }
 }
 
@@ -123,34 +126,74 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_conversions() {
-        let rope = Rope::from("Hello\nworld\n");
+    fn test_roundtrip() {
+        let rope = &Rope::from("Hello\nworld\n");
 
-        let position = Position::try_from((1, 1)).unwrap();
-        let rope_index = 0;
-        assert_eq!(position.to_rope_index(&rope), (rope_index, false));
-        assert_eq!(
-            Position::from_rope_index(&rope, rope_index),
-            (position, false)
-        );
+        let cases: Vec<(usize, Position)> = vec![
+            (0, (1, 1)),
+            (1, (1, 2)),
+            (5, (1, 6)),
+            (6, (2, 1)),
+            (11, (2, 6)),
+        ]
+        .into_iter()
+        .map(|(i, p)| (i, p.try_into().unwrap()))
+        .collect();
 
-        let position = Position::try_from((2, 1)).unwrap();
-        let rope_index = 6;
-        assert_eq!(position.to_rope_index(&rope), (rope_index, false));
-        assert_eq!(
-            Position::from_rope_index(&rope, rope_index),
-            (position, false)
-        );
+        for (index, position) in cases {
+            let (actual_index, index_corrected) = position.to_rope_index(rope);
+            let (actual_position, position_corrected) = Position::from_rope_index(rope, index);
+            assert!(!index_corrected && !position_corrected);
+            assert_eq!(index, actual_index.unwrap_valid());
+            assert_eq!(position, actual_position.unwrap_valid());
+        }
+    }
 
-        let position = Position::try_from((99, 99)).unwrap();
-        assert!(!position.is_valid(&rope));
-        assert_eq!(
-            Position::from_rope_index(&rope, 999),
-            (Position::try_from((2, 6)).unwrap(), true)
-        );
+    #[test]
+    fn test_from_rope_index() {
+        let rope = &Rope::from("Hello\nworld\n");
 
-        let position = Position::try_from((99, 99)).unwrap();
-        let rope_index = 11;
-        assert_eq!(position.to_rope_index(&rope), (rope_index, true));
+        let cases: Vec<(usize, Position, bool)> = vec![
+            (0, (1, 1), false),
+            (1, (1, 2), false),
+            (5, (1, 6), false),
+            (6, (2, 1), false),
+            (11, (2, 6), false),
+            (12, (2, 6), true),
+            (999, (2, 6), true),
+        ]
+        .into_iter()
+        .map(|(i, p, c)| (i, p.try_into().unwrap(), c))
+        .collect();
+
+        for (index, position, corrected) in cases {
+            let (actual_position, actual_corrected) = Position::from_rope_index(rope, index);
+            assert_eq!(position, actual_position.unwrap_valid());
+            assert_eq!(corrected, actual_corrected);
+        }
+    }
+
+    #[test]
+    fn test_to_rope_index() {
+        let rope = &Rope::from("Hello\nworld\n");
+
+        let cases: Vec<(Position, usize, bool)> = vec![
+            ((1, 1), 0, false),
+            ((1, 2), 1, false),
+            ((1, 6), 5, false),
+            ((2, 1), 6, false),
+            ((2, 6), 11, false),
+            ((2, 7), 11, true),
+            ((99, 99), 11, true),
+        ]
+        .into_iter()
+        .map(|(p, i, c)| (p.try_into().unwrap(), i, c))
+        .collect();
+
+        for (position, index, corrected) in cases {
+            let (actual_index, actual_corrected) = position.to_rope_index(rope);
+            assert_eq!(index, actual_index.unwrap_valid());
+            assert_eq!(corrected, actual_corrected);
+        }
     }
 }

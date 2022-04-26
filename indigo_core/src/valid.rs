@@ -4,6 +4,7 @@ use std::{
 };
 
 #[repr(transparent)]
+#[derive(Debug, PartialEq)]
 pub struct Valid<'context, T> {
     value: T,
     marker: PhantomData<&'context ()>,
@@ -17,7 +18,7 @@ impl<T> Valid<'_, T> {
         }
     }
 
-    pub fn get(self) -> T {
+    pub fn unwrap_valid(self) -> T {
         self.value
     }
 }
@@ -63,7 +64,7 @@ mod test {
     /// use indigo_core::ValidFor as _;
     /// let mut string = String::from("Hello\nworld\n");
     /// let length = string.len().valid_for(&string);
-    /// println!("{}", length.get());
+    /// println!("{}", length.unwrap_valid());
     /// ```
     fn test_good() {}
 
@@ -72,7 +73,7 @@ mod test {
     /// let mut string = String::from("Hello\nworld\n");
     /// let length = string.len().valid_for(&string);
     /// string.clear();
-    /// println!("{}", length.get());
+    /// println!("{}", length.unwrap_valid());
     /// ```
     fn test_bad() {}
 }
