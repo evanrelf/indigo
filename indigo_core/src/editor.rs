@@ -21,10 +21,7 @@ impl Editor {
         )
     }
 
-    pub fn open_buffer<P>(&mut self, path: P) -> Result<&Buffer, io::Error>
-    where
-        P: AsRef<Path>,
-    {
+    pub fn open_buffer(&mut self, path: impl AsRef<Path>) -> Result<&Buffer, io::Error> {
         self.current_buffer_index = self.buffers.insert(Buffer::open(path)?);
         Ok(self.buffers.get(self.current_buffer_index).unwrap())
     }

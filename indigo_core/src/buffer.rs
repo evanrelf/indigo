@@ -30,10 +30,7 @@ impl Buffer {
         &self.selection
     }
 
-    pub fn open<P>(path: P) -> Result<Self, io::Error>
-    where
-        P: AsRef<Path>,
-    {
+    pub fn open(path: impl AsRef<Path>) -> Result<Self, io::Error> {
         let path_buf = path.as_ref().to_path_buf();
         let file = File::open(path)?;
         let reader = BufReader::new(file);
