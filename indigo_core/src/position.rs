@@ -1,4 +1,4 @@
-use crate::valid::{Valid, ValidFor as _};
+use crate::valid::{Valid, Validate};
 use ropey::Rope;
 use std::num::NonZeroUsize;
 
@@ -9,25 +9,6 @@ pub struct Position {
 }
 
 impl Position {
-    #[must_use]
-    pub fn is_valid(&self, rope: &Rope) -> bool {
-        let rope_line = self.line.get() - 1;
-
-        // Assert line is valid
-        if rope.len_lines() <= rope_line {
-            return false;
-        }
-
-        let rope_column = self.column.get() - 1;
-
-        // Assert column is valid
-        if rope.line(rope_line).len_chars() <= rope_column {
-            return false;
-        }
-
-        true
-    }
-
     #[must_use]
     pub fn corrected<'rope>(&self, rope: &'rope Rope) -> Valid<'rope, Self> {
         let index = *self.to_rope_index(rope).0;
@@ -101,6 +82,34 @@ impl Default for Position {
             line: NonZeroUsize::new(1).unwrap(),
             column: NonZeroUsize::new(1).unwrap(),
         }
+    }
+}
+
+impl Validate<Rope> for Position {
+    #[must_use]
+    fn is_valid(&self, rope: &Rope) -> bool {
+        let rope_line = self.line.get() - 1;
+
+        // Assert line is valid
+        if rope.len_lines() <= rope_line {
+            return false;
+        }
+
+        let rope_column = self.column.get() - 1;
+
+        // Assert column is valid
+        if rope.line(rope_line).len_chars() <= rope_column {
+            return false;
+        }
+
+        true
+    }
+}
+
+impl Validate<Rope> for usize {
+    #[must_use]
+    fn is_valid(&self, rope: &Rope) -> bool {
+        rope.len_chars() > *self
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::selection::Selection;
+use crate::{selection::Selection, valid::Validate as _};
 use ropey::Rope;
 use std::{
     fs::File,

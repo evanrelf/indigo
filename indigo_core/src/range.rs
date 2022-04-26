@@ -1,6 +1,6 @@
 use crate::{
     position::Position,
-    valid::{Valid, ValidFor as _},
+    valid::{Valid, Validate},
 };
 use regex::Regex;
 use ropey::{Rope, RopeSlice};
@@ -192,11 +192,6 @@ impl Range {
     }
 
     #[must_use]
-    pub fn is_valid(&self, rope: &Rope) -> bool {
-        self.anchor.is_valid(rope) && self.head.is_valid(rope)
-    }
-
-    #[must_use]
     pub fn corrected<'rope>(&self, rope: &'rope Rope) -> Valid<'rope, Self> {
         let anchor = *self.anchor.corrected(rope);
         let head = *self.head.corrected(rope);
@@ -228,6 +223,13 @@ impl Range {
         if let Some(column) = self.target_column {
             debug_assert!(column > self.head.column);
         }
+    }
+}
+
+impl Validate<Rope> for Range {
+    #[must_use]
+    fn is_valid(&self, rope: &Rope) -> bool {
+        self.anchor.is_valid(rope) && self.head.is_valid(rope)
     }
 }
 
