@@ -30,11 +30,6 @@ impl Buffer {
         &self.selection
     }
 
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn open<P>(path: P) -> Result<Self, io::Error>
     where
         P: AsRef<Path>,

@@ -18,10 +18,6 @@ impl Editor {
         (self.current_buffer_index, &self.buffers[self.current_buffer_index])
     }
 
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn open_buffer<P>(&mut self, path: P) -> Result<&Buffer, io::Error>
     where
         P: AsRef<Path>,
