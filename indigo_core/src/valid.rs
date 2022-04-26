@@ -22,6 +22,18 @@ impl<T> Valid<'_, T> {
     }
 }
 
+impl<T> AsRef<T> for Valid<'_, T> {
+    fn as_ref(&self) -> &T {
+        &self.value
+    }
+}
+
+impl<T> AsMut<T> for Valid<'_, T> {
+    fn as_mut(&mut self) -> &mut T {
+        &mut self.value
+    }
+}
+
 impl<T> Deref for Valid<'_, T> {
     type Target = T;
 
