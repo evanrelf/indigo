@@ -14,13 +14,8 @@ impl Editor {
     }
 
     #[must_use]
-    pub fn current_buffer_index(&self) -> Index {
-        self.current_buffer_index
-    }
-
-    #[must_use]
-    pub fn current_buffer(&self) -> &Buffer {
-        &self.buffers[self.current_buffer_index]
+    pub fn current_buffer(&self) -> (Index, &Buffer) {
+        (self.current_buffer_index, &self.buffers[self.current_buffer_index])
     }
 
     pub fn new() -> Self {
