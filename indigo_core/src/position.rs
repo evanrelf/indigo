@@ -30,7 +30,7 @@ impl Position {
 
     #[must_use]
     pub fn corrected<'rope>(&self, rope: &'rope Rope) -> Valid<'rope, Self> {
-        let index = self.to_rope_index(rope).0.unwrap_valid();
+        let index = *self.to_rope_index(rope).0;
         Self::from_rope_index(rope, index).0
     }
 
@@ -144,8 +144,8 @@ mod test {
             let (actual_index, index_corrected) = position.to_rope_index(rope);
             let (actual_position, position_corrected) = Position::from_rope_index(rope, index);
             assert!(!index_corrected && !position_corrected);
-            assert_eq!(index, actual_index.unwrap_valid());
-            assert_eq!(position, actual_position.unwrap_valid());
+            assert_eq!(index, *actual_index);
+            assert_eq!(position, *actual_position);
         }
     }
 
@@ -168,7 +168,7 @@ mod test {
 
         for (index, position, corrected) in cases {
             let (actual_position, actual_corrected) = Position::from_rope_index(rope, index);
-            assert_eq!(position, actual_position.unwrap_valid());
+            assert_eq!(position, *actual_position);
             assert_eq!(corrected, actual_corrected);
         }
     }
@@ -192,7 +192,7 @@ mod test {
 
         for (position, index, corrected) in cases {
             let (actual_index, actual_corrected) = position.to_rope_index(rope);
-            assert_eq!(index, actual_index.unwrap_valid());
+            assert_eq!(index, *actual_index);
             assert_eq!(corrected, actual_corrected);
         }
     }
