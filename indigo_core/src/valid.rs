@@ -36,21 +36,29 @@ impl<T> DerefMut for Valid<'_, T> {
     }
 }
 
+pub trait ValidFor: Sized {
+    fn valid_for<C>(self, context: &C) -> Valid<'_, Self> {
+        Valid::new(self, context)
+    }
+}
+
+impl<T> ValidFor for T {}
+
 mod test {
     #![allow(dead_code)]
 
     /// ```
-    /// use indigo_core::Valid;
+    /// use indigo_core::ValidFor as _;
     /// let mut string = String::from("Hello\nworld\n");
-    /// let length = Valid::new(string.len(), &string);
+    /// let length = string.len().valid_for(&string);
     /// println!("{}", length.get());
     /// ```
     fn test_good() {}
 
     /// ```compile_fail
-    /// use indigo_core::Valid;
+    /// use indigo_core::ValidFor as _;
     /// let mut string = String::from("Hello\nworld\n");
-    /// let length = Valid::new(string.len(), &string);
+    /// let length = string.len().valid_for(&string);
     /// string.clear();
     /// println!("{}", length.get());
     /// ```
