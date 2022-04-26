@@ -58,25 +58,13 @@ impl Selection {
         }
     }
 
-    pub fn map_primary_range<F>(&self, range_fn: F) -> Self
-    where
-        F: Fn(&Range) -> Range,
-    {
-        let mut selection = self.clone();
-        let primary_range = &mut selection.ranges[selection.primary_range_index];
-        *primary_range = range_fn(primary_range);
-        selection
-
-        // TODO: Merge overlapping ranges
-    }
-
     pub fn map_ranges<F>(&self, range_fn: F) -> Self
     where
-        F: Fn(&Range) -> Range,
+        F: Fn(usize, &Range) -> Range,
     {
         let mut selection = self.clone();
-        for range in &mut selection.ranges {
-            *range = range_fn(range);
+        for (index, range) in selection.ranges.iter_mut().enumerate() {
+            *range = range_fn(index, range);
         }
         selection
 
