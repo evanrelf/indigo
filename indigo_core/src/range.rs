@@ -387,7 +387,7 @@ pub fn move_top<R>(range: R) -> Valid<'static, Range>
 where
     R: AsRef<Range>,
 {
-    extend_top(range).reduce().valid_forever().unwrap()
+    extend_top(range).reduce().valid_always().unwrap()
 }
 
 #[must_use]
@@ -478,7 +478,7 @@ where
 {
     let range = range.as_ref();
     Range::from((range.anchor(), (1, 1).try_into().unwrap()))
-        .valid_forever()
+        .valid_always()
         .unwrap()
 }
 

@@ -41,7 +41,7 @@ pub trait Validate<C>: Sized {
         }
     }
 
-    fn valid_forever(self) -> Option<Valid<'static, Self>> {
+    fn valid_always(self) -> Option<Valid<'static, Self>> {
         if self.is_valid(None) {
             Some(Valid(self.entangle_lifetime()))
         } else {
