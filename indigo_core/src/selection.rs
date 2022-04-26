@@ -15,13 +15,11 @@ impl Selection {
     }
 
     #[must_use]
-    pub fn primary_range_index(&self) -> usize {
-        self.primary_range_index
-    }
-
-    #[must_use]
-    pub fn primary_range(&self) -> &Range {
-        &self.ranges[self.primary_range_index]
+    pub fn primary_range(&self) -> (usize, &Range) {
+        (
+            self.primary_range_index,
+            &self.ranges[self.primary_range_index],
+        )
     }
 
     #[must_use]
