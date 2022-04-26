@@ -45,7 +45,7 @@ impl Position {
             rope_column
         };
 
-        let index = (rope.line_to_char(line) + column).valid_for(rope);
+        let index = (rope.line_to_char(line) + column).valid_for(rope).unwrap();
 
         (index, corrected)
     }
@@ -72,7 +72,7 @@ impl Position {
             column: NonZeroUsize::new(rope_column + 1).unwrap(),
         };
 
-        (position.valid_for(rope), corrected)
+        (position.valid_for(rope).unwrap(), corrected)
     }
 }
 
@@ -87,29 +87,39 @@ impl Default for Position {
 
 impl Validate<Rope> for Position {
     #[must_use]
-    fn is_valid(&self, rope: &Rope) -> bool {
-        let rope_line = self.line.get() - 1;
+    fn is_valid(&self, rope: Option<&Rope>) -> bool {
+        if let Some(rope) = rope {
+            let rope_line = self.line.get() - 1;
 
-        // Assert line is valid
-        if rope.len_lines() <= rope_line {
-            return false;
+            // Assert line is valid
+            if rope.len_lines() <= rope_line {
+                return false;
+            }
+
+            let rope_column = self.column.get() - 1;
+
+            // Assert column is valid
+            if rope.line(rope_line).len_chars() <= rope_column {
+                return false;
+            }
+
+            true
+        } else {
+            // TODO
+            false
         }
-
-        let rope_column = self.column.get() - 1;
-
-        // Assert column is valid
-        if rope.line(rope_line).len_chars() <= rope_column {
-            return false;
-        }
-
-        true
     }
 }
 
 impl Validate<Rope> for usize {
     #[must_use]
-    fn is_valid(&self, rope: &Rope) -> bool {
-        rope.len_chars() > *self
+    fn is_valid(&self, rope: Option<&Rope>) -> bool {
+        if let Some(rope) = rope {
+            rope.len_chars() > *self
+        } else {
+            // TODO
+            false
+        }
     }
 }
 

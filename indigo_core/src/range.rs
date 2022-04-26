@@ -201,6 +201,7 @@ impl Range {
             target_column: None,
         }
         .valid_for(rope)
+        .unwrap()
     }
 
     #[must_use]
@@ -228,7 +229,7 @@ impl Range {
 
 impl Validate<Rope> for Range {
     #[must_use]
-    fn is_valid(&self, rope: &Rope) -> bool {
+    fn is_valid(&self, rope: Option<&Rope>) -> bool {
         self.anchor.is_valid(rope) && self.head.is_valid(rope)
     }
 }
@@ -315,6 +316,7 @@ where
     Range::try_from((range.anchor(), head, target_column))
         .unwrap()
         .valid_for(rope)
+        .unwrap()
 }
 
 #[must_use]
@@ -333,7 +335,7 @@ where
 
     let head = *Position::from_rope_index(rope, desired_index).0;
 
-    Range::from((range.anchor(), head)).valid_for(rope)
+    Range::from((range.anchor(), head)).valid_for(rope).unwrap()
 }
 
 #[must_use]
@@ -341,7 +343,10 @@ pub fn move_up<R>(range: R, rope: &Rope, distance: usize) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_up(range, rope, distance).reduce().valid_for(rope)
+    extend_up(range, rope, distance)
+        .reduce()
+        .valid_for(rope)
+        .unwrap()
 }
 
 #[must_use]
@@ -349,7 +354,10 @@ pub fn move_down<R>(range: R, rope: &Rope, distance: usize) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_down(range, rope, distance).reduce().valid_for(rope)
+    extend_down(range, rope, distance)
+        .reduce()
+        .valid_for(rope)
+        .unwrap()
 }
 
 #[must_use]
@@ -357,7 +365,10 @@ pub fn move_left<R>(range: R, rope: &Rope, distance: usize) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_left(range, rope, distance).reduce().valid_for(rope)
+    extend_left(range, rope, distance)
+        .reduce()
+        .valid_for(rope)
+        .unwrap()
 }
 
 #[must_use]
@@ -365,7 +376,10 @@ pub fn move_right<R>(range: R, rope: &Rope, distance: usize) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_right(range, rope, distance).reduce().valid_for(rope)
+    extend_right(range, rope, distance)
+        .reduce()
+        .valid_for(rope)
+        .unwrap()
 }
 
 #[must_use]
@@ -373,7 +387,7 @@ pub fn move_top<R>(range: R) -> Valid<'static, Range>
 where
     R: AsRef<Range>,
 {
-    extend_top(range).reduce().valid_forever()
+    extend_top(range).reduce().valid_forever().unwrap()
 }
 
 #[must_use]
@@ -381,7 +395,7 @@ pub fn move_bottom<R>(range: R, rope: &Rope) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_bottom(range, rope).reduce().valid_for(rope)
+    extend_bottom(range, rope).reduce().valid_for(rope).unwrap()
 }
 
 #[must_use]
@@ -389,7 +403,7 @@ pub fn move_end<R>(range: R, rope: &Rope) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_end(range, rope).reduce().valid_for(rope)
+    extend_end(range, rope).reduce().valid_for(rope).unwrap()
 }
 
 #[must_use]
@@ -397,7 +411,10 @@ pub fn move_line_begin<R>(range: R, rope: &Rope) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_line_begin(range, rope).reduce().valid_for(rope)
+    extend_line_begin(range, rope)
+        .reduce()
+        .valid_for(rope)
+        .unwrap()
 }
 
 #[must_use]
@@ -408,6 +425,7 @@ where
     extend_line_first_non_blank(range, rope)
         .reduce()
         .valid_for(rope)
+        .unwrap()
 }
 
 #[must_use]
@@ -415,7 +433,10 @@ pub fn move_line_end<R>(range: R, rope: &Rope) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_line_end(range, rope).reduce().valid_for(rope)
+    extend_line_end(range, rope)
+        .reduce()
+        .valid_for(rope)
+        .unwrap()
 }
 
 #[must_use]
@@ -456,7 +477,9 @@ where
     R: AsRef<Range>,
 {
     let range = range.as_ref();
-    Range::from((range.anchor(), (1, 1).try_into().unwrap())).valid_forever()
+    Range::from((range.anchor(), (1, 1).try_into().unwrap()))
+        .valid_forever()
+        .unwrap()
 }
 
 #[must_use]
@@ -470,7 +493,7 @@ where
     let index = rope.line_to_char(rope.len_lines().saturating_sub(2));
     let head = *Position::from_rope_index(rope, index).0;
 
-    Range::from((range.anchor(), head)).valid_for(rope)
+    Range::from((range.anchor(), head)).valid_for(rope).unwrap()
 }
 
 #[must_use]
@@ -483,7 +506,7 @@ where
     let index = rope.len_chars().saturating_sub(1);
     let head = *Position::from_rope_index(rope, index).0;
 
-    Range::from((range.anchor(), head)).valid_for(rope)
+    Range::from((range.anchor(), head)).valid_for(rope).unwrap()
 }
 
 #[must_use]
@@ -522,7 +545,7 @@ where
     })
     .unwrap();
 
-    Range::from((range.anchor(), head)).valid_for(rope)
+    Range::from((range.anchor(), head)).valid_for(rope).unwrap()
 }
 
 #[must_use]
@@ -535,5 +558,5 @@ where
     let mut head = *range.head().corrected(rope);
     head.column = NonZeroUsize::new(rope.line(head.line.get()).len_chars()).unwrap();
 
-    Range::from((range.anchor(), head)).valid_for(rope)
+    Range::from((range.anchor(), head)).valid_for(rope).unwrap()
 }

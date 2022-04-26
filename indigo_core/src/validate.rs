@@ -30,15 +30,22 @@ impl<T> DerefMut for Valid<'_, T> {
     }
 }
 
-// TODO: Return `Option`
 pub trait Validate<C>: Sized {
-    fn is_valid(&self, context: &C) -> bool;
+    fn is_valid(&self, context: Option<&C>) -> bool;
 
-    fn valid_for(self, context: &C) -> Valid<'_, Self> {
-        Valid(self.entangle(context))
+    fn valid_for(self, context: &C) -> Option<Valid<'_, Self>> {
+        if self.is_valid(Some(context)) {
+            Some(Valid(self.entangle(context)))
+        } else {
+            None
+        }
     }
 
-    fn valid_forever(self) -> Valid<'static, Self> {
-        Valid(self.entangle_lifetime())
+    fn valid_forever(self) -> Option<Valid<'static, Self>> {
+        if self.is_valid(None) {
+            Some(Valid(self.entangle_lifetime()))
+        } else {
+            None
+        }
     }
 }

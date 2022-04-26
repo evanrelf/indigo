@@ -68,7 +68,7 @@ impl Buffer {
             {
                 let mut valid = true;
                 for range in self.selection().ranges() {
-                    if !range.is_valid(&self.contents) {
+                    if !range.is_valid(Some(&self.contents)) {
                         valid = false;
                         break;
                     }
