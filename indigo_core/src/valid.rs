@@ -9,15 +9,6 @@ pub struct Valid<'context, T> {
     marker: PhantomData<&'context ()>,
 }
 
-impl<T> Valid<'_, T> {
-    pub fn new<C>(value: T, _context: &C) -> Valid<'_, T> {
-        Valid {
-            value,
-            marker: PhantomData,
-        }
-    }
-}
-
 impl<T> AsRef<T> for Valid<'_, T> {
     fn as_ref(&self) -> &T {
         &self.value
@@ -45,8 +36,11 @@ impl<T> DerefMut for Valid<'_, T> {
 }
 
 pub trait ValidFor: Sized {
-    fn valid_for<C>(self, context: &C) -> Valid<'_, Self> {
-        Valid::new(self, context)
+    fn valid_for<C>(self, _context: &C) -> Valid<'_, Self> {
+        Valid {
+            value: self,
+            marker: PhantomData,
+        }
     }
 }
 
