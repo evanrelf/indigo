@@ -222,175 +222,6 @@ impl Range {
         (slice, anchor_corrected || head_corrected)
     }
 
-    #[must_use]
-    fn vertically(&self, rope: &Rope, direction: Direction, distance: usize) -> Self {
-        let desired_head = Position {
-            line: NonZeroUsize::new(max(1, {
-                match direction {
-                    Direction::Backward => self.head().line.get().saturating_sub(distance),
-                    Direction::Forward => {
-                        // Subtracting 1 to remove ropey's mysterious empty final line
-                        let last_line = rope.len_lines().saturating_sub(1);
-                        // Prevent `corrected` from moving us to the last index in the rope if we try to go
-                        // below the last line
-                        min(self.head().line.get() + distance, last_line)
-                    }
-                }
-            }))
-            .unwrap(),
-            column: self.target_column().unwrap_or(self.head().column),
-        };
-
-        let head = *desired_head.corrected(rope);
-
-        let target_column = if head.column == desired_head.column {
-            None
-        } else {
-            Some(desired_head.column)
-        };
-
-        Self::try_from((self.anchor(), head, target_column)).unwrap()
-    }
-
-    #[must_use]
-    fn horizontally(&self, rope: &Rope, direction: Direction, distance: usize) -> Self {
-        let index = *self.head().to_rope_index(rope).0;
-
-        let desired_index = match direction {
-            Direction::Backward => index.saturating_sub(distance),
-            Direction::Forward => index + distance,
-        };
-
-        let head = *Position::from_rope_index(rope, desired_index).0;
-
-        Self::from((self.anchor(), head))
-    }
-
-    #[must_use]
-    pub fn move_up(&self, rope: &Rope, distance: usize) -> Self {
-        self.extend_up(rope, distance).reduce()
-    }
-
-    #[must_use]
-    pub fn move_down(&self, rope: &Rope, distance: usize) -> Self {
-        self.extend_down(rope, distance).reduce()
-    }
-
-    #[must_use]
-    pub fn move_left(&self, rope: &Rope, distance: usize) -> Self {
-        self.extend_left(rope, distance).reduce()
-    }
-
-    #[must_use]
-    pub fn move_right(&self, rope: &Rope, distance: usize) -> Self {
-        self.extend_right(rope, distance).reduce()
-    }
-
-    #[must_use]
-    pub fn move_top(&self) -> Self {
-        self.extend_top().reduce()
-    }
-
-    #[must_use]
-    pub fn move_bottom(&self, rope: &Rope) -> Self {
-        self.extend_bottom(rope).reduce()
-    }
-
-    #[must_use]
-    pub fn move_end(&self, rope: &Rope) -> Self {
-        self.extend_end(rope).reduce()
-    }
-
-    #[must_use]
-    pub fn move_line_begin(&self, rope: &Rope) -> Self {
-        self.extend_line_begin(rope).reduce()
-    }
-
-    #[must_use]
-    pub fn move_line_first_non_blank(&self, rope: &Rope) -> Self {
-        self.extend_line_first_non_blank(rope).reduce()
-    }
-
-    #[must_use]
-    pub fn move_line_end(&self, rope: &Rope) -> Self {
-        self.extend_line_end(rope).reduce()
-    }
-
-    #[must_use]
-    pub fn extend_up(&self, rope: &Rope, distance: usize) -> Self {
-        self.vertically(rope, Direction::Backward, distance)
-    }
-
-    #[must_use]
-    pub fn extend_down(&self, rope: &Rope, distance: usize) -> Self {
-        self.vertically(rope, Direction::Forward, distance)
-    }
-
-    #[must_use]
-    pub fn extend_left(&self, rope: &Rope, distance: usize) -> Self {
-        self.horizontally(rope, Direction::Backward, distance)
-    }
-
-    #[must_use]
-    pub fn extend_right(&self, rope: &Rope, distance: usize) -> Self {
-        self.horizontally(rope, Direction::Forward, distance)
-    }
-
-    #[must_use]
-    pub fn extend_top(&self) -> Self {
-        Self::from((self.anchor(), (1, 1).try_into().unwrap()))
-    }
-
-    #[must_use]
-    pub fn extend_bottom(&self, rope: &Rope) -> Self {
-        // Subtracting 1 to remove ropey's mysterious empty final line
-        let index = rope.line_to_char(rope.len_lines().saturating_sub(2));
-        let head = *Position::from_rope_index(rope, index).0;
-        Self::from((self.anchor(), head))
-    }
-
-    #[must_use]
-    pub fn extend_end(&self, rope: &Rope) -> Self {
-        let index = rope.len_chars().saturating_sub(1);
-        let head = *Position::from_rope_index(rope, index).0;
-        Self::from((self.anchor(), head))
-    }
-
-    #[must_use]
-    pub fn extend_line_begin(&self, rope: &Rope) -> Self {
-        let mut head = self.head();
-        head.column = NonZeroUsize::new(1).unwrap();
-        *Self::from((self.anchor(), head)).corrected(rope)
-    }
-
-    #[must_use]
-    pub fn extend_line_first_non_blank(&self, rope: &Rope) -> Self {
-        let blanks = [' ', '\t'];
-
-        let first_non_blank = rope
-            .line(self.head().line.get())
-            .chars()
-            .enumerate()
-            .find(|(_, c)| !blanks.contains(c));
-
-        let mut head = self.head();
-        head.column = NonZeroUsize::new(match first_non_blank {
-            // Behave like `extend_line_end` if there are no non-blank characters on this line
-            None => rope.line(head.line.get()).len_chars().saturating_sub(1),
-            Some((i, _)) => i,
-        })
-        .unwrap();
-
-        Self::from((self.anchor(), head))
-    }
-
-    #[must_use]
-    pub fn extend_line_end(&self, rope: &Rope) -> Self {
-        let mut head = *self.head().corrected(rope);
-        head.column = NonZeroUsize::new(rope.line(head.line.get()).len_chars()).unwrap();
-        Self::from((self.anchor(), head))
-    }
-
     #[cfg(debug_assertions)]
     pub fn assert_invariants(&self) {
         // Target column must be greater than head's column
@@ -445,4 +276,258 @@ impl TryFrom<(Position, Position, NonZeroUsize)> for Range {
     ) -> Result<Self, Self::Error> {
         Self::try_from((anchor, head, Some(target_column)))
     }
+}
+
+#[must_use]
+fn vertically<R>(range: R, rope: &Rope, direction: Direction, distance: usize) -> Range
+where
+    R: AsRef<Range>,
+{
+    let range = range.as_ref();
+
+    let desired_head = Position {
+        line: NonZeroUsize::new(max(1, {
+            match direction {
+                Direction::Backward => range.head().line.get().saturating_sub(distance),
+                Direction::Forward => {
+                    // Subtracting 1 to remove ropey's mysterious empty final line
+                    let last_line = rope.len_lines().saturating_sub(1);
+                    // Prevent `corrected` from moving us to the last index in the rope if we try to go
+                    // below the last line
+                    min(range.head().line.get() + distance, last_line)
+                }
+            }
+        }))
+        .unwrap(),
+        column: range.target_column().unwrap_or(range.head().column),
+    };
+
+    let head = *desired_head.corrected(rope);
+
+    let target_column = if head.column == desired_head.column {
+        None
+    } else {
+        Some(desired_head.column)
+    };
+
+    Range::try_from((range.anchor(), head, target_column)).unwrap()
+}
+
+#[must_use]
+fn horizontally<R>(range: R, rope: &Rope, direction: Direction, distance: usize) -> Range
+where
+    R: AsRef<Range>,
+{
+    let range = range.as_ref();
+
+    let index = *range.head().to_rope_index(rope).0;
+
+    let desired_index = match direction {
+        Direction::Backward => index.saturating_sub(distance),
+        Direction::Forward => index + distance,
+    };
+
+    let head = *Position::from_rope_index(rope, desired_index).0;
+
+    Range::from((range.anchor(), head))
+}
+
+#[must_use]
+pub fn move_up<R>(range: R, rope: &Rope, distance: usize) -> Range
+where
+    R: AsRef<Range>,
+{
+    extend_up(range, rope, distance).reduce()
+}
+
+#[must_use]
+pub fn move_down<R>(range: R, rope: &Rope, distance: usize) -> Range
+where
+    R: AsRef<Range>,
+{
+    extend_down(range, rope, distance).reduce()
+}
+
+#[must_use]
+pub fn move_left<R>(range: R, rope: &Rope, distance: usize) -> Range
+where
+    R: AsRef<Range>,
+{
+    extend_left(range, rope, distance).reduce()
+}
+
+#[must_use]
+pub fn move_right<R>(range: R, rope: &Rope, distance: usize) -> Range
+where
+    R: AsRef<Range>,
+{
+    extend_right(range, rope, distance).reduce()
+}
+
+#[must_use]
+pub fn move_top<R>(range: R) -> Range
+where
+    R: AsRef<Range>,
+{
+    extend_top(range).reduce()
+}
+
+#[must_use]
+pub fn move_bottom<R>(range: R, rope: &Rope) -> Range
+where
+    R: AsRef<Range>,
+{
+    extend_bottom(range, rope).reduce()
+}
+
+#[must_use]
+pub fn move_end<R>(range: R, rope: &Rope) -> Range
+where
+    R: AsRef<Range>,
+{
+    extend_end(range, rope).reduce()
+}
+
+#[must_use]
+pub fn move_line_begin<R>(range: R, rope: &Rope) -> Range
+where
+    R: AsRef<Range>,
+{
+    extend_line_begin(range, rope).reduce()
+}
+
+#[must_use]
+pub fn move_line_first_non_blank<R>(range: R, rope: &Rope) -> Range
+where
+    R: AsRef<Range>,
+{
+    extend_line_first_non_blank(range, rope).reduce()
+}
+
+#[must_use]
+pub fn move_line_end<R>(range: R, rope: &Rope) -> Range
+where
+    R: AsRef<Range>,
+{
+    extend_line_end(range, rope).reduce()
+}
+
+#[must_use]
+pub fn extend_up<R>(range: R, rope: &Rope, distance: usize) -> Range
+where
+    R: AsRef<Range>,
+{
+    vertically(range, rope, Direction::Backward, distance)
+}
+
+#[must_use]
+pub fn extend_down<R>(range: R, rope: &Rope, distance: usize) -> Range
+where
+    R: AsRef<Range>,
+{
+    vertically(range, rope, Direction::Forward, distance)
+}
+
+#[must_use]
+pub fn extend_left<R>(range: R, rope: &Rope, distance: usize) -> Range
+where
+    R: AsRef<Range>,
+{
+    horizontally(range, rope, Direction::Backward, distance)
+}
+
+#[must_use]
+pub fn extend_right<R>(range: R, rope: &Rope, distance: usize) -> Range
+where
+    R: AsRef<Range>,
+{
+    horizontally(range, rope, Direction::Forward, distance)
+}
+
+#[must_use]
+pub fn extend_top<R>(range: R) -> Range
+where
+    R: AsRef<Range>,
+{
+    let range = range.as_ref();
+    Range::from((range.anchor(), (1, 1).try_into().unwrap()))
+}
+
+#[must_use]
+pub fn extend_bottom<R>(range: R, rope: &Rope) -> Range
+where
+    R: AsRef<Range>,
+{
+    let range = range.as_ref();
+
+    // Subtracting 1 to remove ropey's mysterious empty final line
+    let index = rope.line_to_char(rope.len_lines().saturating_sub(2));
+    let head = *Position::from_rope_index(rope, index).0;
+
+    Range::from((range.anchor(), head))
+}
+
+#[must_use]
+pub fn extend_end<R>(range: R, rope: &Rope) -> Range
+where
+    R: AsRef<Range>,
+{
+    let range = range.as_ref();
+
+    let index = rope.len_chars().saturating_sub(1);
+    let head = *Position::from_rope_index(rope, index).0;
+
+    Range::from((range.anchor(), head))
+}
+
+#[must_use]
+pub fn extend_line_begin<R>(range: R, rope: &Rope) -> Range
+where
+    R: AsRef<Range>,
+{
+    let range = range.as_ref();
+
+    let mut head = range.head();
+    head.column = NonZeroUsize::new(1).unwrap();
+
+    *Range::from((range.anchor(), head)).corrected(rope)
+}
+
+#[must_use]
+pub fn extend_line_first_non_blank<R>(range: R, rope: &Rope) -> Range
+where
+    R: AsRef<Range>,
+{
+    let range = range.as_ref();
+
+    let blanks = [' ', '\t'];
+
+    let first_non_blank = rope
+        .line(range.head().line.get())
+        .chars()
+        .enumerate()
+        .find(|(_, c)| !blanks.contains(c));
+
+    let mut head = range.head();
+    head.column = NonZeroUsize::new(match first_non_blank {
+        // Behave like `extend_line_end` if there are no non-blank characters on this line
+        None => rope.line(head.line.get()).len_chars().saturating_sub(1),
+        Some((i, _)) => i,
+    })
+    .unwrap();
+
+    Range::from((range.anchor(), head))
+}
+
+#[must_use]
+pub fn extend_line_end<R>(range: R, rope: &Rope) -> Range
+where
+    R: AsRef<Range>,
+{
+    let range = range.as_ref();
+
+    let mut head = *range.head().corrected(rope);
+    head.column = NonZeroUsize::new(rope.line(head.line.get()).len_chars()).unwrap();
+
+    Range::from((range.anchor(), head))
 }
