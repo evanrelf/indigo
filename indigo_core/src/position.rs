@@ -1,4 +1,4 @@
-use crate::valid::{Valid, Validate};
+use crate::validate::{Valid, Validate};
 use ropey::Rope;
 use std::num::NonZeroUsize;
 

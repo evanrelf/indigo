@@ -11,7 +11,7 @@ pub mod entangle;
 pub mod position;
 pub mod range;
 pub mod selection;
-pub mod valid;
+pub mod validate;
 
 pub use crate::{
     buffer::Buffer,
@@ -20,5 +20,5 @@ pub use crate::{
     position::Position,
     range::Range,
     selection::Selection,
-    valid::Valid,
+    validate::{Valid, Validate},
 };

@@ -1,6 +1,6 @@
 use crate::{
     position::Position,
-    valid::{Valid, Validate},
+    validate::{Valid, Validate},
 };
 use regex::Regex;
 use ropey::{Rope, RopeSlice};
