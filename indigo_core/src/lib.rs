@@ -10,6 +10,7 @@ mod editor;
 mod position;
 mod range;
 mod selection;
+mod valid;
 
 #[doc(inline)]
-pub use crate::{buffer::*, editor::*, position::*, range::*, selection::*};
+pub use crate::{buffer::*, editor::*, position::*, range::*, selection::*, valid::*};
