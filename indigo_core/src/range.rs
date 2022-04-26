@@ -279,7 +279,7 @@ impl TryFrom<(Position, Position, NonZeroUsize)> for Range {
 }
 
 #[must_use]
-fn vertically<R>(range: R, rope: &Rope, direction: Direction, distance: usize) -> Range
+fn vertically<R>(range: R, rope: &Rope, direction: Direction, distance: usize) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
@@ -310,11 +310,13 @@ where
         Some(desired_head.column)
     };
 
-    Range::try_from((range.anchor(), head, target_column)).unwrap()
+    Range::try_from((range.anchor(), head, target_column))
+        .unwrap()
+        .valid_for(rope)
 }
 
 #[must_use]
-fn horizontally<R>(range: R, rope: &Rope, direction: Direction, distance: usize) -> Range
+fn horizontally<R>(range: R, rope: &Rope, direction: Direction, distance: usize) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
@@ -329,91 +331,93 @@ where
 
     let head = *Position::from_rope_index(rope, desired_index).0;
 
-    Range::from((range.anchor(), head))
+    Range::from((range.anchor(), head)).valid_for(rope)
 }
 
 #[must_use]
-pub fn move_up<R>(range: R, rope: &Rope, distance: usize) -> Range
+pub fn move_up<R>(range: R, rope: &Rope, distance: usize) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_up(range, rope, distance).reduce()
+    extend_up(range, rope, distance).reduce().valid_for(rope)
 }
 
 #[must_use]
-pub fn move_down<R>(range: R, rope: &Rope, distance: usize) -> Range
+pub fn move_down<R>(range: R, rope: &Rope, distance: usize) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_down(range, rope, distance).reduce()
+    extend_down(range, rope, distance).reduce().valid_for(rope)
 }
 
 #[must_use]
-pub fn move_left<R>(range: R, rope: &Rope, distance: usize) -> Range
+pub fn move_left<R>(range: R, rope: &Rope, distance: usize) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_left(range, rope, distance).reduce()
+    extend_left(range, rope, distance).reduce().valid_for(rope)
 }
 
 #[must_use]
-pub fn move_right<R>(range: R, rope: &Rope, distance: usize) -> Range
+pub fn move_right<R>(range: R, rope: &Rope, distance: usize) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_right(range, rope, distance).reduce()
+    extend_right(range, rope, distance).reduce().valid_for(rope)
 }
 
 #[must_use]
-pub fn move_top<R>(range: R) -> Range
+pub fn move_top<R>(range: R) -> Valid<'static, Range>
 where
     R: AsRef<Range>,
 {
-    extend_top(range).reduce()
+    extend_top(range).reduce().valid_forever()
 }
 
 #[must_use]
-pub fn move_bottom<R>(range: R, rope: &Rope) -> Range
+pub fn move_bottom<R>(range: R, rope: &Rope) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_bottom(range, rope).reduce()
+    extend_bottom(range, rope).reduce().valid_for(rope)
 }
 
 #[must_use]
-pub fn move_end<R>(range: R, rope: &Rope) -> Range
+pub fn move_end<R>(range: R, rope: &Rope) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_end(range, rope).reduce()
+    extend_end(range, rope).reduce().valid_for(rope)
 }
 
 #[must_use]
-pub fn move_line_begin<R>(range: R, rope: &Rope) -> Range
+pub fn move_line_begin<R>(range: R, rope: &Rope) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_line_begin(range, rope).reduce()
+    extend_line_begin(range, rope).reduce().valid_for(rope)
 }
 
 #[must_use]
-pub fn move_line_first_non_blank<R>(range: R, rope: &Rope) -> Range
+pub fn move_line_first_non_blank<R>(range: R, rope: &Rope) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_line_first_non_blank(range, rope).reduce()
+    extend_line_first_non_blank(range, rope)
+        .reduce()
+        .valid_for(rope)
 }
 
 #[must_use]
-pub fn move_line_end<R>(range: R, rope: &Rope) -> Range
+pub fn move_line_end<R>(range: R, rope: &Rope) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
-    extend_line_end(range, rope).reduce()
+    extend_line_end(range, rope).reduce().valid_for(rope)
 }
 
 #[must_use]
-pub fn extend_up<R>(range: R, rope: &Rope, distance: usize) -> Range
+pub fn extend_up<R>(range: R, rope: &Rope, distance: usize) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
@@ -421,7 +425,7 @@ where
 }
 
 #[must_use]
-pub fn extend_down<R>(range: R, rope: &Rope, distance: usize) -> Range
+pub fn extend_down<R>(range: R, rope: &Rope, distance: usize) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
@@ -429,7 +433,7 @@ where
 }
 
 #[must_use]
-pub fn extend_left<R>(range: R, rope: &Rope, distance: usize) -> Range
+pub fn extend_left<R>(range: R, rope: &Rope, distance: usize) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
@@ -437,7 +441,7 @@ where
 }
 
 #[must_use]
-pub fn extend_right<R>(range: R, rope: &Rope, distance: usize) -> Range
+pub fn extend_right<R>(range: R, rope: &Rope, distance: usize) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
@@ -445,16 +449,16 @@ where
 }
 
 #[must_use]
-pub fn extend_top<R>(range: R) -> Range
+pub fn extend_top<R>(range: R) -> Valid<'static, Range>
 where
     R: AsRef<Range>,
 {
     let range = range.as_ref();
-    Range::from((range.anchor(), (1, 1).try_into().unwrap()))
+    Range::from((range.anchor(), (1, 1).try_into().unwrap())).valid_forever()
 }
 
 #[must_use]
-pub fn extend_bottom<R>(range: R, rope: &Rope) -> Range
+pub fn extend_bottom<R>(range: R, rope: &Rope) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
@@ -464,11 +468,11 @@ where
     let index = rope.line_to_char(rope.len_lines().saturating_sub(2));
     let head = *Position::from_rope_index(rope, index).0;
 
-    Range::from((range.anchor(), head))
+    Range::from((range.anchor(), head)).valid_for(rope)
 }
 
 #[must_use]
-pub fn extend_end<R>(range: R, rope: &Rope) -> Range
+pub fn extend_end<R>(range: R, rope: &Rope) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
@@ -477,11 +481,11 @@ where
     let index = rope.len_chars().saturating_sub(1);
     let head = *Position::from_rope_index(rope, index).0;
 
-    Range::from((range.anchor(), head))
+    Range::from((range.anchor(), head)).valid_for(rope)
 }
 
 #[must_use]
-pub fn extend_line_begin<R>(range: R, rope: &Rope) -> Range
+pub fn extend_line_begin<R>(range: R, rope: &Rope) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
@@ -490,11 +494,11 @@ where
     let mut head = range.head();
     head.column = NonZeroUsize::new(1).unwrap();
 
-    *Range::from((range.anchor(), head)).corrected(rope)
+    Range::from((range.anchor(), head)).corrected(rope)
 }
 
 #[must_use]
-pub fn extend_line_first_non_blank<R>(range: R, rope: &Rope) -> Range
+pub fn extend_line_first_non_blank<R>(range: R, rope: &Rope) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
@@ -516,11 +520,11 @@ where
     })
     .unwrap();
 
-    Range::from((range.anchor(), head))
+    Range::from((range.anchor(), head)).valid_for(rope)
 }
 
 #[must_use]
-pub fn extend_line_end<R>(range: R, rope: &Rope) -> Range
+pub fn extend_line_end<R>(range: R, rope: &Rope) -> Valid<'_, Range>
 where
     R: AsRef<Range>,
 {
@@ -529,5 +533,5 @@ where
     let mut head = *range.head().corrected(rope);
     head.column = NonZeroUsize::new(rope.line(head.line.get()).len_chars()).unwrap();
 
-    Range::from((range.anchor(), head))
+    Range::from((range.anchor(), head)).valid_for(rope)
 }
