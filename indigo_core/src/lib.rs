@@ -5,12 +5,11 @@
     clippy::cast_sign_loss
 )]
 
-pub mod buffer;
-pub mod editor;
-pub mod position;
-pub mod range;
-pub mod selection;
+mod buffer;
+mod editor;
+mod position;
+mod range;
+mod selection;
 
-pub use crate::{
-    buffer::Buffer, editor::Editor, position::Position, range::Range, selection::Selection,
-};
+#[doc(inline)]
+pub use crate::{buffer::*, editor::*, position::*, range::*, selection::*};

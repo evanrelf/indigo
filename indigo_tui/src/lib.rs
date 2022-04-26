@@ -6,7 +6,7 @@
 )]
 
 use crate::terminal::with_terminal;
-use indigo_core::editor::Editor;
+use indigo_core::Editor;
 use tui::widgets::Widget;
 
 mod terminal;
