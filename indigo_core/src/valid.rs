@@ -57,7 +57,7 @@ mod test {
     #![allow(dead_code)]
 
     /// ```
-    /// use indigo_core::ValidFor as _;
+    /// use indigo_core::valid::ValidFor as _;
     /// let mut string = String::from("Hello\nworld\n");
     /// let length = string.len().valid_for(&string);
     /// println!("{}", *length);
@@ -65,7 +65,7 @@ mod test {
     fn test_good() {}
 
     /// ```compile_fail
-    /// use indigo_core::ValidFor as _;
+    /// use indigo_core::valid::ValidFor as _;
     /// let mut string = String::from("Hello\nworld\n");
     /// let length = string.len().valid_for(&string);
     /// string.clear();
