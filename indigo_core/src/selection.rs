@@ -23,39 +23,26 @@ impl Selection {
     }
 
     #[must_use]
-    pub fn select(&self, rope: &Rope, regex: &Regex) -> Option<Self> {
+    pub fn select(&self, rope: &Rope, regex: &Regex) -> (Option<Self>, bool) {
+        let mut corrected = false;
         let mut ranges = Vec::new();
 
         for range in &self.ranges {
-            ranges.append(&mut range.select(rope, regex)?);
+            let (mut sub_ranges, sub_ranges_corrected) = range.select(rope, regex);
+            corrected |= sub_ranges_corrected;
+            ranges.append(&mut sub_ranges);
         }
 
-        if ranges.is_empty() {
+        let selection = if ranges.is_empty() {
             None
         } else {
             Some(Self {
                 primary_range_index: ranges.len() - 1,
                 ranges,
             })
-        }
-    }
+        };
 
-    #[must_use]
-    pub fn select_corrected(&self, rope: &Rope, regex: &Regex) -> Option<Self> {
-        let mut ranges = Vec::new();
-
-        for range in &self.ranges {
-            ranges.append(&mut range.select_corrected(rope, regex));
-        }
-
-        if ranges.is_empty() {
-            None
-        } else {
-            Some(Self {
-                primary_range_index: ranges.len() - 1,
-                ranges,
-            })
-        }
+        (selection, corrected)
     }
 
     pub fn map_ranges<F>(&self, range_fn: F) -> Self

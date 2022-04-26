@@ -68,7 +68,7 @@ impl Buffer {
             {
                 let mut valid = true;
                 for range in self.selection().ranges() {
-                    if range.to_rope_slice(&self.contents).is_none() {
+                    if !range.is_valid(&self.contents) {
                         valid = false;
                         break;
                     }
