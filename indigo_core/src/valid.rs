@@ -42,6 +42,13 @@ pub trait ValidFor: Sized {
             marker: PhantomData,
         }
     }
+
+    fn valid_forever(self) -> Valid<'static, Self> {
+        Valid {
+            value: self,
+            marker: PhantomData,
+        }
+    }
 }
 
 impl<T> ValidFor for T {}
