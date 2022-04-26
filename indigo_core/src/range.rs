@@ -1,4 +1,7 @@
-use crate::position::Position;
+use crate::{
+    position::Position,
+    valid::{Valid, ValidFor as _},
+};
 use regex::Regex;
 use ropey::{Rope, RopeSlice};
 use std::{
@@ -196,7 +199,7 @@ impl Range {
     }
 
     #[must_use]
-    pub fn corrected(&self, rope: &Rope) -> Self {
+    pub fn corrected<'rope>(&self, rope: &'rope Rope) -> Valid<'rope, Self> {
         let anchor = self.anchor.corrected(rope).unwrap_valid();
         let head = self.head.corrected(rope).unwrap_valid();
         Self {
@@ -204,6 +207,7 @@ impl Range {
             head,
             target_column: None,
         }
+        .valid_for(rope)
     }
 
     #[must_use]
@@ -362,7 +366,9 @@ impl Range {
     pub fn extend_line_begin(&self, rope: &Rope) -> Self {
         let mut head = self.head();
         head.column = NonZeroUsize::new(1).unwrap();
-        Self::from((self.anchor(), head)).corrected(rope)
+        Self::from((self.anchor(), head))
+            .corrected(rope)
+            .unwrap_valid()
     }
 
     #[must_use]
