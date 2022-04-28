@@ -14,25 +14,33 @@ impl Editor {
     }
 
     #[must_use]
-    pub fn current_buffer(&self) -> (Index, &Buffer) {
-        (
-            self.current_buffer_index,
-            &self.buffers[self.current_buffer_index],
-        )
+    pub fn current_buffer_index(&self) -> Index {
+        self.current_buffer_index
     }
 
-    pub fn open_buffer(&mut self, path: impl AsRef<Path>) -> Result<&Buffer, io::Error> {
-        self.current_buffer_index = self.buffers.insert(Buffer::open(path)?);
-        Ok(self.buffers.get(self.current_buffer_index).unwrap())
+    #[must_use]
+    pub fn get_buffer(&self, index: Index) -> Option<&Buffer> {
+        self.buffers.get(index)
     }
 
-    pub fn close_buffer(&mut self, buffer_index: Index, discard_modifications: bool) {
-        if let Some(buffer) = self.buffers.get(buffer_index) {
+    #[must_use]
+    pub fn get_buffer_mut(&mut self, index: Index) -> Option<&mut Buffer> {
+        self.buffers.get_mut(index)
+    }
+
+    pub fn open_buffer(&mut self, path: impl AsRef<Path>) -> Result<Index, io::Error> {
+        let index = self.buffers.insert(Buffer::open(path)?);
+        self.current_buffer_index = index;
+        Ok(index)
+    }
+
+    pub fn close_buffer(&mut self, index: Index, discard_modifications: bool) {
+        if let Some(buffer) = self.buffers.get(index) {
             if !buffer.is_modified() || discard_modifications {
-                self.buffers.remove(buffer_index);
+                self.buffers.remove(index);
                 self.current_buffer_index = match self.buffers.iter().last() {
                     None => self.buffers.insert(Buffer::default()),
-                    Some((last_buffer_index, _)) => last_buffer_index,
+                    Some((last_index, _)) => last_index,
                 }
             }
         }
