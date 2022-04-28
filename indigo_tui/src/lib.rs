@@ -26,6 +26,7 @@ pub fn run(editor: Editor) {
 }
 
 struct Tui {
+    #[allow(dead_code)]
     editor: Editor,
     quit: bool,
 }
@@ -59,7 +60,7 @@ fn handle_event(tui: &mut Tui, event: crossterm::event::Event) {
     }
 }
 
-fn render(tui: &Tui, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
+fn render(_tui: &Tui, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
     // Tildes
     for y in area.top()..area.bottom() {
         buffer.get_mut(area.x, y).set_char('~');
