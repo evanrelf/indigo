@@ -5,25 +5,26 @@
     clippy::cast_sign_loss
 )]
 
-use crate::terminal::with_terminal;
+use crate::terminal::Terminal;
 use indigo_core::Editor;
 use tui::widgets::Widget;
 
 mod terminal;
 
 pub fn run(editor: Editor) {
+    let mut terminal = Terminal::new();
+    terminal.enter();
+
     let mut model = Model::new(editor);
 
-    with_terminal(|terminal| {
-        while !model.quit {
-            terminal
-                .draw(|frame| frame.render_widget(&model, frame.size()))
-                .unwrap();
+    while !model.quit {
+        terminal
+            .draw(|frame| frame.render_widget(&model, frame.size()))
+            .unwrap();
 
-            let event = crossterm::event::read().unwrap();
-            update(&mut model, event);
-        }
-    });
+        let event = crossterm::event::read().unwrap();
+        update(&mut model, event);
+    }
 }
 
 struct Model {
@@ -50,9 +51,9 @@ fn update(model: &mut Model, event: crossterm::event::Event) {
     use crossterm::event::{Event, KeyCode, KeyModifiers};
 
     match event {
-        #[allow(clippy::single_match)]
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::CONTROL, KeyCode::Char('c')) => model.quit = true,
+            (KeyModifiers::CONTROL, KeyCode::Char('p')) => panic!(),
             _ => {}
         },
         Event::Mouse(_) => {}
