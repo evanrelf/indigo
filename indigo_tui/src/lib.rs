@@ -15,24 +15,24 @@ pub fn run(editor: Editor) {
     let mut terminal = Terminal::new();
     terminal.enter();
 
-    let mut model = Model::new(editor);
+    let mut tui = Tui::new(editor);
 
-    while !model.quit {
+    while !tui.quit {
         terminal
-            .draw(|frame| frame.render_widget(&model, frame.size()))
+            .draw(|frame| frame.render_widget(&tui, frame.size()))
             .unwrap();
 
         let event = crossterm::event::read().unwrap();
-        update(&mut model, event);
+        handle_event(&mut tui, event);
     }
 }
 
-struct Model {
+struct Tui {
     editor: Editor,
     quit: bool,
 }
 
-impl Model {
+impl Tui {
     pub fn new(editor: Editor) -> Self {
         Self {
             editor,
@@ -41,18 +41,18 @@ impl Model {
     }
 }
 
-impl Widget for &Model {
+impl Widget for &Tui {
     fn render(self, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
-        view(self, area, buffer);
+        render(self, area, buffer);
     }
 }
 
-fn update(model: &mut Model, event: crossterm::event::Event) {
+fn handle_event(tui: &mut Tui, event: crossterm::event::Event) {
     use crossterm::event::{Event, KeyCode, KeyModifiers};
 
     match event {
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-            (KeyModifiers::CONTROL, KeyCode::Char('c')) => model.quit = true,
+            (KeyModifiers::CONTROL, KeyCode::Char('c')) => tui.quit = true,
             (KeyModifiers::CONTROL, KeyCode::Char('p')) => panic!(),
             _ => {}
         },
@@ -61,7 +61,7 @@ fn update(model: &mut Model, event: crossterm::event::Event) {
     }
 }
 
-fn view(model: &Model, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
+fn render(tui: &Tui, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
     // Tildes
     for y in area.top()..area.bottom() {
         buffer.get_mut(area.x, y).set_char('~');
