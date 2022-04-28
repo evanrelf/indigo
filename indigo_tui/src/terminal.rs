@@ -7,7 +7,6 @@ use std::{
 
 pub struct Terminal {
     tui_terminal: tui::Terminal<tui::backend::CrosstermBackend<Stdout>>,
-    inside: bool,
 }
 
 impl Terminal {
@@ -18,13 +17,12 @@ impl Terminal {
             tui::Terminal::new(backend).unwrap()
         };
 
-        Self {
-            tui_terminal,
-            inside: false,
-        }
+        Self::enter();
+
+        Self { tui_terminal }
     }
 
-    pub fn enter(&mut self) {
+    fn enter() {
         use crossterm::{cursor, event, terminal};
 
         let mut stdout = stdout();
@@ -35,19 +33,12 @@ impl Terminal {
 
         let default_hook = panic::take_hook();
         panic::set_hook(Box::new(move |panic_info| {
-            Self::exit_impl(true);
+            Self::exit(true);
             default_hook(panic_info);
         }));
-
-        self.inside = true;
     }
 
-    pub fn exit(&mut self) {
-        Self::exit_impl(false);
-        self.inside = false;
-    }
-
-    fn exit_impl(panicking: bool) {
+    fn exit(panicking: bool) {
         use crossterm::{cursor, event, terminal};
 
         let mut stdout = stdout();
@@ -65,9 +56,7 @@ impl Terminal {
 
 impl Drop for Terminal {
     fn drop(&mut self) {
-        if self.inside {
-            Self::exit_impl(false);
-        }
+        Self::exit(false);
     }
 }
 

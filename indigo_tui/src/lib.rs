@@ -13,8 +13,6 @@ mod terminal;
 
 pub fn run(editor: Editor) {
     let mut terminal = Terminal::new();
-    terminal.enter();
-
     let mut tui = Tui::new(editor);
 
     while !tui.quit {
