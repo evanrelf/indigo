@@ -1,7 +1,6 @@
 [workspace]
 members = [
   "indigo_core",
-  "indigo_event",
   "indigo_prev",
   "indigo_tui",
 ]
