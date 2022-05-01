@@ -66,29 +66,35 @@ fn handle_event(tui: &mut Tui, event: crossterm::event::Event) {
     }
 }
 
-fn render(tui: &Tui, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
+fn render(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
     use tui::layout::{Constraint, Direction, Layout};
 
     let vertical = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([
-            // number + buffer
-            Constraint::Min(0),
-            // status
-            Constraint::Length(1),
-            // command
-            Constraint::Length(1),
-        ].as_ref())
+        .constraints(
+            [
+                // number + buffer
+                Constraint::Min(0),
+                // status
+                Constraint::Length(1),
+                // command
+                Constraint::Length(1),
+            ]
+            .as_ref(),
+        )
         .split(area);
 
     let horizontal = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([
-            // number
-            Constraint::Length(4),
-            // buffer
-            Constraint::Min(0),
-        ].as_ref())
+        .constraints(
+            [
+                // number
+                Constraint::Length(4),
+                // buffer
+                Constraint::Min(0),
+            ]
+            .as_ref(),
+        )
         .split(vertical[0]);
 
     let numbers_area = horizontal[0];
@@ -96,27 +102,50 @@ fn render(tui: &Tui, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) 
     let status_area = vertical[1];
     let command_area = vertical[2];
 
-    render_numbers(tui, numbers_area, buffer);
-    render_buffer(tui, buffer_area, buffer);
-    render_status(tui, status_area, buffer);
-    render_command(tui, command_area, buffer);
+    render_numbers(tui, numbers_area, surface);
+    render_buffer(tui, buffer_area, surface);
+    render_status(tui, status_area, surface);
+    render_command(tui, command_area, surface);
 }
 
-fn render_numbers(_tui: &Tui, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
-    // Tildes
+fn render_numbers(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
+    use tui::style::Style;
+
+    let buffer = tui.editor.current_buffer();
+
+    let total_lines = buffer.contents().len_lines().saturating_sub(1);
+
     for y in area.top()..area.bottom() {
-        buffer.get_mut(area.x, y).set_char('~');
+        let line_number = buffer.vertical_scroll_offset() + usize::from(y) + 1;
+
+        if line_number <= total_lines {
+            surface.set_stringn(
+                area.x,
+                y,
+                format!("{:>3} ", line_number),
+                usize::from(area.width),
+                Style::default(),
+            );
+        } else {
+            surface.get_mut(area.x, y).set_char('~');
+        }
     }
 }
 
-fn render_buffer(_tui: &Tui, _area: tui::layout::Rect, _buffer: &mut tui::buffer::Buffer) {
-    // TODO
+fn render_buffer(_tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
+    use tui::style::Style;
+
+    surface.set_string(area.x, area.y, "TODO buffer", Style::default());
 }
 
-fn render_status(_tui: &Tui, _area: tui::layout::Rect, _buffer: &mut tui::buffer::Buffer) {
-    // TODO
+fn render_status(_tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
+    use tui::style::Style;
+
+    surface.set_string(area.x, area.y, "TODO status", Style::default());
 }
 
-fn render_command(_tui: &Tui, _area: tui::layout::Rect, _buffer: &mut tui::buffer::Buffer) {
-    // TODO
+fn render_command(_tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
+    use tui::style::Style;
+
+    surface.set_string(area.x, area.y, "TODO command", Style::default());
 }
