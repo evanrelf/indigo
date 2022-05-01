@@ -25,6 +25,16 @@ impl Editor {
     }
 
     #[must_use]
+    pub fn current_buffer(&self) -> &Buffer {
+        &self.buffers[self.current_buffer_index]
+    }
+
+    #[must_use]
+    pub fn current_buffer_mut(&mut self) -> &mut Buffer {
+        &mut self.buffers[self.current_buffer_index]
+    }
+
+    #[must_use]
     pub fn get_buffer(&self, index: Index) -> Option<&Buffer> {
         self.buffers.get(index)
     }
