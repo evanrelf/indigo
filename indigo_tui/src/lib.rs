@@ -7,8 +7,8 @@
 
 use crate::terminal::Terminal;
 use indigo_core::Editor;
-use tui::widgets::Widget;
 use std::time::{Duration, Instant};
+use tui::widgets::Widget;
 
 mod terminal;
 
@@ -35,7 +35,6 @@ pub fn run(editor: Editor) {
 }
 
 struct Tui {
-    #[allow(dead_code)]
     editor: Editor,
     quit: bool,
 }
@@ -84,41 +83,30 @@ fn render(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer)
 
     let vertical = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(
-            [
-                // number + buffer
-                Constraint::Min(0),
-                // status
-                Constraint::Length(1),
-                // command
-                Constraint::Length(1),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            // number + buffer
+            Constraint::Min(0),
+            // status
+            Constraint::Length(1),
+            // command
+            Constraint::Length(1),
+        ])
         .split(area);
 
     let horizontal = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints(
-            [
-                // number
-                Constraint::Length(4),
-                // buffer
-                Constraint::Min(0),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            // number
+            Constraint::Length(4),
+            // buffer
+            Constraint::Min(0),
+        ])
         .split(vertical[0]);
 
-    let numbers_area = horizontal[0];
-    let buffer_area = horizontal[1];
-    let status_area = vertical[1];
-    let command_area = vertical[2];
-
-    render_numbers(tui, numbers_area, surface);
-    render_buffer(tui, buffer_area, surface);
-    render_status(tui, status_area, surface);
-    render_command(tui, command_area, surface);
+    render_numbers(tui, horizontal[0], surface);
+    render_buffer(tui, horizontal[1], surface);
+    render_status(tui, vertical[1], surface);
+    render_command(tui, vertical[2], surface);
 }
 
 fn render_numbers(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
