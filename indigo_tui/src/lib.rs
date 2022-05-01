@@ -8,6 +8,7 @@
 use crate::terminal::Terminal;
 use indigo_core::Editor;
 use tui::widgets::Widget;
+use std::time::{Duration, Instant};
 
 mod terminal;
 
@@ -15,10 +16,18 @@ pub fn run(editor: Editor) {
     let mut terminal = Terminal::new();
     let mut tui = Tui::new(editor);
 
+    let frames_per_second = 120;
+    let frame_time = Duration::from_secs(1) / frames_per_second;
+
+    let mut last_render_time = Instant::now() - frame_time;
+
     while !tui.quit {
-        terminal
-            .draw(|frame| frame.render_widget(&tui, frame.size()))
-            .unwrap();
+        if last_render_time.elapsed() >= frame_time {
+            terminal
+                .draw(|frame| frame.render_widget(&tui, frame.size()))
+                .unwrap();
+            last_render_time = Instant::now();
+        }
 
         let event = crossterm::event::read().unwrap();
         handle_event(&mut tui, event);
