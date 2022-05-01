@@ -116,7 +116,7 @@ fn render_numbers(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer:
     let total_lines = buffer.contents().len_lines().saturating_sub(1);
 
     for y in area.top()..area.bottom() {
-        let line_number = buffer.vertical_scroll_offset() + usize::from(y) + 1;
+        let line_number = usize::from(y) + buffer.vertical_scroll_offset() + 1;
 
         if line_number <= total_lines {
             surface.set_stringn(
@@ -132,10 +132,30 @@ fn render_numbers(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer:
     }
 }
 
-fn render_buffer(_tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
+fn render_buffer(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
     use tui::style::Style;
 
-    surface.set_string(area.x, area.y, "TODO buffer", Style::default());
+    let buffer = tui.editor.current_buffer();
+
+    for y in area.top()..area.bottom() {
+        let line_index = usize::from(y) + buffer.vertical_scroll_offset();
+
+        if let Some(line) = buffer.contents().get_line(line_index) {
+            if let Some(line) = line.get_slice(buffer.horizontal_scroll_offset()..) {
+                surface.set_stringn(
+                    area.x,
+                    y,
+                    line.to_string(),
+                    usize::from(area.width),
+                    Style::default(),
+                );
+            } else {
+                continue;
+            }
+        } else {
+            break;
+        }
+    }
 }
 
 fn render_status(_tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
