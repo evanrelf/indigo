@@ -1,4 +1,4 @@
-use crate::{selection::Selection, validate::Validate as _};
+use crate::selection::Selection;
 use ropey::Rope;
 use std::{
     fs::File,
@@ -109,6 +109,8 @@ impl Buffer {
 
     #[cfg(debug_assertions)]
     pub fn assert_invariants(&self) {
+        use crate::validate::Validate as _;
+
         debug_assert!(
             {
                 let mut valid = true;
