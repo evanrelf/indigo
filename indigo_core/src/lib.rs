@@ -8,6 +8,7 @@
 pub mod buffer;
 pub mod editor;
 pub mod entangle;
+pub mod mode;
 pub mod position;
 pub mod range;
 pub mod selection;
@@ -17,6 +18,7 @@ pub use crate::{
     buffer::Buffer,
     editor::Editor,
     entangle::{Entangle, Entangled},
+    mode::Mode,
     position::Position,
     range::Range,
     selection::Selection,

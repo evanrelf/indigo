@@ -1,10 +1,11 @@
-use crate::buffer::Buffer;
+use crate::{buffer::Buffer, mode::Mode};
 use generational_arena::{Arena, Index};
 use std::{io, path::Path};
 
 pub struct Editor {
     buffers: Arena<Buffer>,
     current_buffer_index: Index,
+    mode: Mode,
 }
 
 impl Editor {
@@ -16,6 +17,11 @@ impl Editor {
     #[must_use]
     pub fn current_buffer_index(&self) -> Index {
         self.current_buffer_index
+    }
+
+    #[must_use]
+    pub fn mode(&self) -> &Mode {
+        &self.mode
     }
 
     #[must_use]
@@ -63,6 +69,7 @@ impl Default for Editor {
         Self {
             buffers,
             current_buffer_index,
+            mode: Mode::normal(),
         }
     }
 }
