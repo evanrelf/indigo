@@ -47,7 +47,7 @@ impl Widget for &Tui {
 }
 
 fn handle_event(tui: &mut Tui, event: crossterm::event::Event) {
-    use crossterm::event::{Event, KeyCode, KeyModifiers};
+    use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEventKind};
 
     let buffer = tui.editor.current_buffer_mut();
 
@@ -61,7 +61,11 @@ fn handle_event(tui: &mut Tui, event: crossterm::event::Event) {
             (KeyModifiers::NONE, KeyCode::Right) => *buffer = buffer.scroll_right(1),
             _ => {}
         },
-        Event::Mouse(_) => {}
+        Event::Mouse(mouse_event) => match mouse_event.kind {
+            MouseEventKind::ScrollUp => *buffer = buffer.scroll_up(3),
+            MouseEventKind::ScrollDown => *buffer = buffer.scroll_down(3),
+            _ => {}
+        },
         Event::Resize(_, _) => {}
     }
 }
