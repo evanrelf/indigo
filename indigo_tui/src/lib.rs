@@ -224,17 +224,19 @@ fn mouse_to_buffer_position(
     areas: &Areas,
     buffer: &Buffer,
 ) -> Option<Position> {
-    let line = if mouse_event.row < areas.buffer_area.top() {
-        return None;
-    } else {
+    let line_range = areas.buffer_area.top()..areas.buffer_area.bottom();
+    let line = if line_range.contains(&mouse_event.row) {
         mouse_event.row - areas.buffer_area.top()
+    } else {
+        return None;
     };
     let line = NonZeroUsize::new(usize::from(line) + 1 + buffer.vertical_scroll_offset()).unwrap();
 
-    let column = if mouse_event.column < areas.buffer_area.left() {
-        return None;
-    } else {
+    let column_range = areas.buffer_area.left()..areas.buffer_area.right();
+    let column = if column_range.contains(&mouse_event.column) {
         mouse_event.column - areas.buffer_area.left()
+    } else {
+        return None;
     };
     let column =
         NonZeroUsize::new(usize::from(column) + 1 + buffer.horizontal_scroll_offset()).unwrap();
