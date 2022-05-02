@@ -82,7 +82,7 @@ fn areas(area: Rect) -> Areas {
         .direction(Direction::Horizontal)
         .constraints([
             // number
-            Constraint::Length(4),
+            Constraint::Length(5),
             // buffer
             Constraint::Min(0),
         ])
@@ -261,13 +261,14 @@ fn render_numbers(tui: &Tui, area: Rect, surface: &mut Surface) {
 
     for y in area.top()..area.bottom() {
         let line_number = usize::from(y) + buffer.vertical_scroll_offset() + 1;
+        let width = usize::from(area.width) - 1;
 
         if line_number <= total_lines {
             surface.set_stringn(
                 area.x,
                 y,
-                format!("{:>3} ", line_number),
-                usize::from(area.width),
+                format!("{:>width$}", line_number),
+                width,
                 Style::default(),
             );
         } else {
