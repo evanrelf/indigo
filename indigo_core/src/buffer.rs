@@ -1,6 +1,7 @@
 use crate::selection::Selection;
 use ropey::Rope;
 use std::{
+    cmp::min,
     fs::File,
     io::{self, BufReader, BufWriter},
     path::{Path, PathBuf},
@@ -72,39 +73,42 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn scroll_up(&self, distance: usize) -> Self {
-        // TODO: don't allow overscroll
+    pub fn scroll_to_line(&self, line: usize) -> Self {
+        let last_line = self.contents.len_lines().saturating_sub(2);
+
         Self {
-            vertical_scroll_offset: self.vertical_scroll_offset.saturating_sub(distance),
+            vertical_scroll_offset: min(line, last_line),
             ..self.clone()
         }
+    }
+
+    #[must_use]
+    pub fn scroll_to_column(&self, column: usize) -> Self {
+        // TODO: don't allow overscroll
+        Self {
+            horizontal_scroll_offset: column,
+            ..self.clone()
+        }
+    }
+
+    #[must_use]
+    pub fn scroll_up(&self, distance: usize) -> Self {
+        self.scroll_to_line(self.vertical_scroll_offset.saturating_sub(distance))
     }
 
     #[must_use]
     pub fn scroll_down(&self, distance: usize) -> Self {
-        // TODO: don't allow overscroll
-        Self {
-            vertical_scroll_offset: self.vertical_scroll_offset + distance,
-            ..self.clone()
-        }
+        self.scroll_to_line(self.vertical_scroll_offset + distance)
     }
 
     #[must_use]
     pub fn scroll_left(&self, distance: usize) -> Self {
-        // TODO: don't allow overscroll
-        Self {
-            horizontal_scroll_offset: self.horizontal_scroll_offset.saturating_sub(distance),
-            ..self.clone()
-        }
+        self.scroll_to_column(self.horizontal_scroll_offset.saturating_sub(distance))
     }
 
     #[must_use]
     pub fn scroll_right(&self, distance: usize) -> Self {
-        // TODO: don't allow overscroll
-        Self {
-            horizontal_scroll_offset: self.horizontal_scroll_offset + distance,
-            ..self.clone()
-        }
+        self.scroll_to_column(self.horizontal_scroll_offset + distance)
     }
 
     #[cfg(debug_assertions)]
