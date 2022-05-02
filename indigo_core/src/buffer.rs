@@ -1,7 +1,7 @@
 use crate::selection::Selection;
 use ropey::Rope;
 use std::{
-    cmp::min,
+    cmp::{max, min},
     fs::File,
     io::{self, BufReader, BufWriter},
     path::{Path, PathBuf},
@@ -84,9 +84,14 @@ impl Buffer {
 
     #[must_use]
     pub fn scroll_to_column(&self, column: usize) -> Self {
-        // TODO: don't allow overscroll
+        let mut longest_line = 0;
+
+        for line in self.contents.lines() {
+            longest_line = max(line.len_chars(), longest_line);
+        }
+
         Self {
-            horizontal_scroll_offset: column,
+            horizontal_scroll_offset: min(column, longest_line),
             ..self.clone()
         }
     }
@@ -127,7 +132,22 @@ impl Buffer {
                 valid
             },
             "selection must be valid in the rope"
-        )
-        // TODO: add assertions for scroll offsets not going outside of buffer
+        );
+
+        debug_assert!(
+            {
+                let mut longest_line = 0;
+                for line in self.contents.lines() {
+                    longest_line = max(line.len_chars(), longest_line);
+                }
+                self.horizontal_scroll_offset <= longest_line
+            },
+            "horizontal scroll offset must not exceed length of longest line"
+        );
+
+        debug_assert!(
+            self.vertical_scroll_offset <= self.contents.len_lines().saturating_sub(2),
+            "vertical scroll offset must not exceed length of buffer"
+        );
     }
 }
