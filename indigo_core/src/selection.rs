@@ -1,4 +1,4 @@
-use crate::range::Range;
+use crate::{range::Range, validate::Validate};
 use regex::Regex;
 use ropey::Rope;
 
@@ -96,6 +96,18 @@ impl Selection {
             },
             "ranges must not overlap"
         );
+    }
+}
+
+impl Validate<Rope> for Selection {
+    #[must_use]
+    fn is_valid(&self, rope: Option<&Rope>) -> bool {
+        for range in &self.ranges {
+            if !range.is_valid(rope) {
+                return false;
+            }
+        }
+        true
     }
 }
 

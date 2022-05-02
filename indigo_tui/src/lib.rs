@@ -57,7 +57,7 @@ impl Widget for &Tui {
 fn handle_event(tui: &mut Tui, event: crossterm::event::Event) {
     #[allow(clippy::single_match)]
     match tui.editor.mode() {
-        Mode::Normal {..} => handle_event_normal(tui, event),
+        Mode::Normal { .. } => handle_event_normal(tui, event),
         _ => {}
     }
 }
@@ -69,17 +69,97 @@ fn handle_event_normal(tui: &mut Tui, event: crossterm::event::Event) {
 
     match event {
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-            (KeyModifiers::CONTROL, KeyCode::Char('c')) => tui.quit = true,
-            (KeyModifiers::CONTROL, KeyCode::Char('p')) => panic!(),
-            (KeyModifiers::NONE, KeyCode::Up) => *buffer = buffer.scroll_up(1),
-            (KeyModifiers::NONE, KeyCode::Down) => *buffer = buffer.scroll_down(1),
-            (KeyModifiers::NONE, KeyCode::Left) => *buffer = buffer.scroll_left(1),
-            (KeyModifiers::NONE, KeyCode::Right) => *buffer = buffer.scroll_right(1),
+            (KeyModifiers::CONTROL, KeyCode::Char('c')) => {
+                tui.quit = true;
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('p')) => {
+                panic!();
+            }
+            (KeyModifiers::NONE, KeyCode::Up) => {
+                *buffer = buffer.scroll_up(1);
+            }
+            (KeyModifiers::NONE, KeyCode::Down) => {
+                *buffer = buffer.scroll_down(1);
+            }
+            (KeyModifiers::NONE, KeyCode::Left) => {
+                *buffer = buffer.scroll_left(1);
+            }
+            (KeyModifiers::NONE, KeyCode::Right) => {
+                *buffer = buffer.scroll_right(1);
+            }
+            (KeyModifiers::NONE, KeyCode::Char('h')) => {
+                *buffer = buffer.update_selection(|rope, selection| {
+                    selection
+                        .update_ranges(|_, range| *range::move_left(range, rope, 1))
+                        .valid_for(rope)
+                        .unwrap()
+                });
+            }
+            (KeyModifiers::NONE, KeyCode::Char('j')) => {
+                *buffer = buffer.update_selection(|rope, selection| {
+                    selection
+                        .update_ranges(|_, range| *range::move_down(range, rope, 1))
+                        .valid_for(rope)
+                        .unwrap()
+                });
+            }
+            (KeyModifiers::NONE, KeyCode::Char('k')) => {
+                *buffer = buffer.update_selection(|rope, selection| {
+                    selection
+                        .update_ranges(|_, range| *range::move_up(range, rope, 1))
+                        .valid_for(rope)
+                        .unwrap()
+                });
+            }
+            (KeyModifiers::NONE, KeyCode::Char('l')) => {
+                *buffer = buffer.update_selection(|rope, selection| {
+                    selection
+                        .update_ranges(|_, range| *range::move_right(range, rope, 1))
+                        .valid_for(rope)
+                        .unwrap()
+                });
+            }
+            (KeyModifiers::SHIFT, KeyCode::Char('H')) => {
+                *buffer = buffer.update_selection(|rope, selection| {
+                    selection
+                        .update_ranges(|_, range| *range::extend_left(range, rope, 1))
+                        .valid_for(rope)
+                        .unwrap()
+                });
+            }
+            (KeyModifiers::SHIFT, KeyCode::Char('J')) => {
+                *buffer = buffer.update_selection(|rope, selection| {
+                    selection
+                        .update_ranges(|_, range| *range::extend_down(range, rope, 1))
+                        .valid_for(rope)
+                        .unwrap()
+                });
+            }
+            (KeyModifiers::SHIFT, KeyCode::Char('K')) => {
+                *buffer = buffer.update_selection(|rope, selection| {
+                    selection
+                        .update_ranges(|_, range| *range::extend_up(range, rope, 1))
+                        .valid_for(rope)
+                        .unwrap()
+                });
+            }
+            (KeyModifiers::SHIFT, KeyCode::Char('L')) => {
+                *buffer = buffer.update_selection(|rope, selection| {
+                    selection
+                        .update_ranges(|_, range| *range::extend_right(range, rope, 1))
+                        .valid_for(rope)
+                        .unwrap()
+                });
+            }
             _ => {}
         },
         Event::Mouse(mouse_event) => match mouse_event.kind {
-            MouseEventKind::ScrollUp => *buffer = buffer.scroll_up(3),
-            MouseEventKind::ScrollDown => *buffer = buffer.scroll_down(3),
+            MouseEventKind::ScrollUp => {
+                *buffer = buffer.scroll_up(3);
+            }
+            MouseEventKind::ScrollDown => {
+                *buffer = buffer.scroll_down(3);
+            }
             _ => {}
         },
         Event::Resize(_, _) => {}
