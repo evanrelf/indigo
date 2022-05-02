@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Evan Relf <evan@evanrelf.com>"]
 license = "ISC"
 edition = "2021"
+default-run = "indigo_tui"
 
 [dependencies]
 crossterm = "0.22.1"
