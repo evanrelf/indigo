@@ -9,6 +9,12 @@ pub struct Entangled<'context, T> {
     marker: PhantomData<&'context ()>,
 }
 
+impl<T> Entangled<'_, T> {
+    pub fn unwrap_entangled(self) -> T {
+        self.value
+    }
+}
+
 impl<T> AsRef<T> for Entangled<'_, T> {
     fn as_ref(&self) -> &T {
         &self.value

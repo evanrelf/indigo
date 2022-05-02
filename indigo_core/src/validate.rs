@@ -4,6 +4,12 @@ use std::ops::{Deref, DerefMut};
 #[repr(transparent)]
 pub struct Valid<'context, T>(Entangled<'context, T>);
 
+impl<T> Valid<'_, T> {
+    pub fn unwrap_valid(self) -> T {
+        self.0.unwrap_entangled()
+    }
+}
+
 impl<T> AsRef<T> for Valid<'_, T> {
     fn as_ref(&self) -> &T {
         &*self.0

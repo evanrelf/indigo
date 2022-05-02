@@ -45,7 +45,8 @@ impl Selection {
         (selection, corrected)
     }
 
-    pub fn map_ranges(&self, range_fn: impl Fn(usize, &Range) -> Range) -> Self {
+    #[must_use]
+    pub fn update_ranges(&self, range_fn: impl Fn(usize, &Range) -> Range) -> Self {
         let mut selection = self.clone();
         for (index, range) in selection.ranges.iter_mut().enumerate() {
             *range = range_fn(index, range);

@@ -1,4 +1,4 @@
-use crate::selection::Selection;
+use crate::{selection::Selection, validate::Valid};
 use ropey::Rope;
 use std::{
     cmp::{max, min},
@@ -41,6 +41,16 @@ impl Buffer {
     #[must_use]
     pub fn horizontal_scroll_offset(&self) -> usize {
         self.horizontal_scroll_offset
+    }
+
+    #[must_use]
+    pub fn update_selection<'rope>(
+        &'rope self,
+        selection_fn: impl Fn(&'rope Rope, &Selection) -> Valid<'rope, Selection>,
+    ) -> Self {
+        let mut new = self.clone();
+        new.selection = selection_fn(&self.contents, &self.selection).unwrap_valid();
+        new
     }
 
     pub fn open(path: impl AsRef<Path>) -> Result<Self, io::Error> {
