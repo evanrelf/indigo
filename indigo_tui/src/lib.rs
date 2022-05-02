@@ -150,8 +150,6 @@ fn render_buffer(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::
                     usize::from(area.width),
                     Style::default(),
                 );
-            } else {
-                continue;
             }
         } else {
             break;
