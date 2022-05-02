@@ -17,6 +17,8 @@ impl Position {
 
     #[must_use]
     pub fn to_rope_index<'rope>(&self, rope: &'rope Rope) -> (Valid<'rope, usize>, bool) {
+        debug_assert!(rope.len_chars() > 0, "cannot handle empty ropes yet");
+
         let mut corrected = false;
 
         let rope_line = self.line.get() - 1;
