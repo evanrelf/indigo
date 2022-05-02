@@ -99,7 +99,13 @@ fn areas(area: Rect) -> Areas {
 
 impl Widget for &Tui {
     fn render(self, area: Rect, surface: &mut Surface) {
-        render(self, area, surface);
+        let areas = areas(area);
+
+        render_numbers(self, areas.numbers_area, surface);
+        render_buffer(self, areas.buffer_area, surface);
+        render_selection(self, areas.buffer_area, surface);
+        render_status(self, areas.status_area, surface);
+        render_command(self, areas.command_area, surface);
     }
 }
 
@@ -247,16 +253,6 @@ fn mouse_to_buffer_position(
         NonZeroUsize::new(usize::from(column) + 1 + buffer.horizontal_scroll_offset()).unwrap();
 
     Some(*Position::from((line, column)).corrected(buffer.contents()))
-}
-
-fn render(tui: &Tui, area: Rect, surface: &mut Surface) {
-    let areas = areas(area);
-
-    render_numbers(tui, areas.numbers_area, surface);
-    render_buffer(tui, areas.buffer_area, surface);
-    render_selection(tui, areas.buffer_area, surface);
-    render_status(tui, areas.status_area, surface);
-    render_command(tui, areas.command_area, surface);
 }
 
 fn render_numbers(tui: &Tui, area: Rect, surface: &mut Surface) {
