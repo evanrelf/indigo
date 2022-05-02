@@ -6,7 +6,7 @@
 )]
 
 use crate::terminal::Terminal;
-use indigo_core::Editor;
+use indigo_core::*;
 use std::time::{Duration, Instant};
 use tui::widgets::Widget;
 
@@ -105,6 +105,7 @@ fn render(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer)
 
     render_numbers(tui, horizontal[0], surface);
     render_buffer(tui, horizontal[1], surface);
+    render_selection(tui, horizontal[1], surface);
     render_status(tui, vertical[1], surface);
     render_command(tui, vertical[2], surface);
 }
@@ -153,6 +154,60 @@ fn render_buffer(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::
             }
         } else {
             break;
+        }
+    }
+}
+
+fn render_selection(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
+    use tui::style::{Color, Style};
+
+    let buffer = tui.editor.current_buffer();
+    let rope = buffer.contents();
+
+    let yellow = Color::Rgb(0xFF, 0xD3, 0x3D);
+    let light_yellow = Color::Rgb(0xFF, 0xF5, 0xB1);
+
+    for range in buffer.selection().ranges() {
+        let range_slice = range.to_rope_slice(rope).0;
+
+        for (i, _) in range_slice.chars().enumerate() {
+            let i = if range.is_forwards() {
+                i + *range.anchor().to_rope_index(rope).0
+            } else {
+                i + *range.head().to_rope_index(rope).0
+            };
+
+            let buffer_position: Position = *Position::from_rope_index(rope, i).0;
+            let buffer_line: usize = buffer_position.line.get() - 1;
+            let buffer_column: usize = buffer_position.column.get() - 1;
+
+            let view_line: usize = buffer_line.saturating_sub(buffer.vertical_scroll_offset());
+            let view_column: usize =
+                buffer_column.saturating_sub(buffer.horizontal_scroll_offset());
+
+            let position_visible = [
+                buffer_line >= buffer.vertical_scroll_offset(),
+                buffer_column >= buffer.horizontal_scroll_offset(),
+                view_line < area.height as usize,
+                view_column < area.width as usize,
+            ]
+            .iter()
+            .all(|x| *x);
+
+            let style = if buffer_position == range.head() {
+                Style::default().bg(yellow)
+            } else {
+                Style::default().bg(light_yellow)
+            };
+
+            if position_visible {
+                surface
+                    .get_mut(
+                        area.left() + u16::try_from(view_column).unwrap(),
+                        area.top() + u16::try_from(view_line).unwrap(),
+                    )
+                    .set_style(style);
+            }
         }
     }
 }
