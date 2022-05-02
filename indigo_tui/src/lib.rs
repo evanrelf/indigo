@@ -19,7 +19,7 @@ pub fn run(editor: Editor) {
     let frames_per_second = 120;
     let frame_time = Duration::from_secs(1) / frames_per_second;
 
-    let mut last_render_time = Instant::now() - frame_time;
+    let mut last_render_time = Instant::now() - (frame_time * 2);
 
     while !tui.quit {
         if last_render_time.elapsed() >= frame_time {
