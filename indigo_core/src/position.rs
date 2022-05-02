@@ -92,7 +92,7 @@ impl Validate<Rope> for Position {
             let rope_line = self.line.get() - 1;
 
             // Assert line is valid
-            if rope.len_lines() <= rope_line {
+            if rope.len_lines().saturating_sub(1) <= rope_line {
                 return false;
             }
 
