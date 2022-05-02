@@ -107,8 +107,7 @@ impl Validate<Rope> for Position {
 
             true
         } else {
-            // TODO
-            false
+            *self == Self::default()
         }
     }
 }
@@ -119,8 +118,7 @@ impl Validate<Rope> for usize {
         if let Some(rope) = rope {
             rope.len_chars() > *self
         } else {
-            // TODO
-            false
+            *self == 0
         }
     }
 }
