@@ -33,12 +33,12 @@ impl Terminal {
 
         let default_hook = panic::take_hook();
         panic::set_hook(Box::new(move |panic_info| {
-            Self::exit(true);
+            Self::exit();
             default_hook(panic_info);
         }));
     }
 
-    fn exit(panicking: bool) {
+    fn exit() {
         use crossterm::{cursor, event, terminal};
 
         let mut stdout = stdout();
@@ -48,7 +48,7 @@ impl Terminal {
         stdout.flush().unwrap();
         terminal::disable_raw_mode().unwrap();
 
-        if !panicking {
+        if !std::thread::panicking() {
             let _ = panic::take_hook();
         }
     }
@@ -56,7 +56,7 @@ impl Terminal {
 
 impl Drop for Terminal {
     fn drop(&mut self) {
-        Self::exit(false);
+        Self::exit();
     }
 }
 
