@@ -38,9 +38,8 @@ pub fn run(editor: Editor) {
             last_render_time = Instant::now();
         }
 
-        let areas = areas(terminal.size().unwrap());
-
         let event = crossterm::event::read().unwrap();
+        let areas = areas(terminal.size().unwrap());
         handle_event(&mut tui, &areas, event);
     }
 }
@@ -94,18 +93,6 @@ fn areas(area: Rect) -> Areas {
         buffer_area: horizontal[1],
         status_area: vertical[1],
         command_area: vertical[2],
-    }
-}
-
-impl Widget for &Tui {
-    fn render(self, area: Rect, surface: &mut Surface) {
-        let areas = areas(area);
-
-        render_numbers(self, areas.numbers_area, surface);
-        render_buffer(self, areas.buffer_area, surface);
-        render_selection(self, areas.buffer_area, surface);
-        render_status(self, areas.status_area, surface);
-        render_command(self, areas.command_area, surface);
     }
 }
 
@@ -253,6 +240,18 @@ fn mouse_to_buffer_position(
         NonZeroUsize::new(usize::from(column) + 1 + buffer.horizontal_scroll_offset()).unwrap();
 
     Some(*Position::from((line, column)).corrected(buffer.contents()))
+}
+
+impl Widget for &Tui {
+    fn render(self, area: Rect, surface: &mut Surface) {
+        let areas = areas(area);
+
+        render_numbers(self, areas.numbers_area, surface);
+        render_buffer(self, areas.buffer_area, surface);
+        render_selection(self, areas.buffer_area, surface);
+        render_status(self, areas.status_area, surface);
+        render_command(self, areas.command_area, surface);
+    }
 }
 
 fn render_numbers(tui: &Tui, area: Rect, surface: &mut Surface) {
