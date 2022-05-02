@@ -6,9 +6,17 @@
 )]
 
 use crate::terminal::Terminal;
+use crossterm::event::{Event, KeyCode, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use indigo_core::*;
-use std::time::{Duration, Instant};
-use tui::widgets::Widget;
+use std::{
+    num::NonZeroUsize,
+    time::{Duration, Instant},
+};
+use tui::{
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Style},
+    widgets::Widget,
+};
 
 mod terminal;
 
@@ -29,8 +37,10 @@ pub fn run(editor: Editor) {
             last_render_time = Instant::now();
         }
 
+        let areas = areas(terminal.size().unwrap());
+
         let event = crossterm::event::read().unwrap();
-        handle_event(&mut tui, event);
+        handle_event(&mut tui, &areas, event);
     }
 }
 
@@ -56,8 +66,6 @@ struct Areas {
 }
 
 fn areas(area: tui::layout::Rect) -> Areas {
-    use tui::layout::{Constraint, Direction, Layout};
-
     let vertical = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -94,17 +102,15 @@ impl Widget for &Tui {
     }
 }
 
-fn handle_event(tui: &mut Tui, event: crossterm::event::Event) {
+fn handle_event(tui: &mut Tui, areas: &Areas, event: crossterm::event::Event) {
     #[allow(clippy::single_match)]
     match tui.editor.mode() {
-        Mode::Normal { .. } => handle_event_normal(tui, event),
+        Mode::Normal { .. } => handle_event_normal(tui, areas, event),
         _ => {}
     }
 }
 
-fn handle_event_normal(tui: &mut Tui, event: crossterm::event::Event) {
-    use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEventKind};
-
+fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: crossterm::event::Event) {
     let buffer = tui.editor.current_buffer_mut();
 
     match event {
@@ -200,10 +206,46 @@ fn handle_event_normal(tui: &mut Tui, event: crossterm::event::Event) {
             MouseEventKind::ScrollDown => {
                 *buffer = buffer.scroll_down(3);
             }
+            MouseEventKind::Down(MouseButton::Left) => {
+                if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
+                    *buffer = buffer.update_selection(|rope, _selection| {
+                        Selection::from(Range::from(head)).valid_for(rope).unwrap()
+                    });
+                }
+            }
+            MouseEventKind::Down(MouseButton::Right) => {
+                // TODO
+            }
+            MouseEventKind::Drag(MouseButton::Left) => {
+                // TODO
+            }
             _ => {}
         },
         Event::Resize(_, _) => {}
     }
+}
+
+fn mouse_to_buffer_position(
+    mouse_event: &MouseEvent,
+    areas: &Areas,
+    buffer: &Buffer,
+) -> Option<Position> {
+    let line = if mouse_event.row < areas.buffer_area.top() {
+        return None;
+    } else {
+        mouse_event.row - areas.buffer_area.top()
+    };
+    let line = NonZeroUsize::new(usize::from(line) + 1 + buffer.vertical_scroll_offset()).unwrap();
+
+    let column = if mouse_event.column < areas.buffer_area.left() {
+        return None;
+    } else {
+        mouse_event.column - areas.buffer_area.left()
+    };
+    let column =
+        NonZeroUsize::new(usize::from(column) + 1 + buffer.horizontal_scroll_offset()).unwrap();
+
+    Some(*Position::from((line, column)).corrected(buffer.contents()))
 }
 
 fn render(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
@@ -217,8 +259,6 @@ fn render(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer)
 }
 
 fn render_numbers(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
-    use tui::style::Style;
-
     let buffer = tui.editor.current_buffer();
 
     let total_lines = buffer.contents().len_lines().saturating_sub(1);
@@ -241,8 +281,6 @@ fn render_numbers(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer:
 }
 
 fn render_buffer(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
-    use tui::style::Style;
-
     let buffer = tui.editor.current_buffer();
 
     for y in area.top()..area.bottom() {
@@ -265,8 +303,6 @@ fn render_buffer(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::
 }
 
 fn render_selection(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
-    use tui::style::{Color, Style};
-
     let buffer = tui.editor.current_buffer();
     let rope = buffer.contents();
 
@@ -319,13 +355,9 @@ fn render_selection(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffe
 }
 
 fn render_status(_tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
-    use tui::style::Style;
-
     surface.set_string(area.x, area.y, "TODO status", Style::default());
 }
 
 fn render_command(_tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
-    use tui::style::Style;
-
     surface.set_string(area.x, area.y, "TODO command", Style::default());
 }
