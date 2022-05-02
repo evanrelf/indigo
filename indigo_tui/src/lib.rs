@@ -55,6 +55,14 @@ impl Widget for &Tui {
 }
 
 fn handle_event(tui: &mut Tui, event: crossterm::event::Event) {
+    #[allow(clippy::single_match)]
+    match tui.editor.mode() {
+        Mode::Normal {..} => handle_event_normal(tui, event),
+        _ => {}
+    }
+}
+
+fn handle_event_normal(tui: &mut Tui, event: crossterm::event::Event) {
     use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEventKind};
 
     let buffer = tui.editor.current_buffer_mut();
