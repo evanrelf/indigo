@@ -221,10 +221,10 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                 }
             }
             MouseEventKind::Down(MouseButton::Right) => {
-                // TODO
+                // TODO (need to implement selection auto-merging logic)
             }
             MouseEventKind::Drag(MouseButton::Left) => {
-                // TODO
+                // TODO (need to implement selection auto-merging logic)
             }
             _ => {}
         },
