@@ -13,7 +13,8 @@ use std::{
     time::{Duration, Instant},
 };
 use tui::{
-    layout::{Constraint, Direction, Layout},
+    buffer::Buffer as Surface,
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     widgets::Widget,
 };
@@ -59,13 +60,13 @@ impl Tui {
 }
 
 struct Areas {
-    numbers_area: tui::layout::Rect,
-    buffer_area: tui::layout::Rect,
-    status_area: tui::layout::Rect,
-    command_area: tui::layout::Rect,
+    numbers_area: Rect,
+    buffer_area: Rect,
+    status_area: Rect,
+    command_area: Rect,
 }
 
-fn areas(area: tui::layout::Rect) -> Areas {
+fn areas(area: Rect) -> Areas {
     let vertical = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -97,12 +98,12 @@ fn areas(area: tui::layout::Rect) -> Areas {
 }
 
 impl Widget for &Tui {
-    fn render(self, area: tui::layout::Rect, buffer: &mut tui::buffer::Buffer) {
-        render(self, area, buffer);
+    fn render(self, area: Rect, surface: &mut Surface) {
+        render(self, area, surface);
     }
 }
 
-fn handle_event(tui: &mut Tui, areas: &Areas, event: crossterm::event::Event) {
+fn handle_event(tui: &mut Tui, areas: &Areas, event: Event) {
     #[allow(clippy::single_match)]
     match tui.editor.mode() {
         Mode::Normal { .. } => handle_event_normal(tui, areas, event),
@@ -110,7 +111,7 @@ fn handle_event(tui: &mut Tui, areas: &Areas, event: crossterm::event::Event) {
     }
 }
 
-fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: crossterm::event::Event) {
+fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
     let buffer = tui.editor.current_buffer_mut();
 
     match event {
@@ -248,7 +249,7 @@ fn mouse_to_buffer_position(
     Some(*Position::from((line, column)).corrected(buffer.contents()))
 }
 
-fn render(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
+fn render(tui: &Tui, area: Rect, surface: &mut Surface) {
     let areas = areas(area);
 
     render_numbers(tui, areas.numbers_area, surface);
@@ -258,7 +259,7 @@ fn render(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer)
     render_command(tui, areas.command_area, surface);
 }
 
-fn render_numbers(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
+fn render_numbers(tui: &Tui, area: Rect, surface: &mut Surface) {
     let buffer = tui.editor.current_buffer();
 
     let total_lines = buffer.contents().len_lines().saturating_sub(1);
@@ -280,7 +281,7 @@ fn render_numbers(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer:
     }
 }
 
-fn render_buffer(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
+fn render_buffer(tui: &Tui, area: Rect, surface: &mut Surface) {
     let buffer = tui.editor.current_buffer();
 
     for y in area.top()..area.bottom() {
@@ -302,7 +303,7 @@ fn render_buffer(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::
     }
 }
 
-fn render_selection(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
+fn render_selection(tui: &Tui, area: Rect, surface: &mut Surface) {
     let buffer = tui.editor.current_buffer();
     let rope = buffer.contents();
 
@@ -354,10 +355,10 @@ fn render_selection(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffe
     }
 }
 
-fn render_status(_tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
+fn render_status(_tui: &Tui, area: Rect, surface: &mut Surface) {
     surface.set_string(area.x, area.y, "TODO status", Style::default());
 }
 
-fn render_command(_tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
+fn render_command(_tui: &Tui, area: Rect, surface: &mut Surface) {
     surface.set_string(area.x, area.y, "TODO command", Style::default());
 }
