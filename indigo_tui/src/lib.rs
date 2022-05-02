@@ -40,11 +40,51 @@ struct Tui {
 }
 
 impl Tui {
-    pub fn new(editor: Editor) -> Self {
+    fn new(editor: Editor) -> Self {
         Self {
             editor,
             quit: false,
         }
+    }
+}
+
+struct Areas {
+    numbers_area: tui::layout::Rect,
+    buffer_area: tui::layout::Rect,
+    status_area: tui::layout::Rect,
+    command_area: tui::layout::Rect,
+}
+
+fn areas(area: tui::layout::Rect) -> Areas {
+    use tui::layout::{Constraint, Direction, Layout};
+
+    let vertical = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            // number + buffer
+            Constraint::Min(0),
+            // status
+            Constraint::Length(1),
+            // command
+            Constraint::Length(1),
+        ])
+        .split(area);
+
+    let horizontal = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            // number
+            Constraint::Length(4),
+            // buffer
+            Constraint::Min(0),
+        ])
+        .split(vertical[0]);
+
+    Areas {
+        numbers_area: horizontal[0],
+        buffer_area: horizontal[1],
+        status_area: vertical[1],
+        command_area: vertical[2],
     }
 }
 
@@ -167,35 +207,13 @@ fn handle_event_normal(tui: &mut Tui, event: crossterm::event::Event) {
 }
 
 fn render(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
-    use tui::layout::{Constraint, Direction, Layout};
+    let areas = areas(area);
 
-    let vertical = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            // number + buffer
-            Constraint::Min(0),
-            // status
-            Constraint::Length(1),
-            // command
-            Constraint::Length(1),
-        ])
-        .split(area);
-
-    let horizontal = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            // number
-            Constraint::Length(4),
-            // buffer
-            Constraint::Min(0),
-        ])
-        .split(vertical[0]);
-
-    render_numbers(tui, horizontal[0], surface);
-    render_buffer(tui, horizontal[1], surface);
-    render_selection(tui, horizontal[1], surface);
-    render_status(tui, vertical[1], surface);
-    render_command(tui, vertical[2], surface);
+    render_numbers(tui, areas.numbers_area, surface);
+    render_buffer(tui, areas.buffer_area, surface);
+    render_selection(tui, areas.buffer_area, surface);
+    render_status(tui, areas.status_area, surface);
+    render_command(tui, areas.command_area, surface);
 }
 
 fn render_numbers(tui: &Tui, area: tui::layout::Rect, surface: &mut tui::buffer::Buffer) {
