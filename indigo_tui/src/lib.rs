@@ -29,18 +29,23 @@ pub fn run(editor: Editor) {
     let frame_time = Duration::from_secs(1) / frames_per_second;
 
     let mut last_render_time = Instant::now() - (frame_time * 2);
+    let mut last_size = terminal.size().unwrap();
 
     while !tui.quit {
         if last_render_time.elapsed() >= frame_time {
             terminal
-                .draw(|frame| frame.render_widget(&tui, frame.size()))
+                .draw(|frame| frame.render_widget(&tui, last_size))
                 .unwrap();
             last_render_time = Instant::now();
         }
 
         let event = crossterm::event::read().unwrap();
-        let areas = areas(terminal.size().unwrap());
-        handle_event(&mut tui, &areas, event);
+
+        if matches!(event, Event::Resize(_, _)) {
+            last_size = terminal.size().unwrap();
+        };
+
+        handle_event(&mut tui, &areas(last_size), event);
     }
 }
 
