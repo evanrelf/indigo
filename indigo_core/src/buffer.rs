@@ -1,16 +1,17 @@
 use crate::{selection::Selection, validate::Valid};
 use anyhow::anyhow;
+use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::{
     cmp::{max, min},
     fs::File,
     io::{BufReader, BufWriter},
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 #[derive(Clone, Default)]
 pub struct Buffer {
-    pub path: Option<PathBuf>,
+    pub path: Option<Utf8PathBuf>,
     contents: Rope,
     is_modified: bool,
     selection: Selection,
@@ -55,7 +56,7 @@ impl Buffer {
     }
 
     pub fn open(path: impl AsRef<Path>) -> Result<Self, anyhow::Error> {
-        let path_buf = path.as_ref().to_path_buf();
+        let path_buf = Utf8PathBuf::try_from(path.as_ref().to_path_buf())?;
         let file = File::open(path)?;
         let reader = BufReader::new(file);
 
