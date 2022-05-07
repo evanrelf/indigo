@@ -358,8 +358,33 @@ fn render_selection(tui: &Tui, area: Rect, surface: &mut Surface) {
     }
 }
 
-fn render_status(_tui: &Tui, area: Rect, surface: &mut Surface) {
-    surface.set_string(area.x, area.y, "TODO status", Style::default());
+fn render_status(tui: &Tui, area: Rect, surface: &mut Surface) {
+    let mode = match tui.editor.mode() {
+        Mode::Normal { .. } => "normal",
+        Mode::Command { .. } => "command",
+        Mode::Insert => "insert",
+    };
+
+    let buffer = tui.editor.current_buffer();
+
+    let path = match buffer.path.as_ref() {
+        Some(path) => path.as_str(),
+        None => "[no file]",
+    };
+
+    let modified = if buffer.is_modified() { " [+]" } else { "" };
+
+    let position = {
+        let Position { line, column } = buffer.selection().primary_range().1.head();
+        format!("{line},{column}")
+    };
+
+    surface.set_string(
+        area.x,
+        area.y,
+        format!("{mode} {path}{modified} {position}"),
+        Style::default(),
+    );
 }
 
 fn render_command(_tui: &Tui, area: Rect, surface: &mut Surface) {
