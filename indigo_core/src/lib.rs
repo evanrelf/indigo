@@ -6,6 +6,7 @@
 )]
 
 pub mod buffer;
+pub mod command_line;
 pub mod editor;
 pub mod entangle;
 pub mod mode;
@@ -16,6 +17,7 @@ pub mod validate;
 
 pub use crate::{
     buffer::Buffer,
+    command_line::CommandLine,
     editor::Editor,
     entangle::{Entangle, Entangled},
     mode::Mode,
