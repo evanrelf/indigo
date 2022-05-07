@@ -1,6 +1,8 @@
+use crate::command_line::CommandLine;
+
 pub enum Mode {
     Normal { count: usize },
-    Command { command: String },
+    Command { command_line: CommandLine },
     Insert,
 }
 
@@ -13,7 +15,7 @@ impl Mode {
     #[must_use]
     pub fn command() -> Self {
         Self::Command {
-            command: String::new(),
+            command_line: CommandLine::default(),
         }
     }
 
