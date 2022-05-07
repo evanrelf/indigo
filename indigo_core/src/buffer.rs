@@ -1,9 +1,10 @@
 use crate::{selection::Selection, validate::Valid};
+use anyhow::anyhow;
 use ropey::Rope;
 use std::{
     cmp::{max, min},
     fs::File,
-    io::{self, BufReader, BufWriter},
+    io::{BufReader, BufWriter},
     path::{Path, PathBuf},
 };
 
@@ -53,7 +54,7 @@ impl Buffer {
         new
     }
 
-    pub fn open(path: impl AsRef<Path>) -> Result<Self, io::Error> {
+    pub fn open(path: impl AsRef<Path>) -> Result<Self, anyhow::Error> {
         let path_buf = path.as_ref().to_path_buf();
         let file = File::open(path)?;
         let reader = BufReader::new(file);
@@ -65,20 +66,15 @@ impl Buffer {
         })
     }
 
-    pub fn save(&mut self) -> Result<(), io::Error> {
+    pub fn save(&mut self) -> Result<(), anyhow::Error> {
         if let Some(path) = &self.path {
             let file = File::open(path)?;
             let writer = BufWriter::new(file);
-            let result = self.contents.write_to(writer);
-            if result.is_ok() {
-                self.is_modified = false;
-            }
-            result
+            self.contents.write_to(writer)?;
+            self.is_modified = false;
+            Ok(())
         } else {
-            Err(io::Error::new(
-                io::ErrorKind::Other,
-                "no path associated with buffer",
-            ))
+            Err(anyhow!("no path associated with buffer"))
         }
     }
 
