@@ -387,6 +387,21 @@ fn render_status(tui: &Tui, area: Rect, surface: &mut Surface) {
     );
 }
 
-fn render_command(_tui: &Tui, area: Rect, surface: &mut Surface) {
-    surface.set_string(area.x, area.y, "TODO command", Style::default());
+fn render_command(tui: &Tui, area: Rect, surface: &mut Surface) {
+    if let Mode::Command { command_line } = tui.editor.mode() {
+        surface.set_string(
+            area.x,
+            area.y,
+            format!(":{}", command_line.contents()),
+            Style::default(),
+        );
+
+        let cursor_index = u16::try_from(command_line.cursor_index()).unwrap();
+
+        let yellow = Color::Rgb(0xFF, 0xD3, 0x3D);
+
+        surface
+            .get_mut(area.x + 1 + cursor_index, area.y)
+            .set_style(Style::default().bg(yellow));
+    }
 }
