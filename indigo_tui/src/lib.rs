@@ -375,8 +375,9 @@ fn render_status(tui: &Tui, area: Rect, surface: &mut Surface) {
     let modified = if buffer.is_modified() { " [+]" } else { "" };
 
     let position = {
-        let Position { line, column } = buffer.selection().primary_range().1.head();
-        format!("{line},{column}")
+        let position @ Position { line, column } = buffer.selection().primary_range().1.head();
+        let index = *position.to_rope_index(buffer.contents()).0;
+        format!("{line},{column}#{index}")
     };
 
     surface.set_string(
