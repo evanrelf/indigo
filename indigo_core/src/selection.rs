@@ -2,7 +2,7 @@ use crate::{range::Range, validate::Validate};
 use regex::Regex;
 use ropey::Rope;
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Selection {
     ranges: Vec<Range>,
     primary_range_index: usize,
@@ -48,12 +48,33 @@ impl Selection {
     #[must_use]
     pub fn update_ranges(&self, range_fn: impl Fn(usize, &Range) -> Range) -> Self {
         let mut selection = self.clone();
+
         for (index, range) in selection.ranges.iter_mut().enumerate() {
             *range = range_fn(index, range);
         }
-        selection
 
-        // TODO: Merge overlapping ranges
+        selection.merge()
+    }
+
+    #[must_use]
+    fn merge(&self) -> Self {
+        let mut ranges: Vec<Range> = Vec::new();
+        let mut primary_range_index = self.primary_range_index;
+
+        for range in &self.ranges {
+            match ranges.last_mut() {
+                Some(last_range) if last_range.is_overlapping(range) => {
+                    *last_range = last_range.merge(range);
+                    primary_range_index = ranges.len() - 1;
+                }
+                _ => ranges.push(*range),
+            }
+        }
+
+        Self {
+            ranges,
+            primary_range_index,
+        }
     }
 
     #[cfg(debug_assertions)]
@@ -126,5 +147,50 @@ impl From<Range> for Selection {
             ranges: vec![range],
             primary_range_index: 0,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::position::Position;
+
+    #[test]
+    fn test_merge() {
+        let tuples_to_ranges = |vec: Vec<_>| {
+            vec.into_iter()
+                .map(|(anchor, head)| {
+                    Range::from((
+                        Position::try_from(anchor).unwrap(),
+                        Position::try_from(head).unwrap(),
+                    ))
+                })
+                .collect()
+        };
+
+        let input_ranges = tuples_to_ranges(vec![
+            ((1, 1), (1, 10)),
+            ((1, 2), (1, 9)),
+            ((2, 1), (2, 10)),
+            ((2, 2), (2, 9)),
+        ]);
+
+        let input_selection = Selection {
+            ranges: input_ranges,
+            primary_range_index: 2,
+        };
+
+        let expected_ranges = tuples_to_ranges(vec![((1, 1), (1, 10)), ((2, 1), (2, 10))]);
+
+        let expected_selection = Selection {
+            ranges: expected_ranges,
+            primary_range_index: 1,
+        };
+
+        expected_selection.assert_invariants();
+
+        let actual_selection = input_selection.merge();
+
+        assert_eq!(expected_selection, actual_selection);
     }
 }

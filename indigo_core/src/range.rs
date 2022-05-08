@@ -10,7 +10,7 @@ use std::{
     num::NonZeroUsize,
 };
 
-#[derive(Copy, Clone, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Range {
     anchor: Position,
     head: Position,
