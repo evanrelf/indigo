@@ -7,6 +7,7 @@ edition = "2021"
 default-run = "indigo_tui"
 
 [dependencies]
+anyhow = "1.0.57"
 crossterm = "0.23.2"
 indigo_core = { path = "../indigo_core" }
 tui = "0.18.0"

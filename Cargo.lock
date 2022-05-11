@@ -102,6 +102,7 @@ dependencies = [
 name = "indigo_tui"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "crossterm",
  "indigo_core",
  "tui",

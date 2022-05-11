@@ -1,6 +1,6 @@
 use crate::validate::{Valid, Validate};
 use ropey::Rope;
-use std::num::NonZeroUsize;
+use std::{cmp::min, num::NonZeroUsize};
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Position {
@@ -17,7 +17,9 @@ impl Position {
 
     #[must_use]
     pub fn to_rope_index<'rope>(&self, rope: &'rope Rope) -> (Valid<'rope, usize>, bool) {
-        debug_assert!(rope.len_chars() > 0, "cannot handle empty ropes yet");
+        let rope_length = rope.len_chars();
+
+        debug_assert!(rope_length > 0, "cannot handle empty ropes yet");
 
         let mut corrected = false;
 
@@ -42,12 +44,24 @@ impl Position {
         let column = if columns <= rope_column {
             // When column goes beyond end of line, use last column
             corrected = true;
-            columns.saturating_sub(1)
+            columns - 1
         } else {
             rope_column
         };
 
-        let index = (rope.line_to_char(line) + column).valid_for(rope).unwrap();
+        // let index = min(rope.line_to_char(line) + column, rope_length - 1);
+        let index = rope.line_to_char(line) + column;
+
+        if index >= rope_length {
+            panic!(
+                "\nrope_length: {}\nindex: {}\ncolumns: {}\n",
+                rope_length, index, columns
+            );
+        }
+
+        let index = index
+            .valid_for(rope)
+            .unwrap_or_else(|| panic!("{index} is valid index in rope"));
 
         (index, corrected)
     }

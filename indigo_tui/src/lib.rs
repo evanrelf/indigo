@@ -51,6 +51,7 @@ pub fn run(editor: Editor) {
 
 struct Tui {
     editor: Editor,
+    dragging: bool,
     quit: bool,
 }
 
@@ -58,6 +59,7 @@ impl Tui {
     fn new(editor: Editor) -> Self {
         Self {
             editor,
+            dragging: false,
             quit: false,
         }
     }
@@ -206,17 +208,43 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                 *buffer = buffer.scroll_down(3);
             }
             MouseEventKind::Down(MouseButton::Left) => {
+                tui.dragging = true;
                 if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
                     *buffer = buffer.update_selection(|rope, _selection| {
                         Selection::from(Range::from(head)).valid_for(rope).unwrap()
                     });
                 }
             }
-            MouseEventKind::Down(MouseButton::Right) => {
-                // TODO (need to implement selection auto-merging logic)
+            MouseEventKind::Up(MouseButton::Left) => {
+                tui.dragging = false;
             }
+            MouseEventKind::Down(MouseButton::Right) => {
+                tui.dragging = true;
+                if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
+                    *buffer = buffer.update_selection(|rope, selection| {
+                        Selection::from(Range::from((selection.primary_range().1.anchor(), head)))
+                            .valid_for(rope)
+                            .unwrap()
+                    });
+                }
+            }
+            MouseEventKind::Up(MouseButton::Right) => {
+                tui.dragging = false;
+            }
+            // "Drag" behaves more like "hover"
             MouseEventKind::Drag(MouseButton::Left) => {
-                // TODO (need to implement selection auto-merging logic)
+                if tui.dragging {
+                    if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
+                        *buffer = buffer.update_selection(|rope, selection| {
+                            Selection::from(Range::from((
+                                selection.primary_range().1.anchor(),
+                                head,
+                            )))
+                            .valid_for(rope)
+                            .unwrap()
+                        });
+                    }
+                }
             }
             _ => {}
         },
