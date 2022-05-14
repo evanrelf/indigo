@@ -45,7 +45,8 @@ pub fn run(editor: Editor) {
             last_size = terminal.size().unwrap();
         };
 
-        handle_event(&mut tui, &areas(last_size), event);
+        let areas = areas(&tui.editor, last_size);
+        handle_event(&mut tui, &areas, event);
     }
 }
 
@@ -70,7 +71,7 @@ struct Areas {
     command_area: Rect,
 }
 
-fn areas(area: Rect) -> Areas {
+fn areas(editor: &Editor, area: Rect) -> Areas {
     let vertical = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -83,11 +84,26 @@ fn areas(area: Rect) -> Areas {
         ])
         .split(area);
 
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    // Change to work with integers instead of floats once this is stabilized:
+    // https://github.com/rust-lang/rust/issues/70887
+    let number_width = {
+        let n = editor
+            .current_buffer()
+            .contents()
+            .len_lines()
+            .saturating_sub(1);
+        assert!(n != 0);
+        let n = n as f64;
+        let digits = 1.0 + n.log10().floor();
+        (digits.max(2.0) + 1.0) as u16
+    };
+
     let horizontal = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
             // number
-            Constraint::Length(5),
+            Constraint::Length(number_width),
             // buffer
             Constraint::Min(0),
         ])
@@ -251,7 +267,7 @@ fn mouse_to_buffer_position(
 
 impl Widget for &Tui {
     fn render(self, area: Rect, surface: &mut Surface) {
-        let areas = areas(area);
+        let areas = areas(&self.editor, area);
 
         render_numbers(self, areas.numbers_area, surface);
         render_buffer(self, areas.buffer_area, surface);
