@@ -268,14 +268,14 @@ fn render_numbers(tui: &Tui, area: Rect, surface: &mut Surface) {
 
     for y in area.top()..area.bottom() {
         let line_number = usize::from(y) + buffer.vertical_scroll_offset() + 1;
-        let width = usize::from(area.width) - 1;
+        let number_width = usize::from(area.width) - 1;
 
         if line_number <= total_lines {
             surface.set_stringn(
                 area.x,
                 y,
-                format!("{:>width$}", line_number),
-                width,
+                format!("{:>number_width$}│", line_number),
+                number_width + 1,
                 Style::default(),
             );
         } else {
