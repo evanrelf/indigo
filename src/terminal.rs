@@ -10,18 +10,6 @@ pub struct Terminal {
 }
 
 impl Terminal {
-    pub fn new() -> Self {
-        let tui_terminal = {
-            let stdout = stdout();
-            let backend = tui::backend::CrosstermBackend::new(stdout);
-            tui::Terminal::new(backend).unwrap()
-        };
-
-        Self::enter();
-
-        Self { tui_terminal }
-    }
-
     fn enter() {
         use crossterm::{cursor, event, terminal};
 
@@ -51,6 +39,20 @@ impl Terminal {
         if !std::thread::panicking() {
             let _ = panic::take_hook();
         }
+    }
+}
+
+impl Default for Terminal {
+    fn default() -> Self {
+        let tui_terminal = {
+            let stdout = stdout();
+            let backend = tui::backend::CrosstermBackend::new(stdout);
+            tui::Terminal::new(backend).unwrap()
+        };
+
+        Self::enter();
+
+        Self { tui_terminal }
     }
 }
 

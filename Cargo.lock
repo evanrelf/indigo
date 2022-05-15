@@ -152,26 +152,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "indigo_core"
+name = "indigo"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "bitflags",
  "camino",
+ "clap",
+ "crossterm",
  "downcast-rs",
  "generational-arena",
  "regex",
  "ropey",
- "tracing",
-]
-
-[[package]]
-name = "indigo_tui"
-version = "0.1.0"
-dependencies = [
- "clap",
- "crossterm",
- "indigo_core",
  "tracing",
  "tracing-subscriber",
  "tui",

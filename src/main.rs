@@ -1,5 +1,4 @@
 use clap::Parser as _;
-use indigo_core::Editor;
 use std::{fs::File, path::PathBuf};
 
 #[derive(clap::Parser)]
@@ -29,11 +28,11 @@ fn main() {
             .init();
     }
 
-    let mut editor = Editor::default();
+    let mut editor = indigo::editor::Editor::default();
 
     for path in args.files {
         editor.open_buffer(path).unwrap();
     }
 
-    indigo_tui::run(editor);
+    indigo::tui::run(editor);
 }

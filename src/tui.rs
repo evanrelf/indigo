@@ -5,9 +5,17 @@
     clippy::cast_sign_loss
 )]
 
-use crate::terminal::Terminal;
+use crate::{
+    buffer::Buffer,
+    editor::Editor,
+    mode::command::CommandMode,
+    position::Position,
+    range::{self, Range},
+    selection::Selection,
+    terminal::Terminal,
+    validate::Validate as _,
+};
 use crossterm::event::{Event, KeyCode, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
-use indigo_core::*;
 use std::{
     num::NonZeroUsize,
     time::{Duration, Instant},
@@ -19,10 +27,8 @@ use tui::{
     widgets::Widget,
 };
 
-mod terminal;
-
 pub fn run(editor: Editor) {
-    let mut terminal = Terminal::new();
+    let mut terminal = Terminal::default();
     let mut tui = Tui::new(editor);
 
     let frames_per_second = 120;
