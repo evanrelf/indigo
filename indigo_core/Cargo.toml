@@ -11,3 +11,4 @@ camino = "1.0.8"
 generational-arena = "0.2.8"
 regex = "1.5.5"
 ropey = { version = "1.4.1", default-features = false }
+tracing = "0.1.34"
