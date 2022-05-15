@@ -1,4 +1,4 @@
-use crate::command_line::CommandLine;
+use crate::{command_line::CommandLine, key::KeyMap};
 use downcast_rs::{impl_downcast, Downcast};
 
 pub trait Mode: Downcast {
@@ -8,6 +8,7 @@ impl_downcast!(Mode);
 
 #[derive(Default)]
 pub struct NormalMode {
+    pub keymap: KeyMap,
     pub count: usize,
 }
 
@@ -19,6 +20,7 @@ impl Mode for NormalMode {
 
 #[derive(Default)]
 pub struct CommandMode {
+    pub keymap: KeyMap,
     pub command_line: CommandLine,
 }
 
@@ -29,7 +31,9 @@ impl Mode for CommandMode {
 }
 
 #[derive(Default)]
-pub struct InsertMode {}
+pub struct InsertMode {
+    pub keymap: KeyMap,
+}
 
 impl Mode for InsertMode {
     fn mode_name(&self) -> &'static str {

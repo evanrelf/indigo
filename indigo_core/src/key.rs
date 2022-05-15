@@ -1,4 +1,5 @@
 use bitflags::bitflags;
+use std::collections::HashMap;
 
 pub struct Key {
     pub code: KeyCode,
@@ -26,3 +27,7 @@ bitflags! {
         const NONE = 0b0000_0000;
     }
 }
+
+pub type KeyMap = HashMap<Key, Todo>;
+
+pub enum Todo {}
