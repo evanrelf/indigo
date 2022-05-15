@@ -401,7 +401,7 @@ fn render_status(tui: &Tui, area: Rect, surface: &mut Surface) {
 }
 
 fn render_command(tui: &Tui, area: Rect, surface: &mut Surface) {
-    if let Some(CommandMode { command_line, .. }) = tui.editor.mode().downcast_ref() {
+    if let Some(CommandMode { command_line }) = tui.editor.mode().downcast_ref() {
         surface.set_string(
             area.x,
             area.y,

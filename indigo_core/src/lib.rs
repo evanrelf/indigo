@@ -21,7 +21,7 @@ pub use crate::{
     command_line::CommandLine,
     editor::Editor,
     entangle::{Entangle, Entangled},
-    key::{Key, KeyCode, KeyMap, KeyModifiers},
+    key::{Key, KeyCode, KeyModifiers},
     mode::{CommandMode, InsertMode, Mode, NormalMode},
     position::Position,
     range::Range,
