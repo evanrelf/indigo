@@ -1,5 +1,2 @@
 [workspace]
-members = [
-  "indigo_core",
-  "indigo_tui",
-]
+members = ["indigo_*"]
