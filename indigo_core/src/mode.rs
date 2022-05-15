@@ -1,26 +1,38 @@
 use crate::command_line::CommandLine;
+use downcast_rs::{impl_downcast, Downcast};
 
-pub enum Mode {
-    Normal { count: usize },
-    Command { command_line: CommandLine },
-    Insert,
+pub trait Mode: Downcast {
+    fn mode_name(&self) -> &'static str;
+}
+impl_downcast!(Mode);
+
+#[derive(Default)]
+pub struct NormalMode {
+    pub count: usize,
 }
 
-impl Mode {
-    #[must_use]
-    pub fn normal() -> Self {
-        Self::Normal { count: 0 }
+impl Mode for NormalMode {
+    fn mode_name(&self) -> &'static str {
+        "normal"
     }
+}
 
-    #[must_use]
-    pub fn command() -> Self {
-        Self::Command {
-            command_line: CommandLine::default(),
-        }
+#[derive(Default)]
+pub struct CommandMode {
+    pub command_line: CommandLine,
+}
+
+impl Mode for CommandMode {
+    fn mode_name(&self) -> &'static str {
+        "command"
     }
+}
 
-    #[must_use]
-    pub fn insert() -> Self {
-        Self::Insert
+#[derive(Default)]
+pub struct InsertMode {}
+
+impl Mode for InsertMode {
+    fn mode_name(&self) -> &'static str {
+        "insert"
     }
 }

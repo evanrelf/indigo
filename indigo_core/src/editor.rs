@@ -1,11 +1,14 @@
-use crate::{buffer::Buffer, mode::Mode};
+use crate::{
+    buffer::Buffer,
+    mode::{Mode, NormalMode},
+};
 use generational_arena::{Arena, Index};
 use std::path::Path;
 
 pub struct Editor {
     buffers: Arena<Buffer>,
     current_buffer_index: Index,
-    mode: Mode,
+    mode: Box<dyn Mode>,
 }
 
 impl Editor {
@@ -20,8 +23,8 @@ impl Editor {
     }
 
     #[must_use]
-    pub fn mode(&self) -> &Mode {
-        &self.mode
+    pub fn mode(&self) -> &dyn Mode {
+        self.mode.as_ref()
     }
 
     #[must_use]
@@ -79,7 +82,7 @@ impl Default for Editor {
         Self {
             buffers,
             current_buffer_index,
-            mode: Mode::normal(),
+            mode: Box::new(NormalMode::default()),
         }
     }
 }
