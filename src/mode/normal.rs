@@ -1,4 +1,5 @@
-use crate::{editor::Editor, key::Key, mode::Mode};
+use crate::{editor::Editor, mode::Mode};
+use crossterm::event::KeyEvent;
 
 #[derive(Default)]
 pub struct NormalMode {
@@ -10,7 +11,11 @@ impl Mode for NormalMode {
         "normal"
     }
 
-    fn handle_key(&mut self, _editor: &mut Editor, _key: Key) -> Result<(), anyhow::Error> {
+    fn handle_key(
+        &mut self,
+        _editor: &mut Editor,
+        _key_event: KeyEvent,
+    ) -> Result<(), anyhow::Error> {
         todo!()
     }
 }

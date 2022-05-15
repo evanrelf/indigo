@@ -9,7 +9,6 @@ pub mod buffer;
 pub mod command_line;
 pub mod editor;
 pub mod entangle;
-pub mod key;
 pub mod mode;
 pub mod position;
 pub mod range;

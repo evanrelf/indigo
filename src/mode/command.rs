@@ -1,4 +1,5 @@
-use crate::{command_line::CommandLine, editor::Editor, key::Key, mode::Mode};
+use crate::{command_line::CommandLine, editor::Editor, mode::Mode};
+use crossterm::event::KeyEvent;
 
 #[derive(Default)]
 pub struct CommandMode {
@@ -10,7 +11,11 @@ impl Mode for CommandMode {
         "command"
     }
 
-    fn handle_key(&mut self, _editor: &mut Editor, _key: Key) -> Result<(), anyhow::Error> {
+    fn handle_key(
+        &mut self,
+        _editor: &mut Editor,
+        _key_event: KeyEvent,
+    ) -> Result<(), anyhow::Error> {
         todo!()
     }
 }
