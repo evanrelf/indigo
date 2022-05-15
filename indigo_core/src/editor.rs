@@ -1,4 +1,7 @@
-use crate::{buffer::Buffer, mode::Mode};
+use crate::{
+    buffer::Buffer,
+    mode::{Mode, NormalMode},
+};
 use generational_arena::{Arena, Index};
 use std::path::Path;
 
@@ -79,7 +82,7 @@ impl Default for Editor {
         Self {
             buffers,
             current_buffer_index,
-            mode: Mode::normal(),
+            mode: Mode::Normal(NormalMode::default()),
         }
     }
 }

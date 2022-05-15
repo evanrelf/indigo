@@ -376,9 +376,9 @@ fn render_selection(tui: &Tui, area: Rect, surface: &mut Surface) {
 
 fn render_status(tui: &Tui, area: Rect, surface: &mut Surface) {
     let mode = match tui.editor.mode() {
-        Mode::Normal { .. } => "normal",
-        Mode::Command { .. } => "command",
-        Mode::Insert => "insert",
+        Mode::Normal(_) => "normal",
+        Mode::Command(_) => "command",
+        Mode::Insert(_) => "insert",
     };
 
     let buffer = tui.editor.current_buffer();
@@ -405,7 +405,7 @@ fn render_status(tui: &Tui, area: Rect, surface: &mut Surface) {
 }
 
 fn render_command(tui: &Tui, area: Rect, surface: &mut Surface) {
-    if let Mode::Command { command_line } = tui.editor.mode() {
+    if let Mode::Command(CommandMode { command_line }) = tui.editor.mode() {
         surface.set_string(
             area.x,
             area.y,

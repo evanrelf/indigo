@@ -1,26 +1,20 @@
 use crate::command_line::CommandLine;
 
 pub enum Mode {
-    Normal { count: usize },
-    Command { command_line: CommandLine },
-    Insert,
+    Normal(NormalMode),
+    Command(CommandMode),
+    Insert(InsertMode),
 }
 
-impl Mode {
-    #[must_use]
-    pub fn normal() -> Self {
-        Self::Normal { count: 0 }
-    }
-
-    #[must_use]
-    pub fn command() -> Self {
-        Self::Command {
-            command_line: CommandLine::default(),
-        }
-    }
-
-    #[must_use]
-    pub fn insert() -> Self {
-        Self::Insert
-    }
+#[derive(Default)]
+pub struct NormalMode {
+    pub count: usize,
 }
+
+#[derive(Default)]
+pub struct CommandMode {
+    pub command_line: CommandLine,
+}
+
+#[derive(Default)]
+pub struct InsertMode {}

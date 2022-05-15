@@ -22,7 +22,7 @@ pub use crate::{
     editor::Editor,
     entangle::{Entangle, Entangled},
     key::{Key, KeyCode, KeyModifiers},
-    mode::Mode,
+    mode::{CommandMode, InsertMode, Mode, NormalMode},
     position::Position,
     range::Range,
     selection::Selection,
