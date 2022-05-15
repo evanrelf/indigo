@@ -1,5 +1,4 @@
-use crate::{editor::Editor, mode::Mode};
-use crossterm::event::KeyEvent;
+use crate::{editor::Editor, key::Key, mode::Mode};
 
 #[derive(Default)]
 pub struct InsertMode {}
@@ -9,11 +8,7 @@ impl Mode for InsertMode {
         "insert"
     }
 
-    fn handle_key(
-        &mut self,
-        _editor: &mut Editor,
-        _key_event: KeyEvent,
-    ) -> Result<(), anyhow::Error> {
+    fn handle_key(&mut self, _editor: &mut Editor, _key: Key) -> Result<(), anyhow::Error> {
         todo!()
     }
 }

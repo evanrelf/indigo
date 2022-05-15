@@ -1,5 +1,4 @@
-use crate::editor::Editor;
-use crossterm::event::KeyEvent;
+use crate::{editor::Editor, key::Key};
 use downcast_rs::{impl_downcast, Downcast};
 
 pub mod command;
@@ -9,8 +8,7 @@ pub mod normal;
 pub trait Mode: Downcast {
     fn mode_name(&self) -> &'static str;
 
-    fn handle_key(&mut self, editor: &mut Editor, key_event: KeyEvent)
-        -> Result<(), anyhow::Error>;
+    fn handle_key(&mut self, editor: &mut Editor, key: Key) -> Result<(), anyhow::Error>;
 }
 
 impl_downcast!(Mode);
