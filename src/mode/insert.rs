@@ -13,7 +13,8 @@ impl Mode for InsertMode {
         &mut self,
         _editor: &mut Editor,
         _key_event: KeyEvent,
-    ) -> Result<(), anyhow::Error> {
-        todo!()
+    ) -> Result<bool, anyhow::Error> {
+        // TODO
+        Ok(false)
     }
 }

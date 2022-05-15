@@ -9,8 +9,11 @@ pub mod normal;
 pub trait Mode: Downcast {
     fn mode_name(&self) -> &'static str;
 
-    fn handle_key(&mut self, editor: &mut Editor, key_event: KeyEvent)
-        -> Result<(), anyhow::Error>;
+    fn handle_key(
+        &mut self,
+        editor: &mut Editor,
+        key_event: KeyEvent,
+    ) -> Result<bool, anyhow::Error>;
 }
 
 impl_downcast!(Mode);
