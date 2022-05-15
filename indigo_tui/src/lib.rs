@@ -119,8 +119,8 @@ fn areas(editor: &Editor, area: Rect) -> Areas {
 
 fn handle_event(tui: &mut Tui, areas: &Areas, event: Event) {
     #[allow(clippy::single_match)]
-    match tui.editor.mode().mode_name() {
-        "normal" => handle_event_normal(tui, areas, event),
+    match tui.editor.mode() {
+        Mode::Normal { .. } => handle_event_normal(tui, areas, event),
         _ => {}
     }
 }
@@ -375,7 +375,11 @@ fn render_selection(tui: &Tui, area: Rect, surface: &mut Surface) {
 }
 
 fn render_status(tui: &Tui, area: Rect, surface: &mut Surface) {
-    let mode = tui.editor.mode().mode_name();
+    let mode = match tui.editor.mode() {
+        Mode::Normal { .. } => "normal",
+        Mode::Command { .. } => "command",
+        Mode::Insert => "insert",
+    };
 
     let buffer = tui.editor.current_buffer();
 
@@ -401,7 +405,7 @@ fn render_status(tui: &Tui, area: Rect, surface: &mut Surface) {
 }
 
 fn render_command(tui: &Tui, area: Rect, surface: &mut Surface) {
-    if let Some(CommandMode { command_line }) = tui.editor.mode().downcast_ref() {
+    if let Mode::Command { command_line } = tui.editor.mode() {
         surface.set_string(
             area.x,
             area.y,
