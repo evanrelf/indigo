@@ -1,6 +1,6 @@
 use crate::{
     buffer::Buffer,
-    mode::{normal::NormalMode, Mode},
+    mode::{Mode, NormalMode},
 };
 use generational_arena::{Arena, Index};
 use std::path::Path;

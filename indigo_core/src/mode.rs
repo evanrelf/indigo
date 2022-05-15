@@ -5,6 +5,8 @@ pub mod command;
 pub mod insert;
 pub mod normal;
 
+pub use crate::mode::{command::*, insert::*, normal::*};
+
 pub trait Mode: Downcast {
     fn mode_name(&self) -> &'static str;
 
