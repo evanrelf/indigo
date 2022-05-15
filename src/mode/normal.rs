@@ -15,8 +15,7 @@ impl Mode for NormalMode {
         &mut self,
         _editor: &mut Editor,
         _key_event: KeyEvent,
-    ) -> Result<bool, anyhow::Error> {
-        // TODO
-        Ok(false)
+    ) -> Result<(), anyhow::Error> {
+        todo!()
     }
 }
