@@ -393,7 +393,7 @@ fn render_status(tui: &Tui, area: Rect, surface: &mut Surface) {
     let position = {
         let position @ Position { line, column } = buffer.selection().primary_range().1.head();
         let index = *position.to_rope_index(buffer.contents()).0;
-        format!("{line},{column}#{index}")
+        format!("{line}:{column}#{index}")
     };
 
     surface.set_string(
