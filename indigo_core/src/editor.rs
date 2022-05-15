@@ -8,7 +8,7 @@ use std::path::Path;
 pub struct Editor {
     buffers: Arena<Buffer>,
     current_buffer_index: Index,
-    mode: Mode,
+    pub mode: Mode,
 }
 
 impl Editor {
@@ -20,11 +20,6 @@ impl Editor {
     #[must_use]
     pub fn current_buffer_index(&self) -> Index {
         self.current_buffer_index
-    }
-
-    #[must_use]
-    pub fn mode(&self) -> &Mode {
-        &self.mode
     }
 
     #[must_use]
