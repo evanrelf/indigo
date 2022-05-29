@@ -77,16 +77,15 @@ impl Selection {
         }
     }
 
-    #[cfg(debug_assertions)]
     pub fn assert_invariants(&self) {
-        debug_assert!(!self.ranges.is_empty(), "must have at least one range");
+        assert!(!self.ranges.is_empty(), "must have at least one range");
 
-        debug_assert!(
+        assert!(
             self.ranges.get(self.primary_range_index).is_some(),
             "primary range index must be valid"
         );
 
-        debug_assert!(
+        assert!(
             {
                 let mut sorted = self.ranges.clone();
                 sorted.sort_by(|left, right| {
@@ -99,7 +98,7 @@ impl Selection {
             "ranges must be sorted"
         );
 
-        debug_assert!(
+        assert!(
             {
                 let mut overlapping = false;
                 for (outer_index, outer_range) in self.ranges.iter().enumerate() {

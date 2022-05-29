@@ -218,11 +218,10 @@ impl Range {
         (slice, anchor_corrected || head_corrected)
     }
 
-    #[cfg(debug_assertions)]
     pub fn assert_invariants(&self) {
         // Target column must be greater than head's column
         if let Some(column) = self.target_column {
-            debug_assert!(column > self.head.column);
+            assert!(column > self.head.column);
         }
     }
 }

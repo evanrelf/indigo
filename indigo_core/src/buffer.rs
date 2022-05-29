@@ -123,11 +123,10 @@ impl Buffer {
         self.scroll_to_column(self.horizontal_scroll_offset + distance)
     }
 
-    #[cfg(debug_assertions)]
     pub fn assert_invariants(&self) {
         use crate::validate::Validate as _;
 
-        debug_assert!(
+        assert!(
             {
                 let mut valid = true;
                 for range in self.selection().ranges() {
@@ -141,7 +140,7 @@ impl Buffer {
             "selection must be valid in the rope"
         );
 
-        debug_assert!(
+        assert!(
             {
                 let mut longest_line = 0;
                 for line in self.contents.lines() {
@@ -152,7 +151,7 @@ impl Buffer {
             "horizontal scroll offset must not exceed length of longest line"
         );
 
-        debug_assert!(
+        assert!(
             self.vertical_scroll_offset <= self.contents.len_lines().saturating_sub(2),
             "vertical scroll offset must not exceed length of buffer"
         );
