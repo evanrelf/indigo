@@ -93,7 +93,7 @@ impl Buffer {
     pub fn scroll_to_column(&self, column: usize) -> Self {
         let mut longest_line = 0;
 
-        for line in self.contents.lines() {
+        for line in self.contents.lines_at(self.vertical_scroll_offset) {
             longest_line = max(line.len_chars(), longest_line);
         }
 
