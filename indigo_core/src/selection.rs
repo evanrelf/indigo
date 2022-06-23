@@ -57,6 +57,18 @@ impl Selection {
     }
 
     #[must_use]
+    pub fn update_primary_range(&self, range_fn: impl Fn(usize, &Range) -> Range) -> Self {
+        let mut selection = self.clone();
+
+        let index = selection.primary_range_index;
+        let range = &mut selection.ranges[index];
+
+        *range = range_fn(index, range);
+
+        selection.merge()
+    }
+
+    #[must_use]
     fn merge(&self) -> Self {
         let mut ranges: Vec<Range> = Vec::new();
         let mut primary_range_index = self.primary_range_index;
