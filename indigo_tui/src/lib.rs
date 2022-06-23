@@ -52,6 +52,7 @@ pub fn run(editor: Editor) {
 
 struct Tui {
     editor: Editor,
+    mouse_down_area: Option<Area>,
     quit: bool,
 }
 
@@ -59,9 +60,17 @@ impl Tui {
     fn new(editor: Editor) -> Self {
         Self {
             editor,
+            mouse_down_area: None,
             quit: false,
         }
     }
+}
+
+enum Area {
+    Numbers,
+    Buffer,
+    // Status,
+    // Command,
 }
 
 struct Areas {
@@ -240,13 +249,17 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
             MouseEventKind::ScrollDown => {
                 *buffer = buffer.scroll_down(3);
             }
-            MouseEventKind::Up(_) => {}
+            MouseEventKind::Up(_) => {
+                tui.mouse_down_area = None;
+            }
             MouseEventKind::Down(MouseButton::Left) => {
                 if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
+                    tui.mouse_down_area = Some(Area::Buffer);
                     *buffer = buffer.update_selection(|rope, _selection| {
                         Selection::from(Range::from(head)).valid_for(rope).unwrap()
                     });
                 } else if let Some(line) = mouse_to_number_line(&mouse_event, areas, buffer) {
+                    tui.mouse_down_area = Some(Area::Numbers);
                     *buffer = buffer.update_selection(|rope, _selection| {
                         let line = line.get() - 1;
                         let anchor = Position::from_rope_index(rope, rope.line_to_char(line))
@@ -284,27 +297,34 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
             }
             MouseEventKind::Down(_) => {}
             MouseEventKind::Moved => {}
-            MouseEventKind::Drag(MouseButton::Left) => {
-                if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
-                    *buffer = buffer.update_selection(|rope, selection| {
-                        let anchor = selection.primary_range().1.anchor();
-                        Selection::from(Range::from((anchor, head)))
-                            .valid_for(rope)
-                            .unwrap()
-                    });
-                } else if let Some(line) = mouse_to_number_line(&mouse_event, areas, buffer) {
-                    *buffer = buffer.update_selection(|rope, selection| {
-                        let line = line.get() - 1;
-                        let anchor = selection.primary_range().1.anchor();
-                        let head = Position::from_rope_index(rope, rope.line_to_char(line + 1) - 1)
-                            .0
-                            .unwrap_valid();
-                        Selection::from(Range::from((anchor, head)))
-                            .valid_for(rope)
-                            .unwrap()
-                    });
+            MouseEventKind::Drag(MouseButton::Left) => match tui.mouse_down_area {
+                Some(Area::Buffer) => {
+                    if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
+                        *buffer = buffer.update_selection(|rope, selection| {
+                            let anchor = selection.primary_range().1.anchor();
+                            Selection::from(Range::from((anchor, head)))
+                                .valid_for(rope)
+                                .unwrap()
+                        });
+                    }
                 }
-            }
+                Some(Area::Numbers) => {
+                    if let Some(line) = mouse_to_number_line(&mouse_event, areas, buffer) {
+                        *buffer = buffer.update_selection(|rope, selection| {
+                            let line = line.get() - 1;
+                            let anchor = selection.primary_range().1.anchor();
+                            let head =
+                                Position::from_rope_index(rope, rope.line_to_char(line + 1) - 1)
+                                    .0
+                                    .unwrap_valid();
+                            Selection::from(Range::from((anchor, head)))
+                                .valid_for(rope)
+                                .unwrap()
+                        });
+                    }
+                }
+                None => {}
+            },
             MouseEventKind::Drag(_) => {}
         },
         Event::Resize(_, _) => {}
