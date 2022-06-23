@@ -104,6 +104,27 @@ impl Buffer {
     }
 
     #[must_use]
+    pub fn scroll_to_selection(&self, height: u16) -> Self {
+        let line = self.selection.primary_range().1.head().line.get() - 1;
+
+        let top = self.vertical_scroll_offset;
+        let bottom = top + height as usize - 1;
+
+        let vertical_scroll_offset = if line < top {
+            line
+        } else if line > bottom {
+            top + (line - bottom)
+        } else {
+            self.vertical_scroll_offset
+        };
+
+        Self {
+            vertical_scroll_offset,
+            ..self.clone()
+        }
+    }
+
+    #[must_use]
     pub fn scroll_up(&self, distance: usize) -> Self {
         self.scroll_to_line(self.vertical_scroll_offset.saturating_sub(distance))
     }
