@@ -93,7 +93,10 @@ fn areas(editor: &Editor, area: Rect) -> Areas {
             .contents()
             .len_lines()
             .saturating_sub(1);
-        assert!(n != 0);
+        assert!(
+            n != 0,
+            "cannot handle rope with single-line file without newline yet"
+        );
         let n = n as f64;
         let digits = 1.0 + n.log10().floor();
         (digits.max(2.0) + 1.0) as u16

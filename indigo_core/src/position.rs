@@ -74,7 +74,13 @@ impl Position {
             column: NonZeroUsize::new(rope_column + 1).unwrap(),
         };
 
-        (position.valid_for(rope).unwrap(), corrected)
+        assert!(rope.len_chars() > 0, "cannot handle empty ropes yet");
+        (
+            position
+                .valid_for(rope)
+                .expect("cannot handle rope with single-line file without newline yet"),
+            corrected,
+        )
     }
 }
 
