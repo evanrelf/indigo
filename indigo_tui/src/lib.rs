@@ -247,7 +247,20 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                         .scroll_to_selection(areas.buffer_area.height);
                 }
             }
-            MouseEventKind::Down(MouseButton::Right) => {}
+            MouseEventKind::Down(MouseButton::Right) => {
+                if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
+                    *buffer = buffer
+                        .update_selection(|rope, selection| {
+                            selection
+                                .update_primary_range(|_, range| {
+                                    Range::from((range.anchor(), head))
+                                })
+                                .valid_for(rope)
+                                .unwrap()
+                        })
+                        .scroll_to_selection(areas.buffer_area.height);
+                }
+            }
             MouseEventKind::Down(_) => {}
             MouseEventKind::Moved => {}
             MouseEventKind::Drag(MouseButton::Left) => {
