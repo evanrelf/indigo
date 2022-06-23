@@ -23,6 +23,8 @@
       - [alexherbo2/phantom.kak](https://web.archive.org/web/20200916163344/https://github.com/alexherbo2/phantom.kak) (deleted)
   - Can't undo/redo selection changes (Vim has basics like `gv` but nothing
     comprehensive/first class)
+  - Scrolling moves the cursor, which makes inspecting multiple selections in
+    large files annoying
 
 ### [Helix](https://github.com/helix-editor/helix)
 
