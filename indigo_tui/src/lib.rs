@@ -237,6 +237,7 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
             MouseEventKind::ScrollDown => {
                 *buffer = buffer.scroll_down(3);
             }
+            MouseEventKind::Up(_) => {}
             MouseEventKind::Down(MouseButton::Left) => {
                 if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
                     *buffer = buffer
@@ -246,13 +247,22 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                         .scroll_to_selection(areas.buffer_area.height);
                 }
             }
-            MouseEventKind::Down(MouseButton::Right) => {
-                // TODO (need to implement selection auto-merging logic)
-            }
+            MouseEventKind::Down(MouseButton::Right) => {}
+            MouseEventKind::Down(_) => {}
+            MouseEventKind::Moved => {}
             MouseEventKind::Drag(MouseButton::Left) => {
-                // TODO (need to implement selection auto-merging logic)
+                if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
+                    *buffer = buffer
+                        .update_selection(|rope, selection| {
+                            let anchor = selection.primary_range().1.anchor();
+                            Selection::from(Range::from((anchor, head)))
+                                .valid_for(rope)
+                                .unwrap()
+                        })
+                        .scroll_to_selection(areas.buffer_area.height);
+                }
             }
-            _ => {}
+            MouseEventKind::Drag(_) => {}
         },
         Event::Resize(_, _) => {}
     }
