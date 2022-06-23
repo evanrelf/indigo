@@ -246,6 +246,19 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                     *buffer = buffer.update_selection(|rope, _selection| {
                         Selection::from(Range::from(head)).valid_for(rope).unwrap()
                     });
+                } else if let Some(line) = mouse_to_number_line(&mouse_event, areas, buffer) {
+                    *buffer = buffer.update_selection(|rope, _selection| {
+                        let line = line.get() - 1;
+                        let anchor = Position::from_rope_index(rope, rope.line_to_char(line))
+                            .0
+                            .unwrap_valid();
+                        let head = Position::from_rope_index(rope, rope.line_to_char(line + 1) - 1)
+                            .0
+                            .unwrap_valid();
+                        Selection::from(Range::from((anchor, head)))
+                            .valid_for(rope)
+                            .unwrap()
+                    });
                 }
             }
             MouseEventKind::Down(MouseButton::Right) => {
@@ -274,6 +287,21 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
         },
         Event::Resize(_, _) => {}
     }
+}
+
+fn mouse_to_number_line(
+    mouse_event: &MouseEvent,
+    areas: &Areas,
+    buffer: &Buffer,
+) -> Option<NonZeroUsize> {
+    let line_range = areas.numbers_area.top()..areas.numbers_area.bottom();
+    let line = if line_range.contains(&mouse_event.row) {
+        mouse_event.row - areas.numbers_area.top()
+    } else {
+        return None;
+    };
+
+    Some(NonZeroUsize::new(usize::from(line) + 1 + buffer.vertical_scroll_offset()).unwrap())
 }
 
 fn mouse_to_buffer_position(
