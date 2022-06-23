@@ -240,39 +240,31 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
             MouseEventKind::Up(_) => {}
             MouseEventKind::Down(MouseButton::Left) => {
                 if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
-                    *buffer = buffer
-                        .update_selection(|rope, _selection| {
-                            Selection::from(Range::from(head)).valid_for(rope).unwrap()
-                        })
-                        .scroll_to_selection(areas.buffer_area.height);
+                    *buffer = buffer.update_selection(|rope, _selection| {
+                        Selection::from(Range::from(head)).valid_for(rope).unwrap()
+                    });
                 }
             }
             MouseEventKind::Down(MouseButton::Right) => {
                 if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
-                    *buffer = buffer
-                        .update_selection(|rope, selection| {
-                            selection
-                                .update_primary_range(|_, range| {
-                                    Range::from((range.anchor(), head))
-                                })
-                                .valid_for(rope)
-                                .unwrap()
-                        })
-                        .scroll_to_selection(areas.buffer_area.height);
+                    *buffer = buffer.update_selection(|rope, selection| {
+                        selection
+                            .update_primary_range(|_, range| Range::from((range.anchor(), head)))
+                            .valid_for(rope)
+                            .unwrap()
+                    });
                 }
             }
             MouseEventKind::Down(_) => {}
             MouseEventKind::Moved => {}
             MouseEventKind::Drag(MouseButton::Left) => {
                 if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
-                    *buffer = buffer
-                        .update_selection(|rope, selection| {
-                            let anchor = selection.primary_range().1.anchor();
-                            Selection::from(Range::from((anchor, head)))
-                                .valid_for(rope)
-                                .unwrap()
-                        })
-                        .scroll_to_selection(areas.buffer_area.height);
+                    *buffer = buffer.update_selection(|rope, selection| {
+                        let anchor = selection.primary_range().1.anchor();
+                        Selection::from(Range::from((anchor, head)))
+                            .valid_for(rope)
+                            .unwrap()
+                    });
                 }
             }
             MouseEventKind::Drag(_) => {}
