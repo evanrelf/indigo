@@ -253,7 +253,9 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                 tui.mouse_down_area = None;
             }
             MouseEventKind::Down(MouseButton::Left) => {
-                if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
+                if let Some(head) =
+                    mouse_to_buffer_position(&mouse_event, areas, &tui.mouse_down_area, buffer)
+                {
                     tui.mouse_down_area = Some(Area::Buffer);
                     *buffer = buffer.update_selection(|rope, _selection| {
                         Selection::from(Range::from(head)).valid_for(rope).unwrap()
@@ -275,7 +277,9 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                 }
             }
             MouseEventKind::Down(MouseButton::Right) => {
-                if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
+                if let Some(head) =
+                    mouse_to_buffer_position(&mouse_event, areas, &tui.mouse_down_area, buffer)
+                {
                     *buffer = buffer.update_selection(|rope, selection| {
                         selection
                             .update_primary_range(|_, range| Range::from((range.anchor(), head)))
@@ -299,7 +303,9 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
             MouseEventKind::Moved => {}
             MouseEventKind::Drag(MouseButton::Left) => match tui.mouse_down_area {
                 Some(Area::Buffer) => {
-                    if let Some(head) = mouse_to_buffer_position(&mouse_event, areas, buffer) {
+                    if let Some(head) =
+                        mouse_to_buffer_position(&mouse_event, areas, &tui.mouse_down_area, buffer)
+                    {
                         *buffer = buffer.update_selection(|rope, selection| {
                             let anchor = selection.primary_range().1.anchor();
                             Selection::from(Range::from((anchor, head)))
@@ -349,6 +355,7 @@ fn mouse_to_number_line(
 fn mouse_to_buffer_position(
     mouse_event: &MouseEvent,
     areas: &Areas,
+    mouse_down_area: &Option<Area>,
     buffer: &Buffer,
 ) -> Option<Position> {
     let line_range = areas.buffer_area.top()..areas.buffer_area.bottom();
@@ -360,8 +367,13 @@ fn mouse_to_buffer_position(
     let line = NonZeroUsize::new(usize::from(line) + 1 + buffer.vertical_scroll_offset()).unwrap();
 
     let column_range = areas.buffer_area.left()..areas.buffer_area.right();
+    let dragging_from_buffer_area = mouse_event.column < areas.buffer_area.left()
+        && matches!(mouse_event.kind, MouseEventKind::Drag(_))
+        && matches!(mouse_down_area, Some(Area::Buffer));
     let column = if column_range.contains(&mouse_event.column) {
         mouse_event.column - areas.buffer_area.left()
+    } else if dragging_from_buffer_area {
+        0
     } else {
         return None;
     };
