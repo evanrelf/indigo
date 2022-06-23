@@ -67,6 +67,7 @@ impl Tui {
 struct Areas {
     numbers_area: Rect,
     buffer_area: Rect,
+    scrollbar_area: Rect,
     status_area: Rect,
     command_area: Rect,
 }
@@ -75,7 +76,7 @@ fn areas(editor: &Editor, area: Rect) -> Areas {
     let vertical = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            // number + buffer
+            // number + buffer + scrollbar
             Constraint::Min(0),
             // status
             Constraint::Length(1),
@@ -106,12 +107,15 @@ fn areas(editor: &Editor, area: Rect) -> Areas {
             Constraint::Length(number_width),
             // buffer
             Constraint::Min(0),
+            // scrollbar
+            Constraint::Length(1),
         ])
         .split(vertical[0]);
 
     Areas {
         numbers_area: horizontal[0],
         buffer_area: horizontal[1],
+        scrollbar_area: horizontal[2],
         status_area: vertical[1],
         command_area: vertical[2],
     }
@@ -289,6 +293,7 @@ impl Widget for &Tui {
 
         render_numbers(self, areas.numbers_area, surface);
         render_buffer(self, areas.buffer_area, surface);
+        render_scrollbar(self, areas.scrollbar_area, surface);
         render_selection(self, areas.buffer_area, surface);
         render_status(self, areas.status_area, surface);
         render_command(self, areas.command_area, surface);
@@ -337,6 +342,34 @@ fn render_buffer(tui: &Tui, area: Rect, surface: &mut Surface) {
         } else {
             break;
         }
+    }
+}
+
+fn render_scrollbar(tui: &Tui, area: Rect, surface: &mut Surface) {
+    let buffer = tui.editor.current_buffer();
+
+    let total_lines = buffer.contents().len_lines().saturating_sub(1);
+
+    let area_height = usize::from(area.height);
+
+    let size = if area_height >= total_lines {
+        area.height
+    } else {
+        u16::try_from(area_height / (total_lines.max(1) / area_height)).unwrap()
+    };
+
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    // TODO: This is horrible
+    let scroll = if area_height >= total_lines {
+        0
+    } else {
+        let end = area.height - size;
+        let percent = buffer.vertical_scroll_offset() as f64 / total_lines as f64;
+        (end as f64 * percent) as u16
+    };
+
+    for y in scroll..(scroll + size) {
+        surface.get_mut(area.x, y).set_bg(Color::Black);
     }
 }
 
