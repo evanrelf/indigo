@@ -20,6 +20,7 @@ impl Position {
         self.to_rope_index_c(rope).0
     }
 
+    #[doc(hidden)]
     #[must_use]
     pub fn to_rope_index_c<'rope>(&self, rope: &'rope Rope) -> (Valid<'rope, usize>, bool) {
         assert!(rope.len_chars() > 0, "cannot handle empty ropes yet");
@@ -60,6 +61,7 @@ impl Position {
         Self::from_rope_index_c(rope, index).0
     }
 
+    #[doc(hidden)]
     #[must_use]
     pub fn from_rope_index_c(rope: &Rope, index: usize) -> (Valid<'_, Self>, bool) {
         let mut corrected = false;

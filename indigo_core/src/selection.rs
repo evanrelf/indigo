@@ -27,6 +27,7 @@ impl Selection {
         self.select_c(rope, regex).0
     }
 
+    #[doc(hidden)]
     #[must_use]
     pub fn select_c(&self, rope: &Rope, regex: &Regex) -> (Option<Self>, bool) {
         let mut corrected = false;
