@@ -314,6 +314,7 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                     if let Some(line) = mouse_to_number_line(&mouse_event, areas, buffer) {
                         *buffer = buffer.update_selection(|rope, selection| {
                             let anchor = selection.primary_range().1.anchor();
+                            // TODO: Column needs to be at EOL
                             let head = {
                                 let mut position = selection.primary_range().1.head();
                                 position.line = line;
