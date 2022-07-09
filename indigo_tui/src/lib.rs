@@ -264,12 +264,9 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                     tui.mouse_down_area = Some(Area::Numbers);
                     *buffer = buffer.update_selection(|rope, _selection| {
                         let line = line.get() - 1;
-                        let anchor = Position::from_rope_index(rope, rope.line_to_char(line))
-                            .0
-                            .unwrap_valid();
-                        let head = Position::from_rope_index(rope, rope.line_to_char(line + 1) - 1)
-                            .0
-                            .unwrap_valid();
+                        let anchor = *Position::from_rope_index(rope, rope.line_to_char(line));
+                        let head =
+                            *Position::from_rope_index(rope, rope.line_to_char(line + 1) - 1);
                         Selection::from(Range::from((anchor, head)))
                             .valid_for(rope)
                             .unwrap()
@@ -290,9 +287,8 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                     *buffer = buffer.update_selection(|rope, selection| {
                         let line = line.get() - 1;
                         let anchor = selection.primary_range().1.anchor();
-                        let head = Position::from_rope_index(rope, rope.line_to_char(line + 1) - 1)
-                            .0
-                            .unwrap_valid();
+                        let head =
+                            *Position::from_rope_index(rope, rope.line_to_char(line + 1) - 1);
                         Selection::from(Range::from((anchor, head)))
                             .valid_for(rope)
                             .unwrap()
@@ -321,7 +317,7 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                             let head = {
                                 let mut position = selection.primary_range().1.head();
                                 position.line = line;
-                                position = position.corrected(rope).unwrap_valid();
+                                position = *position.corrected(rope);
                                 position
                             };
                             Selection::from(Range::from((anchor, head)))
@@ -449,16 +445,16 @@ fn render_selection(tui: &Tui, area: Rect, surface: &mut Surface) {
     let light_yellow = Color::Rgb(0xFF, 0xF5, 0xB1);
 
     for range in buffer.selection().ranges() {
-        let range_slice = range.to_rope_slice(rope).0;
+        let range_slice = range.to_rope_slice(rope);
 
         for (i, _) in range_slice.chars().enumerate() {
             let i = if range.is_forwards() {
-                i + *range.anchor().to_rope_index(rope).0
+                i + *range.anchor().to_rope_index(rope)
             } else {
-                i + *range.head().to_rope_index(rope).0
+                i + *range.head().to_rope_index(rope)
             };
 
-            let buffer_position: Position = *Position::from_rope_index(rope, i).0;
+            let buffer_position: Position = *Position::from_rope_index(rope, i);
             let buffer_line: usize = buffer_position.line.get() - 1;
             let buffer_column: usize = buffer_position.column.get() - 1;
 
@@ -511,7 +507,7 @@ fn render_status(tui: &Tui, area: Rect, surface: &mut Surface) {
 
     let position = {
         let position @ Position { line, column } = buffer.selection().primary_range().1.head();
-        let index = *position.to_rope_index(buffer.contents()).0;
+        let index = *position.to_rope_index(buffer.contents());
         format!("{line}:{column}#{index}")
     };
 

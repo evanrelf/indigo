@@ -15,7 +15,7 @@ static POSITION: Lazy<Position> = Lazy::new(|| {
     Position::try_from((line, column)).unwrap()
 });
 
-static INDEX: Lazy<usize> = Lazy::new(|| POSITION.to_rope_index(&ROPE).0.unwrap_valid());
+static INDEX: Lazy<usize> = Lazy::new(|| *POSITION.to_rope_index(&ROPE));
 
 fn to_rope_index(criterion: &mut Criterion) {
     let position = Lazy::force(&POSITION);

@@ -141,21 +141,26 @@ impl Range {
     }
 
     #[must_use]
-    pub fn select(&self, rope: &Rope, regex: &Regex) -> (Vec<Self>, bool) {
+    pub fn select(&self, rope: &Rope, regex: &Regex) -> Vec<Self> {
+        self.select_c(rope, regex).0
+    }
+
+    #[must_use]
+    pub fn select_c(&self, rope: &Rope, regex: &Regex) -> (Vec<Self>, bool) {
         let mut corrected = false;
 
         let offset = if self.is_forwards() {
-            let (anchor_index, anchor_corrected) = self.anchor.to_rope_index(rope);
+            let (anchor_index, anchor_corrected) = self.anchor.to_rope_index_c(rope);
             corrected |= anchor_corrected;
             *anchor_index
         } else {
-            let (head_index, head_corrected) = self.head.to_rope_index(rope);
+            let (head_index, head_corrected) = self.head.to_rope_index_c(rope);
             corrected |= head_corrected;
             *head_index
         };
 
         let rope_slice = {
-            let (slice, slice_corrected) = self.to_rope_slice(rope);
+            let (slice, slice_corrected) = self.to_rope_slice_c(rope);
             corrected |= slice_corrected;
             slice
         };
@@ -173,11 +178,11 @@ impl Range {
             .map(|match_| {
                 let start_index = offset + rope.byte_to_char(match_.start());
                 let (start_position, start_corrected) =
-                    Position::from_rope_index(rope, start_index);
+                    Position::from_rope_index_c(rope, start_index);
                 debug_assert!(!start_corrected);
 
                 let end_index = offset + rope.byte_to_char(match_.end()).saturating_sub(1);
-                let (end_position, end_corrected) = Position::from_rope_index(rope, end_index);
+                let (end_position, end_corrected) = Position::from_rope_index_c(rope, end_index);
                 debug_assert!(!end_corrected);
 
                 if self.is_forwards() {
@@ -205,9 +210,14 @@ impl Range {
     }
 
     #[must_use]
-    pub fn to_rope_slice<'rope>(&self, rope: &'rope Rope) -> (RopeSlice<'rope>, bool) {
-        let (anchor_index, anchor_corrected) = self.anchor.to_rope_index(rope);
-        let (head_index, head_corrected) = self.head.to_rope_index(rope);
+    pub fn to_rope_slice<'rope>(&self, rope: &'rope Rope) -> RopeSlice<'rope> {
+        self.to_rope_slice_c(rope).0
+    }
+
+    #[must_use]
+    pub fn to_rope_slice_c<'rope>(&self, rope: &'rope Rope) -> (RopeSlice<'rope>, bool) {
+        let (anchor_index, anchor_corrected) = self.anchor.to_rope_index_c(rope);
+        let (head_index, head_corrected) = self.head.to_rope_index_c(rope);
 
         let slice = if self.is_forwards() {
             rope.get_slice(*anchor_index..=*head_index).unwrap()
@@ -325,14 +335,14 @@ fn horizontally<'rope>(
     direction: Direction,
     distance: usize,
 ) -> Valid<'rope, Range> {
-    let index = *range.head().to_rope_index(rope).0;
+    let index = *range.head().to_rope_index(rope);
 
     let desired_index = match direction {
         Direction::Backward => index.saturating_sub(distance),
         Direction::Forward => index + distance,
     };
 
-    let head = *Position::from_rope_index(rope, desired_index).0;
+    let head = *Position::from_rope_index(rope, desired_index);
 
     Range::from((range.anchor(), head)).valid_for(rope).unwrap()
 }
@@ -451,7 +461,7 @@ pub fn extend_top(range: &Range) -> Valid<'static, Range> {
 pub fn extend_bottom<'rope>(range: &Range, rope: &'rope Rope) -> Valid<'rope, Range> {
     // Subtracting 1 to remove ropey's mysterious empty final line
     let index = rope.line_to_char(rope.len_lines().saturating_sub(2));
-    let head = *Position::from_rope_index(rope, index).0;
+    let head = *Position::from_rope_index(rope, index);
 
     Range::from((range.anchor(), head)).valid_for(rope).unwrap()
 }
@@ -459,7 +469,7 @@ pub fn extend_bottom<'rope>(range: &Range, rope: &'rope Rope) -> Valid<'rope, Ra
 #[must_use]
 pub fn extend_end<'rope>(range: &Range, rope: &'rope Rope) -> Valid<'rope, Range> {
     let index = rope.len_chars().saturating_sub(1);
-    let head = *Position::from_rope_index(rope, index).0;
+    let head = *Position::from_rope_index(rope, index);
 
     Range::from((range.anchor(), head)).valid_for(rope).unwrap()
 }

@@ -11,12 +11,17 @@ pub struct Position {
 impl Position {
     #[must_use]
     pub fn corrected<'rope>(&self, rope: &'rope Rope) -> Valid<'rope, Self> {
-        let index = *self.to_rope_index(rope).0;
-        Self::from_rope_index(rope, index).0
+        let index = *self.to_rope_index(rope);
+        Self::from_rope_index(rope, index)
     }
 
     #[must_use]
-    pub fn to_rope_index<'rope>(&self, rope: &'rope Rope) -> (Valid<'rope, usize>, bool) {
+    pub fn to_rope_index<'rope>(&self, rope: &'rope Rope) -> Valid<'rope, usize> {
+        self.to_rope_index_c(rope).0
+    }
+
+    #[must_use]
+    pub fn to_rope_index_c<'rope>(&self, rope: &'rope Rope) -> (Valid<'rope, usize>, bool) {
         assert!(rope.len_chars() > 0, "cannot handle empty ropes yet");
 
         let mut corrected = false;
@@ -51,7 +56,12 @@ impl Position {
     }
 
     #[must_use]
-    pub fn from_rope_index(rope: &Rope, index: usize) -> (Valid<'_, Self>, bool) {
+    pub fn from_rope_index(rope: &Rope, index: usize) -> Valid<'_, Self> {
+        Self::from_rope_index_c(rope, index).0
+    }
+
+    #[must_use]
+    pub fn from_rope_index_c(rope: &Rope, index: usize) -> (Valid<'_, Self>, bool) {
         let mut corrected = false;
 
         // Get valid index
@@ -154,13 +164,13 @@ mod test {
         fn test_to_rope_index_alphanumeric(s in "[a-zA-Z0-9 \\n]+", line in 1usize.., column in 1usize..) {
             let rope = &Rope::from(s);
             let position = Position::try_from((line, column)).unwrap();
-            let _ = position.to_rope_index(rope).0.valid_for(rope).unwrap();
+            let _ = position.to_rope_index(rope);
         }
 
         #[test]
         fn test_from_rope_index_alphanumeric(s in "[a-zA-Z0-9 \\n]+", i: usize) {
             let rope = &Rope::from(s);
-            let _ = Position::from_rope_index(rope, i).0.valid_for(rope).unwrap();
+            let _ = Position::from_rope_index(rope, i);
         }
 
         // #[test]
@@ -232,8 +242,8 @@ mod test {
         .collect();
 
         for (index, position) in cases {
-            let (actual_index, index_corrected) = position.to_rope_index(rope);
-            let (actual_position, position_corrected) = Position::from_rope_index(rope, index);
+            let (actual_index, index_corrected) = position.to_rope_index_c(rope);
+            let (actual_position, position_corrected) = Position::from_rope_index_c(rope, index);
             assert!(!index_corrected && !position_corrected);
             assert_eq!(index, *actual_index);
             assert_eq!(position, *actual_position);
@@ -258,7 +268,7 @@ mod test {
         .collect();
 
         for (index, position, corrected) in cases {
-            let (actual_position, actual_corrected) = Position::from_rope_index(rope, index);
+            let (actual_position, actual_corrected) = Position::from_rope_index_c(rope, index);
             assert_eq!(position, *actual_position);
             assert_eq!(corrected, actual_corrected);
         }
@@ -282,7 +292,7 @@ mod test {
         .collect();
 
         for (position, index, corrected) in cases {
-            let (actual_index, actual_corrected) = position.to_rope_index(rope);
+            let (actual_index, actual_corrected) = position.to_rope_index_c(rope);
             assert_eq!(index, *actual_index);
             assert_eq!(corrected, actual_corrected);
         }
