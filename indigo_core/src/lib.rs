@@ -9,7 +9,6 @@ pub mod buffer;
 pub mod command_line;
 pub mod editor;
 pub mod entangle;
-pub mod key;
 pub mod mode;
 pub mod position;
 pub mod range;
@@ -21,7 +20,6 @@ pub use crate::{
     command_line::CommandLine,
     editor::Editor,
     entangle::{Entangle, Entangled},
-    key::{Key, KeyCode, KeyModifiers},
     mode::{CommandMode, InsertMode, Mode, NormalMode},
     position::Position,
     range::Range,

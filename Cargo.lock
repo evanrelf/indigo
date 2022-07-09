@@ -370,7 +370,6 @@ name = "indigo_core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bitflags",
  "camino",
  "criterion",
  "generational-arena",
