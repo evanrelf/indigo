@@ -100,7 +100,7 @@ impl Validate<Rope> for Position {
             let rope_line = self.line.get() - 1;
 
             // Assert line is valid
-            if rope.len_lines().saturating_sub(1) <= rope_line {
+            if rope.len_lines().saturating_sub(1) < rope_line {
                 return false;
             }
 
@@ -153,14 +153,14 @@ mod test {
 
     proptest! {
         #[test]
-        fn test_to_rope_index_alphanumeric(s in "[a-zA-Z0-9 \\n]+\\n", line in 1usize.., column in 1usize..) {
+        fn test_to_rope_index_alphanumeric(s in "[a-zA-Z0-9 \\n]+", line in 1usize.., column in 1usize..) {
             let rope = &Rope::from(s);
             let position = Position::try_from((line, column)).unwrap();
             let _ = position.to_rope_index(rope).0.valid_for(rope).unwrap();
         }
 
         #[test]
-        fn test_from_rope_index_alphanumeric(s in "[a-zA-Z0-9 \\n]+\\n", i: usize) {
+        fn test_from_rope_index_alphanumeric(s in "[a-zA-Z0-9 \\n]+", i: usize) {
             let rope = &Rope::from(s);
             let _ = Position::from_rope_index(rope, i).0.valid_for(rope).unwrap();
         }
