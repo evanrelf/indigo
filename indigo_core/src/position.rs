@@ -24,13 +24,11 @@ impl Position {
         let rope_line = self.line.get() - 1;
 
         // Get valid line
-        let lines = rope.len_lines();
+        let lines = rope.len_lines().saturating_sub(1);
         let line = if lines <= rope_line {
             // When line goes beyond end of rope, use last line
-            // Subtracting 1 to convert to zero-based index, subtracting another 1 to remove ropey's
-            // mysterious empty final line
             corrected = true;
-            lines.saturating_sub(2)
+            lines.saturating_sub(1)
         } else {
             rope_line
         };
