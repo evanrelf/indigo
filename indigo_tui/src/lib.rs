@@ -160,6 +160,12 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
             (KeyModifiers::NONE, KeyCode::Right) => {
                 *buffer = buffer.scroll_right(1);
             }
+            (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
+                *buffer = buffer.scroll_up(usize::from(areas.buffer_area.height / 2));
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('d')) => {
+                *buffer = buffer.scroll_down(usize::from(areas.buffer_area.height / 2));
+            }
             (KeyModifiers::NONE, KeyCode::Char('h')) => {
                 *buffer = buffer
                     .update_selection(|rope, selection| {
