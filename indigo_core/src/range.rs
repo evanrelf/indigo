@@ -1,5 +1,5 @@
 use crate::{
-    position::Position,
+    position::{self, Position},
     validate::{Valid, Validate},
 };
 use regex::Regex;
@@ -453,26 +453,23 @@ pub fn extend_right<'rope>(
 
 #[must_use]
 pub fn extend_top(range: &Range) -> Valid<'static, Range> {
-    Range::from((range.anchor(), (1, 1).try_into().unwrap()))
+    Range::from((range.anchor(), *position::top()))
         .valid_always()
         .unwrap()
 }
 
 #[must_use]
 pub fn extend_bottom<'rope>(range: &Range, rope: &'rope Rope) -> Valid<'rope, Range> {
-    // Subtracting 1 to remove ropey's mysterious empty final line
-    let index = rope.line_to_char(rope.len_lines().saturating_sub(2));
-    let head = *Position::from_rope_index(rope, index);
-
-    Range::from((range.anchor(), head)).valid_for(rope).unwrap()
+    Range::from((range.anchor(), *position::bottom(rope)))
+        .valid_for(rope)
+        .unwrap()
 }
 
 #[must_use]
 pub fn extend_end<'rope>(range: &Range, rope: &'rope Rope) -> Valid<'rope, Range> {
-    let index = rope.len_chars().saturating_sub(1);
-    let head = *Position::from_rope_index(rope, index);
-
-    Range::from((range.anchor(), head)).valid_for(rope).unwrap()
+    Range::from((range.anchor(), *position::end(rope)))
+        .valid_for(rope)
+        .unwrap()
 }
 
 #[must_use]

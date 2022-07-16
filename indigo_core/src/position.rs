@@ -1,11 +1,19 @@
 use crate::validate::{Valid, Validate};
 use ropey::Rope;
-use std::num::NonZeroUsize;
+use std::{
+    cmp::{max, min},
+    num::NonZeroUsize,
+};
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Position {
     pub line: NonZeroUsize,
     pub column: NonZeroUsize,
+}
+
+enum Direction {
+    Backward,
+    Forward,
 }
 
 impl Position {
@@ -153,6 +161,148 @@ impl TryFrom<(usize, usize)> for Position {
             line: NonZeroUsize::new(line).ok_or(())?,
             column: NonZeroUsize::new(column).ok_or(())?,
         })
+    }
+}
+
+#[must_use]
+fn vertically<'rope>(
+    position: &Position,
+    rope: &'rope Rope,
+    direction: Direction,
+    distance: usize,
+) -> Valid<'rope, Position> {
+    let desired_position = Position {
+        line: NonZeroUsize::new(max(1, {
+            match direction {
+                Direction::Backward => position.line.get().saturating_sub(distance),
+                Direction::Forward => {
+                    // Subtracting 1 to remove ropey's mysterious empty final line
+                    let last_line = rope.len_lines().saturating_sub(1);
+                    // Prevent `corrected` from moving us to the last index in the rope if we try to go
+                    // below the last line
+                    min(position.line.get() + distance, last_line)
+                }
+            }
+        }))
+        .unwrap(),
+        column: position.column,
+    };
+
+    desired_position.corrected(rope)
+}
+
+#[must_use]
+fn horizontally<'rope>(
+    position: &Position,
+    rope: &'rope Rope,
+    direction: Direction,
+    distance: usize,
+) -> Valid<'rope, Position> {
+    let index = *position.to_rope_index(rope);
+
+    let desired_index = match direction {
+        Direction::Backward => index.saturating_sub(distance),
+        Direction::Forward => index + distance,
+    };
+
+    Position::from_rope_index(rope, desired_index)
+}
+
+#[must_use]
+pub fn up<'rope>(
+    position: &Position,
+    rope: &'rope Rope,
+    distance: usize,
+) -> Valid<'rope, Position> {
+    vertically(position, rope, Direction::Backward, distance)
+}
+
+#[must_use]
+pub fn down<'rope>(
+    position: &Position,
+    rope: &'rope Rope,
+    distance: usize,
+) -> Valid<'rope, Position> {
+    vertically(position, rope, Direction::Forward, distance)
+}
+
+#[must_use]
+pub fn left<'rope>(
+    position: &Position,
+    rope: &'rope Rope,
+    distance: usize,
+) -> Valid<'rope, Position> {
+    horizontally(position, rope, Direction::Backward, distance)
+}
+
+#[must_use]
+pub fn right<'rope>(
+    position: &Position,
+    rope: &'rope Rope,
+    distance: usize,
+) -> Valid<'rope, Position> {
+    horizontally(position, rope, Direction::Forward, distance)
+}
+
+#[must_use]
+pub fn top() -> Valid<'static, Position> {
+    Position::try_from((1, 1)).unwrap().valid_always().unwrap()
+}
+
+#[must_use]
+pub fn bottom(rope: &Rope) -> Valid<'_, Position> {
+    // Subtracting 1 to remove ropey's mysterious empty final line
+    let index = rope.line_to_char(rope.len_lines().saturating_sub(2));
+    Position::from_rope_index(rope, index)
+}
+
+#[must_use]
+pub fn end(rope: &Rope) -> Valid<'_, Position> {
+    let index = rope.len_chars().saturating_sub(1);
+    Position::from_rope_index(rope, index)
+}
+
+#[must_use]
+pub fn line_begin(line: NonZeroUsize, rope: &Rope) -> Valid<'_, Position> {
+    let line = line.get() - 1;
+    let last_line = rope.len_lines().saturating_sub(2);
+    if line > last_line {
+        bottom(rope)
+    } else {
+        Position::try_from((line + 1, 1))
+            .unwrap()
+            .valid_for(rope)
+            .unwrap()
+    }
+}
+
+#[must_use]
+pub fn line_first_non_blank(line: NonZeroUsize, rope: &Rope) -> Valid<'_, Position> {
+    let blanks = [' ', '\t'];
+
+    let first_non_blank = rope
+        .line(line.get() - 1)
+        .chars()
+        .enumerate()
+        .find(|(_, c)| !blanks.contains(c));
+
+    match first_non_blank {
+        None => line_end(line, rope),
+        Some((column, _)) => Position::try_from((line.get(), column + 1))
+            .unwrap()
+            .valid_for(rope)
+            .unwrap(),
+    }
+}
+
+#[must_use]
+pub fn line_end(line: NonZeroUsize, rope: &Rope) -> Valid<'_, Position> {
+    match rope.get_line(line.get() - 1) {
+        None => end(rope),
+        Some(rope_slice) => {
+            let column = NonZeroUsize::new(rope_slice.len_chars()).unwrap();
+            Position::from((line, column)).valid_for(rope).unwrap()
+        }
     }
 }
 
