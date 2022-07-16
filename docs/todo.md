@@ -1,0 +1,2 @@
+- Change `Position`'s `line` and `column` from `NonZeroUsize` to `usize`
+- Remove `Valid` wrappers
