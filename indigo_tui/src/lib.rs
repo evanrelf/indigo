@@ -347,13 +347,14 @@ fn mouse_to_number_line(
     buffer: &Buffer,
 ) -> Option<NonZeroUsize> {
     let line_range = areas.numbers_area.top()..areas.numbers_area.bottom();
-    let line = if line_range.contains(&mouse_event.row) {
-        mouse_event.row - areas.numbers_area.top()
-    } else {
-        return None;
-    };
 
-    Some(NonZeroUsize::new(usize::from(line) + 1 + buffer.vertical_scroll_offset()).unwrap())
+    if !line_range.contains(&mouse_event.row) {
+        return None;
+    }
+
+    let line = usize::from(mouse_event.row - areas.numbers_area.top());
+
+    Some(NonZeroUsize::new(line + 1 + buffer.vertical_scroll_offset()).unwrap())
 }
 
 fn mouse_to_buffer_position(
@@ -363,17 +364,21 @@ fn mouse_to_buffer_position(
     buffer: &Buffer,
 ) -> Option<Position> {
     let line_range = areas.buffer_area.top()..areas.buffer_area.bottom();
-    let line = if line_range.contains(&mouse_event.row) {
-        mouse_event.row - areas.buffer_area.top()
-    } else {
+
+    if !line_range.contains(&mouse_event.row) {
         return None;
     };
+
+    let line = mouse_event.row - areas.buffer_area.top();
+
     let line = NonZeroUsize::new(usize::from(line) + 1 + buffer.vertical_scroll_offset()).unwrap();
 
     let column_range = areas.buffer_area.left()..areas.buffer_area.right();
+
     let dragging_from_buffer_area = mouse_event.column < areas.buffer_area.left()
         && matches!(mouse_event.kind, MouseEventKind::Drag(_))
         && matches!(mouse_down_area, Some(Area::Buffer));
+
     let column = if column_range.contains(&mouse_event.column) {
         mouse_event.column - areas.buffer_area.left()
     } else if dragging_from_buffer_area {
@@ -381,6 +386,7 @@ fn mouse_to_buffer_position(
     } else {
         return None;
     };
+
     let column =
         NonZeroUsize::new(usize::from(column) + 1 + buffer.horizontal_scroll_offset()).unwrap();
 
