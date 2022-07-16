@@ -1,4 +1,4 @@
-use crate::{selection::Selection, validate::Valid};
+use crate::selection::{self, Selection};
 use anyhow::anyhow;
 use camino::Utf8PathBuf;
 use ropey::Rope;
@@ -48,10 +48,10 @@ impl Buffer {
     #[must_use]
     pub fn update_selection<'rope>(
         &'rope self,
-        selection_fn: impl Fn(&'rope Rope, &Selection) -> Valid<'rope, Selection>,
+        selection_fn: impl Fn(&'rope Rope, &Selection) -> Selection,
     ) -> Self {
         let mut new = self.clone();
-        new.selection = selection_fn(&self.contents, &self.selection).unwrap_valid();
+        new.selection = selection_fn(&self.contents, &self.selection);
         new
     }
 
@@ -145,19 +145,8 @@ impl Buffer {
     }
 
     pub fn assert_invariants(&self) {
-        use crate::validate::Validate as _;
-
         assert!(
-            {
-                let mut valid = true;
-                for range in self.selection().ranges() {
-                    if !range.is_valid(Some(&self.contents)) {
-                        valid = false;
-                        break;
-                    }
-                }
-                valid
-            },
+            selection::selection_is_valid(&self.selection, Some(&self.contents)),
             "selection must be valid in the rope"
         );
 

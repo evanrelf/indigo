@@ -1,4 +1,4 @@
-use crate::{range::Range, validate::Validate};
+use crate::range::{self, Range};
 use regex::Regex;
 use ropey::Rope;
 
@@ -137,16 +137,14 @@ impl Selection {
     }
 }
 
-impl Validate<Rope> for Selection {
-    #[must_use]
-    fn is_valid(&self, rope: Option<&Rope>) -> bool {
-        for range in &self.ranges {
-            if !range.is_valid(rope) {
-                return false;
-            }
+#[must_use]
+pub fn selection_is_valid(selection: &Selection, rope: Option<&Rope>) -> bool {
+    for range in &selection.ranges {
+        if !range::range_is_valid(range, rope) {
+            return false;
         }
-        true
     }
+    true
 }
 
 impl Default for Selection {

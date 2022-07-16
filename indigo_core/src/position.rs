@@ -1,4 +1,3 @@
-use crate::validate::{Valid, Validate};
 use ropey::Rope;
 use std::{
     cmp::{max, min},
@@ -18,19 +17,19 @@ enum Direction {
 
 impl Position {
     #[must_use]
-    pub fn corrected<'rope>(&self, rope: &'rope Rope) -> Valid<'rope, Self> {
-        let index = *self.to_rope_index(rope);
+    pub fn corrected(&self, rope: &Rope) -> Self {
+        let index = self.to_rope_index(rope);
         Self::from_rope_index(rope, index)
     }
 
     #[must_use]
-    pub fn to_rope_index<'rope>(&self, rope: &'rope Rope) -> Valid<'rope, usize> {
+    pub fn to_rope_index(&self, rope: &Rope) -> usize {
         self.to_rope_index_c(rope).0
     }
 
     #[doc(hidden)]
     #[must_use]
-    pub fn to_rope_index_c<'rope>(&self, rope: &'rope Rope) -> (Valid<'rope, usize>, bool) {
+    pub fn to_rope_index_c(&self, rope: &Rope) -> (usize, bool) {
         assert!(rope.len_chars() > 0, "cannot handle empty ropes yet");
 
         let mut corrected = false;
@@ -59,19 +58,19 @@ impl Position {
             rope_column
         };
 
-        let index = (rope.line_to_char(line) + column).valid_for(rope).unwrap();
+        let index = rope.line_to_char(line) + column;
 
         (index, corrected)
     }
 
     #[must_use]
-    pub fn from_rope_index(rope: &Rope, index: usize) -> Valid<'_, Self> {
+    pub fn from_rope_index(rope: &Rope, index: usize) -> Self {
         Self::from_rope_index_c(rope, index).0
     }
 
     #[doc(hidden)]
     #[must_use]
-    pub fn from_rope_index_c(rope: &Rope, index: usize) -> (Valid<'_, Self>, bool) {
+    pub fn from_rope_index_c(rope: &Rope, index: usize) -> (Self, bool) {
         let mut corrected = false;
 
         // Get valid index
@@ -93,12 +92,7 @@ impl Position {
         };
 
         assert!(rope.len_chars() > 0, "cannot handle empty ropes yet");
-        (
-            position
-                .valid_for(rope)
-                .expect("cannot handle rope with single-line file without newline yet"),
-            corrected,
-        )
+        (position, corrected)
     }
 }
 
@@ -111,39 +105,35 @@ impl Default for Position {
     }
 }
 
-impl Validate<Rope> for Position {
-    #[must_use]
-    fn is_valid(&self, rope: Option<&Rope>) -> bool {
-        if let Some(rope) = rope {
-            let rope_line = self.line.get() - 1;
+#[must_use]
+pub fn position_is_valid(position: &Position, rope: Option<&Rope>) -> bool {
+    if let Some(rope) = rope {
+        let rope_line = position.line.get() - 1;
 
-            // Assert line is valid
-            if rope.len_lines().saturating_sub(1) < rope_line {
-                return false;
-            }
-
-            let rope_column = self.column.get() - 1;
-
-            // Assert column is valid
-            if rope.line(rope_line).len_chars() <= rope_column {
-                return false;
-            }
-
-            true
-        } else {
-            *self == Self::default()
+        // Assert line is valid
+        if rope.len_lines().saturating_sub(1) < rope_line {
+            return false;
         }
+
+        let rope_column = position.column.get() - 1;
+
+        // Assert column is valid
+        if rope.line(rope_line).len_chars() <= rope_column {
+            return false;
+        }
+
+        true
+    } else {
+        *position == Position::default()
     }
 }
 
-impl Validate<Rope> for usize {
-    #[must_use]
-    fn is_valid(&self, rope: Option<&Rope>) -> bool {
-        if let Some(rope) = rope {
-            rope.len_chars() > *self
-        } else {
-            *self == 0
-        }
+#[must_use]
+pub fn index_is_valid(index: usize, rope: Option<&Rope>) -> bool {
+    if let Some(rope) = rope {
+        rope.len_chars() > index
+    } else {
+        index == 0
     }
 }
 
@@ -165,12 +155,7 @@ impl TryFrom<(usize, usize)> for Position {
 }
 
 #[must_use]
-fn vertically<'rope>(
-    position: &Position,
-    rope: &'rope Rope,
-    direction: Direction,
-    distance: usize,
-) -> Valid<'rope, Position> {
+fn vertically(position: &Position, rope: &Rope, direction: Direction, distance: usize) -> Position {
     let desired_position = Position {
         line: NonZeroUsize::new(max(1, {
             match direction {
@@ -192,13 +177,13 @@ fn vertically<'rope>(
 }
 
 #[must_use]
-fn horizontally<'rope>(
+fn horizontally(
     position: &Position,
-    rope: &'rope Rope,
+    rope: &Rope,
     direction: Direction,
     distance: usize,
-) -> Valid<'rope, Position> {
-    let index = *position.to_rope_index(rope);
+) -> Position {
+    let index = position.to_rope_index(rope);
 
     let desired_index = match direction {
         Direction::Backward => index.saturating_sub(distance),
@@ -209,75 +194,56 @@ fn horizontally<'rope>(
 }
 
 #[must_use]
-pub fn up<'rope>(
-    position: &Position,
-    rope: &'rope Rope,
-    distance: usize,
-) -> Valid<'rope, Position> {
+pub fn up(position: &Position, rope: &Rope, distance: usize) -> Position {
     vertically(position, rope, Direction::Backward, distance)
 }
 
 #[must_use]
-pub fn down<'rope>(
-    position: &Position,
-    rope: &'rope Rope,
-    distance: usize,
-) -> Valid<'rope, Position> {
+pub fn down(position: &Position, rope: &Rope, distance: usize) -> Position {
     vertically(position, rope, Direction::Forward, distance)
 }
 
 #[must_use]
-pub fn left<'rope>(
-    position: &Position,
-    rope: &'rope Rope,
-    distance: usize,
-) -> Valid<'rope, Position> {
+pub fn left(position: &Position, rope: &Rope, distance: usize) -> Position {
     horizontally(position, rope, Direction::Backward, distance)
 }
 
 #[must_use]
-pub fn right<'rope>(
-    position: &Position,
-    rope: &'rope Rope,
-    distance: usize,
-) -> Valid<'rope, Position> {
+pub fn right(position: &Position, rope: &Rope, distance: usize) -> Position {
     horizontally(position, rope, Direction::Forward, distance)
 }
 
 #[must_use]
-pub fn top() -> Valid<'static, Position> {
-    Position::try_from((1, 1)).unwrap().valid_always().unwrap()
+pub fn top() -> Position {
+    Position::try_from((1, 1)).unwrap()
 }
 
 #[must_use]
-pub fn bottom(rope: &Rope) -> Valid<'_, Position> {
+pub fn bottom(rope: &Rope) -> Position {
     // Subtracting 1 to remove ropey's mysterious empty final line
     let index = rope.line_to_char(rope.len_lines().saturating_sub(2));
     Position::from_rope_index(rope, index)
 }
 
 #[must_use]
-pub fn end(rope: &Rope) -> Valid<'_, Position> {
+pub fn end(rope: &Rope) -> Position {
     let index = rope.len_chars().saturating_sub(1);
     Position::from_rope_index(rope, index)
 }
 
 #[must_use]
-pub fn line_begin(line: NonZeroUsize, rope: &Rope) -> Valid<'_, Position> {
+pub fn line_begin(line: NonZeroUsize, rope: &Rope) -> Position {
     let line = line.get() - 1;
     let last_line = rope.len_lines().saturating_sub(2);
     if line > last_line {
         bottom(rope)
     } else {
-        Position::try_from((line + 1, 1))
-            .unwrap()
-            .valid_for(rope)
-            .unwrap()
+        Position::try_from((line + 1, 1)).unwrap()
     }
 }
 
 #[must_use]
-pub fn line_first_non_blank(line: NonZeroUsize, rope: &Rope) -> Valid<'_, Position> {
+pub fn line_first_non_blank(line: NonZeroUsize, rope: &Rope) -> Position {
     let blanks = [' ', '\t'];
 
     let first_non_blank = rope
@@ -288,20 +254,17 @@ pub fn line_first_non_blank(line: NonZeroUsize, rope: &Rope) -> Valid<'_, Positi
 
     match first_non_blank {
         None => line_end(line, rope),
-        Some((column, _)) => Position::try_from((line.get(), column + 1))
-            .unwrap()
-            .valid_for(rope)
-            .unwrap(),
+        Some((column, _)) => Position::try_from((line.get(), column + 1)).unwrap(),
     }
 }
 
 #[must_use]
-pub fn line_end(line: NonZeroUsize, rope: &Rope) -> Valid<'_, Position> {
+pub fn line_end(line: NonZeroUsize, rope: &Rope) -> Position {
     match rope.get_line(line.get() - 1) {
         None => end(rope),
         Some(rope_slice) => {
             let column = NonZeroUsize::new(rope_slice.len_chars()).unwrap();
-            Position::from((line, column)).valid_for(rope).unwrap()
+            Position::from((line, column))
         }
     }
 }
@@ -397,8 +360,8 @@ mod test {
             let (actual_index, index_corrected) = position.to_rope_index_c(rope);
             let (actual_position, position_corrected) = Position::from_rope_index_c(rope, index);
             assert!(!index_corrected && !position_corrected);
-            assert_eq!(index, *actual_index);
-            assert_eq!(position, *actual_position);
+            assert_eq!(index, actual_index);
+            assert_eq!(position, actual_position);
         }
     }
 
@@ -421,7 +384,7 @@ mod test {
 
         for (index, position, corrected) in cases {
             let (actual_position, actual_corrected) = Position::from_rope_index_c(rope, index);
-            assert_eq!(position, *actual_position);
+            assert_eq!(position, actual_position);
             assert_eq!(corrected, actual_corrected);
         }
     }
@@ -445,7 +408,7 @@ mod test {
 
         for (position, index, corrected) in cases {
             let (actual_index, actual_corrected) = position.to_rope_index_c(rope);
-            assert_eq!(index, *actual_index);
+            assert_eq!(index, actual_index);
             assert_eq!(corrected, actual_corrected);
         }
     }
