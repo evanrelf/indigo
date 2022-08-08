@@ -35,6 +35,20 @@ impl CommandLine {
     }
 
     #[must_use]
+    pub fn move_line_begin(&self) -> Self {
+        let mut command_line = self.clone();
+        command_line.cursor_index = 0;
+        command_line
+    }
+
+    #[must_use]
+    pub fn move_line_end(&self) -> Self {
+        let mut command_line = self.clone();
+        command_line.cursor_index = command_line.contents.len();
+        command_line
+    }
+
+    #[must_use]
     pub fn insert_char(&self, c: char) -> Self {
         let mut command_line = self.clone();
         command_line.contents.insert(command_line.cursor_index, c);

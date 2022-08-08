@@ -324,6 +324,12 @@ fn handle_event_command(tui: &mut Tui, _areas: &Areas, event: Event) {
             (KeyModifiers::NONE, KeyCode::Right) => {
                 command_mode.command_line = command_mode.command_line.move_right(1);
             }
+            (KeyModifiers::CONTROL, KeyCode::Char('a')) => {
+                command_mode.command_line = command_mode.command_line.move_line_begin();
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('e')) => {
+                command_mode.command_line = command_mode.command_line.move_line_end();
+            }
             (KeyModifiers::NONE, KeyCode::Char(c)) => {
                 command_mode.command_line = command_mode.command_line.insert_char(c);
             }
