@@ -339,6 +339,9 @@ fn handle_event_command(tui: &mut Tui, _areas: &Areas, event: Event) {
             (KeyModifiers::NONE, KeyCode::Backspace) => {
                 command_mode.command_line = command_mode.command_line.backspace();
             }
+            (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
+                command_mode.command_line = command_mode.command_line.clear();
+            }
             _ => {}
         },
         _ => {}

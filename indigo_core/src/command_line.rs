@@ -65,6 +65,14 @@ impl CommandLine {
         }
         command_line
     }
+
+    #[must_use]
+    pub fn clear(&self) -> Self {
+        let mut command_line = self.clone();
+        command_line.contents.clear();
+        command_line.cursor_index = 0;
+        command_line
+    }
 }
 
 #[cfg(test)]
