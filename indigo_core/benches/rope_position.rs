@@ -12,7 +12,7 @@ static ROPE: Lazy<Rope> = Lazy::new(|| {
 static POSITION: Lazy<Position> = Lazy::new(|| {
     let line = ROPE.len_lines() / 2;
     let column = 1;
-    Position::try_from((line, column)).unwrap()
+    Position { line, column }
 });
 
 static INDEX: Lazy<usize> = Lazy::new(|| POSITION.to_rope_index(&ROPE));

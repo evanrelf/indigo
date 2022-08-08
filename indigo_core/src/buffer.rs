@@ -105,7 +105,7 @@ impl Buffer {
 
     #[must_use]
     pub fn scroll_to_selection(&self, height: u16) -> Self {
-        let line = self.selection.primary_range().1.head().line.get() - 1;
+        let line = self.selection.primary_range().1.head().line;
 
         let top = self.vertical_scroll_offset;
         let bottom = top + height as usize - 1;

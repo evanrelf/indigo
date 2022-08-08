@@ -8,10 +8,7 @@
 use crate::terminal::Terminal;
 use crossterm::event::{Event, KeyCode, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use indigo_core::*;
-use std::{
-    num::NonZeroUsize,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 use tui::{
     buffer::Buffer as Surface,
     layout::{Constraint, Direction, Layout, Rect},
@@ -244,7 +241,6 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                 } else if let Some(line) = mouse_to_number_line(&mouse_event, areas, buffer) {
                     tui.mouse_down_area = Some(Area::Numbers);
                     *buffer = buffer.update_selection(|rope, _selection| {
-                        let line = line.get() - 1;
                         let anchor = Position::from_rope_index(rope, rope.line_to_char(line));
                         let head = Position::from_rope_index(rope, rope.line_to_char(line + 1) - 1);
                         Selection::from(Range::from((anchor, head)))
@@ -261,7 +257,6 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                     });
                 } else if let Some(line) = mouse_to_number_line(&mouse_event, areas, buffer) {
                     *buffer = buffer.update_selection(|rope, selection| {
-                        let line = line.get() - 1;
                         let anchor = selection.primary_range().1.anchor();
                         let head = Position::from_rope_index(rope, rope.line_to_char(line + 1) - 1);
                         Selection::from(Range::from((anchor, head)))
@@ -304,11 +299,7 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
     }
 }
 
-fn mouse_to_number_line(
-    mouse_event: &MouseEvent,
-    areas: &Areas,
-    buffer: &Buffer,
-) -> Option<NonZeroUsize> {
+fn mouse_to_number_line(mouse_event: &MouseEvent, areas: &Areas, buffer: &Buffer) -> Option<usize> {
     let line_range = areas.numbers_area.top()..areas.numbers_area.bottom();
 
     if !line_range.contains(&mouse_event.row) {
@@ -317,7 +308,7 @@ fn mouse_to_number_line(
 
     let line = usize::from(mouse_event.row - areas.numbers_area.top());
 
-    Some(NonZeroUsize::new(line + 1 + buffer.vertical_scroll_offset()).unwrap())
+    Some(line + buffer.vertical_scroll_offset())
 }
 
 fn mouse_to_buffer_position(
@@ -334,7 +325,7 @@ fn mouse_to_buffer_position(
 
     let line = mouse_event.row - areas.buffer_area.top();
 
-    let line = NonZeroUsize::new(usize::from(line) + 1 + buffer.vertical_scroll_offset()).unwrap();
+    let line = usize::from(line) + buffer.vertical_scroll_offset();
 
     let column_range = areas.buffer_area.left()..areas.buffer_area.right();
 
@@ -350,10 +341,9 @@ fn mouse_to_buffer_position(
         return None;
     };
 
-    let column =
-        NonZeroUsize::new(usize::from(column) + 1 + buffer.horizontal_scroll_offset()).unwrap();
+    let column = usize::from(column) + buffer.horizontal_scroll_offset();
 
-    Some(Position::from((line, column)).corrected(buffer.contents()))
+    Some(Position { line, column }.corrected(buffer.contents()))
 }
 
 impl Widget for &Tui {
@@ -431,8 +421,8 @@ fn render_selection(tui: &Tui, area: Rect, surface: &mut Surface) {
             };
 
             let buffer_position: Position = Position::from_rope_index(rope, i);
-            let buffer_line: usize = buffer_position.line.get() - 1;
-            let buffer_column: usize = buffer_position.column.get() - 1;
+            let buffer_line: usize = buffer_position.line;
+            let buffer_column: usize = buffer_position.column;
 
             let view_line: usize = buffer_line.saturating_sub(buffer.vertical_scroll_offset());
             let view_column: usize =

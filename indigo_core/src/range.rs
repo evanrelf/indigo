@@ -4,14 +4,13 @@ use ropey::{Rope, RopeSlice};
 use std::{
     borrow::Cow,
     cmp::{max, min},
-    num::NonZeroUsize,
 };
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Range {
     anchor: Position,
     head: Position,
-    target_column: Option<NonZeroUsize>,
+    target_column: Option<usize>,
 }
 
 enum Direction {
@@ -31,7 +30,7 @@ impl Range {
     }
 
     #[must_use]
-    pub fn target_column(&self) -> Option<NonZeroUsize> {
+    pub fn target_column(&self) -> Option<usize> {
         self.target_column
     }
 
@@ -258,11 +257,11 @@ impl From<(Position, Position)> for Range {
     }
 }
 
-impl TryFrom<(Position, Position, Option<NonZeroUsize>)> for Range {
+impl TryFrom<(Position, Position, Option<usize>)> for Range {
     type Error = ();
 
     fn try_from(
-        (anchor, head, target_column): (Position, Position, Option<NonZeroUsize>),
+        (anchor, head, target_column): (Position, Position, Option<usize>),
     ) -> Result<Self, Self::Error> {
         match target_column {
             Some(column) if column <= head.column => Err(()),
@@ -275,11 +274,11 @@ impl TryFrom<(Position, Position, Option<NonZeroUsize>)> for Range {
     }
 }
 
-impl TryFrom<(Position, Position, NonZeroUsize)> for Range {
+impl TryFrom<(Position, Position, usize)> for Range {
     type Error = ();
 
     fn try_from(
-        (anchor, head, target_column): (Position, Position, NonZeroUsize),
+        (anchor, head, target_column): (Position, Position, usize),
     ) -> Result<Self, Self::Error> {
         Self::try_from((anchor, head, Some(target_column)))
     }
@@ -288,19 +287,16 @@ impl TryFrom<(Position, Position, NonZeroUsize)> for Range {
 #[must_use]
 fn vertically(range: &Range, rope: &Rope, direction: Direction, distance: usize) -> Range {
     let desired_head = Position {
-        line: NonZeroUsize::new(max(1, {
-            match direction {
-                Direction::Backward => range.head().line.get().saturating_sub(distance),
-                Direction::Forward => {
-                    // Subtracting 1 to remove ropey's mysterious empty final line
-                    let last_line = rope.len_lines().saturating_sub(1);
-                    // Prevent `corrected` from moving us to the last index in the rope if we try to go
-                    // below the last line
-                    min(range.head().line.get() + distance, last_line)
-                }
+        line: match direction {
+            Direction::Backward => range.head().line.saturating_sub(distance),
+            Direction::Forward => {
+                // Subtracting 1 to remove ropey's mysterious empty final line
+                let last_line = rope.len_lines().saturating_sub(1);
+                // Prevent `corrected` from moving us to the last index in the rope if we try to go
+                // below the last line
+                min(range.head().line + distance, last_line)
             }
-        }))
-        .unwrap(),
+        },
         column: range.target_column().unwrap_or(range.head().column),
     };
 
@@ -417,7 +413,7 @@ pub fn extend_end(range: &Range, rope: &Rope) -> Range {
 #[must_use]
 pub fn extend_line_begin(range: &Range, rope: &Rope) -> Range {
     let mut head = range.head();
-    head.column = NonZeroUsize::new(1).unwrap();
+    head.column = 0;
 
     Range::from((range.anchor(), head)).corrected(rope)
 }
@@ -427,18 +423,17 @@ pub fn extend_line_first_non_blank(range: &Range, rope: &Rope) -> Range {
     let blanks = [' ', '\t'];
 
     let first_non_blank = rope
-        .line(range.head().line.get())
+        .line(range.head().line)
         .chars()
         .enumerate()
         .find(|(_, c)| !blanks.contains(c));
 
     let mut head = range.head();
-    head.column = NonZeroUsize::new(match first_non_blank {
+    head.column = match first_non_blank {
         // Behave like `extend_line_end` if there are no non-blank characters on this line
-        None => rope.line(head.line.get()).len_chars().saturating_sub(1),
+        None => rope.line(head.line).len_chars().saturating_sub(1),
         Some((i, _)) => i,
-    })
-    .unwrap();
+    };
 
     Range::from((range.anchor(), head))
 }
@@ -446,7 +441,7 @@ pub fn extend_line_first_non_blank(range: &Range, rope: &Rope) -> Range {
 #[must_use]
 pub fn extend_line_end(range: &Range, rope: &Rope) -> Range {
     let mut head = range.head().corrected(rope);
-    head.column = NonZeroUsize::new(rope.line(head.line.get()).len_chars()).unwrap();
+    head.column = rope.line(head.line).len_chars();
 
     Range::from((range.anchor(), head))
 }

@@ -174,10 +174,16 @@ mod test {
     fn test_merge() {
         let tuples_to_ranges = |vec: Vec<_>| {
             vec.into_iter()
-                .map(|(anchor, head)| {
+                .map(|((anchor_line, anchor_column), (head_line, head_column))| {
                     Range::from((
-                        Position::try_from(anchor).unwrap(),
-                        Position::try_from(head).unwrap(),
+                        Position {
+                            line: anchor_line,
+                            column: anchor_column,
+                        },
+                        Position {
+                            line: head_line,
+                            column: head_column,
+                        },
                     ))
                 })
                 .collect()
