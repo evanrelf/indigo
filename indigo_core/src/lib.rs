@@ -16,7 +16,7 @@ pub mod selection;
 
 pub use crate::{
     buffer::Buffer,
-    command::{Cli, Command},
+    command::{parse, Cli, Command},
     command_line::CommandLine,
     editor::Editor,
     mode::{CommandMode, InsertMode, Mode, NormalMode},
