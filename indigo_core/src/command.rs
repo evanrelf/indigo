@@ -24,7 +24,10 @@ pub enum Command {
 pub struct Nop;
 
 #[derive(clap::Args, Debug, PartialEq)]
-pub struct Quit;
+pub struct Quit {
+    #[clap(value_parser)]
+    pub exit_code: Option<u8>,
+}
 
 #[derive(clap::Args, Debug, PartialEq)]
 pub struct OpenBuffer {
@@ -55,7 +58,7 @@ mod test {
 
         case!("nop", Command::Nop(Nop));
 
-        case!("quit", Command::Quit(Quit));
+        case!("quit", Command::Quit(Quit { exit_code: None }));
 
         case!(
             "open foo.txt",

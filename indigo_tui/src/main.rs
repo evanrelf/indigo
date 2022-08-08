@@ -1,6 +1,6 @@
 use clap::Parser as _;
 use indigo_core::Editor;
-use std::{fs::File, path::PathBuf};
+use std::{fs::File, path::PathBuf, process::ExitCode};
 
 #[derive(clap::Parser)]
 struct Args {
@@ -9,7 +9,7 @@ struct Args {
     files: Vec<PathBuf>,
 }
 
-fn main() {
+fn main() -> ExitCode {
     #[cfg(debug_assertions)]
     if std::env::var("RUST_BACKTRACE").is_err() {
         std::env::set_var("RUST_BACKTRACE", "1");
@@ -35,5 +35,5 @@ fn main() {
         editor.open_buffer(path).unwrap();
     }
 
-    indigo_tui::run(editor);
+    indigo_tui::run(editor)
 }

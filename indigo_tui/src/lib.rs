@@ -8,7 +8,10 @@
 use crate::terminal::Terminal;
 use crossterm::event::{Event, KeyCode, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use indigo_core::*;
-use std::time::{Duration, Instant};
+use std::{
+    process::ExitCode,
+    time::{Duration, Instant},
+};
 use tui::{
     buffer::Buffer as Surface,
     layout::{Constraint, Direction, Layout, Rect},
@@ -18,7 +21,7 @@ use tui::{
 
 mod terminal;
 
-pub fn run(editor: Editor) {
+pub fn run(editor: Editor) -> ExitCode {
     let mut terminal = Terminal::new();
     let mut tui = Tui::new(editor);
 
@@ -45,12 +48,15 @@ pub fn run(editor: Editor) {
         let areas = areas(&tui.editor, last_size);
         handle_event(&mut tui, &areas, event);
     }
+
+    tui.exit_code
 }
 
 struct Tui {
     editor: Editor,
     mouse_down_area: Option<Area>,
     quit: bool,
+    exit_code: ExitCode,
 }
 
 impl Tui {
@@ -59,6 +65,7 @@ impl Tui {
             editor,
             mouse_down_area: None,
             quit: false,
+            exit_code: ExitCode::SUCCESS,
         }
     }
 }
@@ -347,7 +354,12 @@ fn handle_event_command(tui: &mut Tui, _areas: &Areas, event: Event) {
                     Err(err) => panic!("Invalid command:\n{}", err),
                     Ok(cli) => match cli.command {
                         Command::Nop(_) => {}
-                        Command::Quit(_) => tui.quit = true,
+                        Command::Quit(quit) => {
+                            if let Some(exit_code) = quit.exit_code {
+                                tui.exit_code = ExitCode::from(exit_code);
+                            }
+                            tui.quit = true;
+                        }
                         command => {
                             panic!("Valid command, but unimplemented:\n{:#?}", command)
                         }
