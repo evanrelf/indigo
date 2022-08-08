@@ -9,7 +9,7 @@ pub struct Cli {
 
 #[derive(clap::Subcommand, Debug, PartialEq)]
 pub enum Command {
-    Nop(Nop),
+    Nop,
 
     Quit(Quit),
 
@@ -17,11 +17,8 @@ pub enum Command {
     OpenBuffer(OpenBuffer),
 
     #[clap(name = "close")]
-    CloseBuffer(CloseBuffer),
+    CloseBuffer,
 }
-
-#[derive(clap::Args, Debug, PartialEq)]
-pub struct Nop;
 
 #[derive(clap::Args, Debug, PartialEq)]
 pub struct Quit {
@@ -34,9 +31,6 @@ pub struct OpenBuffer {
     #[clap(value_parser)]
     pub path: Utf8PathBuf,
 }
-
-#[derive(clap::Args, Debug, PartialEq)]
-pub struct CloseBuffer;
 
 pub fn parse(command: &str) -> Result<Cli, anyhow::Error> {
     let words = shell_words::split(&(String::from("indigo_command_line ") + command))?;
@@ -56,7 +50,7 @@ mod test {
             };
         }
 
-        case!("nop", Command::Nop(Nop));
+        case!("nop", Command::Nop);
 
         case!("quit", Command::Quit(Quit { exit_code: None }));
 
@@ -67,6 +61,6 @@ mod test {
             })
         );
 
-        case!("close", Command::CloseBuffer(CloseBuffer));
+        case!("close", Command::CloseBuffer);
     }
 }

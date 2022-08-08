@@ -353,7 +353,7 @@ fn handle_event_command(tui: &mut Tui, _areas: &Areas, event: Event) {
                 match command::parse(command_mode.command_line.contents()) {
                     Err(err) => panic!("Invalid command:\n{}", err),
                     Ok(cli) => match cli.command {
-                        Command::Nop(_) => {}
+                        Command::Nop => {}
                         Command::Quit(quit) => {
                             if let Some(exit_code) = quit.exit_code {
                                 tui.exit_code = ExitCode::from(exit_code);
