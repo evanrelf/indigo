@@ -307,12 +307,28 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
 }
 
 fn handle_event_command(tui: &mut Tui, _areas: &Areas, event: Event) {
+    let command_mode = match &mut tui.editor.mode {
+        Mode::Command(command_mode) => command_mode,
+        _ => unreachable!(),
+    };
+
     #[allow(clippy::single_match)]
     match event {
-        #[allow(clippy::single_match)]
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::NONE, KeyCode::Esc) => {
                 tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            (KeyModifiers::NONE, KeyCode::Left) => {
+                command_mode.command_line = command_mode.command_line.move_left(1);
+            }
+            (KeyModifiers::NONE, KeyCode::Right) => {
+                command_mode.command_line = command_mode.command_line.move_right(1);
+            }
+            (KeyModifiers::NONE, KeyCode::Char(c)) => {
+                command_mode.command_line = command_mode.command_line.insert_char(c);
+            }
+            (KeyModifiers::NONE, KeyCode::Backspace) => {
+                command_mode.command_line = command_mode.command_line.backspace();
             }
             _ => {}
         },
