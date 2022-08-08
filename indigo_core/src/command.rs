@@ -1,7 +1,7 @@
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 
-#[derive(clap::Parser)]
+#[derive(clap::Parser, Debug)]
 pub struct Cli {
     #[clap(subcommand)]
     pub command: Command,
@@ -9,6 +9,8 @@ pub struct Cli {
 
 #[derive(clap::Subcommand, Debug, PartialEq)]
 pub enum Command {
+    Nop(Nop),
+
     Quit(Quit),
 
     #[clap(name = "open")]
@@ -17,6 +19,9 @@ pub enum Command {
     #[clap(name = "close")]
     CloseBuffer(CloseBuffer),
 }
+
+#[derive(clap::Args, Debug, PartialEq)]
+pub struct Nop;
 
 #[derive(clap::Args, Debug, PartialEq)]
 pub struct Quit;
@@ -31,7 +36,7 @@ pub struct OpenBuffer {
 pub struct CloseBuffer;
 
 pub fn parse(command: &str) -> Result<Cli, anyhow::Error> {
-    let words = shell_words::split(command)?;
+    let words = shell_words::split(&(String::from("indigo_command_line ") + command))?;
     let cli = Cli::try_parse_from(words)?;
     Ok(cli)
 }
@@ -44,12 +49,11 @@ mod test {
     fn test_parse() {
         macro_rules! case {
             ($string:literal, $command:expr) => {
-                assert_eq!(
-                    parse(&(String::from("cli ") + $string)).unwrap().command,
-                    $command
-                )
+                assert_eq!(parse($string).unwrap().command, $command)
             };
         }
+
+        case!("nop", Command::Nop(Nop));
 
         case!("quit", Command::Quit(Quit));
 

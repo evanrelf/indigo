@@ -342,6 +342,19 @@ fn handle_event_command(tui: &mut Tui, _areas: &Areas, event: Event) {
             (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
                 command_mode.command_line = command_mode.command_line.clear();
             }
+            (KeyModifiers::NONE, KeyCode::Enter) => {
+                match command::parse(command_mode.command_line.contents()) {
+                    Err(err) => panic!("Invalid command:\n{}", err),
+                    Ok(cli) => match cli.command {
+                        Command::Nop(_) => {}
+                        Command::Quit(_) => tui.quit = true,
+                        command => {
+                            panic!("Valid command, but unimplemented:\n{:#?}", command)
+                        }
+                    },
+                }
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
             _ => {}
         },
         _ => {}
