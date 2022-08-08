@@ -130,7 +130,8 @@ fn handle_event(tui: &mut Tui, areas: &Areas, event: Event) {
     #[allow(clippy::single_match)]
     match &mut tui.editor.mode {
         Mode::Normal(_) => handle_event_normal(tui, areas, event),
-        _ => {}
+        Mode::Command(_) => handle_event_command(tui, areas, event),
+        Mode::Insert(_) => handle_event_insert(tui, areas, event),
     }
 }
 
@@ -144,6 +145,12 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
             }
             (KeyModifiers::CONTROL, KeyCode::Char('p')) => {
                 panic!();
+            }
+            (KeyModifiers::NONE, KeyCode::Char(':')) => {
+                tui.editor.mode = Mode::Command(CommandMode::default());
+            }
+            (KeyModifiers::NONE, KeyCode::Char('i')) => {
+                tui.editor.mode = Mode::Insert(InsertMode::default());
             }
             (KeyModifiers::NONE, KeyCode::Up) => {
                 *buffer = buffer.scroll_up(1);
@@ -296,6 +303,34 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
             MouseEventKind::Drag(_) => {}
         },
         Event::Resize(_, _) => {}
+    }
+}
+
+fn handle_event_command(tui: &mut Tui, _areas: &Areas, event: Event) {
+    #[allow(clippy::single_match)]
+    match event {
+        #[allow(clippy::single_match)]
+        Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+            (KeyModifiers::NONE, KeyCode::Esc) => {
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            _ => {}
+        },
+        _ => {}
+    }
+}
+
+fn handle_event_insert(tui: &mut Tui, _areas: &Areas, event: Event) {
+    #[allow(clippy::single_match)]
+    match event {
+        #[allow(clippy::single_match)]
+        Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+            (KeyModifiers::NONE, KeyCode::Esc) => {
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            _ => {}
+        },
+        _ => {}
     }
 }
 
