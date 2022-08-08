@@ -318,6 +318,9 @@ fn handle_event_command(tui: &mut Tui, _areas: &Areas, event: Event) {
             (KeyModifiers::NONE, KeyCode::Esc) => {
                 tui.editor.mode = Mode::Normal(NormalMode::default())
             }
+            (KeyModifiers::CONTROL, KeyCode::Char('c')) => {
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
             (KeyModifiers::NONE, KeyCode::Left) => {
                 command_mode.command_line = command_mode.command_line.move_left(1);
             }
