@@ -52,7 +52,7 @@ impl Selection {
     }
 
     #[must_use]
-    pub fn update_ranges(&self, range_fn: impl Fn(usize, &Range) -> Range) -> Self {
+    pub fn update_ranges(&self, mut range_fn: impl FnMut(usize, &Range) -> Range) -> Self {
         let mut selection = self.clone();
 
         for (index, range) in selection.ranges.iter_mut().enumerate() {

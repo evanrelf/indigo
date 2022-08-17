@@ -365,12 +365,20 @@ fn handle_event_command(tui: &mut Tui, _areas: &Areas, event: Event) {
 }
 
 fn handle_event_insert(tui: &mut Tui, _areas: &Areas, event: Event) {
+    let buffer = tui.editor.current_buffer_mut();
+
     #[allow(clippy::single_match)]
     match event {
-        #[allow(clippy::single_match)]
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::NONE, KeyCode::Esc) => {
                 tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            (KeyModifiers::NONE, KeyCode::Char(c)) => {
+                buffer.selection = buffer.selection.update_ranges(|_, range| {
+                    let (range, contents) = range::insert_char(range, &buffer.contents, c);
+                    buffer.contents = contents;
+                    range
+                });
             }
             _ => {}
         },
