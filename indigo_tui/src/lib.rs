@@ -103,7 +103,7 @@ fn areas(editor: &Editor, area: Rect) -> Areas {
     let number_width = {
         let n = editor
             .current_buffer()
-            .contents()
+            .contents
             .len_lines()
             .saturating_sub(1);
         assert!(
@@ -431,7 +431,7 @@ fn mouse_to_buffer_position(
 
     let column = usize::from(column) + buffer.horizontal_scroll_offset();
 
-    Some(Position { line, column }.corrected(buffer.contents()))
+    Some(Position { line, column }.corrected(&buffer.contents))
 }
 
 impl Widget for &Tui {
@@ -449,7 +449,7 @@ impl Widget for &Tui {
 fn render_numbers(tui: &Tui, area: Rect, surface: &mut Surface) {
     let buffer = tui.editor.current_buffer();
 
-    let total_lines = buffer.contents().len_lines().saturating_sub(1);
+    let total_lines = buffer.contents.len_lines().saturating_sub(1);
 
     for y in area.top()..area.bottom() {
         let line_number = usize::from(y) + buffer.vertical_scroll_offset() + 1;
@@ -475,7 +475,7 @@ fn render_buffer(tui: &Tui, area: Rect, surface: &mut Surface) {
     for y in area.top()..area.bottom() {
         let line_index = usize::from(y) + buffer.vertical_scroll_offset();
 
-        if let Some(line) = buffer.contents().get_line(line_index) {
+        if let Some(line) = buffer.contents.get_line(line_index) {
             if let Some(line) = line.get_slice(buffer.horizontal_scroll_offset()..) {
                 surface.set_stringn(
                     area.x,
@@ -493,7 +493,7 @@ fn render_buffer(tui: &Tui, area: Rect, surface: &mut Surface) {
 
 fn render_selection(tui: &Tui, area: Rect, surface: &mut Surface) {
     let buffer = tui.editor.current_buffer();
-    let rope = buffer.contents();
+    let rope = &buffer.contents;
 
     let yellow = Color::Rgb(0xFF, 0xD3, 0x3D);
     let light_yellow = Color::Rgb(0xFF, 0xF5, 0xB1);
@@ -561,7 +561,7 @@ fn render_status(tui: &Tui, area: Rect, surface: &mut Surface) {
 
     let position = {
         let position @ Position { line, column } = buffer.selection().primary_range().1.head();
-        let index = position.to_rope_index(buffer.contents());
+        let index = position.to_rope_index(&buffer.contents);
         format!("{line}:{column}#{index}")
     };
 

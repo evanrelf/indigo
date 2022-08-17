@@ -12,7 +12,7 @@ use std::{
 #[derive(Clone, Default)]
 pub struct Buffer {
     pub path: Option<Utf8PathBuf>,
-    contents: Rope,
+    pub contents: Rope,
     is_modified: bool,
     selection: Selection,
     vertical_scroll_offset: usize,
@@ -20,11 +20,6 @@ pub struct Buffer {
 }
 
 impl Buffer {
-    #[must_use]
-    pub fn contents(&self) -> &Rope {
-        &self.contents
-    }
-
     #[must_use]
     pub fn is_modified(&self) -> bool {
         self.is_modified
