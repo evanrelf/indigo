@@ -483,3 +483,39 @@ pub fn insert(range: &Range, rope: &Rope, s: &str) -> (Range, Rope) {
 
     (Range::from((anchor, head)), rope)
 }
+
+#[must_use]
+pub fn backspace(range: &Range, rope: &Rope) -> (Range, Rope) {
+    let anchor_index = range.anchor.to_rope_index(rope);
+    let head_index = range.head.to_rope_index(rope);
+
+    if head_index > 0 {
+        let mut rope = rope.clone();
+
+        rope.remove(head_index - 1..head_index);
+
+        let anchor = Position::from_rope_index(&rope, anchor_index - 1);
+        let head = Position::from_rope_index(&rope, head_index - 1);
+
+        (Range::from((anchor, head)), rope)
+    } else {
+        (*range, rope.clone())
+    }
+}
+
+#[must_use]
+pub fn delete(range: &Range, rope: &Rope) -> (Range, Rope) {
+    let mut range = *range;
+    let mut rope = rope.clone();
+
+    range = range.flip_backwards();
+
+    let anchor_index = range.anchor.to_rope_index(&rope);
+    let head_index = range.head.to_rope_index(&rope);
+
+    rope.remove(head_index..=anchor_index);
+
+    range = range.reduce().corrected(&rope);
+
+    (range, rope)
+}
