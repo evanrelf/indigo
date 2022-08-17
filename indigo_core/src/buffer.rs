@@ -14,7 +14,7 @@ pub struct Buffer {
     pub path: Option<Utf8PathBuf>,
     pub contents: Rope,
     is_modified: bool,
-    selection: Selection,
+    pub selection: Selection,
     vertical_scroll_offset: usize,
     horizontal_scroll_offset: usize,
 }
@@ -26,11 +26,6 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn selection(&self) -> &Selection {
-        &self.selection
-    }
-
-    #[must_use]
     pub fn vertical_scroll_offset(&self) -> usize {
         self.vertical_scroll_offset
     }
@@ -38,16 +33,6 @@ impl Buffer {
     #[must_use]
     pub fn horizontal_scroll_offset(&self) -> usize {
         self.horizontal_scroll_offset
-    }
-
-    #[must_use]
-    pub fn update_selection<'rope>(
-        &'rope self,
-        selection_fn: impl Fn(&'rope Rope, &Selection) -> Selection,
-    ) -> Self {
-        let mut new = self.clone();
-        new.selection = selection_fn(&self.contents, &self.selection);
-        new
     }
 
     pub fn open(path: impl AsRef<Path>) -> Result<Self, anyhow::Error> {

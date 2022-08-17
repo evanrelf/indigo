@@ -178,60 +178,52 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                 *buffer = buffer.scroll_down(usize::from(areas.buffer_area.height / 2));
             }
             (KeyModifiers::NONE, KeyCode::Char('h')) => {
-                *buffer = buffer
-                    .update_selection(|rope, selection| {
-                        selection.update_ranges(|_, range| range::move_left(range, rope, 1))
-                    })
-                    .scroll_to_selection(areas.buffer_area.height);
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::move_left(range, &buffer.contents, 1));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
             }
             (KeyModifiers::NONE, KeyCode::Char('j')) => {
-                *buffer = buffer
-                    .update_selection(|rope, selection| {
-                        selection.update_ranges(|_, range| range::move_down(range, rope, 1))
-                    })
-                    .scroll_to_selection(areas.buffer_area.height);
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::move_down(range, &buffer.contents, 1));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
             }
             (KeyModifiers::NONE, KeyCode::Char('k')) => {
-                *buffer = buffer
-                    .update_selection(|rope, selection| {
-                        selection.update_ranges(|_, range| range::move_up(range, rope, 1))
-                    })
-                    .scroll_to_selection(areas.buffer_area.height);
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::move_up(range, &buffer.contents, 1));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
             }
             (KeyModifiers::NONE, KeyCode::Char('l')) => {
-                *buffer = buffer
-                    .update_selection(|rope, selection| {
-                        selection.update_ranges(|_, range| range::move_right(range, rope, 1))
-                    })
-                    .scroll_to_selection(areas.buffer_area.height);
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::move_right(range, &buffer.contents, 1));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
             }
             (KeyModifiers::SHIFT, KeyCode::Char('H')) => {
-                *buffer = buffer
-                    .update_selection(|rope, selection| {
-                        selection.update_ranges(|_, range| range::extend_left(range, rope, 1))
-                    })
-                    .scroll_to_selection(areas.buffer_area.height);
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::extend_left(range, &buffer.contents, 1));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
             }
             (KeyModifiers::SHIFT, KeyCode::Char('J')) => {
-                *buffer = buffer
-                    .update_selection(|rope, selection| {
-                        selection.update_ranges(|_, range| range::extend_down(range, rope, 1))
-                    })
-                    .scroll_to_selection(areas.buffer_area.height);
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::extend_down(range, &buffer.contents, 1));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
             }
             (KeyModifiers::SHIFT, KeyCode::Char('K')) => {
-                *buffer = buffer
-                    .update_selection(|rope, selection| {
-                        selection.update_ranges(|_, range| range::extend_up(range, rope, 1))
-                    })
-                    .scroll_to_selection(areas.buffer_area.height);
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::extend_up(range, &buffer.contents, 1));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
             }
             (KeyModifiers::SHIFT, KeyCode::Char('L')) => {
-                *buffer = buffer
-                    .update_selection(|rope, selection| {
-                        selection.update_ranges(|_, range| range::extend_right(range, rope, 1))
-                    })
-                    .scroll_to_selection(areas.buffer_area.height);
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::extend_right(range, &buffer.contents, 1));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
             }
             _ => {}
         },
@@ -250,31 +242,34 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                     mouse_to_buffer_position(&mouse_event, areas, &tui.mouse_down_area, buffer)
                 {
                     tui.mouse_down_area = Some(Area::Buffer);
-                    *buffer = buffer
-                        .update_selection(|_rope, _selection| Selection::from(Range::from(head)));
+                    buffer.selection = Selection::from(Range::from(head));
                 } else if let Some(line) = mouse_to_number_line(&mouse_event, areas, buffer) {
                     tui.mouse_down_area = Some(Area::Numbers);
-                    *buffer = buffer.update_selection(|rope, _selection| {
-                        let anchor = Position::from_rope_index(rope, rope.line_to_char(line));
-                        let head = Position::from_rope_index(rope, rope.line_to_char(line + 1) - 1);
-                        Selection::from(Range::from((anchor, head)))
-                    });
+                    let anchor = Position::from_rope_index(
+                        &buffer.contents,
+                        buffer.contents.line_to_char(line),
+                    );
+                    let head = Position::from_rope_index(
+                        &buffer.contents,
+                        buffer.contents.line_to_char(line + 1) - 1,
+                    );
+                    buffer.selection = Selection::from(Range::from((anchor, head)));
                 }
             }
             MouseEventKind::Down(MouseButton::Right) => {
                 if let Some(head) =
                     mouse_to_buffer_position(&mouse_event, areas, &tui.mouse_down_area, buffer)
                 {
-                    *buffer = buffer.update_selection(|_rope, selection| {
-                        selection
-                            .update_primary_range(|_, range| Range::from((range.anchor(), head)))
-                    });
+                    buffer.selection = buffer
+                        .selection
+                        .update_primary_range(|_, range| Range::from((range.anchor(), head)));
                 } else if let Some(line) = mouse_to_number_line(&mouse_event, areas, buffer) {
-                    *buffer = buffer.update_selection(|rope, selection| {
-                        let anchor = selection.primary_range().1.anchor();
-                        let head = Position::from_rope_index(rope, rope.line_to_char(line + 1) - 1);
-                        Selection::from(Range::from((anchor, head)))
-                    });
+                    let anchor = buffer.selection.primary_range().1.anchor();
+                    let head = Position::from_rope_index(
+                        &buffer.contents,
+                        buffer.contents.line_to_char(line + 1) - 1,
+                    );
+                    buffer.selection = Selection::from(Range::from((anchor, head)));
                 }
             }
             MouseEventKind::Down(_) => {}
@@ -284,25 +279,21 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                     if let Some(head) =
                         mouse_to_buffer_position(&mouse_event, areas, &tui.mouse_down_area, buffer)
                     {
-                        *buffer = buffer.update_selection(|_rope, selection| {
-                            let anchor = selection.primary_range().1.anchor();
-                            Selection::from(Range::from((anchor, head)))
-                        });
+                        let anchor = buffer.selection.primary_range().1.anchor();
+                        buffer.selection = Selection::from(Range::from((anchor, head)));
                     }
                 }
                 Some(Area::Numbers) => {
                     if let Some(line) = mouse_to_number_line(&mouse_event, areas, buffer) {
-                        *buffer = buffer.update_selection(|rope, selection| {
-                            let anchor = selection.primary_range().1.anchor();
-                            // TODO: Column needs to be at EOL
-                            let head = {
-                                let mut position = selection.primary_range().1.head();
-                                position.line = line;
-                                position = position.corrected(rope);
-                                position
-                            };
-                            Selection::from(Range::from((anchor, head)))
-                        });
+                        let anchor = buffer.selection.primary_range().1.anchor();
+                        // TODO: Column needs to be at EOL
+                        let head = {
+                            let mut position = buffer.selection.primary_range().1.head();
+                            position.line = line;
+                            position = position.corrected(&buffer.contents);
+                            position
+                        };
+                        buffer.selection = Selection::from(Range::from((anchor, head)));
                     }
                 }
                 None => {}
@@ -498,7 +489,7 @@ fn render_selection(tui: &Tui, area: Rect, surface: &mut Surface) {
     let yellow = Color::Rgb(0xFF, 0xD3, 0x3D);
     let light_yellow = Color::Rgb(0xFF, 0xF5, 0xB1);
 
-    for range in buffer.selection().ranges() {
+    for range in buffer.selection.ranges() {
         let range_slice = range.to_rope_slice(rope);
 
         for (i, _) in range_slice.chars().enumerate() {
@@ -560,7 +551,7 @@ fn render_status(tui: &Tui, area: Rect, surface: &mut Surface) {
     let modified = if buffer.is_modified() { " [+]" } else { "" };
 
     let position = {
-        let position @ Position { line, column } = buffer.selection().primary_range().1.head();
+        let position @ Position { line, column } = buffer.selection.primary_range().1.head();
         let index = position.to_rope_index(&buffer.contents);
         format!("{line}:{column}#{index}")
     };
