@@ -2,6 +2,7 @@ use camino::Utf8PathBuf;
 use clap::Parser as _;
 
 #[derive(clap::Parser, Debug)]
+#[clap(no_binary_name = true)]
 pub struct Cli {
     #[clap(subcommand)]
     pub command: Command,
@@ -33,7 +34,7 @@ pub struct OpenBuffer {
 }
 
 pub fn parse(command: &str) -> Result<Cli, anyhow::Error> {
-    let words = shell_words::split(&(String::from("indigo_command_line ") + command))?;
+    let words = shell_words::split(command)?;
     let cli = Cli::try_parse_from(words)?;
     Ok(cli)
 }
