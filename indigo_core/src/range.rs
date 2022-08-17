@@ -445,3 +445,41 @@ pub fn extend_line_end(range: &Range, rope: &Rope) -> Range {
 
     Range::from((range.anchor(), head))
 }
+
+#[must_use]
+pub fn insert_char(range: &Range, rope: &Rope, c: char) -> (Range, Rope) {
+    let anchor_index = range.anchor.to_rope_index(rope);
+    let head_index = range.head.to_rope_index(rope);
+
+    let mut rope = rope.clone();
+
+    if range.is_forwards() {
+        rope.insert_char(anchor_index, c);
+    } else {
+        rope.insert_char(head_index, c);
+    }
+
+    let anchor = Position::from_rope_index(&rope, anchor_index + 1);
+    let head = Position::from_rope_index(&rope, head_index + 1);
+
+    (Range::from((anchor, head)), rope)
+}
+
+#[must_use]
+pub fn insert(range: &Range, rope: &Rope, s: &str) -> (Range, Rope) {
+    let anchor_index = range.anchor.to_rope_index(rope);
+    let head_index = range.head.to_rope_index(rope);
+
+    let mut rope = rope.clone();
+
+    if range.is_forwards() {
+        rope.insert(anchor_index, s);
+    } else {
+        rope.insert(head_index, s);
+    }
+
+    let anchor = Position::from_rope_index(&rope, anchor_index + s.len());
+    let head = Position::from_rope_index(&rope, head_index + s.len());
+
+    (Range::from((anchor, head)), rope)
+}
