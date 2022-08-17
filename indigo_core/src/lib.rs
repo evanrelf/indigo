@@ -10,6 +10,7 @@ pub mod command_line;
 pub mod commands;
 pub mod editor;
 pub mod mode;
+pub mod ot;
 pub mod position;
 pub mod range;
 pub mod selection;
@@ -20,6 +21,7 @@ pub use crate::{
     commands::{parse, Cli, Command},
     editor::Editor,
     mode::{CommandMode, InsertMode, Mode, NormalMode},
+    ot::{Affinity, Operations},
     position::Position,
     range::Range,
     selection::Selection,
