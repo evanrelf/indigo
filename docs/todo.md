@@ -1,0 +1,3 @@
+- Fix out of bounds panic when clicking line number column past EOF
+- Fix insert/backspace/delete with non-reduced ranges
+- Use operational transformation for modifying buffer contents
