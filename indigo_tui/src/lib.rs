@@ -380,6 +380,20 @@ fn handle_event_insert(tui: &mut Tui, _areas: &Areas, event: Event) {
                     range
                 });
             }
+            (KeyModifiers::NONE, KeyCode::Backspace) => {
+                buffer.selection = buffer.selection.update_ranges(|_, range| {
+                    let (range, contents) = range::backspace(range, &buffer.contents);
+                    buffer.contents = contents;
+                    range
+                });
+            }
+            (KeyModifiers::NONE, KeyCode::Delete) => {
+                buffer.selection = buffer.selection.update_ranges(|_, range| {
+                    let (range, contents) = range::delete(range, &buffer.contents);
+                    buffer.contents = contents;
+                    range
+                });
+            }
             _ => {}
         },
         _ => {}
