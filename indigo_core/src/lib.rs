@@ -6,8 +6,8 @@
 )]
 
 pub mod buffer;
-pub mod command;
 pub mod command_line;
+pub mod commands;
 pub mod editor;
 pub mod mode;
 pub mod position;
@@ -16,8 +16,8 @@ pub mod selection;
 
 pub use crate::{
     buffer::Buffer,
-    command::{parse, Cli, Command},
     command_line::CommandLine,
+    commands::{parse, Cli, Command},
     editor::Editor,
     mode::{CommandMode, InsertMode, Mode, NormalMode},
     position::Position,
