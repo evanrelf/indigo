@@ -2,6 +2,7 @@ use crate::command_line::CommandLine;
 
 pub enum Mode {
     Normal(NormalMode),
+    Goto(GotoMode),
     Command(CommandMode),
     Insert(InsertMode),
 }
@@ -10,6 +11,9 @@ pub enum Mode {
 pub struct NormalMode {
     pub count: usize,
 }
+
+#[derive(Default)]
+pub struct GotoMode {}
 
 #[derive(Default)]
 pub struct CommandMode {

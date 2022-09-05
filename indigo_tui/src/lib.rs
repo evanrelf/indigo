@@ -137,6 +137,7 @@ fn handle_event(tui: &mut Tui, areas: &Areas, event: Event) {
     #[allow(clippy::single_match)]
     match &mut tui.editor.mode {
         Mode::Normal(_) => handle_event_normal(tui, areas, event),
+        Mode::Goto(_) => handle_event_goto(tui, areas, event),
         Mode::Command(_) => handle_event_command(tui, areas, event),
         Mode::Insert(_) => handle_event_insert(tui, areas, event),
     }
@@ -152,6 +153,9 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
             }
             (KeyModifiers::CONTROL, KeyCode::Char('p')) => {
                 panic!();
+            }
+            (KeyModifiers::NONE, KeyCode::Char('g')) => {
+                tui.editor.mode = Mode::Goto(GotoMode::default());
             }
             (KeyModifiers::NONE, KeyCode::Char(':')) => {
                 tui.editor.mode = Mode::Command(CommandMode::default());
@@ -301,6 +305,114 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
             MouseEventKind::Drag(_) => {}
         },
         Event::Resize(_, _) => {}
+    }
+}
+
+fn handle_event_goto(tui: &mut Tui, areas: &Areas, event: Event) {
+    let buffer = tui.editor.current_buffer_mut();
+
+    #[allow(clippy::single_match)]
+    match event {
+        Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+            // Exit
+            (KeyModifiers::NONE, KeyCode::Esc) => {
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('c')) => {
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            // Move
+            (KeyModifiers::NONE, KeyCode::Char('h')) => {
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::move_line_begin(range, &buffer.contents));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            (KeyModifiers::NONE, KeyCode::Char('i')) => {
+                buffer.selection = buffer.selection.update_ranges(|_, range| {
+                    range::move_line_first_non_blank(range, &buffer.contents)
+                });
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            (KeyModifiers::NONE, KeyCode::Char('l')) => {
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::move_line_end(range, &buffer.contents));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            (KeyModifiers::NONE, KeyCode::Char('k')) => {
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::move_top(range));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            (KeyModifiers::NONE, KeyCode::Char('j')) => {
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::move_bottom(range, &buffer.contents));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            (KeyModifiers::NONE, KeyCode::Char('e')) => {
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::move_end(range, &buffer.contents));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            // Extend
+            (KeyModifiers::SHIFT, KeyCode::Char('H')) => {
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::extend_line_begin(range, &buffer.contents));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            (KeyModifiers::SHIFT, KeyCode::Char('I')) => {
+                buffer.selection = buffer.selection.update_ranges(|_, range| {
+                    range::extend_line_first_non_blank(range, &buffer.contents)
+                });
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            (KeyModifiers::SHIFT, KeyCode::Char('L')) => {
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::extend_line_end(range, &buffer.contents));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            (KeyModifiers::SHIFT, KeyCode::Char('K')) => {
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::extend_top(range));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            (KeyModifiers::SHIFT, KeyCode::Char('J')) => {
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::extend_bottom(range, &buffer.contents));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            (KeyModifiers::SHIFT, KeyCode::Char('E')) => {
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::extend_end(range, &buffer.contents));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+            _ => {
+                // TODO: Display error message about unknown mapping
+                tui.editor.mode = Mode::Normal(NormalMode::default())
+            }
+        },
+        _ => {}
     }
 }
 
@@ -559,6 +671,7 @@ fn render_selection(tui: &Tui, area: Rect, surface: &mut Surface) {
 fn render_status(tui: &Tui, area: Rect, surface: &mut Surface) {
     let mode = match tui.editor.mode {
         Mode::Normal(_) => "normal",
+        Mode::Goto(_) => "goto",
         Mode::Command(_) => "command",
         Mode::Insert(_) => "insert",
     };

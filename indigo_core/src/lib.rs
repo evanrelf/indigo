@@ -20,7 +20,7 @@ pub use crate::{
     command_line::CommandLine,
     commands::{parse, Cli, Command},
     editor::Editor,
-    mode::{CommandMode, InsertMode, Mode, NormalMode},
+    mode::{CommandMode, GotoMode, InsertMode, Mode, NormalMode},
     ot::{Affinity, Operations},
     position::Position,
     range::Range,
