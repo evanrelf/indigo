@@ -304,7 +304,7 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
             },
             MouseEventKind::Drag(_) => {}
         },
-        Event::Resize(_, _) => {}
+        _ => {}
     }
 }
 
