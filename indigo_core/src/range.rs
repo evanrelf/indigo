@@ -6,7 +6,7 @@ use std::{
     cmp::{max, min},
 };
 
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
 pub struct Range {
     anchor: Position,
     head: Position,

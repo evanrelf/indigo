@@ -8,7 +8,7 @@ pub struct Cli {
     pub command: Command,
 }
 
-#[derive(clap::Subcommand, Debug, PartialEq)]
+#[derive(clap::Subcommand, Debug, Eq, PartialEq)]
 pub enum Command {
     Nop,
 
@@ -21,13 +21,13 @@ pub enum Command {
     CloseBuffer,
 }
 
-#[derive(clap::Args, Debug, PartialEq)]
+#[derive(clap::Args, Debug, Eq, PartialEq)]
 pub struct Quit {
     #[clap(value_parser)]
     pub exit_code: Option<u8>,
 }
 
-#[derive(clap::Args, Debug, PartialEq)]
+#[derive(clap::Args, Debug, Eq, PartialEq)]
 pub struct OpenBuffer {
     #[clap(value_parser)]
     pub path: Utf8PathBuf,

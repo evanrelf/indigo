@@ -2,7 +2,7 @@ use crate::range::{self, Range};
 use regex::Regex;
 use ropey::Rope;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Selection {
     ranges: Vec<Range>,
     primary_range_index: usize,
