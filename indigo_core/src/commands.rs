@@ -34,7 +34,14 @@ pub struct OpenBuffer {
 }
 
 pub fn parse(command: &str) -> Result<Cli, anyhow::Error> {
-    let words = shell_words::split(command)?;
+    let mut words = shell_words::split(command)?;
+    if let Some(command) = words.get(0) {
+        #[allow(clippy::single_match)]
+        match command.as_str() {
+            "q" => words[0] = String::from("quit"),
+            _ => {}
+        }
+    }
     let cli = Cli::try_parse_from(words)?;
     Ok(cli)
 }
