@@ -441,7 +441,7 @@ pub fn extend_line_first_non_blank(range: &Range, rope: &Rope) -> Range {
 #[must_use]
 pub fn extend_line_end(range: &Range, rope: &Rope) -> Range {
     let mut head = range.head().corrected(rope);
-    head.column = rope.line(head.line).len_chars();
+    head.column = rope.line(head.line).len_chars().saturating_sub(1);
 
     Range::from((range.anchor(), head))
 }
