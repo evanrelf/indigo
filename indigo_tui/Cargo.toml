@@ -7,9 +7,9 @@ edition = "2021"
 default-run = "indigo_tui"
 
 [dependencies]
-clap = { version = "3.2.20", features = ["std", "derive"], default-features = false }
+clap = { version = "4.0.19", features = ["std", "derive"], default-features = false }
 crossterm = "0.25.0"
 indigo_core = { path = "../indigo_core" }
-tracing = "0.1.36"
-tracing-subscriber = { version = "0.3.15", features = ["std", "fmt", "env-filter", "smallvec"], default-features = false }
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.16", features = ["std", "fmt", "env-filter", "smallvec"], default-features = false }
 tui = "0.19.0"
