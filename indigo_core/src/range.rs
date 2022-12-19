@@ -288,16 +288,16 @@ impl TryFrom<(Position, Position, usize)> for Range {
 fn vertically(range: &Range, rope: &Rope, direction: Direction, distance: usize) -> Range {
     let desired_head = Position {
         line: match direction {
-            Direction::Backward => range.head().line.saturating_sub(distance),
+            Direction::Backward => range.head.line.saturating_sub(distance),
             Direction::Forward => {
                 // Subtracting 1 to remove ropey's mysterious empty final line
                 let last_line = rope.len_lines().saturating_sub(1);
                 // Prevent `corrected` from moving us to the last index in the rope if we try to go
                 // below the last line
-                min(range.head().line + distance, last_line)
+                min(range.head.line + distance, last_line)
             }
         },
-        column: range.target_column().unwrap_or(range.head().column),
+        column: range.target_column.unwrap_or(range.head.column),
     };
 
     let head = desired_head.corrected(rope);
@@ -308,12 +308,12 @@ fn vertically(range: &Range, rope: &Rope, direction: Direction, distance: usize)
         Some(desired_head.column)
     };
 
-    Range::try_from((range.anchor(), head, target_column)).unwrap()
+    Range::try_from((range.anchor, head, target_column)).unwrap()
 }
 
 #[must_use]
 fn horizontally(range: &Range, rope: &Rope, direction: Direction, distance: usize) -> Range {
-    let index = range.head().to_rope_index(rope);
+    let index = range.head.to_rope_index(rope);
 
     let desired_index = match direction {
         Direction::Backward => index.saturating_sub(distance),
@@ -322,7 +322,7 @@ fn horizontally(range: &Range, rope: &Rope, direction: Direction, distance: usiz
 
     let head = Position::from_rope_index(rope, desired_index);
 
-    Range::from((range.anchor(), head))
+    Range::from((range.anchor, head))
 }
 
 #[must_use]
@@ -397,25 +397,25 @@ pub fn extend_right(range: &Range, rope: &Rope, distance: usize) -> Range {
 
 #[must_use]
 pub fn extend_top(range: &Range) -> Range {
-    Range::from((range.anchor(), position::top()))
+    Range::from((range.anchor, position::top()))
 }
 
 #[must_use]
 pub fn extend_bottom(range: &Range, rope: &Rope) -> Range {
-    Range::from((range.anchor(), position::bottom(rope)))
+    Range::from((range.anchor, position::bottom(rope)))
 }
 
 #[must_use]
 pub fn extend_end(range: &Range, rope: &Rope) -> Range {
-    Range::from((range.anchor(), position::end(rope)))
+    Range::from((range.anchor, position::end(rope)))
 }
 
 #[must_use]
 pub fn extend_line_begin(range: &Range, rope: &Rope) -> Range {
-    let mut head = range.head();
+    let mut head = range.head;
     head.column = 0;
 
-    Range::from((range.anchor(), head)).corrected(rope)
+    Range::from((range.anchor, head)).corrected(rope)
 }
 
 #[must_use]
@@ -423,27 +423,27 @@ pub fn extend_line_first_non_blank(range: &Range, rope: &Rope) -> Range {
     let blanks = [' ', '\t'];
 
     let first_non_blank = rope
-        .line(range.head().line)
+        .line(range.head.line)
         .chars()
         .enumerate()
         .find(|(_, c)| !blanks.contains(c));
 
-    let mut head = range.head();
+    let mut head = range.head;
     head.column = match first_non_blank {
         // Behave like `extend_line_end` if there are no non-blank characters on this line
         None => rope.line(head.line).len_chars().saturating_sub(1),
         Some((i, _)) => i,
     };
 
-    Range::from((range.anchor(), head))
+    Range::from((range.anchor, head))
 }
 
 #[must_use]
 pub fn extend_line_end(range: &Range, rope: &Rope) -> Range {
-    let mut head = range.head().corrected(rope);
+    let mut head = range.head.corrected(rope);
     head.column = rope.line(head.line).len_chars().saturating_sub(1);
 
-    Range::from((range.anchor(), head))
+    Range::from((range.anchor, head))
 }
 
 #[must_use]
