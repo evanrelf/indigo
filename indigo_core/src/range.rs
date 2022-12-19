@@ -6,6 +6,9 @@ use std::{
     cmp::{max, min},
 };
 
+const SPACES: [char; 3] = [' ', '\t', '\n'];
+const HSPACES: [char; 2] = [' ', '\t'];
+
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
 pub struct Range {
     anchor: Position,
@@ -326,6 +329,34 @@ fn extend_horizontally(range: &Range, rope: &Rope, direction: Direction, distanc
 }
 
 #[must_use]
+fn extend_horizontally_while(
+    range: &Range,
+    rope: &Rope,
+    direction: Direction,
+    predicate: impl Fn(char) -> bool,
+) -> Range {
+    let mut index = range.head.to_rope_index(rope);
+    let mut index_candidate = index;
+
+    loop {
+        match rope.get_char(index_candidate) {
+            None => break,
+            Some(c) if !predicate(c) => break,
+            Some(_) => index = index_candidate,
+        }
+
+        index_candidate = match direction {
+            Direction::Backward => index_candidate.saturating_sub(1),
+            Direction::Forward => index_candidate + 1,
+        };
+    }
+
+    let head = Position::from_rope_index(rope, index);
+
+    Range::from((range.anchor, head))
+}
+
+#[must_use]
 pub fn move_up(range: &Range, rope: &Rope, distance: usize) -> Range {
     extend_up(range, rope, distance).reduce()
 }
@@ -376,6 +407,16 @@ pub fn move_line_end(range: &Range, rope: &Rope) -> Range {
 }
 
 #[must_use]
+pub fn move_non_blank_begin(range: &Range, rope: &Rope) -> Range {
+    extend_non_blank_begin(&range.reduce(), rope)
+}
+
+#[must_use]
+pub fn move_non_blank_end(range: &Range, rope: &Rope) -> Range {
+    extend_non_blank_end(&range.reduce(), rope)
+}
+
+#[must_use]
 pub fn extend_up(range: &Range, rope: &Rope, distance: usize) -> Range {
     extend_vertically(range, rope, Direction::Backward, distance)
 }
@@ -420,13 +461,11 @@ pub fn extend_line_begin(range: &Range, rope: &Rope) -> Range {
 
 #[must_use]
 pub fn extend_line_first_non_blank(range: &Range, rope: &Rope) -> Range {
-    let blanks = [' ', '\t'];
-
     let first_non_blank = rope
         .line(range.head.line)
         .chars()
         .enumerate()
-        .find(|(_, c)| !blanks.contains(c));
+        .find(|(_, c)| !HSPACES.contains(c));
 
     let mut head = range.head;
     head.column = match first_non_blank {
@@ -444,6 +483,16 @@ pub fn extend_line_end(range: &Range, rope: &Rope) -> Range {
     head.column = rope.line(head.line).len_chars().saturating_sub(1);
 
     Range::from((range.anchor, head))
+}
+
+#[must_use]
+pub fn extend_non_blank_begin(range: &Range, rope: &Rope) -> Range {
+    extend_horizontally_while(range, rope, Direction::Backward, |c| !SPACES.contains(&c))
+}
+
+#[must_use]
+pub fn extend_non_blank_end(range: &Range, rope: &Rope) -> Range {
+    extend_horizontally_while(range, rope, Direction::Forward, |c| !SPACES.contains(&c))
 }
 
 #[must_use]

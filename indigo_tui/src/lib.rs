@@ -229,6 +229,30 @@ fn handle_event_normal(tui: &mut Tui, areas: &Areas, event: Event) {
                     .update_ranges(|_, range| range::extend_right(range, &buffer.contents, 1));
                 *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
             }
+            (KeyModifiers::ALT, KeyCode::Char('b')) => {
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::move_non_blank_begin(range, &buffer.contents));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+            }
+            (KeyModifiers::ALT, KeyCode::Char('e')) => {
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::move_non_blank_end(range, &buffer.contents));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+            }
+            (m, KeyCode::Char('B')) if m == KeyModifiers::SHIFT | KeyModifiers::ALT => {
+                buffer.selection = buffer.selection.update_ranges(|_, range| {
+                    range::extend_non_blank_begin(range, &buffer.contents)
+                });
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+            }
+            (m, KeyCode::Char('E')) if m == KeyModifiers::SHIFT | KeyModifiers::ALT => {
+                buffer.selection = buffer
+                    .selection
+                    .update_ranges(|_, range| range::extend_non_blank_end(range, &buffer.contents));
+                *buffer = buffer.scroll_to_selection(areas.buffer_area.height);
+            }
             _ => {}
         },
         Event::Mouse(mouse_event) => match mouse_event.kind {
