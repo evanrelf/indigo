@@ -285,7 +285,7 @@ impl TryFrom<(Position, Position, usize)> for Range {
 }
 
 #[must_use]
-fn vertically(range: &Range, rope: &Rope, direction: Direction, distance: usize) -> Range {
+fn extend_vertically(range: &Range, rope: &Rope, direction: Direction, distance: usize) -> Range {
     let desired_head = Position {
         line: match direction {
             Direction::Backward => range.head.line.saturating_sub(distance),
@@ -312,7 +312,7 @@ fn vertically(range: &Range, rope: &Rope, direction: Direction, distance: usize)
 }
 
 #[must_use]
-fn horizontally(range: &Range, rope: &Rope, direction: Direction, distance: usize) -> Range {
+fn extend_horizontally(range: &Range, rope: &Rope, direction: Direction, distance: usize) -> Range {
     let index = range.head.to_rope_index(rope);
 
     let desired_index = match direction {
@@ -377,22 +377,22 @@ pub fn move_line_end(range: &Range, rope: &Rope) -> Range {
 
 #[must_use]
 pub fn extend_up(range: &Range, rope: &Rope, distance: usize) -> Range {
-    vertically(range, rope, Direction::Backward, distance)
+    extend_vertically(range, rope, Direction::Backward, distance)
 }
 
 #[must_use]
 pub fn extend_down(range: &Range, rope: &Rope, distance: usize) -> Range {
-    vertically(range, rope, Direction::Forward, distance)
+    extend_vertically(range, rope, Direction::Forward, distance)
 }
 
 #[must_use]
 pub fn extend_left(range: &Range, rope: &Rope, distance: usize) -> Range {
-    horizontally(range, rope, Direction::Backward, distance)
+    extend_horizontally(range, rope, Direction::Backward, distance)
 }
 
 #[must_use]
 pub fn extend_right(range: &Range, rope: &Rope, distance: usize) -> Range {
-    horizontally(range, rope, Direction::Forward, distance)
+    extend_horizontally(range, rope, Direction::Forward, distance)
 }
 
 #[must_use]
