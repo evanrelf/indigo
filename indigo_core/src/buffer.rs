@@ -1,4 +1,4 @@
-use crate::selection::{self, Selection};
+use crate::selection::Selection;
 use anyhow::anyhow;
 use camino::Utf8PathBuf;
 use ropey::Rope;
@@ -126,7 +126,7 @@ impl Buffer {
 
     pub fn assert_invariants(&self) {
         assert!(
-            selection::is_selection_valid(&self.selection, Some(&self.contents)),
+            self.selection.is_valid(Some(&self.contents)),
             "selection must be valid in the rope"
         );
 

@@ -197,6 +197,11 @@ impl Range {
     }
 
     #[must_use]
+    pub fn is_valid(&self, rope: Option<&Rope>) -> bool {
+        self.anchor.is_valid(rope) && self.head.is_valid(rope)
+    }
+
+    #[must_use]
     pub fn corrected(&self, rope: &Rope) -> Self {
         let anchor = self.anchor.corrected(rope);
         let head = self.head.corrected(rope);
@@ -232,12 +237,6 @@ impl Range {
             assert!(column > self.head.column);
         }
     }
-}
-
-#[must_use]
-pub fn is_range_valid(range: &Range, rope: Option<&Rope>) -> bool {
-    position::is_position_valid(&range.anchor, rope)
-        && position::is_position_valid(&range.head, rope)
 }
 
 impl From<Position> for Range {

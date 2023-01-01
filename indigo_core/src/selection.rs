@@ -1,4 +1,4 @@
-use crate::range::{self, Range};
+use crate::range::Range;
 use regex::Regex;
 use ropey::Rope;
 
@@ -95,6 +95,16 @@ impl Selection {
         }
     }
 
+    #[must_use]
+    pub fn is_valid(&self, rope: Option<&Rope>) -> bool {
+        for range in &self.ranges {
+            if !range.is_valid(rope) {
+                return false;
+            }
+        }
+        true
+    }
+
     pub fn assert_invariants(&self) {
         assert!(!self.ranges.is_empty(), "must have at least one range");
 
@@ -135,16 +145,6 @@ impl Selection {
             "ranges must not overlap"
         );
     }
-}
-
-#[must_use]
-pub fn is_selection_valid(selection: &Selection, rope: Option<&Rope>) -> bool {
-    for range in &selection.ranges {
-        if !range::is_range_valid(range, rope) {
-            return false;
-        }
-    }
-    true
 }
 
 impl Default for Selection {

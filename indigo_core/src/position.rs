@@ -14,6 +14,17 @@ enum Direction {
 
 impl Position {
     #[must_use]
+    pub fn is_valid(&self, rope: Option<&Rope>) -> bool {
+        if let Some(rope) = rope {
+            let is_line_valid = self.line <= rope.len_lines().saturating_sub(1);
+            let is_column_valid = self.column < rope.line(self.line).len_chars();
+            is_line_valid && is_column_valid
+        } else {
+            *self == Self::default()
+        }
+    }
+
+    #[must_use]
     pub fn corrected(&self, rope: &Rope) -> Self {
         let index = self.to_rope_index(rope);
         Self::from_rope_index(rope, index)
@@ -83,17 +94,6 @@ impl Position {
 
         assert!(rope.len_chars() > 0, "cannot handle empty ropes yet");
         (position, corrected)
-    }
-}
-
-#[must_use]
-pub fn is_position_valid(position: &Position, rope: Option<&Rope>) -> bool {
-    if let Some(rope) = rope {
-        let is_line_valid = position.line <= rope.len_lines().saturating_sub(1);
-        let is_column_valid = position.column < rope.line(position.line).len_chars();
-        is_line_valid && is_column_valid
-    } else {
-        *position == Position::default()
     }
 }
 
