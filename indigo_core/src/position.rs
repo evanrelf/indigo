@@ -224,7 +224,7 @@ mod test {
 
     proptest! {
         #[test]
-        fn test_to_rope_index_alphanumeric(s in "[a-zA-Z0-9 \\n]+", line in 0usize.., column in 0usize..) {
+        fn test_to_rope_index_alphanumeric(s in "[a-zA-Z0-9 \\n]+", line: usize, column: usize) {
             let rope = &Rope::from(s);
             let position = Position { line, column };
             let _ = position.to_rope_index(rope);
@@ -237,7 +237,7 @@ mod test {
         }
 
         #[test]
-        fn test_to_rope_index_unicode(s in "\\PC+", line in 0usize.., column in 0usize..) {
+        fn test_to_rope_index_unicode(s in "\\PC+", line: usize, column: usize) {
             let rope = &Rope::from(s);
             let position = Position { line, column };
             let _ = position.to_rope_index(rope);
