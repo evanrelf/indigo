@@ -89,17 +89,9 @@ impl Position {
 #[must_use]
 pub fn position_is_valid(position: &Position, rope: Option<&Rope>) -> bool {
     if let Some(rope) = rope {
-        // Assert line is valid
-        if rope.len_lines().saturating_sub(1) < position.line {
-            return false;
-        }
-
-        // Assert column is valid
-        if rope.line(position.line).len_chars() <= position.column {
-            return false;
-        }
-
-        true
+        let line_is_valid = position.line <= rope.len_lines().saturating_sub(1);
+        let column_is_valid = position.column < rope.line(position.line).len_chars();
+        line_is_valid && column_is_valid
     } else {
         *position == Position::default()
     }
