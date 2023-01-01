@@ -220,7 +220,7 @@ pub fn line_end(line: usize, rope: &Rope) -> Position {
 #[cfg(test)]
 mod test {
     use super::*;
-    use proptest::prelude::*;
+    use proptest::proptest;
 
     proptest! {
         #[test]
