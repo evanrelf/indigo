@@ -138,9 +138,9 @@ impl Selection {
 }
 
 #[must_use]
-pub fn selection_is_valid(selection: &Selection, rope: Option<&Rope>) -> bool {
+pub fn is_selection_valid(selection: &Selection, rope: Option<&Rope>) -> bool {
     for range in &selection.ranges {
-        if !range::range_is_valid(range, rope) {
+        if !range::is_range_valid(range, rope) {
             return false;
         }
     }

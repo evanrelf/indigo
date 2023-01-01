@@ -235,9 +235,9 @@ impl Range {
 }
 
 #[must_use]
-pub fn range_is_valid(range: &Range, rope: Option<&Rope>) -> bool {
-    position::position_is_valid(&range.anchor, rope)
-        && position::position_is_valid(&range.head, rope)
+pub fn is_range_valid(range: &Range, rope: Option<&Rope>) -> bool {
+    position::is_position_valid(&range.anchor, rope)
+        && position::is_position_valid(&range.head, rope)
 }
 
 impl From<Position> for Range {

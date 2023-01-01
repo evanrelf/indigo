@@ -126,7 +126,7 @@ impl Buffer {
 
     pub fn assert_invariants(&self) {
         assert!(
-            selection::selection_is_valid(&self.selection, Some(&self.contents)),
+            selection::is_selection_valid(&self.selection, Some(&self.contents)),
             "selection must be valid in the rope"
         );
 

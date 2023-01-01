@@ -87,18 +87,18 @@ impl Position {
 }
 
 #[must_use]
-pub fn position_is_valid(position: &Position, rope: Option<&Rope>) -> bool {
+pub fn is_position_valid(position: &Position, rope: Option<&Rope>) -> bool {
     if let Some(rope) = rope {
-        let line_is_valid = position.line <= rope.len_lines().saturating_sub(1);
-        let column_is_valid = position.column < rope.line(position.line).len_chars();
-        line_is_valid && column_is_valid
+        let is_line_valid = position.line <= rope.len_lines().saturating_sub(1);
+        let is_column_valid = position.column < rope.line(position.line).len_chars();
+        is_line_valid && is_column_valid
     } else {
         *position == Position::default()
     }
 }
 
 #[must_use]
-pub fn index_is_valid(index: usize, rope: Option<&Rope>) -> bool {
+pub fn is_index_valid(index: usize, rope: Option<&Rope>) -> bool {
     if let Some(rope) = rope {
         rope.len_chars() > index
     } else {
