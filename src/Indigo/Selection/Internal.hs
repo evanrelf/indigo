@@ -1,49 +1,26 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE NoFieldSelectors #-}
+
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module Indigo.Selection.Internal where
 
-import GHC.Records (HasField (..))
 import Indigo.Range (Range)
 
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Indigo.Range as Range
 
-data Selection = UnsafeSelection
-  { unsafeAbove :: Seq Range
-  , unsafePrimary :: Range
-  , unsafeBelow :: Seq Range
+data Selection = Selection
+  { above :: Seq Range
+  , primary :: Range
+  , below :: Seq Range
   }
-
-pattern Selection :: Seq Range -> Range -> Seq Range -> Selection
-pattern Selection{ above, primary, below } <-
-  UnsafeSelection
-    { unsafeAbove = above
-    , unsafePrimary = primary
-    , unsafeBelow = below
-    }
-
-{-# COMPLETE Selection #-}
-
-instance HasField "above" Selection (Seq Range) where
-  getField :: Selection -> Seq Range
-  getField s = s.unsafeAbove
-
-instance HasField "primary" Selection Range where
-  getField :: Selection -> Range
-  getField s = s.unsafePrimary
-
-instance HasField "below" Selection (Seq Range) where
-  getField :: Selection -> Seq Range
-  getField s = s.unsafeBelow
 
 fromRange :: Range -> Selection
 fromRange r =
-  UnsafeSelection
-    { unsafeAbove = mempty
-    , unsafePrimary = r
-    , unsafeBelow = mempty
+  Selection
+    { above = mempty
+    , primary = r
+    , below = mempty
     }
 
 fromRanges :: NonEmpty Range -> Selection
@@ -72,6 +49,15 @@ isValid s =
       -- Ranges must not overlap
     , undefined
     ]
+
+above :: Selection -> Seq Range
+above s = s.above
+
+primary :: Selection -> Range
+primary s = s.primary
+
+below :: Selection -> Seq Range
+below s = s.below
 
 insert :: Range -> Selection -> Selection
 insert r s =

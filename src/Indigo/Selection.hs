@@ -1,5 +1,5 @@
 module Indigo.Selection
-  ( Selection (Selection, above, primary, below)
+  ( Selection
   , fromRange
   , fromRanges
   , mkSelection

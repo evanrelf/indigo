@@ -1,8 +1,11 @@
 module Indigo.Range
-  ( Range (Range, anchor, head, targetColumn)
+  ( Range
   , fromPosition
   , fromPositions
   , mkRange
+  , anchor
+  , head
+  , targetColumn
   , isForwards
   , isBackwards
   , isReduced

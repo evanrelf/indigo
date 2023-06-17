@@ -1,56 +1,29 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE NoFieldSelectors #-}
 {-# LANGUAGE ViewPatterns #-}
+
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module Indigo.Range.Internal where
 
-import GHC.Records (HasField (..))
 import Indigo.Position (Position (..))
 import Prelude hiding (flip, head)
 
-data Range = UnsafeRange
-  { unsafeAnchor :: Position
-  , unsafeHead :: Position
-  , unsafeTargetColumn :: Maybe Word
+data Range = Range
+  { anchor :: Position
+  , head :: Position
+  , targetColumn :: Maybe Word
   }
-
-pattern Range :: Position -> Position -> Maybe Word -> Range
-pattern Range{ anchor, head, targetColumn } <-
-  UnsafeRange
-    { unsafeAnchor = anchor
-    , unsafeHead = head
-    , unsafeTargetColumn = targetColumn
-    }
-
-{-# COMPLETE Range #-}
-
-instance HasField "anchor" Range Position where
-  getField :: Range -> Position
-  getField r = r.unsafeAnchor
-
-instance HasField "head" Range Position where
-  getField :: Range -> Position
-  getField r = r.unsafeHead
-
-instance HasField "targetColumn" Range (Maybe Word) where
-  getField :: Range -> Maybe Word
-  getField r = r.unsafeTargetColumn
 
 fromPosition :: Position -> Range
 fromPosition p =
-  UnsafeRange
-    { unsafeAnchor = p
-    , unsafeHead = p
-    , unsafeTargetColumn = Nothing
+  Range
+    { anchor = p
+    , head = p
+    , targetColumn = Nothing
     }
 
 fromPositions :: Position -> Position -> Range
-fromPositions anchor head =
-  UnsafeRange
-    { unsafeAnchor = anchor
-    , unsafeHead = head
-    , unsafeTargetColumn = Nothing
-    }
+fromPositions anchor head = Range{ anchor, head, targetColumn = Nothing }
 
 mkRange :: Position -> Position -> Maybe Word -> Maybe Range
 mkRange anchor head targetColumn =
@@ -58,17 +31,21 @@ mkRange anchor head targetColumn =
     then Just range
     else Nothing
   where
-  range =
-    UnsafeRange
-      { unsafeAnchor = anchor
-      , unsafeHead = head
-      , unsafeTargetColumn = targetColumn
-      }
+  range = Range{ anchor, head, targetColumn }
 
 isValid :: Range -> Bool
 isValid r =
   -- Target column must be greater than head's column
   maybe True (> r.head.column) r.targetColumn
+
+anchor :: Range -> Position
+anchor r = r.anchor
+
+head :: Range -> Position
+head r = r.head
+
+targetColumn :: Range -> Maybe Word
+targetColumn r = r.targetColumn
 
 isForwards :: Range -> Bool
 isForwards r = r.anchor <= r.head
@@ -86,10 +63,10 @@ isOverlapping (flipForwards -> l) (flipForwards -> r) =
 
 flip :: Range -> Range
 flip r =
-  UnsafeRange
-    { unsafeAnchor = r.head
-    , unsafeHead = r.anchor
-    , unsafeTargetColumn = Nothing
+  Range
+    { anchor = r.head
+    , head = r.anchor
+    , targetColumn = Nothing
     }
 
 flipForwards :: Range -> Range
@@ -105,27 +82,27 @@ flipBackwards r =
     else r
 
 reduce :: Range -> Range
-reduce r = r{ unsafeAnchor = r.head }
+reduce r = r{ anchor = r.head }
 
 merge :: Range -> Range -> Range
 merge l r =
   case (isForwards l, isForwards r) of
     (True, True) ->
       -- Forwards
-      UnsafeRange
-        { unsafeAnchor = min l.anchor r.anchor
-        , unsafeHead = max l.head r.head
-        , unsafeTargetColumn =
+      Range
+        { anchor = min l.anchor r.anchor
+        , head = max l.head r.head
+        , targetColumn =
             if r.head > l.head
               then r.targetColumn
               else l.targetColumn
         }
     (False, False) ->
       -- Backwards
-      UnsafeRange
-        { unsafeAnchor = max l.anchor r.anchor
-        , unsafeHead = min l.head r.head
-        , unsafeTargetColumn =
+      Range
+        { anchor = max l.anchor r.anchor
+        , head = min l.head r.head
+        , targetColumn =
             if r.head < l.head
               then r.targetColumn
               else l.targetColumn
@@ -139,7 +116,7 @@ instance Semigroup Range where
   (<>) = merge
 
 forgetTargetColumn :: Range -> Range
-forgetTargetColumn r = r{ unsafeTargetColumn = Nothing }
+forgetTargetColumn r = r{ targetColumn = Nothing }
 
 toPositions :: Range -> (Position, Position)
 toPositions r = (r.anchor, r.head)
