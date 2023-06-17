@@ -15,6 +15,7 @@ common common
   default-extensions:
     DerivingStrategies
     InstanceSigs
+    LambdaCase
     NamedFieldPuns
     OverloadedRecordDot
   ghc-options:
@@ -40,11 +41,15 @@ common executable
 library
   import: common
   hs-source-dirs: src
+  build-depends:
+    , containers
   exposed-modules:
     Indigo
     Indigo.Position
     Indigo.Range
     Indigo.Range.Internal
+    Indigo.Selection
+    Indigo.Selection.Internal
 
 executable indigo
   import:

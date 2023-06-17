@@ -12,6 +12,8 @@ module Indigo.Range
   , flipBackwards
   , reduce
   , merge
+  , forgetTargetColumn
+  , toPositions
   )
 where
 

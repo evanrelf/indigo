@@ -137,3 +137,9 @@ merge l r =
 instance Semigroup Range where
   (<>) :: Range -> Range -> Range
   (<>) = merge
+
+forgetTargetColumn :: Range -> Range
+forgetTargetColumn r = r{ unsafeTargetColumn = Nothing }
+
+toPositions :: Range -> (Position, Position)
+toPositions r = (r.anchor, r.head)
