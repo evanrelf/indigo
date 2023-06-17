@@ -14,6 +14,9 @@ common common
   default-language: Haskell2010
   default-extensions:
     DerivingStrategies
+    InstanceSigs
+    NamedFieldPuns
+    OverloadedRecordDot
   ghc-options:
     -Wall
     -Wcompat
@@ -24,7 +27,6 @@ common common
     -Werror=missing-methods
     -Werror=partial-fields
     -Widentities
-    -Wmissing-export-lists
     -Wmissing-home-modules
     -Wno-unticked-promoted-constructors
     -Wredundant-constraints
@@ -41,6 +43,8 @@ library
   exposed-modules:
     Indigo
     Indigo.Position
+    Indigo.Range
+    Indigo.Range.Internal
 
 executable indigo
   import:
