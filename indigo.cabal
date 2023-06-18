@@ -48,9 +48,8 @@ library
     Indigo
     Indigo.Position
     Indigo.Range
-    Indigo.Range.Internal
     Indigo.Selection
-    Indigo.Selection.Internal
+    Indigo.SelectionRange
 
 executable indigo
   import:
