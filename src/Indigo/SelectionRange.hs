@@ -32,6 +32,7 @@ module Indigo.SelectionRange
   )
 where
 
+import Data.Default.Class (Default (..))
 import Indigo.Position (Position (..))
 import Indigo.Range (Range)
 import Prelude hiding (flip, head)
@@ -42,6 +43,10 @@ data SelectionRange = SelectionRange
   { range :: Range
   , targetColumn :: Maybe Word
   }
+
+instance Default SelectionRange where
+  def :: SelectionRange
+  def = SelectionRange{ range = def, targetColumn = Nothing }
 
 fromPosition :: Position -> SelectionRange
 fromPosition position = fromRange $ Range.fromPosition position

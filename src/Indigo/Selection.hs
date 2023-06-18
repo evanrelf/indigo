@@ -24,6 +24,7 @@ module Indigo.Selection
   )
 where
 
+import Data.Default.Class (Default (..))
 import Indigo.Range (Range)
 import Indigo.SelectionRange (SelectionRange)
 
@@ -34,6 +35,10 @@ data Selection = Selection
   , primary :: SelectionRange
   , below :: Seq SelectionRange
   }
+
+instance Default Selection where
+  def :: Selection
+  def = Selection{ above = mempty, primary = def, below = mempty }
 
 fromSelectionRange :: SelectionRange -> Selection
 fromSelectionRange primary =

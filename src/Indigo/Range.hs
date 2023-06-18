@@ -22,6 +22,7 @@ module Indigo.Range
   )
 where
 
+import Data.Default.Class (Default (..))
 import Indigo.Position (Position)
 import Prelude hiding (flip, head)
 
@@ -30,6 +31,10 @@ data Range = Range
   , head :: Position
   }
   deriving stock (Eq, Ord)
+
+instance Default Range where
+  def :: Range
+  def = Range{ anchor = def, head = def }
 
 fromPosition :: Position -> Range
 fromPosition position = Range{ anchor = position, head = position }
