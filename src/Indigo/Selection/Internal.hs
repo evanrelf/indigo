@@ -1,4 +1,5 @@
 {-# LANGUAGE NoFieldSelectors #-}
+{-# LANGUAGE ViewPatterns #-}
 
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
@@ -6,7 +7,6 @@ module Indigo.Selection.Internal where
 
 import Indigo.Range (Range)
 
-import qualified Data.List.NonEmpty as NonEmpty
 import qualified Indigo.Range as Range
 
 data Selection = Selection
@@ -24,10 +24,7 @@ fromRange r =
     }
 
 fromRanges :: NonEmpty Range -> Selection
-fromRanges ranges =
-  case NonEmpty.uncons ranges of
-    (r, Nothing) -> fromRange r
-    (r, Just rs) -> insert r (fromRanges rs)
+fromRanges = undefined
 
 mkSelection :: Seq Range -> Range -> Seq Range -> Maybe Selection
 mkSelection above primary below =
@@ -37,34 +34,29 @@ mkSelection above primary below =
   where
   selection = Selection{ above, primary, below }
 
+-- Must have at least one range
+-- Primary range index must be valid
+-- Ranges must be sorted
+-- Ranges must not overlap
+-- Ranges must face the same direction
 isValid :: Selection -> Bool
-isValid s =
-  and
-    [ -- Must have at least one range
-      undefined
-      -- Primary range index must be valid
-    , undefined
-      -- Ranges must be sorted
-    , undefined
-      -- Ranges must not overlap
-    , undefined
-    ]
-
-above :: Selection -> Seq Range
-above s = s.above
+isValid = undefined
 
 primary :: Selection -> Range
 primary s = s.primary
+
+above :: Selection -> Seq Range
+above s = s.above
 
 below :: Selection -> Seq Range
 below s = s.below
 
 insert :: Range -> Selection -> Selection
-insert r s =
+insert (Range.forgetTargetColumn -> r) s =
   case comparing Range.toPositions r s.primary of
     LT -> undefined
     EQ -> s
     GT -> undefined
 
 toRanges :: Selection -> NonEmpty Range
-toRanges s = undefined $ s.above <> one s.primary <> s.below
+toRanges s = fromList $ toList $ s.above <> one s.primary <> s.below
