@@ -18,12 +18,15 @@ module Indigo.Selection
 
     -- * Modify
   , insert
+  , forward
+  , backward
 
     -- * Consume
   , toSelectionRanges
   )
 where
 
+import Data.Sequence (Seq (..), (<|), (|>))
 import Data.Default.Class (Default (..))
 import Indigo.Range (Range)
 import Indigo.SelectionRange (SelectionRange)
@@ -82,6 +85,52 @@ insert range selection =
     LT -> undefined
     EQ -> selection
     GT -> undefined
+
+forward :: Selection -> Selection
+forward selection =
+  case (selection.above, selection.below) of
+    -- Only primary range, no rotation
+    (Empty, Empty) ->
+      selection
+
+    -- Primary range in middle, rotate forward
+    (_, primary :<| below) ->
+      Selection
+        { above = selection.above |> selection.primary
+        , primary
+        , below
+        }
+
+    -- Primary range at end, loop back to beginning
+    (primary :<| below, Empty) ->
+      Selection
+        { above = Empty
+        , primary
+        , below
+        }
+
+backward :: Selection -> Selection
+backward selection =
+  case (selection.above, selection.below) of
+    -- Only primary range, no rotation
+    (Empty, Empty) ->
+      selection
+
+    -- Primary range in middle, rotate backward
+    (above :|> primary, _) ->
+      Selection
+        { above
+        , primary
+        , below = selection.primary <| selection.below
+        }
+
+    -- Primary range at beginning, loop back to end
+    (Empty, above :|> primary) ->
+      Selection
+        { above
+        , primary
+        , below = Empty
+        }
 
 toSelectionRanges :: Selection -> NonEmpty SelectionRange
 toSelectionRanges selection =
