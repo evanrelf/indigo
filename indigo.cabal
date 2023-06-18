@@ -51,7 +51,8 @@ library
     Indigo.Position
     Indigo.Range
     Indigo.Selection
-    Indigo.SelectionRange
+    Indigo.Selection.Zipper
+    Indigo.Selection.Range
 
 executable indigo
   import:

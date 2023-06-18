@@ -26,26 +26,32 @@ module Indigo.Selection
   )
 where
 
-import Data.Sequence (Seq (..), (<|), (|>))
+import Prelude hiding (lefts, rights)
 import Data.Default.Class (Default (..))
 import Indigo.Range (Range)
-import Indigo.SelectionRange (SelectionRange)
+import Indigo.Selection.Range (SelectionRange)
+import Indigo.Selection.Zipper (SelectionZipper (..))
 
-import qualified Indigo.SelectionRange as SelectionRange
+import qualified Indigo.Selection.Range as SelectionRange
+import qualified Indigo.Selection.Zipper as SelectionZipper
 
-data Selection = Selection
-  { above :: Seq SelectionRange
-  , primary :: SelectionRange
-  , below :: Seq SelectionRange
-  }
+newtype Selection = Selection (SelectionZipper SelectionRange)
 
 instance Default Selection where
   def :: Selection
-  def = Selection{ above = mempty, primary = def, below = mempty }
+  def = Selection SelectionZipper
+    { lefts = mempty
+    , focus = def
+    , rights = mempty
+    }
 
 fromSelectionRange :: SelectionRange -> Selection
-fromSelectionRange primary =
-  Selection{ above = mempty, primary, below = mempty }
+fromSelectionRange focus =
+  Selection SelectionZipper
+    { lefts = mempty
+    , focus
+    , rights = mempty
+    }
 
 fromSelectionRanges :: NonEmpty SelectionRange -> Selection
 fromSelectionRanges = undefined
@@ -55,12 +61,12 @@ mkSelection
   -> SelectionRange
   -> Seq SelectionRange
   -> Maybe Selection
-mkSelection above primary below =
+mkSelection lefts focus rights =
   if isValid selection
     then Just selection
     else Nothing
   where
-  selection = Selection{ above, primary, below }
+  selection = Selection SelectionZipper{ lefts, focus, rights }
 
 -- Must have at least one selection range
 -- Primary selection range index must be valid
@@ -71,68 +77,28 @@ isValid :: Selection -> Bool
 isValid = undefined
 
 primary :: Selection -> SelectionRange
-primary selection = selection.primary
+primary (Selection zipper) = zipper.focus
 
 above :: Selection -> Seq SelectionRange
-above selection = selection.above
+above (Selection zipper) = zipper.lefts
 
 below :: Selection -> Seq SelectionRange
-below selection = selection.below
+below (Selection zipper) = zipper.rights
 
 insert :: Range -> Selection -> Selection
-insert range selection =
-  case compare range (SelectionRange.range selection.primary) of
+insert range selection@(Selection zipper) =
+  case compare range (SelectionRange.range zipper.focus) of
     LT -> undefined
     EQ -> selection
     GT -> undefined
 
 forward :: Selection -> Selection
-forward selection =
-  case (selection.above, selection.below) of
-    -- Only primary range, no rotation
-    (Empty, Empty) ->
-      selection
-
-    -- Primary range in middle, rotate forward
-    (_, primary :<| below) ->
-      Selection
-        { above = selection.above |> selection.primary
-        , primary
-        , below
-        }
-
-    -- Primary range at end, loop back to beginning
-    (primary :<| below, Empty) ->
-      Selection
-        { above = Empty
-        , primary
-        , below
-        }
+forward (Selection zipper) = Selection (SelectionZipper.right zipper)
 
 backward :: Selection -> Selection
-backward selection =
-  case (selection.above, selection.below) of
-    -- Only primary range, no rotation
-    (Empty, Empty) ->
-      selection
-
-    -- Primary range in middle, rotate backward
-    (above :|> primary, _) ->
-      Selection
-        { above
-        , primary
-        , below = selection.primary <| selection.below
-        }
-
-    -- Primary range at beginning, loop back to end
-    (Empty, above :|> primary) ->
-      Selection
-        { above
-        , primary
-        , below = Empty
-        }
+backward (Selection zipper) = Selection (SelectionZipper.left zipper)
 
 toSelectionRanges :: Selection -> NonEmpty SelectionRange
-toSelectionRanges selection =
+toSelectionRanges (Selection zipper) =
   fromList $ toList $
-    selection.above <> one selection.primary <> selection.below
+    zipper.lefts <> one zipper.focus <> zipper.rights

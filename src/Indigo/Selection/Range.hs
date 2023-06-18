@@ -3,7 +3,7 @@
 
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Indigo.SelectionRange
+module Indigo.Selection.Range
   ( SelectionRange
 
     -- * Create
