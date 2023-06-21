@@ -25,4 +25,4 @@ fromIndices :: Word -> Word -> Position
 fromIndices line column = Position{ line, column }
 
 toIndices :: Position -> (Word, Word)
-toIndices position = (position.line, position.column)
+toIndices p = (p.line, p.column)
