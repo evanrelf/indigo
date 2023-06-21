@@ -24,14 +24,19 @@ module Indigo.Selection
 where
 
 import Data.Default.Class (Default (..))
+import Data.Foldable (foldr1)
 import Data.Sequence (Seq (..), (<|), (|>))
 import Indigo.Range (Range)
+
+import qualified Data.List.NonEmpty as NonEmpty
+import qualified Indigo.Range as Range
 
 data Selection = Selection
   { above :: Seq Range
   , primary :: Range
   , below :: Seq Range
   }
+  deriving stock (Eq)
 
 instance Default Selection where
   def :: Selection
@@ -46,7 +51,23 @@ fromRange r =
     }
 
 fromRanges :: NonEmpty Range -> Selection
-fromRanges = undefined
+fromRanges rs =
+  rs
+  -- Normalize ranges
+  & fmap Range.flipForward
+  & fmap Range.forgetTargetColumn
+  -- Merge overlapping ranges
+  & NonEmpty.sortWith Range.toPositions
+  & NonEmpty.groupBy1 Range.isOverlapping
+  & fmap (foldr1 Range.merge)
+  -- Create selection
+  & buildSelection
+  where
+  buildSelection :: NonEmpty Range -> Selection
+  buildSelection =
+    NonEmpty.uncons >>> \case
+      (r, Nothing) -> fromRange r
+      (r, Just rs) -> let s = buildSelection rs in s{ above = r :<| s.above }
 
 primary :: Selection -> Range
 primary s = s.primary
@@ -101,7 +122,7 @@ toRanges :: Selection -> NonEmpty Range
 toRanges s = fromList $ toList $ s.above <> one s.primary <> s.below
 
 -- Ranges must be sorted
--- Ranges must not overlap
+-- Ranges must not overlap (overlapping ranges must be merged)
 -- Ranges must face the same direction
 isValid :: Selection -> Bool
 isValid = undefined

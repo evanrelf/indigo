@@ -21,11 +21,12 @@ module Indigo.Range
   , isOverlapping
 
     -- * Modify
+  , forgetTargetColumn
   , flip
   , flipForward
   , flipBackward
   , reduce
-  , forgetTargetColumn
+  , merge
 
     -- * Consume
   , toPositions
@@ -41,6 +42,7 @@ data Range = Range
   , cursor :: Position
   , targetColumn :: Maybe Word
   }
+  deriving stock (Eq)
 
 instance Default Range where
   def :: Range
@@ -88,6 +90,9 @@ isOverlapping (flipForward -> r1) (flipForward -> r2) =
      (r1.anchor <= r2.anchor && r2.anchor <= r1.cursor)
   || (r2.anchor <= r1.anchor && r1.anchor <= r2.cursor)
 
+forgetTargetColumn :: Range -> Range
+forgetTargetColumn r = r{ targetColumn = Nothing }
+
 flip :: Range -> Range
 flip r =
   Range
@@ -111,8 +116,30 @@ flipBackward r =
 reduce :: Range -> Range
 reduce r = r{ anchor = r.cursor }
 
-forgetTargetColumn :: Range -> Range
-forgetTargetColumn r = r{ targetColumn = Nothing }
+merge :: Range -> Range -> Range
+merge r1 r2 =
+  case (isForward r1, isForward r2) of
+    (True, True) ->
+      -- Forward
+      Range{ anchor, cursor, targetColumn }
+      where
+      anchor = min r1.anchor r2.anchor
+      (cursor, targetColumn) =
+        if r1.cursor > r2.cursor
+          then (r1.cursor, r1.targetColumn)
+          else (r2.cursor, r2.targetColumn)
+    (False, False) ->
+      -- Backward
+      Range{ anchor, cursor, targetColumn }
+      where
+      anchor = max r1.anchor r2.anchor
+      (cursor, targetColumn) =
+        if r1.cursor < r2.cursor
+          then (r1.cursor, r1.targetColumn)
+          else (r2.cursor, r2.targetColumn)
+    _ ->
+      -- Mixed
+      merge r1 (flip r2)
 
 toPositions :: Range -> (Position, Position)
 toPositions r = (r.anchor, r.cursor)
