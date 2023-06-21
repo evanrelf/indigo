@@ -59,3 +59,15 @@ executable indigo
     , executable
   main-is: src/Main.hs
   build-depends: indigo
+
+test-suite doctests
+  import:
+    , common
+    , executable
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: doctests.hs
+  build-depends:
+    , base
+    , indigo
+    , doctest-parallel

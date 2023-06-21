@@ -132,6 +132,14 @@ rotateBackward s =
         , below = Empty
         }
 
+-- $
+-- >>> :set -XOverloadedLists
+-- >>> let mk x y = Range.fromPositions (Position x 0) (Position y 0)
+-- >>> let rs = [mk 0 0, mk 21 42, mk 1 1] :: NonEmpty Range
+-- >>> let s = fromRanges rs
+-- >>> s == rotateForward (rotateBackward s)
+-- True
+
 toRanges :: Selection -> NonEmpty Range
 toRanges s = fromList $ toList $ s.above <> one s.primary <> s.below
 
@@ -155,3 +163,10 @@ isValid s =
   where
   ranges = toRanges s
   sortedRanges = NonEmpty.sortWith Range.toPositions ranges
+
+-- $setup
+-- >>> :m -Prelude
+-- >>> import Relude
+-- >>> import Indigo.Position (Position (..))
+-- >>> import Indigo.Range (Range (..))
+-- >>> import qualified Indigo.Range as Range
