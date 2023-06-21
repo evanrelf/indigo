@@ -2,10 +2,10 @@ module Indigo.Position
   ( Position (..)
 
     -- * Create
-  , fromIndices
+  , fromRawParts
 
     -- * Consume
-  , toIndices
+  , toRawParts
   )
 where
 
@@ -21,8 +21,8 @@ instance Default Position where
   def :: Position
   def = Position{ line = 0, column = 0 }
 
-fromIndices :: Word -> Word -> Position
-fromIndices line column = Position{ line, column }
+fromRawParts :: Word -> Word -> Position
+fromRawParts line column = Position{ line, column }
 
-toIndices :: Position -> (Word, Word)
-toIndices p = (p.line, p.column)
+toRawParts :: Position -> (Word, Word)
+toRawParts p = (p.line, p.column)

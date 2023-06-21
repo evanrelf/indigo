@@ -9,7 +9,8 @@ module Indigo.Range
     -- * Create
   , fromPosition
   , fromPositions
-  , fromPositionsAndTarget
+  , fromRawParts
+  , unsafeFromRawParts
 
     -- * Query
   , anchor
@@ -30,6 +31,7 @@ module Indigo.Range
 
     -- * Consume
   , toPositions
+  , toRawParts
   )
 where
 
@@ -59,13 +61,17 @@ fromPositions anchor cursor =
     , targetColumn = Nothing
     }
 
-fromPositionsAndTarget :: Position -> Position -> Word -> Maybe Range
-fromPositionsAndTarget anchor cursor (Just -> targetColumn) =
+fromRawParts :: Position -> Position -> Maybe Word -> Maybe Range
+fromRawParts anchor cursor targetColumn =
   if isValid r
     then Just r
     else Nothing
   where
   r = Range{ anchor, cursor, targetColumn }
+
+unsafeFromRawParts :: Position -> Position -> Maybe Word -> Range
+unsafeFromRawParts anchor cursor targetColumn =
+  Range{ anchor, cursor, targetColumn }
 
 anchor :: Range -> Position
 anchor r = r.anchor
@@ -143,6 +149,9 @@ merge r1 r2 =
 
 toPositions :: Range -> (Position, Position)
 toPositions r = (r.anchor, r.cursor)
+
+toRawParts :: Range -> (Position, Position, Maybe Word)
+toRawParts r = (r.anchor, r.cursor, r.targetColumn)
 
 isValid :: Range -> Bool
 isValid r =

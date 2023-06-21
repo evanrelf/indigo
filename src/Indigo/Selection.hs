@@ -8,6 +8,8 @@ module Indigo.Selection
     -- * Create
   , fromRange
   , fromRanges
+  , fromRawParts
+  , unsafeFromRawParts
 
     -- * Query
   , primary
@@ -20,6 +22,7 @@ module Indigo.Selection
 
     -- * Consume
   , toRanges
+  , toRawParts
   )
 where
 
@@ -68,6 +71,17 @@ fromRanges rs =
     NonEmpty.uncons >>> \case
       (r, Nothing) -> fromRange r
       (r, Just rs) -> let s = buildSelection rs in s{ above = r :<| s.above }
+
+fromRawParts :: Seq Range -> Range -> Seq Range -> Maybe Selection
+fromRawParts above primary below =
+  if isValid s
+    then Just s
+    else Nothing
+  where
+  s = Selection{ above, primary, below }
+
+unsafeFromRawParts :: Seq Range -> Range -> Seq Range -> Selection
+unsafeFromRawParts above primary below = Selection{ above, primary, below }
 
 primary :: Selection -> Range
 primary s = s.primary
@@ -120,6 +134,9 @@ rotateBackward s =
 
 toRanges :: Selection -> NonEmpty Range
 toRanges s = fromList $ toList $ s.above <> one s.primary <> s.below
+
+toRawParts :: Selection -> (Seq Range, Range, Seq Range)
+toRawParts s = (s.above, s.primary, s.below)
 
 isValid :: Selection -> Bool
 isValid s =
