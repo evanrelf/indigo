@@ -12,7 +12,7 @@ module Indigo.Buffer
     -- * Query
   , path
   , contents
-  , selection
+  , selections
   , isModified
   , verticalScroll
   , horizontalScroll
@@ -25,7 +25,6 @@ where
 
 import Data.Default.Class (Default (..))
 import Data.Text.Rope (Rope)
-import Indigo.Selection (Selection)
 import Prelude hiding (empty)
 
 import qualified Data.Text.Rope as Rope
@@ -33,7 +32,7 @@ import qualified Data.Text.Rope as Rope
 data Buffer = Buffer
   { path :: Maybe FilePath
   , contents :: Rope
-  , selection :: Selection
+  , selections :: Undefined
   , isModified :: Bool
   , verticalScroll :: Word
   , horizontalScroll :: Word
@@ -45,7 +44,7 @@ instance Default Buffer where
     Buffer
       { path = Nothing
       , contents = mempty
-      , selection = def
+      , selections = undefined
       , isModified = False
       , verticalScroll = 0
       , horizontalScroll = 0
@@ -68,8 +67,8 @@ path buffer = buffer.path
 contents :: Buffer -> Rope
 contents buffer = buffer.contents
 
-selection :: Buffer -> Selection
-selection buffer = buffer.selection
+selections :: Buffer -> Undefined
+selections buffer = buffer.selections
 
 isModified :: Buffer -> Bool
 isModified buffer = buffer.isModified
@@ -80,7 +79,7 @@ verticalScroll buffer = buffer.verticalScroll
 horizontalScroll :: Buffer -> Word
 horizontalScroll buffer = buffer.horizontalScroll
 
--- Selection must be valid in the rope
+-- Selections must be valid in the rope
 -- Horizontal scroll offset must not exceed length of longest line
 -- Vertical scroll offset must not exceed length of buffer
 isValid :: Buffer -> Bool

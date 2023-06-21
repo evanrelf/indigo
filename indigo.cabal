@@ -49,10 +49,6 @@ library
     Indigo
     Indigo.Buffer
     Indigo.Position
-    Indigo.Range
-    Indigo.Selection
-    Indigo.Selection.Zipper
-    Indigo.Selection.Range
 
 executable indigo
   import:
