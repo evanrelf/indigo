@@ -6,6 +6,7 @@ module Indigo.Buffer
   ( Buffer
 
     -- * Create
+  , fromText
   , fromRope
   , open
 
@@ -51,6 +52,9 @@ instance Default Buffer where
       , horizontalScroll = 0
       }
 
+fromText :: Text -> Buffer
+fromText = fromRope . Rope.fromText
+
 fromRope :: Rope -> Buffer
 fromRope contents = def{ contents }
 
@@ -63,22 +67,22 @@ open path = do
     }
 
 path :: Buffer -> Maybe FilePath
-path buffer = buffer.path
+path b = b.path
 
 contents :: Buffer -> Rope
-contents buffer = buffer.contents
+contents b = b.contents
 
 selection :: Buffer -> Selection
-selection buffer = buffer.selection
+selection b = b.selection
 
 isModified :: Buffer -> Bool
-isModified buffer = buffer.isModified
+isModified b = b.isModified
 
 verticalScroll :: Buffer -> Word
-verticalScroll buffer = buffer.verticalScroll
+verticalScroll b = b.verticalScroll
 
 horizontalScroll :: Buffer -> Word
-horizontalScroll buffer = buffer.horizontalScroll
+horizontalScroll b = b.horizontalScroll
 
 -- Selection must be valid in the rope
 -- Horizontal scroll offset must not exceed length of longest line
