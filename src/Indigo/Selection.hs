@@ -121,8 +121,20 @@ rotateBackward s =
 toRanges :: Selection -> NonEmpty Range
 toRanges s = fromList $ toList $ s.above <> one s.primary <> s.below
 
--- Ranges must be sorted
--- Ranges must not overlap (overlapping ranges must be merged)
--- Ranges must face the same direction
 isValid :: Selection -> Bool
-isValid = undefined
+isValid s =
+  and
+    [ -- Ranges must be sorted
+      ranges == sortedRanges
+
+    , -- Ranges must face the same direction
+      all Range.isForward ranges || all Range.isBackward ranges
+
+    , -- Ranges must not overlap
+      all
+        (length >>> (== 1))
+        (NonEmpty.groupAllWith1 Range.toPositions sortedRanges)
+    ]
+  where
+  ranges = toRanges s
+  sortedRanges = NonEmpty.sortWith Range.toPositions ranges

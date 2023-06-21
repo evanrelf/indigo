@@ -19,6 +19,7 @@ common common
     LambdaCase
     NamedFieldPuns
     OverloadedRecordDot
+    TypeApplications
   ghc-options:
     -Wall
     -Wcompat
