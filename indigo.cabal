@@ -50,6 +50,7 @@ library
     Indigo.Buffer
     Indigo.Position
     Indigo.Range
+    Indigo.Selection
 
 executable indigo
   import:
