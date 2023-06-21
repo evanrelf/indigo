@@ -15,7 +15,7 @@ data Position = Position
   { line :: Word
   , column :: Word
   }
-  deriving stock (Eq, Ord)
+  deriving stock (Show, Eq, Ord)
 
 instance Default Position where
   def :: Position

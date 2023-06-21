@@ -1,3 +1,2 @@
 packages: .
-write-ghc-environment-files: always
 tests: True
