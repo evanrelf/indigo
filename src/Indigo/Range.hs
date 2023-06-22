@@ -10,7 +10,6 @@ module Indigo.Range
   , fromPosition
   , fromPositions
   , fromRawParts
-  , unsafeFromRawParts
 
     -- * Query
   , anchor
@@ -32,6 +31,11 @@ module Indigo.Range
     -- * Consume
   , toPositions
   , toRawParts
+
+    -- * Internal
+  , unsafeFromRawParts
+  , isValid
+  , isTargetColumnGreaterThanCursorColumn
   )
 where
 
@@ -154,6 +158,8 @@ toRawParts :: Range -> (Position, Position, Maybe Word)
 toRawParts r = (r.anchor, r.cursor, r.targetColumn)
 
 isValid :: Range -> Bool
-isValid r =
-  -- Target column must be greater than cursor column
+isValid r = isTargetColumnGreaterThanCursorColumn r
+
+isTargetColumnGreaterThanCursorColumn :: Range -> Bool
+isTargetColumnGreaterThanCursorColumn r =
   maybe True (r.cursor.column <) r.targetColumn

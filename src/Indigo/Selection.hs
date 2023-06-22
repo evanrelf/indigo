@@ -9,7 +9,6 @@ module Indigo.Selection
   , fromRange
   , fromRanges
   , fromRawParts
-  , unsafeFromRawParts
 
     -- * Query
   , primary
@@ -23,6 +22,13 @@ module Indigo.Selection
     -- * Consume
   , toRanges
   , toRawParts
+
+    -- * Internal
+  , unsafeFromRawParts
+  , isValid
+  , isRangesAreSorted
+  , isRangesFaceSameDirection
+  , isRangesNotOverlapping
   )
 where
 
@@ -141,17 +147,28 @@ toRawParts s = (s.above, s.primary, s.below)
 isValid :: Selection -> Bool
 isValid s =
   and
-    [ -- Ranges must be sorted
-      ranges == sortedRanges
-
-    , -- Ranges must face the same direction
-      all Range.isForward ranges || all Range.isBackward ranges
-
-    , -- Ranges must not overlap
-      all
-        (length >>> (== 1))
-        (NonEmpty.groupAllWith1 Range.toPositions sortedRanges)
+    [ isRangesAreSorted s
+    , isRangesFaceSameDirection s
+    , isRangesNotOverlapping s
     ]
+
+isRangesAreSorted :: Selection -> Bool
+isRangesAreSorted s = ranges == sortedRanges
+  where
+  ranges = toRanges s
+  sortedRanges = NonEmpty.sortWith Range.toPositions ranges
+
+isRangesFaceSameDirection :: Selection -> Bool
+isRangesFaceSameDirection s =
+  all Range.isForward ranges || all Range.isBackward ranges
+  where
+  ranges = toRanges s
+
+isRangesNotOverlapping :: Selection -> Bool
+isRangesNotOverlapping s =
+  all
+    (length >>> (== 1))
+    (NonEmpty.groupAllWith1 Range.toPositions sortedRanges)
   where
   ranges = toRanges s
   sortedRanges = NonEmpty.sortWith Range.toPositions ranges
