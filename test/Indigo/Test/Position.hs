@@ -3,7 +3,7 @@
 module Indigo.Test.Position where
 
 import Hedgehog
-import Indigo.Position (Position (..))
+import Indigo.Core.Position (Position (..))
 
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range

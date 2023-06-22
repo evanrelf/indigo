@@ -1,4 +1,4 @@
-module Indigo.Position
+module Indigo.Core.Position
   ( Position (..)
 
     -- * Create

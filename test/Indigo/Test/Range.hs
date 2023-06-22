@@ -5,10 +5,9 @@
 module Indigo.Test.Range where
 
 import Hedgehog hiding (Range)
-import Indigo.Position (Position (..))
-import Indigo.Range
+import Indigo.Core.Position (Position (..))
+import Indigo.Core.Range
 import Indigo.Test.Position (genPosition)
-
 import Prelude hiding (flip)
 
 import qualified Hedgehog.Gen as Gen

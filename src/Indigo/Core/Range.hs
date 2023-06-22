@@ -3,7 +3,7 @@
 
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Indigo.Range
+module Indigo.Core.Range
   ( Range
 
     -- * Create
@@ -40,7 +40,7 @@ module Indigo.Range
 where
 
 import Data.Default.Class (Default (..))
-import Indigo.Position (Position (..))
+import Indigo.Core.Position (Position (..))
 import Prelude hiding (flip)
 
 data Range = Range

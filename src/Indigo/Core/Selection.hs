@@ -2,7 +2,7 @@
 
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Indigo.Selection
+module Indigo.Core.Selection
   ( Selection
 
     -- * Create
@@ -35,10 +35,10 @@ where
 import Data.Default.Class (Default (..))
 import Data.Foldable (foldr1)
 import Data.Sequence (Seq (..), (<|), (|>))
-import Indigo.Range (Range)
+import Indigo.Core.Range (Range)
 
 import qualified Data.List.NonEmpty as NonEmpty
-import qualified Indigo.Range as Range
+import qualified Indigo.Core.Range as Range
 
 data Selection = Selection
   { above :: Seq Range

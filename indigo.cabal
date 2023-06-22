@@ -48,10 +48,10 @@ library
     , data-default-class
     , text-rope
   exposed-modules:
-    Indigo.Buffer
-    Indigo.Position
-    Indigo.Range
-    Indigo.Selection
+    Indigo.Core.Buffer
+    Indigo.Core.Position
+    Indigo.Core.Range
+    Indigo.Core.Selection
 
 executable indigo
   import:

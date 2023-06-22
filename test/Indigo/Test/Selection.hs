@@ -3,7 +3,7 @@
 module Indigo.Test.Selection where
 
 import Hedgehog hiding (Range)
-import Indigo.Selection
+import Indigo.Core.Selection
 import Indigo.Test.Range (genRange)
 
 import qualified Hedgehog.Gen as Gen

@@ -2,7 +2,7 @@
 
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Indigo.Buffer
+module Indigo.Core.Buffer
   ( Buffer
 
     -- * Create
@@ -26,7 +26,7 @@ where
 
 import Data.Default.Class (Default (..))
 import Data.Text.Rope (Rope)
-import Indigo.Selection (Selection)
+import Indigo.Core.Selection (Selection)
 import Prelude hiding (empty)
 
 import qualified Data.Text.Rope as Rope
