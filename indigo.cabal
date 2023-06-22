@@ -48,7 +48,6 @@ library
     , data-default-class
     , text-rope
   exposed-modules:
-    Indigo
     Indigo.Buffer
     Indigo.Position
     Indigo.Range
