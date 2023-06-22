@@ -20,6 +20,7 @@ common common
     LambdaCase
     NamedFieldPuns
     OverloadedRecordDot
+    OverloadedStrings
     TypeApplications
   ghc-options:
     -Wall
@@ -51,6 +52,7 @@ library
     Indigo.Core.Buffer
     Indigo.Core.Position
     Indigo.Core.Range
+    Indigo.Core.Rope
     Indigo.Core.Selection
 
 executable indigo
@@ -72,6 +74,7 @@ test-suite test
     , indigo
     , tasty
     , tasty-hedgehog
+    , text-rope
   other-modules:
     Indigo.Test.Position
     Indigo.Test.Range
