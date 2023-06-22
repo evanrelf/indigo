@@ -55,10 +55,7 @@ genRange :: Gen Range
 genRange = do
   anchor <- genPosition
   cursor <- genPosition
-  targetColumn <- Gen.maybe do
-    column <- Gen.word (Range.linear 0 1000)
-    guard (cursor.column < column)
-    pure column
+  targetColumn <- Gen.maybe $ Gen.word (Range.linear (cursor.column + 1) 1000)
   case fromRawParts anchor cursor targetColumn of
     Nothing -> fail "`genRange` failed to generate a valid `Range`"
     Just r -> pure r
