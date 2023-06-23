@@ -46,6 +46,7 @@ library
   import: common
   hs-source-dirs: src
   build-depends:
+    , IntervalMap
     , data-default-class
     , text-rope
   exposed-modules:
@@ -54,6 +55,8 @@ library
     Indigo.Core.Range
     Indigo.Core.Rope
     Indigo.Core.Selection
+    Indigo.Core.Selection2
+    Indigo.Core.SelectionRange
 
 executable indigo
   import:
