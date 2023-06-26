@@ -9,8 +9,6 @@ module Indigo.Core.Selection2
 
     -- * Query
   , primary
-  , above
-  , below
   , isForward
   , isBackward
 
@@ -22,11 +20,6 @@ module Indigo.Core.Selection2
   , rotateBackward
 
     -- * Consume
-
-    -- * Internal
-  , isValid
-  , isRangesAreSorted
-  , isRangesNotOverlapping
   )
 where
 
@@ -37,14 +30,9 @@ import Prelude hiding (flip)
 
 import qualified Data.IntervalMap.Generic.Strict as IntervalMap
 
--- TODO: Actually allowing duplicate ranges is probably necessary, even if it's
--- usually not exposed to the user. The `IntervalMap` package might not work,
--- unless I can modify `{Eq,Ord} SelectionRange` instances to never equate two
--- values, and avoid breaking things.
 data Selection = Selection
-  { above :: IntervalMap SelectionRange (NonEmpty (Maybe Word))
+  { ranges :: IntervalMap SelectionRange (NonEmpty (Maybe Word))
   , primary :: (SelectionRange, Maybe Word)
-  , below :: IntervalMap SelectionRange (NonEmpty (Maybe Word))
   , direction :: Direction
   }
   deriving stock (Show, Eq)
@@ -56,12 +44,6 @@ data Direction
 
 primary :: Selection -> Range
 primary selection = undefined selection.primary
-
-above :: Selection -> [Range]
-above selection = undefined
-
-below :: Selection -> [Range]
-below selection = undefined
 
 isForward :: Selection -> Bool
 isForward selection = selection.direction == Forward
@@ -93,18 +75,3 @@ selectionRangeToRange = undefined
 
 rangeToSelectionRange :: Range -> Maybe SelectionRange
 rangeToSelectionRange = undefined
-
-isValid :: Selection -> Bool
-isValid selection =
-  and
-    [ isRangesAreSorted selection
-    , isRangesNotOverlapping selection
-    ]
-
--- TODO: `above` and `below` should be sorted thanks to the `IntervalMap`, but
--- the entire selection still needs to be sorted
-isRangesAreSorted :: Selection -> Bool
-isRangesAreSorted selection = undefined
-
-isRangesNotOverlapping :: Selection -> Bool
-isRangesNotOverlapping = undefined
