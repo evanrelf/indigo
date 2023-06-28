@@ -87,6 +87,7 @@ toRopeIndex position rope = do
 
 -- TODO: Move these functions somewhere more appropriate
 
+-- TODO: THIS IS WRONG
 -- | Saturating subtraction
 (|-) :: (Bounded a, Ord a, Num a) => a -> a -> a
 (|-) x y =

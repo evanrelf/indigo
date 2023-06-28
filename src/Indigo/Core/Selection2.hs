@@ -1,4 +1,5 @@
 {-# LANGUAGE NoFieldSelectors #-}
+{-# LANGUAGE TupleSections #-}
 
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
@@ -6,9 +7,12 @@ module Indigo.Core.Selection2
   ( Selection
 
     -- * Create
+  , fromRange
 
     -- * Query
   , primary
+  , secondaries
+  , ranges
   , isForward
   , isBackward
 
@@ -29,10 +33,13 @@ import Indigo.Core.SelectionRange (SelectionRange)
 import Prelude hiding (flip)
 
 import qualified Data.IntervalMap.Generic.Strict as IntervalMap
+import qualified Data.List.NonEmpty as NonEmpty
+import qualified Indigo.Core.Range as Range
+import qualified Indigo.Core.SelectionRange as SelectionRange
 
 data Selection = Selection
-  { ranges :: IntervalMap SelectionRange (NonEmpty (Maybe Word))
-  , primary :: (SelectionRange, Maybe Word)
+  { primary :: (SelectionRange, Maybe Word)
+  , secondaries :: IntervalMap SelectionRange (NonEmpty (Maybe Word))
   , direction :: Direction
   }
   deriving stock (Show, Eq)
@@ -42,14 +49,53 @@ data Direction
   | Backward
   deriving stock (Show, Eq)
 
-primary :: Selection -> Range
-primary selection = undefined selection.primary
+fromRange :: Range -> Selection
+fromRange range =
+  Selection
+    { primary = (rangeToSelectionRange range, Range.targetColumn range)
+    , secondaries = IntervalMap.empty
+    , direction = if Range.isForward range then Forward else Backward
+    }
+
+primary :: Selection -> (SelectionRange, Maybe Word)
+primary selection = selection.primary
+
+secondaries :: Selection -> [(SelectionRange, Maybe Word)]
+secondaries selection = do
+  (selectionRange, targetColumns) <- IntervalMap.toAscList selection.secondaries
+  targetColumn <- toList targetColumns
+  pure (selectionRange, targetColumn)
+
+ranges :: Selection -> NonEmpty (SelectionRange, Maybe Word)
+ranges selection = do
+  let (selectionRange, targetColumn) = selection.primary
+  let ranges = insert' selectionRange targetColumn selection.secondaries
+  (selectionRange, targetColumns) <-
+    IntervalMap.toAscList ranges
+    & nonEmpty
+    & fromMaybe (error "impossible, we just inserted an element")
+  targetColumn <- targetColumns
+  pure (selectionRange, targetColumn)
 
 isForward :: Selection -> Bool
 isForward selection = selection.direction == Forward
 
 isBackward :: Selection -> Bool
 isBackward selection = selection.direction == Backward
+
+insert :: SelectionRange -> Maybe Word -> Selection -> Selection
+insert selectionRange targetColumn selection =
+  selection
+    { secondaries = insert' selectionRange targetColumn selection.secondaries
+    }
+
+insert'
+  :: SelectionRange
+  -> Maybe Word
+  -> IntervalMap SelectionRange (NonEmpty (Maybe Word))
+  -> IntervalMap SelectionRange (NonEmpty (Maybe Word))
+insert' selectionRange targetColumn =
+  IntervalMap.insertWith (<>) selectionRange (one targetColumn)
 
 flip :: Selection -> Selection
 flip selection =
@@ -64,14 +110,38 @@ flipBackward :: Selection -> Selection
 flipBackward selection = selection{ direction = Backward }
 
 rotateForward :: Selection -> Selection
-rotateForward selection = undefined
+rotateForward selection = do
+  undefined
+  -- let (oldSelectionRange, oldTargetColumn) = selection.primary
+  -- case IntervalMap.lookupGT oldSelectionRange selection.secondaries of
+  --   Just (newSelectionRange, targetColumns) -> do
+  --     case NonEmpty.uncons targetColumns of
+  --       (newTargetColumn, Nothing) ->
+  --         selection
+  --           { primary = (newSelectionRange, newTargetColumn)
+  --           , secondaries =
+  --               selection.secondaries
+  --               & IntervalMap.delete newSelectionRange
+  --               & insert' oldSelectionRange oldTargetColumn
+  --           }
+  --       (newTargetColumn, Just rest) ->
+  --         selection
+  --           { primary = undefined
+  --           , secondaries = undefined
+  --           }
+  --   Nothing ->
+  --     case IntervalMap.lookupMin selection.secondaries of
+  --       Just (newSelectionRange, targetColumns) -> do
+  --         undefined
+  --         -- selection
+  --         --   { primary = undefined
+  --         --   , secondaries = undefined
+  --         --   }
+  --       Nothing ->
+  --         selection
 
 rotateBackward :: Selection -> Selection
 rotateBackward selection = undefined
 
--- TODO: Make sure direction and target column are good
-selectionRangeToRange :: Direction -> SelectionRange -> Maybe Range
-selectionRangeToRange = undefined
-
-rangeToSelectionRange :: Range -> Maybe SelectionRange
-rangeToSelectionRange = undefined
+rangeToSelectionRange :: Range -> SelectionRange
+rangeToSelectionRange = uncurry SelectionRange.fromPositions . Range.toPositions
