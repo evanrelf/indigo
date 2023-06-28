@@ -47,8 +47,10 @@ library
   hs-source-dirs: src
   build-depends:
     , IntervalMap
+    , brick
     , data-default-class
     , text-rope
+    , vty
   exposed-modules:
     Indigo.Core.Buffer
     Indigo.Core.Editor
@@ -58,6 +60,7 @@ library
     Indigo.Core.Selection
     Indigo.Core.Selection2
     Indigo.Core.SelectionRange
+    Indigo.Tui
 
 executable indigo
   import:
