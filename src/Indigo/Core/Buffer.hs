@@ -67,22 +67,22 @@ open path = do
     }
 
 path :: Buffer -> Maybe FilePath
-path b = b.path
+path buffer = buffer.path
 
 contents :: Buffer -> Rope
-contents b = b.contents
+contents buffer = buffer.contents
 
 selection :: Buffer -> Selection
-selection b = b.selection
+selection buffer = buffer.selection
 
 isModified :: Buffer -> Bool
-isModified b = b.isModified
+isModified buffer = buffer.isModified
 
 verticalScroll :: Buffer -> Word
-verticalScroll b = b.verticalScroll
+verticalScroll buffer = buffer.verticalScroll
 
 horizontalScroll :: Buffer -> Word
-horizontalScroll b = b.horizontalScroll
+horizontalScroll buffer = buffer.horizontalScroll
 
 -- Selection must be valid in the rope
 -- Horizontal scroll offset must not exceed length of longest line

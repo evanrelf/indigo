@@ -51,6 +51,7 @@ library
     , text-rope
   exposed-modules:
     Indigo.Core.Buffer
+    Indigo.Core.Editor
     Indigo.Core.Position
     Indigo.Core.Range
     Indigo.Core.Rope

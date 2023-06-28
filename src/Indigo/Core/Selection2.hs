@@ -27,6 +27,7 @@ module Indigo.Core.Selection2
   )
 where
 
+import Data.Default.Class (Default (..))
 import Data.IntervalMap.Generic.Strict (IntervalMap)
 import Indigo.Core.Range (Range)
 import Indigo.Core.SelectionRange (SelectionRange)
@@ -48,6 +49,15 @@ data Direction
   = Forward
   | Backward
   deriving stock (Show, Eq)
+
+instance Default Selection where
+  def :: Selection
+  def =
+    Selection
+      { primary = (def, Nothing)
+      , secondaries = IntervalMap.empty
+      , direction = Forward
+      }
 
 fromRange :: Range -> Selection
 fromRange range =

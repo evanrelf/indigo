@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+
 module Indigo.Core.Rope
   ( -- * Extras
     line
