@@ -1,4 +1,5 @@
 {-# LANGUAGE NoFieldSelectors #-}
+{-# LANGUAGE TupleSections #-}
 
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
@@ -7,168 +8,146 @@ module Indigo.Core.Selection
 
     -- * Create
   , fromRange
-  , fromRanges
-  , fromRawParts
 
     -- * Query
+  , ranges
   , primary
-  , above
-  , below
+  , secondaries
+  , isForward
+  , isBackward
 
     -- * Modify
+  , flip
+  , flipForward
+  , flipBackward
   , rotateForward
   , rotateBackward
 
     -- * Consume
-  , toRanges
-  , toRawParts
-
-    -- * Internal
-  , unsafeFromRawParts
-  , isValid
-  , isRangesAreSorted
-  , isRangesFaceSameDirection
-  , isRangesNotOverlapping
   )
 where
 
 import Data.Default.Class (Default (..))
-import Data.Foldable (foldr1)
-import Data.Sequence (Seq (..), (<|), (|>))
+import Data.IntervalMap.Generic.Strict (IntervalMap)
+import Indigo.Core.Direction (Direction (..))
 import Indigo.Core.Range (Range)
+import Indigo.Core.SelectionRange (SelectionRange)
+import Prelude hiding (flip)
 
+import qualified Data.IntervalMap.Generic.Strict as IntervalMap
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Indigo.Core.Range as Range
+import qualified Indigo.Core.SelectionRange as SelectionRange
 
 data Selection = Selection
-  { above :: Seq Range
-  , primary :: Range
-  , below :: Seq Range
+  { primary :: (SelectionRange, Maybe Word)
+  , secondaries :: IntervalMap SelectionRange (NonEmpty (Maybe Word))
+  , direction :: Direction
   }
   deriving stock (Show, Eq)
 
 instance Default Selection where
   def :: Selection
-  def = fromRange def
+  def =
+    Selection
+      { primary = (def, Nothing)
+      , secondaries = IntervalMap.empty
+      , direction = Forward
+      }
 
 fromRange :: Range -> Selection
-fromRange r =
+fromRange range =
   Selection
-    { above = mempty
-    , primary = r
-    , below = mempty
+    { primary = (rangeToSelectionRange range, Range.targetColumn range)
+    , secondaries = IntervalMap.empty
+    , direction = if Range.isForward range then Forward else Backward
     }
 
-fromRanges :: NonEmpty Range -> Selection
-fromRanges rs =
-  rs
-  -- Normalize ranges
-  & fmap Range.flipForward
-  & fmap Range.forgetTargetColumn
-  -- Merge overlapping ranges
-  & NonEmpty.sortWith Range.toPositions
-  & NonEmpty.groupBy1 Range.isOverlapping
-  & fmap (foldr1 Range.merge)
-  -- Create selection
-  & buildSelection
-  where
-  buildSelection :: NonEmpty Range -> Selection
-  buildSelection =
-    NonEmpty.uncons >>> \case
-      (r, Nothing) -> fromRange r
-      (r, Just rs) -> let s = buildSelection rs in s{ above = r :<| s.above }
+ranges :: Selection -> NonEmpty (SelectionRange, Maybe Word)
+ranges selection = do
+  let (selectionRange, targetColumn) = selection.primary
+  let ranges = insert' selectionRange targetColumn selection.secondaries
+  (selectionRange, targetColumns) <-
+    IntervalMap.toAscList ranges
+    & nonEmpty
+    & fromMaybe (error "impossible, we just inserted an element")
+  targetColumn <- targetColumns
+  pure (selectionRange, targetColumn)
 
-fromRawParts :: Seq Range -> Range -> Seq Range -> Maybe Selection
-fromRawParts above primary below =
-  if isValid s
-    then Just s
-    else Nothing
-  where
-  s = Selection{ above, primary, below }
+primary :: Selection -> (SelectionRange, Maybe Word)
+primary selection = selection.primary
 
-unsafeFromRawParts :: Seq Range -> Range -> Seq Range -> Selection
-unsafeFromRawParts above primary below = Selection{ above, primary, below }
+secondaries :: Selection -> [(SelectionRange, Maybe Word)]
+secondaries selection = do
+  (selectionRange, targetColumns) <- IntervalMap.toAscList selection.secondaries
+  targetColumn <- toList targetColumns
+  pure (selectionRange, targetColumn)
 
-primary :: Selection -> Range
-primary s = s.primary
+isForward :: Selection -> Bool
+isForward selection = selection.direction == Forward
 
-above :: Selection -> Seq Range
-above s = s.above
+isBackward :: Selection -> Bool
+isBackward selection = selection.direction == Backward
 
-below :: Selection -> Seq Range
-below s = s.below
+insert :: SelectionRange -> Maybe Word -> Selection -> Selection
+insert selectionRange targetColumn selection =
+  selection
+    { secondaries = insert' selectionRange targetColumn selection.secondaries
+    }
+
+insert'
+  :: SelectionRange
+  -> Maybe Word
+  -> IntervalMap SelectionRange (NonEmpty (Maybe Word))
+  -> IntervalMap SelectionRange (NonEmpty (Maybe Word))
+insert' selectionRange targetColumn =
+  IntervalMap.insertWith (<>) selectionRange (one targetColumn)
+
+flip :: Selection -> Selection
+flip selection =
+  case selection.direction of
+    Forward -> flipBackward selection
+    Backward -> flipForward selection
+
+flipForward :: Selection -> Selection
+flipForward selection = selection{ direction = Forward }
+
+flipBackward :: Selection -> Selection
+flipBackward selection = selection{ direction = Backward }
 
 rotateForward :: Selection -> Selection
-rotateForward s =
-  case (s.above, s.below) of
-    (Empty, Empty) ->
-      s
-
-    (_, primary :<| below) ->
-      Selection
-        { above = s.above |> s.primary
-        , primary
-        , below
-        }
-
-    (primary :<| below, Empty) ->
-      Selection
-        { above = Empty
-        , primary
-        , below
-        }
+rotateForward selection = do
+  undefined
+  -- let (oldSelectionRange, oldTargetColumn) = selection.primary
+  -- case IntervalMap.lookupGT oldSelectionRange selection.secondaries of
+  --   Just (newSelectionRange, targetColumns) -> do
+  --     case NonEmpty.uncons targetColumns of
+  --       (newTargetColumn, Nothing) ->
+  --         selection
+  --           { primary = (newSelectionRange, newTargetColumn)
+  --           , secondaries =
+  --               selection.secondaries
+  --               & IntervalMap.delete newSelectionRange
+  --               & insert' oldSelectionRange oldTargetColumn
+  --           }
+  --       (newTargetColumn, Just rest) ->
+  --         selection
+  --           { primary = undefined
+  --           , secondaries = undefined
+  --           }
+  --   Nothing ->
+  --     case IntervalMap.lookupMin selection.secondaries of
+  --       Just (newSelectionRange, targetColumns) -> do
+  --         undefined
+  --         -- selection
+  --         --   { primary = undefined
+  --         --   , secondaries = undefined
+  --         --   }
+  --       Nothing ->
+  --         selection
 
 rotateBackward :: Selection -> Selection
-rotateBackward s =
-  case (s.above, s.below) of
-    (Empty, Empty) ->
-      s
+rotateBackward selection = undefined
 
-    (above :|> primary, _) ->
-      Selection
-        { above
-        , primary
-        , below = s.primary <| s.below
-        }
-
-    (Empty, above :|> primary) ->
-      Selection
-        { above
-        , primary
-        , below = Empty
-        }
-
-toRanges :: Selection -> NonEmpty Range
-toRanges s = fromList $ toList $ s.above <> one s.primary <> s.below
-
-toRawParts :: Selection -> (Seq Range, Range, Seq Range)
-toRawParts s = (s.above, s.primary, s.below)
-
-isValid :: Selection -> Bool
-isValid s =
-  and
-    [ isRangesAreSorted s
-    , isRangesFaceSameDirection s
-    , isRangesNotOverlapping s
-    ]
-
-isRangesAreSorted :: Selection -> Bool
-isRangesAreSorted s = ranges == sortedRanges
-  where
-  ranges = toRanges s
-  sortedRanges = NonEmpty.sortWith Range.toPositions ranges
-
-isRangesFaceSameDirection :: Selection -> Bool
-isRangesFaceSameDirection s =
-  all Range.isForward ranges || all Range.isBackward ranges
-  where
-  ranges = toRanges s
-
-isRangesNotOverlapping :: Selection -> Bool
-isRangesNotOverlapping s =
-  all
-    (length >>> (== 1))
-    (NonEmpty.groupAllWith1 Range.toPositions sortedRanges)
-  where
-  ranges = toRanges s
-  sortedRanges = NonEmpty.sortWith Range.toPositions ranges
+rangeToSelectionRange :: Range -> SelectionRange
+rangeToSelectionRange = uncurry SelectionRange.fromPositions . Range.toPositions

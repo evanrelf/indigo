@@ -44,11 +44,4 @@ tests = $$(discover)
 --   undefined
 
 genSelection :: Gen Selection
-genSelection = do
-  -- TODO
-  above <- Gen.seq (Range.linear 0 100) genRange
-  primary <- genRange
-  below <- Gen.seq (Range.linear 0 100) genRange
-  case fromRawParts above primary below of
-    Nothing -> fail "`genSelection` failed to generate a valid `Selection`"
-    Just s -> pure s
+genSelection = undefined
