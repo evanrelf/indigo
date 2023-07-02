@@ -25,9 +25,9 @@ line index0 rope = do
 codePointToLine :: Word -> Rope -> Word
 codePointToLine index rope = do
   let (before, _) = Rope.splitAt index rope
-  Rope.lengthInLines before
+  (max (Rope.lengthInLines before) 1) - 1
 
 lineToCodePoint :: Word -> Rope -> Word
 lineToCodePoint line rope = do
   let (before, _) = Rope.splitAtLine line rope
-  Rope.length before
+  (max (Rope.length before) 1) - 1

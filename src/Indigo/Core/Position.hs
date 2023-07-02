@@ -41,12 +41,14 @@ fromRopeIndex index0 rope = do
 
   let (corrected, index) =
         if Rope.length rope <= index0
-          then (True, Rope.length rope |- 1)
+          then (True, (max (Rope.length rope) 1) - 1)
           else (False, index0)
 
   let line = Rope.codePointToLine index rope
 
   let column = index - Rope.lineToCodePoint line rope
+
+  traceM $ "corrected: " <> show corrected <> ", index: " <> show index <> ", ltcp: " <> show (Rope.lineToCodePoint line rope) <> ", rope: " <> show rope
 
   let position = Position{ line, column }
 
@@ -60,11 +62,11 @@ toRopeIndex position rope = do
   when (Rope.length rope == 0) do
     error "cannot handle empty ropes yet"
 
-  let lines = Rope.lengthInLines rope |- 1
+  let lines = (max (Rope.lengthInLines rope) 1) - 1
 
   let (corrected_line, line) =
         if lines <= position.line
-          then (True, lines |- 1)
+          then (True, (max lines 1) - 1)
           else (False, position.line)
 
   let columns =
@@ -74,7 +76,7 @@ toRopeIndex position rope = do
 
   let (corrected_column, column) =
         if columns <= position.column
-          then (True, columns |- 1)
+          then (True, (max columns 1) - 1)
           else (False, position.column)
 
   let corrected = corrected_line || corrected_column
@@ -84,15 +86,3 @@ toRopeIndex position rope = do
   if corrected
     then Left index
     else Right index
-
--- TODO: Move these functions somewhere more appropriate
-
--- TODO: THIS IS WRONG
--- | Saturating subtraction
-(|-) :: (Bounded a, Ord a, Num a) => a -> a -> a
-(|-) x y =
-  if x == minBound && y >= 0
-    then x
-    else x - y
-
-infixl 6 |-
