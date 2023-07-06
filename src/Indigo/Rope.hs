@@ -1,5 +1,9 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {-# OPTIONS_GHC -Wno-deprecations #-}
 
@@ -28,12 +32,13 @@ module Indigo.Rope
 where
 
 import Prelude hiding (empty, null, toText, splitAt)
-import Data.FingerTree (FingerTree)
+import Data.FingerTree (FingerTree, (<|), (|>), ViewR (..))
 
 import qualified Data.FingerTree as FingerTree
+import qualified Data.Text as Text
 import qualified Text.Show
 
-newtype Rope = Rope (FingerTree ChunkMeta Chunk)
+newtype Rope = Rope{ unRope :: FingerTree NodeMeta Node }
 
 instance Eq Rope where
   (==) = (==) `on` toText
@@ -58,46 +63,87 @@ instance IsString Rope where
   fromString :: String -> Rope
   fromString = fromText . fromString
 
-data Chunk = Chunk
+data Node = Node
   { text :: Text
-  , meta :: ChunkMeta
+  , meta :: NodeMeta
   }
   deriving stock (Eq)
 
-data ChunkMeta = ChunkMeta
+data NodeMeta = NodeMeta
   { length :: Word
   }
   deriving stock (Eq)
 
-instance Semigroup ChunkMeta where
-  (<>) :: ChunkMeta -> ChunkMeta -> ChunkMeta
+instance Semigroup NodeMeta where
+  (<>) :: NodeMeta -> NodeMeta -> NodeMeta
   (<>) left right =
-    ChunkMeta
+    NodeMeta
       { length = left.length + right.length
       }
 
-instance Monoid ChunkMeta where
-  mempty :: ChunkMeta
+instance Monoid NodeMeta where
+  mempty :: NodeMeta
   mempty =
-    ChunkMeta
+    NodeMeta
       { length = 0
       }
 
-instance FingerTree.Measured ChunkMeta Chunk where
-  measure :: Chunk -> ChunkMeta
+instance FingerTree.Measured NodeMeta Node where
+  measure :: Node -> NodeMeta
   measure chunk = chunk.meta
 
+-- TODO: Determine value experimentally
+maxLength :: Integral a => a
+maxLength = 1024
+
+(-|) :: Node -> FingerTree NodeMeta Node -> FingerTree NodeMeta Node
+(-|) node fingerTree =
+  if node.meta.length == 0
+    then fingerTree
+    else node <| fingerTree
+
+(|-) :: FingerTree NodeMeta Node -> Node -> FingerTree NodeMeta Node
+(|-) fingerTree node =
+  if node.meta.length == 0
+    then fingerTree
+    else fingerTree |> node
+
+class Coercible i o => ViaFingerTree i o | o -> i
+instance {-# OVERLAPPABLE #-} i ~ o => ViaFingerTree i o
+instance i ~ FingerTree NodeMeta Node => ViaFingerTree i Rope
+instance (i ~ FingerTree NodeMeta Node, ViaFingerTree a b) => ViaFingerTree (i -> a) (Rope -> b)
+
+viaFingerTree :: ViaFingerTree i o => i -> o
+viaFingerTree = coerce
+
 empty :: Rope
-empty = Rope FingerTree.empty
+empty = viaFingerTree FingerTree.empty
 
 fromText :: Text -> Rope
-fromText = undefined
+fromText = viaFingerTree . go FingerTree.empty . Text.chunksOf maxLength
+  where
+  go :: FingerTree NodeMeta Node -> [Text] -> FingerTree NodeMeta Node
+  go fingerTree = \case
+    [] -> fingerTree
+
+    text : [] -> fingerTree |- node
+      where
+      node = Node{ text, meta }
+      meta = NodeMeta{ length = intToWord (Text.length text) }
+
+    text : texts -> go (fingerTree |- node) texts
+      where
+      node = Node{ text, meta }
+      meta = NodeMeta{ length = maxLength }
+
+  intToWord :: Int -> Word
+  intToWord = fromMaybe (error "unreachable") . toIntegralSized
 
 null :: Rope -> Bool
-null (Rope fingerTree) = FingerTree.null fingerTree
+null = viaFingerTree FingerTree.null
 
 lengthChars :: Rope -> Word
-lengthChars = undefined
+lengthChars = viaFingerTree $ (.length) . FingerTree.measure
 
 lengthLines :: Rope -> Word
 lengthLines = undefined
@@ -111,11 +157,18 @@ insertText = undefined
 remove :: Word -> Word -> Rope -> Rope
 remove = undefined
 
+-- TODO: Merge smaller nodes at connecting ends?
 append :: Rope -> Rope -> Rope
-append = undefined
+append = viaFingerTree (<>)
 
 splitAt :: Word -> Rope -> (Rope, Rope)
 splitAt = undefined
 
 toText :: Rope -> Text
-toText = undefined
+toText = Text.concat . go [] . unRope
+  where
+  go :: [Text] -> FingerTree NodeMeta Node -> [Text]
+  go texts fingerTree =
+    case FingerTree.viewr fingerTree of
+      FingerTree.EmptyR -> texts
+      nodes :> Node{ text } -> go (text : texts) nodes
