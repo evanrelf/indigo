@@ -49,6 +49,7 @@ library
     , IntervalMap
     , brick
     , data-default-class
+    , fingertree
     , text-rope
     , vty
   exposed-modules:
@@ -60,6 +61,7 @@ library
     Indigo.Core.Rope
     Indigo.Core.Selection
     Indigo.Core.SelectionRange
+    Indigo.Rope
     Indigo.Tui
 
 executable indigo
