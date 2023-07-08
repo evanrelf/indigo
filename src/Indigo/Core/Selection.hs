@@ -40,9 +40,9 @@ import qualified Indigo.Core.Range as Range
 import qualified Indigo.Core.SelectionRange as SelectionRange
 
 data Selection = Selection
-  { primary :: (SelectionRange, Maybe Word)
-  , secondaries :: IntervalMap SelectionRange (NonEmpty (Maybe Word))
-  , direction :: Direction
+  { primary :: !(SelectionRange, Maybe Word)
+  , secondaries :: !(IntervalMap SelectionRange (NonEmpty (Maybe Word)))
+  , direction :: !Direction
   }
   deriving stock (Show, Eq)
 

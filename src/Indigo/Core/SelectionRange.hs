@@ -34,8 +34,8 @@ import Indigo.Core.Position (Position (..))
 import Prelude hiding (flip)
 
 data SelectionRange = SelectionRange
-  { start :: Position
-  , end :: Position
+  { start :: !Position
+  , end :: !Position
   }
   deriving stock (Show, Eq, Ord)
 

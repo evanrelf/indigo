@@ -32,12 +32,12 @@ import Prelude hiding (empty)
 import qualified Indigo.Rope as Rope
 
 data Buffer = Buffer
-  { path :: Maybe FilePath
+  { path :: !(Maybe FilePath)
   , contents :: Rope
   , selection :: Selection
-  , isModified :: Bool
-  , verticalScroll :: Word
-  , horizontalScroll :: Word
+  , isModified :: !Bool
+  , verticalScroll :: {-# UNPACK #-} !Word
+  , horizontalScroll :: {-# UNPACK #-} !Word
   }
 
 instance Default Buffer where

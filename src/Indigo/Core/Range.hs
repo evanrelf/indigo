@@ -44,9 +44,9 @@ import Indigo.Core.Position (Position (..))
 import Prelude hiding (flip)
 
 data Range = Range
-  { anchor :: Position
-  , cursor :: Position
-  , targetColumn :: Maybe Word
+  { anchor :: !Position
+  , cursor :: !Position
+  , targetColumn :: !(Maybe Word)
   }
   deriving stock (Show, Eq)
 

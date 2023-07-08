@@ -20,8 +20,8 @@ import Prelude hiding (lines)
 import qualified Indigo.Rope as Rope
 
 data Position = Position
-  { line :: Word
-  , column :: Word
+  { line :: {-# UNPACK #-} !Word
+  , column :: {-# UNPACK #-} !Word
   }
   deriving stock (Show, Eq, Ord)
 
