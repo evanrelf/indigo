@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Indigo.Core.Position
   ( Position (..)
 
@@ -12,10 +14,10 @@ module Indigo.Core.Position
 where
 
 import Data.Default.Class (Default (..))
-import Indigo.Core.Rope (Rope)
+import Indigo.Rope (Rope)
 import Prelude hiding (lines)
 
-import qualified Indigo.Core.Rope as Rope
+import qualified Indigo.Rope as Rope
 
 data Position = Position
   { line :: Word
@@ -33,56 +35,75 @@ fromRawParts line column = Position{ line, column }
 toRawParts :: Position -> (Word, Word)
 toRawParts position = (position.line, position.column)
 
--- TODO: This is probably horribly incorrect and inefficient
-fromRopeIndex :: Word -> Rope -> Either Position Position
+fromRopeIndex :: Rope.CharIndex -> Rope -> Either Position Position
 fromRopeIndex index0 rope = do
-  when (Rope.length rope == 0) do
+  -- TODO
+  when (Rope.null rope) do
     error "cannot handle empty ropes yet"
 
+  let lengthChars = Rope.lengthChars rope
+
   let (corrected, index) =
-        if Rope.length rope <= index0
-          then (True, (max (Rope.length rope) 1) - 1)
+        if lengthChars <= coerce index0
+          then (True, Rope.CharIndex (lengthChars |- 1))
           else (False, index0)
 
-  let line = Rope.codePointToLine index rope
+  let line = Rope.charToLine index rope
 
-  let column = index - Rope.lineToCodePoint line rope
+  let column = index - Rope.lineToChar line rope
 
-  traceM $ "corrected: " <> show corrected <> ", index: " <> show index <> ", ltcp: " <> show (Rope.lineToCodePoint line rope) <> ", rope: " <> show rope
-
-  let position = Position{ line, column }
+  let position =
+        Position
+          { line = coerce line
+          , column = coerce column
+          }
 
   if corrected
     then Left position
     else Right position
 
--- TODO: This is probably horribly incorrect and inefficient
-toRopeIndex :: Position -> Rope -> Either Word Word
+toRopeIndex :: Position -> Rope -> Either Rope.CharIndex Rope.CharIndex
 toRopeIndex position rope = do
-  when (Rope.length rope == 0) do
+  -- TODO
+  when (Rope.null rope) do
     error "cannot handle empty ropes yet"
 
-  let lines = (max (Rope.lengthInLines rope) 1) - 1
+  let lines = Rope.lengthLines rope |- 1
 
   let (corrected_line, line) =
         if lines <= position.line
-          then (True, (max lines 1) - 1)
-          else (False, position.line)
+          then (True, Rope.LineIndex (lines |- 1))
+          else (False, Rope.LineIndex position.line)
 
   let columns =
         case Rope.line line rope of
           Nothing -> error "uh oh"
-          Just l -> Rope.length l
+          Just l -> Rope.lengthChars l
 
   let (corrected_column, column) =
         if columns <= position.column
-          then (True, (max columns 1) - 1)
-          else (False, position.column)
+          then (True, Rope.CharIndex (columns |- 1))
+          else (False, Rope.CharIndex position.column)
 
   let corrected = corrected_line || corrected_column
 
-  let index = Rope.lineToCodePoint line rope + column
+  let index = Rope.lineToChar line rope + column
 
   if corrected
     then Left index
     else Right index
+
+(|-) :: Word -> Word -> Word
+(|-) !x !y
+  | x >= y = x - y
+  | otherwise = minBound
+
+infixl 6 |-
+
+(+|) :: Word -> Word -> Word
+(+|) !x !y
+  | result < min x y = maxBound
+  | otherwise = result
+  where result = x + y
+
+infixl 6 +|

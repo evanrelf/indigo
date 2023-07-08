@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoFieldSelectors #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -8,6 +9,8 @@
 
 module Indigo.Rope
   ( Rope
+  , CharIndex (..)
+  , LineIndex (..)
 
     -- * Create
   , empty
@@ -17,6 +20,9 @@ module Indigo.Rope
   , null
   , lengthChars
   , lengthLines
+  , charToLine
+  , lineToChar
+  , line
 
     -- * Modify
   , insertChar
@@ -63,13 +69,13 @@ instance IsString Rope where
   fromString = fromText . fromString
 
 data Node = Node
-  { text :: Text
-  , lengthChars :: Word
+  { text :: !Text
+  , lengthChars :: {-# UNPACK #-} !Word
   }
 
 data NodeMeta = NodeMeta
-  { lengthChars :: Word
-  , lengthLines :: Word
+  { lengthChars :: {-# UNPACK #-} !Word
+  , lengthLines :: {-# UNPACK #-} !Word
   }
 
 instance Semigroup NodeMeta where
@@ -95,6 +101,14 @@ instance FingerTree.Measured NodeMeta Node where
       { lengthChars = node.lengthChars
       , lengthLines = unsafeIntToWord (Text.count "\n" node.text)
       }
+
+newtype CharIndex = CharIndex{ unCharIndex :: Word }
+  deriving stock (Show)
+  deriving newtype (Eq, Ord, Num)
+
+newtype LineIndex = LineIndex{ unLineIndex :: Word }
+  deriving stock (Show)
+  deriving newtype (Eq, Ord, Num)
 
 unsafeIntToWord :: Int -> Word
 unsafeIntToWord int =
@@ -153,13 +167,22 @@ lengthChars = viaFingerTree $ (.lengthChars) . FingerTree.measure
 lengthLines :: Rope -> Word
 lengthLines = viaFingerTree $ (.lengthLines) . FingerTree.measure
 
-insertChar :: Word -> Char -> Rope -> Rope
+charToLine :: CharIndex -> Rope -> LineIndex
+charToLine = undefined
+
+lineToChar :: LineIndex -> Rope -> CharIndex
+lineToChar = undefined
+
+line :: LineIndex -> Rope -> Maybe Rope
+line = undefined
+
+insertChar :: CharIndex -> Char -> Rope -> Rope
 insertChar = undefined
 
-insertText :: Word -> Text -> Rope -> Rope
+insertText :: CharIndex -> Text -> Rope -> Rope
 insertText = undefined
 
-remove :: Word -> Word -> Rope -> Rope
+remove :: CharIndex -> CharIndex -> Rope -> Rope
 remove = undefined
 
 -- TODO: Merge smaller nodes at connecting ends?
@@ -179,9 +202,9 @@ append = viaFingerTree (<>)
 --     (f, s) = T.split ((> n) . charIndex) t
 --     n' = n - charIndex (measure f)
 
-splitAt :: Word -> Rope -> (Rope, Rope)
-splitAt index rope | index <= 0 = (empty, rope)
-splitAt index (Rope fingerTree) =
+splitAt :: CharIndex -> Rope -> (Rope, Rope)
+splitAt (CharIndex index) rope | index <= 0 = (empty, rope)
+splitAt (CharIndex index) (Rope fingerTree) =
   case FingerTree.viewl fingerTree of
     FingerTree.EmptyL -> (empty, empty)
     node :< nodes -> undefined
