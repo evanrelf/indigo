@@ -17,6 +17,7 @@ module Indigo.Core.Selection
   , isBackward
 
     -- * Modify
+  , forgetTargetColumns
   , flip
   , flipForward
   , flipBackward
@@ -107,6 +108,15 @@ insert'
 insert' selectionRange targetColumn =
   IntervalMap.insertWith (<>) selectionRange (one targetColumn)
 
+forgetTargetColumns :: Selection -> Selection
+forgetTargetColumns selection =
+  selection
+    { primary = (fst selection.primary, Nothing)
+    , secondaries =
+        IntervalMap.map (NonEmpty.map \_ -> Nothing) selection.secondaries
+    }
+
+-- TODO: Clear target columns after flipping non-reduced selection ranges
 flip :: Selection -> Selection
 flip selection =
   case selection.direction of
@@ -174,6 +184,6 @@ selectionRangeToRange direction selectionRange targetColumn = do
   & Range.setTargetColumn targetColumn
   & fromMaybe (error "SelectionRange has an invalid target column")
 
--- TODO: Clear invalid target columns after flipping
+-- TODO: Check that target columns are valid
 isValid :: Selection -> Bool
 isValid = undefined
