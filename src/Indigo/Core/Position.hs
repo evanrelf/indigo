@@ -35,7 +35,11 @@ fromRawParts line column = Position{ line, column }
 toRawParts :: Position -> (Word, Word)
 toRawParts position = (position.line, position.column)
 
-fromRopeIndex :: Rope.CharIndex -> Rope -> Either Position Position
+fromRopeIndex
+  :: HasCallStack
+  => Rope.CharIndex
+  -> Rope
+  -> Either Position Position
 fromRopeIndex index0 rope = do
   -- TODO
   when (Rope.null rope) do
@@ -48,9 +52,9 @@ fromRopeIndex index0 rope = do
           then (True, Rope.CharIndex (lengthChars |- 1))
           else (False, index0)
 
-  let line = Rope.charToLine index rope
+  let line = fromMaybe (error "uh oh") (Rope.charToLine index rope)
 
-  let column = index - Rope.lineToChar line rope
+  let column = maybe (error "uh oh") (index -) (Rope.lineToChar line rope)
 
   let position =
         Position
@@ -62,7 +66,11 @@ fromRopeIndex index0 rope = do
     then Left position
     else Right position
 
-toRopeIndex :: Position -> Rope -> Either Rope.CharIndex Rope.CharIndex
+toRopeIndex
+  :: HasCallStack
+  => Position
+  -> Rope
+  -> Either Rope.CharIndex Rope.CharIndex
 toRopeIndex position rope = do
   -- TODO
   when (Rope.null rope) do
@@ -75,10 +83,7 @@ toRopeIndex position rope = do
           then (True, Rope.LineIndex (lines |- 1))
           else (False, Rope.LineIndex position.line)
 
-  let columns =
-        case Rope.line line rope of
-          Nothing -> error "uh oh"
-          Just l -> Rope.lengthChars l
+  let columns = maybe (error "uh oh") Rope.lengthChars (Rope.line line rope)
 
   let (corrected_column, column) =
         if columns <= position.column
@@ -87,7 +92,7 @@ toRopeIndex position rope = do
 
   let corrected = corrected_line || corrected_column
 
-  let index = Rope.lineToChar line rope + column
+  let index = maybe (error "uh oh") (column +) (Rope.lineToChar line rope)
 
   if corrected
     then Left index

@@ -6,6 +6,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 {-# OPTIONS_GHC -Wno-deprecations #-}
+{-# OPTIONS_GHC -Wno-unused-matches #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Indigo.Rope
   ( Rope
@@ -13,7 +15,7 @@ module Indigo.Rope
   , LineIndex (..)
 
     -- * Create
-  , empty
+  -- , empty
   , fromText
 
     -- * Query
@@ -25,18 +27,18 @@ module Indigo.Rope
   , line
 
     -- * Modify
-  , insertChar
-  , insertText
-  , remove
-  , append
-  , splitAt
+  -- , insertChar
+  -- , insertText
+  -- , remove
+  -- , append
+  -- , splitAt
 
     -- * Consume
-  , toText
+  -- , toText
   )
 where
 
-import Prelude hiding (empty, null, toText, splitAt)
+import Prelude hiding (empty, null, toText, splitAt, lines)
 import Data.FingerTree (FingerTree, ViewL (..), ViewR (..), (<|), (|>))
 
 import qualified Data.FingerTree as FingerTree
@@ -110,11 +112,17 @@ newtype LineIndex = LineIndex{ unLineIndex :: Word }
   deriving stock (Show)
   deriving newtype (Eq, Ord, Num)
 
-unsafeIntToWord :: Int -> Word
+unsafeIntToWord :: HasCallStack => Int -> Word
 unsafeIntToWord int =
   case toIntegralSized int of
     Nothing -> error "unsafeIntToWord given negative integer"
     Just word -> word
+
+unsafeWordToInt :: HasCallStack => Word -> Int
+unsafeWordToInt word =
+  case toIntegralSized word of
+    Nothing -> error "unsafeWordToInt given huge word"
+    Just int -> int
 
 -- TODO: Determine value experimentally
 maxLength :: Integral a => a
@@ -167,14 +175,34 @@ lengthChars = viaFingerTree $ (.lengthChars) . FingerTree.measure
 lengthLines :: Rope -> Word
 lengthLines = viaFingerTree $ (.lengthLines) . FingerTree.measure
 
-charToLine :: CharIndex -> Rope -> LineIndex
-charToLine = undefined
+charToLine :: HasCallStack => CharIndex -> Rope -> Maybe LineIndex
+charToLine (CharIndex index) rope =
+  if index == 0 then
+    Just (LineIndex 0)
+  else if index >= lengthChars rope then
+    Nothing
+  else do
+    let text = toText rope
+    -- TODO: Use `Rope.splitAt`
+    let (before, _after) = Text.splitAt (unsafeWordToInt index) text
+    let lines = unsafeIntToWord (Text.count "\n" before)
+    Just (LineIndex lines)
 
-lineToChar :: LineIndex -> Rope -> CharIndex
-lineToChar = undefined
+-- TODO: In use
+lineToChar :: LineIndex -> Rope -> Maybe CharIndex
+lineToChar (LineIndex index) rope =
+  if index >= lengthLines rope then
+    Nothing
+  else
+    undefined
 
+-- TODO: In use
 line :: LineIndex -> Rope -> Maybe Rope
-line = undefined
+line (LineIndex index) rope =
+  if index >= lengthLines rope then
+    Nothing
+  else
+    undefined
 
 insertChar :: CharIndex -> Char -> Rope -> Rope
 insertChar = undefined
