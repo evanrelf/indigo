@@ -9,7 +9,6 @@ module Indigo.Core.Range
     -- * Create
   , fromPosition
   , fromPositions
-  , fromRawParts
 
     -- * Query
   , anchor
@@ -21,6 +20,7 @@ module Indigo.Core.Range
   , isOverlapping
 
     -- * Modify
+  , mapTargetColumn
   , forgetTargetColumn
   , flip
   , flipForward
@@ -30,10 +30,8 @@ module Indigo.Core.Range
 
     -- * Consume
   , toPositions
-  , toRawParts
 
     -- * Internal
-  , unsafeFromRawParts
   , isValid
   , isTargetColumnGreaterThanCursorColumn
   )
@@ -65,18 +63,6 @@ fromPositions anchor cursor =
     , targetColumn = Nothing
     }
 
-fromRawParts :: Position -> Position -> Maybe Word -> Maybe Range
-fromRawParts anchor cursor targetColumn =
-  if isValid r
-    then Just r
-    else Nothing
-  where
-  r = Range{ anchor, cursor, targetColumn }
-
-unsafeFromRawParts :: Position -> Position -> Maybe Word -> Range
-unsafeFromRawParts anchor cursor targetColumn =
-  Range{ anchor, cursor, targetColumn }
-
 anchor :: Range -> Position
 anchor r = r.anchor
 
@@ -99,6 +85,10 @@ isOverlapping :: Range -> Range -> Bool
 isOverlapping (flipForward -> r1) (flipForward -> r2) =
      (r1.anchor <= r2.anchor && r2.anchor <= r1.cursor)
   || (r2.anchor <= r1.anchor && r1.anchor <= r2.cursor)
+
+mapTargetColumn :: (Maybe Word -> Maybe Word) -> Range -> Maybe Range
+mapTargetColumn f range =
+  guarded isValid range{ targetColumn = f range.targetColumn }
 
 forgetTargetColumn :: Range -> Range
 forgetTargetColumn r = r{ targetColumn = Nothing }

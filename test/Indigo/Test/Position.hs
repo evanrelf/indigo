@@ -4,13 +4,11 @@ module Indigo.Test.Position where
 
 import Hedgehog
 import Indigo.Core.Position
-import Indigo.Core.Rope (Rope)
+import Indigo.Rope (Rope)
 
-import qualified Data.Bits as Bits
-import qualified Data.Text as Text
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import qualified Indigo.Core.Rope as Rope
+import qualified Indigo.Rope as Rope
 
 tests :: Group
 tests = $$(discover)
@@ -31,12 +29,12 @@ genPosition = do
 
 genPositionInRope :: Rope -> Gen Position
 genPositionInRope rope = do
-  let maxLine = Rope.posLine (Rope.lengthAsPosition rope)
+  let maxLine = Rope.lengthLines rope
   line <- Gen.word (Range.linear 0 maxLine)
   let maxColumn =
-        fromMaybe (error "impossible") do
-          int <- Bits.toIntegralSized line
-          text <- Rope.lines rope !!? int
-          Bits.toIntegralSized $ Text.length text
+        maybe
+          (error "unreachable")
+          Rope.lengthChars
+          (Rope.line (Rope.LineIndex line) rope)
   column <- Gen.word (Range.linear 0 maxColumn)
   pure $ Position{ line, column }

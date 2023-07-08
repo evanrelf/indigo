@@ -4,11 +4,9 @@ module Indigo.Core.Position
   ( Position (..)
 
     -- * Create
-  , fromRawParts
   , fromRopeIndex
 
     -- * Consume
-  , toRawParts
   , toRopeIndex
   )
 where

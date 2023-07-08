@@ -21,7 +21,9 @@ prop_target_column_greater_than_cursor_column = property do
   anchor <- forAll genPosition
   cursor <- forAll genPosition
   targetColumn <- forAll $ Gen.maybe $ Gen.word (Range.linear 0 1000)
-  let mRange = fromRawParts anchor cursor targetColumn
+  let mRange =
+        fromPositions anchor cursor
+        & mapTargetColumn (\_ -> targetColumn)
   whenJust mRange \range ->
     assert $ isTargetColumnGreaterThanCursorColumn range
 
@@ -55,6 +57,8 @@ genRange = do
   anchor <- genPosition
   cursor <- genPosition
   targetColumn <- Gen.maybe $ Gen.word (Range.linear (cursor.column + 1) 1000)
-  case fromRawParts anchor cursor targetColumn of
-    Nothing -> fail "`genRange` failed to generate a valid `Range`"
-    Just r -> pure r
+  let mRange =
+        fromPositions anchor cursor
+        & mapTargetColumn (\_ -> targetColumn)
+  whenNothing mRange do
+    fail "`genRange` failed to generate a valid `Range`"
