@@ -20,6 +20,7 @@ module Indigo.Core.Range
   , isOverlapping
 
     -- * Modify
+  , setTargetColumn
   , mapTargetColumn
   , forgetTargetColumn
   , flip
@@ -53,7 +54,7 @@ instance Default Range where
   def = fromPosition def
 
 fromPosition :: Position -> Range
-fromPosition p = fromPositions p p
+fromPosition position = fromPositions position position
 
 fromPositions :: Position -> Position -> Range
 fromPositions anchor cursor =
@@ -64,92 +65,98 @@ fromPositions anchor cursor =
     }
 
 anchor :: Range -> Position
-anchor r = r.anchor
+anchor range = range.anchor
 
 cursor :: Range -> Position
-cursor r = r.cursor
+cursor range = range.cursor
 
 targetColumn :: Range -> Maybe Word
-targetColumn r = r.targetColumn
+targetColumn range = range.targetColumn
 
 isForward :: Range -> Bool
-isForward r = r.anchor <= r.cursor
+isForward range = range.anchor <= range.cursor
 
 isBackward :: Range -> Bool
-isBackward r = r.anchor > r.cursor
+isBackward range = range.anchor > range.cursor
 
 isReduced :: Range -> Bool
-isReduced r = r.anchor == r.cursor
+isReduced range = range.anchor == range.cursor
 
 isOverlapping :: Range -> Range -> Bool
-isOverlapping (flipForward -> r1) (flipForward -> r2) =
-     (r1.anchor <= r2.anchor && r2.anchor <= r1.cursor)
-  || (r2.anchor <= r1.anchor && r1.anchor <= r2.cursor)
+isOverlapping (flipForward -> range1) (flipForward -> range2) =
+     (range1.anchor <= range2.anchor && range2.anchor <= range1.cursor)
+  || (range2.anchor <= range1.anchor && range1.anchor <= range2.cursor)
+
+setTargetColumn :: Maybe Word -> Range -> Maybe Range
+setTargetColumn targetColumn = mapTargetColumn (\_ -> targetColumn)
 
 mapTargetColumn :: (Maybe Word -> Maybe Word) -> Range -> Maybe Range
 mapTargetColumn f range =
   guarded isValid range{ targetColumn = f range.targetColumn }
 
 forgetTargetColumn :: Range -> Range
-forgetTargetColumn r = r{ targetColumn = Nothing }
+forgetTargetColumn range = range{ targetColumn = Nothing }
 
 flip :: Range -> Range
-flip r =
-  Range
-    { anchor = r.cursor
-    , cursor = r.anchor
-    , targetColumn = Nothing
-    }
+flip range =
+  if isReduced range then
+    range
+  else
+    Range
+      { anchor = range.cursor
+      , cursor = range.anchor
+      , targetColumn = Nothing
+      }
 
 flipForward :: Range -> Range
-flipForward r =
-  if isBackward r
-    then flip r
-    else r
+flipForward range =
+  if isBackward range
+    then flip range
+    else range
 
 flipBackward :: Range -> Range
-flipBackward r =
-  if isForward r
-    then flip r
-    else r
+flipBackward range =
+  if isForward range
+    then flip range
+    else range
 
 reduce :: Range -> Range
-reduce r = r{ anchor = r.cursor }
+reduce range = range{ anchor = range.cursor }
 
 merge :: Range -> Range -> Range
-merge r1 r2 =
-  case (isForward r1, isForward r2) of
+merge range1 range2 =
+  case (isForward range1, isForward range2) of
     (True, True) ->
       -- Forward
       Range{ anchor, cursor, targetColumn }
       where
-      anchor = min r1.anchor r2.anchor
+      anchor = min range1.anchor range2.anchor
       (cursor, targetColumn) =
-        if r1.cursor > r2.cursor
-          then (r1.cursor, r1.targetColumn)
-          else (r2.cursor, r2.targetColumn)
+        if range1.cursor > range2.cursor
+          then (range1.cursor, range1.targetColumn)
+          else (range2.cursor, range2.targetColumn)
     (False, False) ->
       -- Backward
       Range{ anchor, cursor, targetColumn }
       where
-      anchor = max r1.anchor r2.anchor
+      anchor = max range1.anchor range2.anchor
       (cursor, targetColumn) =
-        if r1.cursor < r2.cursor
-          then (r1.cursor, r1.targetColumn)
-          else (r2.cursor, r2.targetColumn)
+        if range1.cursor < range2.cursor
+          then (range1.cursor, range1.targetColumn)
+          else (range2.cursor, range2.targetColumn)
     _ ->
       -- Mixed
-      merge r1 (flip r2)
+      merge range1 (flip range2)
 
 toPositions :: Range -> (Position, Position)
-toPositions r = (r.anchor, r.cursor)
+toPositions range = (range.anchor, range.cursor)
 
 toRawParts :: Range -> (Position, Position, Maybe Word)
-toRawParts r = (r.anchor, r.cursor, r.targetColumn)
+toRawParts range = (range.anchor, range.cursor, range.targetColumn)
 
 isValid :: Range -> Bool
-isValid r = isTargetColumnGreaterThanCursorColumn r
+isValid range = isTargetColumnGreaterThanCursorColumn range
 
 isTargetColumnGreaterThanCursorColumn :: Range -> Bool
-isTargetColumnGreaterThanCursorColumn r =
-  maybe True (r.cursor.column <) r.targetColumn
+isTargetColumnGreaterThanCursorColumn range =
+  maybe True (range.cursor.column <) range.targetColumn

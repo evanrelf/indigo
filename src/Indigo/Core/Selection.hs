@@ -24,6 +24,10 @@ module Indigo.Core.Selection
   , rotateBackward
 
     -- * Consume
+  , toRanges
+
+    -- * Internal
+  , isValid
   )
 where
 
@@ -116,7 +120,7 @@ flipBackward :: Selection -> Selection
 flipBackward selection = selection{ direction = Backward }
 
 rotateForward :: Selection -> Selection
-rotateForward selection = do
+rotateForward = do
   undefined
   -- let (oldSelectionRange, oldTargetColumn) = selection.primary
   -- case IntervalMap.lookupGT oldSelectionRange selection.secondaries of
@@ -147,7 +151,29 @@ rotateForward selection = do
   --         selection
 
 rotateBackward :: Selection -> Selection
-rotateBackward selection = undefined
+rotateBackward = undefined
+
+toRanges :: Selection -> NonEmpty Range
+toRanges selection = do
+  (selectionRange, targetColumn) <- ranges selection
+  pure $ selectionRangeToRange selection.direction selectionRange targetColumn
 
 rangeToSelectionRange :: Range -> SelectionRange
 rangeToSelectionRange = uncurry SelectionRange.fromPositions . Range.toPositions
+
+selectionRangeToRange :: Direction -> SelectionRange -> Maybe Word -> Range
+selectionRangeToRange direction selectionRange targetColumn = do
+  let (start, end) = SelectionRange.toPositions selectionRange
+
+  let (anchor, cursor) =
+        case direction of
+          Forward -> (start, end)
+          Backward -> (end, start)
+
+  Range.fromPositions anchor cursor
+  & Range.setTargetColumn targetColumn
+  & fromMaybe (error "SelectionRange has an invalid target column")
+
+-- TODO: Clear invalid target columns after flipping
+isValid :: Selection -> Bool
+isValid = undefined
