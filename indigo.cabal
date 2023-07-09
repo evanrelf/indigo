@@ -55,6 +55,7 @@ library
     Indigo.Core.Buffer
     Indigo.Core.Direction
     Indigo.Core.Editor
+    Indigo.Core.Mode
     Indigo.Core.Position
     Indigo.Core.Range
     Indigo.Core.Rope
