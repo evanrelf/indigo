@@ -98,6 +98,7 @@ toRopeIndex position rope = do
     then Left index
     else Right index
 
+-- TODO: Move somewhere better
 (|-) :: Word -> Word -> Word
 (|-) !x !y
   | x >= y = x - y

@@ -15,7 +15,7 @@ main = do
   pure ()
 
 data State = State
-  { message :: Text
+  { message :: !Text
   }
 
 app :: Brick.App State () ()

@@ -31,10 +31,11 @@ import Prelude hiding (empty)
 
 import qualified Indigo.Core.Rope as Rope
 
+-- TODO: Scratch/virtual buffers without modification state
 data Buffer = Buffer
   { path :: !(Maybe FilePath)
-  , contents :: Rope
-  , selection :: Selection
+  , contents :: !Rope
+  , selection :: !Selection
   , isModified :: !Bool
   , verticalScroll :: {-# UNPACK #-} !Word
   , horizontalScroll :: {-# UNPACK #-} !Word

@@ -3,4 +3,8 @@ module Indigo.Core.Editor
   )
 where
 
+import Indigo.Core.Buffer (Buffer)
+
 data Editor = Editor
+  { buffers :: !(NonEmpty Buffer)
+  }
