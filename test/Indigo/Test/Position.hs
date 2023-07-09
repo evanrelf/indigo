@@ -3,7 +3,7 @@
 module Indigo.Test.Position where
 
 import Hedgehog
-import Indigo.Core.Conversion (Conversion, Conversion' (..))
+import Indigo.Core.Conversion (Conversion (..))
 import Indigo.Core.Position
 import Indigo.Core.Rope (Rope)
 

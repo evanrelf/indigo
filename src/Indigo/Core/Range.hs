@@ -151,9 +151,6 @@ merge range1 range2 =
 toPositions :: Range -> (Position, Position)
 toPositions range = (range.anchor, range.cursor)
 
-toRawParts :: Range -> (Position, Position, Maybe Word)
-toRawParts range = (range.anchor, range.cursor, range.targetColumn)
-
 isValid :: Range -> Bool
 isValid range = isTargetColumnGreaterThanCursorColumn range
 

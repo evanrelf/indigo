@@ -84,7 +84,6 @@ test-suite test
     , tasty
     , tasty-hedgehog
   other-modules:
-    Indigo.Test.Conversion
     Indigo.Test.Position
     Indigo.Test.Range
     Indigo.Test.Selection

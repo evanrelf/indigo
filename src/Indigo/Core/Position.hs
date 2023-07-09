@@ -12,7 +12,7 @@ module Indigo.Core.Position
 where
 
 import Data.Default.Class (Default (..))
-import Indigo.Core.Conversion (Conversion, Conversion' (..))
+import Indigo.Core.Conversion (Conversion (..))
 import Indigo.Core.Rope (Rope)
 import Prelude hiding (lines)
 
@@ -28,20 +28,13 @@ instance Default Position where
   def :: Position
   def = Position{ line = 0, column = 0 }
 
-fromRawParts :: Word -> Word -> Position
-fromRawParts line column = Position{ line, column }
-
-toRawParts :: Position -> (Word, Word)
-toRawParts position = (position.line, position.column)
-
 fromRopeIndex
   :: HasCallStack
   => Rope.CharIndex
   -> Rope
   -> Conversion Position
+fromRopeIndex _ rope | Rope.null rope = Invalid
 fromRopeIndex index0 rope = do
-  when (Rope.null rope) Invalid
-
   let lengthChars = Rope.lengthChars rope
 
   let (corrected, index) =
@@ -68,9 +61,8 @@ toRopeIndex
   => Position
   -> Rope
   -> Conversion Rope.CharIndex
+toRopeIndex _ rope | Rope.null rope = Invalid
 toRopeIndex position rope = do
-  when (Rope.null rope) Invalid
-
   let lines = Rope.lengthLines rope |- 1
 
   let (corrected_line, line) =
