@@ -39,9 +39,10 @@ fromRopeIndex
   -> Rope
   -> Either Position Position
 fromRopeIndex index0 rope = do
-  -- TODO
   when (Rope.null rope) do
+    -- TODO
     error "cannot handle empty ropes yet"
+    Left def
 
   let lengthChars = Rope.lengthChars rope
 
@@ -70,9 +71,10 @@ toRopeIndex
   -> Rope
   -> Either Rope.CharIndex Rope.CharIndex
 toRopeIndex position rope = do
-  -- TODO
   when (Rope.null rope) do
+    -- TODO
     error "cannot handle empty ropes yet"
+    Left def
 
   let lines = Rope.lengthLines rope |- 1
 

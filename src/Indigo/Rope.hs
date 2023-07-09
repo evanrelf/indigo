@@ -38,8 +38,9 @@ module Indigo.Rope
   )
 where
 
-import Prelude hiding (empty, null, toText, splitAt, lines)
+import Data.Default.Class (Default (..))
 import Data.FingerTree (FingerTree, ViewL (..), ViewR (..), (<|), (|>))
+import Prelude hiding (empty, null, toText, splitAt, lines)
 
 import qualified Data.FingerTree as FingerTree
 import qualified Data.Text as Text
@@ -61,6 +62,10 @@ instance Semigroup Rope where
 instance Monoid Rope where
   mempty :: Rope
   mempty = empty
+
+instance Default Rope where
+  def :: Rope
+  def = empty
 
 instance Show Rope where
   show :: Rope -> String
@@ -108,9 +113,17 @@ newtype CharIndex = CharIndex{ unCharIndex :: Word }
   deriving stock (Show)
   deriving newtype (Eq, Ord, Num)
 
+instance Default CharIndex where
+  def :: CharIndex
+  def = CharIndex 0
+
 newtype LineIndex = LineIndex{ unLineIndex :: Word }
   deriving stock (Show)
   deriving newtype (Eq, Ord, Num)
+
+instance Default LineIndex where
+  def :: LineIndex
+  def = LineIndex 0
 
 unsafeIntToWord :: HasCallStack => Int -> Word
 unsafeIntToWord int =
