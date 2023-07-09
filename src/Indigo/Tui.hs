@@ -4,6 +4,8 @@ module Indigo.Tui
 where
 
 import Brick (App (..))
+import Data.Default.Class (Default (..))
+import Indigo.Core.Editor (Editor (..))
 import Prelude hiding (State, state)
 
 import qualified Brick
@@ -11,12 +13,19 @@ import qualified Graphics.Vty as Vty
 
 main :: IO ()
 main = do
-  _finalState <- Brick.defaultMain app initialState
+  _ <- Brick.defaultMain app def
   pure ()
 
 data State = State
-  { message :: !Text
+  { editor :: !Editor
   }
+
+instance Default State where
+  def :: State
+  def =
+    State
+      { editor = def
+      }
 
 app :: Brick.App State () ()
 app =
@@ -28,14 +37,8 @@ app =
     , appAttrMap = \_state -> Brick.attrMap Vty.defAttr []
     }
 
-initialState :: State
-initialState =
-  State
-    { message = "Hello, world!"
-    }
-
 draw :: State -> [Brick.Widget ()]
-draw state = [Brick.txt state.message]
+draw state = [Brick.txt "Hello, world!"]
 
 handleEvent :: Brick.BrickEvent () () -> Brick.EventM () State ()
 handleEvent = \case
