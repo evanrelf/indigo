@@ -13,19 +13,12 @@ import qualified Graphics.Vty as Vty
 
 main :: IO ()
 main = do
-  _ <- Brick.defaultMain app def
+  _ <- Brick.defaultMain app initialState
   pure ()
 
 data State = State
   { editor :: !Editor
   }
-
-instance Default State where
-  def :: State
-  def =
-    State
-      { editor = def
-      }
 
 app :: Brick.App State () ()
 app =
@@ -37,8 +30,14 @@ app =
     , appAttrMap = \_state -> Brick.attrMap Vty.defAttr []
     }
 
+initialState :: State
+initialState =
+  State
+    { editor = def
+    }
+
 draw :: State -> [Brick.Widget ()]
-draw state = [Brick.txt "Hello, world!"]
+draw _state = [Brick.txt "Hello, world!"]
 
 handleEvent :: Brick.BrickEvent () () -> Brick.EventM () State ()
 handleEvent = \case

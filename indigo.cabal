@@ -53,6 +53,7 @@ library
     , vty
   exposed-modules:
     Indigo.Core.Buffer
+    Indigo.Core.Conversion
     Indigo.Core.Direction
     Indigo.Core.Editor
     Indigo.Core.Mode
@@ -83,6 +84,7 @@ test-suite test
     , tasty
     , tasty-hedgehog
   other-modules:
+    Indigo.Test.Conversion
     Indigo.Test.Position
     Indigo.Test.Range
     Indigo.Test.Selection

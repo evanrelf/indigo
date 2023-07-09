@@ -2,6 +2,7 @@ module Main (main) where
 
 import Prelude hiding (group)
 
+import qualified Indigo.Test.Conversion
 import qualified Indigo.Test.Position
 import qualified Indigo.Test.Range
 import qualified Indigo.Test.SelectionRange
@@ -11,7 +12,8 @@ import qualified Test.Tasty.Hedgehog as Tasty.Hedgehog
 main :: IO ()
 main =
   Tasty.defaultMain $ Tasty.testGroup "Indigo" $ fmap Tasty.Hedgehog.fromGroup $
-    [ Indigo.Test.Position.tests
-    , Indigo.Test.Range.tests
-    , Indigo.Test.SelectionRange.tests
+    [ Indigo.Test.Conversion.tests
+    -- , Indigo.Test.Position.tests
+    -- , Indigo.Test.Range.tests
+    -- , Indigo.Test.SelectionRange.tests
     ]

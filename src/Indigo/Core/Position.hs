@@ -12,6 +12,7 @@ module Indigo.Core.Position
 where
 
 import Data.Default.Class (Default (..))
+import Indigo.Core.Conversion (Conversion, Conversion' (..))
 import Indigo.Core.Rope (Rope)
 import Prelude hiding (lines)
 
@@ -37,12 +38,9 @@ fromRopeIndex
   :: HasCallStack
   => Rope.CharIndex
   -> Rope
-  -> Either Position Position
+  -> Conversion Position
 fromRopeIndex index0 rope = do
-  when (Rope.null rope) do
-    -- TODO
-    error "cannot handle empty ropes yet"
-    Left def
+  when (Rope.null rope) Invalid
 
   let lengthChars = Rope.lengthChars rope
 
@@ -62,19 +60,16 @@ fromRopeIndex index0 rope = do
           }
 
   if corrected
-    then Left position
-    else Right position
+    then Corrected position
+    else Valid position
 
 toRopeIndex
   :: HasCallStack
   => Position
   -> Rope
-  -> Either Rope.CharIndex Rope.CharIndex
+  -> Conversion Rope.CharIndex
 toRopeIndex position rope = do
-  when (Rope.null rope) do
-    -- TODO
-    error "cannot handle empty ropes yet"
-    Left def
+  when (Rope.null rope) Invalid
 
   let lines = Rope.lengthLines rope |- 1
 
@@ -95,21 +90,23 @@ toRopeIndex position rope = do
   let index = maybe (error "uh oh") (column +) (Rope.lineToChar line rope)
 
   if corrected
-    then Left index
-    else Right index
+    then Corrected index
+    else Valid index
 
 -- TODO: Move somewhere better
 (|-) :: Word -> Word -> Word
-(|-) !x !y
-  | x >= y = x - y
-  | otherwise = minBound
+(|-) !x !y =
+  if x >= y
+    then x - y
+    else minBound
 
 infixl 6 |-
 
 (+|) :: Word -> Word -> Word
-(+|) !x !y
-  | result < min x y = maxBound
-  | otherwise = result
-  where result = x + y
+(+|) !x !y =
+  let result = x + y in
+  if result < min x y
+    then maxBound
+    else result
 
 infixl 6 +|

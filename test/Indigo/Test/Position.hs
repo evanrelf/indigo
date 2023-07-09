@@ -3,6 +3,7 @@
 module Indigo.Test.Position where
 
 import Hedgehog
+import Indigo.Core.Conversion (Conversion, Conversion' (..))
 import Indigo.Core.Position
 import Indigo.Core.Rope (Rope)
 
@@ -18,8 +19,9 @@ prop_rope_conversions_roundtrip = property do
   let rope = Rope.fromText "foo\nbar\nbaz\n"
   position <- forAll $ genPositionInRope rope
   case toRopeIndex position rope of
-    Left _ -> fail "Position not in rope, was corrected"
-    Right index -> fromRopeIndex index rope === Right position
+    Invalid -> fail "Position invalid in rope"
+    Corrected _ -> fail "Position not in rope, was corrected"
+    Valid index -> fromRopeIndex index rope === Valid position
 
 genPosition :: Gen Position
 genPosition = do
