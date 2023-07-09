@@ -50,7 +50,6 @@ library
     , brick
     , data-default-class
     , fingertree
-    , text-rope
     , vty
   exposed-modules:
     Indigo.Core.Buffer
@@ -82,7 +81,6 @@ test-suite test
     , indigo
     , tasty
     , tasty-hedgehog
-    , text-rope
   other-modules:
     Indigo.Test.Position
     Indigo.Test.Range
