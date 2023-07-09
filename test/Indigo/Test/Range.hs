@@ -27,8 +27,11 @@ prop_target_column_greater_than_cursor_column = property do
 
 prop_flip_forgets_target_column :: Property
 prop_flip_forgets_target_column = property do
-  r <- forAll genRange
-  flip (flip r) === forgetTargetColumn r
+  range <- forAll genRange
+  if isReduced range then
+    flip (flip range) === range
+  else
+    flip (flip range) === forgetTargetColumn range
 
 prop_reduce_remembers_target_column :: Property
 prop_reduce_remembers_target_column = property do
