@@ -25,11 +25,11 @@ module Indigo.Core.Buffer
 where
 
 import Data.Default.Class (Default (..))
-import Indigo.Rope (Rope)
+import Indigo.Core.Rope (Rope)
 import Indigo.Core.Selection (Selection)
 import Prelude hiding (empty)
 
-import qualified Indigo.Rope as Rope
+import qualified Indigo.Core.Rope as Rope
 
 data Buffer = Buffer
   { path :: !(Maybe FilePath)

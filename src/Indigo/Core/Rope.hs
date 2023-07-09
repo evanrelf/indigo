@@ -9,7 +9,7 @@
 {-# OPTIONS_GHC -Wno-unused-matches #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-module Indigo.Rope
+module Indigo.Core.Rope
   ( Rope
   , CharIndex (..)
   , LineIndex (..)
@@ -141,6 +141,8 @@ unsafeWordToInt word =
 maxLength :: Integral a => a
 maxLength = 1024
 
+-- TODO: Rename these operators so they don't look like my saturating
+-- subtraction operator
 (-|) :: Node -> FingerTree NodeMeta Node -> FingerTree NodeMeta Node
 (-|) node fingerTree =
   if node.lengthChars == 0

@@ -4,11 +4,11 @@ module Indigo.Test.Position where
 
 import Hedgehog
 import Indigo.Core.Position
-import Indigo.Rope (Rope)
+import Indigo.Core.Rope (Rope)
 
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import qualified Indigo.Rope as Rope
+import qualified Indigo.Core.Rope as Rope
 
 tests :: Group
 tests = $$(discover)

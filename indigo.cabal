@@ -57,9 +57,9 @@ library
     Indigo.Core.Editor
     Indigo.Core.Position
     Indigo.Core.Range
+    Indigo.Core.Rope
     Indigo.Core.Selection
     Indigo.Core.SelectionRange
-    Indigo.Rope
     Indigo.Tui
 
 executable indigo
