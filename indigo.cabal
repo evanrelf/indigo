@@ -87,3 +87,4 @@ test-suite test
     Indigo.Test.Position
     Indigo.Test.Range
     Indigo.Test.Selection
+    Indigo.Test.SelectionRange
