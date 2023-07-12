@@ -16,6 +16,7 @@ common common
     BlockArguments
     DerivingStrategies
     DuplicateRecordFields
+    GeneralizedNewtypeDeriving
     InstanceSigs
     LambdaCase
     NamedFieldPuns
@@ -50,6 +51,7 @@ library
     , brick
     , data-default-class
     , fingertree
+    , groups
     , vty
   exposed-modules:
     Indigo.Core.Buffer
@@ -57,6 +59,8 @@ library
     Indigo.Core.Direction
     Indigo.Core.Editor
     Indigo.Core.Mode
+    Indigo.Core.Operation
+    Indigo.Core.Operations
     Indigo.Core.Position
     Indigo.Core.Range
     Indigo.Core.Rope
