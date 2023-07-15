@@ -19,65 +19,70 @@ module Indigo.Core.History
 where
 
 import Data.Default.Class (Default (..))
-import Data.Sequence (Seq (..))
-import Prelude hiding (empty, reverse)
-
-import qualified Data.Sequence as Seq
+import Prelude hiding (empty)
 
 data History a = History
-  { past :: Seq a
-  , future :: Seq a
+  { past :: [a]
+  , future :: [a]
   }
 
 instance Default (History a) where
   def :: History a
   def = empty
 
--- `x = reverse (reverse x)` or `id = reverse . reverse`
-class Reversible a where
-  reverse :: a -> a
+-- | Laws:
+-- `x != invert x` or `id != invert`
+-- `x = invert (invert x)` or `id = invert . invert`
+class Action a where
+  invert :: a -> a
 
 empty :: History a
 empty =
   History
-    { past = Seq.empty
-    , future = Seq.empty
+    { past = []
+    , future = []
     }
 
-past :: History a -> Seq a
+-- | Past actions, from newest to oldest
+past :: History a -> [a]
 past history = history.past
 
-future :: History a -> Seq a
+-- | Future actions, from oldest to newest
+future :: History a -> [a]
 future history = history.future
 
-act :: Reversible a => a -> History a -> History a
+act :: Action a => a -> History a -> History a
 act action history =
-  if Seq.null history.future then
-    history{ past = history.past :|> action }
+  if null history.future then
+    history{ past = action : history.past }
   else
     history
-      { past = (history.past <> history.future <> fmap reverse history.future) :|> action
-      , future = Seq.empty
+      { past = mconcat
+          [ fmap invert history.future
+          , reverse history.future
+          , history.past
+          ]
+      , future = []
       }
 
 travelBackward :: History a -> History a
 travelBackward history =
   case history.past of
-    Empty ->
+    [] ->
       history
-    actions :|> action ->
+    action : actions ->
       history
         { past = actions
-        , future = action :<| history.future
+        , future = action : history.future
         }
 
 travelForward :: History a -> History a
 travelForward history =
   case history.future of
-    Empty ->
+    [] ->
       history
-    action :<| actions ->
+    action : actions ->
       history
-        { past = history.past :|> action
+        { past = action : history.past
         , future = actions
         }
