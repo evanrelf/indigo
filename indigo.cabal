@@ -58,6 +58,7 @@ library
     Indigo.Core.Conversion
     Indigo.Core.Direction
     Indigo.Core.Editor
+    Indigo.Core.History
     Indigo.Core.Mode
     Indigo.Core.Operation
     Indigo.Core.Operations
