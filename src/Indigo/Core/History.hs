@@ -3,6 +3,7 @@
 -- https://github.com/zaboople/klonk/blob/master/TheGURQ.md
 module Indigo.Core.History
   ( History
+  , Action (..)
 
     -- * Create
   , empty
@@ -10,6 +11,7 @@ module Indigo.Core.History
     -- * Query
   , past
   , future
+  , length
 
     -- * Modify
   , act
@@ -19,12 +21,15 @@ module Indigo.Core.History
 where
 
 import Data.Default.Class (Default (..))
-import Prelude hiding (empty)
+import Prelude hiding (empty, length)
+
+import qualified Data.List as List
 
 data History a = History
   { past :: [a]
   , future :: [a]
   }
+  deriving stock (Show, Eq)
 
 instance Default (History a) where
   def :: History a
@@ -51,6 +56,9 @@ past history = history.past
 future :: History a -> [a]
 future history = history.future
 
+length :: History a -> Int
+length history = List.length history.past + List.length history.future
+
 act :: Action a => a -> History a -> History a
 act action history =
   if null history.future then
@@ -58,7 +66,8 @@ act action history =
   else
     history
       { past = mconcat
-          [ fmap invert history.future
+          [ one action
+          , fmap invert history.future
           , reverse history.future
           , history.past
           ]
