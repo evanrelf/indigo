@@ -40,6 +40,7 @@ where
 
 import Data.Default.Class (Default (..))
 import Data.FingerTree (FingerTree, ViewL (..), ViewR (..), (<|), (|>))
+import Indigo.Core.Utilities (unsafeIntToWord, unsafeWordToInt)
 import Prelude hiding (empty, null, toText, splitAt, lines)
 
 import qualified Data.FingerTree as FingerTree
@@ -132,18 +133,6 @@ newtype ColumnIndex = ColumnIndex Word
 instance Default ColumnIndex where
   def :: ColumnIndex
   def = ColumnIndex 0
-
-unsafeIntToWord :: HasCallStack => Int -> Word
-unsafeIntToWord int =
-  case toIntegralSized int of
-    Nothing -> error "unsafeIntToWord given negative integer"
-    Just word -> word
-
-unsafeWordToInt :: HasCallStack => Word -> Int
-unsafeWordToInt word =
-  case toIntegralSized word of
-    Nothing -> error "unsafeWordToInt given huge word"
-    Just int -> int
 
 -- TODO: Determine value experimentally
 maxLength :: Integral a => a

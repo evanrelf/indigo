@@ -104,8 +104,8 @@ scrollUp distance buffer =
 
 scrollDown :: Word -> Buffer -> Buffer
 scrollDown distance buffer =
-  scrollToLine (buffer.verticalScroll `satAdd` distance) buffer
-  where satAdd = coerce (+|)
+  scrollToLine (buffer.verticalScroll `add` distance) buffer
+  where add = coerce ((+) @Word)
 
 scrollLeft :: Word -> Buffer -> Buffer
 scrollLeft distance buffer =
@@ -114,8 +114,8 @@ scrollLeft distance buffer =
 
 scrollRight :: Word -> Buffer -> Buffer
 scrollRight distance buffer =
-  scrollToColumn (buffer.horizontalScroll `satAdd` distance) buffer
-  where satAdd = coerce (+|)
+  scrollToColumn (buffer.horizontalScroll `add` distance) buffer
+  where add = coerce ((+) @Word)
 
 scrollToLine :: LineIndex -> Buffer -> Buffer
 scrollToLine line buffer = buffer{ verticalScroll = min line lastLine }

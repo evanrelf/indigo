@@ -1,6 +1,8 @@
 module Indigo.Core.Utilities
   ( (|-)
   , (+|)
+  , unsafeIntToWord
+  , unsafeWordToInt
   )
 where
 
@@ -22,3 +24,15 @@ infixl 6 |-
     else result
 
 infixl 6 +|
+
+unsafeIntToWord :: HasCallStack => Int -> Word
+unsafeIntToWord int =
+  case toIntegralSized int of
+    Nothing -> error "unsafeIntToWord given negative integer"
+    Just word -> word
+
+unsafeWordToInt :: HasCallStack => Word -> Int
+unsafeWordToInt word =
+  case toIntegralSized word of
+    Nothing -> error "unsafeWordToInt given huge word"
+    Just int -> int

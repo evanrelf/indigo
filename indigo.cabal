@@ -52,7 +52,6 @@ library
     , brick
     , data-default-class
     , fingertree
-    , groups
     , unliftio
     , vty
   exposed-modules:
