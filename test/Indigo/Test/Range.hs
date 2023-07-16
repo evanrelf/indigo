@@ -2,7 +2,11 @@
 
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Indigo.Test.Range where
+module Indigo.Test.Range
+  ( tests
+  , genRange
+  )
+where
 
 import Hedgehog hiding (Range)
 import Indigo.Core.Position (Position (..))

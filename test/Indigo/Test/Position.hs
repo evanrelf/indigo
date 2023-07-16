@@ -1,6 +1,10 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Indigo.Test.Position where
+module Indigo.Test.Position
+  ( tests
+  , genPosition
+  )
+where
 
 import Hedgehog
 import Indigo.Core.Conversion (Conversion (..))

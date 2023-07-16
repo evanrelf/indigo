@@ -91,6 +91,7 @@ test-suite test
     , tasty-hedgehog
   other-modules:
     Indigo.Test.History
+    Indigo.Test.Operation
     Indigo.Test.Position
     Indigo.Test.Range
     Indigo.Test.Selection

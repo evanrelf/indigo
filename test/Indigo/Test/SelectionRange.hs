@@ -1,6 +1,10 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Indigo.Test.SelectionRange where
+module Indigo.Test.SelectionRange
+  ( tests
+  , genSelectionRange
+  )
+where
 
 import Hedgehog
 import Indigo.Core.SelectionRange

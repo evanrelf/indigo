@@ -2,7 +2,11 @@
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Indigo.Test.History where
+module Indigo.Test.History
+  ( tests
+  , genHistory
+  )
+where
 
 import Hedgehog hiding (Action)
 import Indigo.Core.History
