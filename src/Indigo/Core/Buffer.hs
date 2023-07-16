@@ -128,7 +128,7 @@ scrollToColumn :: Rope.ColumnIndex -> Buffer -> Buffer
 scrollToColumn column buffer = buffer{ horizontalScroll = column }
 
 -- Selection must be valid in the rope
--- Horizontal scroll offset must not exceed length of longest line
+-- Horizontal scroll offset must not exceed length of longest line(?)
 -- Vertical scroll offset must not exceed length of buffer
 isValid :: Buffer -> Bool
 isValid = undefined

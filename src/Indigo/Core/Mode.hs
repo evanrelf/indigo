@@ -10,10 +10,10 @@ where
 import Data.Default.Class (Default (..))
 
 data Mode
-  = Normal NormalMode
-  | Goto GotoMode
-  | Command CommandMode
-  | Insert InsertMode
+  = Normal !NormalMode
+  | Goto !GotoMode
+  | Command !CommandMode
+  | Insert !InsertMode
 
 instance Default Mode where
   def :: Mode
