@@ -2,6 +2,7 @@
 
 module Indigo.Core.Operation
   ( Operations
+  , Operation (..)
   , Affinity (..)
   , retain
   , delete
