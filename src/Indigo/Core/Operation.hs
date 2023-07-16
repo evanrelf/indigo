@@ -1,38 +1,27 @@
 module Indigo.Core.Operation
   ( Operation (..)
-  , InsertOperation (..)
-  , DeleteOperation (..)
   , invert
   , apply
   )
 where
 
-import Indigo.Core.Rope (CharIndex, Rope)
+import Indigo.Core.Rope (Rope)
 
 data Operation
-  = Insert !InsertOperation
-  | Delete !DeleteOperation
-  deriving stock (Show, Eq)
-
-data InsertOperation = InsertOperation
-  { index :: {-# UNPACK #-} !CharIndex
-  , text :: !Text
-  }
-  deriving stock (Show, Eq)
-
-data DeleteOperation = DeleteOperation
-  { index :: {-# UNPACK #-} !CharIndex
-  , text :: !Text
-  }
+  = Retain {-# UNPACK #-} !Word
+  | Delete {-# UNPACK #-} !Word
+  | Insert !Text
   deriving stock (Show, Eq)
 
 invert :: Operation -> Operation
 invert = \case
-  Insert InsertOperation{index, text} -> Delete DeleteOperation{index, text}
-  Delete DeleteOperation{index, text} -> Insert InsertOperation{index, text}
+  Retain count -> undefined
+  Delete count -> undefined
+  Insert text -> undefined
 
 apply :: Operation -> Rope -> Rope
 apply operation rope =
   case operation of
-    Insert InsertOperation{index, text} -> undefined
-    Delete DeleteOperation{index, text} -> undefined
+    Retain count -> undefined
+    Delete count -> undefined
+    Insert text -> undefined

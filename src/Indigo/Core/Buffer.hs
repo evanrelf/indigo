@@ -34,7 +34,7 @@ module Indigo.Core.Buffer
 where
 
 import Data.Default.Class (Default (..))
-import Indigo.Core.Rope (Rope)
+import Indigo.Core.Rope (ColumnIndex (..), LineIndex (..), Rope)
 import Indigo.Core.Selection (Selection)
 import Indigo.Core.Utilities ((|-), (+|))
 import Prelude hiding (empty)
@@ -48,8 +48,8 @@ data Buffer = Buffer
   , contents :: !Rope
   , selection :: !Selection
   , isModified :: !Bool
-  , verticalScroll :: {-# UNPACK #-} !Rope.LineIndex
-  , horizontalScroll :: {-# UNPACK #-} !Rope.ColumnIndex
+  , verticalScroll :: {-# UNPACK #-} !LineIndex
+  , horizontalScroll :: {-# UNPACK #-} !ColumnIndex
   }
 
 instance Default Buffer where
@@ -91,10 +91,10 @@ selection buffer = buffer.selection
 isModified :: Buffer -> Bool
 isModified buffer = buffer.isModified
 
-verticalScroll :: Buffer -> Rope.LineIndex
+verticalScroll :: Buffer -> LineIndex
 verticalScroll buffer = buffer.verticalScroll
 
-horizontalScroll :: Buffer -> Rope.ColumnIndex
+horizontalScroll :: Buffer -> ColumnIndex
 horizontalScroll buffer = buffer.horizontalScroll
 
 scrollUp :: Word -> Buffer -> Buffer
@@ -117,14 +117,14 @@ scrollRight distance buffer =
   scrollToColumn (buffer.horizontalScroll `satAdd` distance) buffer
   where satAdd = coerce (+|)
 
-scrollToLine :: Rope.LineIndex -> Buffer -> Buffer
+scrollToLine :: LineIndex -> Buffer -> Buffer
 scrollToLine line buffer = buffer{ verticalScroll = min line lastLine }
   where
   lastLine = Rope.lengthLines buffer.contents `satSub` (1 :: Word)
   satSub = coerce (|-)
 
 -- TODO: Should this be capped at the length of the longest line?
-scrollToColumn :: Rope.ColumnIndex -> Buffer -> Buffer
+scrollToColumn :: ColumnIndex -> Buffer -> Buffer
 scrollToColumn column buffer = buffer{ horizontalScroll = column }
 
 -- Selection must be valid in the rope
