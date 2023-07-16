@@ -8,7 +8,7 @@ module Indigo.Core.Buffer
     -- * Create
   , fromText
   , fromRope
-  , open
+  , fromFile
 
     -- * Query
   , path
@@ -19,17 +19,28 @@ module Indigo.Core.Buffer
   , horizontalScroll
 
     -- * Modify
+  , scrollUp
+  , scrollDown
+  , scrollLeft
+  , scrollRight
+  , scrollToLine
+  , scrollToColumn
 
     -- * Consume
+
+    -- * Internal
+  , isValid
   )
 where
 
 import Data.Default.Class (Default (..))
 import Indigo.Core.Rope (Rope)
 import Indigo.Core.Selection (Selection)
+import Indigo.Core.Utilities ((|-), (+|))
 import Prelude hiding (empty)
 
 import qualified Indigo.Core.Rope as Rope
+import qualified UnliftIO.Exception as Exception
 
 -- TODO: Scratch/virtual buffers without modification state
 data Buffer = Buffer
@@ -37,8 +48,8 @@ data Buffer = Buffer
   , contents :: !Rope
   , selection :: !Selection
   , isModified :: !Bool
-  , verticalScroll :: {-# UNPACK #-} !Word
-  , horizontalScroll :: {-# UNPACK #-} !Word
+  , verticalScroll :: {-# UNPACK #-} !Rope.LineIndex
+  , horizontalScroll :: {-# UNPACK #-} !Rope.ColumnIndex
   }
 
 instance Default Buffer where
@@ -59,12 +70,13 @@ fromText = fromRope . Rope.fromText
 fromRope :: Rope -> Buffer
 fromRope contents = def{ contents }
 
-open :: MonadIO m => FilePath -> m Buffer
-open path = do
-  contents <- Rope.fromText <$> readFileText path
+fromFile :: MonadIO m => FilePath -> m Buffer
+fromFile path = do
+  bytes <- readFileBS path
+  text <- Exception.fromEither $ decodeUtf8Strict bytes
   pure def
     { path = Just path
-    , contents
+    , contents = Rope.fromText text
     }
 
 path :: Buffer -> Maybe FilePath
@@ -79,11 +91,41 @@ selection buffer = buffer.selection
 isModified :: Buffer -> Bool
 isModified buffer = buffer.isModified
 
-verticalScroll :: Buffer -> Word
+verticalScroll :: Buffer -> Rope.LineIndex
 verticalScroll buffer = buffer.verticalScroll
 
-horizontalScroll :: Buffer -> Word
+horizontalScroll :: Buffer -> Rope.ColumnIndex
 horizontalScroll buffer = buffer.horizontalScroll
+
+scrollUp :: Word -> Buffer -> Buffer
+scrollUp distance buffer =
+  scrollToLine (buffer.verticalScroll `satSub` distance) buffer
+  where satSub = coerce (|-)
+
+scrollDown :: Word -> Buffer -> Buffer
+scrollDown distance buffer =
+  scrollToLine (buffer.verticalScroll `satAdd` distance) buffer
+  where satAdd = coerce (+|)
+
+scrollLeft :: Word -> Buffer -> Buffer
+scrollLeft distance buffer =
+  scrollToColumn (buffer.horizontalScroll `satSub` distance) buffer
+  where satSub = coerce (|-)
+
+scrollRight :: Word -> Buffer -> Buffer
+scrollRight distance buffer =
+  scrollToColumn (buffer.horizontalScroll `satAdd` distance) buffer
+  where satAdd = coerce (+|)
+
+scrollToLine :: Rope.LineIndex -> Buffer -> Buffer
+scrollToLine line buffer = buffer{ verticalScroll = min line lastLine }
+  where
+  lastLine = Rope.lengthLines buffer.contents `satSub` (1 :: Word)
+  satSub = coerce (|-)
+
+-- TODO: Should this be capped at the length of the longest line?
+scrollToColumn :: Rope.ColumnIndex -> Buffer -> Buffer
+scrollToColumn column buffer = buffer{ horizontalScroll = column }
 
 -- Selection must be valid in the rope
 -- Horizontal scroll offset must not exceed length of longest line

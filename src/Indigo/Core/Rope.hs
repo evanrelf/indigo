@@ -12,6 +12,7 @@ module Indigo.Core.Rope
   ( Rope
   , CharIndex (..)
   , LineIndex (..)
+  , ColumnIndex (..)
 
     -- * Create
   -- , empty
@@ -108,7 +109,7 @@ instance FingerTree.Measured NodeMeta Node where
       , lengthLines = unsafeIntToWord (Text.count "\n" node.text)
       }
 
-newtype CharIndex = CharIndex{ unCharIndex :: Word }
+newtype CharIndex = CharIndex Word
   deriving stock (Show)
   deriving newtype (Eq, Ord, Num)
 
@@ -116,13 +117,21 @@ instance Default CharIndex where
   def :: CharIndex
   def = CharIndex 0
 
-newtype LineIndex = LineIndex{ unLineIndex :: Word }
+newtype LineIndex = LineIndex Word
   deriving stock (Show)
   deriving newtype (Eq, Ord, Num)
 
 instance Default LineIndex where
   def :: LineIndex
   def = LineIndex 0
+
+newtype ColumnIndex = ColumnIndex Word
+  deriving stock (Show)
+  deriving newtype (Eq, Ord, Num)
+
+instance Default ColumnIndex where
+  def :: ColumnIndex
+  def = ColumnIndex 0
 
 unsafeIntToWord :: HasCallStack => Int -> Word
 unsafeIntToWord int =

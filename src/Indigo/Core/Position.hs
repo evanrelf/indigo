@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 module Indigo.Core.Position
   ( Position (..)
 
@@ -14,6 +12,7 @@ where
 import Data.Default.Class (Default (..))
 import Indigo.Core.Conversion (Conversion (..))
 import Indigo.Core.Rope (Rope)
+import Indigo.Core.Utilities ((|-))
 import Prelude hiding (lines)
 
 import qualified Indigo.Core.Rope as Rope
@@ -84,21 +83,3 @@ toRopeIndex position rope = do
   if corrected
     then Corrected index
     else Valid index
-
--- TODO: Move somewhere better
-(|-) :: Word -> Word -> Word
-(|-) !x !y =
-  if x >= y
-    then x - y
-    else minBound
-
-infixl 6 |-
-
-(+|) :: Word -> Word -> Word
-(+|) !x !y =
-  let result = x + y in
-  if result < min x y
-    then maxBound
-    else result
-
-infixl 6 +|

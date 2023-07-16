@@ -13,6 +13,7 @@ common common
     , relude
   default-language: Haskell2010
   default-extensions:
+    BangPatterns
     BlockArguments
     DerivingStrategies
     DuplicateRecordFields
@@ -52,6 +53,7 @@ library
     , data-default-class
     , fingertree
     , groups
+    , unliftio
     , vty
   exposed-modules:
     Indigo.Core.Buffer
@@ -67,6 +69,7 @@ library
     Indigo.Core.Rope
     Indigo.Core.Selection
     Indigo.Core.SelectionRange
+    Indigo.Core.Utilities
     Indigo.Tui
 
 executable indigo
