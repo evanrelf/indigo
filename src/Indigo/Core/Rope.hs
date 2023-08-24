@@ -138,16 +138,14 @@ instance Default ColumnIndex where
 maxLength :: Integral a => a
 maxLength = 1024
 
--- TODO: Rename these operators so they don't look like my saturating
--- subtraction operator
-(-|) :: Node -> FingerTree NodeMeta Node -> FingerTree NodeMeta Node
-(-|) node fingerTree =
+cons :: Node -> FingerTree NodeMeta Node -> FingerTree NodeMeta Node
+cons node fingerTree =
   if node.lengthChars == 0
     then fingerTree
     else node <| fingerTree
 
-(|-) :: FingerTree NodeMeta Node -> Node -> FingerTree NodeMeta Node
-(|-) fingerTree node =
+snoc :: FingerTree NodeMeta Node -> Node -> FingerTree NodeMeta Node
+snoc fingerTree node =
   if node.lengthChars == 0
     then fingerTree
     else fingerTree |> node
@@ -170,11 +168,11 @@ fromText = viaFingerTree . go FingerTree.empty . Text.chunksOf maxLength
   go fingerTree = \case
     [] -> fingerTree
 
-    text : [] -> fingerTree |- node
+    text : [] -> fingerTree `snoc` node
       where
       node = Node{ text, lengthChars = unsafeIntToWord (Text.length text) }
 
-    text : texts -> go (fingerTree |- node) texts
+    text : texts -> go (fingerTree `snoc` node) texts
       where
       node = Node{ text, lengthChars = maxLength }
 
