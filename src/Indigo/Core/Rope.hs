@@ -206,13 +206,18 @@ lineToChar (LineIndex index) rope =
   else
     undefined
 
--- TODO: In use
-line :: LineIndex -> Rope -> Maybe Rope
+line :: HasCallStack => LineIndex -> Rope -> Maybe Rope
 line (LineIndex index) rope =
   if index >= lengthLines rope then
     Nothing
-  else
-    undefined
+  else do
+    let text = toText rope
+    let lines = Text.lines text
+    let line =
+          fromMaybe
+            (error "line: unreachable")
+            (lines !!? unsafeWordToInt index)
+    Just (fromText line)
 
 insertChar :: CharIndex -> Char -> Rope -> Rope
 insertChar = undefined
