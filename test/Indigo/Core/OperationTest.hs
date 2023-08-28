@@ -2,11 +2,9 @@ module Indigo.Core.OperationTest where
 
 import Hedgehog
 import Indigo.Core.Operation
-import Indigo.Core.Rope (Rope)
-import Indigo.Core.Utilities (unsafeIntToWord, unsafeWordToInt)
+import Indigo.Core.Utilities (unsafeWordToInt)
 
 import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
 
 genOperation :: Range Word -> Gen Operation
 genOperation range = do

@@ -21,6 +21,7 @@ common common
     InstanceSigs
     LambdaCase
     NamedFieldPuns
+    NumericUnderscores
     OverloadedRecordDot
     OverloadedStrings
     TypeApplications

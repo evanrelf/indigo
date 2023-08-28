@@ -34,7 +34,7 @@ module Indigo.Core.Rope
   -- , splitAt
 
     -- * Consume
-  -- , toText
+  , toText
   )
 where
 
