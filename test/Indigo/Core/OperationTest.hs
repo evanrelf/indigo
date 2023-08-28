@@ -1,11 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
-
-module Indigo.Test.Operation
-  ( tests
-  , genOperation
-  , genOperations
-  )
-where
+module Indigo.Core.OperationTest where
 
 import Hedgehog
 import Indigo.Core.Operation
@@ -14,9 +7,6 @@ import Indigo.Core.Utilities (unsafeIntToWord, unsafeWordToInt)
 
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-
-tests :: Group
-tests = $$(discover)
 
 genOperation :: Range Word -> Gen Operation
 genOperation range = do

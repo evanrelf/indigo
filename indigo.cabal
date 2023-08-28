@@ -82,17 +82,20 @@ test-suite test
     , common
     , executable
   type: exitcode-stdio-1.0
-  main-is: Main.hs
+  main-is: Driver.hs
   hs-source-dirs: test
   build-depends:
     , hedgehog
     , indigo
     , tasty
+    , tasty-discover
     , tasty-hedgehog
+    , tasty-hunit
   other-modules:
-    Indigo.Test.History
-    Indigo.Test.Operation
-    Indigo.Test.Position
-    Indigo.Test.Range
-    Indigo.Test.Selection
-    Indigo.Test.SelectionRange
+    Indigo.Core.HistoryTest
+    Indigo.Core.OperationTest
+    Indigo.Core.PositionTest
+    Indigo.Core.RangeTest
+    Indigo.Core.RopeTest
+    Indigo.Core.SelectionRangeTest
+    Indigo.Core.SelectionTest

@@ -1,20 +1,11 @@
-{-# LANGUAGE TemplateHaskell #-}
-
-module Indigo.Test.Selection
-  ( tests
-  , genSelection
-  )
-where
+module Indigo.Core.SelectionTest where
 
 import Hedgehog hiding (Range)
 import Indigo.Core.Selection
-import Indigo.Test.Range (genRange)
+import Indigo.Core.RangeTest (genRange)
 
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-
-tests :: Group
-tests = $$(discover)
 
 -- prop_ranges_are_sorted :: Property
 -- prop_ranges_are_sorted = property do

@@ -1,12 +1,6 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Indigo.Test.History
-  ( tests
-  , genHistory
-  )
-where
+module Indigo.Core.HistoryTest where
 
 import Hedgehog hiding (Action)
 import Indigo.Core.History
@@ -16,11 +10,8 @@ import Relude.Unsafe ((!!))
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
-tests :: Group
-tests = $$(discover)
-
-prop_window_shopping_doesnt_fork :: Property
-prop_window_shopping_doesnt_fork = property do
+hprop_window_shopping_doesnt_fork :: Property
+hprop_window_shopping_doesnt_fork = property do
   history <- forAll $ genHistory (Range.linear 0 10) $ Gen.int (Range.linear 0 9)
   forward <- do
     count <- forAll $ Gen.int (Range.linear 0 20)
@@ -30,8 +21,8 @@ prop_window_shopping_doesnt_fork = property do
     pure $ iterate (travelBackward .) travelBackward !! count
   length history === length (backward (forward history))
 
-prop_acting_in_the_past_sends_you_to_the_present :: Property
-prop_acting_in_the_past_sends_you_to_the_present = property do
+hprop_acting_in_the_past_sends_you_to_the_present :: Property
+hprop_acting_in_the_past_sends_you_to_the_present = property do
   history1 <- forAll $ genHistory (Range.linear 1 10) $ Gen.int (Range.linear 0 9)
   let history2 = travelBackward history1
   assert $ not (null (future history2))
