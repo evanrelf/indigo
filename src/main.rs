@@ -1,10 +1,17 @@
 mod terminal;
 
+use clap::Parser as _;
 use crossterm::{event, style, ExecutableCommand as _};
+use std::path::PathBuf;
 use tokio_stream::StreamExt as _;
+
+#[derive(clap::Parser)]
+struct Args;
 
 #[tokio::main]
 async fn main() {
+    let _args = Args::parse();
+
     let _terminal = terminal::enter();
 
     let mut stdout = std::io::stdout();

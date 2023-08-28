@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+clap = { version = "4.4.0", default-features = false, features = ["derive", "error-context", "help", "std", "usage"] }
 crossterm = { version = "0.27.0", default-features = false, features = ["bracketed-paste", "events", "event-stream"] }
 ropey = { version = "1.6.0", default-features = false, features = ["simd"] }
 tokio = { version = "1.32.0", features = ["full"] }
