@@ -4,13 +4,26 @@ use clap::Parser as _;
 use crossterm::{event, style, ExecutableCommand as _};
 use std::path::PathBuf;
 use tokio_stream::StreamExt as _;
+use tracing::Level;
 
 #[derive(clap::Parser)]
-struct Args;
+struct Args {
+    /// Write logs to file for debugging
+    #[arg(long)]
+    log_file: Option<PathBuf>,
+}
 
 #[tokio::main]
-async fn main() {
-    let _args = Args::parse();
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Args::parse();
+
+    if let Some(path) = args.log_file {
+        let file = std::fs::File::create(path)?;
+        tracing_subscriber::fmt()
+            .with_max_level(Level::DEBUG)
+            .with_writer(file)
+            .init();
+    }
 
     let _terminal = terminal::enter();
 
@@ -29,6 +42,8 @@ async fn main() {
             None => break,
         };
 
+        tracing::debug!("event: {event:?}");
+
         match event {
             Key(key) if key.modifiers == M::CONTROL && key.code == Char('p') => panic!(),
             Key(key) if key.modifiers == M::CONTROL && key.code == Char('c') => break,
@@ -36,4 +51,6 @@ async fn main() {
             _ => continue,
         }
     }
+
+    Ok(())
 }

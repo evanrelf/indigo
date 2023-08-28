@@ -9,3 +9,5 @@ crossterm = { version = "0.27.0", default-features = false, features = ["bracket
 ropey = { version = "1.6.0", default-features = false, features = ["simd"] }
 tokio = { version = "1.32.0", features = ["full"] }
 tokio-stream = { version = "0.1.14", features = ["full"] }
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.17", default-features = false, features = ["fmt", "std"] }
