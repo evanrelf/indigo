@@ -107,7 +107,10 @@ instance FingerTree.Measured NodeMeta Node where
   measure node =
     NodeMeta
       { lengthChars = node.lengthChars
-      , lengthLines = unsafeIntToWord (Text.count "\n" node.text)
+        -- TODO: With `unsafeIntToWord (Text.count "\n" node.text)`:
+        -- Behavior:                 "" is 0, "foo" is 0, "foo\n" is 1
+        -- Desired behavior (maybe): "" is 0, "foo" is 1, "foo\n" is 1
+      , lengthLines = unsafeIntToWord (length (Text.lines node.text))
       }
 
 newtype CharIndex = CharIndex Word
@@ -203,8 +206,38 @@ lineToChar :: LineIndex -> Rope -> Maybe CharIndex
 lineToChar (LineIndex index) rope =
   if index >= lengthLines rope then
     Nothing
-  else
-    undefined
+  else do
+    let go :: Word -> Word -> Text -> CharIndex
+        go !lineCount !charCount !text =
+          if lineCount < index then
+            case Text.uncons text of
+              Just ('\n', text') -> go (lineCount + 1) (charCount + 1) text'
+              Just (char, text') -> go lineCount (charCount + 1) text'
+              Nothing -> CharIndex charCount
+          else
+            CharIndex charCount
+
+    Just $ go 0 0 (toText rope)
+
+    -- rope
+    -- & toText
+    -- & Text.foldr
+    --     ( \char (lineCount, charCount) -> do
+    --         let lineCount' = if char == '\n' then lineCount + 1 else lineCount
+    --         let charCount' = charCount + 1
+    --         if lineCount < index
+    --           then (lineCount', charCount')
+    --           else (lineCount, charCount)
+    --     )
+    --     (0 :: Word, 0 :: Word)
+    -- & snd
+    -- & CharIndex
+    -- & Just
+
+    -- let text = toText rope
+    -- let lines = fmap (`Text.snoc` '\n') (Text.split (== '\n') text)
+    -- let length = unsafeIntToWord (Text.length (Text.concat (take (unsafeWordToInt index) lines)))
+    -- Just (CharIndex length)
 
 line :: HasCallStack => LineIndex -> Rope -> Maybe Rope
 line (LineIndex index) rope =
