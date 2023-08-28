@@ -1,3 +1,5 @@
+// #[macro_use]
+mod macros;
 mod terminal;
 
 use clap::Parser as _;
@@ -34,7 +36,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut event_stream = event::EventStream::new();
 
     loop {
-        use crossterm::event::{Event::*, KeyCode::*, KeyModifiers as M};
+        use crate::macros::key_matches;
+        use crossterm::event::Event::*;
 
         let event = match event_stream.next().await {
             Some(Ok(event)) => event,
@@ -45,9 +48,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         tracing::debug!("event: {event:?}");
 
         match event {
-            Key(key) if key.modifiers == M::CONTROL && key.code == Char('p') => panic!(),
-            Key(key) if key.modifiers == M::CONTROL && key.code == Char('c') => break,
-            Key(key) if key.modifiers == M::NONE && key.code == Char('q') => break,
+            Key(key) if key_matches!(key, CONTROL 'p') => panic!(),
+            Key(key) if key_matches!(key, CONTROL 'c') => break,
+            Key(key) if key_matches!(key, 'q') => break,
             _ => continue,
         }
     }
