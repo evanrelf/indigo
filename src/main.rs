@@ -1,4 +1,4 @@
-// #[macro_use]
+mod conversion;
 mod macros;
 mod terminal;
 
