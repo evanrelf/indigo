@@ -64,19 +64,22 @@ toRopeIndex _ rope | Rope.null rope = Invalid
 toRopeIndex position rope = do
   let lines = Rope.lengthLines rope |- 1
 
-  let (corrected_line, line) =
+  let (correctedLine, line) =
         if lines <= position.line
           then (True, LineIndex (lines |- 1))
           else (False, LineIndex position.line)
 
   let columns = maybe (error "uh oh") Rope.lengthChars (Rope.line line rope)
 
-  let (corrected_column, column) =
-        if columns <= position.column
-          then (True, CharIndex (columns |- 1))
-          else (False, CharIndex position.column)
+  let (correctedColumn, column) =
+        if correctedLine then
+          (True, CharIndex columns)
+        else if columns <= position.column then
+          (True, CharIndex (columns |- 1))
+        else
+          (False, CharIndex position.column)
 
-  let corrected = corrected_line || corrected_column
+  let corrected = correctedLine || correctedColumn
 
   let index = maybe (error "uh oh") (column +) (Rope.lineToChar line rope)
 
