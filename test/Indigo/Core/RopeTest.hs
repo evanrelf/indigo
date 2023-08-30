@@ -3,7 +3,7 @@ module Indigo.Core.RopeTest where
 import Hedgehog
 import Indigo.Core.Rope
 import Indigo.Core.Utilities (unsafeIntToWord)
-import Prelude hiding (toText)
+import Prelude hiding (empty, toText)
 import Test.Tasty.HUnit
 
 import qualified Data.Text as Text
@@ -29,6 +29,30 @@ hprop_length_chars :: Property
 hprop_length_chars = property do
   rope <- forAll genRope
   unsafeIntToWord (Text.length (toText rope)) === lengthChars rope
+
+unit_rope_length_empty :: Assertion
+unit_rope_length_empty = do
+  lengthChars empty @?= 0
+  lengthLines empty @?= 1 -- empty rope has 1 line
+
+unit_rope_length_single_line :: Assertion
+unit_rope_length_single_line = do
+  lengthChars (fromText "x") @?= 1
+  lengthLines (fromText "x") @?= 1 -- no trailing newline == 1 line
+
+  lengthChars (fromText "\n") @?= 1
+  lengthLines (fromText "\n") @?= 2
+
+  lengthChars (fromText "x\n") @?= 2
+  lengthLines (fromText "x\n") @?= 2 -- trailing newline == 2 lines
+
+unit_rope_length_multiple_lines :: Assertion
+unit_rope_length_multiple_lines = do
+  lengthChars (fromText "x\ny\nz") @?= 5
+  lengthLines (fromText "x\ny\nz") @?= 3
+
+  lengthChars (fromText "x\ny\nz\n") @?= 6
+  lengthLines (fromText "x\ny\nz\n") @?= 4 -- line count == '\n' count + 1
 
 genRope :: Gen Rope
 genRope = do

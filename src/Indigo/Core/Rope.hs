@@ -15,7 +15,7 @@ module Indigo.Core.Rope
   , ColumnIndex (..)
 
     -- * Create
-  -- , empty
+  , empty
   , fromText
 
     -- * Query
