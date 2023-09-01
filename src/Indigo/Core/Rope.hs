@@ -78,39 +78,36 @@ instance IsString Rope where
 
 data Node = Node
   { text :: !Text
-  , lengthChars :: {-# UNPACK #-} !Word
+  , chars :: {-# UNPACK #-} !Word
   }
 
 data NodeMeta = NodeMeta
-  { lengthChars :: {-# UNPACK #-} !Word
-  , lengthLines :: {-# UNPACK #-} !Word
+  { chars :: {-# UNPACK #-} !Word
+  , newlines :: {-# UNPACK #-} !Word
   }
 
 instance Semigroup NodeMeta where
   (<>) :: NodeMeta -> NodeMeta -> NodeMeta
   (<>) left right =
     NodeMeta
-      { lengthChars = left.lengthChars + right.lengthChars
-      , lengthLines = left.lengthLines + right.lengthLines
+      { chars = left.chars + right.chars
+      , newlines = left.newlines + right.newlines
       }
 
 instance Monoid NodeMeta where
   mempty :: NodeMeta
   mempty =
     NodeMeta
-      { lengthChars = 0
-      , lengthLines = 0
+      { chars = 0
+      , newlines = 0
       }
 
 instance FingerTree.Measured NodeMeta Node where
   measure :: Node -> NodeMeta
   measure node =
     NodeMeta
-      { lengthChars = node.lengthChars
-        -- TODO: With `unsafeIntToWord (Text.count "\n" node.text)`:
-        -- Behavior:                 "" is 0, "foo" is 0, "foo\n" is 1
-        -- Desired behavior (maybe): "" is 0, "foo" is 1, "foo\n" is 1
-      , lengthLines = unsafeIntToWord (length (Text.lines node.text))
+      { chars = node.chars
+      , newlines = unsafeIntToWord (Text.count "\n" node.text)
       }
 
 newtype CharIndex = CharIndex Word
@@ -143,13 +140,13 @@ maxLength = 1024
 
 cons :: Node -> FingerTree NodeMeta Node -> FingerTree NodeMeta Node
 cons node fingerTree =
-  if node.lengthChars == 0
+  if node.chars == 0
     then fingerTree
     else node <| fingerTree
 
 snoc :: FingerTree NodeMeta Node -> Node -> FingerTree NodeMeta Node
 snoc fingerTree node =
-  if node.lengthChars == 0
+  if node.chars == 0
     then fingerTree
     else fingerTree |> node
 
@@ -173,20 +170,23 @@ fromText = viaFingerTree . go FingerTree.empty . Text.chunksOf maxLength
 
     text : [] -> fingerTree `snoc` node
       where
-      node = Node{ text, lengthChars = unsafeIntToWord (Text.length text) }
+      node = Node{ text, chars = unsafeIntToWord (Text.length text) }
 
     text : texts -> go (fingerTree `snoc` node) texts
       where
-      node = Node{ text, lengthChars = maxLength }
+      node = Node{ text, chars = maxLength }
 
 null :: Rope -> Bool
 null = viaFingerTree FingerTree.null
 
 lengthChars :: Rope -> Word
-lengthChars = viaFingerTree $ (.lengthChars) . FingerTree.measure
+lengthChars = viaFingerTree $ (.chars) . FingerTree.measure
 
+-- The number of lines is the number of newlines + 1. That means an empty rope
+-- is considered to have one line. This matches the behavior of the `ropey` Rust
+-- crate.
 lengthLines :: Rope -> Word
-lengthLines = viaFingerTree $ (.lengthLines) . FingerTree.measure
+lengthLines = viaFingerTree $ (+ 1) . (.newlines) . FingerTree.measure
 
 charToLine :: HasCallStack => CharIndex -> Rope -> Maybe LineIndex
 charToLine (CharIndex index) rope =
