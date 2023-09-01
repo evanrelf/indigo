@@ -15,35 +15,35 @@ hprop_rope_conversions_roundtrip :: Property
 hprop_rope_conversions_roundtrip = property do
   let rope = Rope.fromText "foo\nbar\nbaz\n"
   position <- forAll $ genPositionInRope rope
-  case toRopeIndex position rope of
+  case toCharIndex position rope of
     Invalid -> fail "Position invalid in rope"
     Corrected index ->
       fail $ "Position not in rope, was corrected (" <> show index <> ")"
-    Valid index -> fromRopeIndex index rope === Valid position
+    Valid index -> fromCharIndex index rope === Valid position
 
 unit_to_rope_index_invalid :: Assertion
 unit_to_rope_index_invalid = do
   let rope = Rope.empty
   let position = Position{ line = 0, column = 0 }
-  toRopeIndex position rope @?= Invalid
+  toCharIndex position rope @?= Invalid
 
 unit_to_rope_index_corrected :: Assertion
 unit_to_rope_index_corrected = do
   do
     let rope = Rope.fromText "foo\nbar"
     let position = Position{ line = 9, column = 0 }
-    toRopeIndex position rope @?= Corrected 7
+    toCharIndex position rope @?= Corrected 6
 
   do
     let rope = Rope.fromText "foo\nbar\n"
     let position = Position{ line = 9, column = 0 }
-    toRopeIndex position rope @?= Corrected 8
+    toCharIndex position rope @?= Corrected 7
 
 unit_to_rope_index_valid :: Assertion
 unit_to_rope_index_valid = do
   let rope = Rope.fromText "foo\nbar\n"
   let position = Position{ line = 1, column = 3 }
-  toRopeIndex position rope @?= Valid 7
+  toCharIndex position rope @?= Valid 7
 
 genPosition :: Gen Position
 genPosition = do

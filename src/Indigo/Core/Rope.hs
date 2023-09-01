@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE NoFieldSelectors #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -110,7 +109,7 @@ instance FingerTree.Measured NodeMeta Node where
       , newlines = unsafeIntToWord (Text.count "\n" node.text)
       }
 
-newtype CharIndex = CharIndex Word
+newtype CharIndex = CharIndex{ unCharIndex :: Word }
   deriving stock (Show)
   deriving newtype (Eq, Ord, Num)
 
@@ -118,7 +117,7 @@ instance Default CharIndex where
   def :: CharIndex
   def = CharIndex 0
 
-newtype LineIndex = LineIndex Word
+newtype LineIndex = LineIndex{ unLineIndex :: Word }
   deriving stock (Show)
   deriving newtype (Eq, Ord, Num)
 
@@ -126,7 +125,7 @@ instance Default LineIndex where
   def :: LineIndex
   def = LineIndex 0
 
-newtype ColumnIndex = ColumnIndex Word
+newtype ColumnIndex = ColumnIndex{ unColumnIndex :: Word }
   deriving stock (Show)
   deriving newtype (Eq, Ord, Num)
 

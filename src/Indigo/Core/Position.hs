@@ -2,10 +2,10 @@ module Indigo.Core.Position
   ( Position (..)
 
     -- * Create
-  , fromRopeIndex
+  , fromCharIndex
 
     -- * Consume
-  , toRopeIndex
+  , toCharIndex
   )
 where
 
@@ -27,17 +27,12 @@ instance Default Position where
   def :: Position
   def = Position{ line = 0, column = 0 }
 
-fromRopeIndex
-  :: HasCallStack
-  => CharIndex
-  -> Rope
-  -> Conversion Position
-fromRopeIndex _ rope | Rope.null rope = Invalid
-fromRopeIndex index0 rope = do
-  let lengthChars = Rope.lengthChars rope
-
-  let (corrected, index) =
-        if lengthChars <= coerce index0
+fromCharIndex :: HasCallStack => CharIndex -> Rope -> Conversion Position
+fromCharIndex _ rope | Rope.null rope = Invalid
+fromCharIndex index0 rope = do
+  let (corrected, index) = do
+        let lengthChars = Rope.lengthChars rope
+        if lengthChars <= unCharIndex index0
           then (True, CharIndex (lengthChars |- 1))
           else (False, index0)
 
@@ -47,34 +42,31 @@ fromRopeIndex index0 rope = do
 
   let position =
         Position
-          { line = coerce line
-          , column = coerce column
+          { line = unLineIndex line
+          , column = unCharIndex column
           }
 
   if corrected
     then Corrected position
     else Valid position
 
-toRopeIndex
-  :: HasCallStack
-  => Position
-  -> Rope
-  -> Conversion CharIndex
-toRopeIndex _ rope | Rope.null rope = Invalid
-toRopeIndex position rope = do
-  let lines = Rope.lengthLines rope |- 1
-
-  let (correctedLine, line) =
+toCharIndex :: HasCallStack => Position -> Rope -> Conversion CharIndex
+toCharIndex _ rope | Rope.null rope = Invalid
+toCharIndex position rope = do
+  let (correctedLine, line) = do
+        let lines = Rope.lengthLines rope |- 1
         if lines <= position.line
-          then (True, LineIndex (lines |- 1))
+          -- When line goes beyond end of rope, use last line
+          then (True, LineIndex lines)
           else (False, LineIndex position.line)
 
-  let columns = maybe (error "uh oh") Rope.lengthChars (Rope.line line rope)
-
-  let (correctedColumn, column) =
+  let (correctedColumn, column) = do
+        let columns = maybe (error "uh oh") Rope.lengthChars (Rope.line line rope)
         if correctedLine then
+          -- When line was corrected, use last column
           (True, CharIndex columns)
         else if columns <= position.column then
+          -- When column goes beyond end of line, use last column
           (True, CharIndex (columns |- 1))
         else
           (False, CharIndex position.column)
