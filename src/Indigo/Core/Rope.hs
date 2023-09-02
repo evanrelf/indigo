@@ -245,11 +245,11 @@ line (LineIndex index) rope =
   else do
     let text = toText rope
     let lines = Text.lines text
-    let line =
+    let line' =
           fromMaybe
             (error "line: unreachable")
             (lines !!? unsafeWordToInt index)
-    Just (fromText line)
+    Just (fromText line')
 
 insertChar :: CharIndex -> Char -> Rope -> Rope
 insertChar = undefined
