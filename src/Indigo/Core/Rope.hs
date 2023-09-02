@@ -174,11 +174,20 @@ null = FingerTree.null . unRope
 lengthChars :: Rope -> Word
 lengthChars = (.chars) . FingerTree.measure . unRope
 
--- The number of lines is the number of newlines + 1. That means an empty rope
--- is considered to have one line. This matches the behavior of the `ropey` Rust
--- crate.
+-- "" = 0
+-- "x" = 1
+-- "x\n" = 1
+-- "x\ny" = 2
+-- "x\ny\n" = 2
 lengthLines :: Rope -> Word
-lengthLines = (+ 1) . (.newlines) . FingerTree.measure . unRope
+lengthLines rope | null rope = 0
+lengthLines rope = do
+  let newlines = (.newlines) . FingerTree.measure . unRope $ rope
+  let lastChar = CharIndex (lengthChars rope - 1)
+  case char lastChar rope of
+    Nothing -> error "lengthLines: rope is impossibly empty"
+    Just '\n' -> newlines
+    Just _ -> newlines + 1
 
 charToLine :: HasCallStack => CharIndex -> Rope -> Maybe LineIndex
 charToLine _ rope | null rope = Nothing
