@@ -22,6 +22,30 @@ hprop_rope_conversions_roundtrip = property do
       fail $ "Position not in rope, was corrected (" <> show index <> ")"
     Valid index -> fromCharIndex index rope === Valid position
 
+unit_from_char_index_invalid :: Assertion
+unit_from_char_index_invalid = do
+  let rope = Rope.empty
+  let index = 1
+  fromCharIndex index rope @?= Invalid
+
+unit_from_char_index_corrected :: Assertion
+unit_from_char_index_corrected = do
+  do
+    let rope = Rope.fromText "foo\nbar"
+    let index = 7
+    fromCharIndex index rope @?= Corrected Position{ line = 1, column = 2 }
+
+  do
+    let rope = Rope.fromText "foo\nbar\n"
+    let index = 8
+    fromCharIndex index rope @?= Corrected Position{ line = 1, column = 3 }
+
+unit_from_char_index_valid :: Assertion
+unit_from_char_index_valid = do
+  let rope = Rope.fromText "foo\nbar\n"
+  let index = 7
+  fromCharIndex index rope @?= Valid Position{ line = 1, column = 3 }
+
 unit_to_char_index_invalid :: Assertion
 unit_to_char_index_invalid = do
   let rope = Rope.empty
