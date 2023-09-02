@@ -240,6 +240,10 @@ lineToChar (LineIndex index) rope =
     -- let length = unsafeIntToWord (Text.length (Text.concat (take (unsafeWordToInt index) lines)))
     -- Just (CharIndex length)
 
+char :: CharIndex -> Rope -> Maybe Char
+char _ rope | null rope = Nothing
+char (CharIndex index) rope = undefined
+
 line :: HasCallStack => LineIndex -> Rope -> Maybe Rope
 line _ rope | null rope = Nothing
 line (LineIndex index) rope =
