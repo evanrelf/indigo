@@ -26,6 +26,7 @@ module Indigo.Core.Rope
   , lineToChar
   , char
   , line
+  , lines
 
     -- * Modify
   -- , insertChar
@@ -251,17 +252,35 @@ char (CharIndex index) rope =
 
 line :: HasCallStack => LineIndex -> Rope -> Maybe Rope
 line _ rope | null rope = Nothing
-line (LineIndex index) rope =
-  if index >= lengthLines rope then
+line (LineIndex index) rope = do
+  let lastChar = lengthLines rope - 1
+  if index > lastChar then
     Nothing
   else do
-    let text = toText rope
-    let lines = Text.lines text
-    let line' =
-          fromMaybe
-            (error "line: unreachable")
-            (lines !!? unsafeWordToInt index)
-    Just (fromText line')
+    maybe
+      (error "line: unreachable")
+      Just
+      (lines rope !!? unsafeWordToInt index)
+
+lines :: Rope -> [Rope]
+lines rope | null rope = []
+lines rope = go [] (toText rope)
+  where
+  go :: [Rope] -> Text -> [Rope]
+  go ls text = do
+    let (left, right) = Text.break (== '\n') text
+    if Text.null right then
+      if Text.null left then
+        reverse ls
+      else
+        reverse (fromText left : ls)
+    else do
+      let left' = left `Text.snoc` '\n'
+      let right' =
+            case Text.uncons right of
+              Nothing -> error "lines: unreachable"
+              Just (_, right') -> right'
+      go (fromText left' : ls) right'
 
 insertChar :: CharIndex -> Char -> Rope -> Rope
 insertChar = undefined

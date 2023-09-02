@@ -56,6 +56,11 @@ unit_to_char_index_corrected :: Assertion
 unit_to_char_index_corrected = do
   do
     let rope = Rope.fromText "foo\nbar"
+    let position = Position{ line = 0, column = 4 }
+    toCharIndex position rope @?= Corrected 3
+
+  do
+    let rope = Rope.fromText "foo\nbar"
     let position = Position{ line = 9, column = 0 }
     toCharIndex position rope @?= Corrected 6
 
@@ -66,9 +71,15 @@ unit_to_char_index_corrected = do
 
 unit_to_char_index_valid :: Assertion
 unit_to_char_index_valid = do
-  let rope = Rope.fromText "foo\nbar\n"
-  let position = Position{ line = 1, column = 3 }
-  toCharIndex position rope @?= Valid 7
+  do
+    let rope = Rope.fromText "foo\nbar"
+    let position = Position{ line = 1, column = 2 }
+    toCharIndex position rope @?= Valid 6
+
+  do
+    let rope = Rope.fromText "foo\nbar\n"
+    let position = Position{ line = 1, column = 3 }
+    toCharIndex position rope @?= Valid 7
 
 genPosition :: Gen Position
 genPosition = do

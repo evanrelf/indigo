@@ -53,20 +53,22 @@ toCharIndex :: HasCallStack => Position -> Rope -> Conversion CharIndex
 toCharIndex _ rope | Rope.null rope = Invalid
 toCharIndex position rope = do
   let (correctedLine, line) = do
-        let lines = Rope.lengthLines rope |- 1
-        if lines <= position.line
+        let lastLine = Rope.lengthLines rope - 1
+        if position.line > lastLine
           -- When line goes beyond end of rope, use last line
-          then (True, LineIndex lines)
+          then (True, LineIndex lastLine)
           else (False, LineIndex position.line)
 
   let (correctedColumn, column) = do
-        let columns = maybe (error "uh oh") Rope.lengthChars (Rope.line line rope)
+        let lastColumn = fromMaybe (error "uh oh") do
+              l <- Rope.line line rope
+              pure $ Rope.lengthChars l - 1
         if correctedLine then
           -- When line was corrected, use last column
-          (True, CharIndex columns)
-        else if columns <= position.column then
+          (True, CharIndex lastColumn)
+        else if position.column > lastColumn then
           -- When column goes beyond end of line, use last column
-          (True, CharIndex (columns |- 1))
+          (True, CharIndex lastColumn)
         else
           (False, CharIndex position.column)
 

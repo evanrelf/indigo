@@ -9,7 +9,7 @@ import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Indigo.Core.Rope
 import Indigo.Core.Utilities (unsafeIntToWord)
-import Prelude hiding (empty, toText)
+import Prelude hiding (empty, lines, toText)
 import Test.Tasty.HUnit
 
 hprop_roundtrip :: Property
@@ -64,6 +64,28 @@ unit_rope_char = do
   char (CharIndex 1) (fromText "xyz") @?= Just 'y'
   char (CharIndex 2) (fromText "xyz") @?= Just 'z'
   char (CharIndex 3) (fromText "xyz") @?= Nothing
+
+unit_rope_line :: Assertion
+unit_rope_line = do
+  line (LineIndex 0) empty @?= Nothing
+  line (LineIndex 9) (fromText "x\ny\nz") @?= Nothing
+  line (LineIndex 0) (fromText "x") @?= Just (fromText "x")
+  line (LineIndex 0) (fromText "x\n") @?= Just (fromText "x\n")
+  line (LineIndex 0) (fromText "\nx") @?= Just (fromText "\n")
+  line (LineIndex 1) (fromText "\nx") @?= Just (fromText "x")
+
+unit_rope_lines :: Assertion
+unit_rope_lines = do
+  lines empty @?= []
+  lines (fromText "x") @?= ["x"]
+  lines (fromText "x\n") @?= ["x\n"]
+  lines (fromText "x\ny") @?= ["x\n", "y"]
+  lines (fromText "x\ny\n") @?= ["x\n", "y\n"]
+  lines (fromText "\nx") @?= ["\n", "x"]
+  lines (fromText "\nx\n") @?= ["\n", "x\n"]
+  lines (fromText "\nx\ny") @?= ["\n", "x\n", "y"]
+  lines (fromText "\nx\ny\n") @?= ["\n", "x\n", "y\n"]
+  lines (fromText "\n\n") @?= ["\n", "\n"]
 
 genRope :: Gen Rope
 genRope = do
