@@ -35,18 +35,18 @@ hprop_length_chars = property do
 unit_rope_length_empty :: Assertion
 unit_rope_length_empty = do
   lengthChars empty @?= 0
-  lengthLines empty @?= 1 -- empty rope has 1 line
+  lengthLines empty @?= 0
 
 unit_rope_length_single_line :: Assertion
 unit_rope_length_single_line = do
   lengthChars (fromText "x") @?= 1
-  lengthLines (fromText "x") @?= 1 -- no trailing newline == 1 line
+  lengthLines (fromText "x") @?= 1
 
   lengthChars (fromText "\n") @?= 1
-  lengthLines (fromText "\n") @?= 2
+  lengthLines (fromText "\n") @?= 1
 
   lengthChars (fromText "x\n") @?= 2
-  lengthLines (fromText "x\n") @?= 2 -- trailing newline == 2 lines
+  lengthLines (fromText "x\n") @?= 1
 
 unit_rope_length_multiple_lines :: Assertion
 unit_rope_length_multiple_lines = do
@@ -54,7 +54,7 @@ unit_rope_length_multiple_lines = do
   lengthLines (fromText "x\ny\nz") @?= 3
 
   lengthChars (fromText "x\ny\nz\n") @?= 6
-  lengthLines (fromText "x\ny\nz\n") @?= 4 -- line count == '\n' count + 1
+  lengthLines (fromText "x\ny\nz\n") @?= 3
 
 genRope :: Gen Rope
 genRope = do
