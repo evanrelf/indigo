@@ -46,7 +46,7 @@ import Indigo.Core.Utilities (unsafeIntToWord, unsafeWordToInt)
 import Prelude hiding (empty, null, toText, splitAt, lines)
 import Text.Show qualified
 
-newtype Rope = Rope (FingerTree NodeMeta Node)
+newtype Rope = Rope{ unRope :: FingerTree NodeMeta Node }
 
 instance Eq Rope where
   (==) = (==) `on` toText
@@ -149,19 +149,11 @@ snoc fingerTree node =
     then fingerTree
     else fingerTree |> node
 
-class Coercible i o => ViaFingerTree i o | o -> i
-instance {-# OVERLAPPABLE #-} i ~ o => ViaFingerTree i o
-instance i ~ FingerTree NodeMeta Node => ViaFingerTree i Rope
-instance (i ~ FingerTree NodeMeta Node, ViaFingerTree a b) => ViaFingerTree (i -> a) (Rope -> b)
-
-viaFingerTree :: ViaFingerTree i o => i -> o
-viaFingerTree = coerce
-
 empty :: Rope
-empty = viaFingerTree FingerTree.empty
+empty = Rope FingerTree.empty
 
 fromText :: Text -> Rope
-fromText = viaFingerTree . go FingerTree.empty . Text.chunksOf maxLength
+fromText = Rope . go FingerTree.empty . Text.chunksOf maxLength
   where
   go :: FingerTree NodeMeta Node -> [Text] -> FingerTree NodeMeta Node
   go fingerTree = \case
@@ -176,16 +168,16 @@ fromText = viaFingerTree . go FingerTree.empty . Text.chunksOf maxLength
       node = Node{ text, chars = maxLength }
 
 null :: Rope -> Bool
-null = viaFingerTree FingerTree.null
+null = FingerTree.null . unRope
 
 lengthChars :: Rope -> Word
-lengthChars = viaFingerTree $ (.chars) . FingerTree.measure
+lengthChars = (.chars) . FingerTree.measure . unRope
 
 -- The number of lines is the number of newlines + 1. That means an empty rope
 -- is considered to have one line. This matches the behavior of the `ropey` Rust
 -- crate.
 lengthLines :: Rope -> Word
-lengthLines = viaFingerTree $ (+ 1) . (.newlines) . FingerTree.measure
+lengthLines = (+ 1) . (.newlines) . FingerTree.measure . unRope
 
 charToLine :: HasCallStack => CharIndex -> Rope -> Maybe LineIndex
 charToLine _ rope | null rope = Nothing
@@ -269,7 +261,7 @@ remove = undefined
 
 -- TODO: Merge smaller nodes at connecting ends?
 append :: Rope -> Rope -> Rope
-append = viaFingerTree (<>)
+append (Rope left) (Rope right) = Rope (left <> right)
 
 -- splitAt :: Int -> YiString -> (YiString, YiString)
 -- splitAt n (YiString t)
@@ -298,7 +290,7 @@ splitAt (CharIndex index) (Rope fingerTree) =
       -- index' = index - (FingerTree.measure front).lengthChars
 
 toText :: Rope -> Text
-toText = viaFingerTree $ Text.concat . go []
+toText = Text.concat . go [] . unRope
   where
   go :: [Text] -> FingerTree NodeMeta Node -> [Text]
   go texts fingerTree =
