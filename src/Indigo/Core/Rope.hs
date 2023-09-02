@@ -24,6 +24,7 @@ module Indigo.Core.Rope
   , lengthLines
   , charToLine
   , lineToChar
+  , char
   , line
 
     -- * Modify
@@ -234,7 +235,10 @@ lineToChar (LineIndex index) rope =
 
 char :: CharIndex -> Rope -> Maybe Char
 char _ rope | null rope = Nothing
-char (CharIndex index) rope = undefined
+char (CharIndex index) rope =
+  if index >= lengthChars rope
+    then Nothing
+    else Just $ toText rope `Text.index` unsafeWordToInt index
 
 line :: HasCallStack => LineIndex -> Rope -> Maybe Rope
 line _ rope | null rope = Nothing

@@ -56,6 +56,15 @@ unit_rope_length_multiple_lines = do
   lengthChars (fromText "x\ny\nz\n") @?= 6
   lengthLines (fromText "x\ny\nz\n") @?= 3
 
+unit_rope_char :: Assertion
+unit_rope_char = do
+  char (CharIndex 0) empty @?= Nothing
+  char (CharIndex 1) empty @?= Nothing
+  char (CharIndex 0) (fromText "xyz") @?= Just 'x'
+  char (CharIndex 1) (fromText "xyz") @?= Just 'y'
+  char (CharIndex 2) (fromText "xyz") @?= Just 'z'
+  char (CharIndex 3) (fromText "xyz") @?= Nothing
+
 genRope :: Gen Rope
 genRope = do
   let range = Range.linear 0 1_000
