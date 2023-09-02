@@ -34,15 +34,14 @@ where
 
 import Data.Default.Class (Default (..))
 import Data.IntervalMap.Generic.Strict (IntervalMap)
+import Data.IntervalMap.Generic.Strict qualified as IntervalMap
+import Data.List.NonEmpty qualified as NonEmpty
 import Indigo.Core.Direction (Direction (..))
 import Indigo.Core.Range (Range)
+import Indigo.Core.Range qualified as Range
 import Indigo.Core.SelectionRange (SelectionRange)
+import Indigo.Core.SelectionRange qualified as SelectionRange
 import Prelude hiding (flip)
-
-import qualified Data.IntervalMap.Generic.Strict as IntervalMap
-import qualified Data.List.NonEmpty as NonEmpty
-import qualified Indigo.Core.Range as Range
-import qualified Indigo.Core.SelectionRange as SelectionRange
 
 data Selection = Selection
   { primary :: !(SelectionRange, Maybe Word)

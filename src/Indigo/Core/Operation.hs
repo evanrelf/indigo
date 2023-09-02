@@ -13,17 +13,16 @@ module Indigo.Core.Operation
   )
 where
 
+import Control.Monad.ST qualified as ST
 import Data.Default.Class (Default (..))
+import Data.STRef qualified as ST
 import Data.Sequence (Seq (..))
+import Data.Sequence qualified as Seq
+import Data.Text qualified as Text
 import Indigo.Core.Rope (Rope)
+import Indigo.Core.Rope qualified as Rope
 import Indigo.Core.Selection (Selection)
 import Indigo.Core.Utilities (unsafeIntToWord)
-
-import qualified Control.Monad.ST as ST
-import qualified Data.STRef as ST
-import qualified Data.Sequence as Seq
-import qualified Data.Text as Text
-import qualified Indigo.Core.Rope as Rope
 
 data Operations = Operations
   { operations :: !(Seq Operation)

@@ -40,12 +40,11 @@ where
 
 import Data.Default.Class (Default (..))
 import Data.FingerTree (FingerTree, ViewL (..), ViewR (..), (<|), (|>))
+import Data.FingerTree qualified as FingerTree
+import Data.Text qualified as Text
 import Indigo.Core.Utilities (unsafeIntToWord, unsafeWordToInt)
 import Prelude hiding (empty, null, toText, splitAt, lines)
-
-import qualified Data.FingerTree as FingerTree
-import qualified Data.Text as Text
-import qualified Text.Show
+import Text.Show qualified
 
 newtype Rope = Rope (FingerTree NodeMeta Node)
 

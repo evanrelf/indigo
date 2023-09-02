@@ -21,9 +21,8 @@ module Indigo.Core.History
 where
 
 import Data.Default.Class (Default (..))
+import Data.List qualified as List
 import Prelude hiding (empty, length)
-
-import qualified Data.List as List
 
 data History a = History
   { past :: ![a]

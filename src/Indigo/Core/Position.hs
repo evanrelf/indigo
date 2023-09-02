@@ -12,10 +12,9 @@ where
 import Data.Default.Class (Default (..))
 import Indigo.Core.Conversion (Conversion (..))
 import Indigo.Core.Rope (CharIndex (..), LineIndex (..), Rope)
+import Indigo.Core.Rope qualified as Rope
 import Indigo.Core.Utilities ((|-))
 import Prelude hiding (lines)
-
-import qualified Indigo.Core.Rope as Rope
 
 data Position = Position
   { line :: {-# UNPACK #-} !Word

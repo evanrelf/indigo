@@ -1,14 +1,13 @@
 module Indigo.Core.RopeTest where
 
+import Data.Text qualified as Text
 import Hedgehog
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
 import Indigo.Core.Rope
 import Indigo.Core.Utilities (unsafeIntToWord)
 import Prelude hiding (empty, toText)
 import Test.Tasty.HUnit
-
-import qualified Data.Text as Text
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
 
 hprop_roundtrip :: Property
 hprop_roundtrip = property do

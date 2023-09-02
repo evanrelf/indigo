@@ -3,13 +3,12 @@
 module Indigo.Core.RangeTest where
 
 import Hedgehog hiding (Range)
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
 import Indigo.Core.Position (Position (..))
-import Indigo.Core.Range
 import Indigo.Core.PositionTest (genPosition)
+import Indigo.Core.Range
 import Prelude hiding (flip)
-
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
 
 hprop_target_column_greater_than_cursor_column :: Property
 hprop_target_column_greater_than_cursor_column = property do

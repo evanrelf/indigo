@@ -4,12 +4,11 @@ module Indigo.Tui
 where
 
 import Brick (App (..))
+import Brick qualified
 import Data.Default.Class (Default (..))
+import Graphics.Vty qualified as Vty
 import Indigo.Core.Editor (Editor (..))
 import Prelude hiding (State, state)
-
-import qualified Brick
-import qualified Graphics.Vty as Vty
 
 main :: IO ()
 main = do

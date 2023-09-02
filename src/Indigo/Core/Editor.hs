@@ -5,10 +5,9 @@ module Indigo.Core.Editor
 where
 
 import Data.Default.Class (Default (..))
+import Data.Sequence qualified as Seq
 import Indigo.Core.Buffer (Buffer)
 import Indigo.Core.Mode (Mode)
-
-import qualified Data.Sequence as Seq
 
 data Editor = Editor
   { buffers :: !Buffers

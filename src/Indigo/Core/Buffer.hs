@@ -35,12 +35,11 @@ where
 
 import Data.Default.Class (Default (..))
 import Indigo.Core.Rope (ColumnIndex (..), LineIndex (..), Rope)
+import Indigo.Core.Rope qualified as Rope
 import Indigo.Core.Selection (Selection)
 import Indigo.Core.Utilities ((|-), (+|))
 import Prelude hiding (empty)
-
-import qualified Indigo.Core.Rope as Rope
-import qualified UnliftIO.Exception as Exception
+import UnliftIO.Exception qualified as Exception
 
 -- TODO: Scratch/virtual buffers without modification state
 data Buffer = Buffer

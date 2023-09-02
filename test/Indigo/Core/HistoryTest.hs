@@ -3,12 +3,11 @@
 module Indigo.Core.HistoryTest where
 
 import Hedgehog hiding (Action)
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
 import Indigo.Core.History
 import Prelude hiding (empty, length)
 import Relude.Unsafe ((!!))
-
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
 
 hprop_window_shopping_doesnt_fork :: Property
 hprop_window_shopping_doesnt_fork = property do

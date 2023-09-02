@@ -1,11 +1,10 @@
 module Indigo.Core.SelectionTest where
 
 import Hedgehog hiding (Range)
-import Indigo.Core.Selection
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
 import Indigo.Core.RangeTest (genRange)
-
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
+import Indigo.Core.Selection
 
 -- prop_ranges_are_sorted :: Property
 -- prop_ranges_are_sorted = property do
