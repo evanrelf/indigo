@@ -188,6 +188,7 @@ lengthLines :: Rope -> Word
 lengthLines = viaFingerTree $ (+ 1) . (.newlines) . FingerTree.measure
 
 charToLine :: HasCallStack => CharIndex -> Rope -> Maybe LineIndex
+charToLine _ rope | null rope = Nothing
 charToLine (CharIndex index) rope =
   if index == 0 then
     Just (LineIndex 0)
@@ -202,6 +203,7 @@ charToLine (CharIndex index) rope =
 
 -- TODO: In use
 lineToChar :: LineIndex -> Rope -> Maybe CharIndex
+lineToChar _ rope | null rope = Nothing
 lineToChar (LineIndex index) rope =
   if index >= lengthLines rope then
     Nothing
@@ -239,6 +241,7 @@ lineToChar (LineIndex index) rope =
     -- Just (CharIndex length)
 
 line :: HasCallStack => LineIndex -> Rope -> Maybe Rope
+line _ rope | null rope = Nothing
 line (LineIndex index) rope =
   if index >= lengthLines rope then
     Nothing
