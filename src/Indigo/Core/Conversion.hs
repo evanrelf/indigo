@@ -5,6 +5,6 @@ where
 
 data Conversion a
   = Invalid
-  | Corrected a
-  | Valid a
+  | Corrected !a
+  | Valid !a
   deriving stock (Show, Eq)

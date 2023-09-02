@@ -26,8 +26,8 @@ import Prelude hiding (empty, length)
 import qualified Data.List as List
 
 data History a = History
-  { past :: [a]
-  , future :: [a]
+  { past :: ![a]
+  , future :: ![a]
   }
   deriving stock (Show, Eq)
 

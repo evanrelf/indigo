@@ -18,7 +18,7 @@ infixl 6 |-
 -- | Saturating addition
 (+|) :: Word -> Word -> Word
 (+|) !x !y =
-  let result = x + y in
+  let !result = x + y in
   if result < min x y
     then maxBound
     else result
