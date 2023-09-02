@@ -1,4 +1,4 @@
-cabal-version: 2.2
+cabal-version: 3.6
 
 name: indigo
 version: 0.0.0.0
@@ -11,20 +11,14 @@ common common
     , base hiding (Prelude)
     , relude (Relude as Prelude)
     , relude
-  default-language: Haskell2010
+  default-language: GHC2021
   default-extensions:
-    BangPatterns
-    BlockArguments
-    DerivingStrategies
-    DuplicateRecordFields
-    GeneralizedNewtypeDeriving
-    InstanceSigs
-    LambdaCase
-    NamedFieldPuns
-    NumericUnderscores
-    OverloadedRecordDot
-    OverloadedStrings
-    TypeApplications
+    , BlockArguments
+    , DerivingStrategies
+    , DuplicateRecordFields
+    , LambdaCase
+    , OverloadedRecordDot
+    , OverloadedStrings
   ghc-options:
     -Wall
     -Wcompat
@@ -35,6 +29,7 @@ common common
     -Werror=missing-methods
     -Werror=partial-fields
     -Widentities
+    -Wmissing-export-lists
     -Wmissing-home-modules
     -Wno-unticked-promoted-constructors
     -Wredundant-constraints
