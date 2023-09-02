@@ -29,7 +29,6 @@ common common
     -Werror=missing-methods
     -Werror=partial-fields
     -Widentities
-    -Wmissing-export-lists
     -Wmissing-home-modules
     -Wno-unticked-promoted-constructors
     -Wredundant-constraints
