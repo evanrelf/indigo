@@ -1,4 +1,7 @@
-module Indigo.Core.SelectionRangeTest where
+module Indigo.Core.SelectionRangeTest
+  ( module Indigo.Core.SelectionRangeTest
+  )
+where
 
 import Hedgehog
 import Indigo.Core.SelectionRange

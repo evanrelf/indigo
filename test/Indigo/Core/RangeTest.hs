@@ -1,6 +1,9 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Indigo.Core.RangeTest where
+module Indigo.Core.RangeTest
+  ( module Indigo.Core.RangeTest
+  )
+where
 
 import Hedgehog hiding (Range)
 import Hedgehog.Gen qualified as Gen

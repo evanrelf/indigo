@@ -1,4 +1,7 @@
-module Indigo.Core.OperationTest where
+module Indigo.Core.OperationTest
+  ( module Indigo.Core.OperationTest
+  )
+where
 
 import Hedgehog
 import Hedgehog.Gen qualified as Gen

@@ -1,4 +1,7 @@
-module Indigo.Core.RopeTest where
+module Indigo.Core.RopeTest
+  ( module Indigo.Core.RopeTest
+  )
+where
 
 import Data.Text qualified as Text
 import Hedgehog

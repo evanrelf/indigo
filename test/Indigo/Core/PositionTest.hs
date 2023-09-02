@@ -1,4 +1,7 @@
-module Indigo.Core.PositionTest where
+module Indigo.Core.PositionTest
+  ( module Indigo.Core.PositionTest
+  )
+where
 
 import Hedgehog
 import Hedgehog.Gen qualified as Gen
@@ -6,7 +9,6 @@ import Hedgehog.Range qualified as Range
 import Indigo.Core.Conversion (Conversion (..))
 import Indigo.Core.Position
 import Indigo.Core.Rope (Rope)
-import Indigo.Core.Rope qualified as Rope
 import Indigo.Core.Rope qualified as Rope
 import Test.Tasty.HUnit
 

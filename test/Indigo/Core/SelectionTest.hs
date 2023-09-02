@@ -1,4 +1,7 @@
-module Indigo.Core.SelectionTest where
+module Indigo.Core.SelectionTest
+  ( module Indigo.Core.SelectionTest
+  )
+where
 
 import Hedgehog hiding (Range)
 import Hedgehog.Gen qualified as Gen
