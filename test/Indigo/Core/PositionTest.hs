@@ -88,13 +88,12 @@ genPosition = do
   pure $ Position{ line, column }
 
 genPositionInRope :: Rope -> Gen Position
+genPositionInRope rope | Rope.null rope = empty
 genPositionInRope rope = do
-  let maxLine = Rope.lengthLines rope
+  let maxLine = Rope.lengthLines rope - 1
   line <- Gen.word (Range.linear 0 maxLine)
-  let maxColumn =
-        maybe
-          (error "unreachable")
-          Rope.lengthChars
-          (Rope.line (Rope.LineIndex line) rope)
+  let maxColumn = fromMaybe (error "unreachable") do
+          l <- (Rope.line (Rope.LineIndex line) rope)
+          pure $ Rope.lengthChars l - 1
   column <- Gen.word (Range.linear 0 maxColumn)
   pure $ Position{ line, column }
