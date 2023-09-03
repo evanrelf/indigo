@@ -8,19 +8,29 @@ import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Indigo.Core.Conversion (Conversion (..))
 import Indigo.Core.Position
-import Indigo.Core.Rope (Rope)
+import Indigo.Core.Rope (CharIndex (..), Rope)
 import Indigo.Core.Rope qualified as Rope
 import Test.Tasty.HUnit
 
 hprop_rope_conversions_roundtrip :: Property
 hprop_rope_conversions_roundtrip = property do
-  let rope = Rope.fromText "foo\nbar\nbaz\n"
-  position <- forAll $ genPositionInRope rope
-  case toCharIndex position rope of
-    Invalid -> fail "Position invalid in rope"
-    Corrected index ->
-      fail $ "Position not in rope, was corrected (" <> show index <> ")"
-    Valid index -> fromCharIndex index rope === Valid position
+  do
+    let rope = Rope.fromText "foo\nbar\nbaz\n"
+    position <- forAll $ genPositionInRope rope
+    case toCharIndex position rope of
+      Invalid -> fail "Position not valid in rope"
+      Corrected index ->
+        fail $ "Position not in rope, was corrected (" <> show index <> ")"
+      Valid index -> fromCharIndex index rope === Valid position
+
+  do
+    let rope = Rope.fromText "foo\nbar\nbaz\n"
+    index <- forAll $ genCharIndexInRope rope
+    case fromCharIndex index rope of
+      Invalid -> fail "Index not valid in rope"
+      Corrected position ->
+        fail $ "Index not in rope, was corrected (" <> show position <> ")"
+      Valid position -> toCharIndex position rope === Valid index
 
 unit_from_char_index_invalid :: Assertion
 unit_from_char_index_invalid = do
@@ -86,6 +96,13 @@ genPosition = do
   line <- Gen.word (Range.linear 0 1000)
   column <- Gen.word (Range.linear 0 1000)
   pure $ Position{ line, column }
+
+genCharIndexInRope :: Rope -> Gen CharIndex
+genCharIndexInRope rope | Rope.null rope = empty
+genCharIndexInRope rope = do
+  let lastChar = Rope.lengthChars rope - 1
+  word <- Gen.word (Range.linear 0 lastChar)
+  pure $ CharIndex word
 
 genPositionInRope :: Rope -> Gen Position
 genPositionInRope rope | Rope.null rope = empty
