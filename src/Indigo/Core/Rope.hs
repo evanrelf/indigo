@@ -73,10 +73,6 @@ instance Show Rope where
   show :: Rope -> String
   show = Text.Show.show . toText
 
-instance IsString Rope where
-  fromString :: String -> Rope
-  fromString = fromText . fromString
-
 data Node = Node
   { text :: !Text
   , chars :: {-# UNPACK #-} !Word

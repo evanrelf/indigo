@@ -77,15 +77,15 @@ unit_rope_line = do
 unit_rope_lines :: Assertion
 unit_rope_lines = do
   lines empty @?= []
-  lines (fromText "x") @?= ["x"]
-  lines (fromText "x\n") @?= ["x\n"]
-  lines (fromText "x\ny") @?= ["x\n", "y"]
-  lines (fromText "x\ny\n") @?= ["x\n", "y\n"]
-  lines (fromText "\nx") @?= ["\n", "x"]
-  lines (fromText "\nx\n") @?= ["\n", "x\n"]
-  lines (fromText "\nx\ny") @?= ["\n", "x\n", "y"]
-  lines (fromText "\nx\ny\n") @?= ["\n", "x\n", "y\n"]
-  lines (fromText "\n\n") @?= ["\n", "\n"]
+  lines (fromText "x") @?= fmap fromText ["x"]
+  lines (fromText "x\n") @?= fmap fromText ["x\n"]
+  lines (fromText "x\ny") @?= fmap fromText ["x\n", "y"]
+  lines (fromText "x\ny\n") @?= fmap fromText ["x\n", "y\n"]
+  lines (fromText "\nx") @?= fmap fromText ["\n", "x"]
+  lines (fromText "\nx\n") @?= fmap fromText ["\n", "x\n"]
+  lines (fromText "\nx\ny") @?= fmap fromText ["\n", "x\n", "y"]
+  lines (fromText "\nx\ny\n") @?= fmap fromText ["\n", "x\n", "y\n"]
+  lines (fromText "\n\n") @?= fmap fromText ["\n", "\n"]
 
 genRope :: Gen Rope
 genRope = do
@@ -93,9 +93,7 @@ genRope = do
   Gen.recursive Gen.choice
     [ mempty
     , fromText <$> Gen.text range Gen.ascii
-    , fromString <$> Gen.string range Gen.ascii
     , fromText <$> Gen.text range Gen.unicode
-    , fromString <$> Gen.string range Gen.unicode
     ]
     [ Gen.subterm2 genRope genRope (<>)
     ]
