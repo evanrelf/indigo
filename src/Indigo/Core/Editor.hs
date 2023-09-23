@@ -24,6 +24,8 @@ instance Default Editor where
       , mode = def
       }
 
+-- TODO: No way of referring to a particular buffer (no IDs, names/paths aren't
+-- guaranteed to be unique, no stable ordering)
 data Buffers = Buffers
   { before :: !(Seq Buffer)
   , current :: !Buffer
