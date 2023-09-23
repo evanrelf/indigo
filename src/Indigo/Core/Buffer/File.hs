@@ -1,3 +1,7 @@
+{-# LANGUAGE RecordWildCards #-}
+
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+
 module Indigo.Core.Buffer.File
   ( FileBuffer
 
@@ -22,6 +26,7 @@ module Indigo.Core.Buffer.File
   , scrollToColumn
 
     -- * Consume
+  , toInMemoryBuffer
 
     -- * Internal
   , isValid
@@ -29,3 +34,12 @@ module Indigo.Core.Buffer.File
 where
 
 import Indigo.Core.Buffer.File.Internal
+import Indigo.Core.Buffer.InMemory (Name)
+import Indigo.Core.Buffer.InMemory.Internal (InMemoryBuffer (..))
+
+toInMemoryBuffer :: Name -> FileBuffer -> InMemoryBuffer
+toInMemoryBuffer name FileBuffer{..} =
+  InMemoryBuffer
+    { name
+    , ..
+    }
