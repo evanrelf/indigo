@@ -7,6 +7,8 @@ where
 import Data.Default.Class (Default (..))
 import Data.Sequence qualified as Seq
 import Indigo.Core.Buffer (Buffer)
+import Indigo.Core.Buffer qualified as Buffer
+import Indigo.Core.Buffer.InMemory qualified as InMemoryBuffer
 import Indigo.Core.Mode (Mode)
 
 data Editor = Editor
@@ -33,6 +35,6 @@ instance Default Buffers where
   def =
     Buffers
       { before = Seq.empty
-      , current = def
+      , current = Buffer.InMemory InMemoryBuffer.scratch
       , after = Seq.empty
       }

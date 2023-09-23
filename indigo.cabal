@@ -51,6 +51,8 @@ library
     , vty
   exposed-modules:
     Indigo.Core.Buffer
+    Indigo.Core.Buffer.File
+    Indigo.Core.Buffer.InMemory
     Indigo.Core.Conversion
     Indigo.Core.Direction
     Indigo.Core.Editor
