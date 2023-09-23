@@ -52,7 +52,9 @@ library
   exposed-modules:
     Indigo.Core.Buffer
     Indigo.Core.Buffer.File
+    Indigo.Core.Buffer.File.Internal
     Indigo.Core.Buffer.InMemory
+    Indigo.Core.Buffer.InMemory.Internal
     Indigo.Core.Conversion
     Indigo.Core.Direction
     Indigo.Core.Editor

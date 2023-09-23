@@ -1,34 +1,7 @@
 {-# LANGUAGE NoFieldSelectors #-}
 
-module Indigo.Core.Buffer.InMemory
-  ( InMemoryBuffer
-  , Name (..)
-
-    -- * Create
-  , scratch
-  , fromText
-  , fromRope
-
-    -- * Query
-  , name
-  , contents
-  , selection
-  , isReadOnly
-  , verticalScroll
-  , horizontalScroll
-
-    -- * Modify
-  , scrollUp
-  , scrollDown
-  , scrollLeft
-  , scrollRight
-  , scrollToLine
-  , scrollToColumn
-
-    -- * Consume
-
-    -- * Internal
-  , isValid
+module Indigo.Core.Buffer.File.Internal
+  ( module Indigo.Core.Buffer.File.Internal
   )
 where
 
@@ -39,84 +12,83 @@ import Indigo.Core.Selection (Selection)
 import Indigo.Core.Utilities ((|-))
 import UnliftIO.Exception qualified as Exception
 
-data InMemoryBuffer = InMemoryBuffer
-  { name :: !Name
+data FileBuffer = FileBuffer
+  { path :: !FilePath
   , contents :: !Rope
   , selection :: !Selection
+  , isModified :: !Bool
   , isReadOnly :: !Bool
   , verticalScroll :: {-# UNPACK #-} !LineIndex
   , horizontalScroll :: {-# UNPACK #-} !ColumnIndex
   }
 
-newtype Name = Name{ unName :: Text }
-
-scratch :: InMemoryBuffer
-scratch = fromRope (Name "scratch") def
-
-fromText :: Name -> Text -> InMemoryBuffer
-fromText name text = fromRope name (Rope.fromText text)
-
-fromRope :: Name -> Rope -> InMemoryBuffer
-fromRope name rope =
-  InMemoryBuffer
-    { name
-    , contents = rope
+fromFile :: MonadIO m => FilePath -> m FileBuffer
+fromFile path = do
+  bytes <- readFileBS path
+  text <- Exception.fromEither $ decodeUtf8Strict bytes
+  pure FileBuffer
+    { path
+    , contents = Rope.fromText text
     , selection = def
-    , isReadOnly = False
+    , isModified = False
+    , isReadOnly = undefined
     , verticalScroll = 0
     , horizontalScroll = 0
     }
 
-name :: InMemoryBuffer -> Name
-name buffer = buffer.name
+path :: FileBuffer -> FilePath
+path buffer = buffer.path
 
-contents :: InMemoryBuffer -> Rope
+contents :: FileBuffer -> Rope
 contents buffer = buffer.contents
 
-selection :: InMemoryBuffer -> Selection
+selection :: FileBuffer -> Selection
 selection buffer = buffer.selection
 
-isReadOnly :: InMemoryBuffer -> Bool
+isModified :: FileBuffer -> Bool
+isModified buffer = buffer.isModified
+
+isReadOnly :: FileBuffer -> Bool
 isReadOnly buffer = buffer.isReadOnly
 
-verticalScroll :: InMemoryBuffer -> LineIndex
+verticalScroll :: FileBuffer -> LineIndex
 verticalScroll buffer = buffer.verticalScroll
 
-horizontalScroll :: InMemoryBuffer -> ColumnIndex
+horizontalScroll :: FileBuffer -> ColumnIndex
 horizontalScroll buffer = buffer.horizontalScroll
 
-scrollUp :: Word -> InMemoryBuffer -> InMemoryBuffer
+scrollUp :: Word -> FileBuffer -> FileBuffer
 scrollUp distance buffer =
   scrollToLine (buffer.verticalScroll `satSub` distance) buffer
   where satSub = coerce (|-)
 
-scrollDown :: Word -> InMemoryBuffer -> InMemoryBuffer
+scrollDown :: Word -> FileBuffer -> FileBuffer
 scrollDown distance buffer =
   scrollToLine (buffer.verticalScroll `add` distance) buffer
   where add = coerce ((+) @Word)
 
-scrollLeft :: Word -> InMemoryBuffer -> InMemoryBuffer
+scrollLeft :: Word -> FileBuffer -> FileBuffer
 scrollLeft distance buffer =
   scrollToColumn (buffer.horizontalScroll `satSub` distance) buffer
   where satSub = coerce (|-)
 
-scrollRight :: Word -> InMemoryBuffer -> InMemoryBuffer
+scrollRight :: Word -> FileBuffer -> FileBuffer
 scrollRight distance buffer =
   scrollToColumn (buffer.horizontalScroll `add` distance) buffer
   where add = coerce ((+) @Word)
 
-scrollToLine :: LineIndex -> InMemoryBuffer -> InMemoryBuffer
+scrollToLine :: LineIndex -> FileBuffer -> FileBuffer
 scrollToLine line buffer = buffer{ verticalScroll = min line lastLine }
   where
   lastLine = Rope.lengthLines buffer.contents `satSub` (1 :: Word)
   satSub = coerce (|-)
 
 -- TODO: Should this be capped at the length of the longest line?
-scrollToColumn :: ColumnIndex -> InMemoryBuffer -> InMemoryBuffer
+scrollToColumn :: ColumnIndex -> FileBuffer -> FileBuffer
 scrollToColumn column buffer = buffer{ horizontalScroll = column }
 
 -- Selection must be valid in the rope
 -- Horizontal scroll offset must not exceed length of longest line(?)
 -- Vertical scroll offset must not exceed length of buffer
-isValid :: InMemoryBuffer -> Bool
+isValid :: FileBuffer -> Bool
 isValid = undefined
