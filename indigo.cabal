@@ -57,6 +57,7 @@ library
     Indigo.Core.Buffer.File.Internal
     Indigo.Core.Buffer.InMemory
     Indigo.Core.Buffer.InMemory.Internal
+    Indigo.Core.Command
     Indigo.Core.Conversion
     Indigo.Core.Direction
     Indigo.Core.Editor
