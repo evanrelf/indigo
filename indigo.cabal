@@ -47,6 +47,7 @@ library
     , brick
     , data-default-class
     , fingertree
+    , optparse-applicative
     , unliftio
     , vty
   exposed-modules:
@@ -68,6 +69,7 @@ library
     Indigo.Core.Selection
     Indigo.Core.SelectionRange
     Indigo.Core.Utilities
+    Indigo.Options
     Indigo.Tui
 
 executable indigo

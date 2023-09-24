@@ -4,11 +4,14 @@ import Data.Default.Class (Default (..))
 import Indigo.Core.Buffer qualified as Buffer
 import Indigo.Core.Buffer.File qualified as FileBuffer
 import Indigo.Core.Editor qualified as Editor
+import Indigo.Options (Options (..), getOptions)
 import Indigo.Tui qualified as Tui
 
 main :: IO ()
 main = do
-  getArgs >>= \case
+  options <- getOptions
+
+  case options.files of
     [] -> do
       Tui.run def
     [path] -> do
