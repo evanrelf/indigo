@@ -3,8 +3,8 @@ module Indigo.Core.Conversion
   )
 where
 
-data Conversion a
-  = Invalid
+data Conversion e a
+  = Invalid !e
   | Corrected !a
   | Valid !a
   deriving stock (Show, Eq)

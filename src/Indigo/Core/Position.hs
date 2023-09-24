@@ -26,8 +26,9 @@ instance Default Position where
   def :: Position
   def = Position{ line = 0, column = 0 }
 
-fromCharIndex :: HasCallStack => CharIndex -> Rope -> Conversion Position
-fromCharIndex _ rope | Rope.null rope = Invalid
+fromCharIndex :: HasCallStack => CharIndex -> Rope -> Conversion Text Position
+fromCharIndex _ rope | Rope.null rope =
+  Invalid "No valid position in empty rope"
 fromCharIndex index0 rope = do
   let (corrected, index) = do
         let lengthChars = Rope.lengthChars rope
@@ -49,8 +50,9 @@ fromCharIndex index0 rope = do
     then Corrected position
     else Valid position
 
-toCharIndex :: HasCallStack => Position -> Rope -> Conversion CharIndex
-toCharIndex _ rope | Rope.null rope = Invalid
+toCharIndex :: HasCallStack => Position -> Rope -> Conversion Text CharIndex
+toCharIndex _ rope | Rope.null rope =
+  Invalid "No valid char index in empty rope"
 toCharIndex position rope = do
   let (correctedLine, line) = do
         let lastLine = Rope.lengthLines rope - 1
