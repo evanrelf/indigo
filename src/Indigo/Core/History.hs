@@ -1,6 +1,8 @@
 {-# LANGUAGE NoFieldSelectors #-}
 
--- https://github.com/zaboople/klonk/blob/master/TheGURQ.md
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+
+-- | <https://github.com/zaboople/klonk/blob/master/TheGURQ.md>
 module Indigo.Core.History
   ( History
   , Action (..)
@@ -15,8 +17,8 @@ module Indigo.Core.History
 
     -- * Modify
   , act
-  , travelForward
   , travelBackward
+  , travelForward
   )
 where
 
@@ -64,14 +66,16 @@ act action history =
     history{ past = action : history.past }
   else
     history
-      { past = mconcat
-          [ one action
-          , fmap invert history.future
-          , reverse history.future
-          , history.past
-          ]
+      { past = action : past
       , future = []
       }
+    where
+    past =
+      mconcat
+        [ fmap invert history.future
+        , reverse history.future
+        , history.past
+        ]
 
 travelBackward :: History a -> History a
 travelBackward history =
