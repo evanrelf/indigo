@@ -1,18 +1,33 @@
+{-# LANGUAGE NoFieldSelectors #-}
+
 module Indigo.Core.Editor
   ( Editor (..)
-  , Buffers (..)
+
+    -- * Create
+
+    -- * Query
+  , buffers
+  , mode
+
+    -- * Modify
+  , addBuffer
+
+    -- * Consume
+
+    -- * Internal
   )
 where
 
 import Data.Default.Class (Default (..))
-import Data.Sequence qualified as Seq
 import Indigo.Core.Buffer (Buffer)
 import Indigo.Core.Buffer qualified as Buffer
 import Indigo.Core.Buffer.InMemory qualified as InMemoryBuffer
 import Indigo.Core.Mode (Mode)
 
+-- TODO: No way of referring to a particular buffer (no IDs, names/paths aren't
+-- guaranteed to be unique, no stable ordering)
 data Editor = Editor
-  { buffers :: !Buffers
+  { buffers :: ![Buffer]
   , mode :: !Mode
   }
 
@@ -20,23 +35,15 @@ instance Default Editor where
   def :: Editor
   def =
     Editor
-      { buffers = def
+      { buffers = [Buffer.InMemory InMemoryBuffer.scratch]
       , mode = def
       }
 
--- TODO: No way of referring to a particular buffer (no IDs, names/paths aren't
--- guaranteed to be unique, no stable ordering)
-data Buffers = Buffers
-  { before :: !(Seq Buffer)
-  , current :: !Buffer
-  , after :: !(Seq Buffer)
-  }
+buffers :: Editor -> [Buffer]
+buffers editor = editor.buffers
 
-instance Default Buffers where
-  def :: Buffers
-  def =
-    Buffers
-      { before = Seq.empty
-      , current = Buffer.InMemory InMemoryBuffer.scratch
-      , after = Seq.empty
-      }
+mode :: Editor -> Mode
+mode editor = editor.mode
+
+addBuffer :: Buffer -> Editor -> Editor
+addBuffer buffer editor = editor{ buffers = buffer : editor.buffers }

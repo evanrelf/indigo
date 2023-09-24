@@ -31,7 +31,7 @@ fromFile path = do
     , contents = Rope.fromText text
     , selection = def
     , isModified = False
-    , isReadOnly = undefined
+    , isReadOnly = False -- TODO
     , verticalScroll = 0
     , horizontalScroll = 0
     }
