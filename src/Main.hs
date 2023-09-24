@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Indigo.Tui qualified
+import Indigo qualified
 
 main :: IO ()
-main = Indigo.Tui.main
+main = Indigo.main

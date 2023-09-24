@@ -1,36 +1,23 @@
 module Indigo.Tui
-  ( main
+  ( run
   )
 where
 
 import Brick (App (..))
 import Brick qualified
-import Data.Default.Class (Default (..))
 import Data.Text qualified as Text
 import Graphics.Vty qualified as Vty
 import Indigo.Core.Buffer qualified as Buffer
-import Indigo.Core.Buffer.File qualified as FileBuffer
 import Indigo.Core.Editor (Editor (..))
 import Indigo.Core.Editor qualified as Editor
 import Indigo.Core.Rope qualified as Rope
 import Prelude hiding (State, state)
 import Relude.Unsafe qualified as Unsafe
 
-main :: IO ()
-main = do
-  getArgs >>= \case
-    [] -> do
-      let initialState = State{ editor = def }
-      void $ Brick.defaultMain app initialState
-    [path] -> do
-      buffer <- Buffer.File <$> FileBuffer.fromFile path
-      let initialState =
-            State
-              { editor = Editor.addBuffer buffer def
-              }
-      void $ Brick.defaultMain app initialState
-    _ -> do
-      die "usage: indigo [PATH]"
+run :: MonadIO m => Editor -> m ()
+run editor = do
+  let initialState = State{ editor }
+  void $ liftIO $ Brick.defaultMain app initialState
 
 data State = State
   { editor :: !Editor

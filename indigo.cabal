@@ -50,6 +50,7 @@ library
     , unliftio
     , vty
   exposed-modules:
+    Indigo
     Indigo.Core.Buffer
     Indigo.Core.Buffer.File
     Indigo.Core.Buffer.File.Internal
