@@ -13,6 +13,8 @@ module Indigo.Core.History
     -- * Query
   , past
   , future
+  , inPast
+  , inPresent
   , length
 
     -- * Modify
@@ -56,6 +58,12 @@ past history = history.past
 -- | Future actions, from oldest to newest
 future :: History a -> [a]
 future history = history.future
+
+inPast :: History a -> Bool
+inPast = not . inPresent
+
+inPresent :: History a -> Bool
+inPresent history = null history.future
 
 length :: History a -> Int
 length history = List.length history.past + List.length history.future
