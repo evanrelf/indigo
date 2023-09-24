@@ -26,6 +26,8 @@ module Indigo.Core.Rope
   , lineToChar
   , char
   , line
+  , charSlice
+  , lineSlice
   , lines
 
     -- * Modify
@@ -257,6 +259,16 @@ line (LineIndex index) rope = do
       (error "line: unreachable")
       Just
       (lines rope !!? unsafeWordToInt index)
+
+-- TODO: Is there a more idiomatic name for this?
+charSlice :: HasCallStack => CharIndex -> CharIndex -> Rope -> Maybe Rope
+charSlice _ _ rope | null rope = Nothing
+charSlice begin end rope = undefined
+
+-- TODO: Is there a more idiomatic name for this?
+lineSlice :: HasCallStack => LineIndex -> LineIndex -> Rope -> Maybe Rope
+lineSlice _ _ rope | null rope = Nothing
+lineSlice begin end rope = undefined
 
 lines :: Rope -> [Rope]
 lines rope | null rope = []
