@@ -8,6 +8,7 @@ common common
     , base
     , relude
   mixins:
+    , base (Prelude as BasePrelude)
     , base hiding (Prelude)
     , relude (Relude as Prelude)
     , relude
