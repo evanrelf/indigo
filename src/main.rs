@@ -1,6 +1,7 @@
 mod conversion;
 mod macros;
 mod position;
+mod rope;
 mod terminal;
 
 use clap::Parser as _;
