@@ -13,6 +13,7 @@ module Indigo.Core.Selection
   , ranges
   , primary
   , secondaries
+  , direction
   , isForward
   , isBackward
 
@@ -86,6 +87,9 @@ secondaries selection = do
   (selectionRange, targetColumns) <- IntervalMap.toAscList selection.secondaries
   targetColumn <- toList targetColumns
   pure (selectionRange, targetColumn)
+
+direction :: Selection -> Direction
+direction selection = selection.direction
 
 isForward :: Selection -> Bool
 isForward selection = selection.direction == Forward
