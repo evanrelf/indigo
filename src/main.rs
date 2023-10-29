@@ -1,6 +1,7 @@
 mod conversion;
 mod macros;
 mod position;
+mod range;
 mod rope;
 mod terminal;
 
