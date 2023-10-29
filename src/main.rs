@@ -3,6 +3,7 @@ mod macros;
 mod position;
 mod range;
 mod rope;
+mod selection_range;
 mod terminal;
 
 use clap::Parser as _;
