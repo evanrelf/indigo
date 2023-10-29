@@ -7,9 +7,16 @@ mod rope;
 mod selection_range;
 mod terminal;
 
+use crate::macros::key_matches;
 use clap::Parser as _;
-use crossterm::{event, style, ExecutableCommand as _};
-use std::path::PathBuf;
+use crossterm::{
+    cursor::MoveTo,
+    event::{Event, EventStream},
+    style,
+    terminal::{Clear, ClearType},
+    QueueableCommand as _,
+};
+use std::{io::Write as _, path::PathBuf};
 use tokio_stream::StreamExt as _;
 use tracing::Level;
 
@@ -36,28 +43,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut stdout = std::io::stdout();
 
-    stdout.execute(style::Print("Hello, world!")).unwrap();
+    let mut event_stream = EventStream::new();
 
-    let mut event_stream = event::EventStream::new();
+    let mut mouse_position;
 
     loop {
-        use crate::macros::key_matches;
-        use crossterm::event::Event::*;
-
         let event = match event_stream.next().await {
             Some(Ok(event)) => event,
             Some(Err(error)) => panic!("Error: {error}"),
             None => break,
         };
 
-        tracing::debug!("event: {event:?}");
+        tracing::debug!(?event);
 
         match event {
-            Key(key) if key_matches!(key, CONTROL 'p') => panic!(),
-            Key(key) if key_matches!(key, CONTROL 'c') => break,
-            Key(key) if key_matches!(key, 'q') => break,
+            Event::Mouse(mouse_event) => mouse_position = (mouse_event.row, mouse_event.column),
+            Event::Key(key) if key_matches!(key, CONTROL 'p') => panic!(),
+            Event::Key(key) if key_matches!(key, CONTROL 'c') => break,
+            Event::Key(key) if key_matches!(key, 'q') => break,
             _ => continue,
         }
+
+        stdout
+            .queue(MoveTo(0, 0))?
+            .queue(Clear(ClearType::CurrentLine))?
+            .queue(style::Print(format!("mouse: {:?}", mouse_position)))?
+            .flush()?;
     }
 
     Ok(())
