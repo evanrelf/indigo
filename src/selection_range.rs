@@ -1,4 +1,4 @@
-use crate::position::Position;
+use crate::{position::Position, range::Range};
 use std::cmp::{max, min};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -51,6 +51,12 @@ impl From<(Position, Position)> for SelectionRange {
             start: min(position1.clone(), position2.clone()),
             end: max(position1.clone(), position2.clone()),
         }
+    }
+}
+
+impl From<Range> for SelectionRange {
+    fn from(range: Range) -> Self {
+        Self::from((range.anchor().clone(), range.cursor().clone()))
     }
 }
 
