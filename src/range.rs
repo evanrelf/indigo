@@ -21,6 +21,14 @@ impl Range {
         self.target_column
     }
 
+    pub fn start(&self) -> &Position {
+        min(&self.anchor, &self.cursor)
+    }
+
+    pub fn end(&self) -> &Position {
+        max(&self.anchor, &self.cursor)
+    }
+
     pub fn direction(&self) -> Direction {
         if self.is_forward() {
             Direction::Forward
@@ -48,20 +56,18 @@ impl Range {
             || (range2.anchor <= range1.anchor && range1.anchor <= range2.cursor)
     }
 
-    pub fn set_target_column(&self, target_column: Option<usize>) -> Option<Self> {
-        let range = Self {
-            target_column,
-            ..self.clone()
-        };
-
-        if range.is_valid() {
-            Some(range)
+    pub fn with_target_column(&self, target_column: usize) -> Option<Self> {
+        if self.cursor.column < target_column {
+            Some(Self {
+                target_column: Some(target_column),
+                ..self.clone()
+            })
         } else {
             None
         }
     }
 
-    pub fn forget_target_column(&self) -> Self {
+    pub fn without_target_column(&self) -> Self {
         Self {
             target_column: None,
             ..self.clone()
