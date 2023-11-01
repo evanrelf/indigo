@@ -1,4 +1,4 @@
-use crate::position::Position;
+use crate::{direction::Direction, position::Position};
 use std::cmp::{max, min};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -19,6 +19,14 @@ impl Range {
 
     pub fn target_column(&self) -> Option<usize> {
         self.target_column
+    }
+
+    pub fn direction(&self) -> Direction {
+        if self.is_forward() {
+            Direction::Forward
+        } else {
+            Direction::Backward
+        }
     }
 
     pub fn is_forward(&self) -> bool {
