@@ -14,6 +14,7 @@ module Indigo.Core.Range
   , anchor
   , cursor
   , targetColumn
+  , direction
   , isForward
   , isBackward
   , isReduced
@@ -39,6 +40,7 @@ module Indigo.Core.Range
 where
 
 import Data.Default.Class (Default (..))
+import Indigo.Core.Direction (Direction (..))
 import Indigo.Core.Position (Position (..))
 import Prelude hiding (flip)
 
@@ -72,6 +74,9 @@ cursor range = range.cursor
 
 targetColumn :: Range -> Maybe Word
 targetColumn range = range.targetColumn
+
+direction :: Range -> Direction
+direction range = if isForward range then Forward else Backward
 
 isForward :: Range -> Bool
 isForward range = range.anchor <= range.cursor
