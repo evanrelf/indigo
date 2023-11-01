@@ -4,6 +4,7 @@ mod macros;
 mod position;
 mod range;
 mod rope;
+mod selection;
 mod selection_range;
 mod terminal;
 
