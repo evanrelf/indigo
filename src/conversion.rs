@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Conversion<T> {
     Invalid,
     Corrected(T),

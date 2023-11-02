@@ -1,7 +1,7 @@
 use crate::conversion::Conversion;
 use ropey::Rope;
 
-#[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Position {
     pub line: usize,
     pub column: usize,
@@ -35,7 +35,7 @@ impl Position {
         }
     }
 
-    pub fn to_char_index(&self, rope: &Rope) -> Conversion<usize> {
+    pub fn to_char_index(self, rope: &Rope) -> Conversion<usize> {
         if rope.len_chars() == 0 {
             return Conversion::Invalid;
         }

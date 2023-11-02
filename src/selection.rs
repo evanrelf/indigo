@@ -11,8 +11,8 @@ impl Selection {
         &self.ranges
     }
 
-    pub fn primary(&self) -> &Range {
-        self.ranges.get(self.primary).unwrap()
+    pub fn primary(&self) -> Range {
+        *self.ranges.get(self.primary).unwrap()
     }
 
     pub fn direction(&self) -> Direction {

@@ -1,7 +1,7 @@
 use crate::{direction::Direction, position::Position};
 use std::cmp::{max, min};
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Range {
     anchor: Position,
     cursor: Position,
@@ -9,24 +9,24 @@ pub struct Range {
 }
 
 impl Range {
-    pub fn anchor(&self) -> &Position {
-        &self.anchor
+    pub fn anchor(&self) -> Position {
+        self.anchor
     }
 
-    pub fn cursor(&self) -> &Position {
-        &self.cursor
+    pub fn cursor(&self) -> Position {
+        self.cursor
     }
 
     pub fn target_column(&self) -> Option<usize> {
         self.target_column
     }
 
-    pub fn start(&self) -> &Position {
-        min(&self.anchor, &self.cursor)
+    pub fn start(&self) -> Position {
+        min(self.anchor, self.cursor)
     }
 
-    pub fn end(&self) -> &Position {
-        max(&self.anchor, &self.cursor)
+    pub fn end(&self) -> Position {
+        max(self.anchor, self.cursor)
     }
 
     pub fn direction(&self) -> Direction {
@@ -57,7 +57,7 @@ impl Range {
         if self.cursor.column < target_column {
             Some(Self {
                 target_column: Some(target_column),
-                ..self.clone()
+                ..*self
             })
         } else {
             None
@@ -67,17 +67,17 @@ impl Range {
     pub fn without_target_column(&self) -> Self {
         Self {
             target_column: None,
-            ..self.clone()
+            ..*self
         }
     }
 
     pub fn flip(&self) -> Self {
         if self.is_reduced() {
-            self.clone()
+            *self
         } else {
             Self {
-                anchor: self.cursor.clone(),
-                cursor: self.anchor.clone(),
+                anchor: self.cursor,
+                cursor: self.anchor,
                 target_column: None,
             }
         }
@@ -87,7 +87,7 @@ impl Range {
         if self.is_backward() {
             self.flip()
         } else {
-            self.clone()
+            *self
         }
     }
 
@@ -95,14 +95,14 @@ impl Range {
         if self.is_forward() {
             self.flip()
         } else {
-            self.clone()
+            *self
         }
     }
 
     pub fn reduce(&self) -> Self {
         Self {
-            anchor: self.cursor.clone(),
-            ..self.clone()
+            anchor: self.cursor,
+            ..*self
         }
     }
 
@@ -110,11 +110,11 @@ impl Range {
         match (self.is_forward(), other.is_forward()) {
             (true, true) => {
                 // Forward
-                let anchor = min(self.anchor.clone(), other.anchor.clone());
+                let anchor = min(self.anchor, other.anchor);
                 let (cursor, target_column) = if self.cursor > other.cursor {
-                    (self.cursor.clone(), self.target_column)
+                    (self.cursor, self.target_column)
                 } else {
-                    (other.cursor.clone(), other.target_column)
+                    (other.cursor, other.target_column)
                 };
                 Self {
                     anchor,
@@ -124,11 +124,11 @@ impl Range {
             }
             (false, false) => {
                 // Backward
-                let anchor = max(self.anchor.clone(), other.anchor.clone());
+                let anchor = max(self.anchor, other.anchor);
                 let (cursor, target_column) = if self.cursor < other.cursor {
-                    (self.cursor.clone(), self.target_column)
+                    (self.cursor, self.target_column)
                 } else {
-                    (other.cursor.clone(), other.target_column)
+                    (other.cursor, other.target_column)
                 };
                 Self {
                     anchor,
@@ -154,8 +154,8 @@ impl Range {
 impl From<Position> for Range {
     fn from(position: Position) -> Self {
         Self {
-            anchor: position.clone(),
-            cursor: position.clone(),
+            anchor: position,
+            cursor: position,
             target_column: None,
         }
     }
