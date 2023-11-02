@@ -1,5 +1,6 @@
 #![allow(unused_macros)]
 
+#[macro_export]
 macro_rules! key_modifiers {
     () => {
         ::crossterm::event::KeyModifiers::NONE
@@ -8,13 +9,11 @@ macro_rules! key_modifiers {
         ::crossterm::event::KeyModifiers::$m
     };
     ($m:ident | $($ms:ident)|+) => {
-        ::crossterm::event::KeyModifiers::$m | crate::macros::key_modifiers!($($ms)|+)
+        ::crossterm::event::KeyModifiers::$m | ::indigo::key_modifiers!($($ms)|+)
     };
 }
 
-#[allow(unused_imports)]
-pub(crate) use key_modifiers;
-
+#[macro_export]
 macro_rules! key_code {
     ($c:literal) => {
         ::crossterm::event::KeyCode::Char($c)
@@ -24,50 +23,41 @@ macro_rules! key_code {
     };
 }
 
-#[allow(unused_imports)]
-pub(crate) use key_code;
-
+#[macro_export]
 macro_rules! key_kind {
     ($k:ident) => {
         ::crossterm::event::KeyEventKind::$k
     };
 }
 
-#[allow(unused_imports)]
-pub(crate) use key_kind;
-
+#[macro_export]
 macro_rules! key {
     ($c:literal) => {
-        ::crossterm::event::KeyEvent::new(crate::macros::key_code!($c), crate::macros::key_modifiers!())
+        ::crossterm::event::KeyEvent::new(::indigo::key_code!($c), ::indigo::key_modifiers!())
     };
     ($c:ident) => {
-        ::crossterm::event::KeyEvent::new(crate::macros::key_code!($c), crate::macros::key_modifiers!())
+        ::crossterm::event::KeyEvent::new(::indigo::key_code!($c), ::indigo::key_modifiers!())
     };
     ($($m:ident)+ $c:literal) => {
-        ::crossterm::event::KeyEvent::new(crate::macros::key_code!($c), crate::macros::key_modifiers!($($m)|+))
+        ::crossterm::event::KeyEvent::new(::indigo::key_code!($c), ::indigo::key_modifiers!($($m)|+))
     };
     ($($m:ident)+ $c:ident) => {
-        ::crossterm::event::KeyEvent::new(crate::macros::key_code!($c), crate::macros::key_modifiers!($($m)|+))
+        ::crossterm::event::KeyEvent::new(::indigo::key_code!($c), ::indigo::key_modifiers!($($m)|+))
     };
 }
 
-#[allow(unused_imports)]
-pub(crate) use key;
-
+#[macro_export]
 macro_rules! key_matches {
     ($key:expr, $c:literal) => {
-        $key.code == crate::macros::key_code!($c) && $key.modifiers == crate::macros::key_modifiers!()
+        $key.code == ::indigo::key_code!($c) && $key.modifiers == ::indigo::key_modifiers!()
     };
     ($key:expr, $c:ident) => {
-        $key.code == crate::macros::key_code!($c) && $key.modifiers == crate::macros::key_modifiers!()
+        $key.code == ::indigo::key_code!($c) && $key.modifiers == ::indigo::key_modifiers!()
     };
     ($key:expr, $($m:ident)+ $c:literal) => {
-        $key.code == crate::macros::key_code!($c) && $key.modifiers == crate::macros::key_modifiers!($($m)|+)
+        $key.code == ::indigo::key_code!($c) && $key.modifiers == ::indigo::key_modifiers!($($m)|+)
     };
     ($key:expr, $($m:ident)+ $c:ident) => {
-        $key.code == crate::macros::key_code!($c) && $key.modifiers == crate::macros::key_modifiers!($($m)|+)
+        $key.code == ::indigo::key_code!($c) && $key.modifiers == ::indigo::key_modifiers!($($m)|+)
     };
 }
-
-#[allow(unused_imports)]
-pub(crate) use key_matches;

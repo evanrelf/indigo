@@ -3,6 +3,17 @@ name = "indigo"
 version = "0.1.0"
 edition = "2021"
 
+# TODO: Break into multiple crates in a workspace, so the lib doesn't inherit
+# all the bin dependencies
+
+[lib]
+name = "indigo"
+path = "src/lib.rs"
+
+[[bin]]
+name = "indigo"
+path = "src/main.rs"
+
 [dependencies]
 clap = { version = "4.4.0", default-features = false, features = ["derive", "error-context", "help", "std", "usage"] }
 crossterm = { version = "0.27.0", default-features = false, features = ["bracketed-paste", "events", "event-stream"] }
