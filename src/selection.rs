@@ -1,4 +1,5 @@
 use crate::{direction::Direction, range::Range};
+use std::borrow::Cow;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Selection {
@@ -32,19 +33,19 @@ impl Selection {
         todo!()
     }
 
-    pub fn flip_forward(&self) -> Self {
+    pub fn flip_forward(&self) -> Cow<Self> {
         if self.is_backward() {
-            self.flip()
+            Cow::Owned(self.flip())
         } else {
-            self.clone()
+            Cow::Borrowed(self)
         }
     }
 
-    pub fn flip_backward(&self) -> Self {
+    pub fn flip_backward(&self) -> Cow<Self> {
         if self.is_forward() {
-            self.flip()
+            Cow::Owned(self.flip())
         } else {
-            self.clone()
+            Cow::Borrowed(self)
         }
     }
 
