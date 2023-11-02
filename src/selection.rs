@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Selection {
+    // TODO: ranges: Vec<SelectionRange>, primary: usize
     primary: (SelectionRange, Option<usize>),
     secondaries: BTreeMap<SelectionRange, Vec<Option<usize>>>,
     direction: Direction,
