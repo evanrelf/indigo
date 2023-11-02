@@ -74,10 +74,29 @@ impl Position {
     }
 }
 
+impl From<(usize, usize)> for Position {
+    fn from((line, column): (usize, usize)) -> Self {
+        Position { line, column }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::conversion::Conversion;
+
+    #[test]
+    fn position_default() {
+        assert_eq!(Position::default(), Position::from((0, 0)));
+    }
+
+    #[test]
+    fn position_ord() {
+        assert!(Position::from((0, 0)) < Position::from((0, 1)));
+        assert!(Position::from((0, 0)) < Position::from((1, 0)));
+        assert!(Position::from((5, 5)) < Position::from((5, 6)));
+        assert!(Position::from((5, 5)) < Position::from((6, 0)));
+    }
 
     #[test]
     fn from_char_index_invalid() {

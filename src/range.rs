@@ -176,3 +176,19 @@ impl From<Range> for (Position, Position) {
         (range.anchor, range.cursor)
     }
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn range_default() {
+        assert_eq!(
+            Range::default(),
+            Range {
+                anchor: Position::from((0, 0)),
+                cursor: Position::from((0, 0)),
+                target_column: None,
+            }
+        );
+    }
+}
