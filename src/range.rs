@@ -50,10 +50,7 @@ impl Range {
     }
 
     pub fn is_overlapping(&self, other: &Self) -> bool {
-        let range1 = self.flip_forward();
-        let range2 = other.flip_forward();
-        (range1.anchor <= range2.anchor && range2.anchor <= range1.cursor)
-            || (range2.anchor <= range1.anchor && range1.anchor <= range2.cursor)
+        self.start() <= other.end() && other.start() <= self.end()
     }
 
     pub fn with_target_column(&self, target_column: usize) -> Option<Self> {

@@ -5,7 +5,6 @@ mod position;
 mod range;
 mod rope;
 mod selection;
-mod selection_range;
 mod terminal;
 
 use crate::macros::key_matches;
