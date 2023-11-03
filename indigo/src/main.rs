@@ -1,3 +1,7 @@
+mod macros;
+mod terminal;
+
+use crate::macros::key_matches;
 use clap::Parser as _;
 use crossterm::{
     cursor::MoveTo,
@@ -6,7 +10,6 @@ use crossterm::{
     terminal::{Clear, ClearType},
     QueueableCommand as _,
 };
-use indigo::key_matches;
 use std::{io::Write as _, path::PathBuf};
 use tokio_stream::StreamExt as _;
 use tracing::Level;
@@ -30,7 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .init();
     }
 
-    let _terminal = indigo::terminal::enter();
+    let _terminal = crate::terminal::enter();
 
     let mut stdout = std::io::stdout();
 

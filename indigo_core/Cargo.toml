@@ -1,0 +1,11 @@
+[package]
+name = "indigo_core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ropey = { version = "1.6.0", default-features = false, features = ["simd"] }
+
+[dev-dependencies]
+quickcheck = "1.0.3"
+quickcheck_macros = "1.0.0"

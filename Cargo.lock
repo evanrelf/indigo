@@ -197,13 +197,22 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "crossterm",
+ "indigo_core",
  "quickcheck",
  "quickcheck_macros",
- "ropey",
  "tokio",
  "tokio-stream",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "indigo_core"
+version = "0.1.0"
+dependencies = [
+ "quickcheck",
+ "quickcheck_macros",
+ "ropey",
 ]
 
 [[package]]
