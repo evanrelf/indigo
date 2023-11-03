@@ -176,9 +176,11 @@ impl From<Range> for (Position, Position) {
         (range.anchor, range.cursor)
     }
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use quickcheck_macros::quickcheck;
 
     #[test]
     fn range_default() {
@@ -190,5 +192,21 @@ mod tests {
                 target_column: None,
             }
         );
+    }
+
+    #[quickcheck]
+    fn range_start(line1: usize, column1: usize, line2: usize, column2: usize) -> bool {
+        let anchor = Position::from((line1, column1));
+        let cursor = Position::from((line2, column2));
+        let range = Range::from((anchor, cursor));
+        range.start() == range.flip().start()
+    }
+
+    #[quickcheck]
+    fn range_end(line1: usize, column1: usize, line2: usize, column2: usize) -> bool {
+        let anchor = Position::from((line1, column1));
+        let cursor = Position::from((line2, column2));
+        let range = Range::from((anchor, cursor));
+        range.end() == range.flip().end()
     }
 }
