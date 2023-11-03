@@ -1,7 +1,7 @@
 use crate::{direction::Direction, position::Position};
 use std::cmp::{max, min};
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Range {
     anchor: Position,
     cursor: Position,

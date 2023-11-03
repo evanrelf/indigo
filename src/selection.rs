@@ -29,8 +29,58 @@ impl Selection {
         self.direction() == Direction::Backward
     }
 
+    pub fn with_primary(&self, index: usize) -> Option<Self> {
+        if index < self.ranges.len() {
+            Some(Self {
+                ranges: self.ranges.clone(),
+                primary: index,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn insert(&self, range: Range) -> Self {
+        let index = match self.ranges.binary_search(&range) {
+            Ok(index) | Err(index) => index, // TODO: Merge overlapping ranges?
+        };
+
+        let mut ranges = self.ranges.clone();
+        ranges.insert(index, range);
+
+        Self {
+            ranges,
+            primary: self.primary,
+        }
+    }
+
+    pub fn remove(&self, index: usize) -> Option<Self> {
+        if self.ranges.len() <= 1 {
+            return None;
+        }
+
+        if index >= self.ranges.len() {
+            return None;
+        }
+
+        let mut ranges = self.ranges.clone();
+        ranges.remove(index);
+
+        let primary = if self.primary < index {
+            self.primary - 1
+        } else {
+            self.primary
+        };
+
+        Some(Self { ranges, primary })
+    }
+
     pub fn flip(&self) -> Self {
-        todo!()
+        let mut selection = self.clone();
+        for range in selection.ranges.iter_mut() {
+            *range = range.flip();
+        }
+        selection
     }
 
     pub fn flip_forward(&self) -> Cow<Self> {
