@@ -1,32 +1,54 @@
+use ropey::Rope;
+
+pub trait RopeExt {
+    fn len_lines_indigo(&self) -> usize;
+}
+
+impl RopeExt for Rope {
+    fn len_lines_indigo(&self) -> usize {
+        if self.len_chars() == 0 {
+            return 0;
+        }
+        let last_char = self.char(self.len_chars() - 1);
+        self.len_lines() - if last_char == '\n' { 1 } else { 0 }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use ropey::Rope;
+    use super::*;
 
     #[test]
     fn rope_length() {
         let rope = Rope::default();
         assert_eq!(rope.len_chars(), 0);
         assert_eq!(rope.len_lines(), 1);
+        assert_eq!(rope.len_lines_indigo(), 0);
 
         let rope = Rope::from_str("x");
         assert_eq!(rope.len_chars(), 1);
         assert_eq!(rope.len_lines(), 1);
+        assert_eq!(rope.len_lines_indigo(), 1);
 
         let rope = Rope::from_str("\n");
         assert_eq!(rope.len_chars(), 1);
         assert_eq!(rope.len_lines(), 2);
+        assert_eq!(rope.len_lines_indigo(), 1);
 
         let rope = Rope::from_str("x\n");
         assert_eq!(rope.len_chars(), 2);
         assert_eq!(rope.len_lines(), 2);
+        assert_eq!(rope.len_lines_indigo(), 1);
 
         let rope = Rope::from_str("x\ny\nz");
         assert_eq!(rope.len_chars(), 5);
         assert_eq!(rope.len_lines(), 3);
+        assert_eq!(rope.len_lines_indigo(), 3);
 
         let rope = Rope::from_str("x\ny\nz\n");
         assert_eq!(rope.len_chars(), 6);
         assert_eq!(rope.len_lines(), 4);
+        assert_eq!(rope.len_lines_indigo(), 3);
     }
 
     #[test]

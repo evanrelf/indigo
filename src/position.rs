@@ -1,4 +1,4 @@
-use crate::conversion::Conversion;
+use crate::{conversion::Conversion, rope::RopeExt as _};
 use ropey::Rope;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
@@ -42,8 +42,7 @@ impl Position {
 
         let mut corrected = false;
 
-        let last_char = rope.char(rope.len_chars() - 1);
-        let last_line = rope.len_lines() - if last_char == '\n' { 2 } else { 1 };
+        let last_line = rope.len_lines_indigo().saturating_sub(1);
         let line = if self.line > last_line {
             // When line goes beyond end of rope, use last line
             corrected = true;

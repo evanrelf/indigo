@@ -1,4 +1,4 @@
-use crate::selection::Selection;
+use crate::{rope::RopeExt as _, selection::Selection};
 use ropey::Rope;
 use std::{cmp::min, path::PathBuf};
 
@@ -31,9 +31,7 @@ impl Buffer {
     }
 
     pub fn scroll_to_line(&self, line: usize) -> Self {
-        let rope = &self.contents;
-        let last_char = rope.char(rope.len_chars() - 1);
-        let last_line = rope.len_lines() - if last_char == '\n' { 2 } else { 1 };
+        let last_line = self.contents.len_lines_indigo().saturating_sub(1);
         Self {
             vertical_scroll: min(line, last_line),
             ..self.clone()
