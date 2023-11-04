@@ -1,3 +1,10 @@
+#![warn(clippy::pedantic)]
+#![allow(
+    clippy::bool_to_int_with_if,
+    clippy::missing_panics_doc,
+    clippy::module_name_repetitions
+)]
+
 mod macros;
 mod terminal;
 
@@ -61,7 +68,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         stdout
             .queue(MoveTo(0, 0))?
             .queue(Clear(ClearType::CurrentLine))?
-            .queue(style::Print(format!("mouse: {:?}", mouse_position)))?
+            .queue(style::Print(format!("mouse: {mouse_position:?}")))?
             .flush()?;
     }
 
