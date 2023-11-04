@@ -8,8 +8,12 @@
 mod macros;
 mod terminal;
 mod tui;
+mod ui;
 
-use crate::tui::{ControlFlow, Tui};
+use crate::{
+    tui::{ControlFlow, Tui},
+    ui::Indigo,
+};
 use anyhow::Context as _;
 use clap::Parser as _;
 use crossterm::event::EventStream;
@@ -55,11 +59,11 @@ async fn main() -> anyhow::Result<()> {
         mode: Mode::default(),
     };
 
-    let mut tui = Tui::new(editor);
+    let mut tui = Tui { editor };
 
     loop {
         terminal
-            .draw(|frame| tui.view(frame))
+            .draw(|frame| frame.render_widget(Indigo, frame.size()))
             .context("Failed to draw to terminal")?;
 
         let event = event_stream
