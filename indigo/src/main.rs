@@ -45,17 +45,17 @@ async fn main() -> anyhow::Result<()> {
     loop {
         terminal
             .draw(|frame| tui.view(frame))
-            .context("Failed to draw")?;
+            .context("Failed to draw to terminal")?;
 
         let event = event_stream
             .next()
             .await
-            .context("No more events")?
-            .context("Failed to get next event")?;
+            .context("No more crossterm events")?
+            .context("Failed to get next crossterm event")?;
 
         tracing::debug!(?event);
 
-        match tui.update(event).context("Failed to update")? {
+        match tui.update(event).context("Failed to update state")? {
             ControlFlow::Continue => {}
             ControlFlow::Quit => break,
         }
