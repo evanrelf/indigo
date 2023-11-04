@@ -11,31 +11,25 @@ use std::io::Write as _;
 #[derive(Default)]
 pub struct Tui {
     pub mouse_position: (u16, u16),
-    pub quit: bool,
 }
 
 impl Tui {
-    pub fn update(&mut self, event: Event) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn update(&mut self, event: Event) -> anyhow::Result<bool> {
         match event {
             Event::Mouse(mouse_event) => {
                 self.mouse_position = (mouse_event.row, mouse_event.column);
+                Ok(false)
             }
             Event::Key(key) if key_matches!(key, CONTROL 'p') => {
-                panic!();
+                panic!()
             }
-            Event::Key(key) if key_matches!(key, CONTROL 'c') => {
-                self.quit = true;
-            }
-            Event::Key(key) if key_matches!(key, 'q') => {
-                self.quit = true;
-            }
-            _ => {}
+            Event::Key(key) if key_matches!(key, CONTROL 'c') => anyhow::bail!("Ctrl-C"),
+            Event::Key(key) if key_matches!(key, 'q') => Ok(true),
+            _ => Ok(false),
         }
-
-        Ok(())
     }
 
-    pub fn view(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn view(&self) -> anyhow::Result<()> {
         std::io::stdout()
             .queue(MoveTo(0, 0))?
             .queue(Clear(ClearType::CurrentLine))?

@@ -10,6 +10,7 @@ mod terminal;
 mod tui;
 
 use crate::tui::Tui;
+use anyhow::Context as _;
 use clap::Parser as _;
 use crossterm::event::EventStream;
 use std::path::PathBuf;
@@ -24,11 +25,11 @@ struct Args {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     if let Some(path) = args.log_file {
-        let file = std::fs::File::create(path)?;
+        let file = std::fs::File::create(path).context("Failed to create log file")?;
         tracing_subscriber::fmt()
             .with_max_level(Level::DEBUG)
             .with_writer(file)
@@ -41,14 +42,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut tui = Tui::default();
 
-    loop {
-        let event = match event_stream.next().await {
-            Some(event) => event?,
-            None => panic!("No more events"),
-        };
+    let mut quit = false;
+
+    while !quit {
+        tui.view().context("Failed to view")?;
+        let event = event_stream
+            .next()
+            .await
+            .context("No more events")?
+            .context("Failed to get next event")?;
         tracing::debug!(?event);
-        tui.update(event)?;
-        tui.view()?;
+        quit = tui.update(event).context("Failed to update")?;
     }
 
     Ok(())
