@@ -1,6 +1,6 @@
 use crate::macros::key_matches;
 use crossterm::event::Event;
-use indigo_core::editor::Editor;
+use indigo_core::Editor;
 use ratatui::{prelude::Frame, widgets::Paragraph};
 
 #[derive(Default)]

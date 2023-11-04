@@ -15,3 +15,15 @@ pub mod position;
 pub mod range;
 pub mod rope;
 pub mod selection;
+
+pub use crate::{
+    buffer::Buffer,
+    conversion::Conversion,
+    direction::Direction,
+    editor::Editor,
+    mode::{InsertMode, Mode, NormalMode},
+    position::Position,
+    range::Range,
+    rope::RopeExt,
+    selection::Selection,
+};

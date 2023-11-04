@@ -13,7 +13,7 @@ use crate::tui::{ControlFlow, Tui};
 use anyhow::Context as _;
 use clap::Parser as _;
 use crossterm::event::EventStream;
-use indigo_core::{buffer::Buffer, editor::Editor, mode::Mode};
+use indigo_core::{Buffer, Editor, Mode};
 use std::path::PathBuf;
 use tokio_stream::StreamExt as _;
 use tracing::Level;
