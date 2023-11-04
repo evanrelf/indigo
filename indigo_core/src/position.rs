@@ -8,6 +8,7 @@ pub struct Position {
 }
 
 impl Position {
+    #[must_use]
     pub fn from_char_index(index: usize, rope: &Rope) -> Conversion<Self> {
         if rope.len_chars() == 0 {
             return Conversion::Invalid;
@@ -35,6 +36,7 @@ impl Position {
         }
     }
 
+    #[must_use]
     pub fn to_char_index(self, rope: &Rope) -> Conversion<usize> {
         if rope.len_chars() == 0 {
             return Conversion::Invalid;

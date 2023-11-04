@@ -9,26 +9,32 @@ pub struct Range {
 }
 
 impl Range {
+    #[must_use]
     pub fn anchor(&self) -> Position {
         self.anchor
     }
 
+    #[must_use]
     pub fn cursor(&self) -> Position {
         self.cursor
     }
 
+    #[must_use]
     pub fn target_column(&self) -> Option<usize> {
         self.target_column
     }
 
+    #[must_use]
     pub fn start(&self) -> Position {
         min(self.anchor, self.cursor)
     }
 
+    #[must_use]
     pub fn end(&self) -> Position {
         max(self.anchor, self.cursor)
     }
 
+    #[must_use]
     pub fn direction(&self) -> Direction {
         if self.is_forward() {
             Direction::Forward
@@ -37,22 +43,27 @@ impl Range {
         }
     }
 
+    #[must_use]
     pub fn is_forward(&self) -> bool {
         self.anchor <= self.cursor
     }
 
+    #[must_use]
     pub fn is_backward(&self) -> bool {
         self.anchor > self.cursor
     }
 
+    #[must_use]
     pub fn is_reduced(&self) -> bool {
         self.anchor == self.cursor
     }
 
+    #[must_use]
     pub fn is_overlapping(&self, other: &Self) -> bool {
         self.start() <= other.end() && other.start() <= self.end()
     }
 
+    #[must_use]
     pub fn with_target_column(&self, target_column: usize) -> Option<Self> {
         if self.cursor.column < target_column {
             Some(Self {
@@ -64,6 +75,7 @@ impl Range {
         }
     }
 
+    #[must_use]
     pub fn without_target_column(&self) -> Self {
         Self {
             target_column: None,
@@ -71,6 +83,7 @@ impl Range {
         }
     }
 
+    #[must_use]
     pub fn flip(&self) -> Self {
         if self.is_reduced() {
             *self
@@ -83,6 +96,7 @@ impl Range {
         }
     }
 
+    #[must_use]
     pub fn flip_forward(&self) -> Self {
         if self.is_backward() {
             self.flip()
@@ -91,6 +105,7 @@ impl Range {
         }
     }
 
+    #[must_use]
     pub fn flip_backward(&self) -> Self {
         if self.is_forward() {
             self.flip()
@@ -99,6 +114,7 @@ impl Range {
         }
     }
 
+    #[must_use]
     pub fn reduce(&self) -> Self {
         Self {
             anchor: self.cursor,
@@ -106,6 +122,7 @@ impl Range {
         }
     }
 
+    #[must_use]
     pub fn merge(&self, other: &Self) -> Self {
         match (self.is_forward(), other.is_forward()) {
             (true, true) => {
@@ -143,6 +160,7 @@ impl Range {
         }
     }
 
+    #[must_use]
     pub fn is_valid(&self) -> bool {
         match self.target_column {
             None => true,
