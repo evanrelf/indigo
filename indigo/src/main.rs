@@ -9,7 +9,7 @@ mod macros;
 mod terminal;
 mod tui;
 
-use crate::tui::Tui;
+use crate::tui::{ControlFlow, Tui};
 use anyhow::Context as _;
 use clap::Parser as _;
 use crossterm::event::EventStream;
@@ -42,9 +42,7 @@ async fn main() -> anyhow::Result<()> {
 
     let mut tui = Tui::default();
 
-    let mut quit = false;
-
-    while !quit {
+    loop {
         tui.view().context("Failed to view")?;
         let event = event_stream
             .next()
@@ -52,7 +50,10 @@ async fn main() -> anyhow::Result<()> {
             .context("No more events")?
             .context("Failed to get next event")?;
         tracing::debug!(?event);
-        quit = tui.update(event).context("Failed to update")?;
+        match tui.update(event).context("Failed to update")? {
+            ControlFlow::Continue => {}
+            ControlFlow::Quit => break,
+        }
     }
 
     Ok(())

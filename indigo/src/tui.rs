@@ -13,20 +13,30 @@ pub struct Tui {
     pub mouse_position: (u16, u16),
 }
 
+pub enum ControlFlow {
+    Continue,
+    Quit,
+}
+
 impl Tui {
-    pub fn update(&mut self, event: Event) -> anyhow::Result<bool> {
+    pub fn update(&mut self, event: Event) -> anyhow::Result<ControlFlow> {
         match event {
             Event::Mouse(mouse_event) => {
                 self.mouse_position = (mouse_event.row, mouse_event.column);
-                Ok(false)
             }
             Event::Key(key) if key_matches!(key, CONTROL 'p') => {
                 panic!()
             }
-            Event::Key(key) if key_matches!(key, CONTROL 'c') => anyhow::bail!("Ctrl-C"),
-            Event::Key(key) if key_matches!(key, 'q') => Ok(true),
-            _ => Ok(false),
+            Event::Key(key) if key_matches!(key, CONTROL 'c') => {
+                anyhow::bail!("Ctrl-C");
+            }
+            Event::Key(key) if key_matches!(key, 'q') => {
+                return Ok(ControlFlow::Quit);
+            }
+            _ => {}
         }
+
+        Ok(ControlFlow::Continue)
     }
 
     pub fn view(&self) -> anyhow::Result<()> {
