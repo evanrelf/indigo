@@ -1,6 +1,12 @@
 use crate::{rope::RopeExt as _, selection::Selection};
+use anyhow::Context as _;
 use ropey::Rope;
-use std::{cmp::min, path::PathBuf};
+use std::{
+    cmp::min,
+    fs::File,
+    io::BufReader,
+    path::{Path, PathBuf},
+};
 
 #[derive(Clone, Debug, Default)]
 pub struct Buffer {
@@ -14,6 +20,32 @@ pub struct Buffer {
 }
 
 impl Buffer {
+    pub fn open<P>(path: P) -> anyhow::Result<Self>
+    where
+        P: AsRef<Path> + Clone,
+    {
+        let file = File::open(path.clone()).context("Failed to open file")?;
+
+        let is_read_only = file
+            .metadata()
+            .context("Failed to get file metadata")?
+            .permissions()
+            .readonly();
+
+        let rope =
+            Rope::from_reader(BufReader::new(file)).context("Failed to read file into rope")?;
+
+        Ok(Self {
+            path: path.as_ref().to_path_buf(),
+            contents: rope,
+            selection: Selection::default(),
+            is_modified: false,
+            is_read_only,
+            vertical_scroll: 0,
+            horizontal_scroll: 0,
+        })
+    }
+
     #[must_use]
     pub fn scroll_up(&self, distance: usize) -> Self {
         self.scroll_to_line(self.vertical_scroll.saturating_sub(distance))
