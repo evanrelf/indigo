@@ -1,17 +1,14 @@
 use crate::macros::key_matches;
 use anyhow::Context as _;
-use crossterm::{
-    cursor::MoveTo,
-    event::Event,
-    style,
-    terminal::{Clear, ClearType},
-    QueueableCommand as _,
+use crossterm::event::Event;
+use ratatui::{
+    prelude::{CrosstermBackend, Terminal},
+    widgets::Paragraph,
 };
-use ratatui::prelude::{CrosstermBackend, Terminal};
-use std::io::{Stdout, Write as _};
+use std::{cell::RefCell, io::Stdout};
 
 pub struct Tui {
-    pub terminal: Terminal<CrosstermBackend<Stdout>>,
+    pub terminal: RefCell<Terminal<CrosstermBackend<Stdout>>>,
     pub mouse_position: (u16, u16),
 }
 
@@ -26,7 +23,7 @@ impl Tui {
         let backend = CrosstermBackend::new(stdout);
         let terminal = Terminal::new(backend).context("Failed to create ratatui terminal")?;
         Ok(Self {
-            terminal,
+            terminal: RefCell::new(terminal),
             mouse_position: (0, 0),
         })
     }
@@ -52,11 +49,15 @@ impl Tui {
     }
 
     pub fn view(&self) -> anyhow::Result<()> {
-        std::io::stdout()
-            .queue(MoveTo(0, 0))?
-            .queue(Clear(ClearType::CurrentLine))?
-            .queue(style::Print(format!("mouse: {:?}", self.mouse_position)))?
-            .flush()?;
+        let mut terminal = self.terminal.borrow_mut();
+
+        terminal.draw(|frame| {
+            let area = frame.size();
+            frame.render_widget(
+                Paragraph::new(format!("mouse: {:?}", self.mouse_position)),
+                area,
+            );
+        })?;
 
         Ok(())
     }
