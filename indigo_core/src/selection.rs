@@ -86,7 +86,7 @@ impl Selection {
     #[must_use]
     pub fn flip(&self) -> Self {
         let mut selection = self.clone();
-        for range in selection.ranges.iter_mut() {
+        for range in &mut selection.ranges {
             *range = range.flip();
         }
         selection

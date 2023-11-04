@@ -1,11 +1,8 @@
-#![warn(
-    clippy::cast_lossless,
-    clippy::cast_possible_truncation,
-    clippy::cast_possible_wrap,
-    clippy::cast_precision_loss,
-    clippy::cast_sign_loss,
-    clippy::must_use_candidate,
-    clippy::use_self
+#![warn(clippy::pedantic)]
+#![allow(
+    clippy::bool_to_int_with_if,
+    clippy::missing_panics_doc,
+    clippy::module_name_repetitions
 )]
 
 pub mod buffer;
