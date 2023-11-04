@@ -13,7 +13,6 @@ use crate::tui::{ControlFlow, Tui};
 use anyhow::Context as _;
 use clap::Parser as _;
 use crossterm::event::EventStream;
-use ratatui::prelude::{CrosstermBackend, Terminal};
 use std::path::PathBuf;
 use tokio_stream::StreamExt as _;
 use tracing::Level;
@@ -37,12 +36,9 @@ async fn main() -> anyhow::Result<()> {
             .init();
     }
 
-    let _terminal = crate::terminal::enter();
+    let mut terminal = crate::terminal::enter().context("Failed to enter terminal")?;
 
     let mut event_stream = EventStream::new();
-
-    let mut terminal = Terminal::new(CrosstermBackend::new(std::io::stdout()))
-        .context("Failed to create ratatui terminal")?;
 
     let mut tui = Tui::default();
 
