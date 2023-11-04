@@ -13,12 +13,16 @@ use crate::tui::{ControlFlow, Tui};
 use anyhow::Context as _;
 use clap::Parser as _;
 use crossterm::event::EventStream;
+use indigo_core::{buffer::Buffer, editor::Editor, mode::Mode};
 use std::path::PathBuf;
 use tokio_stream::StreamExt as _;
 use tracing::Level;
 
 #[derive(clap::Parser)]
 struct Args {
+    /// Files to open
+    files: Vec<PathBuf>,
+
     /// Write logs to file for debugging
     #[arg(long)]
     log_file: Option<PathBuf>,
@@ -40,7 +44,18 @@ async fn main() -> anyhow::Result<()> {
 
     let mut event_stream = EventStream::new();
 
-    let mut tui = Tui::default();
+    let mut buffers = Vec::with_capacity(args.files.len());
+
+    for file in args.files {
+        buffers.push(Buffer::open(file).context("Failed to open buffer")?);
+    }
+
+    let editor = Editor {
+        buffers,
+        mode: Mode::default(),
+    };
+
+    let mut tui = Tui::new(editor);
 
     loop {
         terminal
