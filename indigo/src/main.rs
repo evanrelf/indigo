@@ -7,17 +7,12 @@
 
 mod macros;
 mod terminal;
+mod tui;
 
-use crate::macros::key_matches;
+use crate::tui::Tui;
 use clap::Parser as _;
-use crossterm::{
-    cursor::MoveTo,
-    event::{Event, EventStream},
-    style,
-    terminal::{Clear, ClearType},
-    QueueableCommand as _,
-};
-use std::{io::Write as _, path::PathBuf};
+use crossterm::event::EventStream;
+use std::path::PathBuf;
 use tokio_stream::StreamExt as _;
 use tracing::Level;
 
@@ -42,34 +37,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let _terminal = crate::terminal::enter();
 
-    let mut stdout = std::io::stdout();
-
     let mut event_stream = EventStream::new();
 
-    let mut mouse_position;
+    let mut tui = Tui::default();
 
     loop {
         let event = match event_stream.next().await {
-            Some(Ok(event)) => event,
-            Some(Err(error)) => panic!("Error: {error}"),
-            None => break,
+            Some(event) => event?,
+            None => panic!("No more events"),
         };
-
         tracing::debug!(?event);
-
-        match event {
-            Event::Mouse(mouse_event) => mouse_position = (mouse_event.row, mouse_event.column),
-            Event::Key(key) if key_matches!(key, CONTROL 'p') => panic!(),
-            Event::Key(key) if key_matches!(key, CONTROL 'c') => break,
-            Event::Key(key) if key_matches!(key, 'q') => break,
-            _ => continue,
-        }
-
-        stdout
-            .queue(MoveTo(0, 0))?
-            .queue(Clear(ClearType::CurrentLine))?
-            .queue(style::Print(format!("mouse: {mouse_position:?}")))?
-            .flush()?;
+        tui.update(event)?;
+        tui.view()?;
     }
 
     Ok(())
