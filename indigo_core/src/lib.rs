@@ -1,4 +1,4 @@
-#![warn(clippy::must_use_candidate)]
+#![warn(clippy::must_use_candidate, clippy::use_self)]
 
 pub mod buffer;
 pub mod conversion;

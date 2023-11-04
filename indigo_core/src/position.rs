@@ -27,7 +27,7 @@ impl Position {
 
         let column = index - rope.line_to_char(line);
 
-        let position = Position { line, column };
+        let position = Self { line, column };
 
         if corrected {
             Conversion::Corrected(position)
@@ -77,7 +77,7 @@ impl Position {
 
 impl From<(usize, usize)> for Position {
     fn from((line, column): (usize, usize)) -> Self {
-        Position { line, column }
+        Self { line, column }
     }
 }
 
