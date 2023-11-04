@@ -1,10 +1,11 @@
 use crate::macros::key_matches;
 use crossterm::event::Event;
+use indigo_core::editor::Editor;
 use ratatui::{prelude::Frame, widgets::Paragraph};
 
 #[derive(Default)]
 pub struct Tui {
-    pub mouse_position: (u16, u16),
+    editor: Editor,
 }
 
 pub enum ControlFlow {
@@ -13,11 +14,12 @@ pub enum ControlFlow {
 }
 
 impl Tui {
+    pub fn new(editor: Editor) -> Self {
+        Self { editor }
+    }
+
     pub fn update(&mut self, event: Event) -> anyhow::Result<ControlFlow> {
         match event {
-            Event::Mouse(mouse_event) => {
-                self.mouse_position = (mouse_event.row, mouse_event.column);
-            }
             Event::Key(key) if key_matches!(key, CONTROL 'p') => {
                 panic!()
             }
@@ -36,9 +38,6 @@ impl Tui {
     pub fn view(&self, frame: &mut Frame) {
         let area = frame.size();
 
-        frame.render_widget(
-            Paragraph::new(format!("mouse: {:?}", self.mouse_position)),
-            area,
-        );
+        frame.render_widget(Paragraph::new(format!("{:#?}", self.editor)), area);
     }
 }

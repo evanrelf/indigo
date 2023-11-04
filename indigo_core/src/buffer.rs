@@ -2,7 +2,7 @@ use crate::{rope::RopeExt as _, selection::Selection};
 use ropey::Rope;
 use std::{cmp::min, path::PathBuf};
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Buffer {
     path: PathBuf,
     contents: Rope,
