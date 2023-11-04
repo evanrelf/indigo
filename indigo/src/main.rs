@@ -40,16 +40,19 @@ async fn main() -> anyhow::Result<()> {
 
     let mut event_stream = EventStream::new();
 
-    let mut tui = Tui::default();
+    let mut tui = Tui::new().context("Failed to create TUI")?;
 
     loop {
         tui.view().context("Failed to view")?;
+
         let event = event_stream
             .next()
             .await
             .context("No more events")?
             .context("Failed to get next event")?;
+
         tracing::debug!(?event);
+
         match tui.update(event).context("Failed to update")? {
             ControlFlow::Continue => {}
             ControlFlow::Quit => break,

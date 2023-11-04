@@ -1,4 +1,5 @@
 use crate::macros::key_matches;
+use anyhow::Context as _;
 use crossterm::{
     cursor::MoveTo,
     event::Event,
@@ -6,10 +7,11 @@ use crossterm::{
     terminal::{Clear, ClearType},
     QueueableCommand as _,
 };
-use std::io::Write as _;
+use ratatui::prelude::{CrosstermBackend, Terminal};
+use std::io::{Stdout, Write as _};
 
-#[derive(Default)]
 pub struct Tui {
+    pub terminal: Terminal<CrosstermBackend<Stdout>>,
     pub mouse_position: (u16, u16),
 }
 
@@ -19,6 +21,16 @@ pub enum ControlFlow {
 }
 
 impl Tui {
+    pub fn new() -> anyhow::Result<Self> {
+        let stdout = std::io::stdout();
+        let backend = CrosstermBackend::new(stdout);
+        let terminal = Terminal::new(backend).context("Failed to create ratatui terminal")?;
+        Ok(Self {
+            terminal,
+            mouse_position: (0, 0),
+        })
+    }
+
     pub fn update(&mut self, event: Event) -> anyhow::Result<ControlFlow> {
         match event {
             Event::Mouse(mouse_event) => {
