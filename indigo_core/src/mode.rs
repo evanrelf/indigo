@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Mode {
     Normal(NormalMode),
     Insert(InsertMode),
@@ -10,10 +10,10 @@ impl Default for Mode {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct NormalMode {
     count: usize,
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct InsertMode {}

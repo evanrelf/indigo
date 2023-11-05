@@ -47,13 +47,9 @@ async fn main() -> anyhow::Result<()> {
         buffers.push(Buffer::open(file).context("Failed to open buffer")?);
     }
 
-    let current = if buffers.is_empty() { None } else { Some(0) };
+    let current_buffer = if buffers.is_empty() { None } else { Some(0) };
 
-    let editor = Editor {
-        buffers,
-        current,
-        mode: Mode::default(),
-    };
+    let editor = Editor::new(buffers, current_buffer, Mode::default());
 
     run(editor).await
 }
