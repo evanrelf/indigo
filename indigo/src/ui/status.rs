@@ -7,9 +7,17 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
         Mode::Insert(_) => "insert",
     };
 
-    // TODO: Show path for current buffer, show something else if no buffers
-    let Some(buffer) = &editor.buffers.get(0) else {
-        return;
+    let buffer = match editor.current {
+        None => {
+            // TODO: What should be shown when there are no buffers, or there is no current buffer?
+            return;
+        }
+        Some(index) => match editor.buffers.get(index) {
+            None => {
+                panic!("Current editor buffer does not exist");
+            }
+            Some(buffer) => buffer,
+        },
     };
 
     let path = buffer.path().display();
