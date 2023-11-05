@@ -15,7 +15,7 @@ use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{Event, EventStream, MouseEventKind};
-use indigo_core::{Buffer, Editor, Mode};
+use indigo_core::{Buffer, Editor, InsertMode, Mode, NormalMode};
 use tokio_stream::StreamExt as _;
 use tracing::Level;
 
@@ -95,6 +95,13 @@ macro_rules! quit {
 pub(crate) use quit;
 
 fn update(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
+    match editor.mode() {
+        Mode::Normal(_) => update_normal(editor, event),
+        Mode::Insert(_) => update_insert(editor, event),
+    }
+}
+
+fn update_normal(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
     match event {
         Event::Mouse(mouse) => match mouse.kind {
             MouseEventKind::ScrollUp => {
@@ -129,5 +136,9 @@ fn update(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
         _ => {}
     }
 
+    Ok(ControlFlow::Continue)
+}
+
+fn update_insert(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
     Ok(ControlFlow::Continue)
 }
