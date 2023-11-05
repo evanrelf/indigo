@@ -1,4 +1,4 @@
-use indigo_core::Editor;
+use indigo_core::{Editor, RopeExt};
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
@@ -7,7 +7,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
         return;
     };
 
-    let total_lines = buffer.contents().len_lines().saturating_sub(1);
+    let total_lines = buffer.contents().len_lines_indigo();
 
     let number_width = usize::from(area.width) - 1;
 
