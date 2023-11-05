@@ -1,32 +1,39 @@
+use std::fmt::Debug;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Conversion<T> {
-    Invalid,
+pub enum Conversion<T, E> {
+    Invalid(E),
     Corrected(T),
     Valid(T),
 }
 
-impl<T> Conversion<T> {
-    pub fn unwrap(self) -> T {
+impl<T, E> Conversion<T, E> {
+    pub fn unwrap(self) -> T
+    where
+        E: Debug,
+    {
         match self {
-            Self::Invalid => panic!("called `Conversion::unwrap()` on an `Invalid` value"),
-            Self::Corrected(x) | Self::Valid(x) => x,
+            Self::Invalid(e) => {
+                panic!("called `Conversion::unwrap()` on an `Invalid` value: {e:?}")
+            }
+            Self::Corrected(t) | Self::Valid(t) => t,
         }
     }
 
     pub fn unwrap_or(self, default: T) -> T {
         match self {
-            Self::Invalid => default,
-            Self::Corrected(x) | Self::Valid(x) => x,
+            Self::Invalid(_) => default,
+            Self::Corrected(t) | Self::Valid(t) => t,
         }
     }
 
     pub fn unwrap_or_else<F>(self, op: F) -> T
     where
-        F: FnOnce() -> T,
+        F: FnOnce(E) -> T,
     {
         match self {
-            Self::Invalid => op(),
-            Self::Corrected(x) | Self::Valid(x) => x,
+            Self::Invalid(e) => op(e),
+            Self::Corrected(t) | Self::Valid(t) => t,
         }
     }
 
@@ -35,8 +42,8 @@ impl<T> Conversion<T> {
         T: Default,
     {
         match self {
-            Self::Invalid => T::default(),
-            Self::Corrected(x) | Self::Valid(x) => x,
+            Self::Invalid(_) => T::default(),
+            Self::Corrected(t) | Self::Valid(t) => t,
         }
     }
 }

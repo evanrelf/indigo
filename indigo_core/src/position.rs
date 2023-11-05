@@ -9,9 +9,9 @@ pub struct Position {
 
 impl Position {
     #[must_use]
-    pub fn from_char_index(index: usize, rope: &Rope) -> Conversion<Self> {
+    pub fn from_char_index(index: usize, rope: &Rope) -> Conversion<Self, ()> {
         if rope.len_chars() == 0 {
-            return Conversion::Invalid;
+            return Conversion::Invalid(());
         }
 
         let mut corrected = false;
@@ -37,9 +37,9 @@ impl Position {
     }
 
     #[must_use]
-    pub fn to_char_index(self, rope: &Rope) -> Conversion<usize> {
+    pub fn to_char_index(self, rope: &Rope) -> Conversion<usize, ()> {
         if rope.len_chars() == 0 {
-            return Conversion::Invalid;
+            return Conversion::Invalid(());
         }
 
         let mut corrected = false;
@@ -103,7 +103,10 @@ mod tests {
     fn from_char_index_invalid() {
         let rope = Rope::default();
         let index = 1;
-        assert_eq!(Position::from_char_index(index, &rope), Conversion::Invalid);
+        assert_eq!(
+            Position::from_char_index(index, &rope),
+            Conversion::Invalid(())
+        );
     }
 
     #[test]
@@ -137,7 +140,7 @@ mod tests {
     fn to_char_index_invalid() {
         let rope = Rope::default();
         let position = Position { line: 0, column: 0 };
-        assert_eq!(position.to_char_index(&rope), Conversion::Invalid);
+        assert_eq!(position.to_char_index(&rope), Conversion::Invalid(()));
     }
 
     #[test]
