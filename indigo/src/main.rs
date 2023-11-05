@@ -41,20 +41,24 @@ async fn main() -> anyhow::Result<()> {
             .init();
     }
 
-    let mut terminal = crate::terminal::enter().context("Failed to enter terminal")?;
-
-    let mut event_stream = EventStream::new();
-
     let mut buffers = Vec::with_capacity(args.files.len());
 
     for file in args.files {
         buffers.push(Buffer::open(file).context("Failed to open buffer")?);
     }
 
-    let mut editor = Editor {
+    let editor = Editor {
         buffers,
         mode: Mode::default(),
     };
+
+    run(editor).await
+}
+
+pub async fn run(mut editor: Editor) -> anyhow::Result<()> {
+    let mut terminal = crate::terminal::enter().context("Failed to enter terminal")?;
+
+    let mut event_stream = EventStream::new();
 
     loop {
         terminal
