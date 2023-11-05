@@ -12,21 +12,21 @@ mod ui;
 
 use crate::macros::key_matches;
 use anyhow::Context as _;
+use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{Event, EventStream, MouseEventKind};
 use indigo_core::{Buffer, Editor, Mode};
-use std::path::PathBuf;
 use tokio_stream::StreamExt as _;
 use tracing::Level;
 
 #[derive(clap::Parser)]
 struct Args {
     /// Files to open
-    files: Vec<PathBuf>,
+    files: Vec<Utf8PathBuf>,
 
     /// Write logs to file for debugging
     #[arg(long)]
-    log_file: Option<PathBuf>,
+    log_file: Option<Utf8PathBuf>,
 }
 
 #[tokio::main]

@@ -6,6 +6,7 @@ default-run = "indigo"
 
 [dependencies]
 anyhow = "1.0.75"
+camino = "1.1.6"
 clap = { version = "4.4.0", default-features = false, features = ["derive", "error-context", "help", "std", "usage"] }
 crossterm = { version = "0.27.0", default-features = false, features = ["bracketed-paste", "events", "event-stream"] }
 indigo_core = { path = "../indigo_core" }

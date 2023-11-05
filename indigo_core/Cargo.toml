@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.75"
+camino = "1.1.6"
 ropey = { version = "1.6.0", default-features = false, features = ["simd"] }
 
 [dev-dependencies]

@@ -12,7 +12,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
         return;
     };
 
-    let path = buffer.path().display();
+    let path = buffer.path();
 
     let modified = if buffer.is_modified() { " [+]" } else { "" };
 

@@ -1,19 +1,15 @@
 use crate::{rope::RopeExt as _, selection::Selection};
 use anyhow::Context as _;
+use camino::Utf8PathBuf;
 use ropey::Rope;
-use std::{
-    cmp::min,
-    fs::File,
-    io::BufReader,
-    path::{Path, PathBuf},
-};
+use std::{cmp::min, fs::File, io::BufReader, path::PathBuf};
 
 // TODO: Update `vertical_scroll` (and maybe `horizontal_scroll`) whenever the buffer contents
 // changes, to ensure you haven't scrolled beyond the end of the buffer.
 
 #[derive(Clone, Debug, Default)]
 pub struct Buffer {
-    path: PathBuf,
+    path: Utf8PathBuf,
     contents: Rope,
     selection: Selection,
     is_modified: bool,
@@ -24,7 +20,7 @@ pub struct Buffer {
 
 impl Buffer {
     #[must_use]
-    pub fn path(&self) -> &PathBuf {
+    pub fn path(&self) -> &Utf8PathBuf {
         &self.path
     }
 
@@ -58,11 +54,8 @@ impl Buffer {
         self.horizontal_scroll
     }
 
-    pub fn open<P>(path: P) -> anyhow::Result<Self>
-    where
-        P: AsRef<Path> + Clone,
-    {
-        let file = File::open(path.clone()).context("Failed to open file")?;
+    pub fn open(path: Utf8PathBuf) -> anyhow::Result<Self> {
+        let file = File::open(PathBuf::from(path.clone())).context("Failed to open file")?;
 
         let is_read_only = file
             .metadata()
@@ -74,7 +67,7 @@ impl Buffer {
             Rope::from_reader(BufReader::new(file)).context("Failed to read file into rope")?;
 
         Ok(Self {
-            path: path.as_ref().to_path_buf(),
+            path,
             contents: rope,
             selection: Selection::default(),
             is_modified: false,
