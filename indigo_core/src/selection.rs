@@ -1,10 +1,19 @@
 use crate::{direction::Direction, range::Range};
 use std::borrow::Cow;
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Selection {
     ranges: Vec<Range>,
     primary: usize,
+}
+
+impl Default for Selection {
+    fn default() -> Self {
+        Self {
+            ranges: vec![Range::default()],
+            primary: 0,
+        }
+    }
 }
 
 impl Selection {
