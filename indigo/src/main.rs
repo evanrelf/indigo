@@ -105,6 +105,18 @@ fn update(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
             }
             _ => {}
         },
+        Event::Key(key) if key_matches!(key, Up) => {
+            editor.current_buffer_mut().scroll_up_mut(1);
+        }
+        Event::Key(key) if key_matches!(key, Down) => {
+            editor.current_buffer_mut().scroll_down_mut(1);
+        }
+        Event::Key(key) if key_matches!(key, Left) => {
+            editor.current_buffer_mut().scroll_left_mut(1);
+        }
+        Event::Key(key) if key_matches!(key, Right) => {
+            editor.current_buffer_mut().scroll_right_mut(1);
+        }
         Event::Key(key) if key_matches!(key, CONTROL 'p') => {
             panic!()
         }
