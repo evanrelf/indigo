@@ -1,4 +1,4 @@
-use indigo_core::{Editor, Mode};
+use indigo_core::{Conversion, Editor, Mode, Position};
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
@@ -16,10 +16,19 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let modified = if buffer.is_modified() { " [+]" } else { "" };
 
+    let position = {
+        let position @ Position { line, column } = buffer.selection().primary().cursor();
+        let index = match position.to_char_index(buffer.contents()) {
+            Conversion::Invalid => panic!("Position {line}:{column} is not valid char index"),
+            Conversion::Corrected(index) | Conversion::Valid(index) => index,
+        };
+        format!("{line}:{column}#{index}")
+    };
+
     surface.set_string(
         area.x,
         area.y,
-        format!("{mode} {path}{modified}"),
+        format!("{mode} {path}{modified} {position}"),
         Style::default(),
     );
 }
