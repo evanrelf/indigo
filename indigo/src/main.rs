@@ -51,12 +51,10 @@ async fn main() -> anyhow::Result<()> {
         buffers.push(Buffer::open(file).context("Failed to open buffer")?);
     }
 
-    let editor = Editor {
+    let mut editor = Editor {
         buffers,
         mode: Mode::default(),
     };
-
-    let mut tui = Tui { editor };
 
     loop {
         terminal
@@ -71,7 +69,7 @@ async fn main() -> anyhow::Result<()> {
 
         tracing::debug!(?event);
 
-        match tui.update(&event).context("Failed to update state")? {
+        match update(&mut editor, &event).context("Failed to update state")? {
             ControlFlow::Continue => {}
             ControlFlow::Quit => break,
         }
@@ -80,31 +78,24 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[derive(Default)]
-pub struct Tui {
-    pub editor: Editor,
-}
-
 pub enum ControlFlow {
     Continue,
     Quit,
 }
 
-impl Tui {
-    pub fn update(&mut self, event: &Event) -> anyhow::Result<ControlFlow> {
-        match event {
-            Event::Key(key) if key_matches!(key, CONTROL 'p') => {
-                panic!()
-            }
-            Event::Key(key) if key_matches!(key, CONTROL 'c') => {
-                anyhow::bail!("Ctrl-C");
-            }
-            Event::Key(key) if key_matches!(key, 'q') => {
-                return Ok(ControlFlow::Quit);
-            }
-            _ => {}
+pub fn update(_editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
+    match event {
+        Event::Key(key) if key_matches!(key, CONTROL 'p') => {
+            panic!()
         }
-
-        Ok(ControlFlow::Continue)
+        Event::Key(key) if key_matches!(key, CONTROL 'c') => {
+            anyhow::bail!("Ctrl-C");
+        }
+        Event::Key(key) if key_matches!(key, 'q') => {
+            return Ok(ControlFlow::Quit);
+        }
+        _ => {}
     }
+
+    Ok(ControlFlow::Continue)
 }
