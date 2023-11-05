@@ -1,4 +1,5 @@
 mod buffer;
+mod column;
 mod command;
 mod numbers;
 mod status;
@@ -10,6 +11,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let areas = areas(editor, area);
     numbers::render(editor, areas.numbers, surface);
     buffer::render(editor, areas.buffer, surface);
+    column::render(editor, areas.buffer, surface);
     status::render(editor, areas.status, surface);
     command::render(editor, areas.command, surface);
 }
