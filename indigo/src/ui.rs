@@ -3,11 +3,11 @@ mod command;
 mod numbers;
 mod status;
 
-use indigo_core::Editor;
+use indigo_core::{Editor, RopeExt};
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let areas = areas(area);
+    let areas = areas(editor, area);
     numbers::render(editor, areas.numbers, surface);
     buffer::render(editor, areas.buffer, surface);
     status::render(editor, areas.status, surface);
@@ -21,7 +21,7 @@ pub struct Areas {
     command: Rect,
 }
 
-pub fn areas(area: Rect) -> Areas {
+pub fn areas(editor: &Editor, area: Rect) -> Areas {
     let vertical = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -34,7 +34,27 @@ pub fn areas(area: Rect) -> Areas {
         ])
         .split(area);
 
-    let numbers_width = 3; // TODO: Calculate from `Editor`
+    // TODO: Make this better
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_precision_loss,
+        clippy::cast_sign_loss
+    )]
+    // Change to work with integers instead of floats once this is stabilized:
+    // https://github.com/rust-lang/rust/issues/70887
+    let numbers_width = {
+        let n = match editor.current_buffer() {
+            None => 0,
+            Some(buffer) => buffer.contents().len_lines_indigo(),
+        };
+        assert!(
+            n != 0,
+            "cannot handle rope with single-line file without newline yet"
+        );
+        let n = n as f64;
+        let digits = 1.0 + n.log10().floor();
+        (digits.max(2.0) + 1.0) as u16
+    };
 
     let horizontal = Layout::default()
         .direction(Direction::Horizontal)
