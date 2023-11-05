@@ -58,7 +58,7 @@ async fn main() -> anyhow::Result<()> {
 
     loop {
         terminal
-            .draw(|frame| frame.render_widget(Indigo, frame.size()))
+            .draw(|frame| frame.render_widget(Indigo::new(&editor), frame.size()))
             .context("Failed to draw to terminal")?;
 
         let event = event_stream

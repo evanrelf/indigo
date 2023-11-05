@@ -4,14 +4,23 @@ mod numbers;
 mod status;
 
 use crate::ui::{buffer::Buffer, command::Command, numbers::Numbers, status::Status};
+use indigo_core::Editor;
 use ratatui::{
     prelude::{Buffer as Surface, *},
     widgets::Widget,
 };
 
-pub struct Indigo;
+pub struct Indigo<'e> {
+    editor: &'e Editor,
+}
 
-impl Widget for Indigo {
+impl<'e> Indigo<'e> {
+    pub fn new(editor: &'e Editor) -> Self {
+        Self { editor }
+    }
+}
+
+impl Widget for Indigo<'_> {
     fn render(self, area: Rect, surface: &mut Surface) {
         let vertical = Layout::default()
             .direction(Direction::Vertical)
