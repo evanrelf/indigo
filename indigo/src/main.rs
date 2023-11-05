@@ -41,15 +41,15 @@ async fn main() -> anyhow::Result<()> {
             .init();
     }
 
-    let mut buffers = Vec::with_capacity(args.files.len());
-
-    for file in args.files {
-        buffers.push(Buffer::open(file).context("Failed to open buffer")?);
-    }
-
-    let current_buffer = if buffers.is_empty() { None } else { Some(0) };
-
-    let editor = Editor::new(buffers, current_buffer, Mode::default());
+    let editor = if args.files.is_empty() {
+        Editor::default()
+    } else {
+        let mut buffers = Vec::with_capacity(args.files.len());
+        for file in args.files {
+            buffers.push(Buffer::open(file).context("Failed to open buffer")?);
+        }
+        Editor::new(buffers, 0, Mode::default())
+    };
 
     run(editor).await
 }
@@ -98,14 +98,10 @@ fn update(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
     match event {
         Event::Mouse(mouse) => match mouse.kind {
             MouseEventKind::ScrollUp => {
-                if let Some(buffer) = editor.current_buffer_mut() {
-                    buffer.scroll_up_mut(3);
-                }
+                editor.current_buffer_mut().scroll_up_mut(3);
             }
             MouseEventKind::ScrollDown => {
-                if let Some(buffer) = editor.current_buffer_mut() {
-                    buffer.scroll_down_mut(3);
-                }
+                editor.current_buffer_mut().scroll_down_mut(3);
             }
             _ => {}
         },

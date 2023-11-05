@@ -1,16 +1,26 @@
 use crate::{buffer::Buffer, mode::Mode};
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Editor {
     buffers: Vec<Buffer>,
-    current_buffer: Option<usize>,
+    current_buffer: usize,
     mode: Mode,
+}
+
+impl Default for Editor {
+    fn default() -> Self {
+        Self {
+            buffers: vec![Buffer::default()],
+            current_buffer: 0,
+            mode: Mode::default(),
+        }
+    }
 }
 
 impl Editor {
     // TODO: Delete this, it's bad
     #[must_use]
-    pub fn new(buffers: Vec<Buffer>, current_buffer: Option<usize>, mode: Mode) -> Self {
+    pub fn new(buffers: Vec<Buffer>, current_buffer: usize, mode: Mode) -> Self {
         Self {
             buffers,
             current_buffer,
@@ -24,17 +34,17 @@ impl Editor {
     }
 
     #[must_use]
-    pub fn current_buffer(&self) -> Option<&Buffer> {
-        match self.buffers.get(self.current_buffer?) {
-            Some(buffer) => Some(buffer),
+    pub fn current_buffer(&self) -> &Buffer {
+        match self.buffers.get(self.current_buffer) {
+            Some(buffer) => buffer,
             None => panic!("omg editor didn't maintain invariant"),
         }
     }
 
     #[must_use]
-    pub fn current_buffer_mut(&mut self) -> Option<&mut Buffer> {
-        match self.buffers.get_mut(self.current_buffer?) {
-            Some(buffer) => Some(buffer),
+    pub fn current_buffer_mut(&mut self) -> &mut Buffer {
+        match self.buffers.get_mut(self.current_buffer) {
+            Some(buffer) => buffer,
             None => panic!("omg editor didn't maintain invariant"),
         }
     }

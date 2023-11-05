@@ -43,10 +43,7 @@ pub fn areas(editor: &Editor, area: Rect) -> Areas {
     // Change to work with integers instead of floats once this is stabilized:
     // https://github.com/rust-lang/rust/issues/70887
     let numbers_width = {
-        let n = match editor.current_buffer() {
-            None => 0,
-            Some(buffer) => buffer.contents().len_lines_indigo(),
-        };
+        let n = editor.current_buffer().contents().len_lines_indigo();
         // assert!(
         //     n != 0,
         //     "cannot handle rope with single-line file without newline yet"

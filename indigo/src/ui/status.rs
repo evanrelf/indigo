@@ -5,10 +5,7 @@ use ratatui::{
 };
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let Some(buffer) = editor.current_buffer() else {
-        // TODO: What should be shown when there are no buffers, or there is no current buffer?
-        return;
-    };
+    let buffer = editor.current_buffer();
 
     let path = buffer.path();
 
