@@ -47,10 +47,10 @@ pub fn areas(editor: &Editor, area: Rect) -> Areas {
             None => 0,
             Some(buffer) => buffer.contents().len_lines_indigo(),
         };
-        assert!(
-            n != 0,
-            "cannot handle rope with single-line file without newline yet"
-        );
+        // assert!(
+        //     n != 0,
+        //     "cannot handle rope with single-line file without newline yet"
+        // );
         let n = n as f64;
         let digits = 1.0 + n.log10().floor();
         (digits.max(2.0) + 1.0) as u16
