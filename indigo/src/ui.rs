@@ -7,6 +7,21 @@ use indigo_core::Editor;
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
+    let areas = areas(area);
+    numbers::render(editor, areas.numbers, surface);
+    buffer::render(editor, areas.buffer, surface);
+    status::render(editor, areas.status, surface);
+    command::render(editor, areas.command, surface);
+}
+
+pub struct Areas {
+    numbers: Rect,
+    buffer: Rect,
+    status: Rect,
+    command: Rect,
+}
+
+pub fn areas(area: Rect) -> Areas {
     let vertical = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -31,8 +46,10 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
         ])
         .split(vertical[0]);
 
-    numbers::render(editor, horizontal[0], surface);
-    buffer::render(editor, horizontal[1], surface);
-    status::render(editor, vertical[1], surface);
-    command::render(editor, vertical[2], surface);
+    Areas {
+        numbers: horizontal[0],
+        buffer: horizontal[1],
+        status: vertical[1],
+        command: vertical[2],
+    }
 }

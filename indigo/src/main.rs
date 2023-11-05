@@ -59,7 +59,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn run(mut editor: Editor) -> anyhow::Result<()> {
-    let mut terminal = crate::terminal::enter().context("Failed to enter terminal")?;
+    let mut terminal = terminal::enter().context("Failed to enter terminal")?;
 
     let mut event_stream = EventStream::new();
 
