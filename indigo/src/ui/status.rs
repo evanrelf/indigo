@@ -25,10 +25,12 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
         format!("{line}:{column}#{index}")
     };
 
+    let count = buffer.selection().ranges().len();
+
     surface.set_string(
         area.x,
         area.y,
-        format!("{mode} {path}{modified} {position}"),
+        format!("{mode} {path}{modified} {position} ({count})"),
         Style::default(),
     );
 }
