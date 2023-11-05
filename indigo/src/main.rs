@@ -71,7 +71,7 @@ async fn main() -> anyhow::Result<()> {
 
         tracing::debug!(?event);
 
-        match tui.update(event).context("Failed to update state")? {
+        match tui.update(&event).context("Failed to update state")? {
             ControlFlow::Continue => {}
             ControlFlow::Quit => break,
         }
@@ -91,7 +91,7 @@ pub enum ControlFlow {
 }
 
 impl Tui {
-    pub fn update(&mut self, event: Event) -> anyhow::Result<ControlFlow> {
+    pub fn update(&mut self, event: &Event) -> anyhow::Result<ControlFlow> {
         match event {
             Event::Key(key) if key_matches!(key, CONTROL 'p') => {
                 panic!()
