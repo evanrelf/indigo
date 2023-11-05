@@ -1,12 +1,6 @@
-use ratatui::{
-    prelude::{Buffer as Surface, *},
-    widgets::Widget,
-};
+use indigo_core::Editor;
+use ratatui::prelude::{Buffer as Surface, *};
 
-pub struct Numbers;
-
-impl Widget for Numbers {
-    fn render(self, area: Rect, surface: &mut Surface) {
-        surface.set_string(area.x, area.y, "~", Style::default());
-    }
+pub fn render(_editor: &Editor, area: Rect, surface: &mut Surface) {
+    surface.set_string(area.x, area.y, "~", Style::default());
 }

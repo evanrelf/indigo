@@ -10,7 +10,7 @@ mod macros;
 mod terminal;
 mod ui;
 
-use crate::{macros::key_matches, ui::Indigo};
+use crate::macros::key_matches;
 use anyhow::Context as _;
 use clap::Parser as _;
 use crossterm::event::{Event, EventStream};
@@ -58,7 +58,7 @@ async fn main() -> anyhow::Result<()> {
 
     loop {
         terminal
-            .draw(|frame| frame.render_widget(Indigo::new(&editor), frame.size()))
+            .draw(|frame| ui::render(&editor, frame.size(), frame.buffer_mut()))
             .context("Failed to draw to terminal")?;
 
         let event = event_stream
