@@ -7,16 +7,12 @@
 
 mod macros;
 mod terminal;
-mod tui;
 mod ui;
 
-use crate::{
-    tui::{ControlFlow, Tui},
-    ui::Indigo,
-};
+use crate::{macros::key_matches, ui::Indigo};
 use anyhow::Context as _;
 use clap::Parser as _;
-use crossterm::event::EventStream;
+use crossterm::event::{Event, EventStream};
 use indigo_core::{Buffer, Editor, Mode};
 use std::path::PathBuf;
 use tokio_stream::StreamExt as _;
@@ -81,4 +77,33 @@ async fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+#[derive(Default)]
+pub struct Tui {
+    pub editor: Editor,
+}
+
+pub enum ControlFlow {
+    Continue,
+    Quit,
+}
+
+impl Tui {
+    pub fn update(&mut self, event: Event) -> anyhow::Result<ControlFlow> {
+        match event {
+            Event::Key(key) if key_matches!(key, CONTROL 'p') => {
+                panic!()
+            }
+            Event::Key(key) if key_matches!(key, CONTROL 'c') => {
+                anyhow::bail!("Ctrl-C");
+            }
+            Event::Key(key) if key_matches!(key, 'q') => {
+                return Ok(ControlFlow::Quit);
+            }
+            _ => {}
+        }
+
+        Ok(ControlFlow::Continue)
+    }
 }
