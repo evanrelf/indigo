@@ -1,5 +1,8 @@
 use indigo_core::{Conversion, Editor, Mode, Position};
-use ratatui::prelude::{Buffer as Surface, *};
+use ratatui::{
+    prelude::{Buffer as Surface, *},
+    widgets::{Paragraph, Widget as _},
+};
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let mode = match editor.mode() {
@@ -27,10 +30,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let count = buffer.selection().ranges().len();
 
-    surface.set_string(
-        area.x,
-        area.y,
-        format!("{mode} {path}{modified} {position} ({count})"),
-        Style::default(),
-    );
+    Paragraph::new(format!("{mode} {path}{modified} {position} ({count})"))
+        .alignment(Alignment::Right)
+        .render(area, surface);
 }
