@@ -20,6 +20,41 @@ pub struct Buffer {
 }
 
 impl Buffer {
+    #[must_use]
+    pub fn path(&self) -> &PathBuf {
+        &self.path
+    }
+
+    #[must_use]
+    pub fn contents(&self) -> &Rope {
+        &self.contents
+    }
+
+    #[must_use]
+    pub fn selection(&self) -> &Selection {
+        &self.selection
+    }
+
+    #[must_use]
+    pub fn is_modified(&self) -> bool {
+        self.is_modified
+    }
+
+    #[must_use]
+    pub fn is_read_only(&self) -> bool {
+        self.is_read_only
+    }
+
+    #[must_use]
+    pub fn vertical_scroll(&self) -> usize {
+        self.vertical_scroll
+    }
+
+    #[must_use]
+    pub fn horizontal_scroll(&self) -> usize {
+        self.horizontal_scroll
+    }
+
     pub fn open<P>(path: P) -> anyhow::Result<Self>
     where
         P: AsRef<Path> + Clone,
