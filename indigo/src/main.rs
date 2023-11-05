@@ -13,7 +13,7 @@ mod ui;
 use crate::macros::key_matches;
 use anyhow::Context as _;
 use clap::Parser as _;
-use crossterm::event::{Event, EventStream};
+use crossterm::event::{Event, EventStream, MouseEventKind};
 use indigo_core::{Buffer, Editor, Mode};
 use std::path::PathBuf;
 use tokio_stream::StreamExt as _;
@@ -94,8 +94,21 @@ macro_rules! quit {
 
 pub(crate) use quit;
 
-fn update(_editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
+fn update(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
     match event {
+        Event::Mouse(mouse) => match mouse.kind {
+            MouseEventKind::ScrollUp => {
+                if let Some(buffer) = editor.current_buffer_mut() {
+                    *buffer = buffer.scroll_up(3);
+                }
+            }
+            MouseEventKind::ScrollDown => {
+                if let Some(buffer) = editor.current_buffer_mut() {
+                    *buffer = buffer.scroll_down(3);
+                }
+            }
+            _ => {}
+        },
         Event::Key(key) if key_matches!(key, CONTROL 'p') => {
             panic!()
         }

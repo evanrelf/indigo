@@ -32,6 +32,14 @@ impl Editor {
     }
 
     #[must_use]
+    pub fn current_buffer_mut(&mut self) -> Option<&mut Buffer> {
+        match self.buffers.get_mut(self.current_buffer?) {
+            Some(buffer) => Some(buffer),
+            None => panic!("omg editor didn't maintain invariant"),
+        }
+    }
+
+    #[must_use]
     pub fn mode(&self) -> Mode {
         self.mode
     }
