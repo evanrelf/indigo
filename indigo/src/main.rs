@@ -55,7 +55,7 @@ async fn main() -> anyhow::Result<()> {
     run(editor).await
 }
 
-pub async fn run(mut editor: Editor) -> anyhow::Result<()> {
+async fn run(mut editor: Editor) -> anyhow::Result<()> {
     let mut terminal = crate::terminal::enter().context("Failed to enter terminal")?;
 
     let mut event_stream = EventStream::new();
@@ -82,12 +82,20 @@ pub async fn run(mut editor: Editor) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub enum ControlFlow {
+enum ControlFlow {
     Continue,
     Quit,
 }
 
-pub fn update(_editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
+macro_rules! quit {
+    () => {{
+        return Ok(ControlFlow::Quit);
+    }};
+}
+
+pub(crate) use quit;
+
+fn update(_editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
     match event {
         Event::Key(key) if key_matches!(key, CONTROL 'p') => {
             panic!()
@@ -96,7 +104,7 @@ pub fn update(_editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow
             anyhow::bail!("Ctrl-C");
         }
         Event::Key(key) if key_matches!(key, 'q') => {
-            return Ok(ControlFlow::Quit);
+            quit!();
         }
         _ => {}
     }
