@@ -86,9 +86,17 @@ impl Buffer {
         self.scroll_to_line(self.vertical_scroll.saturating_sub(distance))
     }
 
+    pub fn scroll_up_mut(&mut self, distance: usize) {
+        self.scroll_to_line_mut(self.vertical_scroll.saturating_sub(distance));
+    }
+
     #[must_use]
     pub fn scroll_down(&self, distance: usize) -> Self {
         self.scroll_to_line(self.vertical_scroll + distance)
+    }
+
+    pub fn scroll_down_mut(&mut self, distance: usize) {
+        self.scroll_to_line_mut(self.vertical_scroll + distance);
     }
 
     #[must_use]
@@ -96,9 +104,17 @@ impl Buffer {
         self.scroll_to_column(self.horizontal_scroll.saturating_sub(distance))
     }
 
+    pub fn scroll_left_mut(&mut self, distance: usize) {
+        self.scroll_to_column_mut(self.horizontal_scroll.saturating_sub(distance));
+    }
+
     #[must_use]
     pub fn scroll_right(&self, distance: usize) -> Self {
         self.scroll_to_column(self.horizontal_scroll + distance)
+    }
+
+    pub fn scroll_right_mut(&mut self, distance: usize) {
+        self.scroll_to_column_mut(self.horizontal_scroll + distance);
     }
 
     #[must_use]
@@ -110,12 +126,21 @@ impl Buffer {
         }
     }
 
+    pub fn scroll_to_line_mut(&mut self, line: usize) {
+        let last_line = self.contents.len_lines_indigo().saturating_sub(1);
+        self.vertical_scroll = min(line, last_line);
+    }
+
     #[must_use]
     pub fn scroll_to_column(&self, column: usize) -> Self {
         Self {
             horizontal_scroll: column,
             ..self.clone()
         }
+    }
+
+    pub fn scroll_to_column_mut(&mut self, column: usize) {
+        self.horizontal_scroll = column;
     }
 
     #[must_use]

@@ -99,12 +99,12 @@ fn update(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
         Event::Mouse(mouse) => match mouse.kind {
             MouseEventKind::ScrollUp => {
                 if let Some(buffer) = editor.current_buffer_mut() {
-                    *buffer = buffer.scroll_up(3);
+                    buffer.scroll_up_mut(3);
                 }
             }
             MouseEventKind::ScrollDown => {
                 if let Some(buffer) = editor.current_buffer_mut() {
-                    *buffer = buffer.scroll_down(3);
+                    buffer.scroll_down_mut(3);
                 }
             }
             _ => {}
