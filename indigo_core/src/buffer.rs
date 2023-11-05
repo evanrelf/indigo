@@ -8,6 +8,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
+// TODO: Update `vertical_scroll` (and maybe `horizontal_scroll`) whenever the buffer contents
+// changes, to ensure you haven't scrolled beyond the end of the buffer.
+
 #[derive(Clone, Debug, Default)]
 pub struct Buffer {
     path: PathBuf,
