@@ -1,4 +1,4 @@
-use indigo_core::{Editor, Position};
+use indigo_core::{Editor, Mode, Position};
 use ratatui::{
     prelude::{Buffer as Surface, *},
     widgets::{Paragraph, Widget as _},
@@ -15,7 +15,13 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let count = buffer.selection().ranges().len();
 
-    Paragraph::new(format!("{path}{modified} {line}:{column}/{count}"))
+    let mode = match editor.mode() {
+        Mode::Normal(_) => "n",
+        Mode::Insert(_) => "i",
+        Mode::Command(_) => "c",
+    };
+
+    Paragraph::new(format!("{path}{modified} {line}:{column}/{count} {mode}"))
         .alignment(Alignment::Right)
         .render(area, surface);
 }
