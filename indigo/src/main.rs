@@ -10,11 +10,11 @@ mod macros;
 mod terminal;
 mod ui;
 
-use crate::macros::key_matches;
+use crate::macros::{key_matches, key_modifiers};
 use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
-use crossterm::event::{Event, EventStream, MouseEventKind};
+use crossterm::event::{Event, EventStream, KeyCode, MouseEventKind};
 use indigo_core::{Buffer, CommandMode, Editor, InsertMode, Mode, NormalMode};
 use tokio_stream::StreamExt as _;
 use tracing::Level;
@@ -172,7 +172,38 @@ fn update_insert(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFl
 }
 
 fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
+    let Mode::Command(command_mode) = editor.mode_mut() else {
+        unreachable!();
+    };
+
     match event {
+        Event::Key(key) if key_matches!(key, Left) => {
+            command_mode.move_left(1);
+        }
+        Event::Key(key) if key_matches!(key, Right) => {
+            command_mode.move_right(1);
+        }
+        Event::Key(key) if key_matches!(key, CONTROL 'a') => {
+            command_mode.move_line_begin();
+        }
+        Event::Key(key) if key_matches!(key, CONTROL 'e') => {
+            command_mode.move_line_end();
+        }
+        Event::Key(key)
+            if matches!(key.code, KeyCode::Char(_)) && key.modifiers == key_modifiers!() =>
+        {
+            let KeyCode::Char(c) = key.code else {
+                unreachable!();
+            };
+            command_mode.insert_char(c);
+        }
+        Event::Key(key) if key_matches!(key, Backspace) => {
+            command_mode.backspace();
+        }
+        Event::Key(key) if key_matches!(key, Enter) => {
+            // TODO: Do something with command
+            *editor.mode_mut() = Mode::Normal(NormalMode::default());
+        }
         // Modes
         Event::Key(key) if key_matches!(key, Esc) => {
             *editor.mode_mut() = Mode::Normal(NormalMode::default());

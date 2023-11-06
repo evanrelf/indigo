@@ -46,9 +46,4 @@ impl CommandMode {
             self.cursor = cursor;
         }
     }
-
-    pub fn clear(&mut self) {
-        self.command = Rope::new();
-        self.cursor = 0;
-    }
 }
