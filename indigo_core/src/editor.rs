@@ -49,8 +49,16 @@ impl Editor {
         }
     }
 
+    // TODO: Should `mode` just be `pub`? Or are there invariants that need to be enforced, so this
+    // should be more restrictive?
+
     #[must_use]
     pub fn mode(&self) -> &Mode {
         &self.mode
+    }
+
+    #[must_use]
+    pub fn mode_mut(&mut self) -> &mut Mode {
+        &mut self.mode
     }
 }

@@ -104,6 +104,7 @@ fn update(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
 
 fn update_normal(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
     match event {
+        // Scrolling
         Event::Mouse(mouse) => match mouse.kind {
             MouseEventKind::ScrollUp => {
                 editor.current_buffer_mut().scroll_up_mut(3);
@@ -125,8 +126,16 @@ fn update_normal(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFl
         Event::Key(key) if key_matches!(key, Right) => {
             editor.current_buffer_mut().scroll_right_mut(1);
         }
+        // Modes
+        Event::Key(key) if key_matches!(key, 'i') => {
+            *editor.mode_mut() = Mode::Insert(InsertMode::default());
+        }
+        Event::Key(key) if key_matches!(key, ':') => {
+            *editor.mode_mut() = Mode::Command(CommandMode::default());
+        }
+        // Debug
         Event::Key(key) if key_matches!(key, CONTROL 'p') => {
-            panic!()
+            panic!();
         }
         Event::Key(key) if key_matches!(key, CONTROL 'c') => {
             anyhow::bail!("Ctrl-C");
@@ -141,9 +150,45 @@ fn update_normal(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFl
 }
 
 fn update_insert(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
+    match event {
+        // Modes
+        Event::Key(key) if key_matches!(key, Esc) => {
+            *editor.mode_mut() = Mode::Normal(NormalMode::default());
+        }
+        // Debug
+        Event::Key(key) if key_matches!(key, CONTROL 'p') => {
+            panic!();
+        }
+        Event::Key(key) if key_matches!(key, CONTROL 'c') => {
+            anyhow::bail!("Ctrl-C");
+        }
+        Event::Key(key) if key_matches!(key, 'q') => {
+            quit!();
+        }
+        _ => {}
+    }
+
     Ok(ControlFlow::Continue)
 }
 
 fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
+    match event {
+        // Modes
+        Event::Key(key) if key_matches!(key, Esc) => {
+            *editor.mode_mut() = Mode::Normal(NormalMode::default());
+        }
+        // Debug
+        Event::Key(key) if key_matches!(key, CONTROL 'p') => {
+            panic!();
+        }
+        Event::Key(key) if key_matches!(key, CONTROL 'c') => {
+            anyhow::bail!("Ctrl-C");
+        }
+        Event::Key(key) if key_matches!(key, 'q') => {
+            quit!();
+        }
+        _ => {}
+    }
+
     Ok(ControlFlow::Continue)
 }
