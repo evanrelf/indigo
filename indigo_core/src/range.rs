@@ -1,4 +1,5 @@
-use crate::{direction::Direction, position::Position};
+use crate::{conversion::Conversion, direction::Direction, position::Position};
+use ropey::{Rope, RopeSlice};
 use std::cmp::{max, min};
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
@@ -157,6 +158,31 @@ impl Range {
                 // Mixed
                 self.merge(&other.flip())
             }
+        }
+    }
+
+    #[must_use]
+    pub fn to_rope_slice<'rope>(&self, rope: &'rope Rope) -> Conversion<RopeSlice<'rope>, ()> {
+        let (anchor_index, anchor_corrected) = match self.anchor.to_char_index(rope) {
+            Conversion::Invalid(()) => return Conversion::Invalid(()),
+            Conversion::Corrected(index) => (index, true),
+            Conversion::Valid(index) => (index, false),
+        };
+        let (cursor_index, cursor_corrected) = match self.cursor.to_char_index(rope) {
+            Conversion::Invalid(()) => return Conversion::Invalid(()),
+            Conversion::Corrected(index) => (index, true),
+            Conversion::Valid(index) => (index, false),
+        };
+
+        let slice = match self.direction() {
+            Direction::Forward => rope.get_slice(anchor_index..=cursor_index).unwrap(),
+            Direction::Backward => rope.get_slice(cursor_index..=anchor_index).unwrap(),
+        };
+
+        if anchor_corrected || cursor_corrected {
+            Conversion::Corrected(slice)
+        } else {
+            Conversion::Valid(slice)
         }
     }
 

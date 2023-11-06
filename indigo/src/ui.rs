@@ -3,6 +3,7 @@ mod colors;
 mod column;
 mod command;
 mod numbers;
+mod selection;
 mod status;
 
 use indigo_core::{Editor, RopeExt};
@@ -12,6 +13,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let areas = areas(editor, area);
     numbers::render(editor, areas.numbers, surface);
     buffer::render(editor, areas.buffer, surface);
+    selection::render(editor, areas.buffer, surface);
     column::render(editor, areas.buffer, surface);
     status::render(editor, areas.status, surface);
     command::render(editor, areas.command, surface);
