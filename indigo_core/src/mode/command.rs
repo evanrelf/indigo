@@ -1,5 +1,5 @@
 use ropey::Rope;
-use std::{borrow::Cow, cmp::min};
+use std::cmp::min;
 
 #[derive(Clone, Debug, Default)]
 pub struct CommandMode {
@@ -18,68 +18,37 @@ impl CommandMode {
         self.cursor
     }
 
-    #[must_use]
-    pub fn move_left(&self, distance: usize) -> Self {
-        Self {
-            cursor: self.cursor.saturating_sub(distance),
-            ..self.clone()
-        }
+    pub fn move_left(&mut self, distance: usize) {
+        self.cursor = self.cursor.saturating_sub(distance);
     }
 
-    #[must_use]
-    pub fn move_right(&self, distance: usize) -> Self {
-        Self {
-            cursor: min(self.command.len_chars(), self.cursor + distance),
-            ..self.clone()
-        }
+    pub fn move_right(&mut self, distance: usize) {
+        self.cursor = min(self.command.len_chars(), self.cursor + distance);
     }
 
-    #[must_use]
-    pub fn move_line_begin(&self) -> Self {
-        Self {
-            cursor: 0,
-            ..self.clone()
-        }
+    pub fn move_line_begin(&mut self) {
+        self.cursor = 0;
     }
 
-    #[must_use]
-    pub fn move_line_end(&self) -> Self {
-        Self {
-            cursor: self.command.len_chars(),
-            ..self.clone()
-        }
+    pub fn move_line_end(&mut self) {
+        self.cursor = self.command.len_chars();
     }
 
-    #[must_use]
-    pub fn insert_char(&self, c: char) -> Self {
-        let mut command = self.command.clone();
-        command.insert_char(self.cursor, c);
-        Self {
-            command,
-            cursor: self.cursor + 1,
-        }
+    pub fn insert_char(&mut self, c: char) {
+        self.command.insert_char(self.cursor, c);
+        self.cursor += 1;
     }
 
-    // TODO: In theory `Cow` is pointless here because `Rope`s are copy-on-write anyways, but it
-    // might start to matter if `CommandMode` gets more fields that are expensive to clone?
-
-    #[must_use]
-    pub fn backspace(&self) -> Cow<Self> {
+    pub fn backspace(&mut self) {
         if self.cursor > 0 {
-            let mut command = self.command.clone();
             let cursor = self.cursor - 1;
-            command.remove(cursor..=cursor);
-            Cow::Owned(Self { command, cursor })
-        } else {
-            Cow::Borrowed(self)
+            self.command.remove(cursor..=cursor);
+            self.cursor = cursor;
         }
     }
 
-    #[must_use]
-    pub fn clear(&self) -> Self {
-        Self {
-            command: Rope::new(),
-            cursor: 0,
-        }
+    pub fn clear(&mut self) {
+        self.command = Rope::new();
+        self.cursor = 0;
     }
 }
