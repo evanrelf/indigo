@@ -5,6 +5,8 @@
     clippy::missing_panics_doc,
     clippy::module_name_repetitions
 )]
+// TODO: Remove
+#![allow(dead_code)]
 
 pub mod buffer;
 pub mod conversion;
