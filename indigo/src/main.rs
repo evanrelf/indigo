@@ -177,10 +177,10 @@ fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlF
     };
 
     match event {
-        Event::Key(key) if key_matches!(key, Left) => {
+        Event::Key(key) if key_matches!(key, Left) || key_matches!(key, CONTROL 'b') => {
             command_mode.move_left(1);
         }
-        Event::Key(key) if key_matches!(key, Right) => {
+        Event::Key(key) if key_matches!(key, Right) || key_matches!(key, CONTROL 'f') => {
             command_mode.move_right(1);
         }
         Event::Key(key) if key_matches!(key, CONTROL 'a') => {
