@@ -46,4 +46,13 @@ impl CommandMode {
             self.cursor = cursor;
         }
     }
+
+    pub fn clear_backward(&mut self) {
+        self.command.remove(..self.cursor);
+        self.cursor = 0;
+    }
+
+    pub fn clear_forward(&mut self) {
+        self.command.remove(self.cursor..);
+    }
 }

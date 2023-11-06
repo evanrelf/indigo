@@ -189,6 +189,12 @@ fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlF
         Event::Key(key) if key_matches!(key, CONTROL 'e') => {
             command_mode.move_line_end();
         }
+        Event::Key(key) if key_matches!(key, CONTROL 'u') => {
+            command_mode.clear_backward();
+        }
+        Event::Key(key) if key_matches!(key, CONTROL 'k') => {
+            command_mode.clear_forward();
+        }
         Event::Key(key)
             if matches!(key.code, KeyCode::Char(_)) && key.modifiers == key_modifiers!() =>
         {
