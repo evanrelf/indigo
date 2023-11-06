@@ -198,7 +198,11 @@ fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlF
             command_mode.insert_char(c);
         }
         Event::Key(key) if key_matches!(key, Backspace) => {
-            command_mode.backspace();
+            if command_mode.command().len_chars() == 0 {
+                *editor.mode_mut() = Mode::Normal(NormalMode::default());
+            } else {
+                command_mode.backspace();
+            }
         }
         Event::Key(key) if key_matches!(key, Enter) => {
             // TODO: Do something with command
