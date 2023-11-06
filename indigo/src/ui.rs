@@ -1,4 +1,5 @@
 mod buffer;
+mod colors;
 mod column;
 mod command;
 mod numbers;
