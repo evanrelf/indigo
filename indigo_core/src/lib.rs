@@ -21,7 +21,7 @@ pub use crate::{
     conversion::Conversion,
     direction::Direction,
     editor::Editor,
-    mode::{InsertMode, Mode, NormalMode},
+    mode::{CommandMode, InsertMode, Mode, NormalMode},
     position::Position,
     range::Range,
     rope::RopeExt,

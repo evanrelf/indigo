@@ -15,7 +15,7 @@ use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{Event, EventStream, MouseEventKind};
-use indigo_core::{Buffer, Editor, InsertMode, Mode, NormalMode};
+use indigo_core::{Buffer, CommandMode, Editor, InsertMode, Mode, NormalMode};
 use tokio_stream::StreamExt as _;
 use tracing::Level;
 
@@ -98,6 +98,7 @@ fn update(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
     match editor.mode() {
         Mode::Normal(_) => update_normal(editor, event),
         Mode::Insert(_) => update_insert(editor, event),
+        Mode::Command(_) => update_command(editor, event),
     }
 }
 
@@ -140,5 +141,9 @@ fn update_normal(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFl
 }
 
 fn update_insert(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
+    Ok(ControlFlow::Continue)
+}
+
+fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
     Ok(ControlFlow::Continue)
 }

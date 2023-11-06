@@ -1,7 +1,10 @@
-#[derive(Clone, Copy, Debug)]
+use ropey::Rope;
+
+#[derive(Clone, Debug)]
 pub enum Mode {
     Normal(NormalMode),
     Insert(InsertMode),
+    Command(CommandMode),
 }
 
 impl Default for Mode {
@@ -17,3 +20,9 @@ pub struct NormalMode {
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct InsertMode {}
+
+#[derive(Clone, Debug, Default)]
+pub struct CommandMode {
+    command: Rope,
+    cursor: usize,
+}

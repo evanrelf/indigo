@@ -50,7 +50,7 @@ impl Editor {
     }
 
     #[must_use]
-    pub fn mode(&self) -> Mode {
-        self.mode
+    pub fn mode(&self) -> &Mode {
+        &self.mode
     }
 }
