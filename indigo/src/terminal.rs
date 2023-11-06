@@ -1,8 +1,8 @@
 use anyhow::Context as _;
-use crossterm::{cursor, event, terminal, QueueableCommand as _};
+use crossterm::{cursor, event, terminal};
 use ratatui::prelude::{CrosstermBackend, Terminal};
 use std::{
-    io::{Stdout, Write as _},
+    io::Stdout,
     ops::{Deref, DerefMut},
     panic,
 };
@@ -40,19 +40,16 @@ pub fn enter() -> anyhow::Result<TerminalGuard> {
 
     terminal::enable_raw_mode().context("Failed to enable raw mode")?;
 
-    stdout
-        .queue(terminal::EnterAlternateScreen)
-        .context("Failed to enter alternate screen")?
-        .queue(cursor::Hide)
-        .context("Failed to hide cursor")?
-        .queue(event::EnableMouseCapture)
-        .context("Failed to enable mouse capture")?
-        .queue(event::PushKeyboardEnhancementFlags(
-            KEF::DISAMBIGUATE_ESCAPE_CODES | KEF::REPORT_EVENT_TYPES,
-        ))
-        .context("Failed to push keyboard enhancement flags")?
-        .flush()
-        .context("Failed to flush queued commands")?;
+    crossterm::execute!(
+        stdout,
+        terminal::EnterAlternateScreen,
+        cursor::Hide,
+        event::EnableMouseCapture,
+        event::PushKeyboardEnhancementFlags(
+            KEF::DISAMBIGUATE_ESCAPE_CODES | KEF::REPORT_EVENT_TYPES
+        ),
+    )
+    .context("Failed to execute crossterm commands")?;
 
     let previous_hook = panic::take_hook();
 
@@ -73,17 +70,14 @@ pub fn enter() -> anyhow::Result<TerminalGuard> {
 pub fn exit() -> anyhow::Result<()> {
     let mut stdout = std::io::stdout();
 
-    stdout
-        .queue(event::PopKeyboardEnhancementFlags)
-        .context("Failed to pop keyboard enhancement flags")?
-        .queue(event::DisableMouseCapture)
-        .context("Failed to disable mouse capture")?
-        .queue(cursor::Show)
-        .context("Failed to show cursor")?
-        .queue(terminal::LeaveAlternateScreen)
-        .context("Failed to leave alternate screen")?
-        .flush()
-        .context("Failed to flush queued commands")?;
+    crossterm::execute!(
+        stdout,
+        event::PopKeyboardEnhancementFlags,
+        event::DisableMouseCapture,
+        cursor::Show,
+        terminal::LeaveAlternateScreen,
+    )
+    .context("Failed to execute crossterm commands")?;
 
     terminal::disable_raw_mode().context("Failed to disable raw mode")?;
 
