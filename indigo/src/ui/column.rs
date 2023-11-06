@@ -8,6 +8,8 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let column = 81;
 
+    let light_gray = Color::Rgb(0xF6, 0xF8, 0xFA);
+
     for y in area.top()..area.bottom() {
         let line_number = usize::from(y) + buffer.vertical_scroll() + 1;
 
@@ -17,7 +19,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 
         if column_in_area && column_in_buffer && line_in_buffer {
             let x = area.x + ((column - 1) - u16::try_from(buffer.horizontal_scroll()).unwrap());
-            surface.get_mut(x, y).set_bg(Color::White);
+            surface.get_mut(x, y).set_bg(light_gray);
         }
     }
 }

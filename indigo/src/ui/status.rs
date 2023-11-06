@@ -15,6 +15,8 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let count = buffer.selection().ranges().len();
 
+    let light_gray = Color::Rgb(0xF6, 0xF8, 0xFA);
+
     let mode = match editor.mode() {
         Mode::Normal(_) => "n",
         Mode::Insert(_) => "i",
@@ -22,6 +24,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     };
 
     Paragraph::new(format!("{path}{modified} {line}:{column}/{count} {mode}"))
+        .style(Style::default().bg(light_gray))
         .alignment(Alignment::Right)
         .render(area, surface);
 }
