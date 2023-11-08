@@ -119,13 +119,21 @@ impl Selection {
         }
     }
 
-    #[must_use]
-    pub fn is_valid(&self) -> bool {
-        // TODO: `ranges` isn't empty
-        // TODO: `primary` index is valid
+    pub fn assert_valid(&self) {
+        assert!(!self.ranges.is_empty(), "`ranges` isn't empty");
+
+        assert!(
+            self.ranges.get(self.primary).is_some(),
+            "`primary` index is valid"
+        );
+
         // TODO: All ranges face the same direction
+
         // TODO: Ranges are sorted
-        todo!()
+
+        for range in &self.ranges {
+            range.assert_valid();
+        }
     }
 }
 

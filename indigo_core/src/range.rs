@@ -186,11 +186,12 @@ impl Range {
         }
     }
 
-    #[must_use]
-    pub fn is_valid(&self) -> bool {
-        match self.target_column {
-            None => true,
-            Some(target_column) => self.cursor.column < target_column,
+    pub fn assert_valid(&self) {
+        if let Some(target_column) = self.target_column {
+            assert!(
+                target_column > self.cursor.column,
+                "target column must be greater than cursor column"
+            );
         }
     }
 }

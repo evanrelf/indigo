@@ -73,6 +73,8 @@ impl Position {
             Conversion::Valid(index)
         }
     }
+
+    pub fn assert_valid(&self) {}
 }
 
 impl From<(usize, usize)> for Position {

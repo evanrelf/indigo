@@ -4,9 +4,6 @@ use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::{cmp::min, fs::File, io::BufReader, path::PathBuf};
 
-// TODO: Update `vertical_scroll` (and maybe `horizontal_scroll`) whenever the buffer contents
-// changes, to ensure you haven't scrolled beyond the end of the buffer.
-
 #[derive(Clone, Debug, Default)]
 pub struct Buffer {
     path: Utf8PathBuf,
@@ -139,8 +136,13 @@ impl Buffer {
         self.horizontal_scroll = column;
     }
 
-    #[must_use]
-    pub fn is_valid(&self) -> bool {
-        todo!()
+    pub fn assert_valid(&self) {
+        // TODO: `selection` is valid in `contents` rope
+
+        // TODO: `vertical_scroll` doesn't go beyond the last line of the `contents` rope
+
+        // TODO: Buffer validation
+
+        self.selection.assert_valid();
     }
 }
