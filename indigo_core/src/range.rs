@@ -1,4 +1,5 @@
 use crate::{conversion::Conversion, direction::Direction, position::Position};
+use anyhow::Context as _;
 use ropey::{Rope, RopeSlice};
 use std::cmp::{max, min};
 
@@ -161,27 +162,32 @@ impl Range {
         }
     }
 
-    pub fn to_rope_slice<'rope>(&self, rope: &'rope Rope) -> Conversion<RopeSlice<'rope>, ()> {
-        let (anchor_index, anchor_corrected) = match self.anchor.to_char_index(rope) {
-            Conversion::Invalid(()) => return Conversion::Invalid(()),
+    pub fn to_rope_slice<'rope>(
+        &self,
+        rope: &'rope Rope,
+    ) -> anyhow::Result<Conversion<RopeSlice<'rope>>> {
+        let (anchor_index, anchor_corrected) = match self.anchor.to_char_index(rope)? {
             Conversion::Corrected(index) => (index, true),
             Conversion::Valid(index) => (index, false),
         };
-        let (cursor_index, cursor_corrected) = match self.cursor.to_char_index(rope) {
-            Conversion::Invalid(()) => return Conversion::Invalid(()),
+        let (cursor_index, cursor_corrected) = match self.cursor.to_char_index(rope)? {
             Conversion::Corrected(index) => (index, true),
             Conversion::Valid(index) => (index, false),
         };
 
         let slice = match self.direction() {
-            Direction::Forward => rope.get_slice(anchor_index..=cursor_index).unwrap(),
-            Direction::Backward => rope.get_slice(cursor_index..=anchor_index).unwrap(),
+            Direction::Forward => rope
+                .get_slice(anchor_index..=cursor_index)
+                .context("Failed to get forward slice")?,
+            Direction::Backward => rope
+                .get_slice(cursor_index..=anchor_index)
+                .context("Failed to get backward slice")?,
         };
 
         if anchor_corrected || cursor_corrected {
-            Conversion::Corrected(slice)
+            Ok(Conversion::Corrected(slice))
         } else {
-            Conversion::Valid(slice)
+            Ok(Conversion::Valid(slice))
         }
     }
 

@@ -8,9 +8,9 @@ pub struct Position {
 }
 
 impl Position {
-    pub fn from_char_index(index: usize, rope: &Rope) -> Conversion<Self, ()> {
+    pub fn from_char_index(index: usize, rope: &Rope) -> anyhow::Result<Conversion<Self>> {
         if rope.len_chars() == 0 {
-            return Conversion::Invalid(());
+            anyhow::bail!("Rope is empty");
         }
 
         let mut corrected = false;
@@ -29,15 +29,15 @@ impl Position {
         let position = Self { line, column };
 
         if corrected {
-            Conversion::Corrected(position)
+            Ok(Conversion::Corrected(position))
         } else {
-            Conversion::Valid(position)
+            Ok(Conversion::Valid(position))
         }
     }
 
-    pub fn to_char_index(self, rope: &Rope) -> Conversion<usize, ()> {
+    pub fn to_char_index(self, rope: &Rope) -> anyhow::Result<Conversion<usize>> {
         if rope.len_chars() == 0 {
-            return Conversion::Invalid(());
+            anyhow::bail!("Rope is empty");
         }
 
         let mut corrected = false;
@@ -66,9 +66,9 @@ impl Position {
         let index = column + rope.line_to_char(line);
 
         if corrected {
-            Conversion::Corrected(index)
+            Ok(Conversion::Corrected(index))
         } else {
-            Conversion::Valid(index)
+            Ok(Conversion::Valid(index))
         }
     }
 
@@ -103,69 +103,81 @@ mod tests {
     fn from_char_index_invalid() {
         let rope = Rope::default();
         let index = 1;
-        assert_eq!(
-            Position::from_char_index(index, &rope),
-            Conversion::Invalid(())
-        );
+        assert!(Position::from_char_index(index, &rope).is_err());
     }
 
     #[test]
     fn from_char_index_corrected() {
         let rope = Rope::from_str("foo\nbar");
         let index = 7;
-        assert_eq!(
+        assert!(matches!(
             Position::from_char_index(index, &rope),
-            Conversion::Corrected(Position { line: 1, column: 2 })
-        );
+            Ok(Conversion::Corrected(Position { line: 1, column: 2 }))
+        ));
 
         let rope = Rope::from_str("foo\nbar\n");
         let index = 8;
-        assert_eq!(
+        assert!(matches!(
             Position::from_char_index(index, &rope),
-            Conversion::Corrected(Position { line: 1, column: 3 })
-        );
+            Ok(Conversion::Corrected(Position { line: 1, column: 3 }))
+        ));
     }
 
     #[test]
     fn from_char_index_valid() {
         let rope = Rope::from_str("foo\nbar\n");
         let index = 7;
-        assert_eq!(
+        assert!(matches!(
             Position::from_char_index(index, &rope),
-            Conversion::Valid(Position { line: 1, column: 3 })
-        );
+            Ok(Conversion::Valid(Position { line: 1, column: 3 }))
+        ));
     }
 
     #[test]
     fn to_char_index_invalid() {
         let rope = Rope::default();
         let position = Position { line: 0, column: 0 };
-        assert_eq!(position.to_char_index(&rope), Conversion::Invalid(()));
+        assert!(position.to_char_index(&rope).is_err());
     }
 
     #[test]
     fn to_char_index_corrected() {
         let rope = Rope::from_str("foo\nbar");
         let position = Position { line: 0, column: 4 };
-        assert_eq!(position.to_char_index(&rope), Conversion::Corrected(3));
+        assert!(matches!(
+            position.to_char_index(&rope),
+            Ok(Conversion::Corrected(3))
+        ));
 
         let rope = Rope::from_str("foo\nbar");
         let position = Position { line: 9, column: 0 };
-        assert_eq!(position.to_char_index(&rope), Conversion::Corrected(6));
+        assert!(matches!(
+            position.to_char_index(&rope),
+            Ok(Conversion::Corrected(6))
+        ));
 
         let rope = Rope::from_str("foo\nbar\n");
         let position = Position { line: 9, column: 0 };
-        assert_eq!(position.to_char_index(&rope), Conversion::Corrected(7));
+        assert!(matches!(
+            position.to_char_index(&rope),
+            Ok(Conversion::Corrected(7))
+        ));
     }
 
     #[test]
     fn to_char_index_valid() {
         let rope = Rope::from_str("foo\nbar");
         let position = Position { line: 1, column: 2 };
-        assert_eq!(position.to_char_index(&rope), Conversion::Valid(6));
+        assert!(matches!(
+            position.to_char_index(&rope),
+            Ok(Conversion::Valid(6))
+        ));
 
         let rope = Rope::from_str("foo\nbar\n");
         let position = Position { line: 1, column: 3 };
-        assert_eq!(position.to_char_index(&rope), Conversion::Valid(7));
+        assert!(matches!(
+            position.to_char_index(&rope),
+            Ok(Conversion::Valid(7))
+        ));
     }
 }

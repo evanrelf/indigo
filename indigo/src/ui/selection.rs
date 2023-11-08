@@ -7,15 +7,15 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let rope = &buffer.contents();
 
     for range in buffer.selection().ranges() {
-        let range_slice = range.to_rope_slice(rope).unwrap();
+        let range_slice = range.to_rope_slice(rope).unwrap().into_inner();
 
         for (i, _) in range_slice.chars().enumerate() {
             let i = match range.direction() {
-                Direction::Forward => i + range.anchor().to_char_index(rope).unwrap(),
-                Direction::Backward => i + range.cursor().to_char_index(rope).unwrap(),
+                Direction::Forward => i + range.anchor().to_char_index(rope).unwrap().into_inner(),
+                Direction::Backward => i + range.cursor().to_char_index(rope).unwrap().into_inner(),
             };
 
-            let buffer_position = Position::from_char_index(i, rope).unwrap();
+            let buffer_position = Position::from_char_index(i, rope).unwrap().into_inner();
             let buffer_line = buffer_position.line;
             let buffer_column = buffer_position.column;
 
