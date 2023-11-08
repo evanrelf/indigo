@@ -9,6 +9,18 @@ pub enum Conversion<T, E> {
 }
 
 impl<T, E> Conversion<T, E> {
+    pub fn is_invalid(&self) -> bool {
+        matches!(self, Self::Invalid(_))
+    }
+
+    pub fn is_corrected(&self) -> bool {
+        matches!(self, Self::Corrected(_))
+    }
+
+    pub fn is_valid(&self) -> bool {
+        matches!(self, Self::Valid(_))
+    }
+
     pub fn map<U, F>(self, op: F) -> Conversion<U, E>
     where
         F: FnOnce(T) -> U,
@@ -67,6 +79,24 @@ impl<T, E> Conversion<T, E> {
         match self {
             Self::Invalid(_) => T::default(),
             Self::Corrected(t) | Self::Valid(t) => t,
+        }
+    }
+}
+
+impl<T, E> From<Conversion<T, E>> for Option<T> {
+    fn from(conversion: Conversion<T, E>) -> Self {
+        match conversion {
+            Conversion::Invalid(_) => Self::None,
+            Conversion::Corrected(t) | Conversion::Valid(t) => Self::Some(t),
+        }
+    }
+}
+
+impl<T, E> From<Conversion<T, E>> for Result<T, E> {
+    fn from(conversion: Conversion<T, E>) -> Self {
+        match conversion {
+            Conversion::Invalid(e) => Self::Err(e),
+            Conversion::Corrected(t) | Conversion::Valid(t) => Self::Ok(t),
         }
     }
 }
