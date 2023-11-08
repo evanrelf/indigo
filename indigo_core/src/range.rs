@@ -161,7 +161,6 @@ impl Range {
         }
     }
 
-    #[must_use]
     pub fn to_rope_slice<'rope>(&self, rope: &'rope Rope) -> Conversion<RopeSlice<'rope>, ()> {
         let (anchor_index, anchor_corrected) = match self.anchor.to_char_index(rope) {
             Conversion::Invalid(()) => return Conversion::Invalid(()),

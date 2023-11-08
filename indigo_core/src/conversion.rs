@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+#[must_use]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Conversion<T, E> {
     Invalid(E),
