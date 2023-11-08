@@ -1,4 +1,6 @@
-use crate::{direction::Direction, range::Range};
+use crate::{conversion::Conversion, direction::Direction, range::Range};
+use fancy_regex::Regex;
+use ropey::Rope;
 use std::borrow::Cow;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -116,6 +118,33 @@ impl Selection {
             Cow::Owned(self.flip())
         } else {
             Cow::Borrowed(self)
+        }
+    }
+
+    pub fn select(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Conversion<Self>> {
+        let mut corrected = false;
+        let mut ranges = Vec::new();
+
+        for range in &self.ranges {
+            let sub_ranges = range.select(rope, regex)?;
+            corrected |= sub_ranges.is_corrected();
+            let mut sub_ranges = sub_ranges.into_inner();
+            ranges.append(&mut sub_ranges);
+        }
+
+        if ranges.is_empty() {
+            anyhow::bail!("No matches");
+        }
+
+        let selection = Self {
+            primary: ranges.len() - 1,
+            ranges,
+        };
+
+        if corrected {
+            Ok(Conversion::Corrected(selection))
+        } else {
+            Ok(Conversion::Valid(selection))
         }
     }
 

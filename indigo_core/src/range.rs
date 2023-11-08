@@ -3,6 +3,9 @@ use anyhow::Context as _;
 use ropey::{Rope, RopeSlice};
 use std::cmp::{max, min};
 
+use fancy_regex::Regex;
+use std::borrow::Cow;
+
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Range {
     anchor: Position,
@@ -159,6 +162,62 @@ impl Range {
                 // Mixed
                 self.merge(&other.flip())
             }
+        }
+    }
+
+    pub fn select(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Conversion<Vec<Self>>> {
+        let mut corrected = false;
+
+        let offset = if self.is_forward() {
+            let anchor_index = self.anchor.to_char_index(rope)?;
+            corrected |= anchor_index.is_corrected();
+            anchor_index.into_inner()
+        } else {
+            let cursor_index = self.cursor.to_char_index(rope)?;
+            corrected |= cursor_index.is_corrected();
+            cursor_index.into_inner()
+        };
+
+        let rope_slice = {
+            let slice = self.to_rope_slice(rope)?;
+            corrected |= slice.is_corrected();
+            slice.into_inner()
+        };
+
+        let cow = Cow::<str>::from(rope_slice);
+
+        let str = if let Some(str) = rope_slice.as_str() {
+            str
+        } else {
+            cow.as_ref()
+        };
+
+        let ranges = regex
+            .find_iter(str)
+            .map(|match_| {
+                let match_ = match_.unwrap();
+
+                let start_index = offset + rope.byte_to_char(match_.start());
+                let start_position = Position::from_char_index(start_index, rope).unwrap();
+                debug_assert!(!start_position.is_corrected());
+                let start_position = start_position.into_inner();
+
+                let end_index = offset + rope.byte_to_char(match_.end()).saturating_sub(1);
+                let end_position = Position::from_char_index(end_index, rope).unwrap();
+                debug_assert!(!end_position.is_corrected());
+                let end_position = end_position.into_inner();
+
+                match self.direction() {
+                    Direction::Forward => Self::from((start_position, end_position)),
+                    Direction::Backward => Self::from((end_position, start_position)),
+                }
+            })
+            .collect();
+
+        if corrected {
+            Ok(Conversion::Corrected(ranges))
+        } else {
+            Ok(Conversion::Valid(ranges))
         }
     }
 

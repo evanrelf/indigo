@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.75"
 camino = "1.1.6"
+fancy-regex = "0.11.0"
 ropey = { version = "1.6.0", default-features = false, features = ["simd"] }
 
 [dev-dependencies]
