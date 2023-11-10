@@ -46,7 +46,9 @@ pub fn enter() -> anyhow::Result<TerminalGuard> {
         cursor::Hide,
         event::EnableMouseCapture,
         event::PushKeyboardEnhancementFlags(
-            KEF::DISAMBIGUATE_ESCAPE_CODES | KEF::REPORT_EVENT_TYPES
+            KEF::DISAMBIGUATE_ESCAPE_CODES
+                | KEF::REPORT_EVENT_TYPES
+                | KEF::REPORT_ALL_KEYS_AS_ESCAPE_CODES
         ),
     )
     .context("Failed to execute crossterm commands")?;
