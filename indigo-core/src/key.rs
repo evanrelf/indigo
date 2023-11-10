@@ -48,7 +48,6 @@ pub enum KeyCode {
     Tab,
     Char(char),
     Escape,
-    Modifier(KeyModifier),
 }
 
 pub fn key_code(input: &mut &str) -> PResult<KeyCode> {
