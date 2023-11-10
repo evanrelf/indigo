@@ -286,6 +286,8 @@ dependencies = [
  "clap",
  "indigo-core",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
