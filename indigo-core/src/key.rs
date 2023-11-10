@@ -1,6 +1,10 @@
 use std::collections::HashSet;
 use std::str::FromStr;
-use winnow::prelude::*;
+use winnow::{
+    combinator::{dispatch, fail, success},
+    prelude::*,
+    token::any,
+};
 
 pub struct Key {
     pub modifiers: HashSet<KeyModifier>,
@@ -19,6 +23,7 @@ impl FromStr for Key {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum KeyModifier {
     Shift,
     Ctrl,
@@ -26,7 +31,13 @@ pub enum KeyModifier {
 }
 
 pub fn key_modifier(input: &mut &str) -> PResult<KeyModifier> {
-    todo!()
+    dispatch! { any;
+        's' => success(KeyModifier::Shift),
+        'c' => success(KeyModifier::Ctrl),
+        'a' => success(KeyModifier::Alt),
+        _ => fail,
+    }
+    .parse_next(input)
 }
 
 impl FromStr for KeyModifier {
@@ -58,5 +69,18 @@ impl FromStr for KeyCode {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         key_code.parse(s).map_err(|e| e.to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_key_modifier() {
+        assert_eq!("s".parse(), Ok(KeyModifier::Shift));
+        assert_eq!("c".parse(), Ok(KeyModifier::Ctrl));
+        assert_eq!("a".parse(), Ok(KeyModifier::Alt));
+        assert!("abc".parse::<KeyModifier>().is_err());
     }
 }
