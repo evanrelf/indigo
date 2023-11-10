@@ -1,0 +1,10 @@
+[package]
+name = "indigo-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.75"
+clap = { version = "4.4.7", default-features = false, features = ["derive", "error-context", "help", "std", "usage"] }
+indigo-core = { path = "../indigo-core" }
+tokio = { version = "1.34.0", features = ["full"] }
