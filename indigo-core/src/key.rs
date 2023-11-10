@@ -1,10 +1,6 @@
 use std::collections::HashSet;
 use std::str::FromStr;
-use winnow::{
-    combinator::{alt, dispatch, fail, success},
-    prelude::*,
-    token::{any, one_of},
-};
+use winnow::{combinator::alt, prelude::*, token::one_of};
 
 pub struct Key {
     pub modifiers: HashSet<KeyModifier>,
@@ -31,12 +27,11 @@ pub enum KeyModifier {
 }
 
 pub fn key_modifier(input: &mut &str) -> PResult<KeyModifier> {
-    dispatch! { any;
-        's' => success(KeyModifier::Shift),
-        'c' => success(KeyModifier::Ctrl),
-        'a' => success(KeyModifier::Alt),
-        _ => fail,
-    }
+    alt((
+        alt(("shift", "s")).value(KeyModifier::Shift),
+        alt(("control", "ctrl", "c")).value(KeyModifier::Ctrl),
+        alt(("option", "alt", "a")).value(KeyModifier::Alt),
+    ))
     .parse_next(input)
 }
 
@@ -63,15 +58,15 @@ pub enum KeyCode {
 
 pub fn key_code(input: &mut &str) -> PResult<KeyCode> {
     alt((
-        "backspace".value(KeyCode::Backspace),
-        "enter".value(KeyCode::Enter),
+        alt(("backspace", "bs")).value(KeyCode::Backspace),
+        alt(("enter", "return", "cr")).value(KeyCode::Enter),
         "left".value(KeyCode::Left),
         "right".value(KeyCode::Right),
         "up".value(KeyCode::Up),
         "down".value(KeyCode::Down),
         "tab".value(KeyCode::Tab),
-        "escape".value(KeyCode::Escape),
         one_of(' '..='~').map(KeyCode::Char),
+        alt(("escape", "esc")).value(KeyCode::Escape),
     ))
     .parse_next(input)
 }
@@ -91,8 +86,13 @@ mod tests {
     #[test]
     fn test_parse_key_modifier() {
         assert_eq!("s".parse(), Ok(KeyModifier::Shift));
+        assert_eq!("shift".parse(), Ok(KeyModifier::Shift));
         assert_eq!("c".parse(), Ok(KeyModifier::Ctrl));
+        assert_eq!("ctrl".parse(), Ok(KeyModifier::Ctrl));
+        assert_eq!("control".parse(), Ok(KeyModifier::Ctrl));
         assert_eq!("a".parse(), Ok(KeyModifier::Alt));
+        assert_eq!("alt".parse(), Ok(KeyModifier::Alt));
+        assert_eq!("option".parse(), Ok(KeyModifier::Alt));
         assert!("abc".parse::<KeyModifier>().is_err());
     }
 
@@ -103,8 +103,10 @@ mod tests {
         assert_eq!("+".parse(), Ok(KeyCode::Char('+')));
         assert_eq!("~".parse(), Ok(KeyCode::Char('~')));
         assert_eq!("b".parse(), Ok(KeyCode::Char('b')));
+        assert_eq!("bs".parse(), Ok(KeyCode::Backspace));
         assert_eq!("backspace".parse(), Ok(KeyCode::Backspace));
         assert_eq!("escape".parse(), Ok(KeyCode::Escape));
+        assert_eq!("esc".parse(), Ok(KeyCode::Escape));
         assert!("∆".parse::<KeyCode>().is_err());
     }
 }
