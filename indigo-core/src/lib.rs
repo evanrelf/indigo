@@ -12,6 +12,7 @@ pub mod buffer;
 pub mod conversion;
 pub mod direction;
 pub mod editor;
+pub mod key;
 pub mod mode;
 pub mod position;
 pub mod range;
@@ -23,6 +24,7 @@ pub use crate::{
     conversion::Conversion,
     direction::Direction,
     editor::Editor,
+    key::{Code, Key, Modifier},
     mode::{CommandMode, InsertMode, Mode, NormalMode},
     position::Position,
     range::Range,
