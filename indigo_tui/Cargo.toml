@@ -1,8 +1,7 @@
 [package]
-name = "indigo"
+name = "indigo_tui"
 version = "0.1.0"
 edition = "2021"
-default-run = "indigo"
 
 [dependencies]
 anyhow = "1.0.75"
