@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 use std::str::FromStr;
 use winnow::{
-    combinator::{dispatch, fail, success},
+    combinator::{alt, dispatch, fail, success},
     prelude::*,
-    token::any,
+    token::{any, one_of},
 };
 
 pub struct Key {
@@ -48,6 +48,7 @@ impl FromStr for KeyModifier {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum KeyCode {
     Backspace,
     Enter,
@@ -61,7 +62,18 @@ pub enum KeyCode {
 }
 
 pub fn key_code(input: &mut &str) -> PResult<KeyCode> {
-    todo!()
+    alt((
+        "backspace".value(KeyCode::Backspace),
+        "enter".value(KeyCode::Enter),
+        "left".value(KeyCode::Left),
+        "right".value(KeyCode::Right),
+        "up".value(KeyCode::Up),
+        "down".value(KeyCode::Down),
+        "tab".value(KeyCode::Tab),
+        "escape".value(KeyCode::Escape),
+        one_of(' '..='~').map(KeyCode::Char),
+    ))
+    .parse_next(input)
 }
 
 impl FromStr for KeyCode {
@@ -82,5 +94,17 @@ mod tests {
         assert_eq!("c".parse(), Ok(KeyModifier::Ctrl));
         assert_eq!("a".parse(), Ok(KeyModifier::Alt));
         assert!("abc".parse::<KeyModifier>().is_err());
+    }
+
+    #[test]
+    fn test_parse_key_code() {
+        assert_eq!(" ".parse(), Ok(KeyCode::Char(' ')));
+        assert_eq!("!".parse(), Ok(KeyCode::Char('!')));
+        assert_eq!("+".parse(), Ok(KeyCode::Char('+')));
+        assert_eq!("~".parse(), Ok(KeyCode::Char('~')));
+        assert_eq!("b".parse(), Ok(KeyCode::Char('b')));
+        assert_eq!("backspace".parse(), Ok(KeyCode::Backspace));
+        assert_eq!("escape".parse(), Ok(KeyCode::Escape));
+        assert!("∆".parse::<KeyCode>().is_err());
     }
 }
