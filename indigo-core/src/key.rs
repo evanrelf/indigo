@@ -7,16 +7,16 @@ pub struct Key {
     pub code: KeyCode,
 }
 
-pub fn key(input: &mut &str) -> PResult<Key> {
-    todo!()
-}
-
 impl FromStr for Key {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         key.parse(s).map_err(|e| e.to_string())
     }
+}
+
+pub fn key(input: &mut &str) -> PResult<Key> {
+    todo!()
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -33,14 +33,6 @@ pub fn key_modifier(input: &mut &str) -> PResult<KeyModifier> {
         alt(("option", "alt", "a")).value(KeyModifier::Alt),
     ))
     .parse_next(input)
-}
-
-impl FromStr for KeyModifier {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        key_modifier.parse(s).map_err(|e| e.to_string())
-    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -71,42 +63,34 @@ pub fn key_code(input: &mut &str) -> PResult<KeyCode> {
     .parse_next(input)
 }
 
-impl FromStr for KeyCode {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        key_code.parse(s).map_err(|e| e.to_string())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_parse_key_modifier() {
-        assert_eq!("s".parse(), Ok(KeyModifier::Shift));
-        assert_eq!("shift".parse(), Ok(KeyModifier::Shift));
-        assert_eq!("c".parse(), Ok(KeyModifier::Ctrl));
-        assert_eq!("ctrl".parse(), Ok(KeyModifier::Ctrl));
-        assert_eq!("control".parse(), Ok(KeyModifier::Ctrl));
-        assert_eq!("a".parse(), Ok(KeyModifier::Alt));
-        assert_eq!("alt".parse(), Ok(KeyModifier::Alt));
-        assert_eq!("option".parse(), Ok(KeyModifier::Alt));
-        assert!("abc".parse::<KeyModifier>().is_err());
+        assert_eq!(key_modifier.parse("s"), Ok(KeyModifier::Shift));
+        assert_eq!(key_modifier.parse("shift"), Ok(KeyModifier::Shift));
+        assert_eq!(key_modifier.parse("c"), Ok(KeyModifier::Ctrl));
+        assert_eq!(key_modifier.parse("ctrl"), Ok(KeyModifier::Ctrl));
+        assert_eq!(key_modifier.parse("control"), Ok(KeyModifier::Ctrl));
+        assert_eq!(key_modifier.parse("a"), Ok(KeyModifier::Alt));
+        assert_eq!(key_modifier.parse("alt"), Ok(KeyModifier::Alt));
+        assert_eq!(key_modifier.parse("option"), Ok(KeyModifier::Alt));
+        assert!(key_modifier.parse("abc").is_err());
     }
 
     #[test]
     fn test_parse_key_code() {
-        assert_eq!(" ".parse(), Ok(KeyCode::Char(' ')));
-        assert_eq!("!".parse(), Ok(KeyCode::Char('!')));
-        assert_eq!("+".parse(), Ok(KeyCode::Char('+')));
-        assert_eq!("~".parse(), Ok(KeyCode::Char('~')));
-        assert_eq!("b".parse(), Ok(KeyCode::Char('b')));
-        assert_eq!("bs".parse(), Ok(KeyCode::Backspace));
-        assert_eq!("backspace".parse(), Ok(KeyCode::Backspace));
-        assert_eq!("escape".parse(), Ok(KeyCode::Escape));
-        assert_eq!("esc".parse(), Ok(KeyCode::Escape));
-        assert!("∆".parse::<KeyCode>().is_err());
+        assert_eq!(key_code.parse(" "), Ok(KeyCode::Char(' ')));
+        assert_eq!(key_code.parse("!"), Ok(KeyCode::Char('!')));
+        assert_eq!(key_code.parse("+"), Ok(KeyCode::Char('+')));
+        assert_eq!(key_code.parse("~"), Ok(KeyCode::Char('~')));
+        assert_eq!(key_code.parse("b"), Ok(KeyCode::Char('b')));
+        assert_eq!(key_code.parse("bs"), Ok(KeyCode::Backspace));
+        assert_eq!(key_code.parse("backspace"), Ok(KeyCode::Backspace));
+        assert_eq!(key_code.parse("escape"), Ok(KeyCode::Escape));
+        assert_eq!(key_code.parse("esc"), Ok(KeyCode::Escape));
+        assert!(key_code.parse("∆").is_err());
     }
 }
