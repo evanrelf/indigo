@@ -23,7 +23,6 @@ pub enum KeyModifier {
     Shift,
     Ctrl,
     Alt,
-    Super,
 }
 
 pub fn key_modifier(input: &mut &str) -> PResult<KeyModifier> {
