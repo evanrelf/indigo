@@ -4,6 +4,7 @@ use clap::Parser as _;
 // TODO: This doesn't work? Help output in `parse` error isn't what I want.
 #[clap(no_binary_name = true)]
 pub enum Command {
+    #[command(alias = "q")]
     Quit(Quit),
 }
 
@@ -12,16 +13,10 @@ pub struct Quit {
     pub exit_code: Option<u8>,
 }
 
-pub fn parse(command: &str) -> anyhow::Result<Command> {
-    let mut words = shell_words::split(command)?;
-    if let Some(command) = words.get(0) {
-        #[allow(clippy::single_match)]
-        match command.as_str() {
-            "q" => words[0] = String::from("quit"),
-            _ => {}
-        }
-    }
-    Ok(Command::try_parse_from(words)?)
+pub fn parse(input: &str) -> anyhow::Result<Command> {
+    let words = shell_words::split(input)?;
+    let command = Command::try_parse_from(words)?;
+    Ok(command)
 }
 
 // TODO: Add `help` function that prints help text, similar to the thing I made in Haskell here:
