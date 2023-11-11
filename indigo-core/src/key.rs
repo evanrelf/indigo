@@ -2,6 +2,9 @@ use std::collections::HashSet;
 use std::str::FromStr;
 use winnow::{combinator::alt, prelude::*, token::one_of};
 
+// TODO: Strict mode? Would forbid alternatives, abbreviations, repeated modifiers, incorrectly
+// ordered modifiers, etc.
+
 pub struct Key {
     pub modifiers: HashSet<KeyModifier>,
     pub code: KeyCode,
