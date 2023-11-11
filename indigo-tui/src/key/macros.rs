@@ -51,17 +51,41 @@ macro_rules! key {
 pub(crate) use key;
 
 macro_rules! key_matches {
+    // _+
+    ($key:expr, $(_)+) => {
+        true
+    };
+    // c
     ($key:expr, $c:literal) => {
         $key.code == $crate::key::macros::key_code!($c) && $key.modifiers == $crate::key::macros::key_modifiers!()
     };
     ($key:expr, $c:ident) => {
         $key.code == $crate::key::macros::key_code!($c) && $key.modifiers == $crate::key::macros::key_modifiers!()
     };
+    // _ c
+    ($key:expr, _ $c:literal) => {
+        $key.code == $crate::key::macros::key_code!($c)
+    };
+    ($key:expr, _ $c:ident) => {
+        $key.code == $crate::key::macros::key_code!($c)
+    };
+    // m+ _
+    ($key:expr, $($m:ident)+ _) => {
+        $key.modifiers == $crate::key::macros::key_modifiers!($($m)|+)
+    };
+    // m+ c
     ($key:expr, $($m:ident)+ $c:literal) => {
         $key.code == $crate::key::macros::key_code!($c) && $key.modifiers == $crate::key::macros::key_modifiers!($($m)|+)
     };
     ($key:expr, $($m:ident)+ $c:ident) => {
         $key.code == $crate::key::macros::key_code!($c) && $key.modifiers == $crate::key::macros::key_modifiers!($($m)|+)
+    };
+    // m+ _ c
+    ($key:expr, $($m:ident)+ _ $c:literal) => {
+        $key.code == $crate::key::macros::key_code!($c) && $key.modifiers.contains($crate::key::macros::key_modifiers!($($m)|+))
+    };
+    ($key:expr, $($m:ident)+ _ $c:ident) => {
+        $key.code == $crate::key::macros::key_code!($c) && $key.modifiers.contains($crate::key::macros::key_modifiers!($($m)|+))
     };
 }
 
