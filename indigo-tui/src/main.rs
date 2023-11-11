@@ -147,9 +147,6 @@ fn update_normal(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFl
         Event::Key(key) if key_matches!(key, CONTROL 'c') => {
             anyhow::bail!("Ctrl-C");
         }
-        Event::Key(key) if key_matches!(key, 'q') => {
-            quit!();
-        }
         _ => {}
     }
 
@@ -168,9 +165,6 @@ fn update_insert(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFl
         }
         Event::Key(key) if key_matches!(key, CONTROL 'c') => {
             anyhow::bail!("Ctrl-C");
-        }
-        Event::Key(key) if key_matches!(key, 'q') => {
-            quit!();
         }
         _ => {}
     }
@@ -240,9 +234,6 @@ fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlF
         }
         Event::Key(key) if key_matches!(key, CONTROL 'c') => {
             anyhow::bail!("Ctrl-C");
-        }
-        Event::Key(key) if key_matches!(key, 'q') => {
-            quit!();
         }
         _ => {}
     }
