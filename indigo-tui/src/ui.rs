@@ -8,6 +8,7 @@ mod status;
 
 use indigo_core::{Editor, RopeExt};
 use ratatui::prelude::{Buffer as Surface, *};
+use std::cmp::max;
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let areas = areas(editor, area);
@@ -41,8 +42,8 @@ pub fn areas(editor: &Editor, area: Rect) -> Areas {
 
     let numbers_width = {
         let n = editor.current_buffer().contents().len_lines_indigo();
-        let digits = 1 + n.ilog10();
-        u16::try_from(digits.max(2) + 1).unwrap()
+        let digits = 1 + max(1, n).ilog10();
+        u16::try_from(max(2, digits) + 1).unwrap()
     };
 
     let horizontal = Layout::default()
