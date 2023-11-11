@@ -90,7 +90,7 @@ impl Display for Key {
             for modifier in self.modifiers {
                 let modifier = match modifier {
                     KeyModifier::Shift => "s",
-                    KeyModifier::Ctrl => "c",
+                    KeyModifier::Control => "c",
                     KeyModifier::Alt => "a",
                 };
                 write!(f, "{modifier}-")?;
@@ -132,7 +132,7 @@ pub fn key_bare(input: &mut &str) -> PResult<Key> {
 flags! {
     pub enum KeyModifier: u8 {
         Shift,
-        Ctrl,
+        Control,
         Alt,
     }
 }
@@ -140,7 +140,7 @@ flags! {
 pub fn key_modifier(input: &mut &str) -> PResult<KeyModifier> {
     alt((
         alt(("shift", "s")).value(KeyModifier::Shift),
-        alt(("control", "ctrl", "c")).value(KeyModifier::Ctrl),
+        alt(("control", "ctrl", "c")).value(KeyModifier::Control),
         alt(("option", "alt", "a")).value(KeyModifier::Alt),
     ))
     .parse_next(input)
@@ -245,11 +245,14 @@ mod tests {
         assert_eq!(key.parse(">"), Ok(Key::from('>')));
         assert_eq!(key.parse("a"), Ok(Key::from('a')));
         assert_eq!(key.parse("<s-a>"), Ok(Key::from(([Shift], 'a'))));
-        assert_eq!(key.parse("<c-a>"), Ok(Key::from(([Ctrl], 'a'))));
-        assert_eq!(key.parse("<c-s-a>"), Ok(Key::from(([Ctrl, Shift], 'a'))));
+        assert_eq!(key.parse("<c-a>"), Ok(Key::from(([Control], 'a'))));
+        assert_eq!(key.parse("<c-s-a>"), Ok(Key::from(([Control, Shift], 'a'))));
         assert_eq!(key.parse("<tab>"), Ok(Key::from(Tab)));
-        assert_eq!(key.parse("<c-s-tab>"), Ok(Key::from(([Ctrl, Shift], Tab))));
-        assert_eq!(key.parse("<c-c-tab>"), Ok(Key::from(([Ctrl], Tab))));
+        assert_eq!(
+            key.parse("<c-s-tab>"),
+            Ok(Key::from(([Control, Shift], Tab)))
+        );
+        assert_eq!(key.parse("<c-c-tab>"), Ok(Key::from(([Control], Tab))));
         assert!(key.parse("tab").is_err());
     }
 
@@ -258,9 +261,9 @@ mod tests {
         use KeyModifier::*;
         assert_eq!(key_modifier.parse("s"), Ok(Shift));
         assert_eq!(key_modifier.parse("shift"), Ok(Shift));
-        assert_eq!(key_modifier.parse("c"), Ok(Ctrl));
-        assert_eq!(key_modifier.parse("ctrl"), Ok(Ctrl));
-        assert_eq!(key_modifier.parse("control"), Ok(Ctrl));
+        assert_eq!(key_modifier.parse("c"), Ok(Control));
+        assert_eq!(key_modifier.parse("ctrl"), Ok(Control));
+        assert_eq!(key_modifier.parse("control"), Ok(Control));
         assert_eq!(key_modifier.parse("a"), Ok(Alt));
         assert_eq!(key_modifier.parse("alt"), Ok(Alt));
         assert_eq!(key_modifier.parse("option"), Ok(Alt));

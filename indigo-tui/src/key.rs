@@ -29,7 +29,7 @@ pub fn key_modifiers_c2i(modifiers: c::KeyModifiers) -> Option<FlagSet<i::KeyMod
         .iter_names()
         .map(|m| match m {
             ("SHIFT", _) => Some(i::KeyModifier::Shift),
-            ("CONTROL", _) => Some(i::KeyModifier::Ctrl),
+            ("CONTROL", _) => Some(i::KeyModifier::Control),
             ("ALT", _) => Some(i::KeyModifier::Alt),
             _ => None,
         })
@@ -41,7 +41,7 @@ pub fn key_modifiers_i2c(modifiers: FlagSet<i::KeyModifier>) -> c::KeyModifiers 
         .into_iter()
         .map(|m| match m {
             i::KeyModifier::Shift => c::KeyModifiers::SHIFT,
-            i::KeyModifier::Ctrl => c::KeyModifiers::CONTROL,
+            i::KeyModifier::Control => c::KeyModifiers::CONTROL,
             i::KeyModifier::Alt => c::KeyModifiers::ALT,
         })
         .fold(c::KeyModifiers::NONE, |x, y| x | y)
@@ -82,7 +82,7 @@ mod tests {
 
     #[test]
     fn test_roundtrip() {
-        let i = i::Key::from(([i::KeyModifier::Ctrl, i::KeyModifier::Shift], 'a'));
+        let i = i::Key::from(([i::KeyModifier::Control, i::KeyModifier::Shift], 'a'));
         let c = c::KeyEvent {
             modifiers: c::KeyModifiers::CONTROL | c::KeyModifiers::SHIFT,
             code: c::KeyCode::Char('a'),
