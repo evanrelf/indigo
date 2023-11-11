@@ -146,6 +146,34 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_keys() {
+        use KeyCode::*;
+        use KeyModifier::*;
+        assert_eq!(
+            repeat(0.., key).parse("%s\\bfn\\b<enter>E<a-k>test<enter><"),
+            Ok(vec![
+                Key::from('%'),
+                Key::from('s'),
+                Key::from('\\'),
+                Key::from('b'),
+                Key::from('f'),
+                Key::from('n'),
+                Key::from('\\'),
+                Key::from('b'),
+                Key::from(Enter),
+                Key::from('E'),
+                Key::from(([Alt], 'k')),
+                Key::from('t'),
+                Key::from('e'),
+                Key::from('s'),
+                Key::from('t'),
+                Key::from(Enter),
+                Key::from('<'),
+            ])
+        );
+    }
+
+    #[test]
     fn test_parse_key_modifier() {
         use KeyModifier::*;
         assert_eq!(key_modifier.parse("s"), Ok(Shift));
