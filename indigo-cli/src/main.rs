@@ -8,10 +8,17 @@
 // TODO: Remove
 #![allow(dead_code)]
 
+use camino::Utf8PathBuf;
 use clap::Parser as _;
+use indigo_core::Keys;
 
 #[derive(Debug, clap::Parser)]
-struct Args {}
+struct Args {
+    file: Option<Utf8PathBuf>,
+
+    #[arg(long, short)]
+    keys: Keys,
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -19,7 +26,7 @@ async fn main() -> anyhow::Result<()> {
 
     let args = Args::parse();
 
-    println!("{args:#?}");
+    println!("{args:?}");
 
     Ok(())
 }

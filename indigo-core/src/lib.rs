@@ -24,7 +24,7 @@ pub use crate::{
     conversion::Conversion,
     direction::Direction,
     editor::Editor,
-    key::{Key, KeyCode, KeyModifier},
+    key::{Key, KeyCode, KeyModifier, Keys},
     mode::{CommandMode, InsertMode, Mode, NormalMode},
     position::Position,
     range::Range,

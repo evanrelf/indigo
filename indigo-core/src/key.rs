@@ -10,6 +10,21 @@ use winnow::{
 // ordered modifiers, etc.
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Keys(Vec<Key>);
+
+impl FromStr for Keys {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        keys.parse(s).map_err(|e| e.to_string())
+    }
+}
+
+pub fn keys(input: &mut &str) -> PResult<Keys> {
+    repeat(0.., key).map(Keys).parse_next(input)
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Key {
     // TODO: Use `bitflags` or `flagset` crate
     pub modifiers: HashSet<KeyModifier>,
@@ -132,28 +147,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_key() {
-        use KeyCode::*;
-        use KeyModifier::*;
-        assert_eq!(key.parse("<"), Ok(Key::from('<')));
-        assert_eq!(key.parse(">"), Ok(Key::from('>')));
-        assert_eq!(key.parse("a"), Ok(Key::from('a')));
-        assert_eq!(key.parse("<s-a>"), Ok(Key::from(([Shift], 'a'))));
-        assert_eq!(key.parse("<c-a>"), Ok(Key::from(([Ctrl], 'a'))));
-        assert_eq!(key.parse("<c-s-a>"), Ok(Key::from(([Ctrl, Shift], 'a'))));
-        assert_eq!(key.parse("<tab>"), Ok(Key::from(Tab)));
-        assert_eq!(key.parse("<c-s-tab>"), Ok(Key::from(([Ctrl, Shift], Tab))));
-        assert_eq!(key.parse("<c-c-tab>"), Ok(Key::from(([Ctrl], Tab))));
-        assert!(key.parse("tab").is_err());
-    }
-
-    #[test]
     fn test_parse_keys() {
         use KeyCode::*;
         use KeyModifier::*;
         assert_eq!(
-            repeat(0.., key).parse("%s\\bfn\\b<enter>E<a-k>test<enter><"),
-            Ok(vec![
+            keys.parse("%s\\bfn\\b<enter>E<a-k>test<enter><"),
+            Ok(Keys(vec![
                 Key::from('%'),
                 Key::from('s'),
                 Key::from('\\'),
@@ -171,8 +170,24 @@ mod tests {
                 Key::from('t'),
                 Key::from(Enter),
                 Key::from('<'),
-            ])
+            ]))
         );
+    }
+
+    #[test]
+    fn test_parse_key() {
+        use KeyCode::*;
+        use KeyModifier::*;
+        assert_eq!(key.parse("<"), Ok(Key::from('<')));
+        assert_eq!(key.parse(">"), Ok(Key::from('>')));
+        assert_eq!(key.parse("a"), Ok(Key::from('a')));
+        assert_eq!(key.parse("<s-a>"), Ok(Key::from(([Shift], 'a'))));
+        assert_eq!(key.parse("<c-a>"), Ok(Key::from(([Ctrl], 'a'))));
+        assert_eq!(key.parse("<c-s-a>"), Ok(Key::from(([Ctrl, Shift], 'a'))));
+        assert_eq!(key.parse("<tab>"), Ok(Key::from(Tab)));
+        assert_eq!(key.parse("<c-s-tab>"), Ok(Key::from(([Ctrl, Shift], Tab))));
+        assert_eq!(key.parse("<c-c-tab>"), Ok(Key::from(([Ctrl], Tab))));
+        assert!(key.parse("tab").is_err());
     }
 
     #[test]

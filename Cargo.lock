@@ -283,6 +283,7 @@ name = "indigo-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "camino",
  "clap",
  "indigo-core",
  "tokio",
