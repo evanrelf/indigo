@@ -20,14 +20,11 @@ struct Args {
     keys: Keys,
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() {
     tracing_subscriber::fmt::init();
 
     let args = Args::parse();
 
     println!("file: {:?}", args.file);
     println!("keys: {}", args.keys);
-
-    Ok(())
 }

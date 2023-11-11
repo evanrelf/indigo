@@ -8,6 +8,5 @@ anyhow = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
 indigo-core = { workspace = true }
-tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
