@@ -6,9 +6,11 @@ edition = "2021"
 [dependencies]
 anyhow = { workspace = true }
 camino = { workspace = true }
+clap = { workspace = true }
 fancy-regex = { workspace = true }
 flagset = { workspace = true }
 ropey = { workspace = true }
+shell-words = { workspace = true }
 winnow = { workspace = true }
 
 [dev-dependencies]

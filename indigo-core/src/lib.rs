@@ -9,6 +9,7 @@
 #![allow(dead_code)]
 
 pub mod buffer;
+pub mod command;
 pub mod conversion;
 pub mod direction;
 pub mod editor;
