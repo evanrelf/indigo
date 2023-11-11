@@ -1,5 +1,5 @@
+use flagset::{flags, FlagSet};
 use std::{
-    collections::HashSet,
     fmt::{Display, Formatter},
     str::FromStr,
 };
@@ -36,10 +36,9 @@ pub fn keys(input: &mut &str) -> PResult<Keys> {
     repeat(0.., key).map(Keys).parse_next(input)
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Key {
-    // TODO: Use `bitflags` or `flagset` crate
-    pub modifiers: HashSet<KeyModifier>,
+    pub modifiers: FlagSet<KeyModifier>,
     pub code: KeyCode,
 }
 
@@ -49,20 +48,19 @@ where
 {
     fn from(code: C) -> Self {
         Self {
-            modifiers: HashSet::new(),
+            modifiers: FlagSet::default(),
             code: code.into(),
         }
     }
 }
 
-impl<M, C> From<(M, C)> for Key
+impl<const N: usize, C> From<([KeyModifier; N], C)> for Key
 where
-    M: Into<HashSet<KeyModifier>>,
     C: Into<KeyCode>,
 {
-    fn from((modifiers, code): (M, C)) -> Self {
+    fn from((modifiers, code): ([KeyModifier; N], C)) -> Self {
         Self {
-            modifiers: modifiers.into(),
+            modifiers: modifiers.into_iter().fold(FlagSet::default(), |x, y| x | y),
             code: code.into(),
         }
     }
@@ -89,7 +87,7 @@ impl Display for Key {
             write!(f, "{code}")?;
         } else {
             write!(f, "<")?;
-            for modifier in &self.modifiers {
+            for modifier in self.modifiers {
                 let modifier = match modifier {
                     KeyModifier::Shift => "s",
                     KeyModifier::Ctrl => "c",
@@ -119,23 +117,24 @@ pub fn key(input: &mut &str) -> PResult<Key> {
 pub fn key_wrapped(input: &mut &str) -> PResult<Key> {
     let _ = "<".parse_next(input)?;
     let modifiers: Vec<_> = repeat(0.., terminated(key_modifier, "-")).parse_next(input)?;
-    let modifiers = modifiers.into_iter().collect();
+    let modifiers = modifiers.into_iter().fold(FlagSet::default(), |x, y| x | y);
     let code = key_code.parse_next(input)?;
     let _ = ">".parse_next(input)?;
     Ok(Key { modifiers, code })
 }
 
 pub fn key_bare(input: &mut &str) -> PResult<Key> {
-    let modifiers = HashSet::new();
+    let modifiers = FlagSet::default();
     let code = key_code_bare.parse_next(input)?;
     Ok(Key { modifiers, code })
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum KeyModifier {
-    Shift,
-    Ctrl,
-    Alt,
+flags! {
+    pub enum KeyModifier: u8 {
+        Shift,
+        Ctrl,
+        Alt,
+    }
 }
 
 pub fn key_modifier(input: &mut &str) -> PResult<KeyModifier> {

@@ -7,6 +7,7 @@ edition = "2021"
 anyhow = { workspace = true }
 camino = { workspace = true }
 fancy-regex = { workspace = true }
+flagset = { workspace = true }
 ropey = { workspace = true }
 winnow = { workspace = true }
 

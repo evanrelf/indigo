@@ -228,6 +228,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "flagset"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d52a7e408202050813e6f1d9addadcaafef3dca7530c7ddfb005d4081cce6779"
+
+[[package]]
 name = "futures-core"
 version = "0.3.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -297,6 +303,7 @@ dependencies = [
  "anyhow",
  "camino",
  "fancy-regex",
+ "flagset",
  "quickcheck",
  "quickcheck_macros",
  "ropey",

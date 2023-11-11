@@ -8,6 +8,7 @@ camino = "1.1.6"
 clap = { version = "4.4.7", default-features = false, features = ["derive", "error-context", "help", "std", "usage"] }
 crossterm = { version = "0.27.0", default-features = false, features = ["bracketed-paste", "events", "event-stream"] }
 fancy-regex = "0.11.0"
+flagset = "0.4.4"
 indigo-core = { path = "indigo-core" }
 quickcheck = "1.0.3"
 quickcheck_macros = "1.0.0"
