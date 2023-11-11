@@ -1,6 +1,7 @@
 use clap::Parser as _;
 
 #[derive(Debug, clap::Parser, Eq, PartialEq)]
+// TODO: This doesn't work? Help output in `parse` error isn't what I want.
 #[clap(no_binary_name = true)]
 pub struct Cli {
     #[clap(subcommand)]

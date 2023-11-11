@@ -3,6 +3,7 @@ use std::cmp::min;
 
 #[derive(Clone, Debug, Default)]
 pub struct CommandMode {
+    // TODO: Maybe change back to `String` for convenience
     command: Rope,
     cursor: usize,
 }

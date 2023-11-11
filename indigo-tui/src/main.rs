@@ -17,7 +17,8 @@ use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{Event, EventStream, KeyCode, MouseEventKind};
-use indigo_core::{Buffer, CommandMode, Editor, InsertMode, Mode, NormalMode};
+use indigo_core::{command, Buffer, CommandMode, Editor, InsertMode, Mode, NormalMode};
+use std::process::ExitCode;
 use tokio_stream::StreamExt as _;
 use tracing::Level;
 
@@ -32,7 +33,7 @@ struct Args {
 }
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> anyhow::Result<ExitCode> {
     let args = Args::parse();
 
     if let Some(path) = args.log_file {
@@ -56,7 +57,7 @@ async fn main() -> anyhow::Result<()> {
     run(editor).await
 }
 
-async fn run(mut editor: Editor) -> anyhow::Result<()> {
+async fn run(mut editor: Editor) -> anyhow::Result<ExitCode> {
     let mut terminal = terminal::enter().context("Failed to enter terminal")?;
 
     let mut event_stream = EventStream::new();
@@ -76,21 +77,22 @@ async fn run(mut editor: Editor) -> anyhow::Result<()> {
 
         match update(&mut editor, &event).context("Failed to update state")? {
             ControlFlow::Continue => {}
-            ControlFlow::Quit => break,
+            ControlFlow::Quit(exit_code) => break Ok(exit_code),
         }
     }
-
-    Ok(())
 }
 
 enum ControlFlow {
     Continue,
-    Quit,
+    Quit(ExitCode),
 }
 
 macro_rules! quit {
     () => {{
-        return Ok(ControlFlow::Quit);
+        return Ok(ControlFlow::Quit(ExitCode::SUCCESS));
+    }};
+    ($x:expr) => {{
+        return Ok(ControlFlow::Quit(ExitCode::from($x)));
     }};
 }
 
@@ -213,7 +215,20 @@ fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlF
             }
         }
         Event::Key(key) if key_matches!(key, Enter) => {
-            // TODO: Do something with command
+            use indigo_core::command::{Command, Quit};
+
+            let command = command_mode.command().to_string();
+
+            if !command.is_empty() {
+                let cli = command::parse(&command).context("Failed to parse command")?;
+
+                match cli.command {
+                    Command::Quit(Quit { exit_code }) => {
+                        quit!(exit_code.unwrap_or(0));
+                    }
+                }
+            }
+
             *editor.mode_mut() = Mode::Normal(NormalMode::default());
         }
         // Modes
