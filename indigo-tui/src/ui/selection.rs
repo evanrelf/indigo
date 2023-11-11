@@ -6,6 +6,10 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let buffer = editor.current_buffer();
     let rope = &buffer.contents();
 
+    if rope.len_chars() == 0 {
+        return;
+    }
+
     for range in buffer.selection().ranges() {
         let range_slice = range.to_rope_slice(rope).unwrap().into_inner();
 
