@@ -1,3 +1,5 @@
+pub mod macros;
+
 use flagset::FlagSet;
 
 mod c {

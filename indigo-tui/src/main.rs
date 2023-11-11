@@ -9,11 +9,10 @@
 #![allow(dead_code)]
 
 mod key;
-mod macros;
 mod terminal;
 mod ui;
 
-use crate::macros::{key_matches, key_modifiers};
+use crate::key::macros::{key_matches, key_modifiers};
 use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
