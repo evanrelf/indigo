@@ -8,6 +8,7 @@
 // TODO: Remove
 #![allow(dead_code)]
 
+mod key;
 mod macros;
 mod terminal;
 mod ui;

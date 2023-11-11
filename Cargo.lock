@@ -318,6 +318,7 @@ dependencies = [
  "camino",
  "clap",
  "crossterm",
+ "flagset",
  "indigo-core",
  "quickcheck",
  "quickcheck_macros",
