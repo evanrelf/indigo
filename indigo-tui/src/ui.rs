@@ -39,23 +39,10 @@ pub fn areas(editor: &Editor, area: Rect) -> Areas {
         ])
         .split(area);
 
-    // TODO: Make this better
-    #[allow(
-        clippy::cast_possible_truncation,
-        clippy::cast_precision_loss,
-        clippy::cast_sign_loss
-    )]
-    // Change to work with integers instead of floats once this is stabilized:
-    // https://github.com/rust-lang/rust/issues/70887
     let numbers_width = {
         let n = editor.current_buffer().contents().len_lines_indigo();
-        // assert!(
-        //     n != 0,
-        //     "cannot handle rope with single-line file without newline yet"
-        // );
-        let n = n as f64;
-        let digits = 1.0 + n.log10().floor();
-        (digits.max(2.0) + 1.0) as u16
+        let digits = 1 + n.ilog10();
+        u16::try_from(digits.max(2) + 1).unwrap()
     };
 
     let horizontal = Layout::default()
