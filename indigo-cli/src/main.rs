@@ -26,7 +26,8 @@ async fn main() -> anyhow::Result<()> {
 
     let args = Args::parse();
 
-    println!("{args:?}");
+    println!("file: {:?}", args.file);
+    println!("keys: {}", args.keys);
 
     Ok(())
 }

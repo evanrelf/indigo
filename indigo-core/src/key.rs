@@ -1,5 +1,8 @@
-use std::collections::HashSet;
-use std::str::FromStr;
+use std::{
+    collections::HashSet,
+    fmt::{Display, Formatter},
+    str::FromStr,
+};
 use winnow::{
     combinator::{alt, repeat, terminated},
     prelude::*,
@@ -11,6 +14,15 @@ use winnow::{
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Keys(Vec<Key>);
+
+impl Display for Keys {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        for key in &self.0 {
+            write!(f, "{key}")?;
+        }
+        Ok(())
+    }
+}
 
 impl FromStr for Keys {
     type Err = String;
@@ -53,6 +65,42 @@ where
             modifiers: modifiers.into(),
             code: code.into(),
         }
+    }
+}
+
+impl Display for Key {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        let ch;
+        let code = match self.code {
+            KeyCode::Backspace => "backspace",
+            KeyCode::Enter => "enter",
+            KeyCode::Left => "left",
+            KeyCode::Right => "right",
+            KeyCode::Up => "up",
+            KeyCode::Down => "down",
+            KeyCode::Tab => "tab",
+            KeyCode::Escape => "escape",
+            KeyCode::Char(c) => {
+                ch = format!("{c}");
+                &ch
+            }
+        };
+        if self.modifiers.is_empty() && matches!(self.code, KeyCode::Char(_)) {
+            write!(f, "{code}")?;
+        } else {
+            write!(f, "<")?;
+            for modifier in &self.modifiers {
+                let modifier = match modifier {
+                    KeyModifier::Shift => "s",
+                    KeyModifier::Ctrl => "c",
+                    KeyModifier::Alt => "a",
+                };
+                write!(f, "{modifier}-")?;
+            }
+            write!(f, "{code}")?;
+            write!(f, ">")?;
+        }
+        Ok(())
     }
 }
 
@@ -110,6 +158,22 @@ pub enum KeyCode {
     Tab,
     Escape,
     Char(char),
+}
+
+impl Display for KeyCode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        match self {
+            Self::Backspace => write!(f, "backspace"),
+            Self::Enter => write!(f, "enter"),
+            Self::Left => write!(f, "left"),
+            Self::Right => write!(f, "right"),
+            Self::Up => write!(f, "up"),
+            Self::Down => write!(f, "down"),
+            Self::Tab => write!(f, "tab"),
+            Self::Escape => write!(f, "escape"),
+            Self::Char(c) => write!(f, "{c}"),
+        }
+    }
 }
 
 pub fn key_code(input: &mut &str) -> PResult<KeyCode> {
