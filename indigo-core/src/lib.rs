@@ -22,6 +22,7 @@ pub mod selection;
 
 pub use crate::{
     buffer::Buffer,
+    command::Command,
     conversion::Conversion,
     direction::Direction,
     editor::Editor,

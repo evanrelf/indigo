@@ -17,7 +17,10 @@ use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{Event, EventStream, KeyCode, MouseEventKind};
-use indigo_core::{command, Buffer, CommandMode, Editor, InsertMode, Mode, NormalMode};
+use indigo_core::{
+    command::{self, Quit},
+    Buffer, Command, CommandMode, Editor, InsertMode, Mode, NormalMode,
+};
 use std::process::ExitCode;
 use tokio_stream::StreamExt as _;
 use tracing::Level;
@@ -215,8 +218,6 @@ fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlF
             }
         }
         Event::Key(key) if key_matches!(key, Enter) => {
-            use indigo_core::command::{Command, Quit};
-
             let command = command_mode.command().to_string();
 
             if !command.is_empty() {
