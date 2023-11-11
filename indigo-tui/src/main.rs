@@ -220,9 +220,7 @@ fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlF
             let command = command_mode.command().to_string();
 
             if !command.is_empty() {
-                let cli = command::parse(&command).context("Failed to parse command")?;
-
-                match cli.command {
+                match command::parse(&command).context("Failed to parse command")? {
                     Command::Quit(Quit { exit_code }) => {
                         quit!(exit_code.unwrap_or(0));
                     }
