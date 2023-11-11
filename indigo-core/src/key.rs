@@ -50,10 +50,10 @@ impl FromStr for Key {
 }
 
 pub fn key(input: &mut &str) -> PResult<Key> {
-    alt((key_non_char, key_char)).parse_next(input)
+    alt((key_wrapped, key_bare)).parse_next(input)
 }
 
-pub fn key_non_char(input: &mut &str) -> PResult<Key> {
+pub fn key_wrapped(input: &mut &str) -> PResult<Key> {
     let _ = "<".parse_next(input)?;
     let modifiers: Vec<_> = repeat(0.., terminated(key_modifier, "-")).parse_next(input)?;
     let modifiers = modifiers.into_iter().collect();
@@ -62,9 +62,9 @@ pub fn key_non_char(input: &mut &str) -> PResult<Key> {
     Ok(Key { modifiers, code })
 }
 
-pub fn key_char(input: &mut &str) -> PResult<Key> {
+pub fn key_bare(input: &mut &str) -> PResult<Key> {
     let modifiers = HashSet::new();
-    let code = key_code_char.parse_next(input)?;
+    let code = key_code_bare.parse_next(input)?;
     Ok(Key { modifiers, code })
 }
 
@@ -98,10 +98,10 @@ pub enum KeyCode {
 }
 
 pub fn key_code(input: &mut &str) -> PResult<KeyCode> {
-    alt((key_code_non_char, key_code_char)).parse_next(input)
+    alt((key_code_wrapped, key_code_bare)).parse_next(input)
 }
 
-pub fn key_code_non_char(input: &mut &str) -> PResult<KeyCode> {
+pub fn key_code_wrapped(input: &mut &str) -> PResult<KeyCode> {
     alt((
         alt(("backspace", "bs")).value(KeyCode::Backspace),
         alt(("enter", "return", "cr")).value(KeyCode::Enter),
@@ -111,11 +111,13 @@ pub fn key_code_non_char(input: &mut &str) -> PResult<KeyCode> {
         "down".value(KeyCode::Down),
         "tab".value(KeyCode::Tab),
         alt(("escape", "esc")).value(KeyCode::Escape),
+        "lt".value(KeyCode::Char('<')),
+        "gt".value(KeyCode::Char('>')),
     ))
     .parse_next(input)
 }
 
-pub fn key_code_char(input: &mut &str) -> PResult<KeyCode> {
+pub fn key_code_bare(input: &mut &str) -> PResult<KeyCode> {
     one_of(' '..='~').map(KeyCode::Char).parse_next(input)
 }
 
