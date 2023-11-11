@@ -4,7 +4,7 @@ use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::{cmp::min, fs::File, io::BufReader, path::PathBuf};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct Buffer {
     path: Utf8PathBuf,
     contents: Rope,
@@ -63,11 +63,13 @@ impl Buffer {
         let rope =
             Rope::from_reader(BufReader::new(file)).context("Failed to read file into rope")?;
 
+        let empty = rope.len_chars() == 0;
+
         Ok(Self {
             path,
-            contents: rope,
+            contents: if empty { Rope::from("\n") } else { rope },
             selection: Selection::default(),
-            is_modified: false,
+            is_modified: empty,
             is_read_only,
             vertical_scroll: 0,
             horizontal_scroll: 0,
@@ -137,6 +139,8 @@ impl Buffer {
     }
 
     pub fn assert_valid(&self) {
+        // TODO: `contents` rope is not empty
+
         // TODO: `selection` is valid in `contents` rope
 
         // TODO: `vertical_scroll` doesn't go beyond the last line of the `contents` rope
@@ -144,5 +148,19 @@ impl Buffer {
         // TODO: Buffer validation
 
         self.selection.assert_valid();
+    }
+}
+
+impl Default for Buffer {
+    fn default() -> Self {
+        Self {
+            path: Utf8PathBuf::default(),
+            contents: Rope::from("\n"),
+            selection: Selection::default(),
+            is_modified: false,
+            is_read_only: false,
+            vertical_scroll: 0,
+            horizontal_scroll: 0,
+        }
     }
 }
