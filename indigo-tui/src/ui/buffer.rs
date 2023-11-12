@@ -12,16 +12,13 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
             break;
         };
 
-        let Some(line) = line.get_slice(buffer.horizontal_scroll()..) else {
+        let Some(line) = line
+            .get_slice(buffer.horizontal_scroll()..)
+            .map(Cow::<str>::from)
+        else {
             continue;
         };
 
-        surface.set_stringn(
-            area.x,
-            y,
-            Cow::<str>::from(line),
-            usize::from(area.width),
-            Style::default(),
-        );
+        surface.set_stringn(area.x, y, line, usize::from(area.width), Style::default());
     }
 }
