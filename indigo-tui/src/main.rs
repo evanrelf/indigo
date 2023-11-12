@@ -12,7 +12,7 @@ mod key;
 mod terminal;
 mod ui;
 
-use crate::key::macros::{key_matches, key_modifiers};
+use crate::key::macros::{key_matches, key_matches2, key_modifiers};
 use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
@@ -139,6 +139,18 @@ fn update_normal(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFl
         }
         Event::Key(key) if key_matches!(key, Right) => {
             editor.current_buffer_mut().scroll_right_mut(1);
+        }
+        Event::Key(key) if key_matches2!(key, SHIFT, Up) => {
+            editor.current_buffer_mut().scroll_up_mut(10);
+        }
+        Event::Key(key) if key_matches2!(key, SHIFT, Down) => {
+            editor.current_buffer_mut().scroll_down_mut(10);
+        }
+        Event::Key(key) if key_matches2!(key, SHIFT, Left) => {
+            editor.current_buffer_mut().scroll_left_mut(10);
+        }
+        Event::Key(key) if key_matches2!(key, SHIFT, Right) => {
+            editor.current_buffer_mut().scroll_right_mut(10);
         }
         // Modes
         Event::Key(key) if key_matches!(key, 'i') => {

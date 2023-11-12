@@ -90,3 +90,22 @@ macro_rules! key_matches {
 }
 
 pub(crate) use key_matches;
+
+macro_rules! key_matches2 {
+    // c
+    ($key:expr, $c:literal) => {
+        $key.code == $crate::key::macros::key_code!($c) && $key.modifiers == $crate::key::macros::key_modifiers!()
+    };
+    ($key:expr, $c:ident) => {
+        $key.code == $crate::key::macros::key_code!($c) && $key.modifiers == $crate::key::macros::key_modifiers!()
+    };
+    // m+ c
+    ($key:expr, $($m:ident)+ , $c:literal) => {
+        $key.code == $crate::key::macros::key_code!($c) && $key.modifiers == $crate::key::macros::key_modifiers!($($m)|+)
+    };
+    ($key:expr, $($m:ident)+ , $c:ident) => {
+        $key.code == $crate::key::macros::key_code!($c) && $key.modifiers == $crate::key::macros::key_modifiers!($($m)|+)
+    };
+}
+
+pub(crate) use key_matches2;
