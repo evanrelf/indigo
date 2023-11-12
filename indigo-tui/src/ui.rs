@@ -6,7 +6,7 @@ mod numbers;
 mod selection;
 mod status;
 
-use indigo_core::{Editor, RopeExt};
+use indigo_core::{Buffer, Editor, Position, RopeExt};
 use ratatui::prelude::{Buffer as Surface, *};
 use std::cmp::max;
 
@@ -64,4 +64,45 @@ impl Areas {
             command: vertical[2],
         }
     }
+
+    pub fn mouse_to_buffer_position(
+        &self,
+        mouse_position: (u16, u16),
+        buffer: &Buffer,
+    ) -> Option<Position> {
+        let (area_line, area_column) = mouse_to_area_position(mouse_position, self.buffer)?;
+
+        let buffer_line = usize::from(area_line) + buffer.vertical_scroll();
+
+        let buffer_column = usize::from(area_column) + buffer.horizontal_scroll();
+
+        let naive_buffer_position = Position {
+            line: buffer_line,
+            column: buffer_column,
+        };
+
+        naive_buffer_position.corrected(buffer.contents()).ok()
+    }
+}
+
+pub fn mouse_to_area_position(mouse_position: (u16, u16), area: Rect) -> Option<(u16, u16)> {
+    let (mouse_line, mouse_column) = mouse_position;
+    Some((
+        mouse_to_area_line(mouse_line, area)?,
+        mouse_to_area_column(mouse_column, area)?,
+    ))
+}
+
+pub fn mouse_to_area_line(mouse_line: u16, area: Rect) -> Option<u16> {
+    if !(area.top()..area.bottom()).contains(&mouse_line) {
+        return None;
+    }
+    Some(mouse_line - area.top())
+}
+
+pub fn mouse_to_area_column(mouse_column: u16, area: Rect) -> Option<u16> {
+    if !(area.left()..area.right()).contains(&mouse_column) {
+        return None;
+    };
+    Some(mouse_column - area.left())
 }
