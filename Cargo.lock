@@ -148,6 +148,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap-verbosity-flag"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e5fdbb015d790cfb378aca82caf9cc52a38be96a7eecdb92f31b4366a8afc019"
+dependencies = [
+ "clap",
+ "log",
+]
+
+[[package]]
 name = "clap_builder"
 version = "4.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -291,8 +301,10 @@ dependencies = [
  "anyhow",
  "camino",
  "clap",
+ "clap-verbosity-flag",
  "indigo-core",
  "tracing",
+ "tracing-log",
  "tracing-subscriber",
 ]
 
@@ -319,6 +331,7 @@ dependencies = [
  "anyhow",
  "camino",
  "clap",
+ "clap-verbosity-flag",
  "crossterm",
  "flagset",
  "indigo-core",
@@ -328,6 +341,7 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tracing",
+ "tracing-log",
  "tracing-subscriber",
 ]
 
@@ -817,6 +831,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c06d3da6113f116aaee68e4d601191614c9053067f9ab7f6edbcb161237daa54"
 dependencies = [
  "once_cell",
+ "valuable",
+]
+
+[[package]]
+name = "tracing-log"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee855f1f400bd0e5c02d150ae5de3840039a3f54b025156404e34c23c03f47c3"
+dependencies = [
+ "log",
+ "once_cell",
+ "tracing-core",
 ]
 
 [[package]]
@@ -847,6 +873,12 @@ name = "unicode-width"
 version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e51733f11c9c4f72aa0c160008246859e340b00807569a0da0e7a1079b27ba85"
+
+[[package]]
+name = "valuable"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
 
 [[package]]
 name = "version_check"

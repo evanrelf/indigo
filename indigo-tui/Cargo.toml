@@ -7,6 +7,7 @@ edition = "2021"
 anyhow = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
+clap-verbosity-flag = { workspace = true }
 crossterm = { workspace = true }
 flagset = { workspace = true }
 indigo-core = { workspace = true }
@@ -14,6 +15,7 @@ ratatui = { workspace = true }
 tokio = { workspace = true }
 tokio-stream = { workspace = true }
 tracing = { workspace = true }
+tracing-log = { workspace = true }
 tracing-subscriber = { workspace = true }
 
 [dev-dependencies]

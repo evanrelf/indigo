@@ -16,6 +16,7 @@ use crate::key::macros::{key_matches, key_modifiers};
 use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
+use clap_verbosity_flag::Verbosity;
 use crossterm::event::{Event, EventStream, KeyCode, MouseEventKind};
 use indigo_core::{
     command::{self, Quit},
@@ -23,7 +24,7 @@ use indigo_core::{
 };
 use std::process::ExitCode;
 use tokio_stream::StreamExt as _;
-use tracing::Level;
+use tracing_log::AsTrace as _;
 
 #[derive(clap::Parser)]
 struct Args {
@@ -33,6 +34,9 @@ struct Args {
     /// Write logs to file for debugging
     #[arg(long)]
     log_file: Option<Utf8PathBuf>,
+
+    #[command(flatten)]
+    verbosity: Verbosity,
 }
 
 #[tokio::main]
@@ -42,7 +46,7 @@ async fn main() -> anyhow::Result<ExitCode> {
     if let Some(path) = args.log_file {
         let file = std::fs::File::create(path).context("Failed to create log file")?;
         tracing_subscriber::fmt()
-            .with_max_level(Level::TRACE)
+            .with_max_level(args.verbosity.log_level_filter().as_trace())
             .with_writer(file)
             .init();
     }
