@@ -79,7 +79,7 @@ async fn run(mut editor: Editor) -> anyhow::Result<ExitCode> {
             .context("No more crossterm events")?
             .context("Failed to get next crossterm event")?;
 
-        tracing::debug!(?event);
+        tracing::trace!(?event);
 
         match update(&mut editor, &event).context("Failed to update state")? {
             ControlFlow::Continue => {}
