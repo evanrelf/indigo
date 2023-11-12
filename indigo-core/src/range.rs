@@ -1,4 +1,4 @@
-use crate::{direction::Direction, position::Position};
+use crate::position::Position;
 use anyhow::Context as _;
 use fancy_regex::Regex;
 use ropey::{Rope, RopeSlice};
@@ -36,15 +36,6 @@ impl Range {
     #[must_use]
     pub fn end(&self) -> Position {
         max(self.anchor, self.cursor)
-    }
-
-    #[must_use]
-    pub fn direction(&self) -> Direction {
-        if self.is_forward() {
-            Direction::Forward
-        } else {
-            Direction::Backward
-        }
     }
 
     #[must_use]
@@ -188,9 +179,10 @@ impl Range {
                 let end_index = offset + rope.byte_to_char(match_.end()).saturating_sub(1);
                 let end_position = Position::from_char_index(end_index, rope).unwrap();
 
-                match self.direction() {
-                    Direction::Forward => Self::from((start_position, end_position)),
-                    Direction::Backward => Self::from((end_position, start_position)),
+                if self.is_forward() {
+                    Self::from((start_position, end_position))
+                } else {
+                    Self::from((end_position, start_position))
                 }
             })
             .collect();
@@ -202,13 +194,12 @@ impl Range {
         let anchor_index = self.anchor.to_char_index(rope)?;
         let cursor_index = self.cursor.to_char_index(rope)?;
 
-        let slice = match self.direction() {
-            Direction::Forward => rope
-                .get_slice(anchor_index..=cursor_index)
-                .context("Failed to get forward slice")?,
-            Direction::Backward => rope
-                .get_slice(cursor_index..=anchor_index)
-                .context("Failed to get backward slice")?,
+        let slice = if self.is_forward() {
+            rope.get_slice(anchor_index..=cursor_index)
+                .context("Failed to get forward slice")?
+        } else {
+            rope.get_slice(cursor_index..=anchor_index)
+                .context("Failed to get backward slice")?
         };
 
         Ok(slice)
