@@ -1,4 +1,4 @@
-use crate::{direction::Direction, range::Range};
+use crate::range::Range;
 use fancy_regex::Regex;
 use ropey::Rope;
 use std::borrow::Cow;
@@ -29,22 +29,6 @@ impl Selection {
     #[must_use]
     pub fn primary(&self) -> Range {
         *self.ranges.get(self.primary).unwrap()
-    }
-
-    #[must_use]
-    pub fn direction(&self) -> Direction {
-        // All ranges face the same direction
-        self.ranges.get(0).unwrap().direction()
-    }
-
-    #[must_use]
-    pub fn is_forward(&self) -> bool {
-        self.direction() == Direction::Forward
-    }
-
-    #[must_use]
-    pub fn is_backward(&self) -> bool {
-        self.direction() == Direction::Backward
     }
 
     #[must_use]
@@ -153,8 +137,8 @@ impl Selection {
     }
 
     pub fn flip_forward(&mut self) {
-        if self.is_backward() {
-            self.flip();
+        for range in &mut self.ranges {
+            range.flip_forward();
         }
     }
 
@@ -166,8 +150,8 @@ impl Selection {
     }
 
     pub fn flip_backward(&mut self) {
-        if self.is_forward() {
-            self.flip();
+        for range in &mut self.ranges {
+            range.flip_backward();
         }
     }
 
@@ -248,14 +232,6 @@ impl Selection {
         assert!(
             self.ranges.get(self.primary).is_some(),
             "`primary` index is valid"
-        );
-
-        let direction = self.primary().direction();
-        assert!(
-            self.ranges
-                .iter()
-                .all(|range| range.direction() == direction),
-            "All ranges face the same direction"
         );
 
         // TODO: Use `is_sorted` once it stabilized
