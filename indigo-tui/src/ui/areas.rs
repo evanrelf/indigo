@@ -43,12 +43,8 @@ impl Areas {
         }
     }
 
-    pub fn mouse_to_buffer_position(
-        &self,
-        mouse_position: (u16, u16),
-        buffer: &Buffer,
-    ) -> Option<Position> {
-        let (area_line, area_column) = mouse_to_area_position(mouse_position, self.buffer)?;
+    pub fn to_buffer_position(&self, position: (u16, u16), buffer: &Buffer) -> Option<Position> {
+        let (area_line, area_column) = to_area_position(position, self.buffer)?;
 
         let buffer_line = usize::from(area_line) + buffer.vertical_scroll();
 
@@ -63,24 +59,21 @@ impl Areas {
     }
 }
 
-pub fn mouse_to_area_position(mouse_position: (u16, u16), area: Rect) -> Option<(u16, u16)> {
-    let (mouse_line, mouse_column) = mouse_position;
-    Some((
-        mouse_to_area_line(mouse_line, area)?,
-        mouse_to_area_column(mouse_column, area)?,
-    ))
+pub fn to_area_position(position: (u16, u16), area: Rect) -> Option<(u16, u16)> {
+    let (line, column) = position;
+    Some((to_area_line(line, area)?, to_area_column(column, area)?))
 }
 
-pub fn mouse_to_area_line(mouse_line: u16, area: Rect) -> Option<u16> {
-    if !(area.top()..area.bottom()).contains(&mouse_line) {
+pub fn to_area_line(line: u16, area: Rect) -> Option<u16> {
+    if !(area.top()..area.bottom()).contains(&line) {
         return None;
     }
-    Some(mouse_line - area.top())
+    Some(line - area.top())
 }
 
-pub fn mouse_to_area_column(mouse_column: u16, area: Rect) -> Option<u16> {
-    if !(area.left()..area.right()).contains(&mouse_column) {
+pub fn to_area_column(column: u16, area: Rect) -> Option<u16> {
+    if !(area.left()..area.right()).contains(&column) {
         return None;
     };
-    Some(mouse_column - area.left())
+    Some(column - area.left())
 }
