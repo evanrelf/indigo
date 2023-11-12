@@ -185,16 +185,10 @@ impl Range {
             slice.into_inner()
         };
 
-        let cow = Cow::<str>::from(rope_slice);
-
-        let str = if let Some(str) = rope_slice.as_str() {
-            str
-        } else {
-            cow.as_ref()
-        };
+        let string_slice = Cow::<str>::from(rope_slice);
 
         let ranges = regex
-            .find_iter(str)
+            .find_iter(&string_slice)
             .map(|match_| {
                 let match_ = match_.unwrap();
 
