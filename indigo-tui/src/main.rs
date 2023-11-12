@@ -216,7 +216,9 @@ fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlF
             command_mode.clear_forward();
         }
         Event::Key(key)
-            if matches!(key.code, KeyCode::Char(_)) && key.modifiers == key_modifiers!() =>
+            if matches!(key.code, KeyCode::Char(_))
+                && (key.modifiers == key_modifiers!()
+                    || key.modifiers == key_modifiers!(SHIFT)) =>
         {
             let KeyCode::Char(c) = key.code else {
                 unreachable!();
