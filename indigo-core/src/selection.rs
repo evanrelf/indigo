@@ -140,7 +140,7 @@ impl Selection {
         let mut ranges = Vec::new();
 
         for range in &self.ranges {
-            let sub_ranges = range.select(rope, regex)?;
+            let sub_ranges = range.selected(rope, regex)?;
             corrected |= sub_ranges.is_corrected();
             let mut sub_ranges = sub_ranges.into_inner();
             ranges.append(&mut sub_ranges);

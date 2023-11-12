@@ -166,7 +166,7 @@ impl Range {
         x
     }
 
-    pub fn select(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Conversion<Vec<Self>>> {
+    pub fn selected(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Conversion<Vec<Self>>> {
         let mut corrected = false;
 
         let offset = if self.is_forward() {
