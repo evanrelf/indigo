@@ -18,5 +18,5 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     selection::render(editor, areas.buffer, surface);
     column::render(editor, areas.buffer, surface);
     status::render(editor, areas.status, surface);
-    command::render(editor, areas.command, surface);
+    command::render(editor, areas.status, surface);
 }

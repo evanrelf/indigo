@@ -6,7 +6,6 @@ pub struct Areas {
     pub numbers: Rect,
     pub buffer: Rect,
     pub status: Rect,
-    pub command: Rect,
 }
 
 impl Areas {
@@ -17,8 +16,6 @@ impl Areas {
                 // numbers + buffer
                 Constraint::Min(0),
                 // status
-                Constraint::Length(1),
-                // command
                 Constraint::Length(1),
             ])
             .split(area);
@@ -43,7 +40,6 @@ impl Areas {
             numbers: horizontal[0],
             buffer: horizontal[1],
             status: vertical[1],
-            command: vertical[2],
         }
     }
 
