@@ -8,9 +8,9 @@ use ratatui::{
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let buffer = editor.current_buffer();
 
-    let path = buffer.path();
+    let modified = if buffer.is_modified() { "[+] " } else { "" };
 
-    let modified = if buffer.is_modified() { " [+]" } else { "" };
+    let path = buffer.path();
 
     let Position { line, column } = buffer.selection().primary().cursor();
 
@@ -22,7 +22,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
         Mode::Command(_) => "c",
     };
 
-    Paragraph::new(format!("{path}{modified} {line}:{column}/{count} {mode}"))
+    Paragraph::new(format!("{modified}{path} {line}:{column}/{count} {mode}"))
         .style(Style::default().bg(GRAY_LIGHT))
         .alignment(Alignment::Right)
         .render(area, surface);
