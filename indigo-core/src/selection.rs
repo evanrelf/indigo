@@ -161,6 +161,12 @@ impl Selection {
     }
 
     pub fn select(&mut self, rope: &Rope, regex: &Regex) -> anyhow::Result<()> {
+        let x = self.keeping(rope, regex)?;
+        *self = x;
+        Ok(())
+    }
+
+    pub fn selected(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Self> {
         let mut ranges = Vec::new();
 
         for range in &self.ranges {
@@ -172,16 +178,10 @@ impl Selection {
             anyhow::bail!("No matches");
         }
 
-        self.primary = ranges.len() - 1;
-        self.ranges = ranges;
-
-        Ok(())
-    }
-
-    pub fn selected(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Self> {
-        let mut x = self.clone();
-        x.select(rope, regex)?;
-        Ok(x)
+        Ok(Self {
+            primary: ranges.len() - 1,
+            ranges,
+        })
     }
 
     pub fn keep(&mut self, rope: &Rope, regex: &Regex) -> anyhow::Result<()> {
