@@ -59,21 +59,40 @@ impl Areas {
     }
 }
 
-pub fn to_area_position(position: (u16, u16), area: Rect) -> Option<(u16, u16)> {
-    let (line, column) = position;
-    Some((to_area_line(line, area)?, to_area_column(column, area)?))
+pub fn from_area_position(area_position: (u16, u16), area: Rect) -> (u16, u16) {
+    let (area_line, area_column) = area_position;
+    (
+        from_area_line(area_line, area),
+        from_area_column(area_column, area),
+    )
 }
 
-pub fn to_area_line(line: u16, area: Rect) -> Option<u16> {
-    if !(area.top()..area.bottom()).contains(&line) {
+pub fn from_area_line(area_line: u16, area: Rect) -> u16 {
+    area.top() + area_line
+}
+
+pub fn from_area_column(area_column: u16, area: Rect) -> u16 {
+    area.left() + area_column
+}
+
+pub fn to_area_position(absolute_position: (u16, u16), area: Rect) -> Option<(u16, u16)> {
+    let (absolute_line, absolute_column) = absolute_position;
+    Some((
+        to_area_line(absolute_line, area)?,
+        to_area_column(absolute_column, area)?,
+    ))
+}
+
+pub fn to_area_line(absolute_line: u16, area: Rect) -> Option<u16> {
+    if !(area.top()..area.bottom()).contains(&absolute_line) {
         return None;
     }
-    Some(line - area.top())
+    Some(absolute_line - area.top())
 }
 
-pub fn to_area_column(column: u16, area: Rect) -> Option<u16> {
-    if !(area.left()..area.right()).contains(&column) {
+pub fn to_area_column(absolute_column: u16, area: Rect) -> Option<u16> {
+    if !(area.left()..area.right()).contains(&absolute_column) {
         return None;
     };
-    Some(column - area.left())
+    Some(absolute_column - area.left())
 }
