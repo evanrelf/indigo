@@ -121,36 +121,36 @@ fn update_normal(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFl
         // Scrolling
         Event::Mouse(mouse) => match mouse.kind {
             MouseEventKind::ScrollUp => {
-                editor.current_buffer_mut().scroll_up_mut(3);
+                editor.current_buffer_mut().scroll_up(3);
             }
             MouseEventKind::ScrollDown => {
-                editor.current_buffer_mut().scroll_down_mut(3);
+                editor.current_buffer_mut().scroll_down(3);
             }
             _ => {}
         },
         Event::Key(key) if k!(key, Up) => {
-            editor.current_buffer_mut().scroll_up_mut(1);
+            editor.current_buffer_mut().scroll_up(1);
         }
         Event::Key(key) if k!(key, Down) => {
-            editor.current_buffer_mut().scroll_down_mut(1);
+            editor.current_buffer_mut().scroll_down(1);
         }
         Event::Key(key) if k!(key, Left) => {
-            editor.current_buffer_mut().scroll_left_mut(1);
+            editor.current_buffer_mut().scroll_left(1);
         }
         Event::Key(key) if k!(key, Right) => {
-            editor.current_buffer_mut().scroll_right_mut(1);
+            editor.current_buffer_mut().scroll_right(1);
         }
         Event::Key(key) if k!(key, SHIFT, Up) => {
-            editor.current_buffer_mut().scroll_up_mut(10);
+            editor.current_buffer_mut().scroll_up(10);
         }
         Event::Key(key) if k!(key, SHIFT, Down) => {
-            editor.current_buffer_mut().scroll_down_mut(10);
+            editor.current_buffer_mut().scroll_down(10);
         }
         Event::Key(key) if k!(key, SHIFT, Left) => {
-            editor.current_buffer_mut().scroll_left_mut(10);
+            editor.current_buffer_mut().scroll_left(10);
         }
         Event::Key(key) if k!(key, SHIFT, Right) => {
-            editor.current_buffer_mut().scroll_right_mut(10);
+            editor.current_buffer_mut().scroll_right(10);
         }
         // Modes
         Event::Key(key) if k!(key, 'i') => {

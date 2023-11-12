@@ -76,66 +76,63 @@ impl Buffer {
         })
     }
 
-    #[must_use]
-    pub fn scroll_up(&self, distance: usize) -> Self {
-        self.scroll_to_line(self.vertical_scroll.saturating_sub(distance))
-    }
-
-    pub fn scroll_up_mut(&mut self, distance: usize) {
-        self.scroll_to_line_mut(self.vertical_scroll.saturating_sub(distance));
+    pub fn scroll_up(&mut self, distance: usize) {
+        self.scroll_to_line(self.vertical_scroll.saturating_sub(distance));
     }
 
     #[must_use]
-    pub fn scroll_down(&self, distance: usize) -> Self {
-        self.scroll_to_line(self.vertical_scroll + distance)
+    pub fn scrolled_up(&self, distance: usize) -> Self {
+        self.scrolled_to_line(self.vertical_scroll.saturating_sub(distance))
     }
 
-    pub fn scroll_down_mut(&mut self, distance: usize) {
-        self.scroll_to_line_mut(self.vertical_scroll + distance);
-    }
-
-    #[must_use]
-    pub fn scroll_left(&self, distance: usize) -> Self {
-        self.scroll_to_column(self.horizontal_scroll.saturating_sub(distance))
-    }
-
-    pub fn scroll_left_mut(&mut self, distance: usize) {
-        self.scroll_to_column_mut(self.horizontal_scroll.saturating_sub(distance));
+    pub fn scroll_down(&mut self, distance: usize) {
+        self.scroll_to_line(self.vertical_scroll + distance);
     }
 
     #[must_use]
-    pub fn scroll_right(&self, distance: usize) -> Self {
-        self.scroll_to_column(self.horizontal_scroll + distance)
+    pub fn scrolled_down(&self, distance: usize) -> Self {
+        self.scrolled_to_line(self.vertical_scroll + distance)
     }
 
-    pub fn scroll_right_mut(&mut self, distance: usize) {
-        self.scroll_to_column_mut(self.horizontal_scroll + distance);
+    pub fn scroll_left(&mut self, distance: usize) {
+        self.scroll_to_column(self.horizontal_scroll.saturating_sub(distance));
     }
 
     #[must_use]
-    pub fn scroll_to_line(&self, line: usize) -> Self {
-        let last_line = self.contents.len_lines_indigo().saturating_sub(1);
-        Self {
-            vertical_scroll: min(line, last_line),
-            ..self.clone()
-        }
+    pub fn scrolled_left(&self, distance: usize) -> Self {
+        self.scrolled_to_column(self.horizontal_scroll.saturating_sub(distance))
     }
 
-    pub fn scroll_to_line_mut(&mut self, line: usize) {
+    pub fn scroll_right(&mut self, distance: usize) {
+        self.scroll_to_column(self.horizontal_scroll + distance);
+    }
+
+    #[must_use]
+    pub fn scrolled_right(&self, distance: usize) -> Self {
+        self.scrolled_to_column(self.horizontal_scroll + distance)
+    }
+
+    pub fn scroll_to_line(&mut self, line: usize) {
         let last_line = self.contents.len_lines_indigo().saturating_sub(1);
         self.vertical_scroll = min(line, last_line);
     }
 
     #[must_use]
-    pub fn scroll_to_column(&self, column: usize) -> Self {
-        Self {
-            horizontal_scroll: column,
-            ..self.clone()
-        }
+    pub fn scrolled_to_line(&self, line: usize) -> Self {
+        let mut x = self.clone();
+        x.scroll_to_line(line);
+        x
     }
 
-    pub fn scroll_to_column_mut(&mut self, column: usize) {
+    pub fn scroll_to_column(&mut self, column: usize) {
         self.horizontal_scroll = column;
+    }
+
+    #[must_use]
+    pub fn scrolled_to_column(&self, column: usize) -> Self {
+        let mut x = self.clone();
+        x.scroll_to_column(column);
+        x
     }
 
     pub fn assert_valid(&self) {
