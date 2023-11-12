@@ -1,4 +1,4 @@
-use crate::{conversion::Conversion, direction::Direction, range::Range};
+use crate::{direction::Direction, range::Range};
 use fancy_regex::Regex;
 use ropey::Rope;
 
@@ -135,14 +135,11 @@ impl Selection {
         x
     }
 
-    pub fn select(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Conversion<Self>> {
-        let mut corrected = false;
+    pub fn select(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Self> {
         let mut ranges = Vec::new();
 
         for range in &self.ranges {
-            let sub_ranges = range.selected(rope, regex)?;
-            corrected |= sub_ranges.is_corrected();
-            let mut sub_ranges = sub_ranges.into_inner();
+            let mut sub_ranges = range.selected(rope, regex)?;
             ranges.append(&mut sub_ranges);
         }
 
@@ -150,16 +147,10 @@ impl Selection {
             anyhow::bail!("No matches");
         }
 
-        let selection = Self {
+        Ok(Self {
             primary: ranges.len() - 1,
             ranges,
-        };
-
-        if corrected {
-            Ok(Conversion::Corrected(selection))
-        } else {
-            Ok(Conversion::Valid(selection))
-        }
+        })
     }
 
     pub fn assert_valid(&self) {

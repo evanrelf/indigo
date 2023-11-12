@@ -10,7 +10,6 @@
 
 pub mod buffer;
 pub mod command;
-pub mod conversion;
 pub mod direction;
 pub mod editor;
 pub mod key;
@@ -23,7 +22,6 @@ pub mod selection;
 pub use crate::{
     buffer::Buffer,
     command::Command,
-    conversion::Conversion,
     direction::Direction,
     editor::Editor,
     key::{Key, KeyCode, KeyModifier, Keys},

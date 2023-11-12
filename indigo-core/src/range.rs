@@ -1,4 +1,4 @@
-use crate::{conversion::Conversion, direction::Direction, position::Position};
+use crate::{direction::Direction, position::Position};
 use anyhow::Context as _;
 use fancy_regex::Regex;
 use ropey::{Rope, RopeSlice};
@@ -166,24 +166,14 @@ impl Range {
         x
     }
 
-    pub fn selected(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Conversion<Vec<Self>>> {
-        let mut corrected = false;
-
+    pub fn selected(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Vec<Self>> {
         let offset = if self.is_forward() {
-            let anchor_index = self.anchor.to_char_index(rope)?;
-            corrected |= anchor_index.is_corrected();
-            anchor_index.into_inner()
+            self.anchor.to_char_index(rope)?
         } else {
-            let cursor_index = self.cursor.to_char_index(rope)?;
-            corrected |= cursor_index.is_corrected();
-            cursor_index.into_inner()
+            self.cursor.to_char_index(rope)?
         };
 
-        let rope_slice = {
-            let slice = self.to_rope_slice(rope)?;
-            corrected |= slice.is_corrected();
-            slice.into_inner()
-        };
+        let rope_slice = self.to_rope_slice(rope)?;
 
         let string_slice = Cow::<str>::from(rope_slice);
 
@@ -194,13 +184,9 @@ impl Range {
 
                 let start_index = offset + rope.byte_to_char(match_.start());
                 let start_position = Position::from_char_index(start_index, rope).unwrap();
-                debug_assert!(!start_position.is_corrected());
-                let start_position = start_position.into_inner();
 
                 let end_index = offset + rope.byte_to_char(match_.end()).saturating_sub(1);
                 let end_position = Position::from_char_index(end_index, rope).unwrap();
-                debug_assert!(!end_position.is_corrected());
-                let end_position = end_position.into_inner();
 
                 match self.direction() {
                     Direction::Forward => Self::from((start_position, end_position)),
@@ -209,25 +195,12 @@ impl Range {
             })
             .collect();
 
-        if corrected {
-            Ok(Conversion::Corrected(ranges))
-        } else {
-            Ok(Conversion::Valid(ranges))
-        }
+        Ok(ranges)
     }
 
-    pub fn to_rope_slice<'rope>(
-        &self,
-        rope: &'rope Rope,
-    ) -> anyhow::Result<Conversion<RopeSlice<'rope>>> {
-        let (anchor_index, anchor_corrected) = match self.anchor.to_char_index(rope)? {
-            Conversion::Corrected(index) => (index, true),
-            Conversion::Valid(index) => (index, false),
-        };
-        let (cursor_index, cursor_corrected) = match self.cursor.to_char_index(rope)? {
-            Conversion::Corrected(index) => (index, true),
-            Conversion::Valid(index) => (index, false),
-        };
+    pub fn to_rope_slice<'rope>(&self, rope: &'rope Rope) -> anyhow::Result<RopeSlice<'rope>> {
+        let anchor_index = self.anchor.to_char_index(rope)?;
+        let cursor_index = self.cursor.to_char_index(rope)?;
 
         let slice = match self.direction() {
             Direction::Forward => rope
@@ -238,11 +211,7 @@ impl Range {
                 .context("Failed to get backward slice")?,
         };
 
-        if anchor_corrected || cursor_corrected {
-            Ok(Conversion::Corrected(slice))
-        } else {
-            Ok(Conversion::Valid(slice))
-        }
+        Ok(slice)
     }
 
     pub fn assert_valid(&self) {
