@@ -59,10 +59,10 @@ macro_rules! k {
         $key.modifiers == ::crossterm::event::KeyModifiers::NONE && $key.code == $crate::key::macros::key_code!($code)
     };
     // m+ c
-    ($key:expr, $($modifier:ident)|+ , $code:literal) => {
+    ($key:expr, $($modifier:ident)+ , $code:literal) => {
         $key.modifiers == $crate::key::macros::key_modifiers!($($modifier)|+) && $key.code == $crate::key::macros::key_code!($code)
     };
-    ($key:expr, $($modifier:ident)|+ , $code:ident) => {
+    ($key:expr, $($modifier:ident)+ , $code:ident) => {
         $key.modifiers == $crate::key::macros::key_modifiers!($($modifier)|+) && $key.code == $crate::key::macros::key_code!($code)
     };
 }
