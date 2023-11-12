@@ -199,6 +199,31 @@ impl Selection {
         })
     }
 
+    pub fn merge(&mut self) {
+        let mut ranges: Vec<Range> = Vec::new();
+        let mut primary = self.primary;
+
+        for range in &self.ranges {
+            match ranges.last_mut() {
+                Some(last_range) if last_range.is_overlapping(range) => {
+                    last_range.merge(range);
+                    primary = ranges.len() - 1;
+                }
+                _ => ranges.push(*range),
+            }
+        }
+
+        self.ranges = ranges;
+        self.primary = primary;
+    }
+
+    #[must_use]
+    pub fn merged(&self) -> Self {
+        let mut x = self.clone();
+        x.merge();
+        x
+    }
+
     pub fn assert_valid(&self) {
         assert!(!self.ranges.is_empty(), "`ranges` isn't empty");
 
