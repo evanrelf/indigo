@@ -8,7 +8,7 @@ use ratatui::{
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let buffer = editor.current_buffer();
 
-    let modified = if buffer.is_modified() { "[+] " } else { "" };
+    let modified = if buffer.is_modified() { "+ " } else { "" };
 
     let path = buffer.path();
 
