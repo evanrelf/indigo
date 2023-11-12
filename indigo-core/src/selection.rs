@@ -1,6 +1,7 @@
 use crate::{direction::Direction, range::Range};
 use fancy_regex::Regex;
 use ropey::Rope;
+use std::borrow::Cow;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Selection {
@@ -181,6 +182,21 @@ impl Selection {
         let mut x = self.clone();
         x.select(rope, regex)?;
         Ok(x)
+    }
+
+    pub fn keep(&mut self, rope: &Rope, regex: &Regex) -> anyhow::Result<()> {
+        let x = self.keeping(rope, regex)?;
+        *self = x;
+        Ok(())
+    }
+
+    pub fn keeping(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Self> {
+        self.filtered(|range| {
+            let rope_slice = range.to_rope_slice(rope)?;
+            let string_slice = Cow::<str>::from(rope_slice);
+            let keep = regex.is_match(&string_slice)?;
+            Ok(keep)
+        })
     }
 
     pub fn assert_valid(&self) {
