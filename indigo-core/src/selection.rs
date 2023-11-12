@@ -55,7 +55,7 @@ impl Selection {
         Ok(())
     }
 
-    pub fn with_primary(&self, index: usize) -> anyhow::Result<Self> {
+    pub fn set_primary_immut(&self, index: usize) -> anyhow::Result<Self> {
         let mut x = self.clone();
         x.set_primary(index)?;
         Ok(x)
@@ -69,7 +69,7 @@ impl Selection {
     }
 
     #[must_use]
-    pub fn inserted(&self, range: Range) -> Self {
+    pub fn insert_immut(&self, range: Range) -> Self {
         let mut x = self.clone();
         x.insert(range);
         x
@@ -93,7 +93,7 @@ impl Selection {
         Ok(())
     }
 
-    pub fn removed(&self, index: usize) -> anyhow::Result<Self> {
+    pub fn remove_immut(&self, index: usize) -> anyhow::Result<Self> {
         let mut x = self.clone();
         x.remove(index)?;
         Ok(x)
@@ -103,12 +103,12 @@ impl Selection {
     where
         P: Fn(&Range) -> anyhow::Result<bool>,
     {
-        let x = self.filtered(predicate)?;
+        let x = self.filter_immut(predicate)?;
         *self = x;
         Ok(())
     }
 
-    pub fn filtered<P>(&self, predicate: P) -> anyhow::Result<Self>
+    pub fn filter_immut<P>(&self, predicate: P) -> anyhow::Result<Self>
     where
         P: Fn(&Range) -> anyhow::Result<bool>,
     {
@@ -130,7 +130,7 @@ impl Selection {
     }
 
     #[must_use]
-    pub fn flipped(&self) -> Self {
+    pub fn flip_immut(&self) -> Self {
         let mut x = self.clone();
         x.flip();
         x
@@ -143,7 +143,7 @@ impl Selection {
     }
 
     #[must_use]
-    pub fn flipped_forward(&self) -> Self {
+    pub fn flip_forward_immut(&self) -> Self {
         let mut x = self.clone();
         x.flip_forward();
         x
@@ -156,23 +156,23 @@ impl Selection {
     }
 
     #[must_use]
-    pub fn flipped_backward(&self) -> Self {
+    pub fn flip_backward_immut(&self) -> Self {
         let mut x = self.clone();
         x.flip_backward();
         x
     }
 
     pub fn select(&mut self, rope: &Rope, regex: &Regex) -> anyhow::Result<()> {
-        let x = self.keeping(rope, regex)?;
+        let x = self.keep_immut(rope, regex)?;
         *self = x;
         Ok(())
     }
 
-    pub fn selected(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Self> {
+    pub fn select_immut(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Self> {
         let mut ranges = Vec::new();
 
         for range in &self.ranges {
-            let mut sub_ranges = range.selected(rope, regex)?;
+            let mut sub_ranges = range.select(rope, regex)?;
             ranges.append(&mut sub_ranges);
         }
 
@@ -187,13 +187,13 @@ impl Selection {
     }
 
     pub fn keep(&mut self, rope: &Rope, regex: &Regex) -> anyhow::Result<()> {
-        let x = self.keeping(rope, regex)?;
+        let x = self.keep_immut(rope, regex)?;
         *self = x;
         Ok(())
     }
 
-    pub fn keeping(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Self> {
-        self.filtered(|range| {
+    pub fn keep_immut(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Self> {
+        self.filter_immut(|range| {
             let rope_slice = range.to_rope_slice(rope)?;
             let string_slice = Cow::<str>::from(rope_slice);
             let keep = regex.is_match(&string_slice)?;
@@ -220,7 +220,7 @@ impl Selection {
     }
 
     #[must_use]
-    pub fn merged(&self) -> Self {
+    pub fn merge_immut(&self) -> Self {
         let mut x = self.clone();
         x.merge();
         x

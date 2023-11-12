@@ -82,7 +82,7 @@ impl Range {
     }
 
     #[must_use]
-    pub fn flipped(&self) -> Self {
+    pub fn flip_immut(&self) -> Self {
         let mut x = *self;
         x.flip();
         x
@@ -95,7 +95,7 @@ impl Range {
     }
 
     #[must_use]
-    pub fn flipped_forward(&self) -> Self {
+    pub fn flip_forward_immut(&self) -> Self {
         let mut x = *self;
         x.flip_forward();
         x
@@ -108,7 +108,7 @@ impl Range {
     }
 
     #[must_use]
-    pub fn flipped_backward(&self) -> Self {
+    pub fn flip_backward_immut(&self) -> Self {
         let mut x = *self;
         x.flip_backward();
         x
@@ -119,7 +119,7 @@ impl Range {
     }
 
     #[must_use]
-    pub fn reduced(&self) -> Self {
+    pub fn reduce_immut(&self) -> Self {
         let mut x = *self;
         x.reduce();
         x
@@ -145,19 +145,19 @@ impl Range {
             }
             _ => {
                 // Mixed
-                self.merge(&other.flipped());
+                self.merge(&other.flip_immut());
             }
         }
     }
 
     #[must_use]
-    pub fn merged(&self, other: &Self) -> Self {
+    pub fn merge_immut(&self, other: &Self) -> Self {
         let mut x = *self;
         x.merge(other);
         x
     }
 
-    pub fn selected(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Vec<Self>> {
+    pub fn select(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Vec<Self>> {
         let offset = if self.is_forward() {
             self.anchor.to_char_index(rope)?
         } else {
@@ -267,7 +267,7 @@ mod tests {
         let anchor = Position::from((line1, column1));
         let cursor = Position::from((line2, column2));
         let range = Range::from((anchor, cursor));
-        range.start() == range.flipped().start()
+        range.start() == range.flip_immut().start()
     }
 
     #[quickcheck]
@@ -275,6 +275,6 @@ mod tests {
         let anchor = Position::from((line1, column1));
         let cursor = Position::from((line2, column2));
         let range = Range::from((anchor, cursor));
-        range.end() == range.flipped().end()
+        range.end() == range.flip_immut().end()
     }
 }

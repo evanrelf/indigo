@@ -81,8 +81,8 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn scrolled_up(&self, distance: usize) -> Self {
-        self.scrolled_to_line(self.vertical_scroll.saturating_sub(distance))
+    pub fn scroll_up_immut(&self, distance: usize) -> Self {
+        self.scroll_to_line_immut(self.vertical_scroll.saturating_sub(distance))
     }
 
     pub fn scroll_down(&mut self, distance: usize) {
@@ -90,8 +90,8 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn scrolled_down(&self, distance: usize) -> Self {
-        self.scrolled_to_line(self.vertical_scroll + distance)
+    pub fn scroll_down_immut(&self, distance: usize) -> Self {
+        self.scroll_to_line_immut(self.vertical_scroll + distance)
     }
 
     pub fn scroll_left(&mut self, distance: usize) {
@@ -99,8 +99,8 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn scrolled_left(&self, distance: usize) -> Self {
-        self.scrolled_to_column(self.horizontal_scroll.saturating_sub(distance))
+    pub fn scroll_left_immut(&self, distance: usize) -> Self {
+        self.scroll_to_column_immut(self.horizontal_scroll.saturating_sub(distance))
     }
 
     pub fn scroll_right(&mut self, distance: usize) {
@@ -108,8 +108,8 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn scrolled_right(&self, distance: usize) -> Self {
-        self.scrolled_to_column(self.horizontal_scroll + distance)
+    pub fn scroll_right_immut(&self, distance: usize) -> Self {
+        self.scroll_to_column_immut(self.horizontal_scroll + distance)
     }
 
     pub fn scroll_to_line(&mut self, line: usize) {
@@ -118,7 +118,7 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn scrolled_to_line(&self, line: usize) -> Self {
+    pub fn scroll_to_line_immut(&self, line: usize) -> Self {
         let mut x = self.clone();
         x.scroll_to_line(line);
         x
@@ -129,7 +129,7 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn scrolled_to_column(&self, column: usize) -> Self {
+    pub fn scroll_to_column_immut(&self, column: usize) -> Self {
         let mut x = self.clone();
         x.scroll_to_column(column);
         x
