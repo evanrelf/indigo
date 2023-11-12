@@ -191,6 +191,8 @@ fn update_insert(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFl
     Ok(ControlFlow::Continue)
 }
 
+// TODO: Support pasting large strings (use bracketed paste mode, don't `insert_char` a million
+// times)
 fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
     let Mode::Command(command_mode) = editor.mode_mut() else {
         unreachable!();

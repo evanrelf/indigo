@@ -6,7 +6,6 @@ pub struct CommandMode {
     // TODO: Maybe change back to `String` for convenience
     command: Rope,
     cursor: usize,
-    horizontal_scroll: usize,
 }
 
 impl CommandMode {
@@ -18,11 +17,6 @@ impl CommandMode {
     #[must_use]
     pub fn cursor(&self) -> usize {
         self.cursor
-    }
-
-    #[must_use]
-    pub fn horizontal_scroll(&self) -> usize {
-        self.horizontal_scroll
     }
 
     pub fn insert_char(&mut self, c: char) {
@@ -61,17 +55,5 @@ impl CommandMode {
 
     pub fn move_line_end(&mut self) {
         self.cursor = self.command.len_chars();
-    }
-
-    pub fn scroll_left(&mut self, distance: usize) {
-        self.scroll_to_column(self.horizontal_scroll.saturating_sub(distance));
-    }
-
-    pub fn scroll_right(&mut self, distance: usize) {
-        self.scroll_to_column(self.horizontal_scroll + distance);
-    }
-
-    pub fn scroll_to_column(&mut self, column: usize) {
-        self.horizontal_scroll = column;
     }
 }

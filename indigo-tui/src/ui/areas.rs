@@ -1,4 +1,5 @@
-use indigo_core::{Buffer, Editor, Position, RopeExt};
+use crate::ui::command;
+use indigo_core::{Buffer, Editor, Mode, Position, RopeExt};
 use ratatui::prelude::{Constraint, Direction, Layout, Rect};
 use std::cmp::max;
 
@@ -10,13 +11,18 @@ pub struct Areas {
 
 impl Areas {
     pub fn new(editor: &Editor, area: Rect) -> Self {
+        let status_height = match editor.mode() {
+            Mode::Command(command_mode) => command::lines(command_mode, area),
+            _ => 1,
+        };
+
         let vertical = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
                 // numbers + buffer
                 Constraint::Min(0),
                 // status
-                Constraint::Length(1),
+                Constraint::Length(status_height),
             ])
             .split(area);
 
