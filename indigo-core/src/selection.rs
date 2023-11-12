@@ -45,6 +45,22 @@ impl Selection {
         self.direction() == Direction::Backward
     }
 
+    #[must_use]
+    pub fn is_overlapping(&self) -> bool {
+        // TODO: omg this is so inefficient
+        for (i1, r1) in self.ranges.iter().enumerate() {
+            for (i2, r2) in self.ranges.iter().enumerate() {
+                if i1 == i2 {
+                    continue;
+                }
+                if r1.is_overlapping(r2) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
     pub fn set_primary(&mut self, index: usize) -> anyhow::Result<()> {
         if index >= self.ranges.len() {
             anyhow::bail!("Invalid range index {index}");
