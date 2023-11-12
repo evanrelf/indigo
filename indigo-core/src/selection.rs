@@ -1,7 +1,6 @@
 use crate::{conversion::Conversion, direction::Direction, range::Range};
 use fancy_regex::Regex;
 use ropey::Rope;
-use std::borrow::Cow;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Selection {
@@ -57,19 +56,11 @@ impl Selection {
         }
     }
 
-    #[must_use]
-    pub fn insert(&self, range: Range) -> Self {
+    pub fn insert(&mut self, range: Range) {
         let index = match self.ranges.binary_search(&range) {
             Ok(index) | Err(index) => index, // TODO: Merge overlapping ranges?
         };
-
-        let mut ranges = self.ranges.clone();
-        ranges.insert(index, range);
-
-        Self {
-            ranges,
-            primary: self.primary,
-        }
+        self.ranges.insert(index, range);
     }
 
     #[must_use]
@@ -94,30 +85,21 @@ impl Selection {
         Some(Self { ranges, primary })
     }
 
-    #[must_use]
-    pub fn flip(&self) -> Self {
-        let mut selection = self.clone();
-        for range in &mut selection.ranges {
-            *range = range.flip();
+    pub fn flip(&mut self) {
+        for range in &mut self.ranges {
+            range.flip();
         }
-        selection
     }
 
-    #[must_use]
-    pub fn flip_forward(&self) -> Cow<Self> {
+    pub fn flip_forward(&mut self) {
         if self.is_backward() {
-            Cow::Owned(self.flip())
-        } else {
-            Cow::Borrowed(self)
+            self.flip();
         }
     }
 
-    #[must_use]
-    pub fn flip_backward(&self) -> Cow<Self> {
+    pub fn flip_backward(&mut self) {
         if self.is_forward() {
-            Cow::Owned(self.flip())
-        } else {
-            Cow::Borrowed(self)
+            self.flip();
         }
     }
 

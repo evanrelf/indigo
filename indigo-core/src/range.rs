@@ -1,10 +1,9 @@
 use crate::{conversion::Conversion, direction::Direction, position::Position};
 use anyhow::Context as _;
-use ropey::{Rope, RopeSlice};
-use std::cmp::{max, min};
-
 use fancy_regex::Regex;
+use ropey::{Rope, RopeSlice};
 use std::borrow::Cow;
+use std::cmp::{max, min};
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Range {
@@ -68,101 +67,103 @@ impl Range {
         self.start() <= other.end() && other.start() <= self.end()
     }
 
-    #[must_use]
-    pub fn with_target_column(&self, target_column: usize) -> Option<Self> {
-        if self.cursor.column < target_column {
-            Some(Self {
-                target_column: Some(target_column),
-                ..*self
-            })
-        } else {
-            None
-        }
-    }
-
-    #[must_use]
-    pub fn without_target_column(&self) -> Self {
-        Self {
-            target_column: None,
-            ..*self
-        }
-    }
-
-    #[must_use]
-    pub fn flip(&self) -> Self {
-        if self.is_reduced() {
-            *self
-        } else {
-            Self {
-                anchor: self.cursor,
-                cursor: self.anchor,
-                target_column: None,
+    pub fn set_target_column(&mut self, target_column: Option<usize>) -> anyhow::Result<()> {
+        if let Some(target_column) = target_column {
+            if self.cursor.column >= target_column {
+                anyhow::bail!("Target column must be greater than cursor column");
             }
         }
+        self.target_column = target_column;
+        Ok(())
+    }
+
+    pub fn with_target_column(&self, target_column: Option<usize>) -> anyhow::Result<Self> {
+        let mut x = *self;
+        x.set_target_column(target_column)?;
+        Ok(x)
+    }
+
+    pub fn flip(&mut self) {
+        if !self.is_reduced() {
+            std::mem::swap(&mut self.anchor, &mut self.cursor);
+            self.target_column = None;
+        }
     }
 
     #[must_use]
-    pub fn flip_forward(&self) -> Self {
+    pub fn flipped(&self) -> Self {
+        let mut x = *self;
+        x.flip();
+        x
+    }
+
+    pub fn flip_forward(&mut self) {
         if self.is_backward() {
-            self.flip()
-        } else {
-            *self
+            self.flip();
         }
     }
 
     #[must_use]
-    pub fn flip_backward(&self) -> Self {
+    pub fn flipped_forward(&self) -> Self {
+        let mut x = *self;
+        x.flip_forward();
+        x
+    }
+
+    pub fn flip_backward(&mut self) {
         if self.is_forward() {
-            self.flip()
-        } else {
-            *self
+            self.flip();
         }
     }
 
     #[must_use]
-    pub fn reduce(&self) -> Self {
-        Self {
-            anchor: self.cursor,
-            ..*self
-        }
+    pub fn flipped_backward(&self) -> Self {
+        let mut x = *self;
+        x.flip_backward();
+        x
+    }
+
+    pub fn reduce(&mut self) {
+        self.anchor = self.cursor;
     }
 
     #[must_use]
-    pub fn merge(&self, other: &Self) -> Self {
+    pub fn reduced(&self) -> Self {
+        let mut x = *self;
+        x.reduce();
+        x
+    }
+
+    pub fn merge(&mut self, other: &Self) {
         match (self.is_forward(), other.is_forward()) {
             (true, true) => {
                 // Forward
-                let anchor = min(self.anchor, other.anchor);
-                let (cursor, target_column) = if self.cursor > other.cursor {
-                    (self.cursor, self.target_column)
-                } else {
-                    (other.cursor, other.target_column)
-                };
-                Self {
-                    anchor,
-                    cursor,
-                    target_column,
+                self.anchor = min(self.anchor, other.anchor);
+                if self.cursor < other.cursor {
+                    self.cursor = other.cursor;
+                    self.target_column = other.target_column;
                 }
             }
             (false, false) => {
                 // Backward
-                let anchor = max(self.anchor, other.anchor);
-                let (cursor, target_column) = if self.cursor < other.cursor {
-                    (self.cursor, self.target_column)
-                } else {
-                    (other.cursor, other.target_column)
-                };
-                Self {
-                    anchor,
-                    cursor,
-                    target_column,
+                self.anchor = max(self.anchor, other.anchor);
+                if self.cursor > other.cursor {
+                    self.cursor = other.cursor;
+                    self.target_column = other.target_column;
                 }
             }
             _ => {
                 // Mixed
-                self.merge(&other.flip())
+                self.merge(&other.flipped());
             }
         }
+    }
+
+    #[must_use]
+    pub fn merged(&self, other: &Self) -> Self {
+        let mut x = *self;
+        x.merge(other);
+        x
     }
 
     pub fn select(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Conversion<Vec<Self>>> {
@@ -308,7 +309,7 @@ mod tests {
         let anchor = Position::from((line1, column1));
         let cursor = Position::from((line2, column2));
         let range = Range::from((anchor, cursor));
-        range.start() == range.flip().start()
+        range.start() == range.flipped().start()
     }
 
     #[quickcheck]
@@ -316,6 +317,6 @@ mod tests {
         let anchor = Position::from((line1, column1));
         let cursor = Position::from((line2, column2));
         let range = Range::from((anchor, cursor));
-        range.end() == range.flip().end()
+        range.end() == range.flipped().end()
     }
 }
