@@ -42,7 +42,7 @@ async fn main() -> anyhow::Result<ExitCode> {
     if let Some(path) = args.log_file {
         let file = std::fs::File::create(path).context("Failed to create log file")?;
         tracing_subscriber::fmt()
-            .with_max_level(Level::DEBUG)
+            .with_max_level(Level::TRACE)
             .with_writer(file)
             .init();
     }
