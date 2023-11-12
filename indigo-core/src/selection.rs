@@ -44,16 +44,18 @@ impl Selection {
         self.direction() == Direction::Backward
     }
 
-    #[must_use]
-    pub fn with_primary(&self, index: usize) -> Option<Self> {
-        if index < self.ranges.len() {
-            Some(Self {
-                ranges: self.ranges.clone(),
-                primary: index,
-            })
-        } else {
-            None
+    pub fn set_primary(&mut self, index: usize) -> anyhow::Result<()> {
+        if index >= self.ranges.len() {
+            anyhow::bail!("Invalid range index {index}");
         }
+        self.primary = index;
+        Ok(())
+    }
+
+    pub fn with_primary(&self, index: usize) -> anyhow::Result<Self> {
+        let mut x = self.clone();
+        x.set_primary(index)?;
+        Ok(x)
     }
 
     pub fn insert(&mut self, range: Range) {
@@ -64,25 +66,34 @@ impl Selection {
     }
 
     #[must_use]
-    pub fn remove(&self, index: usize) -> Option<Self> {
+    pub fn inserted(&self, range: Range) -> Self {
+        let mut x = self.clone();
+        x.insert(range);
+        x
+    }
+
+    pub fn remove(&mut self, index: usize) -> anyhow::Result<()> {
         if self.ranges.len() <= 1 {
-            return None;
+            anyhow::bail!("Cannot remove final range");
         }
 
         if index >= self.ranges.len() {
-            return None;
+            anyhow::bail!("Invalid range index {index}");
         }
 
-        let mut ranges = self.ranges.clone();
-        ranges.remove(index);
+        self.ranges.remove(index);
 
-        let primary = if self.primary < index {
-            self.primary - 1
-        } else {
-            self.primary
-        };
+        if self.primary < index {
+            self.primary -= 1;
+        }
 
-        Some(Self { ranges, primary })
+        Ok(())
+    }
+
+    pub fn removed(&self, index: usize) -> anyhow::Result<Self> {
+        let mut x = self.clone();
+        x.remove(index)?;
+        Ok(x)
     }
 
     pub fn flip(&mut self) {
@@ -91,16 +102,37 @@ impl Selection {
         }
     }
 
+    #[must_use]
+    pub fn flipped(&self) -> Self {
+        let mut x = self.clone();
+        x.flip();
+        x
+    }
+
     pub fn flip_forward(&mut self) {
         if self.is_backward() {
             self.flip();
         }
     }
 
+    #[must_use]
+    pub fn flipped_forward(&self) -> Self {
+        let mut x = self.clone();
+        x.flip_forward();
+        x
+    }
+
     pub fn flip_backward(&mut self) {
         if self.is_forward() {
             self.flip();
         }
+    }
+
+    #[must_use]
+    pub fn flipped_backward(&self) -> Self {
+        let mut x = self.clone();
+        x.flip_backward();
+        x
     }
 
     pub fn select(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Conversion<Self>> {
