@@ -1,5 +1,6 @@
 use indigo_core::Editor;
 use ratatui::prelude::{Buffer as Surface, *};
+use std::borrow::Cow;
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let buffer = editor.current_buffer();
@@ -18,7 +19,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
         surface.set_stringn(
             area.x,
             y,
-            line.to_string(),
+            Cow::<str>::from(line),
             usize::from(area.width),
             Style::default(),
         );
