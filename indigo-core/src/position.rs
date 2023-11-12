@@ -57,6 +57,12 @@ impl Position {
         Ok(index)
     }
 
+    pub fn corrected(&self, rope: &Rope) -> anyhow::Result<Self> {
+        let index = self.to_char_index(rope)?;
+        let position = Self::from_char_index(index, rope)?;
+        Ok(position)
+    }
+
     pub fn assert_valid(&self) {
         // Positions are trivially valid
     }
