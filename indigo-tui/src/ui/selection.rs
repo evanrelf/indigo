@@ -1,5 +1,5 @@
 use crate::ui::colors::{YELLOW, YELLOW_LIGHT};
-use indigo_core::{Direction, Editor, Position};
+use indigo_core::{Editor, Position};
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
@@ -13,31 +13,30 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     for range in buffer.selection().ranges() {
         let range_slice = range.to_rope_slice(rope).unwrap();
 
-        for (i, _) in range_slice.chars().enumerate() {
-            let i = match range.direction() {
-                Direction::Forward => i + range.anchor().to_char_index(rope).unwrap(),
-                Direction::Backward => i + range.cursor().to_char_index(rope).unwrap(),
-            };
+        let range_start_index = range.start().to_char_index(rope).unwrap();
 
-            let buffer_position = Position::from_char_index(i, rope).unwrap();
+        for (index, _) in range_slice.chars().enumerate() {
+            let index = range_start_index + index;
+
+            let buffer_position = Position::from_char_index(index, rope).unwrap();
             let buffer_line = buffer_position.line;
             let buffer_column = buffer_position.column;
 
-            let view_line = buffer_line.saturating_sub(buffer.vertical_scroll());
-            let view_column = buffer_column.saturating_sub(buffer.horizontal_scroll());
+            let area_line = buffer_line.saturating_sub(buffer.vertical_scroll());
+            let area_column = buffer_column.saturating_sub(buffer.horizontal_scroll());
 
             let position_visible = [
                 buffer_line >= buffer.vertical_scroll(),
                 buffer_column >= buffer.horizontal_scroll(),
-                view_line < usize::from(area.height),
-                view_column < usize::from(area.width),
+                area_line < usize::from(area.height),
+                area_column < usize::from(area.width),
             ]
             .iter()
             .all(|x| *x);
 
             if position_visible {
-                let x = area.left() + u16::try_from(view_column).unwrap();
-                let y = area.top() + u16::try_from(view_line).unwrap();
+                let x = area.left() + u16::try_from(area_column).unwrap();
+                let y = area.top() + u16::try_from(area_line).unwrap();
                 let color = if buffer_position == range.cursor() {
                     YELLOW
                 } else {
