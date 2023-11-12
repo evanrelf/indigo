@@ -37,7 +37,7 @@ impl Editor {
     pub fn current_buffer(&self) -> &Buffer {
         match self.buffers.get(self.current_buffer) {
             Some(buffer) => buffer,
-            None => panic!("omg editor didn't maintain invariant"),
+            None => panic!("`current_buffer` index is invalid"),
         }
     }
 
@@ -45,7 +45,7 @@ impl Editor {
     pub fn current_buffer_mut(&mut self) -> &mut Buffer {
         match self.buffers.get_mut(self.current_buffer) {
             Some(buffer) => buffer,
-            None => panic!("omg editor didn't maintain invariant"),
+            None => panic!("`current_buffer` index is invalid"),
         }
     }
 
@@ -60,5 +60,12 @@ impl Editor {
     #[must_use]
     pub fn mode_mut(&mut self) -> &mut Mode {
         &mut self.mode
+    }
+
+    pub fn assert_valid(&self) {
+        assert!(
+            self.buffers.get(self.current_buffer).is_some(),
+            "`current_buffer` index is valid"
+        );
     }
 }

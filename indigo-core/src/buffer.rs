@@ -139,7 +139,10 @@ impl Buffer {
     }
 
     pub fn assert_valid(&self) {
-        // TODO: `contents` rope is not empty
+        assert!(
+            self.contents.len_chars() > 0,
+            "`contents` rope is not empty"
+        );
 
         // TODO: `selection` is valid in `contents` rope
 
