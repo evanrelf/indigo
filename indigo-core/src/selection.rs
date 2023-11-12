@@ -96,6 +96,30 @@ impl Selection {
         Ok(x)
     }
 
+    pub fn filter<P>(&mut self, predicate: P) -> anyhow::Result<()>
+    where
+        P: Fn(&Range) -> anyhow::Result<bool>,
+    {
+        let x = self.filtered(predicate)?;
+        *self = x;
+        Ok(())
+    }
+
+    pub fn filtered<P>(&self, predicate: P) -> anyhow::Result<Self>
+    where
+        P: Fn(&Range) -> anyhow::Result<bool>,
+    {
+        let mut selection = self.clone();
+
+        for (i, range) in self.ranges.iter().enumerate() {
+            if !predicate(range)? {
+                selection.remove(i)?;
+            }
+        }
+
+        Ok(selection)
+    }
+
     pub fn flip(&mut self) {
         for range in &mut self.ranges {
             range.flip();
