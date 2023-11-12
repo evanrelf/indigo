@@ -66,6 +66,9 @@ async fn run(mut editor: Editor) -> anyhow::Result<ExitCode> {
     let mut event_stream = EventStream::new();
 
     loop {
+        #[cfg(debug_assertions)]
+        editor.assert_valid();
+
         terminal
             .draw(|frame| ui::render(&editor, frame.size(), frame.buffer_mut()))
             .context("Failed to draw to terminal")?;
