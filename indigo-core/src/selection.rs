@@ -3,6 +3,8 @@ use fancy_regex::Regex;
 use ropey::Rope;
 use std::borrow::Cow;
 
+const ALLOW_OVERLAP: bool = true;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Selection {
     ranges: Vec<Range>,
@@ -262,6 +264,10 @@ impl Selection {
             self.ranges.windows(2).all(|range| range[0] <= range[1]),
             "Ranges are sorted"
         );
+
+        if !ALLOW_OVERLAP {
+            assert!(!self.is_overlapping(), "Ranges must not overlap");
+        }
 
         for range in &self.ranges {
             range.assert_valid();
