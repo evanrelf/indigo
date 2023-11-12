@@ -12,7 +12,7 @@ mod key;
 mod terminal;
 mod ui;
 
-use crate::key::macros::{key_matches, key_matches2, key_modifiers};
+use crate::key::macros::{k, key_modifiers};
 use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
@@ -128,42 +128,42 @@ fn update_normal(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFl
             }
             _ => {}
         },
-        Event::Key(key) if key_matches!(key, Up) => {
+        Event::Key(key) if k!(key, Up) => {
             editor.current_buffer_mut().scroll_up_mut(1);
         }
-        Event::Key(key) if key_matches!(key, Down) => {
+        Event::Key(key) if k!(key, Down) => {
             editor.current_buffer_mut().scroll_down_mut(1);
         }
-        Event::Key(key) if key_matches!(key, Left) => {
+        Event::Key(key) if k!(key, Left) => {
             editor.current_buffer_mut().scroll_left_mut(1);
         }
-        Event::Key(key) if key_matches!(key, Right) => {
+        Event::Key(key) if k!(key, Right) => {
             editor.current_buffer_mut().scroll_right_mut(1);
         }
-        Event::Key(key) if key_matches2!(key, SHIFT, Up) => {
+        Event::Key(key) if k!(key, SHIFT, Up) => {
             editor.current_buffer_mut().scroll_up_mut(10);
         }
-        Event::Key(key) if key_matches2!(key, SHIFT, Down) => {
+        Event::Key(key) if k!(key, SHIFT, Down) => {
             editor.current_buffer_mut().scroll_down_mut(10);
         }
-        Event::Key(key) if key_matches2!(key, SHIFT, Left) => {
+        Event::Key(key) if k!(key, SHIFT, Left) => {
             editor.current_buffer_mut().scroll_left_mut(10);
         }
-        Event::Key(key) if key_matches2!(key, SHIFT, Right) => {
+        Event::Key(key) if k!(key, SHIFT, Right) => {
             editor.current_buffer_mut().scroll_right_mut(10);
         }
         // Modes
-        Event::Key(key) if key_matches!(key, 'i') => {
+        Event::Key(key) if k!(key, 'i') => {
             *editor.mode_mut() = Mode::Insert(InsertMode::default());
         }
-        Event::Key(key) if key_matches!(key, ':') => {
+        Event::Key(key) if k!(key, ':') => {
             *editor.mode_mut() = Mode::Command(CommandMode::default());
         }
         // Debug
-        Event::Key(key) if key_matches!(key, CONTROL 'p') => {
+        Event::Key(key) if k!(key, CONTROL, 'p') => {
             panic!();
         }
-        Event::Key(key) if key_matches!(key, CONTROL 'c') => {
+        Event::Key(key) if k!(key, CONTROL, 'c') => {
             anyhow::bail!("Ctrl-C");
         }
         _ => {}
@@ -175,14 +175,14 @@ fn update_normal(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFl
 fn update_insert(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
     match event {
         // Modes
-        Event::Key(key) if key_matches!(key, Esc) => {
+        Event::Key(key) if k!(key, Esc) => {
             *editor.mode_mut() = Mode::Normal(NormalMode::default());
         }
         // Debug
-        Event::Key(key) if key_matches!(key, CONTROL 'p') => {
+        Event::Key(key) if k!(key, CONTROL, 'p') => {
             panic!();
         }
-        Event::Key(key) if key_matches!(key, CONTROL 'c') => {
+        Event::Key(key) if k!(key, CONTROL, 'c') => {
             anyhow::bail!("Ctrl-C");
         }
         _ => {}
@@ -197,22 +197,22 @@ fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlF
     };
 
     match event {
-        Event::Key(key) if key_matches!(key, Left) || key_matches!(key, CONTROL 'b') => {
+        Event::Key(key) if k!(key, Left) || k!(key, CONTROL, 'b') => {
             command_mode.move_left(1);
         }
-        Event::Key(key) if key_matches!(key, Right) || key_matches!(key, CONTROL 'f') => {
+        Event::Key(key) if k!(key, Right) || k!(key, CONTROL, 'f') => {
             command_mode.move_right(1);
         }
-        Event::Key(key) if key_matches!(key, CONTROL 'a') => {
+        Event::Key(key) if k!(key, CONTROL, 'a') => {
             command_mode.move_line_begin();
         }
-        Event::Key(key) if key_matches!(key, CONTROL 'e') => {
+        Event::Key(key) if k!(key, CONTROL, 'e') => {
             command_mode.move_line_end();
         }
-        Event::Key(key) if key_matches!(key, CONTROL 'u') => {
+        Event::Key(key) if k!(key, CONTROL, 'u') => {
             command_mode.clear_backward();
         }
-        Event::Key(key) if key_matches!(key, CONTROL 'k') => {
+        Event::Key(key) if k!(key, CONTROL, 'k') => {
             command_mode.clear_forward();
         }
         Event::Key(key)
@@ -223,14 +223,14 @@ fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlF
             };
             command_mode.insert_char(c);
         }
-        Event::Key(key) if key_matches!(key, Backspace) => {
+        Event::Key(key) if k!(key, Backspace) => {
             if command_mode.command().len_chars() == 0 {
                 *editor.mode_mut() = Mode::Normal(NormalMode::default());
             } else {
                 command_mode.backspace();
             }
         }
-        Event::Key(key) if key_matches!(key, Enter) => {
+        Event::Key(key) if k!(key, Enter) => {
             let command = command_mode.command().to_string();
 
             if !command.is_empty() {
@@ -244,14 +244,14 @@ fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlF
             *editor.mode_mut() = Mode::Normal(NormalMode::default());
         }
         // Modes
-        Event::Key(key) if key_matches!(key, Esc) => {
+        Event::Key(key) if k!(key, Esc) => {
             *editor.mode_mut() = Mode::Normal(NormalMode::default());
         }
         // Debug
-        Event::Key(key) if key_matches!(key, CONTROL 'p') => {
+        Event::Key(key) if k!(key, CONTROL, 'p') => {
             panic!();
         }
-        Event::Key(key) if key_matches!(key, CONTROL 'c') => {
+        Event::Key(key) if k!(key, CONTROL, 'c') => {
             anyhow::bail!("Ctrl-C");
         }
         _ => {}
