@@ -67,5 +67,9 @@ impl Editor {
             self.buffers.get(self.current_buffer).is_some(),
             "`current_buffer` index is valid"
         );
+
+        for buffer in &self.buffers {
+            buffer.assert_valid();
+        }
     }
 }

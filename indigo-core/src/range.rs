@@ -215,6 +215,10 @@ impl Range {
     }
 
     pub fn assert_valid(&self) {
+        self.anchor.assert_valid();
+
+        self.cursor.assert_valid();
+
         if let Some(target_column) = self.target_column {
             assert!(
                 target_column > self.cursor.column,

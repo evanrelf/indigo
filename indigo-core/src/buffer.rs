@@ -144,9 +144,12 @@ impl Buffer {
             "`contents` rope is not empty"
         );
 
-        // TODO: `selection` is valid in `contents` rope
+        assert!(
+            self.vertical_scroll < self.contents.len_lines_indigo(),
+            "`vertical_scroll` doesn't go beyond the last line of the `contents` rope"
+        );
 
-        // TODO: `vertical_scroll` doesn't go beyond the last line of the `contents` rope
+        // TODO: `selection` is valid in `contents` rope
 
         // TODO: Buffer validation
 

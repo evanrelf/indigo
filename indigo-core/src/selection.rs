@@ -207,9 +207,20 @@ impl Selection {
             "`primary` index is valid"
         );
 
-        // TODO: All ranges face the same direction
+        let direction = self.primary().direction();
+        assert!(
+            self.ranges
+                .iter()
+                .all(|range| range.direction() == direction),
+            "All ranges face the same direction"
+        );
 
-        // TODO: Ranges are sorted
+        // TODO: Use `is_sorted` once it stabilized
+        // https://github.com/rust-lang/rust/issues/53485
+        assert!(
+            self.ranges.windows(2).all(|range| range[0] <= range[1]),
+            "Ranges are sorted"
+        );
 
         for range in &self.ranges {
             range.assert_valid();
