@@ -42,6 +42,11 @@ struct Args {
 }
 
 fn main() -> anyhow::Result<ExitCode> {
+    #[cfg(debug_assertions)]
+    if std::env::var("RUST_BACKTRACE").is_err() {
+        std::env::set_var("RUST_BACKTRACE", "1");
+    }
+
     let args = Args::parse();
 
     if let Some(path) = args.log_file {
