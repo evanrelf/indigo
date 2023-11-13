@@ -25,10 +25,10 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
         .wrap(Wrap { trim: false })
         .render(area, surface);
 
-    let cursor = u16::try_from(command_mode.cursor()).unwrap();
+    let cursor = command_mode.cursor() + 1;
 
-    let x = area.x + ((cursor + 1) % area.width);
-    let y = area.y + ((cursor + 1) / area.width);
+    let x = u16::try_from(usize::from(area.x) + (cursor % usize::from(area.width))).unwrap();
+    let y = u16::try_from(usize::from(area.y) + (cursor / usize::from(area.width))).unwrap();
 
     surface.get_mut(x, y).set_bg(YELLOW);
 }
