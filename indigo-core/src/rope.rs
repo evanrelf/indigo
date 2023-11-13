@@ -1,10 +1,20 @@
-use ropey::Rope;
+use ropey::{Rope, RopeSlice};
 
 pub trait RopeExt {
     fn len_lines_indigo(&self) -> usize;
 }
 
 impl RopeExt for Rope {
+    fn len_lines_indigo(&self) -> usize {
+        if self.len_chars() == 0 {
+            return 0;
+        }
+        let last_char = self.char(self.len_chars() - 1);
+        self.len_lines() - if last_char == '\n' { 1 } else { 0 }
+    }
+}
+
+impl RopeExt for RopeSlice<'_> {
     fn len_lines_indigo(&self) -> usize {
         if self.len_chars() == 0 {
             return 0;
