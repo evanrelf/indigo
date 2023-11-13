@@ -5,6 +5,7 @@ edition = "2021"
 
 [[bin]]
 name = "indigo-core-command"
+path = "src/bin/command.rs"
 
 [dependencies]
 anyhow = { workspace = true }
