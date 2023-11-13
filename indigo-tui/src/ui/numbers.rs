@@ -3,6 +3,10 @@ use indigo_core::{Editor, RopeExt};
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
+    if area.width == 0 {
+        return;
+    }
+
     let buffer = editor.current_buffer();
 
     let total_lines = buffer.contents().len_lines_indigo();

@@ -3,6 +3,10 @@ use ratatui::prelude::{Buffer as Surface, *};
 use std::borrow::Cow;
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
+    if area.width == 0 {
+        return;
+    }
+
     let buffer = editor.current_buffer();
 
     for y in area.top()..area.bottom() {
