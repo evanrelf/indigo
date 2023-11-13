@@ -3,6 +3,7 @@ use indigo_core::{Buffer, Editor, Mode, Position, RopeExt};
 use ratatui::prelude::{Constraint, Direction, Layout, Rect};
 use std::cmp::max;
 
+#[derive(Clone, Copy)]
 pub struct Areas {
     pub tildes: Rect,
     pub numbers: Rect,
@@ -58,7 +59,7 @@ impl Areas {
         }
     }
 
-    pub fn to_buffer_position(&self, position: (u16, u16), buffer: &Buffer) -> Option<Position> {
+    pub fn to_buffer_position(self, position: (u16, u16), buffer: &Buffer) -> Option<Position> {
         let (area_line, area_column) = to_area_position(position, self.buffer)?;
 
         let buffer_line = usize::from(area_line) + buffer.vertical_scroll();
