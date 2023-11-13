@@ -1,10 +1,7 @@
 use crate::ui::colors::{BG_GRAY, BG_YELLOW};
 use indigo_core::{CommandMode, Editor, Mode};
-use ratatui::{
-    prelude::{Buffer as Surface, *},
-    widgets::{Paragraph, Widget as _, Wrap},
-};
-use std::borrow::Cow;
+use ratatui::prelude::{Buffer as Surface, *};
+use std::cmp::min;
 
 // TODO: Paint over status elements a few characters ahead of the command, so it's clear the command
 // text isn't part of the status
@@ -13,18 +10,41 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let Mode::Command(command_mode) = editor.mode() else {
         return;
     };
+    render_command(command_mode, area, surface);
+    render_cursor(command_mode, area, surface);
+}
 
-    let command = Cow::<str>::from(command_mode.command());
+fn render_command(command_mode: &CommandMode, area: Rect, surface: &mut Surface) {
+    surface.get_mut(area.x, area.y).set_char(':');
 
-    // TODO: Don't use `Paragraph` widget here because it's buggy.
-    //
-    // When the command is only spaces, and you exceed a single line (triggering wrapping), drawing
-    // gets offset by one. Also, it doesn't draw the background color properly all the time?
-    Paragraph::new(format!(":{command}"))
-        .style(Style::default().bg(BG_GRAY))
-        .wrap(Wrap { trim: false })
-        .render(area, surface);
+    let rope = command_mode.command();
 
+    if rope.len_chars() == 0 {
+        return;
+    }
+
+    for y in area.top()..area.bottom() {
+        let i = y - area.top();
+
+        let start = usize::from(area.width * i).saturating_sub(1);
+        let end = usize::from(area.width * (i + 1)).saturating_sub(1);
+        let range = start..min(rope.len_chars(), end);
+
+        // Don't do all the rest if the string is empty
+        if range.is_empty() {
+            break;
+        }
+
+        let line = rope.slice(range).to_string();
+
+        // Offset the first line to account for the `:`
+        let x = area.x + if i == 0 { 1 } else { 0 };
+
+        surface.set_string(x, y, line, Style::default().bg(BG_GRAY));
+    }
+}
+
+fn render_cursor(command_mode: &CommandMode, area: Rect, surface: &mut Surface) {
     let cursor = command_mode.cursor() + 1;
 
     let x = u16::try_from(usize::from(area.x) + (cursor % usize::from(area.width))).unwrap();
