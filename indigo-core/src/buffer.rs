@@ -135,6 +135,26 @@ impl Buffer {
         x
     }
 
+    pub fn scroll_to_selection(&mut self, area_height: u16) {
+        let line = self.selection.primary().cursor().line;
+
+        let top = self.vertical_scroll;
+        let bottom = (top + usize::try_from(area_height).unwrap()) - 1;
+
+        if line < top {
+            self.vertical_scroll = line;
+        } else if line > bottom {
+            self.vertical_scroll = top + (line - bottom);
+        };
+    }
+
+    #[must_use]
+    pub fn scroll_to_selection_immut(&self, area_height: u16) -> Self {
+        let mut x = self.clone();
+        x.scroll_to_selection(area_height);
+        x
+    }
+
     pub fn assert_valid(&self) {
         assert!(
             self.contents.len_chars() > 0,
