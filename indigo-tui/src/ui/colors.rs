@@ -115,16 +115,16 @@ pub const BG_RED_LIGHT: Color = RED_100;
 pub const BG_RED: Color = RED_500;
 pub const BG_PINK: Color = PINK_500;
 
-// Text colors
+// Foreground colors
 
-pub const TEXT_GRAY_LIGHT: Color = GRAY_500;
-pub const TEXT_GRAY: Color = GRAY_600;
-pub const TEXT_GRAY_DARK: Color = GRAY_900;
-pub const TEXT_BLUE: Color = BLUE_500;
-pub const TEXT_GREEN: Color = GREEN_500;
-pub const TEXT_PURPLE: Color = PURPLE_500;
-pub const TEXT_YELLOW: Color = YELLOW_800;
-pub const TEXT_ORANGE_LIGHT: Color = ORANGE_600;
-pub const TEXT_ORANGE: Color = ORANGE_900;
-pub const TEXT_RED: Color = RED_600;
-pub const TEXT_PINK: Color = PINK_500;
+pub const FG_GRAY_LIGHT: Color = GRAY_500;
+pub const FG_GRAY: Color = GRAY_600;
+pub const FG_GRAY_DARK: Color = GRAY_900;
+pub const FG_BLUE: Color = BLUE_500;
+pub const FG_GREEN: Color = GREEN_500;
+pub const FG_PURPLE: Color = PURPLE_500;
+pub const FG_YELLOW: Color = YELLOW_800;
+pub const FG_ORANGE_LIGHT: Color = ORANGE_600;
+pub const FG_ORANGE: Color = ORANGE_900;
+pub const FG_RED: Color = RED_600;
+pub const FG_PINK: Color = PINK_500;
