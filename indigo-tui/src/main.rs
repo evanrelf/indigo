@@ -124,7 +124,7 @@ fn update(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Result<Co
     }
 }
 
-fn update_normal(editor: &mut Editor, _areas: Areas, event: &Event) -> anyhow::Result<ControlFlow> {
+fn update_normal(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Result<ControlFlow> {
     match event {
         // Scrolling
         Event::Mouse(mouse) => match mouse.kind {
@@ -159,6 +159,16 @@ fn update_normal(editor: &mut Editor, _areas: Areas, event: &Event) -> anyhow::R
         }
         Event::Key(key) if k!(key, SHIFT, Right) => {
             editor.current_buffer_mut().scroll_right(10);
+        }
+        Event::Key(key) if k!(key, CONTROL, 'u') => {
+            editor
+                .current_buffer_mut()
+                .scroll_up(usize::from(areas.buffer.height) / 2);
+        }
+        Event::Key(key) if k!(key, CONTROL, 'd') => {
+            editor
+                .current_buffer_mut()
+                .scroll_down(usize::from(areas.buffer.height) / 2);
         }
         // Modes
         Event::Key(key) if k!(key, 'i') => {
