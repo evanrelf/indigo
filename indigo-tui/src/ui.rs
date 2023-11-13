@@ -1,12 +1,12 @@
-mod areas;
-mod buffer;
-mod colors;
-mod column;
-mod command;
-mod numbers;
-mod selection;
-mod status;
-mod tildes;
+pub mod areas;
+pub mod buffer;
+pub mod colors;
+pub mod column;
+pub mod command;
+pub mod numbers;
+pub mod selection;
+pub mod status;
+pub mod tildes;
 
 use crate::ui::areas::Areas;
 use indigo_core::Editor;
