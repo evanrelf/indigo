@@ -134,28 +134,28 @@ fn update_normal(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Re
             _ => {}
         },
         Event::Key(key) if k!(key, Up) => {
-            editor.current_buffer_mut().scroll_up(1);
-        }
-        Event::Key(key) if k!(key, Down) => {
-            editor.current_buffer_mut().scroll_down(1);
-        }
-        Event::Key(key) if k!(key, Left) => {
-            editor.current_buffer_mut().scroll_left(1);
-        }
-        Event::Key(key) if k!(key, Right) => {
-            editor.current_buffer_mut().scroll_right(1);
-        }
-        Event::Key(key) if k!(key, SHIFT, Up) => {
             editor.current_buffer_mut().scroll_up(10);
         }
-        Event::Key(key) if k!(key, SHIFT, Down) => {
+        Event::Key(key) if k!(key, Down) => {
             editor.current_buffer_mut().scroll_down(10);
         }
-        Event::Key(key) if k!(key, SHIFT, Left) => {
+        Event::Key(key) if k!(key, Left) => {
             editor.current_buffer_mut().scroll_left(10);
         }
-        Event::Key(key) if k!(key, SHIFT, Right) => {
+        Event::Key(key) if k!(key, Right) => {
             editor.current_buffer_mut().scroll_right(10);
+        }
+        Event::Key(key) if k!(key, SHIFT, Up) => {
+            editor.current_buffer_mut().scroll_up(1);
+        }
+        Event::Key(key) if k!(key, SHIFT, Down) => {
+            editor.current_buffer_mut().scroll_down(1);
+        }
+        Event::Key(key) if k!(key, SHIFT, Left) => {
+            editor.current_buffer_mut().scroll_left(1);
+        }
+        Event::Key(key) if k!(key, SHIFT, Right) => {
+            editor.current_buffer_mut().scroll_right(1);
         }
         Event::Key(key) if k!(key, CONTROL, 'u') => {
             editor
