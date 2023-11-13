@@ -4,8 +4,9 @@ use ratatui::{
     prelude::{Buffer as Surface, *},
     widgets::{Paragraph, Widget as _},
 };
+use std::cmp::min;
 
-pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
+pub fn render(editor: &Editor, mut area: Rect, surface: &mut Surface) {
     let buffer = editor.current_buffer();
 
     let modified = if buffer.is_modified() { "+ " } else { "" };
@@ -21,6 +22,9 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
         Mode::Insert(_) => "i",
         Mode::Command(_) => "c",
     };
+
+    area.y += area.height.saturating_sub(1);
+    area.height = min(1, area.height);
 
     Paragraph::new(format!("{modified}{path} {line}:{column}/{count} {mode}"))
         .style(Style::default().bg(GRAY_LIGHT))
