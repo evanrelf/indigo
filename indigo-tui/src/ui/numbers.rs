@@ -1,4 +1,4 @@
-use crate::ui::colors::GRAY_LIGHT;
+use crate::ui::colors::BG_GRAY;
 use indigo_core::{Editor, RopeExt};
 use ratatui::prelude::{Buffer as Surface, *};
 
@@ -22,7 +22,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
                 y,
                 format!("{line_number:>number_width$}│"),
                 number_width + 1,
-                Style::default().bg(GRAY_LIGHT),
+                Style::default().bg(BG_GRAY),
             );
         } else {
             surface.get_mut(area.x, y).set_char('~');

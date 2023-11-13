@@ -1,4 +1,4 @@
-use crate::ui::colors::{YELLOW, YELLOW_LIGHT};
+use crate::ui::colors::{BG_YELLOW, BG_YELLOW_LIGHT};
 use indigo_core::{Editor, Position};
 use ratatui::prelude::{Buffer as Surface, *};
 
@@ -38,9 +38,9 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
                 let x = area.left() + u16::try_from(area_column).unwrap();
                 let y = area.top() + u16::try_from(area_line).unwrap();
                 let color = if buffer_position == range.cursor() {
-                    YELLOW
+                    BG_YELLOW
                 } else {
-                    YELLOW_LIGHT
+                    BG_YELLOW_LIGHT
                 };
                 surface.get_mut(x, y).set_bg(color);
             }

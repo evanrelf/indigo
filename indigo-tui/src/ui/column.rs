@@ -1,4 +1,4 @@
-use crate::ui::colors::GRAY_LIGHT;
+use crate::ui::colors::BG_GRAY;
 use indigo_core::{Editor, RopeExt};
 use ratatui::prelude::{Buffer as Surface, *};
 
@@ -27,7 +27,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 
             if column_in_area && column_in_buffer && line_in_buffer {
                 let x = area.x + ((column - 1) - horizontal_scroll);
-                surface.get_mut(x, y).set_bg(GRAY_LIGHT);
+                surface.get_mut(x, y).set_bg(BG_GRAY);
             }
         }
     }

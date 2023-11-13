@@ -1,4 +1,4 @@
-use crate::ui::colors::{GRAY_LIGHT, YELLOW};
+use crate::ui::colors::{BG_GRAY, BG_YELLOW};
 use indigo_core::{CommandMode, Editor, Mode};
 use ratatui::{
     prelude::{Buffer as Surface, *},
@@ -21,7 +21,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     // When the command is only spaces, and you exceed a single line (triggering wrapping), drawing
     // gets offset by one. Also, it doesn't draw the background color properly all the time?
     Paragraph::new(format!(":{command}"))
-        .style(Style::default().bg(GRAY_LIGHT))
+        .style(Style::default().bg(BG_GRAY))
         .wrap(Wrap { trim: false })
         .render(area, surface);
 
@@ -30,7 +30,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let x = u16::try_from(usize::from(area.x) + (cursor % usize::from(area.width))).unwrap();
     let y = u16::try_from(usize::from(area.y) + (cursor / usize::from(area.width))).unwrap();
 
-    surface.get_mut(x, y).set_bg(YELLOW);
+    surface.get_mut(x, y).set_bg(BG_YELLOW);
 }
 
 pub fn lines(command_mode: &CommandMode, area: Rect) -> u16 {
