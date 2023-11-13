@@ -68,24 +68,11 @@ impl Range {
         Ok(())
     }
 
-    pub fn with_target_column(&self, target_column: Option<usize>) -> anyhow::Result<Self> {
-        let mut x = *self;
-        x.set_target_column(target_column)?;
-        Ok(x)
-    }
-
     pub fn flip(&mut self) {
         if !self.is_reduced() {
             std::mem::swap(&mut self.anchor, &mut self.cursor);
             self.target_column = None;
         }
-    }
-
-    #[must_use]
-    pub fn flip_immut(&self) -> Self {
-        let mut x = *self;
-        x.flip();
-        x
     }
 
     pub fn flip_forward(&mut self) {
@@ -94,35 +81,14 @@ impl Range {
         }
     }
 
-    #[must_use]
-    pub fn flip_forward_immut(&self) -> Self {
-        let mut x = *self;
-        x.flip_forward();
-        x
-    }
-
     pub fn flip_backward(&mut self) {
         if self.is_forward() {
             self.flip();
         }
     }
 
-    #[must_use]
-    pub fn flip_backward_immut(&self) -> Self {
-        let mut x = *self;
-        x.flip_backward();
-        x
-    }
-
     pub fn reduce(&mut self) {
         self.anchor = self.cursor;
-    }
-
-    #[must_use]
-    pub fn reduce_immut(&self) -> Self {
-        let mut x = *self;
-        x.reduce();
-        x
     }
 
     pub fn merge(&mut self, other: &Self) {
@@ -145,16 +111,11 @@ impl Range {
             }
             _ => {
                 // Mixed
-                self.merge(&other.flip_immut());
+                let mut other = *other;
+                other.flip();
+                self.merge(&other);
             }
         }
-    }
-
-    #[must_use]
-    pub fn merge_immut(&self, other: &Self) -> Self {
-        let mut x = *self;
-        x.merge(other);
-        x
     }
 
     pub fn select(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Vec<Self>> {
@@ -266,15 +227,19 @@ mod tests {
     fn range_start(line1: usize, column1: usize, line2: usize, column2: usize) -> bool {
         let anchor = Position::from((line1, column1));
         let cursor = Position::from((line2, column2));
-        let range = Range::from((anchor, cursor));
-        range.start() == range.flip_immut().start()
+        let r1 = Range::from((anchor, cursor));
+        let mut r2 = r1;
+        r2.flip();
+        r1.start() == r2.start()
     }
 
     #[quickcheck]
     fn range_end(line1: usize, column1: usize, line2: usize, column2: usize) -> bool {
         let anchor = Position::from((line1, column1));
         let cursor = Position::from((line2, column2));
-        let range = Range::from((anchor, cursor));
-        range.end() == range.flip_immut().end()
+        let r1 = Range::from((anchor, cursor));
+        let mut r2 = r1;
+        r2.flip();
+        r1.end() == r2.end()
     }
 }

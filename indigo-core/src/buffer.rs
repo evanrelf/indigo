@@ -80,36 +80,16 @@ impl Buffer {
         self.scroll_to_line(self.vertical_scroll.saturating_sub(distance));
     }
 
-    #[must_use]
-    pub fn scroll_up_immut(&self, distance: usize) -> Self {
-        self.scroll_to_line_immut(self.vertical_scroll.saturating_sub(distance))
-    }
-
     pub fn scroll_down(&mut self, distance: usize) {
         self.scroll_to_line(self.vertical_scroll + distance);
-    }
-
-    #[must_use]
-    pub fn scroll_down_immut(&self, distance: usize) -> Self {
-        self.scroll_to_line_immut(self.vertical_scroll + distance)
     }
 
     pub fn scroll_left(&mut self, distance: usize) {
         self.scroll_to_column(self.horizontal_scroll.saturating_sub(distance));
     }
 
-    #[must_use]
-    pub fn scroll_left_immut(&self, distance: usize) -> Self {
-        self.scroll_to_column_immut(self.horizontal_scroll.saturating_sub(distance))
-    }
-
     pub fn scroll_right(&mut self, distance: usize) {
         self.scroll_to_column(self.horizontal_scroll + distance);
-    }
-
-    #[must_use]
-    pub fn scroll_right_immut(&self, distance: usize) -> Self {
-        self.scroll_to_column_immut(self.horizontal_scroll + distance)
     }
 
     pub fn scroll_to_line(&mut self, line: usize) {
@@ -117,22 +97,8 @@ impl Buffer {
         self.vertical_scroll = min(line, last_line);
     }
 
-    #[must_use]
-    pub fn scroll_to_line_immut(&self, line: usize) -> Self {
-        let mut x = self.clone();
-        x.scroll_to_line(line);
-        x
-    }
-
     pub fn scroll_to_column(&mut self, column: usize) {
         self.horizontal_scroll = column;
-    }
-
-    #[must_use]
-    pub fn scroll_to_column_immut(&self, column: usize) -> Self {
-        let mut x = self.clone();
-        x.scroll_to_column(column);
-        x
     }
 
     pub fn scroll_to_selection(&mut self, area_height: u16) {
@@ -146,13 +112,6 @@ impl Buffer {
         } else if line > bottom {
             self.vertical_scroll = top + (line - bottom);
         };
-    }
-
-    #[must_use]
-    pub fn scroll_to_selection_immut(&self, area_height: u16) -> Self {
-        let mut x = self.clone();
-        x.scroll_to_selection(area_height);
-        x
     }
 
     pub fn assert_valid(&self) {

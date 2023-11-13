@@ -55,24 +55,11 @@ impl Selection {
         Ok(())
     }
 
-    pub fn set_primary_immut(&self, index: usize) -> anyhow::Result<Self> {
-        let mut x = self.clone();
-        x.set_primary(index)?;
-        Ok(x)
-    }
-
     pub fn insert(&mut self, range: Range) {
         let index = match self.ranges.binary_search(&range) {
             Ok(index) | Err(index) => index, // TODO: Merge overlapping ranges?
         };
         self.ranges.insert(index, range);
-    }
-
-    #[must_use]
-    pub fn insert_immut(&self, range: Range) -> Self {
-        let mut x = self.clone();
-        x.insert(range);
-        x
     }
 
     pub fn remove(&mut self, index: usize) -> anyhow::Result<()> {
@@ -93,22 +80,7 @@ impl Selection {
         Ok(())
     }
 
-    pub fn remove_immut(&self, index: usize) -> anyhow::Result<Self> {
-        let mut x = self.clone();
-        x.remove(index)?;
-        Ok(x)
-    }
-
     pub fn filter<P>(&mut self, predicate: P) -> anyhow::Result<()>
-    where
-        P: Fn(&Range) -> anyhow::Result<bool>,
-    {
-        let x = self.filter_immut(predicate)?;
-        *self = x;
-        Ok(())
-    }
-
-    pub fn filter_immut<P>(&self, predicate: P) -> anyhow::Result<Self>
     where
         P: Fn(&Range) -> anyhow::Result<bool>,
     {
@@ -120,7 +92,9 @@ impl Selection {
             }
         }
 
-        Ok(selection)
+        *self = selection;
+
+        Ok(())
     }
 
     pub fn flip(&mut self) {
@@ -129,24 +103,10 @@ impl Selection {
         }
     }
 
-    #[must_use]
-    pub fn flip_immut(&self) -> Self {
-        let mut x = self.clone();
-        x.flip();
-        x
-    }
-
     pub fn flip_forward(&mut self) {
         for range in &mut self.ranges {
             range.flip_forward();
         }
-    }
-
-    #[must_use]
-    pub fn flip_forward_immut(&self) -> Self {
-        let mut x = self.clone();
-        x.flip_forward();
-        x
     }
 
     pub fn flip_backward(&mut self) {
@@ -155,20 +115,7 @@ impl Selection {
         }
     }
 
-    #[must_use]
-    pub fn flip_backward_immut(&self) -> Self {
-        let mut x = self.clone();
-        x.flip_backward();
-        x
-    }
-
     pub fn select(&mut self, rope: &Rope, regex: &Regex) -> anyhow::Result<()> {
-        let x = self.keep_immut(rope, regex)?;
-        *self = x;
-        Ok(())
-    }
-
-    pub fn select_immut(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Self> {
         let mut ranges = Vec::new();
 
         for range in &self.ranges {
@@ -180,20 +127,14 @@ impl Selection {
             anyhow::bail!("No matches");
         }
 
-        Ok(Self {
-            primary: ranges.len() - 1,
-            ranges,
-        })
-    }
+        self.primary = ranges.len() - 1;
+        self.ranges = ranges;
 
-    pub fn keep(&mut self, rope: &Rope, regex: &Regex) -> anyhow::Result<()> {
-        let x = self.keep_immut(rope, regex)?;
-        *self = x;
         Ok(())
     }
 
-    pub fn keep_immut(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Self> {
-        self.filter_immut(|range| {
+    pub fn keep(&mut self, rope: &Rope, regex: &Regex) -> anyhow::Result<()> {
+        self.filter(|range| {
             let rope_slice = range.to_rope_slice(rope)?;
             let string_slice = Cow::<str>::from(rope_slice);
             let keep = regex.is_match(&string_slice)?;
@@ -217,13 +158,6 @@ impl Selection {
 
         self.ranges = ranges;
         self.primary = primary;
-    }
-
-    #[must_use]
-    pub fn merge_immut(&self) -> Self {
-        let mut x = self.clone();
-        x.merge();
-        x
     }
 
     pub fn assert_valid(&self) {
