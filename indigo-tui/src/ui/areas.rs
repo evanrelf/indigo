@@ -4,6 +4,7 @@ use ratatui::prelude::{Constraint, Direction, Layout, Rect};
 use std::cmp::max;
 
 pub struct Areas {
+    pub tildes: Rect,
     pub numbers: Rect,
     pub buffer: Rect,
     pub status: Rect,
@@ -42,10 +43,16 @@ impl Areas {
             ])
             .split(vertical[0]);
 
+        let numbers = horizontal[0];
+        let buffer = horizontal[1];
+        let status = vertical[1];
+        let tildes = if numbers.width > 0 { numbers } else { buffer };
+
         Self {
-            numbers: horizontal[0],
-            buffer: horizontal[1],
-            status: vertical[1],
+            tildes,
+            numbers,
+            buffer,
+            status,
         }
     }
 

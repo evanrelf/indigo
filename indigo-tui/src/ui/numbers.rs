@@ -24,8 +24,6 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
                 number_width + 1,
                 Style::default().bg(BG_GRAY),
             );
-        } else {
-            surface.get_mut(area.x, y).set_char('~');
         }
     }
 }
