@@ -60,11 +60,14 @@ fn main() -> anyhow::Result<ExitCode> {
     let editor = if args.files.is_empty() {
         Editor::default()
     } else {
-        let mut buffers = Vec::with_capacity(args.files.len());
+        let mut editor = Editor::default();
         for file in args.files {
-            buffers.push(Buffer::open(file).context("Failed to open buffer")?);
+            let last_buffer_key =
+                editor.insert_buffer(Buffer::open(file).context("Failed to open buffer")?);
+            editor.set_current_buffer(last_buffer_key)?;
         }
-        Editor::new(buffers, 0, Mode::default())
+        // TODO: Default empty buffer needs to go
+        editor
     };
 
     run(editor)
