@@ -13,6 +13,7 @@ pub mod command;
 mod editor;
 mod key;
 mod mode;
+mod non_empty;
 mod position;
 mod range;
 mod rope;
