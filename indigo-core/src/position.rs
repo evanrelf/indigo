@@ -57,10 +57,10 @@ impl Position {
         Ok(index)
     }
 
-    pub fn corrected(&self, rope: &Rope) -> anyhow::Result<Self> {
+    pub fn correct(&mut self, rope: &Rope) -> anyhow::Result<()> {
         let index = self.to_char_index(rope)?;
-        let position = Self::from_char_index(index, rope)?;
-        Ok(position)
+        *self = Self::from_char_index(index, rope)?;
+        Ok(())
     }
 
     pub fn assert_valid(&self) {

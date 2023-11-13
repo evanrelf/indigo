@@ -66,12 +66,14 @@ impl Areas {
 
         let buffer_column = usize::from(area_column) + buffer.horizontal_scroll();
 
-        let naive_buffer_position = Position {
+        let mut buffer_position = Position {
             line: buffer_line,
             column: buffer_column,
         };
 
-        naive_buffer_position.corrected(buffer.contents()).ok()
+        buffer_position.correct(buffer.contents()).ok()?;
+
+        Some(buffer_position)
     }
 }
 
