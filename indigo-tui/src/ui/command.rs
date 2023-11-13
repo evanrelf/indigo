@@ -1,4 +1,4 @@
-use crate::ui::colors::YELLOW;
+use crate::ui::colors::{GRAY_LIGHT, YELLOW};
 use indigo_core::{CommandMode, Editor, Mode};
 use ratatui::{
     prelude::{Buffer as Surface, *},
@@ -16,7 +16,12 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let command = Cow::<str>::from(command_mode.command());
 
+    // TODO: Don't use `Paragraph` widget here because it's buggy.
+    //
+    // When the command is only spaces, and you exceed a single line (triggering wrapping), drawing
+    // gets offset by one. Also, it doesn't draw the background color properly all the time?
     Paragraph::new(format!(":{command}"))
+        .style(Style::default().bg(GRAY_LIGHT))
         .wrap(Wrap { trim: false })
         .render(area, surface);
 
