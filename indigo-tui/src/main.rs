@@ -20,13 +20,12 @@ use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use clap_verbosity_flag::Verbosity;
-use crossterm::event::{Event, EventStream, KeyCode, MouseEventKind};
+use crossterm::event::{Event, KeyCode, MouseEventKind};
 use indigo_core::{
     command::{self, Quit},
     Buffer, Command, CommandMode, Editor, InsertMode, Mode, NormalMode,
 };
 use std::process::ExitCode;
-use tokio_stream::StreamExt as _;
 use tracing_log::AsTrace as _;
 
 #[derive(clap::Parser)]
@@ -42,8 +41,7 @@ struct Args {
     verbosity: Verbosity,
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<ExitCode> {
+fn main() -> anyhow::Result<ExitCode> {
     let args = Args::parse();
 
     if let Some(path) = args.log_file {
@@ -64,15 +62,13 @@ async fn main() -> anyhow::Result<ExitCode> {
         Editor::new(buffers, 0, Mode::default())
     };
 
-    run(editor).await
+    run(editor)
 }
 
-async fn run(mut editor: Editor) -> anyhow::Result<ExitCode> {
+fn run(mut editor: Editor) -> anyhow::Result<ExitCode> {
     let mut terminal = terminal::enter().context("Failed to enter terminal")?;
 
     let mut areas = Areas::default();
-
-    let mut event_stream = EventStream::new();
 
     loop {
         #[cfg(debug_assertions)]
@@ -85,11 +81,7 @@ async fn run(mut editor: Editor) -> anyhow::Result<ExitCode> {
             })
             .context("Failed to draw to terminal")?;
 
-        let event = event_stream
-            .next()
-            .await
-            .context("No more crossterm events")?
-            .context("Failed to get next crossterm event")?;
+        let event = crossterm::event::read().context("Failed to get next crossterm event")?;
 
         tracing::trace!(?event);
 

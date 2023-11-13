@@ -12,8 +12,6 @@ crossterm = { workspace = true }
 flagset = { workspace = true }
 indigo-core = { workspace = true }
 ratatui = { workspace = true }
-tokio = { workspace = true }
-tokio-stream = { workspace = true }
 tracing = { workspace = true }
 tracing-log = { workspace = true }
 tracing-subscriber = { workspace = true }
