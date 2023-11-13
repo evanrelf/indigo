@@ -10,10 +10,9 @@ pub mod tildes;
 
 use crate::ui::areas::Areas;
 use indigo_core::Editor;
-use ratatui::prelude::{Buffer as Surface, Rect};
+use ratatui::prelude::Buffer as Surface;
 
-pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let areas = Areas::new(editor, area);
+pub fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
     tildes::render(editor, areas.tildes, surface);
     numbers::render(editor, areas.numbers, surface);
     buffer::render(editor, areas.buffer, surface);

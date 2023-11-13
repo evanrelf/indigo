@@ -12,7 +12,10 @@ mod key;
 mod terminal;
 mod ui;
 
-use crate::key::macros::{k, key_modifiers};
+use crate::{
+    key::macros::{k, key_modifiers},
+    ui::areas::Areas,
+};
 use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
@@ -67,6 +70,8 @@ async fn main() -> anyhow::Result<ExitCode> {
 async fn run(mut editor: Editor) -> anyhow::Result<ExitCode> {
     let mut terminal = terminal::enter().context("Failed to enter terminal")?;
 
+    let mut areas = Areas::default();
+
     let mut event_stream = EventStream::new();
 
     loop {
@@ -74,7 +79,10 @@ async fn run(mut editor: Editor) -> anyhow::Result<ExitCode> {
         editor.assert_valid();
 
         terminal
-            .draw(|frame| ui::render(&editor, frame.size(), frame.buffer_mut()))
+            .draw(|frame| {
+                areas = Areas::new(&editor, frame.size());
+                ui::render(&editor, areas, frame.buffer_mut());
+            })
             .context("Failed to draw to terminal")?;
 
         let event = event_stream
@@ -85,7 +93,7 @@ async fn run(mut editor: Editor) -> anyhow::Result<ExitCode> {
 
         tracing::trace!(?event);
 
-        match update(&mut editor, &event).context("Failed to update state")? {
+        match update(&mut editor, areas, &event).context("Failed to update state")? {
             ControlFlow::Continue => {}
             ControlFlow::Quit(exit_code) => break Ok(exit_code),
         }
@@ -108,15 +116,15 @@ macro_rules! quit {
 
 pub(crate) use quit;
 
-fn update(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
+fn update(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Result<ControlFlow> {
     match editor.mode() {
-        Mode::Normal(_) => update_normal(editor, event),
-        Mode::Insert(_) => update_insert(editor, event),
-        Mode::Command(_) => update_command(editor, event),
+        Mode::Normal(_) => update_normal(editor, areas, event),
+        Mode::Insert(_) => update_insert(editor, areas, event),
+        Mode::Command(_) => update_command(editor, areas, event),
     }
 }
 
-fn update_normal(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
+fn update_normal(editor: &mut Editor, _areas: Areas, event: &Event) -> anyhow::Result<ControlFlow> {
     match event {
         // Scrolling
         Event::Mouse(mouse) => match mouse.kind {
@@ -172,7 +180,7 @@ fn update_normal(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFl
     Ok(ControlFlow::Continue)
 }
 
-fn update_insert(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
+fn update_insert(editor: &mut Editor, _areas: Areas, event: &Event) -> anyhow::Result<ControlFlow> {
     match event {
         // Modes
         Event::Key(key) if k!(key, Esc) => {
@@ -193,7 +201,11 @@ fn update_insert(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFl
 
 // TODO: Support pasting large strings (use bracketed paste mode, don't `insert_char` a million
 // times)
-fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
+fn update_command(
+    editor: &mut Editor,
+    _areas: Areas,
+    event: &Event,
+) -> anyhow::Result<ControlFlow> {
     let Mode::Command(command_mode) = editor.mode_mut() else {
         unreachable!();
     };

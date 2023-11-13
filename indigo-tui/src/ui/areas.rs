@@ -3,7 +3,7 @@ use indigo_core::{Buffer, Editor, Mode, Position, RopeExt};
 use ratatui::prelude::{Constraint, Direction, Layout, Rect};
 use std::cmp::max;
 
-#[derive(Clone, Copy)]
+#[derive(Default, Clone, Copy)]
 pub struct Areas {
     pub tildes: Rect,
     pub numbers: Rect,
