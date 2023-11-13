@@ -1,4 +1,4 @@
-use crate::range::Range;
+use crate::Range;
 use fancy_regex::Regex;
 use ropey::Rope;
 use std::borrow::Cow;

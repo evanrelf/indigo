@@ -8,15 +8,15 @@
 // TODO: Remove
 #![allow(dead_code)]
 
-pub mod buffer;
+mod buffer;
 pub mod command;
-pub mod editor;
-pub mod key;
-pub mod mode;
-pub mod position;
-pub mod range;
-pub mod rope;
-pub mod selection;
+mod editor;
+mod key;
+mod mode;
+mod position;
+mod range;
+mod rope;
+mod selection;
 
 pub use crate::{
     buffer::Buffer,

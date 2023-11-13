@@ -1,4 +1,4 @@
-use crate::position::Position;
+use crate::Position;
 use anyhow::Context as _;
 use fancy_regex::Regex;
 use ropey::{Rope, RopeSlice};

@@ -13,7 +13,7 @@ use winnow::{
 // ordered modifiers, etc.
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Keys(Vec<Key>);
+pub struct Keys(pub Vec<Key>);
 
 impl Display for Keys {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -32,7 +32,7 @@ impl FromStr for Keys {
     }
 }
 
-pub fn keys(input: &mut &str) -> PResult<Keys> {
+fn keys(input: &mut &str) -> PResult<Keys> {
     repeat(0.., key).map(Keys).parse_next(input)
 }
 
@@ -110,11 +110,11 @@ impl FromStr for Key {
     }
 }
 
-pub fn key(input: &mut &str) -> PResult<Key> {
+fn key(input: &mut &str) -> PResult<Key> {
     alt((key_wrapped, key_bare)).parse_next(input)
 }
 
-pub fn key_wrapped(input: &mut &str) -> PResult<Key> {
+fn key_wrapped(input: &mut &str) -> PResult<Key> {
     let _ = "<".parse_next(input)?;
     let modifiers: Vec<_> = repeat(0.., terminated(key_modifier, "-")).parse_next(input)?;
     let modifiers = modifiers.into_iter().fold(FlagSet::default(), |x, y| x | y);
@@ -123,7 +123,7 @@ pub fn key_wrapped(input: &mut &str) -> PResult<Key> {
     Ok(Key { modifiers, code })
 }
 
-pub fn key_bare(input: &mut &str) -> PResult<Key> {
+fn key_bare(input: &mut &str) -> PResult<Key> {
     let modifiers = FlagSet::default();
     let code = key_code_bare.parse_next(input)?;
     Ok(Key { modifiers, code })
@@ -137,7 +137,7 @@ flags! {
     }
 }
 
-pub fn key_modifier(input: &mut &str) -> PResult<KeyModifier> {
+fn key_modifier(input: &mut &str) -> PResult<KeyModifier> {
     alt((
         alt(("shift", "s")).value(KeyModifier::Shift),
         alt(("control", "ctrl", "c")).value(KeyModifier::Control),
@@ -175,11 +175,11 @@ impl Display for KeyCode {
     }
 }
 
-pub fn key_code(input: &mut &str) -> PResult<KeyCode> {
+fn key_code(input: &mut &str) -> PResult<KeyCode> {
     alt((key_code_wrapped, key_code_bare)).parse_next(input)
 }
 
-pub fn key_code_wrapped(input: &mut &str) -> PResult<KeyCode> {
+fn key_code_wrapped(input: &mut &str) -> PResult<KeyCode> {
     alt((
         alt(("backspace", "bs")).value(KeyCode::Backspace),
         alt(("enter", "return", "cr")).value(KeyCode::Enter),
@@ -195,7 +195,7 @@ pub fn key_code_wrapped(input: &mut &str) -> PResult<KeyCode> {
     .parse_next(input)
 }
 
-pub fn key_code_bare(input: &mut &str) -> PResult<KeyCode> {
+fn key_code_bare(input: &mut &str) -> PResult<KeyCode> {
     one_of(' '..='~').map(KeyCode::Char).parse_next(input)
 }
 

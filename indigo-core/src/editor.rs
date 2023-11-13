@@ -1,4 +1,4 @@
-use crate::{buffer::Buffer, mode::Mode};
+use crate::{Buffer, Mode};
 
 #[derive(Debug)]
 pub struct Editor {

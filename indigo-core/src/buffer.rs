@@ -1,4 +1,4 @@
-use crate::{rope::RopeExt as _, selection::Selection};
+use crate::{RopeExt as _, Selection};
 use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use ropey::Rope;
