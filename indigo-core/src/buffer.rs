@@ -1,26 +1,16 @@
 use crate::{RopeExt as _, Selection};
-use anyhow::Context as _;
-use camino::Utf8PathBuf;
 use ropey::Rope;
-use std::{cmp::min, fs::File, io::BufReader, path::PathBuf};
+use std::cmp::min;
 
 #[derive(Clone, Debug)]
 pub struct Buffer {
-    path: Utf8PathBuf,
     contents: Rope,
     selection: Selection,
-    is_modified: bool,
-    is_read_only: bool,
     vertical_scroll: usize,
     horizontal_scroll: usize,
 }
 
 impl Buffer {
-    #[must_use]
-    pub fn path(&self) -> &Utf8PathBuf {
-        &self.path
-    }
-
     #[must_use]
     pub fn contents(&self) -> &Rope {
         &self.contents
@@ -32,16 +22,6 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn is_modified(&self) -> bool {
-        self.is_modified
-    }
-
-    #[must_use]
-    pub fn is_read_only(&self) -> bool {
-        self.is_read_only
-    }
-
-    #[must_use]
     pub fn vertical_scroll(&self) -> usize {
         self.vertical_scroll
     }
@@ -49,31 +29,6 @@ impl Buffer {
     #[must_use]
     pub fn horizontal_scroll(&self) -> usize {
         self.horizontal_scroll
-    }
-
-    pub fn open(path: Utf8PathBuf) -> anyhow::Result<Self> {
-        let file = File::open(PathBuf::from(path.clone())).context("Failed to open file")?;
-
-        let is_read_only = file
-            .metadata()
-            .context("Failed to get file metadata")?
-            .permissions()
-            .readonly();
-
-        let rope =
-            Rope::from_reader(BufReader::new(file)).context("Failed to read file into rope")?;
-
-        let empty = rope.len_chars() == 0;
-
-        Ok(Self {
-            path,
-            contents: if empty { Rope::from("\n") } else { rope },
-            selection: Selection::default(),
-            is_modified: empty,
-            is_read_only,
-            vertical_scroll: 0,
-            horizontal_scroll: 0,
-        })
     }
 
     pub fn scroll_up(&mut self, distance: usize) {
@@ -136,13 +91,24 @@ impl Buffer {
 impl Default for Buffer {
     fn default() -> Self {
         Self {
-            path: Utf8PathBuf::default(),
             contents: Rope::from("\n"),
             selection: Selection::default(),
-            is_modified: false,
-            is_read_only: false,
             vertical_scroll: 0,
             horizontal_scroll: 0,
         }
+    }
+}
+
+impl TryFrom<Rope> for Buffer {
+    type Error = anyhow::Error;
+
+    fn try_from(rope: Rope) -> Result<Self, Self::Error> {
+        if rope.len_chars() == 0 {
+            anyhow::bail!("Rope cannot be empty");
+        }
+        Ok(Self {
+            contents: rope,
+            ..Self::default()
+        })
     }
 }

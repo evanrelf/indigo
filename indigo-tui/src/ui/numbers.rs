@@ -7,7 +7,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
         return;
     }
 
-    let buffer = editor.current_buffer();
+    let buffer = editor.current_file().buffer();
 
     let total_lines = buffer.contents().len_lines_indigo();
 

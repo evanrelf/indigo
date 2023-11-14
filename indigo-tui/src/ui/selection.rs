@@ -3,7 +3,8 @@ use indigo_core::{Editor, Position};
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let buffer = editor.current_buffer();
+    let buffer = editor.current_file().buffer();
+
     let rope = &buffer.contents();
 
     if rope.len_chars() == 0 {

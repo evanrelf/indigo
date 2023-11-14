@@ -31,7 +31,7 @@ impl Areas {
         let show_numbers = true;
 
         let numbers_width = {
-            let n = editor.current_buffer().contents().len_lines_indigo();
+            let n = editor.current_file().buffer().contents().len_lines_indigo();
             let digits = 1 + max(1, n).ilog10();
             u16::try_from(max(2, digits) + 1).unwrap()
         };

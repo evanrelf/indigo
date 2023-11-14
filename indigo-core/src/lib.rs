@@ -11,6 +11,7 @@
 mod buffer;
 pub mod command;
 mod editor;
+mod file;
 mod key;
 mod mode;
 mod non_empty;
@@ -23,6 +24,7 @@ pub use crate::{
     buffer::Buffer,
     command::Command,
     editor::Editor,
+    file::{File, FileKey},
     key::{Key, KeyCode, KeyModifier, Keys},
     mode::{CommandMode, InsertMode, Mode, NormalMode},
     position::Position,

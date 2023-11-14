@@ -23,7 +23,7 @@ use clap_verbosity_flag::Verbosity;
 use crossterm::event::{Event, KeyCode, MouseEventKind};
 use indigo_core::{
     command::{self, Quit},
-    Buffer, Command, CommandMode, Editor, InsertMode, Mode, NormalMode,
+    Command, CommandMode, Editor, File, InsertMode, Mode, NormalMode,
 };
 use std::process::ExitCode;
 use tracing_log::AsTrace as _;
@@ -63,8 +63,8 @@ fn main() -> anyhow::Result<ExitCode> {
         let mut editor = Editor::default();
         for file in args.files {
             let last_buffer_key =
-                editor.insert_buffer(Buffer::open(file).context("Failed to open buffer")?);
-            editor.set_current_buffer(last_buffer_key)?;
+                editor.insert_file(File::open(file).context("Failed to open buffer")?);
+            editor.set_current_file(last_buffer_key)?;
         }
         // TODO: Default empty buffer needs to go
         editor
@@ -129,45 +129,47 @@ fn update_normal(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Re
         // Scrolling
         Event::Mouse(mouse) => match mouse.kind {
             MouseEventKind::ScrollUp => {
-                editor.current_buffer_mut().scroll_up(3);
+                editor.current_file_mut().buffer_mut().scroll_up(3);
             }
             MouseEventKind::ScrollDown => {
-                editor.current_buffer_mut().scroll_down(3);
+                editor.current_file_mut().buffer_mut().scroll_down(3);
             }
             _ => {}
         },
         Event::Key(key) if k!(key, Up) => {
-            editor.current_buffer_mut().scroll_up(10);
+            editor.current_file_mut().buffer_mut().scroll_up(10);
         }
         Event::Key(key) if k!(key, Down) => {
-            editor.current_buffer_mut().scroll_down(10);
+            editor.current_file_mut().buffer_mut().scroll_down(10);
         }
         Event::Key(key) if k!(key, Left) => {
-            editor.current_buffer_mut().scroll_left(10);
+            editor.current_file_mut().buffer_mut().scroll_left(10);
         }
         Event::Key(key) if k!(key, Right) => {
-            editor.current_buffer_mut().scroll_right(10);
+            editor.current_file_mut().buffer_mut().scroll_right(10);
         }
         Event::Key(key) if k!(key, SHIFT, Up) => {
-            editor.current_buffer_mut().scroll_up(1);
+            editor.current_file_mut().buffer_mut().scroll_up(1);
         }
         Event::Key(key) if k!(key, SHIFT, Down) => {
-            editor.current_buffer_mut().scroll_down(1);
+            editor.current_file_mut().buffer_mut().scroll_down(1);
         }
         Event::Key(key) if k!(key, SHIFT, Left) => {
-            editor.current_buffer_mut().scroll_left(1);
+            editor.current_file_mut().buffer_mut().scroll_left(1);
         }
         Event::Key(key) if k!(key, SHIFT, Right) => {
-            editor.current_buffer_mut().scroll_right(1);
+            editor.current_file_mut().buffer_mut().scroll_right(1);
         }
         Event::Key(key) if k!(key, CONTROL, 'u') => {
             editor
-                .current_buffer_mut()
+                .current_file_mut()
+                .buffer_mut()
                 .scroll_up(usize::from(areas.buffer.height) / 2);
         }
         Event::Key(key) if k!(key, CONTROL, 'd') => {
             editor
-                .current_buffer_mut()
+                .current_file_mut()
+                .buffer_mut()
                 .scroll_down(usize::from(areas.buffer.height) / 2);
         }
         // Modes

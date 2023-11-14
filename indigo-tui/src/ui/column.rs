@@ -3,7 +3,7 @@ use indigo_core::{Editor, RopeExt};
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let buffer = editor.current_buffer();
+    let buffer = editor.current_file().buffer();
 
     let horizontal_scroll = u16::try_from(buffer.horizontal_scroll()).unwrap();
 

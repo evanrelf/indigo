@@ -6,11 +6,13 @@ use ratatui::{
 };
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let buffer = editor.current_buffer();
+    let file = editor.current_file();
 
-    let modified = if buffer.is_modified() { "+ " } else { "" };
+    let buffer = file.buffer();
 
-    let path = buffer.path();
+    let modified = if file.is_modified() { "+ " } else { "" };
+
+    let path = file.path();
 
     let Position { line, column } = buffer.selection().primary().cursor();
 

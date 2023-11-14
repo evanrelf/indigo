@@ -7,7 +7,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
         return;
     }
 
-    let buffer = editor.current_buffer();
+    let buffer = editor.current_file().buffer();
 
     for y in area.top()..area.bottom() {
         let line_index = usize::from(y) + buffer.vertical_scroll();

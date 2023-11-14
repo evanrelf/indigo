@@ -1,22 +1,20 @@
-use crate::{Buffer, Mode};
+use crate::{File, FileKey, Mode};
 use slotmap::SlotMap;
-
-slotmap::new_key_type! { pub struct BufferKey; }
 
 #[derive(Debug)]
 pub struct Editor {
-    buffers: SlotMap<BufferKey, Buffer>,
-    current_buffer: BufferKey,
+    files: SlotMap<FileKey, File>,
+    current_file: FileKey,
     mode: Mode,
 }
 
 impl Default for Editor {
     fn default() -> Self {
-        let mut buffers = SlotMap::with_key();
-        let current_buffer = buffers.insert(Buffer::default());
+        let mut files = SlotMap::with_key();
+        let current_file = files.insert(File::default());
         Self {
-            buffers,
-            current_buffer,
+            files,
+            current_file,
             mode: Mode::default(),
         }
     }
@@ -24,33 +22,33 @@ impl Default for Editor {
 
 impl Editor {
     #[must_use]
-    pub fn get_buffer(&self, buffer_key: BufferKey) -> Option<&Buffer> {
-        self.buffers.get(buffer_key)
+    pub fn get_file(&self, file_key: FileKey) -> Option<&File> {
+        self.files.get(file_key)
     }
 
     #[must_use]
-    pub fn get_buffer_mut(&mut self, buffer_key: BufferKey) -> Option<&mut Buffer> {
-        self.buffers.get_mut(buffer_key)
+    pub fn get_file_mut(&mut self, file_key: FileKey) -> Option<&mut File> {
+        self.files.get_mut(file_key)
     }
 
     #[must_use]
-    pub fn current_buffer(&self) -> &Buffer {
-        self.buffers.get(self.current_buffer).unwrap()
+    pub fn current_file(&self) -> &File {
+        self.files.get(self.current_file).unwrap()
     }
 
     #[must_use]
-    pub fn current_buffer_mut(&mut self) -> &mut Buffer {
-        self.buffers.get_mut(self.current_buffer).unwrap()
+    pub fn current_file_mut(&mut self) -> &mut File {
+        self.files.get_mut(self.current_file).unwrap()
     }
 
     #[must_use]
-    pub fn current_buffer_key(&self) -> BufferKey {
-        self.current_buffer
+    pub fn current_file_key(&self) -> FileKey {
+        self.current_file
     }
 
     #[must_use]
-    pub fn buffers(&self) -> &SlotMap<BufferKey, Buffer> {
-        &self.buffers
+    pub fn files(&self) -> &SlotMap<FileKey, File> {
+        &self.files
     }
 
     // TODO: Should `mode` just be `pub`? Or are there invariants that need to be enforced, so this
@@ -67,38 +65,38 @@ impl Editor {
     }
 
     #[must_use]
-    pub fn insert_buffer(&mut self, buffer: Buffer) -> BufferKey {
-        self.buffers.insert(buffer)
+    pub fn insert_file(&mut self, file: File) -> FileKey {
+        self.files.insert(file)
     }
 
-    // pub fn remove_buffer(&mut self, buffer_key: BufferKey) -> anyhow::Result<()> {
-    //     if !self.buffers.contains_key(buffer_key) {
-    //         anyhow::bail!("Buffer does not exist");
+    // pub fn remove_file(&mut self, file_key: FileKey) -> anyhow::Result<()> {
+    //     if !self.files.contains_key(file_key) {
+    //         anyhow::bail!("File does not exist");
     //     }
-    //     if self.buffers.len() == 1 {
-    //         anyhow::bail!("Cannot remove last buffer");
+    //     if self.files.len() == 1 {
+    //         anyhow::bail!("Cannot remove last file");
     //     }
-    //     // TODO: Update `current_buffer` to stay valid
-    //     self.buffers.remove(buffer_key);
+    //     // TODO: Update `current_file` to stay valid
+    //     self.files.remove(file_key);
     //     Ok(())
     // }
 
-    pub fn set_current_buffer(&mut self, buffer_key: BufferKey) -> anyhow::Result<()> {
-        if !self.buffers.contains_key(buffer_key) {
-            anyhow::bail!("Buffer does not exist");
+    pub fn set_current_file(&mut self, file_key: FileKey) -> anyhow::Result<()> {
+        if !self.files.contains_key(file_key) {
+            anyhow::bail!("File does not exist");
         }
-        self.current_buffer = buffer_key;
+        self.current_file = file_key;
         Ok(())
     }
 
     pub fn assert_valid(&self) {
         assert!(
-            self.buffers.get(self.current_buffer).is_some(),
-            "`current_buffer` index is valid"
+            self.files.get(self.current_file).is_some(),
+            "`current_file` index is valid"
         );
 
-        for buffer in self.buffers.values() {
-            buffer.assert_valid();
+        for file in self.files.values() {
+            file.assert_valid();
         }
     }
 }
