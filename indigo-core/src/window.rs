@@ -2,7 +2,7 @@ use crate::FileKey;
 
 slotmap::new_key_type! { pub struct WindowKey; }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Window {
     file: FileKey,
     vertical_scroll: usize,

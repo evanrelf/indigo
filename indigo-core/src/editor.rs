@@ -93,8 +93,11 @@ impl Editor {
         Ok(())
     }
 
-    pub fn insert_window(&mut self, window: Window) -> WindowKey {
-        self.windows.insert(window)
+    pub fn insert_window(&mut self, window: Window) -> anyhow::Result<WindowKey> {
+        if !self.files.contains_key(window.file()) {
+            anyhow::bail!("File does not exist");
+        }
+        Ok(self.windows.insert(window))
     }
 
     // TODO: remove_window
@@ -124,19 +127,15 @@ impl Editor {
 
         for window in self.windows.values() {
             window.assert_valid();
+            assert!(
+                self.files.contains_key(window.file()),
+                "Window's file is valid"
+            );
         }
 
         assert!(
             self.windows.get(self.current_window).is_some(),
             "Current window key is valid"
-        );
-
-        assert!(
-            self.windows
-                .get(self.current_window)
-                .and_then(|window| self.files.get(window.file()))
-                .is_some(),
-            "Current window's buffer key is valid"
         );
     }
 }
