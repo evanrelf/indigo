@@ -2,6 +2,8 @@ use crate::{RopeExt as _, Selection};
 use ropey::Rope;
 use std::cmp::min;
 
+// TODO: `Buffer` becomes invalid if `Rope` is truncated and `vertical_scroll` goes beyond last line
+
 #[derive(Clone, Debug)]
 pub struct Buffer {
     contents: Rope,
