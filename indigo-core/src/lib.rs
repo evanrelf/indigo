@@ -19,6 +19,7 @@ mod position;
 mod range;
 mod rope;
 mod selection;
+mod window;
 
 pub use crate::{
     buffer::Buffer,
@@ -31,4 +32,5 @@ pub use crate::{
     range::Range,
     rope::RopeExt,
     selection::Selection,
+    window::{Window, WindowKey},
 };
