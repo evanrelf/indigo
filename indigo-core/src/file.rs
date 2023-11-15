@@ -6,10 +6,19 @@ use std::{io::BufReader, path::PathBuf};
 
 slotmap::new_key_type! { pub struct FileKey; }
 
+// TODO: Add method to refresh `is_modified` and `is_read_only` with the filesystem.
+
 #[derive(Clone, Debug, Default)]
 pub struct File {
     path: Utf8PathBuf,
     buffer: Buffer,
+    // TODO: Track the hash of on-disk bytes, compare with the hash of in-memory bytes, and if they
+    // differ consider it modified. Then modification state will be tracked implicitly, without the
+    // need to explicitly track rope modifications.
+    //
+    // Or maybe `ropey` is efficient enough, with its copy-on-write stuff, that we could keep an
+    // original `Rope` (matching the last on-disk state) and use `PartialEq` instead of `Hash`.
+    // Ropes will often differ in length, so checking for equality will often be O(1).
     is_modified: bool,
     is_read_only: bool,
 }
