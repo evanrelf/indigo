@@ -2,6 +2,7 @@ use crate::FileKey;
 
 slotmap::new_key_type! { pub struct WindowKey; }
 
+#[derive(Debug)]
 pub struct Window {
     file: FileKey,
     vertical_scroll: usize,
@@ -9,6 +10,20 @@ pub struct Window {
 }
 
 impl Window {
+    #[must_use]
+    pub fn new(file: FileKey) -> Self {
+        Self {
+            file,
+            vertical_scroll: 0,
+            horizontal_scroll: 0,
+        }
+    }
+
+    #[must_use]
+    pub fn file(&self) -> FileKey {
+        self.file
+    }
+
     #[must_use]
     pub fn vertical_scroll(&self) -> usize {
         self.vertical_scroll

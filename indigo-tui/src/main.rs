@@ -57,17 +57,17 @@ fn main() -> anyhow::Result<ExitCode> {
             .init();
     }
 
-    let editor = if args.files.is_empty() {
-        Editor::default()
-    } else {
-        let mut editor = Editor::default();
-        for file in args.files {
-            let last_buffer_key =
-                editor.insert_file(File::open(file).context("Failed to open buffer")?);
-            editor.set_current_file(last_buffer_key)?;
+    let editor = match args.files.split_first() {
+        None => Editor::new(File::default()),
+        Some((path, paths)) => {
+            // TODO: Get rid of clones
+            let file = File::open(path.clone()).context("Failed to open file")?;
+            let mut editor = Editor::new(file);
+            for path in paths {
+                editor.insert_file(File::open(path.clone()).context("Failed to open file")?);
+            }
+            editor
         }
-        // TODO: Default empty buffer needs to go
-        editor
     };
 
     run(editor)
