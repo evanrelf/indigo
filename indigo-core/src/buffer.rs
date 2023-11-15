@@ -106,11 +106,27 @@ impl TryFrom<Rope> for Buffer {
 
     fn try_from(rope: Rope) -> Result<Self, Self::Error> {
         if rope.len_chars() == 0 {
-            anyhow::bail!("Rope cannot be empty");
+            anyhow::bail!("Buffer cannot be empty");
         }
         Ok(Self {
             contents: rope,
             ..Self::default()
         })
+    }
+}
+
+impl TryFrom<String> for Buffer {
+    type Error = anyhow::Error;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        Self::try_from(Rope::from(s))
+    }
+}
+
+impl TryFrom<&str> for Buffer {
+    type Error = anyhow::Error;
+
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        Self::try_from(Rope::from(s))
     }
 }
