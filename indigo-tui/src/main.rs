@@ -1,13 +1,3 @@
-#![warn(clippy::pedantic, clippy::use_self)]
-#![allow(
-    clippy::bool_to_int_with_if,
-    clippy::missing_errors_doc,
-    clippy::missing_panics_doc,
-    clippy::module_name_repetitions
-)]
-// TODO: Remove
-#![allow(dead_code)]
-
 mod key;
 mod terminal;
 mod ui;
