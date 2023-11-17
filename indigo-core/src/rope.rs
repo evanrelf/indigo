@@ -1,7 +1,18 @@
+use crate::Position;
 use ropey::{Rope, RopeSlice};
 
 pub trait RopeSliceExt {
     fn len_lines_indigo(&self) -> usize;
+}
+
+impl RopeSliceExt for RopeSlice<'_> {
+    fn len_lines_indigo(&self) -> usize {
+        if self.len_chars() == 0 {
+            return 0;
+        }
+        let last_char = self.char(self.len_chars() - 1);
+        self.len_lines() - if last_char == '\n' { 1 } else { 0 }
+    }
 }
 
 impl RopeSliceExt for Rope {
@@ -14,13 +25,33 @@ impl RopeSliceExt for Rope {
     }
 }
 
-impl RopeSliceExt for RopeSlice<'_> {
-    fn len_lines_indigo(&self) -> usize {
-        if self.len_chars() == 0 {
-            return 0;
-        }
-        let last_char = self.char(self.len_chars() - 1);
-        self.len_lines() - if last_char == '\n' { 1 } else { 0 }
+pub trait RopeExt {
+    fn try_insert_char_indigo(&mut self, position: Position, c: char) -> anyhow::Result<Position>;
+
+    fn insert_char_indigo(&mut self, position: Position, c: char) -> Position {
+        self.try_insert_char_indigo(position, c).unwrap()
+    }
+
+    fn try_insert_indigo(&mut self, position: Position, s: &str) -> anyhow::Result<Position>;
+
+    fn insert_indigo(&mut self, position: Position, s: &str) -> Position {
+        self.try_insert_indigo(position, s).unwrap()
+    }
+}
+
+impl RopeExt for Rope {
+    fn try_insert_char_indigo(&mut self, position: Position, c: char) -> anyhow::Result<Position> {
+        let index = position.to_char_index(self)?;
+        self.try_insert_char(index, c)?;
+        let position = Position::from_char_index(index + 1, self).unwrap();
+        Ok(position)
+    }
+
+    fn try_insert_indigo(&mut self, position: Position, s: &str) -> anyhow::Result<Position> {
+        let index = position.to_char_index(self)?;
+        self.try_insert(index, s)?;
+        let position = Position::from_char_index(index + s.len(), self).unwrap();
+        Ok(position)
     }
 }
 
