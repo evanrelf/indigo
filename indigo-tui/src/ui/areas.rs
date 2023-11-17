@@ -73,7 +73,7 @@ impl Areas {
             column: buffer_column,
         };
 
-        buffer_position.correct(buffer.contents()).ok()?;
+        buffer_position.correct(buffer.contents());
 
         Some(buffer_position)
     }

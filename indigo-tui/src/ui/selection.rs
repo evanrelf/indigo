@@ -19,12 +19,12 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     for range in buffer.selection().ranges() {
         let range_slice = range.to_rope_slice(rope).unwrap();
 
-        let range_start_index = range.start().to_char_index(rope).unwrap();
+        let range_start_index = range.start().to_char_index(rope).unwrap_or_default();
 
         for (index, _) in range_slice.chars().enumerate() {
             let index = range_start_index + index;
 
-            let buffer_position = Position::from_char_index(index, rope).unwrap();
+            let buffer_position = Position::from_char_index(index, rope).unwrap_or_default();
             let buffer_line = buffer_position.line;
             let buffer_column = buffer_position.column;
 

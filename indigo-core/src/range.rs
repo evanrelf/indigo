@@ -119,11 +119,7 @@ impl Range {
     }
 
     pub fn select(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Vec<Self>> {
-        let offset = if self.is_forward() {
-            self.anchor.to_char_index(rope)?
-        } else {
-            self.cursor.to_char_index(rope)?
-        };
+        let offset = self.start().to_char_index(rope).unwrap_or_default();
 
         let rope_slice = self.to_rope_slice(rope)?;
 

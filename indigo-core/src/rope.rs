@@ -41,14 +41,14 @@ pub trait RopeExt {
 
 impl RopeExt for Rope {
     fn try_insert_char_indigo(&mut self, position: Position, c: char) -> anyhow::Result<Position> {
-        let index = position.to_char_index(self)?;
+        let index = position.to_char_index(self).unwrap_or_default();
         self.try_insert_char(index, c)?;
         let position = Position::from_char_index(index + 1, self).unwrap();
         Ok(position)
     }
 
     fn try_insert_indigo(&mut self, position: Position, s: &str) -> anyhow::Result<Position> {
-        let index = position.to_char_index(self)?;
+        let index = position.to_char_index(self).unwrap_or_default();
         self.try_insert(index, s)?;
         let position = Position::from_char_index(index + s.len(), self).unwrap();
         Ok(position)

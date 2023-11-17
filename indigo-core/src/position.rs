@@ -57,10 +57,9 @@ impl Position {
         Ok(index)
     }
 
-    pub fn correct(&mut self, rope: &Rope) -> anyhow::Result<()> {
-        let index = self.to_char_index(rope)?;
-        *self = Self::from_char_index(index, rope)?;
-        Ok(())
+    pub fn correct(&mut self, rope: &Rope) {
+        let index = self.to_char_index(rope).unwrap_or_default();
+        *self = Self::from_char_index(index, rope).unwrap_or_default();
     }
 
     pub fn assert_valid(&self) {
