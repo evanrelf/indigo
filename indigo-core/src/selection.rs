@@ -28,7 +28,7 @@ impl Selection {
 
     #[must_use]
     pub fn primary(&self) -> Range {
-        *self.ranges.get(self.primary).unwrap()
+        self.ranges[self.primary]
     }
 
     #[must_use]

@@ -36,17 +36,17 @@ impl Editor {
 
     #[must_use]
     pub fn current_file(&self) -> &File {
-        self.files.get(self.current_file_key()).unwrap()
+        self.get_file(self.current_file_key()).unwrap()
     }
 
     #[must_use]
     pub fn current_file_mut(&mut self) -> &mut File {
-        self.files.get_mut(self.current_file_key()).unwrap()
+        self.get_file_mut(self.current_file_key()).unwrap()
     }
 
     #[must_use]
     pub fn current_file_key(&self) -> FileKey {
-        self.windows.get(self.current_window).unwrap().file_key()
+        self.windows[self.current_window].file_key()
     }
 
     pub fn insert_file(&mut self, file: File) -> FileKey {
@@ -70,14 +70,14 @@ impl Editor {
     #[must_use]
     pub fn get_window(&self, window_key: WindowKey) -> Option<Window> {
         let state = self.windows.get(window_key)?;
-        let file = self.files.get(state.file_key()).unwrap();
+        let file = &self.files[state.file_key()];
         Some(Window::new(file, state))
     }
 
     #[must_use]
     pub fn get_window_mut(&mut self, window_key: WindowKey) -> Option<WindowMut> {
         let state = self.windows.get_mut(window_key)?;
-        let file = self.files.get_mut(state.file_key()).unwrap();
+        let file = &mut self.files[state.file_key()];
         Some(WindowMut::new(file, state))
     }
 
