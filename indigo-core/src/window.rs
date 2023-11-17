@@ -5,11 +5,15 @@ slotmap::new_key_type! { pub struct WindowKey; }
 
 #[derive(Debug)]
 pub struct Window<'editor> {
-    pub(crate) file: &'editor File,
-    pub(crate) state: &'editor WindowState,
+    file: &'editor File,
+    state: &'editor WindowState,
 }
 
-impl Window<'_> {
+impl<'editor> Window<'editor> {
+    pub(crate) fn new(file: &'editor File, state: &'editor WindowState) -> Self {
+        Self { file, state }
+    }
+
     #[must_use]
     pub fn file(&self) -> &File {
         self.file
@@ -32,11 +36,15 @@ impl Window<'_> {
 
 #[derive(Debug)]
 pub struct WindowMut<'editor> {
-    pub(crate) file: &'editor mut File,
-    pub(crate) state: &'editor mut WindowState,
+    file: &'editor mut File,
+    state: &'editor mut WindowState,
 }
 
-impl WindowMut<'_> {
+impl<'editor> WindowMut<'editor> {
+    pub(crate) fn new(file: &'editor mut File, state: &'editor mut WindowState) -> Self {
+        Self { file, state }
+    }
+
     #[must_use]
     pub fn file(&self) -> &File {
         self.file

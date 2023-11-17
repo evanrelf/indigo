@@ -71,14 +71,14 @@ impl Editor {
     pub fn get_window(&self, window_key: WindowKey) -> Option<Window> {
         let state = self.windows.get(window_key)?;
         let file = self.files.get(state.file_key()).unwrap();
-        Some(Window { file, state })
+        Some(Window::new(file, state))
     }
 
     #[must_use]
     pub fn get_window_mut(&mut self, window_key: WindowKey) -> Option<WindowMut> {
         let state = self.windows.get_mut(window_key)?;
         let file = self.files.get_mut(state.file_key()).unwrap();
-        Some(WindowMut { file, state })
+        Some(WindowMut::new(file, state))
     }
 
     #[must_use]
