@@ -20,7 +20,7 @@ pub use crate::{
     mode::{CommandMode, InsertMode, Mode, NormalMode},
     position::Position,
     range::Range,
-    rope::RopeExt,
+    rope::RopeSliceExt,
     selection::Selection,
     window::{Window, WindowKey, WindowMut},
 };

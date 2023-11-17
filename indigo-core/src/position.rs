@@ -1,4 +1,4 @@
-use crate::RopeExt as _;
+use crate::RopeSliceExt as _;
 use ropey::Rope;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]

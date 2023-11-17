@@ -1,4 +1,4 @@
-use indigo_core::{Editor, RopeExt as _};
+use indigo_core::{Editor, RopeSliceExt as _};
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
