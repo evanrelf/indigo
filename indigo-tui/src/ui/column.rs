@@ -3,9 +3,12 @@ use indigo_core::{Editor, RopeExt};
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let buffer = editor.current_file().buffer();
+    let window = editor.current_window();
 
-    let horizontal_scroll = u16::try_from(buffer.horizontal_scroll()).unwrap();
+    let buffer = window.file().buffer();
+
+    let vertical_scroll = window.vertical_scroll();
+    let horizontal_scroll = u16::try_from(window.horizontal_scroll()).unwrap();
 
     let total_lines = buffer.contents().len_lines_indigo();
 
@@ -16,7 +19,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 
     for y in area.top()..area.bottom() {
-        let line_number = usize::from(y) + buffer.vertical_scroll() + 1;
+        let line_number = usize::from(y) + vertical_scroll + 1;
 
         let line_in_buffer = line_number <= total_lines;
 

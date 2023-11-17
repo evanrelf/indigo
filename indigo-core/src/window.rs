@@ -1,4 +1,5 @@
 use crate::{File, FileKey, RopeExt};
+use std::cmp::min;
 
 slotmap::new_key_type! { pub struct WindowKey; }
 
@@ -9,16 +10,23 @@ pub struct Window<'editor> {
 }
 
 impl Window<'_> {
+    #[must_use]
     pub fn file(&self) -> &File {
-        &self.file
+        self.file
     }
 
+    #[must_use]
     pub fn vertical_scroll(&self) -> usize {
         self.state.vertical_scroll(self.file)
     }
 
+    #[must_use]
     pub fn horizontal_scroll(&self) -> usize {
         self.state.horizontal_scroll(self.file)
+    }
+
+    fn assert_valid(&self) {
+        self.state.assert_valid(self.file);
     }
 }
 
@@ -29,48 +37,52 @@ pub struct WindowMut<'editor> {
 }
 
 impl WindowMut<'_> {
+    #[must_use]
     pub fn file(&self) -> &File {
-        &self.file
+        self.file
     }
 
+    #[must_use]
     pub fn file_mut(&mut self) -> &mut File {
-        &mut self.file
+        self.file
     }
 
+    #[must_use]
     pub fn vertical_scroll(&self) -> usize {
         self.state.vertical_scroll(self.file)
     }
 
+    #[must_use]
     pub fn horizontal_scroll(&self) -> usize {
         self.state.horizontal_scroll(self.file)
     }
 
     pub fn scroll_up(&mut self, distance: usize) {
-        self.scroll_to_line(self.state.vertical_scroll.saturating_sub(distance));
+        self.scroll_to_line(self.vertical_scroll().saturating_sub(distance));
     }
 
     pub fn scroll_down(&mut self, distance: usize) {
-        self.scroll_to_line(self.state.vertical_scroll + distance);
+        self.scroll_to_line(self.vertical_scroll() + distance);
     }
 
     pub fn scroll_left(&mut self, distance: usize) {
-        self.scroll_to_column(self.state.horizontal_scroll.saturating_sub(distance));
+        self.scroll_to_column(self.horizontal_scroll().saturating_sub(distance));
     }
 
     pub fn scroll_right(&mut self, distance: usize) {
-        self.scroll_to_column(self.state.horizontal_scroll + distance);
+        self.scroll_to_column(self.horizontal_scroll() + distance);
     }
 
     pub fn scroll_to_line(&mut self, line: usize) {
-        todo!()
+        self.state.scroll_to_line(line, self.file);
     }
 
     pub fn scroll_to_column(&mut self, column: usize) {
-        self.state.horizontal_scroll = column;
+        self.state.scroll_to_column(column, self.file);
     }
 
     pub fn scroll_to_selection(&mut self, area_height: u16) {
-        todo!()
+        self.state.scroll_to_selection(area_height, self.file);
     }
 
     fn assert_valid(&self) {
@@ -78,28 +90,67 @@ impl WindowMut<'_> {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct WindowState {
-    pub(crate) file_key: FileKey,
-    pub(crate) vertical_scroll: usize,
-    pub(crate) horizontal_scroll: usize,
+    file_key: FileKey,
+    prev_vertical_scroll: usize,
+    prev_horizontal_scroll: usize,
 }
 
 impl WindowState {
-    pub(crate) fn new(file_key: FileKey) -> Self {
+    #[must_use]
+    pub fn new(file_key: FileKey) -> Self {
         Self {
             file_key,
-            vertical_scroll: 0,
-            horizontal_scroll: 0,
+            prev_vertical_scroll: 0,
+            prev_horizontal_scroll: 0,
         }
     }
 
-    fn vertical_scroll(&self, file: &File) -> usize {
-        todo!()
+    #[must_use]
+    pub fn file_key(&self) -> FileKey {
+        self.file_key
     }
 
-    fn horizontal_scroll(&self, file: &File) -> usize {
-        todo!()
+    #[must_use]
+    fn vertical_scroll(&self, file: &File) -> usize {
+        let max_scroll = file
+            .buffer()
+            .contents()
+            .len_lines_indigo()
+            .saturating_sub(1);
+        min(self.prev_vertical_scroll, max_scroll)
+    }
+
+    #[must_use]
+    fn horizontal_scroll(&self, _file: &File) -> usize {
+        self.prev_horizontal_scroll
+    }
+
+    fn scroll_to_line(&mut self, line: usize, file: &File) {
+        let max_scroll = file
+            .buffer()
+            .contents()
+            .len_lines_indigo()
+            .saturating_sub(1);
+        self.prev_vertical_scroll = min(line, max_scroll);
+    }
+
+    fn scroll_to_column(&mut self, column: usize, _file: &File) {
+        self.prev_horizontal_scroll = column;
+    }
+
+    fn scroll_to_selection(&mut self, area_height: u16, file: &File) {
+        let line = file.buffer().selection().primary().cursor().line;
+
+        let top = self.vertical_scroll(file);
+        let bottom = (top + usize::try_from(area_height).unwrap()) - 1;
+
+        if line < top {
+            self.prev_vertical_scroll = line;
+        } else if line > bottom {
+            self.prev_vertical_scroll = top + (line - bottom);
+        };
     }
 
     fn assert_valid(&self, file: &File) {

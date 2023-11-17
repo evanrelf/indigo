@@ -1,5 +1,5 @@
 use crate::ui::command;
-use indigo_core::{Buffer, Editor, Mode, Position, RopeExt};
+use indigo_core::{Editor, Mode, Position, RopeExt, Window};
 use ratatui::prelude::{Constraint, Direction, Layout, Rect};
 use std::cmp::max;
 
@@ -59,12 +59,14 @@ impl Areas {
         }
     }
 
-    pub fn to_buffer_position(self, position: (u16, u16), buffer: &Buffer) -> Option<Position> {
+    pub fn to_buffer_position(self, position: (u16, u16), window: &Window) -> Option<Position> {
+        let buffer = window.file().buffer();
+
         let (area_line, area_column) = to_area_position(position, self.buffer)?;
 
-        let buffer_line = usize::from(area_line) + buffer.vertical_scroll();
+        let buffer_line = usize::from(area_line) + window.vertical_scroll();
 
-        let buffer_column = usize::from(area_column) + buffer.horizontal_scroll();
+        let buffer_column = usize::from(area_column) + window.horizontal_scroll();
 
         let mut buffer_position = Position {
             line: buffer_line,

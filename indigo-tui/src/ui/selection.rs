@@ -3,7 +3,12 @@ use indigo_core::{Editor, Position};
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let buffer = editor.current_file().buffer();
+    let window = editor.current_window();
+
+    let vertical_scroll = window.vertical_scroll();
+    let horizontal_scroll = window.horizontal_scroll();
+
+    let buffer = window.file().buffer();
 
     let rope = &buffer.contents();
 
@@ -23,12 +28,12 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
             let buffer_line = buffer_position.line;
             let buffer_column = buffer_position.column;
 
-            let area_line = buffer_line.saturating_sub(buffer.vertical_scroll());
-            let area_column = buffer_column.saturating_sub(buffer.horizontal_scroll());
+            let area_line = buffer_line.saturating_sub(vertical_scroll);
+            let area_column = buffer_column.saturating_sub(horizontal_scroll);
 
             let position_visible = [
-                buffer_line >= buffer.vertical_scroll(),
-                buffer_column >= buffer.horizontal_scroll(),
+                buffer_line >= vertical_scroll,
+                buffer_column >= horizontal_scroll,
                 area_line < usize::from(area.height),
                 area_column < usize::from(area.width),
             ]

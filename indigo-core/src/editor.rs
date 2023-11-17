@@ -46,7 +46,7 @@ impl Editor {
 
     #[must_use]
     pub fn current_file_key(&self) -> FileKey {
-        self.windows.get(self.current_window).unwrap().file_key
+        self.windows.get(self.current_window).unwrap().file_key()
     }
 
     pub fn insert_file(&mut self, file: File) -> FileKey {
@@ -55,17 +55,14 @@ impl Editor {
 
     // TODO: remove_file
 
-    #[must_use]
     pub fn files(&self) -> impl Iterator<Item = &File> + '_ {
         self.files.values()
     }
 
-    #[must_use]
     pub fn files_mut(&mut self) -> impl Iterator<Item = &mut File> + '_ {
         self.files.values_mut()
     }
 
-    #[must_use]
     pub fn file_keys(&self) -> impl Iterator<Item = FileKey> + '_ {
         self.files.keys()
     }
@@ -73,14 +70,14 @@ impl Editor {
     #[must_use]
     pub fn get_window(&self, window_key: WindowKey) -> Option<Window> {
         let state = self.windows.get(window_key)?;
-        let file = self.files.get(state.file_key).unwrap();
+        let file = self.files.get(state.file_key()).unwrap();
         Some(Window { file, state })
     }
 
     #[must_use]
     pub fn get_window_mut(&mut self, window_key: WindowKey) -> Option<WindowMut> {
         let state = self.windows.get_mut(window_key)?;
-        let file = self.files.get_mut(state.file_key).unwrap();
+        let file = self.files.get_mut(state.file_key()).unwrap();
         Some(WindowMut { file, state })
     }
 
@@ -117,18 +114,15 @@ impl Editor {
     // TODO: remove_window
 
     // TODO
-    // #[must_use]
     // pub fn windows(&self) -> impl Iterator<Item = &Window> + '_ {
     //     self.windows.values()
     // }
 
     // TODO
-    // #[must_use]
     // pub fn windows_mut(&self) -> impl Iterator<Item = &mut Window> + '_ {
     //     self.windows.values_mut()
     // }
 
-    #[must_use]
     pub fn window_keys(&self) -> impl Iterator<Item = WindowKey> + '_ {
         self.windows.keys()
     }
@@ -153,7 +147,7 @@ impl Editor {
 
         for window_state in self.windows.values() {
             assert!(
-                self.files.contains_key(window_state.file_key),
+                self.files.contains_key(window_state.file_key()),
                 "Window's file is valid"
             );
         }

@@ -7,19 +7,21 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
         return;
     }
 
-    let buffer = editor.current_file().buffer();
+    let window = editor.current_window();
+
+    let vertical_scroll = window.vertical_scroll();
+    let horizontal_scroll = window.horizontal_scroll();
+
+    let buffer = window.file().buffer();
 
     for y in area.top()..area.bottom() {
-        let line_index = usize::from(y) + buffer.vertical_scroll();
+        let line_index = usize::from(y) + vertical_scroll;
 
         let Some(line) = buffer.contents().get_line(line_index) else {
             break;
         };
 
-        let Some(line) = line
-            .get_slice(buffer.horizontal_scroll()..)
-            .map(Cow::<str>::from)
-        else {
+        let Some(line) = line.get_slice(horizontal_scroll..).map(Cow::<str>::from) else {
             continue;
         };
 

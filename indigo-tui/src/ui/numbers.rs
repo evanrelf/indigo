@@ -7,14 +7,18 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
         return;
     }
 
-    let buffer = editor.current_file().buffer();
+    let window = editor.current_window();
+
+    let vertical_scroll = window.vertical_scroll();
+
+    let buffer = window.file().buffer();
 
     let total_lines = buffer.contents().len_lines_indigo();
 
     let number_width = usize::from(area.width) - 1;
 
     for y in area.top()..area.bottom() {
-        let line_number = usize::from(y) + buffer.vertical_scroll() + 1;
+        let line_number = usize::from(y) + vertical_scroll + 1;
 
         if line_number <= total_lines {
             surface.set_stringn(
