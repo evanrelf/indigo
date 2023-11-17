@@ -64,7 +64,7 @@ impl Position {
     }
 
     pub fn assert_valid(&self) {
-        // Positions are trivially valid
+        // `Position`s are trivially valid
     }
 }
 

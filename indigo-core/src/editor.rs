@@ -1,10 +1,10 @@
-use crate::{File, FileKey, Mode, Window, WindowKey};
+use crate::{window::WindowState, File, FileKey, Mode, Window, WindowKey, WindowMut};
 use slotmap::SlotMap;
 
 #[derive(Debug)]
 pub struct Editor {
     files: SlotMap<FileKey, File>,
-    windows: SlotMap<WindowKey, Window>,
+    windows: SlotMap<WindowKey, WindowState>,
     current_window: WindowKey,
     mode: Mode,
 }
@@ -15,7 +15,7 @@ impl Editor {
         let mut files = SlotMap::with_key();
         let mut windows = SlotMap::with_key();
         let file_key = files.insert(file);
-        let window_key = windows.insert(Window::new(file_key));
+        let window_key = windows.insert(WindowState::new(file_key));
         Self {
             files,
             windows,
@@ -46,7 +46,7 @@ impl Editor {
 
     #[must_use]
     pub fn current_file_key(&self) -> FileKey {
-        self.current_window().file()
+        self.windows.get(self.current_window).unwrap().file_key
     }
 
     pub fn insert_file(&mut self, file: File) -> FileKey {
@@ -56,28 +56,42 @@ impl Editor {
     // TODO: remove_file
 
     #[must_use]
-    pub fn files(&self) -> &SlotMap<FileKey, File> {
-        &self.files
+    pub fn files(&self) -> impl Iterator<Item = &File> + '_ {
+        self.files.values()
     }
 
     #[must_use]
-    pub fn get_window(&self, window_key: WindowKey) -> Option<&Window> {
-        self.windows.get(window_key)
+    pub fn files_mut(&mut self) -> impl Iterator<Item = &mut File> + '_ {
+        self.files.values_mut()
     }
 
     #[must_use]
-    pub fn get_window_mut(&mut self, window_key: WindowKey) -> Option<&mut Window> {
-        self.windows.get_mut(window_key)
+    pub fn file_keys(&self) -> impl Iterator<Item = FileKey> + '_ {
+        self.files.keys()
     }
 
     #[must_use]
-    pub fn current_window(&self) -> &Window {
-        self.windows.get(self.current_window).unwrap()
+    pub fn get_window(&self, window_key: WindowKey) -> Option<Window> {
+        let state = self.windows.get(window_key)?;
+        let file = self.files.get(state.file_key).unwrap();
+        Some(Window { file, state })
     }
 
     #[must_use]
-    pub fn current_window_mut(&mut self) -> &mut Window {
-        self.windows.get_mut(self.current_window).unwrap()
+    pub fn get_window_mut(&mut self, window_key: WindowKey) -> Option<WindowMut> {
+        let state = self.windows.get_mut(window_key)?;
+        let file = self.files.get_mut(state.file_key).unwrap();
+        Some(WindowMut { file, state })
+    }
+
+    #[must_use]
+    pub fn current_window(&self) -> Window {
+        self.get_window(self.current_window).unwrap()
+    }
+
+    #[must_use]
+    pub fn current_window_mut(&mut self) -> WindowMut {
+        self.get_window_mut(self.current_window).unwrap()
     }
 
     #[must_use]
@@ -93,18 +107,30 @@ impl Editor {
         Ok(())
     }
 
-    pub fn insert_window(&mut self, window: Window) -> anyhow::Result<WindowKey> {
-        if !self.files.contains_key(window.file()) {
+    pub fn insert_window(&mut self, file_key: FileKey) -> anyhow::Result<WindowKey> {
+        if !self.files.contains_key(file_key) {
             anyhow::bail!("File does not exist");
         }
-        Ok(self.windows.insert(window))
+        Ok(self.windows.insert(WindowState::new(file_key)))
     }
 
     // TODO: remove_window
 
+    // TODO
+    // #[must_use]
+    // pub fn windows(&self) -> impl Iterator<Item = &Window> + '_ {
+    //     self.windows.values()
+    // }
+
+    // TODO
+    // #[must_use]
+    // pub fn windows_mut(&self) -> impl Iterator<Item = &mut Window> + '_ {
+    //     self.windows.values_mut()
+    // }
+
     #[must_use]
-    pub fn windows(&self) -> &SlotMap<WindowKey, Window> {
-        &self.windows
+    pub fn window_keys(&self) -> impl Iterator<Item = WindowKey> + '_ {
+        self.windows.keys()
     }
 
     // TODO: Should `mode` just be `pub`? Or are there invariants that need to be enforced, so this
@@ -125,10 +151,9 @@ impl Editor {
             file.assert_valid();
         }
 
-        for window in self.windows.values() {
-            window.assert_valid();
+        for window_state in self.windows.values() {
             assert!(
-                self.files.contains_key(window.file()),
+                self.files.contains_key(window_state.file_key),
                 "Window's file is valid"
             );
         }

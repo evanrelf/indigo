@@ -22,5 +22,5 @@ pub use crate::{
     range::Range,
     rope::RopeExt,
     selection::Selection,
-    window::{Window, WindowKey},
+    window::{Window, WindowKey, WindowMut},
 };
