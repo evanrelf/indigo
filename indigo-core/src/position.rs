@@ -138,6 +138,8 @@ mod tests {
         assert!(Position::from((5, 5)) < Position::from((6, 0)));
     }
 
+    // TODO: Test strict conversion functions instead
+
     #[test]
     fn from_char_index() {
         let rope = Rope::default();
