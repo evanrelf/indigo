@@ -41,11 +41,11 @@ impl CommandMode {
         self.command.remove(self.cursor..);
     }
 
-    pub fn move_left(&mut self, distance: usize) {
+    pub fn move_backward(&mut self, distance: usize) {
         self.cursor = self.cursor.saturating_sub(distance);
     }
 
-    pub fn move_right(&mut self, distance: usize) {
+    pub fn move_forward(&mut self, distance: usize) {
         self.cursor = min(self.command.len_chars(), self.cursor + distance);
     }
 
