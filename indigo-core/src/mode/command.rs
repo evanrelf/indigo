@@ -49,6 +49,51 @@ impl CommandMode {
         self.cursor = min(self.command.len_chars(), self.cursor + distance);
     }
 
+    pub fn move_forward_word(&mut self) {
+        if self.cursor == self.command.len_chars() {
+            return;
+        }
+
+        let distance = self
+            .command
+            .slice(self.cursor..)
+            .chars()
+            .enumerate()
+            .skip_while(|(_, c)| !is_word_char(*c))
+            .skip_while(|(_, c)| is_word_char(*c))
+            .map(|(i, _)| i)
+            .next();
+
+        match distance {
+            Some(distance) => self.move_forward(distance),
+            None => self.move_line_end(),
+        }
+    }
+
+    pub fn move_backward_word(&mut self) {
+        if self.cursor == 0 {
+            return;
+        }
+
+        let distance = self
+            .command
+            .slice(..self.cursor)
+            .chars()
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .enumerate()
+            .skip_while(|(_, c)| !is_word_char(*c))
+            .skip_while(|(_, c)| is_word_char(*c))
+            .map(|(i, _)| i)
+            .next();
+
+        match distance {
+            Some(distance) => self.move_backward(distance),
+            None => self.move_line_begin(),
+        }
+    }
+
     pub fn move_line_begin(&mut self) {
         self.cursor = 0;
     }
@@ -56,4 +101,9 @@ impl CommandMode {
     pub fn move_line_end(&mut self) {
         self.cursor = self.command.len_chars();
     }
+}
+
+fn is_word_char(c: char) -> bool {
+    // TODO: Not sure if '_' or other characters should be included?
+    c.is_ascii_alphanumeric()
 }

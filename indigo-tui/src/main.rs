@@ -231,6 +231,12 @@ fn update_command(
         Event::Key(key) if k!(key, Right) || k!(key, CONTROL, 'f') => {
             command_mode.move_forward(1);
         }
+        Event::Key(key) if k!(key, Left) || k!(key, ALT, 'b') => {
+            command_mode.move_backward_word();
+        }
+        Event::Key(key) if k!(key, Right) || k!(key, ALT, 'f') => {
+            command_mode.move_forward_word();
+        }
         Event::Key(key) if k!(key, CONTROL, 'a') => {
             command_mode.move_line_begin();
         }
