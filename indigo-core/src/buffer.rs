@@ -1,10 +1,10 @@
-use crate::Selection;
+use crate::{selection2::SelectionState, Selection, SelectionMut};
 use ropey::Rope;
 
 #[derive(Clone, Debug)]
 pub struct Buffer {
     contents: Rope,
-    selection: Selection,
+    selection: SelectionState,
 }
 
 impl Buffer {
@@ -14,8 +14,17 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn selection(&self) -> &Selection {
-        &self.selection
+    pub fn selection(&self) -> Selection {
+        let rope = &self.contents;
+        let state = &self.selection;
+        Selection::new(rope, state)
+    }
+
+    #[must_use]
+    pub fn selection_mut(&mut self) -> SelectionMut {
+        let rope = &mut self.contents;
+        let state = &mut self.selection;
+        SelectionMut::new(rope, state)
     }
 
     pub fn assert_valid(&self) {
@@ -36,7 +45,7 @@ impl Default for Buffer {
     fn default() -> Self {
         Self {
             contents: Rope::from("\n"),
-            selection: Selection::default(),
+            selection: SelectionState::default(),
         }
     }
 }

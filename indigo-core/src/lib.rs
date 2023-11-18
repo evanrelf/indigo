@@ -22,6 +22,6 @@ pub use crate::{
     position::Position,
     range::Range,
     rope::RopeSliceExt,
-    selection::Selection,
+    selection2::{Selection, SelectionMut},
     window::{Window, WindowKey, WindowMut},
 };
