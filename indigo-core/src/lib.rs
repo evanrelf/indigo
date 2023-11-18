@@ -9,7 +9,6 @@ mod position;
 mod range;
 mod rope;
 mod selection;
-mod selection2;
 mod window;
 
 pub use crate::{
@@ -22,6 +21,6 @@ pub use crate::{
     position::Position,
     range::Range,
     rope::RopeSliceExt,
-    selection2::{Selection, SelectionMut},
+    selection::{Selection, SelectionMut},
     window::{Window, WindowKey, WindowMut},
 };

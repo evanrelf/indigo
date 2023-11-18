@@ -1,4 +1,4 @@
-use crate::{selection2::SelectionState, Selection, SelectionMut};
+use crate::{selection::SelectionState, Selection, SelectionMut};
 use ropey::Rope;
 
 #[derive(Clone, Debug)]
