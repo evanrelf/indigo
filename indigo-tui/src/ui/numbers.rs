@@ -1,5 +1,5 @@
 use crate::ui::colors::BG_GRAY;
-use indigo_core::{Editor, RopeSliceExt};
+use indigo_core::{Editor, RopeExt};
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {

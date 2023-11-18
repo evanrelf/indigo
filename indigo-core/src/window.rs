@@ -1,4 +1,4 @@
-use crate::{File, FileKey, RopeSliceExt};
+use crate::{File, FileKey, RopeExt as _};
 use std::cmp::min;
 
 slotmap::new_key_type! { pub struct WindowKey; }

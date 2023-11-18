@@ -1,4 +1,4 @@
-use crate::{Position, RopeExt};
+use crate::Position;
 use fancy_regex::Regex;
 use ropey::{Rope, RopeSlice};
 use std::borrow::Cow;
@@ -155,7 +155,7 @@ impl Range {
         new_range.anchor = Position::from_char_index(anchor_index + 1, rope).unwrap();
         new_range.cursor = Position::from_char_index(cursor_index + 1, rope).unwrap();
 
-        rope.insert_char_indigo(self.start(), c);
+        self.start().insert_char(c, rope).unwrap();
 
         Ok(new_range)
     }
@@ -168,7 +168,7 @@ impl Range {
         new_range.anchor = Position::from_char_index(anchor_index + s.len(), rope).unwrap();
         new_range.cursor = Position::from_char_index(cursor_index + s.len(), rope).unwrap();
 
-        rope.insert_indigo(self.start(), s);
+        self.start().insert(s, rope).unwrap();
 
         Ok(new_range)
     }

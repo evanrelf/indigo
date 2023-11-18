@@ -1,4 +1,4 @@
-use crate::RopeSliceExt as _;
+use crate::RopeExt as _;
 use ropey::Rope;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
@@ -60,6 +60,20 @@ impl Position {
     pub fn correct(&mut self, rope: &Rope) {
         let index = self.to_char_index(rope).unwrap_or_default();
         *self = Self::from_char_index(index, rope).unwrap_or_default();
+    }
+
+    pub fn insert_char(&self, c: char, rope: &mut Rope) -> anyhow::Result<Self> {
+        let index = self.to_char_index(rope).unwrap_or_default();
+        let position = Self::from_char_index(index + 1, rope).unwrap();
+        rope.try_insert_char(index, c)?;
+        Ok(position)
+    }
+
+    pub fn insert(&self, s: &str, rope: &mut Rope) -> anyhow::Result<Self> {
+        let index = self.to_char_index(rope).unwrap_or_default();
+        let position = Self::from_char_index(index + s.len(), rope).unwrap();
+        rope.try_insert(index, s)?;
+        Ok(position)
     }
 
     pub fn assert_valid(&self) {

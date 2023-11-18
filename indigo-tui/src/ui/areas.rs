@@ -1,5 +1,5 @@
 use crate::ui::command;
-use indigo_core::{Editor, Mode, Position, RopeSliceExt, Window};
+use indigo_core::{Editor, Mode, Position, RopeExt, Window};
 use ratatui::prelude::{Constraint, Direction, Layout, Rect};
 use std::cmp::max;
 
