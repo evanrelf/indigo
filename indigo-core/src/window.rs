@@ -10,6 +10,7 @@ pub struct Window<'editor> {
 }
 
 impl<'editor> Window<'editor> {
+    #[must_use]
     pub(crate) fn new(file: &'editor File, state: &'editor WindowState) -> Self {
         Self { file, state }
     }
@@ -41,6 +42,7 @@ pub struct WindowMut<'editor> {
 }
 
 impl<'editor> WindowMut<'editor> {
+    #[must_use]
     pub(crate) fn new(file: &'editor mut File, state: &'editor mut WindowState) -> Self {
         Self { file, state }
     }
