@@ -155,7 +155,7 @@ impl Range {
         new_range.anchor = Position::from_char_index(anchor_index + 1, rope).unwrap();
         new_range.cursor = Position::from_char_index(cursor_index + 1, rope).unwrap();
 
-        self.start().insert_char(c, rope).unwrap();
+        self.start().insert_char(c, rope)?;
 
         Ok(new_range)
     }
@@ -168,7 +168,7 @@ impl Range {
         new_range.anchor = Position::from_char_index(anchor_index + s.len(), rope).unwrap();
         new_range.cursor = Position::from_char_index(cursor_index + s.len(), rope).unwrap();
 
-        self.start().insert(s, rope).unwrap();
+        self.start().insert(s, rope)?;
 
         Ok(new_range)
     }

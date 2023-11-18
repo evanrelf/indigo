@@ -107,11 +107,11 @@ impl<'buffer> SelectionMut<'buffer> {
     }
 
     pub fn insert_char(&mut self, c: char) {
-        self.state.insert_char(c, self.rope);
+        self.state.insert_char(c, self.rope).unwrap();
     }
 
     pub fn insert(&mut self, s: &str) {
-        self.state.insert(s, self.rope);
+        self.state.insert(s, self.rope).unwrap();
     }
 
     pub fn assert_valid(&self) {
@@ -278,16 +278,18 @@ impl SelectionState {
         self.primary = primary;
     }
 
-    fn insert_char(&mut self, c: char, rope: &mut Rope) {
+    fn insert_char(&mut self, c: char, rope: &mut Rope) -> anyhow::Result<()> {
         for range in &mut self.ranges {
-            *range = range.insert_char(c, rope).unwrap();
+            *range = range.insert_char(c, rope)?;
         }
+        Ok(())
     }
 
-    fn insert(&mut self, s: &str, rope: &mut Rope) {
+    fn insert(&mut self, s: &str, rope: &mut Rope) -> anyhow::Result<()> {
         for range in &mut self.ranges {
-            *range = range.insert(s, rope).unwrap();
+            *range = range.insert(s, rope)?;
         }
+        Ok(())
     }
 
     pub fn assert_valid(&self) {
