@@ -3,13 +3,39 @@ use fancy_regex::Regex;
 use ropey::Rope;
 use std::borrow::Cow;
 
+#[derive(Debug)]
+pub struct Selection<'buffer> {
+    rope: &'buffer Rope,
+    state: &'buffer SelectionState,
+}
+
+impl<'buffer> Selection<'buffer> {
+    #[must_use]
+    pub(crate) fn new(rope: &'buffer Rope, state: &'buffer SelectionState) -> Self {
+        Self { rope, state }
+    }
+}
+
+#[derive(Debug)]
+pub struct SelectionMut<'buffer> {
+    rope: &'buffer mut Rope,
+    state: &'buffer mut SelectionState,
+}
+
+impl<'buffer> SelectionMut<'buffer> {
+    #[must_use]
+    pub(crate) fn new(rope: &'buffer mut Rope, state: &'buffer mut SelectionState) -> Self {
+        Self { rope, state }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Selection {
+pub(crate) struct SelectionState {
     ranges: Vec<Range>,
     primary: usize,
 }
 
-impl Default for Selection {
+impl Default for SelectionState {
     fn default() -> Self {
         Self {
             ranges: vec![Range::default()],
@@ -18,7 +44,7 @@ impl Default for Selection {
     }
 }
 
-impl Selection {
+impl SelectionState {
     #[must_use]
     pub fn ranges(&self) -> &Vec<Range> {
         &self.ranges
@@ -82,15 +108,15 @@ impl Selection {
     where
         P: Fn(&Range) -> anyhow::Result<bool>,
     {
-        let mut selection = self.clone();
+        let mut selection_state = self.clone();
 
         for (i, range) in self.ranges.iter().enumerate() {
             if !predicate(range)? {
-                selection.remove(i)?;
+                selection_state.remove(i)?;
             }
         }
 
-        *self = selection;
+        *self = selection_state;
 
         Ok(())
     }
@@ -182,7 +208,7 @@ impl Selection {
     }
 }
 
-impl From<Range> for Selection {
+impl From<Range> for SelectionState {
     fn from(range: Range) -> Self {
         Self {
             ranges: vec![range],
