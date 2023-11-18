@@ -1,5 +1,6 @@
 mod buffer;
 pub mod command;
+mod conversion;
 mod editor;
 mod file;
 mod key;
@@ -14,6 +15,7 @@ mod window;
 pub use crate::{
     buffer::Buffer,
     command::Command,
+    conversion::Conversion,
     editor::Editor,
     file::{File, FileKey},
     key::{Key, KeyCode, KeyModifier, Keys},
