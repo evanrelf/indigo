@@ -9,6 +9,7 @@ mod position;
 mod range;
 mod rope;
 mod selection;
+mod selection2;
 mod window;
 
 pub use crate::{
