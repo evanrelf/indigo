@@ -283,16 +283,30 @@ impl SelectionState {
     }
 
     fn insert_char(&mut self, c: char, rope: &mut Rope) -> anyhow::Result<()> {
-        for range in &mut self.ranges {
-            *range = range.insert_char(c, rope)?;
+        let mut new_rope = rope.clone();
+        let mut new_ranges = Vec::with_capacity(self.ranges.len());
+
+        for range in &self.ranges {
+            new_ranges.push(range.insert_char(c, &mut new_rope)?);
         }
+
+        *rope = new_rope;
+        self.ranges = new_ranges;
+
         Ok(())
     }
 
     fn insert(&mut self, s: &str, rope: &mut Rope) -> anyhow::Result<()> {
-        for range in &mut self.ranges {
-            *range = range.insert(s, rope)?;
+        let mut new_rope = rope.clone();
+        let mut new_ranges = Vec::with_capacity(self.ranges.len());
+
+        for range in &self.ranges {
+            new_ranges.push(range.insert(s, &mut new_rope)?);
         }
+
+        *rope = new_rope;
+        self.ranges = new_ranges;
+
         Ok(())
     }
 
