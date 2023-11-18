@@ -151,7 +151,7 @@ impl WindowState {
     }
 
     fn scroll_to_selection(&mut self, area_height: u16, file: &File) {
-        let line = file.buffer().selection().primary().cursor().line;
+        let line = file.buffer().selection().primary_range().cursor().line;
 
         let top = self.vertical_scroll(file);
         let bottom = (top + usize::try_from(area_height).unwrap()) - 1;

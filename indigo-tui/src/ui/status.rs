@@ -14,7 +14,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let path = file.path();
 
-    let Position { line, column } = buffer.selection().primary().cursor();
+    let Position { line, column } = buffer.selection().primary_range().cursor();
 
     let count = buffer.selection().ranges().len();
 
