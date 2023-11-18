@@ -1,5 +1,4 @@
 use crate::Position;
-use anyhow::Context as _;
 use fancy_regex::Regex;
 use ropey::{Rope, RopeSlice};
 use std::borrow::Cow;
@@ -118,7 +117,8 @@ impl Range {
         }
     }
 
-    pub fn select(&self, rope: &Rope, regex: &Regex) -> anyhow::Result<Vec<Self>> {
+    #[must_use]
+    pub fn select(&self, rope: &Rope, regex: &Regex) -> Option<Vec<Self>> {
         let offset = self.start().to_char_index(rope).unwrap_or_default();
 
         let rope_slice = self.to_rope_slice(rope)?;
@@ -144,22 +144,21 @@ impl Range {
             })
             .collect();
 
-        Ok(ranges)
+        Some(ranges)
     }
 
-    pub fn to_rope_slice<'rope>(&self, rope: &'rope Rope) -> anyhow::Result<RopeSlice<'rope>> {
-        let anchor_index = self.anchor.to_char_index(rope)?;
-        let cursor_index = self.cursor.to_char_index(rope)?;
+    #[must_use]
+    pub fn to_rope_slice<'rope>(&self, rope: &'rope Rope) -> Option<RopeSlice<'rope>> {
+        let anchor_index = self.anchor.to_char_index(rope).ok()?;
+        let cursor_index = self.cursor.to_char_index(rope).ok()?;
 
         let slice = if self.is_forward() {
-            rope.get_slice(anchor_index..=cursor_index)
-                .context("Failed to get forward slice")?
+            rope.get_slice(anchor_index..=cursor_index)?
         } else {
-            rope.get_slice(cursor_index..=anchor_index)
-                .context("Failed to get backward slice")?
+            rope.get_slice(cursor_index..=anchor_index)?
         };
 
-        Ok(slice)
+        Some(slice)
     }
 
     pub fn assert_valid(&self) {

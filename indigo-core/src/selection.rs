@@ -1,4 +1,5 @@
 use crate::Range;
+use anyhow::Context as _;
 use fancy_regex::Regex;
 use ropey::Rope;
 use std::borrow::Cow;
@@ -224,7 +225,9 @@ impl SelectionState {
         let mut ranges = Vec::new();
 
         for range in &self.ranges {
-            let mut sub_ranges = range.select(rope, regex)?;
+            let mut sub_ranges = range
+                .select(rope, regex)
+                .context("Failed to select in range")?;
             ranges.append(&mut sub_ranges);
         }
 
@@ -240,7 +243,9 @@ impl SelectionState {
 
     pub fn keep(&mut self, regex: &Regex, rope: &Rope) -> anyhow::Result<()> {
         self.filter(|range| {
-            let rope_slice = range.to_rope_slice(rope)?;
+            let rope_slice = range
+                .to_rope_slice(rope)
+                .context("Failed to get rope slice")?;
             let string_slice = Cow::<str>::from(rope_slice);
             let keep = regex.is_match(&string_slice)?;
             Ok(keep)
