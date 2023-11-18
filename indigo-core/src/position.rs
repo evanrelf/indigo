@@ -84,23 +84,29 @@ impl Position {
         *self = Self::from_char_index(index, rope).unwrap_or_default();
     }
 
-    // TODO: Bring back corrected return value so we can be more strict with insertion functions
-
     pub fn insert_char(&self, c: char, rope: &mut Rope) -> anyhow::Result<Self> {
-        // TODO: Fail if position isn't valid, without correction
-        let index = self.to_char_index(rope).unwrap_or_default();
+        let Ok(Conversion::Valid(index)) = self.to_char_index_strict(rope) else {
+            anyhow::bail!("Position isn't valid in rope");
+        };
+
         let position = Self::from_char_index(index + 1, rope)
             .expect("position is valid because it comes from a known valid index");
+
         rope.try_insert_char(index, c)?;
+
         Ok(position)
     }
 
     pub fn insert(&self, s: &str, rope: &mut Rope) -> anyhow::Result<Self> {
-        // TODO: Fail if position isn't valid, without correction
-        let index = self.to_char_index(rope).unwrap_or_default();
+        let Ok(Conversion::Valid(index)) = self.to_char_index_strict(rope) else {
+            anyhow::bail!("Position isn't valid in rope");
+        };
+
         let position = Self::from_char_index(index + s.len(), rope)
             .expect("position is valid because it comes from a known valid index");
+
         rope.try_insert(index, s)?;
+
         Ok(position)
     }
 
