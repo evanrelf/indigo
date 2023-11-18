@@ -110,6 +110,10 @@ impl<'buffer> SelectionMut<'buffer> {
         self.state.insert_char(c, self.rope);
     }
 
+    pub fn insert(&mut self, s: &str) {
+        self.state.insert(s, self.rope);
+    }
+
     pub fn assert_valid(&self) {
         self.state.assert_valid();
     }
@@ -277,6 +281,12 @@ impl SelectionState {
     fn insert_char(&mut self, c: char, rope: &mut Rope) {
         for range in &mut self.ranges {
             *range = range.insert_char(c, rope).unwrap();
+        }
+    }
+
+    fn insert(&mut self, s: &str, rope: &mut Rope) {
+        for range in &mut self.ranges {
+            *range = range.insert(s, rope).unwrap();
         }
     }
 

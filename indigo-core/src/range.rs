@@ -160,6 +160,19 @@ impl Range {
         Ok(new_range)
     }
 
+    pub fn insert(&self, s: &str, rope: &mut Rope) -> anyhow::Result<Self> {
+        let anchor_index = self.anchor.to_char_index(rope)?;
+        let cursor_index = self.cursor.to_char_index(rope)?;
+
+        let mut new_range = *self;
+        new_range.anchor = Position::from_char_index(anchor_index + s.len(), rope).unwrap();
+        new_range.cursor = Position::from_char_index(cursor_index + s.len(), rope).unwrap();
+
+        rope.insert_indigo(self.start(), s);
+
+        Ok(new_range)
+    }
+
     #[must_use]
     pub fn to_rope_slice<'rope>(&self, rope: &'rope Rope) -> Option<RopeSlice<'rope>> {
         let anchor_index = self.anchor.to_char_index(rope).ok()?;
