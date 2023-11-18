@@ -182,6 +182,20 @@ fn update_normal(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Re
 
 fn update_insert(editor: &mut Editor, _areas: Areas, event: &Event) -> anyhow::Result<ControlFlow> {
     match event {
+        Event::Key(key)
+            if matches!(key.code, KeyCode::Char(_))
+                && (key.modifiers == key_modifiers!()
+                    || key.modifiers == key_modifiers!(SHIFT)) =>
+        {
+            let KeyCode::Char(c) = key.code else {
+                unreachable!();
+            };
+            editor
+                .current_file_mut()
+                .buffer_mut()
+                .selection_mut()
+                .insert_char(c);
+        }
         // Modes
         Event::Key(key) if k!(key, Esc) => {
             *editor.mode_mut() = Mode::Normal(NormalMode::default());

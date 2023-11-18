@@ -106,6 +106,10 @@ impl<'buffer> SelectionMut<'buffer> {
         self.state.merge_ranges();
     }
 
+    pub fn insert_char(&mut self, c: char) {
+        self.state.insert_char(c, self.rope);
+    }
+
     pub fn assert_valid(&self) {
         self.state.assert_valid();
     }
@@ -128,17 +132,17 @@ impl Default for SelectionState {
 
 impl SelectionState {
     #[must_use]
-    pub fn ranges(&self) -> &Vec<Range> {
+    fn ranges(&self) -> &Vec<Range> {
         &self.ranges
     }
 
     #[must_use]
-    pub fn primary_range(&self) -> Range {
+    fn primary_range(&self) -> Range {
         self.ranges[self.primary]
     }
 
     #[must_use]
-    pub fn ranges_overlapping(&self) -> bool {
+    fn ranges_overlapping(&self) -> bool {
         // TODO: omg this is so inefficient
         for (i1, r1) in self.ranges.iter().enumerate() {
             for (i2, r2) in self.ranges.iter().enumerate() {
@@ -153,7 +157,7 @@ impl SelectionState {
         false
     }
 
-    pub fn set_primary_range(&mut self, index: usize) -> anyhow::Result<()> {
+    fn set_primary_range(&mut self, index: usize) -> anyhow::Result<()> {
         if index >= self.ranges.len() {
             anyhow::bail!("Invalid range index {index}");
         }
@@ -161,14 +165,14 @@ impl SelectionState {
         Ok(())
     }
 
-    pub fn insert_range(&mut self, range: Range) {
+    fn insert_range(&mut self, range: Range) {
         let index = match self.ranges.binary_search(&range) {
             Ok(index) | Err(index) => index, // TODO: Merge overlapping ranges?
         };
         self.ranges.insert(index, range);
     }
 
-    pub fn remove_range(&mut self, index: usize) -> anyhow::Result<()> {
+    fn remove_range(&mut self, index: usize) -> anyhow::Result<()> {
         if self.ranges.len() <= 1 {
             anyhow::bail!("Cannot remove final range");
         }
@@ -186,7 +190,7 @@ impl SelectionState {
         Ok(())
     }
 
-    pub fn filter_ranges<P>(&mut self, predicate: P) -> anyhow::Result<()>
+    fn filter_ranges<P>(&mut self, predicate: P) -> anyhow::Result<()>
     where
         P: Fn(&Range) -> anyhow::Result<bool>,
     {
@@ -203,25 +207,25 @@ impl SelectionState {
         Ok(())
     }
 
-    pub fn flip_ranges(&mut self) {
+    fn flip_ranges(&mut self) {
         for range in &mut self.ranges {
             range.flip();
         }
     }
 
-    pub fn flip_ranges_forward(&mut self) {
+    fn flip_ranges_forward(&mut self) {
         for range in &mut self.ranges {
             range.flip_forward();
         }
     }
 
-    pub fn flip_ranges_backward(&mut self) {
+    fn flip_ranges_backward(&mut self) {
         for range in &mut self.ranges {
             range.flip_backward();
         }
     }
 
-    pub fn select_ranges(&mut self, regex: &Regex, rope: &Rope) -> anyhow::Result<()> {
+    fn select_ranges(&mut self, regex: &Regex, rope: &Rope) -> anyhow::Result<()> {
         let mut ranges = Vec::new();
 
         for range in &self.ranges {
@@ -241,7 +245,7 @@ impl SelectionState {
         Ok(())
     }
 
-    pub fn keep_ranges(&mut self, regex: &Regex, rope: &Rope) -> anyhow::Result<()> {
+    fn keep_ranges(&mut self, regex: &Regex, rope: &Rope) -> anyhow::Result<()> {
         self.filter_ranges(|range| {
             let rope_slice = range
                 .to_rope_slice(rope)
@@ -252,7 +256,7 @@ impl SelectionState {
         })
     }
 
-    pub fn merge_ranges(&mut self) {
+    fn merge_ranges(&mut self) {
         let mut ranges: Vec<Range> = Vec::new();
         let mut primary = self.primary;
 
@@ -268,6 +272,12 @@ impl SelectionState {
 
         self.ranges = ranges;
         self.primary = primary;
+    }
+
+    fn insert_char(&mut self, c: char, rope: &mut Rope) {
+        for range in &mut self.ranges {
+            *range = range.insert_char(c, rope).unwrap();
+        }
     }
 
     pub fn assert_valid(&self) {
