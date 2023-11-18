@@ -27,7 +27,7 @@ impl<'buffer> Selection<'buffer> {
     }
 
     #[must_use]
-    pub fn is_overlapping(&self) -> bool {
+    pub fn ranges_overlapping(&self) -> bool {
         self.state.ranges_overlapping()
     }
 
