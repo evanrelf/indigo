@@ -81,7 +81,11 @@ fn run(mut editor: Editor) -> anyhow::Result<ExitCode> {
 
         let event = crossterm::event::read().context("Failed to get next crossterm event")?;
 
-        tracing::trace!(?event);
+        if matches!(event, Event::Mouse(_)) {
+            tracing::trace!(?event);
+        } else {
+            tracing::debug!(?event);
+        }
 
         match update(&mut editor, areas, &event).context("Failed to update state")? {
             ControlFlow::Continue => {}
