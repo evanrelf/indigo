@@ -36,12 +36,14 @@ impl Editor {
 
     #[must_use]
     pub fn current_file(&self) -> &File {
-        self.get_file(self.current_file_key()).unwrap()
+        self.get_file(self.current_file_key())
+            .expect("current file key is always valid")
     }
 
     #[must_use]
     pub fn current_file_mut(&mut self) -> &mut File {
-        self.get_file_mut(self.current_file_key()).unwrap()
+        self.get_file_mut(self.current_file_key())
+            .expect("current file key is always valid")
     }
 
     #[must_use]
@@ -83,12 +85,14 @@ impl Editor {
 
     #[must_use]
     pub fn current_window(&self) -> Window {
-        self.get_window(self.current_window).unwrap()
+        self.get_window(self.current_window)
+            .expect("current window key is always valid")
     }
 
     #[must_use]
     pub fn current_window_mut(&mut self) -> WindowMut {
-        self.get_window_mut(self.current_window).unwrap()
+        self.get_window_mut(self.current_window)
+            .expect("current window key is always valid")
     }
 
     #[must_use]

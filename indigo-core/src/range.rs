@@ -119,7 +119,7 @@ impl Range {
 
     #[must_use]
     pub fn select(&self, rope: &Rope, regex: &Regex) -> Option<Vec<Self>> {
-        let offset = self.start().to_char_index(rope).unwrap_or_default();
+        let offset = self.start().to_char_index(rope).ok()?;
 
         let rope_slice = self.to_rope_slice(rope)?;
 
@@ -152,8 +152,10 @@ impl Range {
         let cursor_index = self.cursor.to_char_index(rope)?;
 
         let mut new_range = *self;
-        new_range.anchor = Position::from_char_index(anchor_index + 1, rope).unwrap();
-        new_range.cursor = Position::from_char_index(cursor_index + 1, rope).unwrap();
+        new_range.anchor = Position::from_char_index(anchor_index + 1, rope)
+            .expect("position is valid because it comes from a known valid index");
+        new_range.cursor = Position::from_char_index(cursor_index + 1, rope)
+            .expect("position is valid because it comes from a known valid index");
 
         self.start().insert_char(c, rope)?;
 
@@ -165,8 +167,10 @@ impl Range {
         let cursor_index = self.cursor.to_char_index(rope)?;
 
         let mut new_range = *self;
-        new_range.anchor = Position::from_char_index(anchor_index + s.len(), rope).unwrap();
-        new_range.cursor = Position::from_char_index(cursor_index + s.len(), rope).unwrap();
+        new_range.anchor = Position::from_char_index(anchor_index + s.len(), rope)
+            .expect("position is valid because it comes from a known valid index");
+        new_range.cursor = Position::from_char_index(cursor_index + s.len(), rope)
+            .expect("position is valid because it comes from a known valid index");
 
         self.start().insert(s, rope)?;
 

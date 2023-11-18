@@ -17,7 +17,9 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 
     for range in buffer.selection().ranges() {
-        let range_slice = range.to_rope_slice(rope).unwrap();
+        let range_slice = range
+            .to_rope_slice(rope)
+            .expect("buffer ranges are always valid");
 
         let range_start_index = range.start().to_char_index(rope).unwrap_or_default();
 

@@ -154,7 +154,7 @@ impl WindowState {
         let line = file.buffer().selection().primary_range().cursor().line;
 
         let top = self.vertical_scroll(file);
-        let bottom = (top + usize::try_from(area_height).unwrap()) - 1;
+        let bottom = (top + usize::from(area_height)) - 1;
 
         if line < top {
             self.prev_vertical_scroll = line;

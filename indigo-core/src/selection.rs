@@ -107,11 +107,15 @@ impl<'buffer> SelectionMut<'buffer> {
     }
 
     pub fn insert_char(&mut self, c: char) {
-        self.state.insert_char(c, self.rope).unwrap();
+        self.state
+            .insert_char(c, self.rope)
+            .expect("insert never fails because selection positions are always valid");
     }
 
     pub fn insert(&mut self, s: &str) {
-        self.state.insert(s, self.rope).unwrap();
+        self.state
+            .insert(s, self.rope)
+            .expect("insert never fails because selection positions are always valid");
     }
 
     pub fn assert_valid(&self) {
