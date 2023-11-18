@@ -25,6 +25,7 @@ impl RopeSliceExt for Rope {
     }
 }
 
+// TODO: Remove, move code to `position` module
 pub trait RopeExt {
     fn try_insert_char_indigo(&mut self, position: Position, c: char) -> anyhow::Result<Position>;
 
