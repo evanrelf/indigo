@@ -200,6 +200,13 @@ fn update_insert(editor: &mut Editor, _areas: Areas, event: &Event) -> anyhow::R
                 .selection_mut()
                 .insert_char(c);
         }
+        Event::Paste(s) => {
+            editor
+                .current_file_mut()
+                .buffer_mut()
+                .selection_mut()
+                .insert(s);
+        }
         // Modes
         Event::Key(key) if k!(key, Esc) => {
             *editor.mode_mut() = Mode::Normal(NormalMode::default());
@@ -262,6 +269,9 @@ fn update_command(
                 unreachable!();
             };
             command_mode.insert_char(c);
+        }
+        Event::Paste(s) => {
+            command_mode.insert(s);
         }
         Event::Key(key) if k!(key, Backspace) => {
             if command_mode.command().len_chars() == 0 {

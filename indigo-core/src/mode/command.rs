@@ -24,6 +24,11 @@ impl CommandMode {
         self.cursor += 1;
     }
 
+    pub fn insert(&mut self, s: &str) {
+        self.command.insert(self.cursor, s);
+        self.cursor += s.len();
+    }
+
     pub fn backspace(&mut self) {
         if self.cursor > 0 {
             let cursor = self.cursor - 1;
