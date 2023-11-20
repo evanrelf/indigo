@@ -45,6 +45,7 @@ pub fn enter() -> anyhow::Result<TerminalGuard> {
         terminal::EnterAlternateScreen,
         cursor::Hide,
         event::EnableMouseCapture,
+        event::EnableBracketedPaste,
         event::PushKeyboardEnhancementFlags(
             KEF::DISAMBIGUATE_ESCAPE_CODES
                 | KEF::REPORT_EVENT_TYPES
@@ -75,6 +76,7 @@ pub fn exit() -> anyhow::Result<()> {
     crossterm::execute!(
         stdout,
         event::PopKeyboardEnhancementFlags,
+        event::DisableBracketedPaste,
         event::DisableMouseCapture,
         cursor::Show,
         terminal::LeaveAlternateScreen,
