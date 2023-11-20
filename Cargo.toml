@@ -6,7 +6,6 @@ members = ["indigo-*"]
 anyhow = "1.0.75"
 camino = "1.1.6"
 clap = { version = "4.4.8", default-features = false, features = ["derive", "error-context", "help", "std", "usage"] }
-clap-verbosity-flag = "2.1.0"
 crossterm = { version = "0.27.0", default-features = false, features = ["bracketed-paste", "events"] }
 fancy-regex = "0.11.0"
 flagset = "0.4.4"
@@ -18,7 +17,6 @@ ropey = { version = "1.6.1", default-features = false, features = ["simd"] }
 shell-words = "1.1.0"
 slotmap = "1.0.6"
 tracing = "0.1.40"
-tracing-log = { version = "0.2.0", default-features = false, features = ["std"] }
 tracing-subscriber = { version = "0.3.18", default-features = false, features = ["fmt", "std"] }
 winnow = "0.5.19"
 

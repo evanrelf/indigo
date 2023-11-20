@@ -9,14 +9,12 @@ use crate::{
 use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
-use clap_verbosity_flag::Verbosity;
 use crossterm::event::{Event, KeyCode, MouseEventKind};
 use indigo_core::{
     command::{self, Quit},
     Command, CommandMode, Editor, File, InsertMode, Mode, NormalMode,
 };
 use std::process::ExitCode;
-use tracing_log::AsTrace as _;
 
 #[derive(clap::Parser)]
 struct Args {
@@ -26,9 +24,6 @@ struct Args {
     /// Write logs to file for debugging
     #[arg(long)]
     log_file: Option<Utf8PathBuf>,
-
-    #[command(flatten)]
-    verbosity: Verbosity,
 }
 
 fn main() -> anyhow::Result<ExitCode> {
@@ -41,10 +36,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
     if let Some(path) = args.log_file {
         let file = std::fs::File::create(path).context("Failed to create log file")?;
-        tracing_subscriber::fmt()
-            .with_max_level(args.verbosity.log_level_filter().as_trace())
-            .with_writer(file)
-            .init();
+        tracing_subscriber::fmt().with_writer(file).init();
     }
 
     let editor = match args.files.split_first() {

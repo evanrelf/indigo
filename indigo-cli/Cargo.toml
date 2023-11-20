@@ -7,10 +7,8 @@ edition = "2021"
 anyhow = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
-clap-verbosity-flag = { workspace = true }
 indigo-core = { workspace = true }
 tracing = { workspace = true }
-tracing-log = { workspace = true }
 tracing-subscriber = { workspace = true }
 
 [lints]
