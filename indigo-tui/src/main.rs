@@ -110,6 +110,8 @@ macro_rules! quit {
 
 pub(crate) use quit;
 
+// TODO: Treat `CONTROL 'B'` like `CONTROL SHIFT 'b'`
+
 fn update(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Result<ControlFlow> {
     match editor.mode() {
         Mode::Normal(_) => update_normal(editor, areas, event),
