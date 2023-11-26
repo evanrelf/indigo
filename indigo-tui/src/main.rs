@@ -198,6 +198,13 @@ fn update_insert(editor: &mut Editor, _areas: Areas, event: &Event) -> anyhow::R
                 .selection_mut()
                 .insert_char(c);
         }
+        Event::Key(key) if k!(key, Enter) => {
+            editor
+                .current_file_mut()
+                .buffer_mut()
+                .selection_mut()
+                .insert_char('\n');
+        }
         Event::Paste(s) => {
             editor
                 .current_file_mut()

@@ -4,8 +4,6 @@ A text editor
 
 ## Todo
 
-- **Handle `<enter>` key in insert mode.**
-
 - **Handle `<backspace>` key in insert mode.**
 
 - **Move key event handling to `indigo-core`.**
