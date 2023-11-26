@@ -11,6 +11,20 @@ impl<T> Conversion<T> {
         }
     }
 
+    pub fn corrected(self) -> Option<T> {
+        match self {
+            Self::Corrected(t) => Some(t),
+            Self::Valid(_) => None,
+        }
+    }
+
+    pub fn valid(self) -> Option<T> {
+        match self {
+            Self::Corrected(_) => None,
+            Self::Valid(t) => Some(t),
+        }
+    }
+
     pub fn is_corrected(&self) -> bool {
         matches!(self, Self::Corrected(_))
     }
