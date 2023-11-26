@@ -1,4 +1,5 @@
-use crate::Position;
+use crate::{Conversion, Position};
+use anyhow::Context as _;
 use fancy_regex::Regex;
 use ropey::{Rope, RopeSlice};
 use std::borrow::Cow;
@@ -151,28 +152,54 @@ impl Range {
         let anchor_index = self.anchor.to_char_index(rope)?;
         let cursor_index = self.cursor.to_char_index(rope)?;
 
+        let mut new_rope = rope.clone();
+
+        self.start().insert_char(c, &mut new_rope)?;
+
         let mut new_range = *self;
-        new_range.anchor = Position::from_char_index(anchor_index + 1, rope)
-            .expect("position is valid because it comes from a known valid index");
-        new_range.cursor = Position::from_char_index(cursor_index + 1, rope)
+
+        new_range.anchor = Position::from_char_index_strict(anchor_index + 1, &new_rope)
+            .ok()
+            .and_then(Conversion::valid)
             .expect("position is valid because it comes from a known valid index");
 
-        self.start().insert_char(c, rope)?;
+        new_range.cursor = Position::from_char_index_strict(cursor_index + 1, &new_rope)
+            .ok()
+            .and_then(Conversion::valid)
+            .expect("position is valid because it comes from a known valid index");
+
+        *rope = new_rope;
 
         Ok(new_range)
     }
 
     pub fn insert(&self, s: &str, rope: &mut Rope) -> anyhow::Result<Self> {
-        let anchor_index = self.anchor.to_char_index(rope)?;
-        let cursor_index = self.cursor.to_char_index(rope)?;
+        let Ok(Conversion::Valid(anchor_index)) = self.anchor.to_char_index_strict(rope) else {
+            anyhow::bail!("Anchor position is invalid");
+        };
+        let Ok(Conversion::Valid(cursor_index)) = self.cursor.to_char_index_strict(rope) else {
+            anyhow::bail!("Cursor position is invalid");
+        };
+
+        let mut new_rope = rope.clone();
+
+        self.start()
+            .insert(s, &mut new_rope)
+            .context("Failed to insert at start of range")?;
 
         let mut new_range = *self;
-        new_range.anchor = Position::from_char_index(anchor_index + s.len(), rope)
-            .expect("position is valid because it comes from a known valid index");
-        new_range.cursor = Position::from_char_index(cursor_index + s.len(), rope)
+
+        new_range.anchor = Position::from_char_index_strict(anchor_index + s.len(), &new_rope)
+            .ok()
+            .and_then(Conversion::valid)
             .expect("position is valid because it comes from a known valid index");
 
-        self.start().insert(s, rope)?;
+        new_range.cursor = Position::from_char_index_strict(cursor_index + s.len(), &new_rope)
+            .ok()
+            .and_then(Conversion::valid)
+            .expect("position is valid because it comes from a known valid index");
+
+        *rope = new_rope;
 
         Ok(new_range)
     }

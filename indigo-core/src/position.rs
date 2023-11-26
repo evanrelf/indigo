@@ -89,12 +89,18 @@ impl Position {
             anyhow::bail!("Position isn't valid in rope");
         };
 
-        let position = Self::from_char_index(index + 1, rope)
+        let mut new_rope = rope.clone();
+
+        new_rope.try_insert_char(index, c)?;
+
+        let new_position = Self::from_char_index_strict(index + 1, &new_rope)
+            .ok()
+            .and_then(Conversion::valid)
             .expect("position is valid because it comes from a known valid index");
 
-        rope.try_insert_char(index, c)?;
+        *rope = new_rope;
 
-        Ok(position)
+        Ok(new_position)
     }
 
     pub fn insert(&self, s: &str, rope: &mut Rope) -> anyhow::Result<Self> {
@@ -102,12 +108,18 @@ impl Position {
             anyhow::bail!("Position isn't valid in rope");
         };
 
-        let position = Self::from_char_index(index + s.len(), rope)
+        let mut new_rope = rope.clone();
+
+        new_rope.try_insert(index, s)?;
+
+        let new_position = Self::from_char_index_strict(index + s.len(), &new_rope)
+            .ok()
+            .and_then(Conversion::valid)
             .expect("position is valid because it comes from a known valid index");
 
-        rope.try_insert(index, s)?;
+        *rope = new_rope;
 
-        Ok(position)
+        Ok(new_position)
     }
 
     pub fn assert_valid(&self) {

@@ -4,21 +4,6 @@ A text editor
 
 ## Todo
 
-- **Fix panic when inserting newlines.**
-
-  Panic message:
-
-  ```
-  thread 'main' panicked at indigo-core/src/selection.rs:118:14:
-  insert never fails because selection positions are always valid: Position isn't valid in rope
-  ```
-
-  Reproduction:
-
-  1. Run `echo -ne "\n" | pbcopy`.
-  2. Run `cargo run --bin indigo-tui -- (echo "foo" | psub)`.
-  3. Press `i` to enter insert mode, then paste twice.
-
 - **Handle `<enter>` key in insert mode.**
 
 - **Handle `<backspace>` key in insert mode.**

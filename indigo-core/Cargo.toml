@@ -15,8 +15,9 @@ fancy-regex = { workspace = true }
 flagset = { workspace = true }
 ropey = { workspace = true }
 shell-words = { workspace = true }
-winnow = { workspace = true }
 slotmap = { workspace = true }
+tracing = { workspace = true }
+winnow = { workspace = true }
 
 [dev-dependencies]
 quickcheck = { workspace = true }
