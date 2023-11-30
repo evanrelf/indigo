@@ -26,7 +26,8 @@ struct Args {
     log_file: Option<Utf8PathBuf>,
 }
 
-fn main() -> anyhow::Result<ExitCode> {
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> anyhow::Result<ExitCode> {
     #[cfg(debug_assertions)]
     if std::env::var("RUST_BACKTRACE").is_err() {
         std::env::set_var("RUST_BACKTRACE", "1");
@@ -48,10 +49,16 @@ fn main() -> anyhow::Result<ExitCode> {
         None => Editor::new(File::default()),
         Some((path, paths)) => {
             // TODO: Get rid of clones
-            let file = File::open(path.clone()).context("Failed to open file")?;
+            let file = File::open(path.clone())
+                .await
+                .context("Failed to open file")?;
             let mut editor = Editor::new(file);
             for path in paths {
-                editor.insert_file(File::open(path.clone()).context("Failed to open file")?);
+                editor.insert_file(
+                    File::open(path.clone())
+                        .await
+                        .context("Failed to open file")?,
+                );
             }
             editor
         }

@@ -2,7 +2,9 @@ use crate::Buffer;
 use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use ropey::Rope;
-use std::{io::BufReader, path::PathBuf};
+use std::path::PathBuf;
+use tokio::io::BufReader;
+use tokio_util::io::SyncIoBridge;
 
 slotmap::new_key_type! { pub struct FileKey; }
 
@@ -50,18 +52,24 @@ impl File {
         self.is_read_only
     }
 
-    pub fn open(path: Utf8PathBuf) -> anyhow::Result<Self> {
-        let file =
-            std::fs::File::open(PathBuf::from(path.clone())).context("Failed to open file")?;
+    pub async fn open(path: Utf8PathBuf) -> anyhow::Result<Self> {
+        let file = tokio::fs::File::open(PathBuf::from(path.clone()))
+            .await
+            .context("Failed to open file")?;
 
         let is_read_only = file
             .metadata()
+            .await
             .context("Failed to get file metadata")?
             .permissions()
             .readonly();
 
-        let rope =
-            Rope::from_reader(BufReader::new(file)).context("Failed to read file into rope")?;
+        let rope = tokio::task::spawn_blocking(|| {
+            Rope::from_reader(SyncIoBridge::new(BufReader::new(file)))
+        })
+        .await
+        .context("Failed to execute task")?
+        .context("Failed to read file into rope")?;
 
         let empty = rope.len_chars() == 0;
 

@@ -16,6 +16,8 @@ flagset = { workspace = true }
 ropey = { workspace = true }
 shell-words = { workspace = true }
 slotmap = { workspace = true }
+tokio = { workspace = true, features = ["fs", "io-util"] }
+tokio-util = { workspace = true, features = ["io-util"] }
 tracing = { workspace = true }
 winnow = { workspace = true }
 
