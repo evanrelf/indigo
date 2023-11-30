@@ -1,5 +1,5 @@
 use crate::ui::command;
-use indigo_core::{Editor, Mode, Position, RopeExt, Window};
+use indigo_core::{settings::Numbers, Editor, Mode, Position, RopeExt, Window};
 use ratatui::prelude::{Constraint, Direction, Layout, Rect};
 use std::cmp::max;
 
@@ -28,21 +28,20 @@ impl Areas {
             ])
             .split(area);
 
-        let numbers_width = {
-            let n = editor.current_file().buffer().contents().len_lines_indigo();
-            let digits = 1 + max(1, n).ilog10();
-            u16::try_from(max(2, digits) + 1).unwrap()
+        let numbers_width = match editor.settings.numbers {
+            Numbers::Hidden => 0,
+            Numbers::Absolute => {
+                let n = editor.current_file().buffer().contents().len_lines_indigo();
+                let digits = 1 + max(1, n).ilog10();
+                u16::try_from(max(2, digits) + 1).unwrap()
+            }
         };
 
         let horizontal = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
                 // numbers
-                Constraint::Length(if editor.settings.numbers {
-                    numbers_width
-                } else {
-                    0
-                }),
+                Constraint::Length(numbers_width),
                 // buffer
                 Constraint::Min(0),
             ])

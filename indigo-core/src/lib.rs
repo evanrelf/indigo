@@ -10,7 +10,7 @@ mod position;
 mod range;
 mod rope;
 mod selection;
-mod settings;
+pub mod settings;
 mod window;
 
 pub use crate::{
