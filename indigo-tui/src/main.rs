@@ -15,7 +15,6 @@ use indigo_core::{
     Command, CommandMode, Editor, File, InsertMode, Mode, NormalMode,
 };
 use std::process::ExitCode;
-use tracing::Level;
 
 #[derive(clap::Parser)]
 struct Args {
@@ -36,11 +35,13 @@ fn main() -> anyhow::Result<ExitCode> {
     let args = Args::parse();
 
     if let Some(path) = args.log_file {
+        if std::env::var("RUST_LOG").is_err() {
+            std::env::set_var("RUST_LOG", "trace");
+        }
+
         let file = std::fs::File::create(path).context("Failed to create log file")?;
-        tracing_subscriber::fmt()
-            .with_max_level(Level::TRACE)
-            .with_writer(file)
-            .init();
+
+        tracing_subscriber::fmt().with_writer(file).init();
     }
 
     let editor = match args.files.split_first() {
