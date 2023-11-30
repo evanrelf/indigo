@@ -12,9 +12,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let total_lines = buffer.contents().len_lines_indigo();
 
-    let columns = [81];
-
-    if columns.is_empty() {
+    if editor.settings.columns.is_empty() {
         return;
     }
 
@@ -23,13 +21,17 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 
         let line_in_buffer = line_number <= total_lines;
 
-        for column in columns {
-            let column_in_area = area.x + (column - 1) < area.right();
+        for column in &editor.settings.columns {
+            let column_in_area = usize::from(area.x) + (column - 1) < usize::from(area.right());
 
-            let column_in_buffer = horizontal_scroll < column;
+            let column_in_buffer = usize::from(horizontal_scroll) < *column;
 
             if column_in_area && column_in_buffer && line_in_buffer {
-                let x = area.x + ((column - 1) - horizontal_scroll);
+                let x = u16::try_from(
+                    usize::from(area.x) + ((column - 1) - usize::from(horizontal_scroll)),
+                )
+                .expect("`column - horizontal_scroll` will not exceed area width");
+
                 surface.get_mut(x, y).set_bg(BG_GRAY);
             }
         }

@@ -28,8 +28,6 @@ impl Areas {
             ])
             .split(area);
 
-        let show_numbers = true;
-
         let numbers_width = {
             let n = editor.current_file().buffer().contents().len_lines_indigo();
             let digits = 1 + max(1, n).ilog10();
@@ -40,7 +38,11 @@ impl Areas {
             .direction(Direction::Horizontal)
             .constraints([
                 // numbers
-                Constraint::Length(if show_numbers { numbers_width } else { 0 }),
+                Constraint::Length(if editor.settings.numbers {
+                    numbers_width
+                } else {
+                    0
+                }),
                 // buffer
                 Constraint::Min(0),
             ])

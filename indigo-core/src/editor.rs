@@ -1,4 +1,4 @@
-use crate::{window::WindowState, File, FileKey, Mode, Window, WindowKey, WindowMut};
+use crate::{window::WindowState, File, FileKey, Mode, Settings, Window, WindowKey, WindowMut};
 use slotmap::SlotMap;
 
 #[derive(Debug)]
@@ -7,6 +7,7 @@ pub struct Editor {
     windows: SlotMap<WindowKey, WindowState>,
     current_window: WindowKey,
     mode: Mode,
+    pub settings: Settings,
 }
 
 impl Editor {
@@ -21,6 +22,7 @@ impl Editor {
             windows,
             current_window: window_key,
             mode: Mode::default(),
+            settings: Settings::default(),
         }
     }
 

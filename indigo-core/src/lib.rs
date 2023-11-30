@@ -10,6 +10,7 @@ mod position;
 mod range;
 mod rope;
 mod selection;
+mod settings;
 mod window;
 
 pub use crate::{
@@ -24,5 +25,6 @@ pub use crate::{
     range::Range,
     rope::RopeExt,
     selection::{Selection, SelectionMut},
+    settings::Settings,
     window::{Window, WindowKey, WindowMut},
 };
