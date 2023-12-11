@@ -12,6 +12,7 @@ flagset = { workspace = true }
 indigo-core = { workspace = true }
 ratatui = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt"] }
+tokio-stream = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 

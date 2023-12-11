@@ -9,12 +9,13 @@ use crate::{
 use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
-use crossterm::event::{Event, KeyCode, MouseEventKind};
+use crossterm::event::{Event, EventStream, KeyCode, MouseEventKind};
 use indigo_core::{
     command::{self, Quit},
     Command, CommandMode, Editor, File, InsertMode, Mode, NormalMode,
 };
 use std::process::ExitCode;
+use tokio_stream::StreamExt as _;
 
 #[derive(clap::Parser)]
 struct Args {
@@ -64,11 +65,13 @@ async fn main() -> anyhow::Result<ExitCode> {
         }
     };
 
-    run(editor)
+    run(editor).await
 }
 
-fn run(mut editor: Editor) -> anyhow::Result<ExitCode> {
+async fn run(mut editor: Editor) -> anyhow::Result<ExitCode> {
     let mut terminal = terminal::enter().context("Failed to enter terminal")?;
+
+    let mut event_stream = EventStream::new();
 
     let mut areas = Areas::default();
 
@@ -83,7 +86,11 @@ fn run(mut editor: Editor) -> anyhow::Result<ExitCode> {
             })
             .context("Failed to draw to terminal")?;
 
-        let event = crossterm::event::read().context("Failed to get next crossterm event")?;
+        let event = event_stream
+            .next()
+            .await
+            .context("No more crossterm events")?
+            .context("Failed to get next crossterm event")?;
 
         if matches!(event, Event::Mouse(_)) {
             tracing::trace!(?event);
