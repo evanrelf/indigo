@@ -5,10 +5,23 @@ use std::{
     io::Stdout,
     ops::{Deref, DerefMut},
     panic,
+    sync::atomic::{AtomicBool, Ordering},
 };
 
 pub struct TerminalGuard {
     terminal: Terminal<CrosstermBackend<Stdout>>,
+}
+
+impl TerminalGuard {
+    fn new() -> anyhow::Result<Self> {
+        let stdout = std::io::stdout();
+
+        let backend = CrosstermBackend::new(stdout);
+
+        let terminal = Terminal::new(backend).context("Failed to create ratatui terminal")?;
+
+        Ok(Self { terminal })
+    }
 }
 
 impl Deref for TerminalGuard {
@@ -27,14 +40,24 @@ impl DerefMut for TerminalGuard {
 
 impl Drop for TerminalGuard {
     fn drop(&mut self) {
-        exit()
-            .context("Failed to exit terminal during drop")
-            .unwrap();
+        let result = exit().context("Failed to exit terminal during drop");
+        // Ignore the `Result` if we're already panicking; aborting is undesirable
+        if !std::thread::panicking() {
+            result.unwrap();
+        }
     }
 }
 
+static INSIDE: AtomicBool = AtomicBool::new(false);
+
 pub fn enter() -> anyhow::Result<TerminalGuard> {
     use event::KeyboardEnhancementFlags as KEF;
+
+    if INSIDE.load(Ordering::SeqCst) {
+        return TerminalGuard::new();
+    }
+
+    INSIDE.store(true, Ordering::SeqCst);
 
     let mut stdout = std::io::stdout();
 
@@ -58,20 +81,19 @@ pub fn enter() -> anyhow::Result<TerminalGuard> {
     let previous_hook = panic::take_hook();
 
     panic::set_hook(Box::new(move |panic_info| {
-        exit()
-            .context("Failed to exit terminal during panic")
-            .unwrap();
+        // Ignoring the `Result` because we're already panicking; aborting is undesirable
+        let _ = exit();
         previous_hook(panic_info);
     }));
 
-    let backend = CrosstermBackend::new(stdout);
-
-    let terminal = Terminal::new(backend).context("Failed to create ratatui terminal")?;
-
-    Ok(TerminalGuard { terminal })
+    TerminalGuard::new()
 }
 
 pub fn exit() -> anyhow::Result<()> {
+    if !INSIDE.load(Ordering::SeqCst) {
+        return Ok(());
+    }
+
     let mut stdout = std::io::stdout();
 
     crossterm::execute!(
@@ -87,9 +109,7 @@ pub fn exit() -> anyhow::Result<()> {
 
     terminal::disable_raw_mode().context("Failed to disable raw mode")?;
 
-    if !std::thread::panicking() {
-        let _ = panic::take_hook();
-    }
+    INSIDE.store(false, Ordering::SeqCst);
 
     Ok(())
 }
