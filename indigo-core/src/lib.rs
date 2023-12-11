@@ -19,6 +19,7 @@ pub use crate::{
     conversion::Conversion,
     editor::Editor,
     file::{File, FileKey},
+    key::types as key_types,
     key::{Key, KeyCode, KeyModifier, Keys},
     mode::{CommandMode, InsertMode, Mode, NormalMode},
     position::Position,

@@ -1,3 +1,5 @@
+pub mod types;
+
 use flagset::{flags, FlagSet};
 use std::{
     fmt::{Display, Formatter},
