@@ -286,6 +286,7 @@ dependencies = [
  "camino",
  "clap",
  "indigo-core",
+ "tokio",
  "tracing",
  "tracing-subscriber",
 ]
