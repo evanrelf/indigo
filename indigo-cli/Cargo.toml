@@ -5,10 +5,11 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true }
+async-executor = { workspace = true }
+async-io = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
 indigo-core = { workspace = true }
-tokio = { workspace = true, features = ["macros", "rt"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 

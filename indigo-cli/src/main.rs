@@ -10,8 +10,15 @@ struct Args {
     keys: Keys,
 }
 
-#[tokio::main(flavor = "current_thread")]
-async fn main() {
+fn main() {
+    let executor = async_executor::LocalExecutor::new();
+    let task = executor.spawn(indigo_cli());
+    async_io::block_on(executor.run(task));
+}
+
+// TODO: Remove
+#[allow(clippy::unused_async)]
+async fn indigo_cli() {
     #[cfg(debug_assertions)]
     if std::env::var("RUST_BACKTRACE").is_err() {
         std::env::set_var("RUST_BACKTRACE", "1");

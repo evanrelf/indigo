@@ -10,12 +10,12 @@ use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{Event, EventStream, KeyCode, MouseEventKind};
+use futures_lite::StreamExt as _;
 use indigo_core::{
     command::{self, Quit},
     Command, CommandMode, Editor, File, InsertMode, Mode, NormalMode,
 };
 use std::process::ExitCode;
-use tokio_stream::StreamExt as _;
 
 #[derive(clap::Parser)]
 struct Args {
@@ -27,8 +27,13 @@ struct Args {
     log_file: Option<Utf8PathBuf>,
 }
 
-#[tokio::main(flavor = "current_thread")]
-async fn main() -> anyhow::Result<ExitCode> {
+fn main() -> anyhow::Result<ExitCode> {
+    let executor = async_executor::LocalExecutor::new();
+    let task = executor.spawn(indigo_tui());
+    async_io::block_on(executor.run(task))
+}
+
+async fn indigo_tui() -> anyhow::Result<ExitCode> {
     #[cfg(debug_assertions)]
     if std::env::var("RUST_BACKTRACE").is_err() {
         std::env::set_var("RUST_BACKTRACE", "1");

@@ -5,14 +5,15 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true }
+async-executor = { workspace = true }
+async-io = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
 crossterm = { workspace = true }
 flagset = { workspace = true }
+futures-lite = { workspace = true }
 indigo-core = { workspace = true }
 ratatui = { workspace = true }
-tokio = { workspace = true, features = ["macros", "rt"] }
-tokio-stream = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 

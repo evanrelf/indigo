@@ -9,15 +9,17 @@ path = "src/bin/command.rs"
 
 [dependencies]
 anyhow = { workspace = true }
+async-fs = { workspace = true }
+async-io = { workspace = true }
+blocking = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
 fancy-regex = { workspace = true }
 flagset = { workspace = true }
+futures-lite = { workspace = true }
 ropey = { workspace = true }
 shell-words = { workspace = true }
 slotmap = { workspace = true }
-tokio = { workspace = true, features = ["fs", "io-util"] }
-tokio-util = { workspace = true, features = ["io-util"] }
 tracing = { workspace = true }
 winnow = { workspace = true }
 
