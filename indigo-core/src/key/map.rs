@@ -33,10 +33,11 @@ impl<S, E> KeyMap<S, E> {
         self
     }
 
-    pub fn dispatch(&self, state: &mut S, key: &Key) -> Option<Result<(), E>> {
-        let handler = self.mappings.get(key)?;
-        let result = handler(state);
-        Some(result)
+    pub fn dispatch(&self, state: &mut S, key: &Key) -> Result<bool, E> {
+        match self.mappings.get(key) {
+            None => Ok(false),
+            Some(handler) => handler(state).map(|()| true),
+        }
     }
 }
 
@@ -55,7 +56,7 @@ mod tests {
 
     #[test]
     #[allow(clippy::unnecessary_wraps)]
-    fn test() {
+    fn test() -> anyhow::Result<()> {
         fn handle_up(count: &mut usize) -> anyhow::Result<()> {
             *count += 1;
             Ok(())
@@ -73,17 +74,16 @@ mod tests {
 
         let mut state = 0;
 
-        key_map.dispatch(&mut state, &key::<Up>()).unwrap().unwrap();
-        key_map.dispatch(&mut state, &key::<Up>()).unwrap().unwrap();
-        key_map.dispatch(&mut state, &key::<Up>()).unwrap().unwrap();
+        key_map.dispatch(&mut state, &key::<Up>())?;
+        key_map.dispatch(&mut state, &key::<Up>())?;
+        key_map.dispatch(&mut state, &key::<Up>())?;
 
         assert_eq!(state, 3);
 
-        key_map
-            .dispatch(&mut state, &key::<Down>())
-            .unwrap()
-            .unwrap();
+        key_map.dispatch(&mut state, &key::<Down>())?;
 
         assert_eq!(state, 2);
+
+        Ok(())
     }
 }
