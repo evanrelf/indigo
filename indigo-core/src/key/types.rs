@@ -1,9 +1,11 @@
 use crate::key::values as v;
 use crate::Reflect;
 use flagset::FlagSet;
+use std::convert::Infallible;
 use std::marker::PhantomData;
 
 pub struct Key<T> {
+    never: Infallible,
     phantom: PhantomData<fn() -> T>,
 }
 
