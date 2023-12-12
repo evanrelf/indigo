@@ -22,7 +22,7 @@ pub use crate::{
     editor::Editor,
     file::{File, FileKey},
     key::types::{self as key_types, key},
-    key::{Key, KeyCode, KeyModifier, Keys},
+    key::values::{Key, KeyCode, KeyModifier, Keys},
     mode::{CommandMode, InsertMode, Mode, NormalMode},
     position::Position,
     range::Range,

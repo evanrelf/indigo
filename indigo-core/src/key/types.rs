@@ -1,4 +1,4 @@
-use crate::key as value;
+use crate::key::values as v;
 use crate::Reflect;
 use flagset::FlagSet;
 use std::marker::PhantomData;
@@ -10,7 +10,7 @@ pub struct Key<T> {
 #[must_use]
 pub fn key<K>() -> <Key<K> as Reflect>::Value
 where
-    Key<K>: Reflect<Value = value::Key>,
+    Key<K>: Reflect<Value = v::Key>,
 {
     Key::<K>::reflect()
 }
@@ -19,10 +19,10 @@ impl<C> Reflect for Key<C>
 where
     C: KeyCode,
 {
-    type Value = value::Key;
+    type Value = v::Key;
 
     fn reflect() -> Self::Value {
-        value::Key {
+        v::Key {
             modifiers: FlagSet::default(),
             code: C::reflect(),
         }
@@ -34,10 +34,10 @@ where
     M: KeyModifier,
     C: KeyCode,
 {
-    type Value = value::Key;
+    type Value = v::Key;
 
     fn reflect() -> Self::Value {
-        value::Key {
+        v::Key {
             modifiers: M::reflect().into(),
             code: C::reflect(),
         }
@@ -50,10 +50,10 @@ where
     M2: KeyModifier,
     C: KeyCode,
 {
-    type Value = value::Key;
+    type Value = v::Key;
 
     fn reflect() -> Self::Value {
-        value::Key {
+        v::Key {
             modifiers: M1::reflect() | M2::reflect(),
             code: C::reflect(),
         }
@@ -67,25 +67,25 @@ where
     M3: KeyModifier,
     C: KeyCode,
 {
-    type Value = value::Key;
+    type Value = v::Key;
 
     fn reflect() -> Self::Value {
-        value::Key {
+        v::Key {
             modifiers: M1::reflect() | M2::reflect() | M3::reflect(),
             code: C::reflect(),
         }
     }
 }
 
-pub trait KeyModifier: Reflect<Value = value::KeyModifier> {}
+pub trait KeyModifier: Reflect<Value = v::KeyModifier> {}
 
 pub enum Shift {}
 
 impl Reflect for Shift {
-    type Value = value::KeyModifier;
+    type Value = v::KeyModifier;
 
     fn reflect() -> Self::Value {
-        value::KeyModifier::Shift
+        v::KeyModifier::Shift
     }
 }
 
@@ -94,10 +94,10 @@ impl KeyModifier for Shift {}
 pub enum Control {}
 
 impl Reflect for Control {
-    type Value = value::KeyModifier;
+    type Value = v::KeyModifier;
 
     fn reflect() -> Self::Value {
-        value::KeyModifier::Control
+        v::KeyModifier::Control
     }
 }
 
@@ -106,24 +106,24 @@ impl KeyModifier for Control {}
 pub enum Alt {}
 
 impl Reflect for Alt {
-    type Value = value::KeyModifier;
+    type Value = v::KeyModifier;
 
     fn reflect() -> Self::Value {
-        value::KeyModifier::Alt
+        v::KeyModifier::Alt
     }
 }
 
 impl KeyModifier for Alt {}
 
-pub trait KeyCode: Reflect<Value = value::KeyCode> {}
+pub trait KeyCode: Reflect<Value = v::KeyCode> {}
 
 pub enum Backspace {}
 
 impl Reflect for Backspace {
-    type Value = value::KeyCode;
+    type Value = v::KeyCode;
 
     fn reflect() -> Self::Value {
-        value::KeyCode::Backspace
+        v::KeyCode::Backspace
     }
 }
 
@@ -132,10 +132,10 @@ impl KeyCode for Backspace {}
 pub enum Enter {}
 
 impl Reflect for Enter {
-    type Value = value::KeyCode;
+    type Value = v::KeyCode;
 
     fn reflect() -> Self::Value {
-        value::KeyCode::Enter
+        v::KeyCode::Enter
     }
 }
 
@@ -144,10 +144,10 @@ impl KeyCode for Enter {}
 pub enum Left {}
 
 impl Reflect for Left {
-    type Value = value::KeyCode;
+    type Value = v::KeyCode;
 
     fn reflect() -> Self::Value {
-        value::KeyCode::Left
+        v::KeyCode::Left
     }
 }
 
@@ -156,10 +156,10 @@ impl KeyCode for Left {}
 pub enum Right {}
 
 impl Reflect for Right {
-    type Value = value::KeyCode;
+    type Value = v::KeyCode;
 
     fn reflect() -> Self::Value {
-        value::KeyCode::Right
+        v::KeyCode::Right
     }
 }
 
@@ -168,10 +168,10 @@ impl KeyCode for Right {}
 pub enum Up {}
 
 impl Reflect for Up {
-    type Value = value::KeyCode;
+    type Value = v::KeyCode;
 
     fn reflect() -> Self::Value {
-        value::KeyCode::Up
+        v::KeyCode::Up
     }
 }
 
@@ -180,10 +180,10 @@ impl KeyCode for Up {}
 pub enum Down {}
 
 impl Reflect for Down {
-    type Value = value::KeyCode;
+    type Value = v::KeyCode;
 
     fn reflect() -> Self::Value {
-        value::KeyCode::Down
+        v::KeyCode::Down
     }
 }
 
@@ -192,10 +192,10 @@ impl KeyCode for Down {}
 pub enum Tab {}
 
 impl Reflect for Tab {
-    type Value = value::KeyCode;
+    type Value = v::KeyCode;
 
     fn reflect() -> Self::Value {
-        value::KeyCode::Tab
+        v::KeyCode::Tab
     }
 }
 
@@ -204,10 +204,10 @@ impl KeyCode for Tab {}
 pub enum Escape {}
 
 impl Reflect for Escape {
-    type Value = value::KeyCode;
+    type Value = v::KeyCode;
 
     fn reflect() -> Self::Value {
-        value::KeyCode::Escape
+        v::KeyCode::Escape
     }
 }
 
@@ -216,10 +216,10 @@ impl KeyCode for Escape {}
 pub enum Char<const C: char> {}
 
 impl<const C: char> Reflect for Char<C> {
-    type Value = value::KeyCode;
+    type Value = v::KeyCode;
 
     fn reflect() -> Self::Value {
-        value::KeyCode::Char(C)
+        v::KeyCode::Char(C)
     }
 }
 
@@ -232,25 +232,25 @@ mod tests {
     #[test]
     fn test() {
         // `KeyCode`s
-        assert_eq!(Escape::reflect(), value::KeyCode::Escape);
-        assert_eq!(Char::<'a'>::reflect(), value::KeyCode::Char('a'));
+        assert_eq!(Escape::reflect(), v::KeyCode::Escape);
+        assert_eq!(Char::<'a'>::reflect(), v::KeyCode::Char('a'));
 
         // `KeyModifier`s
-        assert_eq!(Shift::reflect(), value::KeyModifier::Shift);
-        assert_eq!(Control::reflect(), value::KeyModifier::Control);
-        assert_eq!(Alt::reflect(), value::KeyModifier::Alt);
+        assert_eq!(Shift::reflect(), v::KeyModifier::Shift);
+        assert_eq!(Control::reflect(), v::KeyModifier::Control);
+        assert_eq!(Alt::reflect(), v::KeyModifier::Alt);
 
         // `Key`s
-        assert_eq!(key::<Escape>(), value::Key::from(value::KeyCode::Escape));
+        assert_eq!(key::<Escape>(), v::Key::from(v::KeyCode::Escape));
         assert_eq!(
             key::<(Control, Char<'c'>)>(),
-            value::Key::from(([value::KeyModifier::Control], value::KeyCode::Char('c'))),
+            v::Key::from(([v::KeyModifier::Control], v::KeyCode::Char('c'))),
         );
         assert_eq!(
             key::<(Control, Shift, Backspace)>(),
-            value::Key::from((
-                [value::KeyModifier::Control, value::KeyModifier::Shift],
-                value::KeyCode::Backspace
+            v::Key::from((
+                [v::KeyModifier::Control, v::KeyModifier::Shift],
+                v::KeyCode::Backspace
             )),
         );
     }
