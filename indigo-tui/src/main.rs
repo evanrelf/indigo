@@ -7,6 +7,7 @@ use crate::{
     ui::areas::Areas,
 };
 use anyhow::Context as _;
+use async_executor::LocalExecutor;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{Event, EventStream, KeyCode, MouseEventKind};
@@ -28,12 +29,13 @@ struct Args {
 }
 
 fn main() -> anyhow::Result<ExitCode> {
-    let executor = async_executor::LocalExecutor::new();
-    let task = executor.spawn(indigo_tui());
+    // TODO: This feels suboptimal
+    let executor: &'static LocalExecutor = Box::leak(Box::new(LocalExecutor::new()));
+    let task = executor.spawn(indigo_tui(executor));
     async_io::block_on(executor.run(task))
 }
 
-async fn indigo_tui() -> anyhow::Result<ExitCode> {
+async fn indigo_tui(executor: &LocalExecutor<'_>) -> anyhow::Result<ExitCode> {
     #[cfg(debug_assertions)]
     if std::env::var("RUST_BACKTRACE").is_err() {
         std::env::set_var("RUST_BACKTRACE", "1");
@@ -51,22 +53,27 @@ async fn indigo_tui() -> anyhow::Result<ExitCode> {
         tracing_subscriber::fmt().with_writer(file).init();
     }
 
-    let editor = match args.files.split_first() {
-        None => Editor::new(File::new("scratch")),
-        Some((path, paths)) => {
-            // TODO: Get rid of clones
-            let file = File::open(path.clone())
-                .await
-                .context("Failed to open file")?;
+    let editor = {
+        let mut join_handles = args
+            .files
+            .iter()
+            .map(|path| executor.spawn(File::open(path.clone())))
+            // Need to use `collect` to force the iterator
+            .collect::<Vec<_>>()
+            .into_iter();
+
+        if let Some(join_handle) = join_handles.next() {
+            let file = join_handle.await.context("Failed to open file")?;
             let mut editor = Editor::new(file);
-            for path in paths {
-                editor.insert_file(
-                    File::open(path.clone())
-                        .await
-                        .context("Failed to open file")?,
-                );
+
+            for join_handle in join_handles {
+                let file = join_handle.await.context("Failed to open file")?;
+                editor.insert_file(file);
             }
+
             editor
+        } else {
+            Editor::new(File::new("scratch"))
         }
     };
 
