@@ -10,6 +10,11 @@ pub struct CommandMode {
 
 impl CommandMode {
     #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    #[must_use]
     pub fn command(&self) -> &Rope {
         &self.command
     }

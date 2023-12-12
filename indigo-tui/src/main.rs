@@ -52,7 +52,7 @@ async fn indigo_tui() -> anyhow::Result<ExitCode> {
     }
 
     let editor = match args.files.split_first() {
-        None => Editor::new(File::default()),
+        None => Editor::new(File::new("scratch")),
         Some((path, paths)) => {
             // TODO: Get rid of clones
             let file = File::open(path.clone())
@@ -78,7 +78,7 @@ async fn run(mut editor: Editor) -> anyhow::Result<ExitCode> {
 
     let mut event_stream = EventStream::new();
 
-    let mut areas = Areas::default();
+    let mut areas = Areas::empty();
 
     loop {
         #[cfg(debug_assertions)]

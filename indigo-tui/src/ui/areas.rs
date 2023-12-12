@@ -3,7 +3,7 @@ use indigo_core::{settings::Numbers, Editor, Mode, Position, RopeExt, Window};
 use ratatui::prelude::{Constraint, Direction, Layout, Rect};
 use std::cmp::max;
 
-#[derive(Default, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Areas {
     pub tildes: Rect,
     pub numbers: Rect,
@@ -12,6 +12,15 @@ pub struct Areas {
 }
 
 impl Areas {
+    pub fn empty() -> Self {
+        Self {
+            tildes: Rect::default(),
+            numbers: Rect::default(),
+            buffer: Rect::default(),
+            status: Rect::default(),
+        }
+    }
+
     pub fn new(editor: &Editor, area: Rect) -> Self {
         let status_height = match editor.mode() {
             Mode::Command(command_mode) => command::lines(command_mode, area),

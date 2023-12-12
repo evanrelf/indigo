@@ -9,7 +9,7 @@ slotmap::new_key_type! { pub struct FileKey; }
 
 // TODO: Add method to refresh `is_modified` and `is_read_only` with the filesystem.
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct File {
     path: Utf8PathBuf,
     buffer: Buffer,
@@ -25,30 +25,16 @@ pub struct File {
 }
 
 impl File {
-    #[must_use]
-    pub fn path(&self) -> &Utf8PathBuf {
-        &self.path
-    }
-
-    #[must_use]
-    pub fn buffer(&self) -> &Buffer {
-        &self.buffer
-    }
-
-    // TODO: Somehow update `is_modified`
-    #[must_use]
-    pub fn buffer_mut(&mut self) -> &mut Buffer {
-        &mut self.buffer
-    }
-
-    #[must_use]
-    pub fn is_modified(&self) -> bool {
-        self.is_modified
-    }
-
-    #[must_use]
-    pub fn is_read_only(&self) -> bool {
-        self.is_read_only
+    pub fn new<P>(path: P) -> Self
+    where
+        P: Into<Utf8PathBuf>,
+    {
+        Self {
+            path: path.into(),
+            buffer: Buffer::default(),
+            is_modified: true,
+            is_read_only: false,
+        }
     }
 
     pub async fn open(path: Utf8PathBuf) -> anyhow::Result<Self> {
@@ -75,6 +61,32 @@ impl File {
             is_modified: empty,
             is_read_only,
         })
+    }
+
+    #[must_use]
+    pub fn path(&self) -> &Utf8PathBuf {
+        &self.path
+    }
+
+    #[must_use]
+    pub fn buffer(&self) -> &Buffer {
+        &self.buffer
+    }
+
+    // TODO: Somehow update `is_modified`
+    #[must_use]
+    pub fn buffer_mut(&mut self) -> &mut Buffer {
+        &mut self.buffer
+    }
+
+    #[must_use]
+    pub fn is_modified(&self) -> bool {
+        self.is_modified
+    }
+
+    #[must_use]
+    pub fn is_read_only(&self) -> bool {
+        self.is_read_only
     }
 
     pub fn assert_valid(&self) {
