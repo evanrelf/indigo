@@ -1,14 +1,7 @@
-#![allow(private_bounds)]
-
 use crate::key as value;
+use crate::Reflect;
 use flagset::FlagSet;
 use std::marker::PhantomData;
-
-trait Reflect {
-    type Value;
-
-    fn reflect() -> Self::Value;
-}
 
 pub struct Key<T> {
     phantom: PhantomData<fn() -> T>,

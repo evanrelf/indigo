@@ -8,6 +8,7 @@ mod mode;
 mod non_empty;
 mod position;
 mod range;
+mod reflect;
 mod rope;
 mod selection;
 pub mod settings;
@@ -24,6 +25,7 @@ pub use crate::{
     mode::{CommandMode, InsertMode, Mode, NormalMode},
     position::Position,
     range::Range,
+    reflect::Reflect,
     rope::RopeExt,
     selection::{Selection, SelectionMut},
     settings::Settings,
