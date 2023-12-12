@@ -14,6 +14,7 @@ mod selection;
 pub mod settings;
 mod window;
 
+#[doc(inline)]
 pub use crate::{
     buffer::Buffer,
     command::Command,
