@@ -7,6 +7,14 @@ pub struct Key<T> {
     phantom: PhantomData<fn() -> T>,
 }
 
+#[must_use]
+pub fn key<K>() -> <Key<K> as Reflect>::Value
+where
+    Key<K>: Reflect<Value = value::Key>,
+{
+    Key::<K>::reflect()
+}
+
 impl<C> Reflect for Key<C>
 where
     C: KeyCode,
@@ -233,16 +241,13 @@ mod tests {
         assert_eq!(Alt::reflect(), value::KeyModifier::Alt);
 
         // `Key`s
+        assert_eq!(key::<Escape>(), value::Key::from(value::KeyCode::Escape));
         assert_eq!(
-            Key::<Escape>::reflect(),
-            value::Key::from(value::KeyCode::Escape),
-        );
-        assert_eq!(
-            Key::<(Control, Char<'c'>)>::reflect(),
+            key::<(Control, Char<'c'>)>(),
             value::Key::from(([value::KeyModifier::Control], value::KeyCode::Char('c'))),
         );
         assert_eq!(
-            Key::<(Control, Shift, Backspace)>::reflect(),
+            key::<(Control, Shift, Backspace)>(),
             value::Key::from((
                 [value::KeyModifier::Control, value::KeyModifier::Shift],
                 value::KeyCode::Backspace
