@@ -1,6 +1,7 @@
 use flagset::{flags, FlagSet};
 use std::{
     fmt::{Display, Formatter},
+    hash::{Hash, Hasher},
     str::FromStr,
 };
 use winnow::{
@@ -110,6 +111,16 @@ impl FromStr for Key {
     }
 }
 
+impl Hash for Key {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: Hasher,
+    {
+        self.modifiers.bits().hash(state);
+        self.code.hash(state);
+    }
+}
+
 fn key(input: &mut &str) -> PResult<Key> {
     alt((key_wrapped, key_bare)).parse_next(input)
 }
@@ -130,6 +141,7 @@ fn key_bare(input: &mut &str) -> PResult<Key> {
 }
 
 flags! {
+    #[derive(Hash)]
     pub enum KeyModifier: u8 {
         Shift,
         Control,
@@ -146,7 +158,7 @@ fn key_modifier(input: &mut &str) -> PResult<KeyModifier> {
     .parse_next(input)
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum KeyCode {
     Backspace,
     Enter,

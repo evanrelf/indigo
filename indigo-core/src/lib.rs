@@ -21,8 +21,11 @@ pub use crate::{
     conversion::Conversion,
     editor::Editor,
     file::{File, FileKey},
-    key::types::{self as key_types, key},
-    key::values::{Key, KeyCode, KeyModifier, Keys},
+    key::{
+        map::KeyMap,
+        types::{self as key_types, key},
+        values::{Key, KeyCode, KeyModifier, Keys},
+    },
     mode::{CommandMode, InsertMode, Mode, NormalMode},
     position::Position,
     range::Range,
