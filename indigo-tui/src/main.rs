@@ -30,7 +30,7 @@ struct Args {
 
 fn main() -> anyhow::Result<ExitCode> {
     // TODO: This feels suboptimal
-    let executor: &'static LocalExecutor = Box::leak(Box::new(LocalExecutor::new()));
+    let executor = Box::leak(Box::new(LocalExecutor::new()));
     let task = executor.spawn(indigo_tui(executor));
     async_io::block_on(executor.run(task))
 }
