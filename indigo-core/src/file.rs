@@ -37,6 +37,8 @@ impl File {
         }
     }
 
+    // TODO: `open` might not be the best term for this. `std::fs::File`'s `open` method doesn't
+    // imply reading anything.
     pub async fn open(path: Utf8PathBuf) -> anyhow::Result<Self> {
         let file = async_fs::File::open(PathBuf::from(path.clone()))
             .await
