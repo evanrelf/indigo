@@ -28,13 +28,10 @@ struct Args {
 }
 
 fn main() -> anyhow::Result<ExitCode> {
-    // TODO: This feels suboptimal
-    let executor = Box::leak(Box::new(smol::LocalExecutor::new()));
-    let task = executor.spawn(indigo_tui(executor));
-    smol::block_on(executor.run(task))
+    smol::block_on(smol::spawn(indigo_tui()))
 }
 
-async fn indigo_tui(executor: &smol::LocalExecutor<'_>) -> anyhow::Result<ExitCode> {
+async fn indigo_tui() -> anyhow::Result<ExitCode> {
     #[cfg(debug_assertions)]
     if std::env::var("RUST_BACKTRACE").is_err() {
         std::env::set_var("RUST_BACKTRACE", "1");
@@ -56,7 +53,7 @@ async fn indigo_tui(executor: &smol::LocalExecutor<'_>) -> anyhow::Result<ExitCo
         let mut join_handles = args
             .files
             .iter()
-            .map(|path| executor.spawn(File::open(path.clone())))
+            .map(|path| smol::spawn(File::open(path.clone())))
             // Need to use `collect` to force the iterator
             .collect::<Vec<_>>()
             .into_iter();
