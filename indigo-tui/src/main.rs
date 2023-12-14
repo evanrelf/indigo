@@ -7,15 +7,14 @@ use crate::{
     ui::areas::Areas,
 };
 use anyhow::Context as _;
-use async_executor::LocalExecutor;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{Event, EventStream, KeyCode, MouseEventKind};
-use futures_lite::StreamExt as _;
 use indigo_core::{
     command::{self, Quit},
     Command, CommandMode, Editor, File, InsertMode, Mode, NormalMode,
 };
+use smol::stream::StreamExt as _;
 use std::process::ExitCode;
 
 #[derive(clap::Parser)]
@@ -30,12 +29,12 @@ struct Args {
 
 fn main() -> anyhow::Result<ExitCode> {
     // TODO: This feels suboptimal
-    let executor = Box::leak(Box::new(LocalExecutor::new()));
+    let executor = Box::leak(Box::new(smol::LocalExecutor::new()));
     let task = executor.spawn(indigo_tui(executor));
-    async_io::block_on(executor.run(task))
+    smol::block_on(executor.run(task))
 }
 
-async fn indigo_tui(executor: &LocalExecutor<'_>) -> anyhow::Result<ExitCode> {
+async fn indigo_tui(executor: &smol::LocalExecutor<'_>) -> anyhow::Result<ExitCode> {
     #[cfg(debug_assertions)]
     if std::env::var("RUST_BACKTRACE").is_err() {
         std::env::set_var("RUST_BACKTRACE", "1");

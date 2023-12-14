@@ -11,9 +11,9 @@ struct Args {
 }
 
 fn main() {
-    let executor = async_executor::LocalExecutor::new();
+    let executor = smol::LocalExecutor::new();
     let task = executor.spawn(indigo_cli());
-    async_io::block_on(executor.run(task));
+    smol::block_on(executor.run(task));
 }
 
 // TODO: Remove
