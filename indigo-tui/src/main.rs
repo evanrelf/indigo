@@ -41,12 +41,15 @@ async fn indigo_tui() -> anyhow::Result<ExitCode> {
 
     if let Some(path) = args.log_file {
         if std::env::var("RUST_LOG").is_err() {
-            std::env::set_var("RUST_LOG", "trace");
+            std::env::set_var("RUST_LOG", "indigo_tui=trace");
         }
 
         let file = std::fs::File::create(path).context("Failed to create log file")?;
 
-        tracing_subscriber::fmt().with_writer(file).init();
+        tracing_subscriber::fmt()
+            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+            .with_writer(file)
+            .init();
     }
 
     let editor = {
