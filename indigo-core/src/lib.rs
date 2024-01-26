@@ -4,7 +4,6 @@ mod conversion;
 mod editor;
 mod file;
 mod key;
-mod key_map;
 mod mode;
 mod position;
 mod range;
@@ -21,7 +20,6 @@ pub use crate::{
     editor::Editor,
     file::{File, FileKey},
     key::{Key, KeyCode, KeyModifier, Keys},
-    key_map::KeyMap,
     mode::{CommandMode, InsertMode, Mode, NormalMode},
     position::Position,
     range::Range,
