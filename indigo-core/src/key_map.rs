@@ -1,4 +1,5 @@
-use crate::Key;
+use crate::{Editor, Key};
+use once_cell::sync::Lazy;
 use std::collections::HashMap;
 
 pub struct KeyMap<S, E> {
@@ -47,6 +48,45 @@ impl<S, E> Default for KeyMap<S, E> {
         }
     }
 }
+
+struct Mapping {
+    key: Key,
+    handler: fn(&mut Editor) -> anyhow::Result<()>,
+}
+
+#[linkme::distributed_slice]
+static MAPPINGS: [Lazy<Mapping>];
+
+pub fn global_mappings() -> KeyMap<Editor, anyhow::Error> {
+    let mut key_map = KeyMap::new();
+    for mapping in MAPPINGS {
+        key_map = key_map.on(mapping.key, mapping.handler);
+    }
+    key_map
+}
+
+macro_rules! on {
+    ($key:expr, $handler:ident) => {
+        #[::linkme::distributed_slice($crate::key_map::MAPPINGS)]
+        static _MAPPING: ::once_cell::sync::Lazy<$crate::key_map::Mapping> =
+            ::once_cell::sync::Lazy::new(|| {
+                #[allow(unused_imports)]
+                use $crate::{Key, KeyCode::*, KeyModifier::*};
+                $crate::key_map::Mapping {
+                    key: Key::from($key),
+                    handler: $handler,
+                }
+            });
+    };
+}
+
+pub(crate) use on;
+
+// TODO: Attribute proc macro
+// on!((Control, 'c'), test);
+// fn test(_editor: &mut Editor) -> anyhow::Result<()> {
+//     panic!()
+// }
 
 #[cfg(test)]
 mod tests {

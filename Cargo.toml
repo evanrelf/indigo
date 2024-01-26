@@ -10,6 +10,8 @@ crossterm = { version = "0.27.0", default-features = false, features = ["bracket
 fancy-regex = "0.13.0"
 flagset = "0.4.4"
 indigo-core = { path = "indigo-core" }
+linkme = "0.3.22"
+once_cell = "1.19.0"
 quickcheck = "1.0.3"
 quickcheck_macros = "1.0.0"
 ratatui = "0.25.0"
