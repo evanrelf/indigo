@@ -55,6 +55,44 @@ where
     }
 }
 
+impl<C> From<(KeyModifier, C)> for Key
+where
+    C: Into<KeyCode>,
+{
+    fn from((modifier, code): (KeyModifier, C)) -> Self {
+        Self {
+            modifiers: modifier.into(),
+            code: code.into(),
+        }
+    }
+}
+
+impl<C> From<(KeyModifier, KeyModifier, C)> for Key
+where
+    C: Into<KeyCode>,
+{
+    fn from((modifier1, modifier2, code): (KeyModifier, KeyModifier, C)) -> Self {
+        Self {
+            modifiers: modifier1 | modifier2,
+            code: code.into(),
+        }
+    }
+}
+
+impl<C> From<(KeyModifier, KeyModifier, KeyModifier, C)> for Key
+where
+    C: Into<KeyCode>,
+{
+    fn from(
+        (modifier1, modifier2, modifier3, code): (KeyModifier, KeyModifier, KeyModifier, C),
+    ) -> Self {
+        Self {
+            modifiers: modifier1 | modifier2 | modifier3,
+            code: code.into(),
+        }
+    }
+}
+
 impl<const N: usize, C> From<([KeyModifier; N], C)> for Key
 where
     C: Into<KeyCode>,
@@ -257,8 +295,10 @@ mod tests {
         assert_eq!(key.parse(">"), Ok(Key::from('>')));
         assert_eq!(key.parse("a"), Ok(Key::from('a')));
         assert_eq!(key.parse("<s-a>"), Ok(Key::from(([Shift], 'a'))));
+        assert_eq!(key.parse("<c-a>"), Ok(Key::from((Control, 'a'))));
         assert_eq!(key.parse("<c-a>"), Ok(Key::from(([Control], 'a'))));
         assert_eq!(key.parse("<c-s-a>"), Ok(Key::from(([Control, Shift], 'a'))));
+        assert_eq!(key.parse("<c-s-a>"), Ok(Key::from((Control, Shift, 'a'))));
         assert_eq!(key.parse("<tab>"), Ok(Key::from(Tab)));
         assert_eq!(
             key.parse("<c-s-tab>"),
