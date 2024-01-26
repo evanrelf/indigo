@@ -188,6 +188,16 @@ fn update_normal(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Re
                 .current_window_mut()
                 .scroll_down(usize::from(areas.buffer.height) / 2);
         }
+        Event::Key(key) if k!(key, CONTROL, 'b') => {
+            editor
+                .current_window_mut()
+                .scroll_up(usize::from(areas.buffer.height));
+        }
+        Event::Key(key) if k!(key, CONTROL, 'f') => {
+            editor
+                .current_window_mut()
+                .scroll_down(usize::from(areas.buffer.height));
+        }
         // Modes
         Event::Key(key) if k!(key, 'i') => {
             *editor.mode_mut() = Mode::Insert(InsertMode::default());
