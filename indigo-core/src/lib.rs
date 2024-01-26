@@ -6,7 +6,6 @@ mod file;
 mod key;
 mod key_map;
 mod mode;
-mod non_empty;
 mod position;
 mod range;
 mod rope;
