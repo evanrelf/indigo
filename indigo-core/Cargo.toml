@@ -13,7 +13,6 @@ camino = { workspace = true }
 clap = { workspace = true }
 fancy-regex = { workspace = true }
 flagset = { workspace = true }
-linkme = { workspace = true }
 once_cell = { workspace = true }
 ropey = { workspace = true }
 shell-words = { workspace = true }
