@@ -8,6 +8,7 @@ pub struct Areas {
     pub tildes: Rect,
     pub numbers: Rect,
     pub buffer: Rect,
+    pub scrollbar: Rect,
     pub status: Rect,
 }
 
@@ -17,6 +18,7 @@ impl Areas {
             tildes: Rect::default(),
             numbers: Rect::default(),
             buffer: Rect::default(),
+            scrollbar: Rect::default(),
             status: Rect::default(),
         }
     }
@@ -30,7 +32,7 @@ impl Areas {
         let vertical = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                // numbers + buffer
+                // numbers + buffer + scrollbar
                 Constraint::Min(0),
                 // status
                 Constraint::Length(status_height),
@@ -52,12 +54,15 @@ impl Areas {
                 // numbers
                 Constraint::Length(numbers_width),
                 // buffer
-                Constraint::Min(0),
+                Constraint::Fill(1),
+                // scrollbar
+                Constraint::Length(1),
             ])
             .split(vertical[0]);
 
         let numbers = horizontal[0];
         let buffer = horizontal[1];
+        let scrollbar = horizontal[2];
         let status = vertical[1];
         let tildes = if numbers.width > 0 { numbers } else { buffer };
 
@@ -65,6 +70,7 @@ impl Areas {
             tildes,
             numbers,
             buffer,
+            scrollbar,
             status,
         }
     }
