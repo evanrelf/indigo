@@ -2,7 +2,7 @@ use crate::ui::colors::BG_GRAY;
 use indigo_core::{Editor, Mode, Position};
 use ratatui::{
     prelude::{Buffer as Surface, *},
-    widgets::{Paragraph, Widget as _},
+    widgets::Paragraph,
 };
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
