@@ -3,8 +3,10 @@ use indigo_core::{Editor, RopeExt};
 use ratatui::prelude::{Buffer as Surface, *};
 use std::cmp::min;
 
+// TODO: Use Unicode box drawing characters to render at a sub-cell level for smoother scrolling
+
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
-    if area.width == 0 || area.height == 0 {
+    if area.width == 0 || area.height < 3 {
         return;
     }
 
@@ -18,8 +20,11 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let scrollbar_gutter = usize::from(area.height) - 2;
 
-    let scrollbar_height =
+    let scrollbar_size =
         (min(usize::from(area.height), total_lines) * scrollbar_gutter) / total_lines;
+
+    let scrollbar_scroll =
+        (window.vertical_scroll() * (scrollbar_gutter - scrollbar_size)) / total_lines;
 
     for x in area.left()..area.right() {
         // Up arrow
@@ -32,16 +37,14 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
             .set_fg(color);
     }
 
-    let start = area.top() + 1;
+    let start = usize::from(area.top() + 1) + scrollbar_scroll;
 
-    let end = area.bottom() - 1;
+    let end = start + scrollbar_size;
 
-    for y in start..end {
-        if usize::from(y - start) > scrollbar_height {
-            break;
-        }
-
+    // Scrollbar
+    for y in start..=end {
         for x in area.left()..area.right() {
+            let y = u16::try_from(y).unwrap();
             surface.get_mut(x, y).set_bg(color);
         }
     }
