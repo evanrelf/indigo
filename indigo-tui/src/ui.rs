@@ -20,6 +20,6 @@ pub fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
     selection::render(editor, areas.buffer, surface);
     column::render(editor, areas.buffer, surface);
     scrollbar::render(editor, areas.scrollbar, surface);
-    status::render(editor, areas.status, surface);
+    status::render(editor, areas.status, surface, areas.buffer);
     command::render(editor, areas.status, surface);
 }
