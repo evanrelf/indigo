@@ -3,9 +3,6 @@ use indigo_core::{CommandMode, Editor, Mode};
 use ratatui::prelude::{Buffer as Surface, *};
 use std::cmp::min;
 
-// TODO: Paint over status elements a few characters ahead of the command, so it's clear the command
-// text isn't part of the status
-
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let Mode::Command(command_mode) = editor.mode() else {
         return;
@@ -15,7 +12,10 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_command(command_mode: &CommandMode, area: Rect, surface: &mut Surface) {
-    surface.get_mut(area.x, area.y).set_char(':');
+    surface
+        .get_mut(area.x, area.y)
+        .set_char(':')
+        .set_fg(Color::Reset);
 
     let rope = command_mode.command();
 
@@ -35,12 +35,13 @@ fn render_command(command_mode: &CommandMode, area: Rect, surface: &mut Surface)
             break;
         }
 
-        let line = rope.slice(range).to_string();
+        let mut line = rope.slice(range).to_string();
+        line.push(' ');
 
         // Offset the first line to account for the `:`
         let x = area.x + if i == 0 { 1 } else { 0 };
 
-        surface.set_string(x, y, line, Style::default().bg(BG_GRAY));
+        surface.set_string(x, y, line, Style::default().fg(Color::Reset).bg(BG_GRAY));
     }
 }
 
