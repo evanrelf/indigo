@@ -1,9 +1,25 @@
 use crate::ui::colors::GRAY_400;
-use indigo_core::Editor;
+use indigo_core::{Editor, RopeExt};
 use ratatui::prelude::{Buffer as Surface, *};
+use std::cmp::min;
 
-pub fn render(_editor: &Editor, area: Rect, surface: &mut Surface) {
+pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
+    if area.width == 0 || area.height == 0 {
+        return;
+    }
+
     let color = GRAY_400;
+
+    let window = editor.current_window();
+
+    let buffer = window.file().buffer();
+
+    let total_lines = buffer.contents().len_lines_indigo();
+
+    let scrollbar_gutter = usize::from(area.height) - 2;
+
+    let scrollbar_height =
+        (min(usize::from(area.height), total_lines) * scrollbar_gutter) / total_lines;
 
     for x in area.left()..area.right() {
         // Up arrow
@@ -16,9 +32,12 @@ pub fn render(_editor: &Editor, area: Rect, surface: &mut Surface) {
             .set_fg(color);
     }
 
-    for y in (area.top() + 1)..(area.bottom() - 1) {
-        // TODO: Remove
-        if y > (area.bottom() / 2) {
+    let start = area.top() + 1;
+
+    let end = area.bottom() - 1;
+
+    for y in start..end {
+        if usize::from(y - start) > scrollbar_height {
             break;
         }
 
