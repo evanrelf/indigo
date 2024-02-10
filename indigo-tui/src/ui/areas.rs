@@ -48,6 +48,8 @@ impl Areas {
             }
         };
 
+        let scrollbar_width = if editor.settings.scrollbar { 1 } else { 0 };
+
         let horizontal = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
@@ -56,7 +58,7 @@ impl Areas {
                 // buffer
                 Constraint::Fill(1),
                 // scrollbar
-                Constraint::Length(1),
+                Constraint::Length(scrollbar_width),
             ])
             .split(vertical[0]);
 
