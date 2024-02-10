@@ -1,4 +1,4 @@
 mod buffer;
 
 #[doc(inline)]
-pub use crate::buffer::{Anchor, Buffer, Deletion, EncodedBuffer, Insertion};
+pub use crate::buffer::{Buffer, Deletion, EncodedBuffer, Insertion, Position};

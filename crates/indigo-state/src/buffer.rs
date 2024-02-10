@@ -44,13 +44,13 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn create_anchor(&self, index: usize) -> Anchor {
-        Anchor(self.crdt.create_anchor(index, cola::AnchorBias::Right))
+    pub fn index_to_position(&self, index: usize) -> Position {
+        Position(self.crdt.create_anchor(index, cola::AnchorBias::Right))
     }
 
     #[must_use]
-    pub fn resolve_anchor(&self, anchor: Anchor) -> Option<usize> {
-        self.crdt.resolve_anchor(anchor.0)
+    pub fn position_to_index(&self, position: Position) -> Option<usize> {
+        self.crdt.resolve_anchor(position.0)
     }
 
     #[must_use]
@@ -99,7 +99,7 @@ pub struct Deletion(cola::Deletion);
 
 #[derive(Clone, Copy, Deserialize, Serialize)]
 #[serde(transparent)]
-pub struct Anchor(cola::Anchor);
+pub struct Position(cola::Anchor);
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct EncodedBuffer<'rope> {
