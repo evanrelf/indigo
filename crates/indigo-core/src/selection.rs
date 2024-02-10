@@ -119,6 +119,8 @@ impl<'buffer> SelectionMut<'buffer> {
     }
 
     pub fn assert_valid(&self) {
+        // TODO: `state` is valid for `rope`
+
         self.state.assert_valid();
     }
 }
