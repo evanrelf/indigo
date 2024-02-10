@@ -1,4 +1,4 @@
-use cola::{Deletion, EncodedReplica, Replica, ReplicaId};
+use cola::{Anchor, Deletion, EncodedReplica, Replica, ReplicaId};
 use ropey::Rope;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, ops::RangeBounds};
@@ -42,6 +42,16 @@ impl Buffer {
     {
         self.text.remove(range.clone());
         self.crdt.deleted(range)
+    }
+
+    #[must_use]
+    pub fn create_anchor(&self, index: usize) -> Anchor {
+        self.crdt.create_anchor(index, cola::AnchorBias::Right)
+    }
+
+    #[must_use]
+    pub fn resolve_anchor(&self, anchor: Anchor) -> Option<usize> {
+        self.crdt.resolve_anchor(anchor)
     }
 
     #[must_use]
