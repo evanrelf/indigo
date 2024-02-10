@@ -92,6 +92,6 @@ impl File {
     }
 
     pub fn assert_valid(&self) {
-        // `File` maintains invariants, but can't check that they're upheld after the fact.
+        self.buffer.assert_valid();
     }
 }

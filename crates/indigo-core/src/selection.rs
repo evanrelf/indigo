@@ -1,4 +1,4 @@
-use crate::Range;
+use crate::{Conversion, Range};
 use anyhow::Context as _;
 use fancy_regex::Regex;
 use ropey::Rope;
@@ -32,6 +32,14 @@ impl<'buffer> Selection<'buffer> {
     }
 
     pub fn assert_valid(&self) {
+        for range in &self.state.ranges {
+            let anchor = range.anchor().to_char_index_strict(self.rope);
+            assert!(matches!(anchor, Ok(Conversion::Valid(_))));
+
+            let cursor = range.cursor().to_char_index_strict(self.rope);
+            assert!(matches!(cursor, Ok(Conversion::Valid(_))));
+        }
+
         self.state.assert_valid();
     }
 }
@@ -119,7 +127,10 @@ impl<'buffer> SelectionMut<'buffer> {
     }
 
     pub fn assert_valid(&self) {
-        // TODO: `state` is valid for `rope`
+        // `Selection` and `SelectionMut` share the same invariants
+        let SelectionMut { rope, state } = self;
+        let selection = Selection { rope, state };
+        selection.assert_valid();
 
         self.state.assert_valid();
     }
@@ -320,7 +331,7 @@ impl SelectionState {
             "`primary` index is valid"
         );
 
-        // TODO: Use `is_sorted` once it stabilized
+        // TODO: Use `is_sorted` once it's stabilized
         // https://github.com/rust-lang/rust/issues/53485
         assert!(
             self.ranges.windows(2).all(|range| range[0] <= range[1]),

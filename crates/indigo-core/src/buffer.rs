@@ -33,11 +33,12 @@ impl Buffer {
             "`contents` rope is not empty"
         );
 
-        // TODO: `selection` is valid in `contents` rope
+        self.selection().assert_valid();
+        // `Selection` and `SelectionMut` share the same invariants, but the former doesn't require
+        // exclusive references, so we don't bother checking the latter.
+        // self.selection_mut().assert_valid();
 
         // TODO: Buffer validation
-
-        self.selection.assert_valid();
     }
 }
 
