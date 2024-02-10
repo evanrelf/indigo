@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true }
+cola = { workspace = true }
 ropey = { workspace = true }
 serde = { workspace = true }
 
