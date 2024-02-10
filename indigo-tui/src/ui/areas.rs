@@ -1,12 +1,12 @@
 use crate::ui::command;
-use indigo_core::{settings::Numbers, Editor, Mode, Position, RopeExt, Window};
+use indigo_core::{settings::LineNumbers, Editor, Mode, Position, RopeExt, Window};
 use ratatui::prelude::{Constraint, Direction, Layout, Rect};
 use std::cmp::max;
 
 #[derive(Clone, Copy)]
 pub struct Areas {
     pub tildes: Rect,
-    pub numbers: Rect,
+    pub line_numbers: Rect,
     pub buffer: Rect,
     pub scrollbar: Rect,
     pub status: Rect,
@@ -16,7 +16,7 @@ impl Areas {
     pub fn empty() -> Self {
         Self {
             tildes: Rect::default(),
-            numbers: Rect::default(),
+            line_numbers: Rect::default(),
             buffer: Rect::default(),
             scrollbar: Rect::default(),
             status: Rect::default(),
@@ -32,16 +32,16 @@ impl Areas {
         let vertical = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                // numbers + buffer + scrollbar
+                // line_numbers + buffer + scrollbar
                 Constraint::Min(0),
                 // status
                 Constraint::Length(status_height),
             ])
             .split(area);
 
-        let numbers_width = match editor.settings.numbers {
-            Numbers::Hidden => 0,
-            Numbers::Absolute => {
+        let line_numbers_width = match editor.settings.line_numbers {
+            LineNumbers::Hidden => 0,
+            LineNumbers::Absolute => {
                 let n = editor.current_file().buffer().contents().len_lines_indigo();
                 let digits = 1 + max(1, n).ilog10();
                 u16::try_from(max(2, digits) + 1).unwrap()
@@ -51,8 +51,8 @@ impl Areas {
         let horizontal = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
-                // numbers
-                Constraint::Length(numbers_width),
+                // line_numbers
+                Constraint::Length(line_numbers_width),
                 // buffer
                 Constraint::Fill(1),
                 // scrollbar
@@ -60,15 +60,19 @@ impl Areas {
             ])
             .split(vertical[0]);
 
-        let numbers = horizontal[0];
+        let line_numbers = horizontal[0];
         let buffer = horizontal[1];
         let scrollbar = horizontal[2];
         let status = vertical[1];
-        let tildes = if numbers.width > 0 { numbers } else { buffer };
+        let tildes = if line_numbers.width > 0 {
+            line_numbers
+        } else {
+            buffer
+        };
 
         Self {
             tildes,
-            numbers,
+            line_numbers,
             buffer,
             scrollbar,
             status,

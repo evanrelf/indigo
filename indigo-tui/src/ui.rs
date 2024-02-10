@@ -3,7 +3,7 @@ pub mod buffer;
 pub mod colors;
 pub mod column;
 pub mod command;
-pub mod numbers;
+pub mod line_numbers;
 pub mod scrollbar;
 pub mod selection;
 pub mod status;
@@ -15,7 +15,7 @@ use ratatui::prelude::Buffer as Surface;
 
 pub fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
     tildes::render(editor, areas.tildes, surface);
-    numbers::render(editor, areas.numbers, surface);
+    line_numbers::render(editor, areas.line_numbers, surface);
     buffer::render(editor, areas.buffer, surface);
     selection::render(editor, areas.buffer, surface);
     column::render(editor, areas.buffer, surface);
