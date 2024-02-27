@@ -209,22 +209,6 @@ pub enum KeyCode {
     Char(char),
 }
 
-impl Display for KeyCode {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
-        match self {
-            Self::Backspace => write!(f, "backspace"),
-            Self::Enter => write!(f, "enter"),
-            Self::Left => write!(f, "left"),
-            Self::Right => write!(f, "right"),
-            Self::Up => write!(f, "up"),
-            Self::Down => write!(f, "down"),
-            Self::Tab => write!(f, "tab"),
-            Self::Escape => write!(f, "escape"),
-            Self::Char(c) => write!(f, "{c}"),
-        }
-    }
-}
-
 fn key_code(input: &mut &str) -> PResult<KeyCode> {
     alt((key_code_wrapped, key_code_bare)).parse_next(input)
 }
