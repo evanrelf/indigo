@@ -16,3 +16,11 @@ impl Default for Mode {
         Self::Normal(NormalMode::default())
     }
 }
+
+#[derive(Clone, Debug, Default)]
+pub enum ModeKind {
+    #[default]
+    Normal,
+    Insert,
+    Command,
+}
