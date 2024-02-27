@@ -1,6 +1,11 @@
 use ropey::{Rope, RopeSlice};
 
 pub trait RopeExt {
+    // `ropey` counts lines in a non-intuitive way, at least for my purposes. This method provides
+    // an alternative, Indigo-specific line count.
+    //
+    // See the unit tests below for examples, and this GitHub issue for more info:
+    // https://github.com/cessen/ropey/issues/60
     fn len_lines_indigo(&self) -> usize;
 }
 
