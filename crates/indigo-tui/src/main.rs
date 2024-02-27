@@ -126,7 +126,11 @@ macro_rules! quit {
         return Ok(ControlFlow::Quit(ExitCode::SUCCESS));
     }};
     ($x:expr) => {{
-        return Ok(ControlFlow::Quit(ExitCode::from($x)));
+        return Ok(ControlFlow::Quit(if $x == 0 {
+            ExitCode::SUCCESS
+        } else {
+            ExitCode::from($x)
+        }));
     }};
 }
 
@@ -326,9 +330,7 @@ fn update_command(
 
             if !command.is_empty() {
                 match command::parse(&command).context("Failed to parse command")? {
-                    Command::Quit(Quit { exit_code }) => {
-                        quit!(exit_code.unwrap_or(0));
-                    }
+                    Command::Quit(Quit { exit_code }) => quit!(exit_code),
                 }
             }
 

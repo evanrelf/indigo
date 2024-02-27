@@ -8,7 +8,8 @@ pub enum Command {
 
 #[derive(Debug, clap::Args, Eq, PartialEq)]
 pub struct Quit {
-    pub exit_code: Option<u8>,
+    #[clap(default_value_t = 0)]
+    pub exit_code: u8,
 }
 
 pub fn parse(input: &str) -> anyhow::Result<Command> {
@@ -28,16 +29,11 @@ mod test {
 
     #[test]
     fn test_parse() {
-        assert_eq!(parse("q").unwrap(), Command::Quit(Quit { exit_code: None }));
-        assert_eq!(
-            parse("quit").unwrap(),
-            Command::Quit(Quit { exit_code: None })
-        );
+        assert_eq!(parse("q").unwrap(), Command::Quit(Quit { exit_code: 0 }));
+        assert_eq!(parse("quit").unwrap(), Command::Quit(Quit { exit_code: 0 }));
         assert_eq!(
             parse("quit 42").unwrap(),
-            Command::Quit(Quit {
-                exit_code: Some(42)
-            })
+            Command::Quit(Quit { exit_code: 42 })
         );
     }
 }
