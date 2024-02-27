@@ -50,7 +50,10 @@ impl Editor {
 
     #[must_use]
     pub fn current_file_key(&self) -> FileKey {
-        self.windows[self.current_window].file_key()
+        self.windows
+            .get(self.current_window)
+            .expect("`current_window` is always valid")
+            .file_key()
     }
 
     pub fn insert_file(&mut self, file: File) -> FileKey {
@@ -88,17 +91,21 @@ impl Editor {
     #[must_use]
     pub fn current_window(&self) -> Window {
         self.get_window(self.current_window)
-            .expect("current window key is always valid")
+            .expect("`current_window` key is always valid")
     }
 
     #[must_use]
     pub fn current_window_mut(&mut self) -> WindowMut {
         self.get_window_mut(self.current_window)
-            .expect("current window key is always valid")
+            .expect("`current_window` is always valid")
     }
 
     #[must_use]
     pub fn current_window_key(&self) -> WindowKey {
+        assert!(
+            self.windows.contains_key(self.current_window),
+            "`current_window` is always valid"
+        );
         self.current_window
     }
 
