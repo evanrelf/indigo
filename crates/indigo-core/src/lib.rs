@@ -2,6 +2,7 @@ mod buffer;
 pub mod command;
 mod conversion;
 mod editor;
+mod event;
 mod file;
 mod key;
 mod mode;
@@ -18,9 +19,10 @@ pub use crate::{
     command::Command,
     conversion::Conversion,
     editor::Editor,
+    event::Event,
     file::{File, FileKey},
     key::{Key, KeyCode, KeyModifier, Keys},
-    mode::{CommandMode, InsertMode, Mode, NormalMode},
+    mode::{CommandMode, InsertMode, Mode, ModeKind, NormalMode},
     position::Position,
     range::Range,
     rope::RopeExt,
