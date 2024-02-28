@@ -586,7 +586,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "indigo-state"
+name = "indigo-nursery"
 version = "0.1.0"
 dependencies = [
  "anyhow",
