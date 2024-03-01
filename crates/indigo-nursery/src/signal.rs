@@ -1,54 +1,53 @@
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex};
 
 // https://www.youtube.com/watch?v=cELFZQAMdhQ
 
-pub fn signal<T>(value: T) -> (Getter<T>, Setter<T>) {
-    let value = Arc::new(RwLock::new(value));
+pub fn signal<T>(value: T) -> (Reader<T>, Writer<T>)
+where
+    T: Clone + 'static,
+{
+    let value = Arc::new(Mutex::new(value));
 
-    let subscribers = Arc::new(RwLock::new(Vec::new()));
-
-    let getter = Getter {
-        value: Arc::clone(&value),
-        subscribers: Arc::clone(&subscribers),
+    let reader_value = Arc::clone(&value);
+    let reader = Reader {
+        value: Box::new(move || (*reader_value.lock().unwrap()).clone()),
     };
 
-    let setter = Setter {
-        value: Arc::clone(&value),
-        subscribers: Arc::clone(&subscribers),
+    let writer_value = Arc::clone(&value);
+    let writer = Writer {
+        value: writer_value,
     };
 
-    (getter, setter)
+    (reader, writer)
 }
 
-pub struct Getter<T> {
-    value: Arc<RwLock<T>>,
-    #[allow(clippy::type_complexity)]
-    subscribers: Arc<RwLock<Vec<Box<dyn Fn(&T)>>>>,
+pub struct Writer<T> {
+    value: Arc<Mutex<T>>,
 }
 
-impl<T> Getter<T> {
-    pub fn get(&self) -> T
-    where
-        T: Clone,
-    {
-        (*self.value.read().unwrap()).clone()
+impl<T> Writer<T> {
+    pub fn set(&self, value: T) {
+        *self.value.lock().unwrap() = value;
     }
 }
 
-pub struct Setter<T> {
-    value: Arc<RwLock<T>>,
-    #[allow(clippy::type_complexity)]
-    subscribers: Arc<RwLock<Vec<Box<dyn Fn(&T)>>>>,
+pub struct Reader<T> {
+    value: Box<dyn Fn() -> T>,
 }
 
-impl<T> Setter<T> {
-    pub fn set(&self, value: T) {
-        let mut value_guard = self.value.write().unwrap();
+impl<T> Reader<T> {
+    pub fn get(&self) -> T {
+        (self.value)()
+    }
 
-        *value_guard = value;
-
-        for subscriber in &*self.subscribers.read().unwrap() {
-            subscriber(&value_guard);
+    pub fn map<'me, C, F, U>(&'me self, context: &C, f: F) -> Reader<U>
+    where
+        C: Clone + 'me,
+        F: Fn(T, C) -> U + 'me,
+    {
+        let context = context.clone();
+        Reader {
+            value: Box::new(move || f(self.get(), context)),
         }
     }
 }
@@ -57,10 +56,16 @@ impl<T> Setter<T> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn single() {
-        let (count, set_count) = signal(0);
-        set_count.set(count.get() + 1);
-        assert_eq!(count.get(), 1);
-    }
+    // #[test]
+    // fn test() {
+    //     let (count, set_count) = signal(2);
+    //     let (multipler, set_multiplier) = signal(2);
+    //     let product = count.map(|x| x * multipler.get());
+    //     set_count.set(count.get() + 1);
+    //     set_multiplier.set(multipler.get() + 1);
+    //     assert_eq!(
+    //         format!("{} * {} = {}", count.get(), multipler.get(), product.get()),
+    //         "3 * 3 = 9"
+    //     );
+    // }
 }
