@@ -4,12 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
 indigo-core = { workspace = true }
 smol = { workspace = true }
-tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 
 [lints]
