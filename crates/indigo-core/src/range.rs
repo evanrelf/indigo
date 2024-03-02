@@ -2,9 +2,12 @@ use crate::{Conversion, Position};
 use anyhow::Context as _;
 use fancy_regex::Regex;
 use ropey::{Rope, RopeSlice};
-use std::borrow::Cow;
-use std::cmp::{max, min};
+use std::{
+    borrow::Cow,
+    cmp::{max, min},
+};
 
+/// A directional range of positions in a rope.
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Range {
     anchor: Position,
@@ -13,11 +16,25 @@ pub struct Range {
 }
 
 impl Range {
+    /// ```text
+    /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒█
+    /// ^
+    ///
+    /// █▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+    ///               ^
+    /// ```
     #[must_use]
     pub fn anchor(&self) -> Position {
         self.anchor
     }
 
+    /// ```text
+    /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒█
+    ///               ^
+    ///
+    /// █▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+    /// ^
+    /// ```
     #[must_use]
     pub fn cursor(&self) -> Position {
         self.cursor
@@ -28,31 +45,79 @@ impl Range {
         self.target_column
     }
 
+    /// ```text
+    /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒█
+    /// ^
+    ///
+    /// █▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+    /// ^
+    /// ```
     #[must_use]
     pub fn start(&self) -> Position {
         min(self.anchor, self.cursor)
     }
 
+    /// ```text
+    /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒█
+    ///               ^
+    ///
+    /// █▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+    ///               ^
+    /// ```
     #[must_use]
     pub fn end(&self) -> Position {
         max(self.anchor, self.cursor)
     }
 
+    /// Whether the range is facing forward (the anchor is behind or overlapping with the cursor).
+    ///
+    /// ```text
+    /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒█ -> true
+    ///
+    ///               █ -> true
+    ///
+    /// █▒▒▒▒▒▒▒▒▒▒▒▒▒▒ -> false
+    /// ```
     #[must_use]
     pub fn is_forward(&self) -> bool {
         self.anchor <= self.cursor
     }
 
+    /// Whether the range is facing backward (the anchor is ahead of the cursor).
+    ///
+    /// ```text
+    /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒█ -> false
+    ///
+    ///               █ -> false
+    ///
+    /// █▒▒▒▒▒▒▒▒▒▒▒▒▒▒ -> true
+    /// ```
     #[must_use]
     pub fn is_backward(&self) -> bool {
         self.anchor > self.cursor
     }
 
+    /// Whether the range is reduced (the anchor and cursor are overlapping).
+    ///
+    /// ```text
+    /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒█ -> false
+    ///
+    ///               █ -> true
+    /// ```
     #[must_use]
     pub fn is_reduced(&self) -> bool {
         self.anchor == self.cursor
     }
 
+    /// Whether two ranges are overlapping.
+    ///
+    /// ```text
+    /// ▒▒▒▒▒▒▒▒█       -> true
+    ///       ▒▒▒▒▒▒▒▒█
+    ///
+    /// ▒▒▒▒▒▒█
+    ///          ▒▒▒▒▒█ -> false
+    /// ```
     #[must_use]
     pub fn is_overlapping(&self, other: &Self) -> bool {
         self.start() <= other.end() && other.start() <= self.end()
@@ -68,6 +133,11 @@ impl Range {
         Ok(())
     }
 
+    /// Swap the anchor and the cursor, reversing the range's direction.
+    ///
+    /// ```text
+    /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒█ -> █▒▒▒▒▒▒▒▒▒▒▒▒▒▒ -> ▒▒▒▒▒▒▒▒▒▒▒▒▒▒█
+    /// ```
     pub fn flip(&mut self) {
         if !self.is_reduced() {
             std::mem::swap(&mut self.anchor, &mut self.cursor);
@@ -75,22 +145,46 @@ impl Range {
         }
     }
 
+    /// If the cursor is behind the anchor, swap the two.
+    ///
+    /// ```text
+    /// █▒▒▒▒▒▒▒▒▒▒▒▒▒▒ -> ▒▒▒▒▒▒▒▒▒▒▒▒▒▒█ -> ▒▒▒▒▒▒▒▒▒▒▒▒▒▒█
+    /// ```
     pub fn flip_forward(&mut self) {
         if self.is_backward() {
             self.flip();
         }
     }
 
+    /// If the anchor is behind the cursor, swap the two.
+    ///
+    /// ```text
+    /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒█ -> █▒▒▒▒▒▒▒▒▒▒▒▒▒▒ -> █▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+    /// ```
     pub fn flip_backward(&mut self) {
         if self.is_forward() {
             self.flip();
         }
     }
 
+    /// Move the anchor to the cursor's position, collapsing the range down to a single position.
+    ///
+    /// ```text
+    /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒█ ->               █
+    ///
+    /// █▒▒▒▒▒▒▒▒▒▒▒▒▒▒ -> █
+    /// ```
     pub fn reduce(&mut self) {
         self.anchor = self.cursor;
     }
 
+    /// ```text
+    /// ▒▒▒▒▒▒▒▒█       -> ▒▒▒▒▒▒▒▒▒▒▒▒▒▒█
+    ///       ▒▒▒▒▒▒▒▒█
+    ///
+    /// ▒▒▒▒▒▒█         -> ▒▒▒▒▒▒▒▒▒▒▒▒▒▒█
+    ///          ▒▒▒▒▒█
+    /// ```
     pub fn merge(&mut self, other: &Self) {
         match (self.is_forward(), other.is_forward()) {
             (true, true) => {
@@ -118,8 +212,21 @@ impl Range {
         }
     }
 
+    /// ```text
+    ///   Hello, world!                Hello world!
+    ///   ▒▒▒▒▒▒▒▒▒▒▒▒█ --- Hello ---> ▒▒▒▒█
+    ///
+    ///   Hello, world!                Hello world!
+    ///   ▒▒▒▒▒▒▒▒▒▒▒▒█ -- Goodbye -->
+    ///
+    /// [foo, bar, baz]                [foo, bar, baz]
+    /// █▒▒▒▒▒▒▒▒▒▒▒▒▒▒ ---- \w+ ---->  █▒▒  █▒▒  █▒▒
+    /// ```
     #[must_use]
     pub fn select(&self, rope: &Rope, regex: &Regex) -> Option<Vec<Self>> {
+        // TODO: Check if this preserves the range's direction correctly, like the third example in
+        // the docs illustrates.
+
         let offset = self.start().to_char_index(rope).ok()?;
 
         let rope_slice = self.to_rope_slice(rope)?;
@@ -218,6 +325,7 @@ impl Range {
         Some(slice)
     }
 
+    /// Check that the type's invariants hold.
     pub fn assert_valid(&self) {
         self.anchor.assert_valid();
 
