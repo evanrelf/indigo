@@ -8,6 +8,8 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
 };
 
+// TODO: Copy changes from `ghciwatch`
+
 pub struct TerminalGuard {
     terminal: Terminal<CrosstermBackend<Stdout>>,
 }

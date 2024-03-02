@@ -1,6 +1,7 @@
 use crate::{Conversion, RopeExt as _};
 use ropey::Rope;
 
+/// A position in a rope.
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Position {
     pub line: usize,
@@ -8,10 +9,20 @@ pub struct Position {
 }
 
 impl Position {
+    /// Convert a character index in a rope into a position.
+    ///
+    /// If the index exceeds the length of the rope, it is snapped to the last character. Fails if
+    /// the rope is empty.
+    ///
+    /// If you need to know if a correction was made, use [`Position::from_char_index_strict`].
     pub fn from_char_index(index: usize, rope: &Rope) -> anyhow::Result<Self> {
         Self::from_char_index_strict(index, rope).map(Conversion::into_inner)
     }
 
+    /// Convert a character index in a rope into a position.
+    ///
+    /// If the index exceeds the length of the rope, it is snapped to the last character. Fails if
+    /// the rope is empty.
     pub fn from_char_index_strict(index: usize, rope: &Rope) -> anyhow::Result<Conversion<Self>> {
         let mut corrected = false;
 
@@ -40,10 +51,22 @@ impl Position {
         }
     }
 
+    /// Convert a position in a rope into a character index.
+    ///
+    /// If the position's column exceeds the length of a line, it is snapped to the last column. If
+    /// the position exceeds the length of the rope, it is snapped to the last character. Fails if
+    /// the rope is empty.
+    ///
+    /// If you need to know if a correction was made, use [`Position::to_char_index_strict`].
     pub fn to_char_index(self, rope: &Rope) -> anyhow::Result<usize> {
         self.to_char_index_strict(rope).map(Conversion::into_inner)
     }
 
+    /// Convert a position in a rope into a character index.
+    ///
+    /// If the position's column exceeds the length of a line, it is snapped to the last column. If
+    /// the position exceeds the length of the rope, it is snapped to the last character. Fails if
+    /// the rope is empty.
     pub fn to_char_index_strict(self, rope: &Rope) -> anyhow::Result<Conversion<usize>> {
         if rope.len_chars() == 0 {
             anyhow::bail!("Rope is empty");
@@ -79,11 +102,20 @@ impl Position {
         }
     }
 
+    /// Correct a position so it's valid in the provided rope.
+    ///
+    /// If the position's column exceeds the length of a line, it is snapped to the last column. If
+    /// the position exceeds the length of the rope, it is snapped to the last character. Defaults
+    /// to (0, 0) if the rope is empty.
     pub fn correct(&mut self, rope: &Rope) {
+        // TODO: Fail instead of using default
         let index = self.to_char_index(rope).unwrap_or_default();
         *self = Self::from_char_index(index, rope).unwrap_or_default();
     }
 
+    /// Insert a character at this position in a rope.
+    ///
+    /// Fails if the position is not valid in the rope.
     pub fn insert_char(&self, c: char, rope: &mut Rope) -> anyhow::Result<Self> {
         let Ok(Conversion::Valid(index)) = self.to_char_index_strict(rope) else {
             anyhow::bail!("Position isn't valid in rope");
@@ -103,6 +135,9 @@ impl Position {
         Ok(new_position)
     }
 
+    /// Insert a string at this position in a rope.
+    ///
+    /// Fails if the position is not valid in the rope.
     pub fn insert(&self, s: &str, rope: &mut Rope) -> anyhow::Result<Self> {
         let Ok(Conversion::Valid(index)) = self.to_char_index_strict(rope) else {
             anyhow::bail!("Position isn't valid in rope");
@@ -122,9 +157,11 @@ impl Position {
         Ok(new_position)
     }
 
-    pub fn assert_valid(&self) {
-        // `Position`s are trivially valid
-    }
+    /// Check that the type's invariants hold.
+    ///
+    /// Positions are trivially valid - they aren't necessarily associated with a rope - so this
+    /// function is a no-op.
+    pub fn assert_valid(&self) {}
 }
 
 impl From<(usize, usize)> for Position {
