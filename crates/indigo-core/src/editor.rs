@@ -1,4 +1,5 @@
 use crate::{window::WindowState, File, FileKey, Mode, Settings, Window, WindowKey, WindowMut};
+use anyhow::Context as _;
 use slotmap::SlotMap;
 
 #[derive(Debug)]
@@ -138,6 +139,24 @@ impl Editor {
 
     pub fn window_keys(&self) -> impl Iterator<Item = WindowKey> + '_ {
         self.windows.keys()
+    }
+
+    pub fn set_window_file(
+        &mut self,
+        window_key: WindowKey,
+        file_key: FileKey,
+    ) -> anyhow::Result<()> {
+        let window = self
+            .windows
+            .get_mut(window_key)
+            .context("Invalid window key")?;
+        let _file = self.files.get(file_key).context("Invalid file key")?;
+        *window = WindowState::new(file_key);
+        Ok(())
+    }
+
+    pub fn set_current_window_file(&mut self, file_key: FileKey) -> anyhow::Result<()> {
+        self.set_window_file(self.current_window, file_key)
     }
 
     // TODO: Should `mode` just be `pub`? Or are there invariants that need to be enforced, so this

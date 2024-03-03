@@ -11,7 +11,7 @@ use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{Event, EventStream, KeyCode, MouseEventKind};
 use indigo_core::{
-    command::{self, Quit},
+    command::{self, Edit, Quit},
     Command, CommandMode, Editor, File, InsertMode, Mode, NormalMode,
 };
 use smol::stream::StreamExt as _;
@@ -109,7 +109,10 @@ async fn run(mut editor: Editor) -> anyhow::Result<ExitCode> {
             tracing::debug!(?event);
         }
 
-        match update(&mut editor, areas, &event).context("Failed to update state")? {
+        match update(&mut editor, areas, &event)
+            .await
+            .context("Failed to update state")?
+        {
             ControlFlow::Continue => {}
             ControlFlow::Quit(exit_code) => break Ok(exit_code),
         }
@@ -138,11 +141,11 @@ pub(crate) use quit;
 
 // TODO: Treat `CONTROL 'B'` like `CONTROL SHIFT 'b'`
 
-fn update(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Result<ControlFlow> {
+async fn update(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Result<ControlFlow> {
     match editor.mode() {
         Mode::Normal(_) => update_normal(editor, areas, event),
-        Mode::Insert(_) => update_insert(editor, areas, event),
-        Mode::Command(_) => update_command(editor, areas, event),
+        Mode::Insert(_) => update_insert(editor, event),
+        Mode::Command(_) => update_command(editor, event).await,
     }
 }
 
@@ -222,7 +225,7 @@ fn update_normal(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Re
     Ok(ControlFlow::Continue)
 }
 
-fn update_insert(editor: &mut Editor, _areas: Areas, event: &Event) -> anyhow::Result<ControlFlow> {
+fn update_insert(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
     match event {
         Event::Key(key)
             if matches!(key.code, KeyCode::Char(_))
@@ -271,11 +274,7 @@ fn update_insert(editor: &mut Editor, _areas: Areas, event: &Event) -> anyhow::R
 
 // TODO: Support pasting large strings (use bracketed paste mode, don't `insert_char` a million
 // times)
-fn update_command(
-    editor: &mut Editor,
-    _areas: Areas,
-    event: &Event,
-) -> anyhow::Result<ControlFlow> {
+async fn update_command(editor: &mut Editor, event: &Event) -> anyhow::Result<ControlFlow> {
     let Mode::Command(command_mode) = editor.mode_mut() else {
         unreachable!();
     };
@@ -331,6 +330,13 @@ fn update_command(
             if !command.is_empty() {
                 match command::parse(&command).context("Failed to parse command")? {
                     Command::Quit(Quit { exit_code }) => quit!(exit_code),
+                    Command::Edit(Edit { path }) => {
+                        let file = smol::spawn(File::open(path.clone()))
+                            .await
+                            .context("Failed to open file")?;
+                        let file_key = editor.insert_file(file);
+                        editor.set_current_window_file(file_key)?;
+                    }
                 }
             }
 

@@ -1,15 +1,24 @@
+use camino::Utf8PathBuf;
 use clap::Parser as _;
 
 #[derive(Debug, clap::Parser, Eq, PartialEq)]
 pub enum Command {
     #[command(alias = "q")]
     Quit(Quit),
+    #[command(alias = "e")]
+    Edit(Edit),
 }
 
 #[derive(Debug, clap::Args, Eq, PartialEq)]
 pub struct Quit {
     #[clap(default_value_t = 0)]
     pub exit_code: u8,
+}
+
+// TODO: Accept line and column
+#[derive(Debug, clap::Args, Eq, PartialEq)]
+pub struct Edit {
+    pub path: Utf8PathBuf,
 }
 
 pub fn parse(input: &str) -> anyhow::Result<Command> {
