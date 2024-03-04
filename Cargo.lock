@@ -585,9 +585,11 @@ dependencies = [
 name = "indigo-nursery"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "cola",
  "ropey",
  "serde",
+ "slotmap",
 ]
 
 [[package]]
