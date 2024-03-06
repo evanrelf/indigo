@@ -1,3 +1,5 @@
+// Ambitious, exploring possibilities
+
 #![allow(clippy::type_complexity)]
 
 use slotmap::SlotMap;
