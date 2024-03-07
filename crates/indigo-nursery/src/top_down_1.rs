@@ -63,31 +63,11 @@ struct EventRouter;
 
 struct Settings;
 
-fn settings(
-    _global: &GlobalSettings,
-    _buffer: &BufferSettings,
-    _window: &WindowSettings,
-) -> Settings {
-    todo!()
-}
-
 struct GlobalSettings;
-
-fn global_settings(_settings: &Settings) -> GlobalSettings {
-    todo!()
-}
 
 struct BufferSettings;
 
-fn buffer_settings(_settings: &Settings) -> BufferSettings {
-    todo!()
-}
-
 struct WindowSettings;
-
-fn window_settings(_settings: &Settings) -> WindowSettings {
-    todo!()
-}
 
 struct Key {
     modifiers: HashSet<KeyModifier>,
