@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.80"
 camino = "1.1.6"
 clap = { version = "4.5.1", default-features = false, features = ["derive", "error-context", "help", "std", "usage"] }
 ropey = { version = "1.6.1", default-features = false, features = ["simd"] }
