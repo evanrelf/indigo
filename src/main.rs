@@ -1,5 +1,6 @@
 use camino::Utf8PathBuf;
 use clap::Parser as _;
+use crossterm::event::{self, Event, KeyCode, KeyModifiers};
 use ropey::Rope;
 use std::{fs::File, io::BufReader};
 
@@ -18,6 +19,27 @@ fn main() -> anyhow::Result<()> {
         editor.text = Rope::from_reader(BufReader::new(file))?;
     }
 
+    enter_terminal()?;
+
+    crossterm::execute!(
+        std::io::stdout(),
+        crossterm::cursor::MoveTo(0, 0),
+        crossterm::style::Print("Hello, world! (Ctrl-C to exit)"),
+    )?;
+
+    loop {
+        #[allow(clippy::single_match)]
+        match event::read()? {
+            Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+                (KeyModifiers::CONTROL, KeyCode::Char('c')) => break,
+                _ => {}
+            },
+            _ => {}
+        }
+    }
+
+    exit_terminal()?;
+
     Ok(())
 }
 
@@ -26,4 +48,32 @@ struct Editor {
     text: Rope,
     cursor: (usize, usize),
     scroll: usize,
+}
+
+fn enter_terminal() -> anyhow::Result<()> {
+    let mut stdout = std::io::stdout();
+
+    crossterm::terminal::enable_raw_mode()?;
+
+    crossterm::execute!(
+        stdout,
+        crossterm::terminal::EnterAlternateScreen,
+        crossterm::cursor::Hide,
+    )?;
+
+    Ok(())
+}
+
+fn exit_terminal() -> anyhow::Result<()> {
+    let mut stdout = std::io::stdout();
+
+    crossterm::execute!(
+        stdout,
+        crossterm::cursor::Show,
+        crossterm::terminal::LeaveAlternateScreen,
+    )?;
+
+    crossterm::terminal::disable_raw_mode()?;
+
+    Ok(())
 }
