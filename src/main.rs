@@ -1,3 +1,6 @@
+mod editor;
+
+use crate::editor::Editor;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
@@ -41,13 +44,6 @@ fn main() -> anyhow::Result<()> {
     exit_terminal()?;
 
     Ok(())
-}
-
-#[derive(Debug, Default)]
-struct Editor {
-    text: Rope,
-    cursor: (usize, usize),
-    scroll: usize,
 }
 
 fn enter_terminal() -> anyhow::Result<()> {
