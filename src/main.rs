@@ -1,7 +1,8 @@
 mod editor;
+mod rope;
 mod terminal;
 
-use crate::{editor::Editor, terminal::Terminal};
+use crate::{editor::Editor, rope::RopeExt as _, terminal::Terminal};
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
@@ -31,7 +32,7 @@ fn main() -> anyhow::Result<()> {
     loop {
         terminal.draw(|frame| {
             let text = Cow::<'_, str>::from(&editor.text);
-            let last_line = len_lines_indigo(&editor.text).saturating_sub(1);
+            let last_line = editor.text.len_lines_indigo().saturating_sub(1);
             let scroll = min(last_line, editor.scroll);
             let scroll = u16::try_from(scroll).unwrap();
             frame.render_widget(Paragraph::new(text).scroll((scroll, 0)), frame.size());
@@ -55,12 +56,4 @@ fn main() -> anyhow::Result<()> {
     terminal::exit()?;
 
     Ok(())
-}
-
-fn len_lines_indigo(rope: &Rope) -> usize {
-    if rope.len_chars() == 0 {
-        return 0;
-    }
-    let last_char = rope.char(rope.len_chars() - 1);
-    rope.len_lines() - if last_char == '\n' { 1 } else { 0 }
 }
