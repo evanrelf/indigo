@@ -38,6 +38,7 @@ pub fn enter() -> anyhow::Result<()> {
         stdout,
         crossterm::terminal::EnterAlternateScreen,
         crossterm::cursor::Hide,
+        crossterm::event::EnableMouseCapture,
     )?;
 
     Ok(())
@@ -48,6 +49,7 @@ pub fn exit() -> anyhow::Result<()> {
 
     crossterm::execute!(
         stdout,
+        crossterm::event::DisableMouseCapture,
         crossterm::cursor::Show,
         crossterm::terminal::LeaveAlternateScreen,
     )?;
