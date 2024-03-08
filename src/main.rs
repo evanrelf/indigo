@@ -1,10 +1,11 @@
 mod editor;
 mod terminal;
 
-use crate::editor::Editor;
+use crate::{editor::Editor, terminal::Terminal};
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
+use ratatui::widgets::Paragraph;
 use ropey::Rope;
 use std::{fs::File, io::BufReader};
 
@@ -23,15 +24,18 @@ fn main() -> anyhow::Result<()> {
         editor.text = Rope::from_reader(BufReader::new(file))?;
     }
 
+    let mut terminal = Terminal::new()?;
+
     terminal::enter()?;
 
-    crossterm::execute!(
-        std::io::stdout(),
-        crossterm::cursor::MoveTo(0, 0),
-        crossterm::style::Print("Hello, world! (Ctrl-C to exit)"),
-    )?;
-
     loop {
+        terminal.draw(|frame| {
+            frame.render_widget(
+                Paragraph::new("Hello, world! (Ctrl-C to exit)"),
+                frame.size(),
+            );
+        })?;
+
         #[allow(clippy::single_match)]
         match event::read()? {
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
