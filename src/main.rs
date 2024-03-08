@@ -7,7 +7,7 @@ use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
 use ratatui::widgets::Paragraph;
 use ropey::Rope;
-use std::{fs::File, io::BufReader};
+use std::{borrow::Cow, fs::File, io::BufReader};
 
 #[derive(clap::Parser, Debug)]
 struct Args {
@@ -31,7 +31,7 @@ fn main() -> anyhow::Result<()> {
     loop {
         terminal.draw(|frame| {
             frame.render_widget(
-                Paragraph::new("Hello, world! (Ctrl-C to exit)"),
+                Paragraph::new(Cow::<'_, str>::from(&editor.text)),
                 frame.size(),
             );
         })?;
