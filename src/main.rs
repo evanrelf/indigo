@@ -1,4 +1,5 @@
 mod editor;
+mod terminal;
 
 use crate::editor::Editor;
 use camino::Utf8PathBuf;
@@ -22,7 +23,7 @@ fn main() -> anyhow::Result<()> {
         editor.text = Rope::from_reader(BufReader::new(file))?;
     }
 
-    enter_terminal()?;
+    terminal::enter()?;
 
     crossterm::execute!(
         std::io::stdout(),
@@ -41,35 +42,7 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    exit_terminal()?;
-
-    Ok(())
-}
-
-fn enter_terminal() -> anyhow::Result<()> {
-    let mut stdout = std::io::stdout();
-
-    crossterm::terminal::enable_raw_mode()?;
-
-    crossterm::execute!(
-        stdout,
-        crossterm::terminal::EnterAlternateScreen,
-        crossterm::cursor::Hide,
-    )?;
-
-    Ok(())
-}
-
-fn exit_terminal() -> anyhow::Result<()> {
-    let mut stdout = std::io::stdout();
-
-    crossterm::execute!(
-        stdout,
-        crossterm::cursor::Show,
-        crossterm::terminal::LeaveAlternateScreen,
-    )?;
-
-    crossterm::terminal::disable_raw_mode()?;
+    terminal::exit()?;
 
     Ok(())
 }
