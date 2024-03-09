@@ -6,7 +6,10 @@ use crate::{editor::Editor, rope::RopeExt as _, terminal::Terminal};
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
-use ratatui::widgets::Paragraph;
+use ratatui::{
+    prelude::{Buffer, Rect},
+    widgets::{Paragraph, Widget as _},
+};
 use ropey::Rope;
 use std::{borrow::Cow, cmp::min, fs::File, io::BufReader};
 
@@ -30,13 +33,7 @@ fn main() -> anyhow::Result<()> {
     terminal::enter()?;
 
     loop {
-        terminal.draw(|frame| {
-            let text = Cow::<'_, str>::from(&editor.text);
-            let last_line = editor.text.len_lines_indigo().saturating_sub(1);
-            let scroll = min(last_line, editor.scroll);
-            let scroll = u16::try_from(scroll).unwrap();
-            frame.render_widget(Paragraph::new(text).scroll((scroll, 0)), frame.size());
-        })?;
+        terminal.draw(|frame| render(&editor, frame.size(), frame.buffer_mut()).unwrap())?;
 
         #[allow(clippy::single_match)]
         match event::read()? {
@@ -54,6 +51,20 @@ fn main() -> anyhow::Result<()> {
     }
 
     terminal::exit()?;
+
+    Ok(())
+}
+
+fn render(editor: &Editor, area: Rect, buffer: &mut Buffer) -> anyhow::Result<()> {
+    let text = Cow::<'_, str>::from(&editor.text);
+
+    let last_line = editor.text.len_lines_indigo().saturating_sub(1);
+
+    let scroll = u16::try_from(min(last_line, editor.scroll))?;
+
+    Paragraph::new(text)
+        .scroll((scroll, 0))
+        .render(area, buffer);
 
     Ok(())
 }
