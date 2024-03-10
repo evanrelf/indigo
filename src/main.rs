@@ -1,3 +1,4 @@
+mod conversion;
 mod editor;
 mod position;
 mod rope;
