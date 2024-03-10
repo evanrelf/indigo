@@ -27,8 +27,9 @@ fn main() -> anyhow::Result<()> {
 
     let mut editor = Editor::default();
 
-    if let Some(ref path) = args.file {
-        let file = File::open(path)?;
+    if let Some(path) = args.file {
+        let file = File::open(&path)?;
+        editor.path = Some(path);
         editor.buffer.text = Rope::from_reader(BufReader::new(file))?;
     }
 
@@ -74,6 +75,7 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
                 (KeyModifiers::NONE, KeyCode::Down) => editor.scroll_down(1),
                 (KeyModifiers::NONE, KeyCode::Left) => editor.scroll_left(1),
                 (KeyModifiers::NONE, KeyCode::Right) => editor.scroll_right(1),
+                (KeyModifiers::CONTROL, KeyCode::Char('s')) => editor.save()?,
                 (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
                 (KeyModifiers::CONTROL, KeyCode::Char('p')) => panic!(),
                 _ => {}
@@ -95,6 +97,7 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
                 (KeyModifiers::SHIFT, KeyCode::Char(char)) => buffer.insert_char(char)?,
                 (KeyModifiers::NONE, KeyCode::Enter) => buffer.insert_char('\n')?,
                 (KeyModifiers::NONE, KeyCode::Backspace) => buffer.backspace()?,
+                (KeyModifiers::CONTROL, KeyCode::Char('s')) => editor.save()?,
                 (KeyModifiers::NONE, KeyCode::Esc) => editor.mode = Mode::Normal,
                 _ => {}
             },
