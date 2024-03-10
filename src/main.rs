@@ -40,7 +40,6 @@ fn main() -> anyhow::Result<()> {
             render_cursor(&editor, area, buffer).unwrap();
         })?;
 
-        #[allow(clippy::single_match)]
         match event::read()? {
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
                 (KeyModifiers::NONE, KeyCode::Char('h')) => editor.move_left(1),
@@ -54,9 +53,13 @@ fn main() -> anyhow::Result<()> {
                 (KeyModifiers::CONTROL, KeyCode::Char('c')) => break,
                 _ => {}
             },
-            Event::Mouse(mouse_event) => match mouse_event.kind {
-                MouseEventKind::ScrollUp => editor.scroll_up(3),
-                MouseEventKind::ScrollDown => editor.scroll_down(3),
+            Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
+                (KeyModifiers::ALT, MouseEventKind::ScrollUp) => editor.scroll_up(1),
+                (KeyModifiers::ALT, MouseEventKind::ScrollDown) => editor.scroll_down(1),
+                (KeyModifiers::NONE, MouseEventKind::ScrollUp) => editor.scroll_up(3),
+                (KeyModifiers::NONE, MouseEventKind::ScrollDown) => editor.scroll_down(3),
+                (KeyModifiers::SHIFT, MouseEventKind::ScrollUp) => editor.scroll_up(6),
+                (KeyModifiers::SHIFT, MouseEventKind::ScrollDown) => editor.scroll_down(6),
                 _ => {}
             },
             _ => {}
