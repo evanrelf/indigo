@@ -58,7 +58,17 @@ impl<T> History<T> {
         if self.after.is_empty() {
             self.before.push(Arc::new(action));
         } else {
-            todo!();
+            let after = std::mem::take(&mut self.after);
+
+            let reversed = after.iter().cloned().rev();
+
+            let inverted = after.iter().map(|action| Arc::new(action.invert()));
+
+            self.before.extend(reversed);
+
+            self.before.extend(inverted);
+
+            self.before.push(Arc::new(action));
         }
     }
 
@@ -99,4 +109,65 @@ impl<T> Default for History<T> {
 
 pub trait Action {
     fn invert(&self) -> Self;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use quickcheck_macros::quickcheck;
+
+    impl Action for (i32, bool) {
+        fn invert(&self) -> Self {
+            (self.0, !self.1)
+        }
+    }
+
+    fn make_history<T>(actions: Vec<T>) -> History<T>
+    where
+        T: Action,
+    {
+        let mut history = History::new();
+        for action in actions {
+            history.act(action);
+        }
+        history
+    }
+
+    // TODO: Write more tests. These hardly cover anything.
+
+    #[quickcheck]
+    fn window_shopping_doesnt_fork(actions: Vec<(i32, bool)>, earlier: u8, later: u8) {
+        let mut history = make_history(actions);
+
+        let before_len = history.len();
+
+        for _ in 0..=earlier {
+            history.shift_earlier();
+        }
+
+        for _ in 0..=later {
+            history.shift_later();
+        }
+
+        let after_len = history.len();
+
+        assert_eq!(before_len, after_len);
+    }
+
+    #[quickcheck]
+    fn acting_in_the_past_sends_you_to_the_present(actions: Vec<(i32, bool)>) {
+        if actions.is_empty() {
+            return;
+        }
+
+        let mut history = make_history(actions);
+
+        history.shift_earlier();
+
+        assert!(!history.after().is_empty());
+
+        history.act((42, true));
+
+        assert!(history.after().is_empty());
+    }
 }
