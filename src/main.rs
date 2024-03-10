@@ -91,13 +91,14 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
         },
         Mode::Insert => match event {
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-                (KeyModifiers::NONE, KeyCode::Char(c)) => buffer.insert_char(c)?,
-                (KeyModifiers::SHIFT, KeyCode::Char(c)) => buffer.insert_char(c)?,
+                (KeyModifiers::NONE, KeyCode::Char(char)) => buffer.insert_char(char)?,
+                (KeyModifiers::SHIFT, KeyCode::Char(char)) => buffer.insert_char(char)?,
                 (KeyModifiers::NONE, KeyCode::Enter) => buffer.insert_char('\n')?,
                 (KeyModifiers::NONE, KeyCode::Backspace) => buffer.backspace()?,
                 (KeyModifiers::NONE, KeyCode::Esc) => editor.mode = Mode::Normal,
                 _ => {}
             },
+            Event::Paste(string) => buffer.insert(string)?,
             _ => {}
         },
     }

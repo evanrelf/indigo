@@ -69,6 +69,7 @@ pub fn enter() -> anyhow::Result<TerminalGuard> {
         crossterm::terminal::EnterAlternateScreen,
         crossterm::cursor::Hide,
         crossterm::event::EnableMouseCapture,
+        crossterm::event::EnableBracketedPaste,
     )?;
 
     let terminal_guard = TerminalGuard::new(stdout)?;
@@ -81,6 +82,7 @@ pub fn exit() -> anyhow::Result<()> {
 
     crossterm::execute!(
         stdout,
+        crossterm::event::DisableBracketedPaste,
         crossterm::event::DisableMouseCapture,
         crossterm::cursor::Show,
         crossterm::terminal::LeaveAlternateScreen,

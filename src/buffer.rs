@@ -69,12 +69,22 @@ impl Buffer {
         Ok(())
     }
 
-    pub fn insert_char(&mut self, c: char) -> anyhow::Result<()> {
+    pub fn insert_char(&mut self, char: char) -> anyhow::Result<()> {
         let index = self.cursor.to_char_index(&self.text)?;
 
-        self.text.insert_char(index, c);
+        self.text.insert_char(index, char);
 
         self.cursor = Position::from_char_index(index + 1, &self.text)?;
+
+        Ok(())
+    }
+
+    pub fn insert(&mut self, str: &str) -> anyhow::Result<()> {
+        let index = self.cursor.to_char_index(&self.text)?;
+
+        self.text.insert(index, str);
+
+        self.cursor = Position::from_char_index(index + str.len(), &self.text)?;
 
         Ok(())
     }
