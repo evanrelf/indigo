@@ -1,7 +1,7 @@
 use crate::{conversion::Conversion, rope::RopeExt as _};
 use ropey::Rope;
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug)]
 pub struct Position {
     pub line: usize,
     pub column: usize,

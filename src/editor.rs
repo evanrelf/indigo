@@ -2,7 +2,7 @@ use crate::{mode::Mode, position::Position, rope::RopeExt as _};
 use ropey::Rope;
 use std::cmp::{max, min};
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Editor {
     pub text: Rope,
     pub cursor: Position,
@@ -121,5 +121,17 @@ impl Editor {
         self.cursor = Position::from_char_index(index - 1, &self.text)?;
 
         Ok(())
+    }
+}
+
+impl Default for Editor {
+    fn default() -> Self {
+        Self {
+            text: Rope::from("\n"),
+            cursor: Position { line: 0, column: 0 },
+            target_column: None,
+            scroll: Position { line: 0, column: 0 },
+            mode: Mode::Normal,
+        }
     }
 }

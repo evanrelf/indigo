@@ -1,6 +1,5 @@
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub enum Mode {
-    #[default]
     Normal,
     Insert,
 }
