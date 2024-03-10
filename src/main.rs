@@ -47,6 +47,10 @@ fn main() -> anyhow::Result<()> {
                 (KeyModifiers::NONE, KeyCode::Char('j')) => editor.move_down(1),
                 (KeyModifiers::NONE, KeyCode::Char('k')) => editor.move_up(1),
                 (KeyModifiers::NONE, KeyCode::Char('l')) => editor.move_right(1),
+                (KeyModifiers::NONE, KeyCode::Up) => editor.scroll_up(1),
+                (KeyModifiers::NONE, KeyCode::Down) => editor.scroll_down(1),
+                (KeyModifiers::NONE, KeyCode::Left) => editor.scroll_left(1),
+                (KeyModifiers::NONE, KeyCode::Right) => editor.scroll_right(1),
                 (KeyModifiers::CONTROL, KeyCode::Char('c')) => break,
                 _ => {}
             },
