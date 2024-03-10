@@ -47,8 +47,8 @@ fn main() -> anyhow::Result<()> {
                 _ => {}
             },
             Event::Mouse(mouse_event) => match mouse_event.kind {
-                MouseEventKind::ScrollUp => editor.scroll = editor.scroll.saturating_sub(3),
-                MouseEventKind::ScrollDown => editor.scroll += 3,
+                MouseEventKind::ScrollUp => editor.scroll_up(3),
+                MouseEventKind::ScrollDown => editor.scroll_down(3),
                 _ => {}
             },
             _ => {}
