@@ -89,10 +89,8 @@ fn render_text(editor: &Editor, area: Rect, buffer: &mut Buffer) -> anyhow::Resu
 
     let last_line = editor.text.len_lines_indigo().saturating_sub(1);
 
-    let (scroll_line, scroll_column) = editor.scroll;
-
-    let scroll_line = u16::try_from(min(last_line, scroll_line))?;
-    let scroll_column = u16::try_from(scroll_column)?;
+    let scroll_line = u16::try_from(min(last_line, editor.scroll.line))?;
+    let scroll_column = u16::try_from(editor.scroll.column)?;
 
     Paragraph::new(text)
         .scroll((scroll_line, scroll_column))
@@ -102,24 +100,21 @@ fn render_text(editor: &Editor, area: Rect, buffer: &mut Buffer) -> anyhow::Resu
 }
 
 fn render_cursor(editor: &Editor, area: Rect, buffer: &mut Buffer) -> anyhow::Result<()> {
-    let (line, column) = editor.cursor;
-    let (scroll_line, scroll_column) = editor.scroll;
-
-    if scroll_line > line {
+    if editor.scroll.line > editor.cursor.line {
         return Ok(());
     }
 
-    let line = u16::try_from(line - scroll_line)? + area.top();
+    let line = u16::try_from(editor.cursor.line - editor.scroll.line)? + area.top();
 
     if !(area.top()..area.bottom()).contains(&line) {
         return Ok(());
     }
 
-    if scroll_column > column {
+    if editor.scroll.column > editor.cursor.column {
         return Ok(());
     }
 
-    let column = u16::try_from(column - scroll_column)? + area.left();
+    let column = u16::try_from(editor.cursor.column - editor.scroll.column)? + area.left();
 
     if !(area.left()..area.right()).contains(&column) {
         return Ok(());
