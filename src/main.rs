@@ -5,7 +5,7 @@ mod position;
 mod rope;
 mod terminal;
 
-use crate::{editor::Editor, mode::Mode, rope::RopeExt as _, terminal::Terminal};
+use crate::{editor::Editor, mode::Mode, rope::RopeExt as _};
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
@@ -31,9 +31,7 @@ fn main() -> anyhow::Result<()> {
         editor.text = Rope::from_reader(BufReader::new(file))?;
     }
 
-    let mut terminal = Terminal::new()?;
-
-    terminal::enter()?;
+    let mut terminal = terminal::enter()?;
 
     loop {
         terminal.draw(|frame| {
@@ -76,6 +74,7 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
                 (KeyModifiers::NONE, KeyCode::Left) => editor.scroll_left(1),
                 (KeyModifiers::NONE, KeyCode::Right) => editor.scroll_right(1),
                 (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
+                (KeyModifiers::CONTROL, KeyCode::Char('p')) => panic!(),
                 _ => {}
             },
             Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
