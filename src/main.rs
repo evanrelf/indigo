@@ -1,4 +1,5 @@
 mod editor;
+mod position;
 mod rope;
 mod terminal;
 
