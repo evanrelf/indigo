@@ -11,14 +11,18 @@ pub struct Buffer {
 }
 
 impl Buffer {
-    pub fn move_to(&mut self, line: usize, column: usize) -> anyhow::Result<()> {
+    pub fn reduce(&mut self) {
+        self.anchor = self.cursor;
+    }
+
+    pub fn extend_to(&mut self, line: usize, column: usize) -> anyhow::Result<()> {
         self.cursor.line = line;
         self.cursor.column = column;
         self.target_column = None;
         self.cursor.correct(&self.text)
     }
 
-    pub fn move_up(&mut self, distance: usize) -> anyhow::Result<()> {
+    pub fn extend_up(&mut self, distance: usize) -> anyhow::Result<()> {
         self.target_column = match self.target_column {
             None => Some(self.cursor.column),
             Some(target_column) => Some(max(self.cursor.column, target_column)),
@@ -35,7 +39,7 @@ impl Buffer {
         Ok(())
     }
 
-    pub fn move_down(&mut self, distance: usize) -> anyhow::Result<()> {
+    pub fn extend_down(&mut self, distance: usize) -> anyhow::Result<()> {
         self.target_column = match self.target_column {
             None => Some(self.cursor.column),
             Some(target_column) => Some(max(self.cursor.column, target_column)),
@@ -54,7 +58,7 @@ impl Buffer {
         Ok(())
     }
 
-    pub fn move_left(&mut self, distance: usize) -> anyhow::Result<()> {
+    pub fn extend_left(&mut self, distance: usize) -> anyhow::Result<()> {
         self.cursor = self
             .cursor
             .via_char_index(&self.text, |index| index.saturating_sub(distance))?;
@@ -62,11 +66,41 @@ impl Buffer {
         Ok(())
     }
 
-    pub fn move_right(&mut self, distance: usize) -> anyhow::Result<()> {
+    pub fn extend_right(&mut self, distance: usize) -> anyhow::Result<()> {
         self.cursor = self
             .cursor
             .via_char_index(&self.text, |index| index + distance)?;
         self.target_column = None;
+        Ok(())
+    }
+
+    pub fn move_to(&mut self, line: usize, column: usize) -> anyhow::Result<()> {
+        self.extend_to(line, column)?;
+        self.reduce();
+        Ok(())
+    }
+
+    pub fn move_up(&mut self, distance: usize) -> anyhow::Result<()> {
+        self.extend_up(distance)?;
+        self.reduce();
+        Ok(())
+    }
+
+    pub fn move_down(&mut self, distance: usize) -> anyhow::Result<()> {
+        self.extend_down(distance)?;
+        self.reduce();
+        Ok(())
+    }
+
+    pub fn move_left(&mut self, distance: usize) -> anyhow::Result<()> {
+        self.extend_left(distance)?;
+        self.reduce();
+        Ok(())
+    }
+
+    pub fn move_right(&mut self, distance: usize) -> anyhow::Result<()> {
+        self.extend_right(distance)?;
+        self.reduce();
         Ok(())
     }
 
