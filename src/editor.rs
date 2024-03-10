@@ -10,25 +10,32 @@ pub struct Editor {
 }
 
 impl Editor {
-    pub fn move_to(&mut self, line: usize, column: usize) {
+    pub fn move_to(&mut self, line: usize, column: usize) -> anyhow::Result<()> {
         self.cursor.line = line;
         self.cursor.column = column;
+        self.cursor.correct(&self.text)
     }
 
-    pub fn move_up(&mut self, distance: usize) {
-        self.cursor.line = self.cursor.line.saturating_sub(distance);
+    pub fn move_up(&mut self, distance: usize) -> anyhow::Result<()> {
+        self.move_to(
+            self.cursor.line.saturating_sub(distance),
+            self.cursor.column,
+        )
     }
 
-    pub fn move_down(&mut self, distance: usize) {
-        self.cursor.line += distance;
+    pub fn move_down(&mut self, distance: usize) -> anyhow::Result<()> {
+        self.move_to(self.cursor.line + distance, self.cursor.column)
     }
 
-    pub fn move_left(&mut self, distance: usize) {
-        self.cursor.column = self.cursor.column.saturating_sub(distance);
+    pub fn move_left(&mut self, distance: usize) -> anyhow::Result<()> {
+        self.move_to(
+            self.cursor.line,
+            self.cursor.column.saturating_sub(distance),
+        )
     }
 
-    pub fn move_right(&mut self, distance: usize) {
-        self.cursor.column += distance;
+    pub fn move_right(&mut self, distance: usize) -> anyhow::Result<()> {
+        self.move_to(self.cursor.line, self.cursor.column + distance)
     }
 
     pub fn scroll_to(&mut self, line: usize, column: usize) {

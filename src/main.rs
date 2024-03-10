@@ -41,7 +41,7 @@ fn main() -> anyhow::Result<()> {
             render_cursor(&editor, area, buffer).unwrap();
         })?;
 
-        let quit = handle_event(&mut editor, &event::read()?);
+        let quit = handle_event(&mut editor, &event::read()?)?;
 
         if quit {
             break;
@@ -53,15 +53,15 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn handle_event(editor: &mut Editor, event: &Event) -> bool {
+fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
     let mut quit = false;
 
     match event {
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-            (KeyModifiers::NONE, KeyCode::Char('h')) => editor.move_left(1),
-            (KeyModifiers::NONE, KeyCode::Char('j')) => editor.move_down(1),
-            (KeyModifiers::NONE, KeyCode::Char('k')) => editor.move_up(1),
-            (KeyModifiers::NONE, KeyCode::Char('l')) => editor.move_right(1),
+            (KeyModifiers::NONE, KeyCode::Char('h')) => editor.move_left(1)?,
+            (KeyModifiers::NONE, KeyCode::Char('j')) => editor.move_down(1)?,
+            (KeyModifiers::NONE, KeyCode::Char('k')) => editor.move_up(1)?,
+            (KeyModifiers::NONE, KeyCode::Char('l')) => editor.move_right(1)?,
             (KeyModifiers::NONE, KeyCode::Up) => editor.scroll_up(1),
             (KeyModifiers::NONE, KeyCode::Down) => editor.scroll_down(1),
             (KeyModifiers::NONE, KeyCode::Left) => editor.scroll_left(1),
@@ -81,7 +81,7 @@ fn handle_event(editor: &mut Editor, event: &Event) -> bool {
         _ => {}
     }
 
-    quit
+    Ok(quit)
 }
 
 fn render_text(editor: &Editor, area: Rect, buffer: &mut Buffer) -> anyhow::Result<()> {
