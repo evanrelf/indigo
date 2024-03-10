@@ -154,30 +154,32 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Re
 fn render_cursor(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Result<()> {
     let buffer = &editor.buffer;
 
-    if editor.scroll.line > buffer.cursor.line {
-        return Ok(());
+    for position in [buffer.anchor, buffer.cursor] {
+        if editor.scroll.line > position.line {
+            return Ok(());
+        }
+
+        let line = u16::try_from(position.line - editor.scroll.line)? + area.top();
+
+        if !(area.top()..area.bottom()).contains(&line) {
+            return Ok(());
+        }
+
+        if editor.scroll.column > position.column {
+            return Ok(());
+        }
+
+        let column = u16::try_from(position.column - editor.scroll.column)? + area.left();
+
+        if !(area.left()..area.right()).contains(&column) {
+            return Ok(());
+        }
+
+        surface
+            .get_mut(column, line)
+            .set_fg(Color::White)
+            .set_bg(Color::Black);
     }
-
-    let line = u16::try_from(buffer.cursor.line - editor.scroll.line)? + area.top();
-
-    if !(area.top()..area.bottom()).contains(&line) {
-        return Ok(());
-    }
-
-    if editor.scroll.column > buffer.cursor.column {
-        return Ok(());
-    }
-
-    let column = u16::try_from(buffer.cursor.column - editor.scroll.column)? + area.left();
-
-    if !(area.left()..area.right()).contains(&column) {
-        return Ok(());
-    }
-
-    surface
-        .get_mut(column, line)
-        .set_fg(Color::White)
-        .set_bg(Color::Black);
 
     Ok(())
 }
