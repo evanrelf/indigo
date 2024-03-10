@@ -187,10 +187,17 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) -> anyho
             return Ok(());
         }
 
-        surface
-            .get_mut(column, line)
-            .set_fg(Color::White)
-            .set_bg(Color::Black);
+        if index == cursor_index {
+            surface
+                .get_mut(column, line)
+                .set_fg(Color::Black)
+                .set_bg(Color::Rgb(0xFF, 0xD3, 0x3D));
+        } else {
+            surface
+                .get_mut(column, line)
+                .set_fg(Color::Black)
+                .set_bg(Color::Rgb(0xFF, 0xF5, 0xB1));
+        }
     }
 
     Ok(())
