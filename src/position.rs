@@ -1,4 +1,4 @@
-use crate::rope::RopeExt as _;
+use crate::{conversion::Conversion, rope::RopeExt as _};
 use ropey::Rope;
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -9,12 +9,10 @@ pub struct Position {
 
 impl Position {
     pub fn from_char_index(index: usize, rope: &Rope) -> anyhow::Result<Self> {
-        Self::from_char_index_strict(index, rope).map(|position| match position {
-            Ok(position) | Err(position) => position,
-        })
+        Self::from_char_index_strict(index, rope).map(Conversion::into_inner)
     }
 
-    pub fn from_char_index_strict(index: usize, rope: &Rope) -> anyhow::Result<Result<Self, Self>> {
+    pub fn from_char_index_strict(index: usize, rope: &Rope) -> anyhow::Result<Conversion<Self>> {
         let mut corrected = false;
 
         if rope.len_chars() == 0 {
@@ -36,19 +34,17 @@ impl Position {
         let position = Self { line, column };
 
         if corrected {
-            Ok(Err(position))
+            Ok(Conversion::Corrected(position))
         } else {
-            Ok(Ok(position))
+            Ok(Conversion::Valid(position))
         }
     }
 
     pub fn to_char_index(self, rope: &Rope) -> anyhow::Result<usize> {
-        self.to_char_index_strict(rope).map(|index| match index {
-            Ok(index) | Err(index) => index,
-        })
+        self.to_char_index_strict(rope).map(Conversion::into_inner)
     }
 
-    pub fn to_char_index_strict(self, rope: &Rope) -> anyhow::Result<Result<usize, usize>> {
+    pub fn to_char_index_strict(self, rope: &Rope) -> anyhow::Result<Conversion<usize>> {
         if rope.len_chars() == 0 {
             anyhow::bail!("Rope is empty");
         }
@@ -77,9 +73,9 @@ impl Position {
         let index = column + rope.line_to_char(line);
 
         if line_corrected || column_corrected {
-            Ok(Err(index))
+            Ok(Conversion::Corrected(index))
         } else {
-            Ok(Ok(index))
+            Ok(Conversion::Valid(index))
         }
     }
 
