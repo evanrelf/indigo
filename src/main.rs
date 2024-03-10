@@ -86,7 +86,16 @@ fn render_cursor(editor: &Editor, area: Rect, buffer: &mut Buffer) -> anyhow::Re
     }
 
     let line = u16::try_from(line - editor.scroll)? + area.top();
+
+    if line >= area.bottom() {
+        return Ok(());
+    }
+
     let column = u16::try_from(column)? + area.left();
+
+    if column >= area.right() {
+        return Ok(());
+    }
 
     buffer
         .get_mut(column, line)
