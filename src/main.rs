@@ -83,6 +83,7 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
                 (KeyModifiers::SHIFT, KeyCode::Char('J')) => buffer.extend_down(1)?,
                 (KeyModifiers::SHIFT, KeyCode::Char('K')) => buffer.extend_up(1)?,
                 (KeyModifiers::SHIFT, KeyCode::Char('L')) => buffer.extend_right(1)?,
+                (KeyModifiers::NONE, KeyCode::Char(';')) => buffer.reduce(),
                 (KeyModifiers::NONE, KeyCode::Char('i')) => editor.mode = Mode::Insert,
                 (KeyModifiers::NONE, KeyCode::Char('a')) => {
                     buffer.move_right(1)?;
