@@ -1,4 +1,4 @@
-use crate::{position::Position, rope::RopeExt as _};
+use crate::{mode::Mode, position::Position, rope::RopeExt as _};
 use ropey::Rope;
 use std::cmp::{max, min};
 
@@ -8,6 +8,7 @@ pub struct Editor {
     pub cursor: Position,
     pub target_column: Option<usize>,
     pub scroll: Position,
+    pub mode: Mode,
 }
 
 impl Editor {
@@ -96,5 +97,29 @@ impl Editor {
 
     pub fn scroll_right(&mut self, distance: usize) {
         self.scroll_to(self.scroll.line, self.scroll.column + distance);
+    }
+
+    pub fn insert_char(&mut self, c: char) -> anyhow::Result<()> {
+        let index = self.cursor.to_char_index(&self.text)?;
+
+        self.text.insert_char(index, c);
+
+        self.cursor = Position::from_char_index(index + 1, &self.text)?;
+
+        Ok(())
+    }
+
+    pub fn backspace(&mut self) -> anyhow::Result<()> {
+        let index = self.cursor.to_char_index(&self.text)?;
+
+        if index == 0 {
+            return Ok(());
+        }
+
+        self.text.remove(index - 1..index);
+
+        self.cursor = Position::from_char_index(index - 1, &self.text)?;
+
+        Ok(())
     }
 }

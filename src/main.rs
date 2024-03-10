@@ -1,10 +1,11 @@
 mod conversion;
 mod editor;
+mod mode;
 mod position;
 mod rope;
 mod terminal;
 
-use crate::{editor::Editor, rope::RopeExt as _, terminal::Terminal};
+use crate::{editor::Editor, mode::Mode, rope::RopeExt as _, terminal::Terminal};
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
@@ -57,29 +58,48 @@ fn main() -> anyhow::Result<()> {
 fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
     let mut quit = false;
 
-    match event {
-        Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-            (KeyModifiers::NONE, KeyCode::Char('h')) => editor.move_left(1)?,
-            (KeyModifiers::NONE, KeyCode::Char('j')) => editor.move_down(1)?,
-            (KeyModifiers::NONE, KeyCode::Char('k')) => editor.move_up(1)?,
-            (KeyModifiers::NONE, KeyCode::Char('l')) => editor.move_right(1)?,
-            (KeyModifiers::NONE, KeyCode::Up) => editor.scroll_up(1),
-            (KeyModifiers::NONE, KeyCode::Down) => editor.scroll_down(1),
-            (KeyModifiers::NONE, KeyCode::Left) => editor.scroll_left(1),
-            (KeyModifiers::NONE, KeyCode::Right) => editor.scroll_right(1),
-            (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
+    #[allow(clippy::single_match)]
+    match &editor.mode {
+        Mode::Normal => match event {
+            Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+                (KeyModifiers::NONE, KeyCode::Char('h')) => editor.move_left(1)?,
+                (KeyModifiers::NONE, KeyCode::Char('j')) => editor.move_down(1)?,
+                (KeyModifiers::NONE, KeyCode::Char('k')) => editor.move_up(1)?,
+                (KeyModifiers::NONE, KeyCode::Char('l')) => editor.move_right(1)?,
+                (KeyModifiers::NONE, KeyCode::Char('i')) => editor.mode = Mode::Insert,
+                (KeyModifiers::NONE, KeyCode::Char('a')) => {
+                    editor.move_right(1)?;
+                    editor.mode = Mode::Insert;
+                }
+                (KeyModifiers::NONE, KeyCode::Up) => editor.scroll_up(1),
+                (KeyModifiers::NONE, KeyCode::Down) => editor.scroll_down(1),
+                (KeyModifiers::NONE, KeyCode::Left) => editor.scroll_left(1),
+                (KeyModifiers::NONE, KeyCode::Right) => editor.scroll_right(1),
+                (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
+                _ => {}
+            },
+            Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
+                (KeyModifiers::ALT, MouseEventKind::ScrollUp) => editor.scroll_up(1),
+                (KeyModifiers::ALT, MouseEventKind::ScrollDown) => editor.scroll_down(1),
+                (KeyModifiers::NONE, MouseEventKind::ScrollUp) => editor.scroll_up(3),
+                (KeyModifiers::NONE, MouseEventKind::ScrollDown) => editor.scroll_down(3),
+                (KeyModifiers::SHIFT, MouseEventKind::ScrollUp) => editor.scroll_up(6),
+                (KeyModifiers::SHIFT, MouseEventKind::ScrollDown) => editor.scroll_down(6),
+                _ => {}
+            },
             _ => {}
         },
-        Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::ALT, MouseEventKind::ScrollUp) => editor.scroll_up(1),
-            (KeyModifiers::ALT, MouseEventKind::ScrollDown) => editor.scroll_down(1),
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => editor.scroll_up(3),
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => editor.scroll_down(3),
-            (KeyModifiers::SHIFT, MouseEventKind::ScrollUp) => editor.scroll_up(6),
-            (KeyModifiers::SHIFT, MouseEventKind::ScrollDown) => editor.scroll_down(6),
+        Mode::Insert => match event {
+            Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+                (KeyModifiers::NONE, KeyCode::Char(c)) => editor.insert_char(c)?,
+                (KeyModifiers::SHIFT, KeyCode::Char(c)) => editor.insert_char(c)?,
+                (KeyModifiers::NONE, KeyCode::Enter) => editor.insert_char('\n')?,
+                (KeyModifiers::NONE, KeyCode::Backspace) => editor.backspace()?,
+                (KeyModifiers::NONE, KeyCode::Esc) => editor.mode = Mode::Normal,
+                _ => {}
+            },
             _ => {}
         },
-        _ => {}
     }
 
     Ok(quit)
