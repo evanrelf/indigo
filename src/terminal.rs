@@ -50,6 +50,15 @@ pub fn enter() -> anyhow::Result<TerminalGuard> {
         crossterm::event::EnableMouseCapture,
     )?;
 
+    let previous_hook = std::panic::take_hook();
+
+    std::panic::set_hook(Box::new(move |panic_info| {
+        // Restoring terminal state before the panic hook runs so that its output shows up. Ignoring
+        // the `Result` because we're already panicking; aborting is undesirable.
+        let _ = exit();
+        previous_hook(panic_info);
+    }));
+
     let terminal_guard = TerminalGuard::new(stdout)?;
 
     Ok(terminal_guard)
