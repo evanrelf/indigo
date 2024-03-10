@@ -7,7 +7,7 @@ mod position;
 mod rope;
 mod terminal;
 
-use crate::{editor::Editor, mode::Mode, rope::RopeExt as _};
+use crate::{editor::Editor, mode::Mode, position::Position, rope::RopeExt as _};
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
@@ -16,7 +16,12 @@ use ratatui::{
     widgets::Paragraph,
 };
 use ropey::Rope;
-use std::{borrow::Cow, cmp::min, fs::File, io::BufReader};
+use std::{
+    borrow::Cow,
+    cmp::{max, min},
+    fs::File,
+    io::BufReader,
+};
 
 #[derive(clap::Parser, Debug)]
 struct Args {
@@ -128,7 +133,7 @@ fn render(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Result<
     let status_bar_area = areas[1];
 
     render_text(editor, buffer_area, surface)?;
-    render_cursor(editor, buffer_area, surface)?;
+    render_selection(editor, buffer_area, surface)?;
     render_status_bar(editor, status_bar_area, surface);
 
     Ok(())
@@ -151,10 +156,17 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Re
     Ok(())
 }
 
-fn render_cursor(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Result<()> {
+fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Result<()> {
     let buffer = &editor.buffer;
 
-    for position in [buffer.anchor, buffer.cursor] {
+    let anchor_index = buffer.anchor.to_char_index(&editor.buffer.text)?;
+    let cursor_index = buffer.cursor.to_char_index(&editor.buffer.text)?;
+    let start_index = min(anchor_index, cursor_index);
+    let end_index = max(anchor_index, cursor_index);
+
+    for index in start_index..=end_index {
+        let position = Position::from_char_index(index, &editor.buffer.text)?;
+
         if editor.scroll.line > position.line {
             return Ok(());
         }
