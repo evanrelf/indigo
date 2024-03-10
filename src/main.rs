@@ -39,11 +39,7 @@ fn main() -> anyhow::Result<()> {
         terminal.draw(|frame| {
             let area = frame.size();
             let surface = frame.buffer_mut();
-            render_text(&editor, area, surface).unwrap();
-            render_cursor(&editor, area, surface).unwrap();
-            // TODO: Covering buffer text, because the terminal hasn't been split up into dedicated
-            // areas yet.
-            render_status_bar(&editor, area, surface);
+            render(&editor, area, surface).unwrap();
         })?;
 
         let quit = handle_event(&mut editor, &event::read()?)?;
@@ -110,6 +106,15 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
     }
 
     Ok(quit)
+}
+
+fn render(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Result<()> {
+    render_text(editor, area, surface)?;
+    render_cursor(editor, area, surface)?;
+    // TODO: Covering buffer text, because the terminal hasn't been split up into dedicated
+    // areas yet.
+    render_status_bar(editor, area, surface);
+    Ok(())
 }
 
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Result<()> {
