@@ -11,7 +11,7 @@ use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
 use ratatui::{
-    prelude::{Buffer as Surface, Color, Rect, Widget as _},
+    prelude::{Buffer as Surface, Color, Rect, Style, Widget as _},
     widgets::Paragraph,
 };
 use ropey::Rope;
@@ -41,6 +41,9 @@ fn main() -> anyhow::Result<()> {
             let surface = frame.buffer_mut();
             render_text(&editor, area, surface).unwrap();
             render_cursor(&editor, area, surface).unwrap();
+            // TODO: Covering buffer text, because the terminal hasn't been split up into dedicated
+            // areas yet.
+            render_status_bar(&editor, area, surface);
         })?;
 
         let quit = handle_event(&mut editor, &event::read()?)?;
@@ -155,4 +158,22 @@ fn render_cursor(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::
         .set_bg(Color::Black);
 
     Ok(())
+}
+
+fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
+    let mode = match editor.mode {
+        Mode::Normal => "N",
+        Mode::Insert => "I",
+    };
+
+    let path = match &editor.path {
+        Some(path) => path.as_str(),
+        None => "",
+    };
+
+    let x = area.left();
+    let y = area.bottom() - 1;
+    let string = format!("{mode} {path}");
+    let style = Style::new().fg(Color::Blue);
+    surface.set_string(x, y, string, style);
 }
