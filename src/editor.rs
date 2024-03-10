@@ -28,14 +28,20 @@ impl Editor {
     }
 
     pub fn move_left(&mut self, distance: usize) -> anyhow::Result<()> {
-        self.move_to(
-            self.cursor.line,
-            self.cursor.column.saturating_sub(distance),
-        )
+        let index = self
+            .cursor
+            .to_char_index(&self.text)?
+            .saturating_sub(distance);
+        let position = Position::from_char_index(index, &self.text)?;
+        self.cursor = position;
+        Ok(())
     }
 
     pub fn move_right(&mut self, distance: usize) -> anyhow::Result<()> {
-        self.move_to(self.cursor.line, self.cursor.column + distance)
+        let index = self.cursor.to_char_index(&self.text)? + distance;
+        let position = Position::from_char_index(index, &self.text)?;
+        self.cursor = position;
+        Ok(())
     }
 
     pub fn scroll_to(&mut self, line: usize, column: usize) {
