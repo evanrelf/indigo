@@ -40,35 +40,47 @@ fn main() -> anyhow::Result<()> {
             render_cursor(&editor, area, buffer).unwrap();
         })?;
 
-        match event::read()? {
-            Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-                (KeyModifiers::NONE, KeyCode::Char('h')) => editor.move_left(1),
-                (KeyModifiers::NONE, KeyCode::Char('j')) => editor.move_down(1),
-                (KeyModifiers::NONE, KeyCode::Char('k')) => editor.move_up(1),
-                (KeyModifiers::NONE, KeyCode::Char('l')) => editor.move_right(1),
-                (KeyModifiers::NONE, KeyCode::Up) => editor.scroll_up(1),
-                (KeyModifiers::NONE, KeyCode::Down) => editor.scroll_down(1),
-                (KeyModifiers::NONE, KeyCode::Left) => editor.scroll_left(1),
-                (KeyModifiers::NONE, KeyCode::Right) => editor.scroll_right(1),
-                (KeyModifiers::CONTROL, KeyCode::Char('c')) => break,
-                _ => {}
-            },
-            Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-                (KeyModifiers::ALT, MouseEventKind::ScrollUp) => editor.scroll_up(1),
-                (KeyModifiers::ALT, MouseEventKind::ScrollDown) => editor.scroll_down(1),
-                (KeyModifiers::NONE, MouseEventKind::ScrollUp) => editor.scroll_up(3),
-                (KeyModifiers::NONE, MouseEventKind::ScrollDown) => editor.scroll_down(3),
-                (KeyModifiers::SHIFT, MouseEventKind::ScrollUp) => editor.scroll_up(6),
-                (KeyModifiers::SHIFT, MouseEventKind::ScrollDown) => editor.scroll_down(6),
-                _ => {}
-            },
-            _ => {}
+        let quit = handle_event(&mut editor, &event::read()?);
+
+        if quit {
+            break;
         }
     }
 
     terminal::exit()?;
 
     Ok(())
+}
+
+fn handle_event(editor: &mut Editor, event: &Event) -> bool {
+    let mut quit = false;
+
+    match event {
+        Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+            (KeyModifiers::NONE, KeyCode::Char('h')) => editor.move_left(1),
+            (KeyModifiers::NONE, KeyCode::Char('j')) => editor.move_down(1),
+            (KeyModifiers::NONE, KeyCode::Char('k')) => editor.move_up(1),
+            (KeyModifiers::NONE, KeyCode::Char('l')) => editor.move_right(1),
+            (KeyModifiers::NONE, KeyCode::Up) => editor.scroll_up(1),
+            (KeyModifiers::NONE, KeyCode::Down) => editor.scroll_down(1),
+            (KeyModifiers::NONE, KeyCode::Left) => editor.scroll_left(1),
+            (KeyModifiers::NONE, KeyCode::Right) => editor.scroll_right(1),
+            (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
+            _ => {}
+        },
+        Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
+            (KeyModifiers::ALT, MouseEventKind::ScrollUp) => editor.scroll_up(1),
+            (KeyModifiers::ALT, MouseEventKind::ScrollDown) => editor.scroll_down(1),
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => editor.scroll_up(3),
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => editor.scroll_down(3),
+            (KeyModifiers::SHIFT, MouseEventKind::ScrollUp) => editor.scroll_up(6),
+            (KeyModifiers::SHIFT, MouseEventKind::ScrollDown) => editor.scroll_down(6),
+            _ => {}
+        },
+        _ => {}
+    }
+
+    quit
 }
 
 fn render_text(editor: &Editor, area: Rect, buffer: &mut Buffer) -> anyhow::Result<()> {
