@@ -11,6 +11,14 @@ pub struct Buffer {
 }
 
 impl Buffer {
+    pub fn start(&self) -> Position {
+        min(self.anchor, self.cursor)
+    }
+
+    pub fn end(&self) -> Position {
+        max(self.anchor, self.cursor)
+    }
+
     pub fn reduce(&mut self) {
         self.anchor = self.cursor;
     }
