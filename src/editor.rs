@@ -28,19 +28,16 @@ impl Editor {
     }
 
     pub fn move_left(&mut self, distance: usize) -> anyhow::Result<()> {
-        let index = self
+        self.cursor = self
             .cursor
-            .to_char_index(&self.text)?
-            .saturating_sub(distance);
-        let position = Position::from_char_index(index, &self.text)?;
-        self.cursor = position;
+            .via_char_index(&self.text, |index| index.saturating_sub(distance))?;
         Ok(())
     }
 
     pub fn move_right(&mut self, distance: usize) -> anyhow::Result<()> {
-        let index = self.cursor.to_char_index(&self.text)? + distance;
-        let position = Position::from_char_index(index, &self.text)?;
-        self.cursor = position;
+        self.cursor = self
+            .cursor
+            .via_char_index(&self.text, |index| index + distance)?;
         Ok(())
     }
 
