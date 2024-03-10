@@ -8,24 +8,36 @@ pub struct Editor {
 }
 
 impl Editor {
+    pub fn move_to(&mut self, line: usize, column: usize) {
+        let (cursor_line, cursor_column) = &mut self.cursor;
+        *cursor_line = line;
+        *cursor_column = column;
+    }
+
     pub fn move_up(&mut self, distance: usize) {
-        let (line, _column) = &mut self.cursor;
-        *line = line.saturating_sub(distance);
+        let (cursor_line, _cursor_column) = &mut self.cursor;
+        *cursor_line = cursor_line.saturating_sub(distance);
     }
 
     pub fn move_down(&mut self, distance: usize) {
-        let (line, _column) = &mut self.cursor;
-        *line += distance;
+        let (cursor_line, _cursor_column) = &mut self.cursor;
+        *cursor_line += distance;
     }
 
     pub fn move_left(&mut self, distance: usize) {
-        let (_line, column) = &mut self.cursor;
-        *column = column.saturating_sub(distance);
+        let (_cursor_line, cursor_column) = &mut self.cursor;
+        *cursor_column = cursor_column.saturating_sub(distance);
     }
 
     pub fn move_right(&mut self, distance: usize) {
-        let (_line, column) = &mut self.cursor;
-        *column += distance;
+        let (_cursor_line, cursor_column) = &mut self.cursor;
+        *cursor_column += distance;
+    }
+
+    pub fn scroll_to(&mut self, line: usize, column: usize) {
+        let (scroll_line, scroll_column) = &mut self.scroll;
+        *scroll_line = line;
+        *scroll_column = column;
     }
 
     pub fn scroll_up(&mut self, distance: usize) {
