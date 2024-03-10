@@ -1,4 +1,6 @@
+use crate::rope::RopeExt as _;
 use ropey::Rope;
+use std::cmp::min;
 
 #[derive(Debug, Default)]
 pub struct Editor {
@@ -36,27 +38,28 @@ impl Editor {
 
     pub fn scroll_to(&mut self, line: usize, column: usize) {
         let (scroll_line, scroll_column) = &mut self.scroll;
-        *scroll_line = line;
+        let last_line = self.text.len_lines_indigo().saturating_sub(1);
+        *scroll_line = min(line, last_line);
         *scroll_column = column;
     }
 
     pub fn scroll_up(&mut self, distance: usize) {
-        let (scroll_line, _scroll_column) = &mut self.scroll;
-        *scroll_line = scroll_line.saturating_sub(distance);
+        let (scroll_line, scroll_column) = self.scroll;
+        self.scroll_to(scroll_line.saturating_sub(distance), scroll_column);
     }
 
     pub fn scroll_down(&mut self, distance: usize) {
-        let (scroll_line, _scroll_column) = &mut self.scroll;
-        *scroll_line += distance;
+        let (scroll_line, scroll_column) = self.scroll;
+        self.scroll_to(scroll_line + distance, scroll_column);
     }
 
     pub fn scroll_left(&mut self, distance: usize) {
-        let (_scroll_line, scroll_column) = &mut self.scroll;
-        *scroll_column = scroll_column.saturating_sub(distance);
+        let (scroll_line, scroll_column) = self.scroll;
+        self.scroll_to(scroll_line, scroll_column.saturating_sub(distance));
     }
 
     pub fn scroll_right(&mut self, distance: usize) {
-        let (_scroll_line, scroll_column) = &mut self.scroll;
-        *scroll_column += distance;
+        let (scroll_line, scroll_column) = self.scroll;
+        self.scroll_to(scroll_line, scroll_column + distance);
     }
 }
