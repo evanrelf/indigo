@@ -36,11 +36,15 @@ fn main() -> anyhow::Result<()> {
     let mut terminal = terminal::enter()?;
 
     loop {
+        let mut result = Ok(());
+
         terminal.draw(|frame| {
             let area = frame.size();
             let surface = frame.buffer_mut();
-            render(&editor, area, surface).unwrap();
+            result = render(&editor, area, surface);
         })?;
+
+        result?;
 
         let quit = handle_event(&mut editor, &event::read()?)?;
 
