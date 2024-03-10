@@ -4,7 +4,7 @@ use ropey::Rope;
 pub struct Editor {
     pub text: Rope,
     pub cursor: (usize, usize),
-    pub scroll: usize,
+    pub scroll: (usize, usize),
 }
 
 impl Editor {
@@ -29,10 +29,22 @@ impl Editor {
     }
 
     pub fn scroll_up(&mut self, distance: usize) {
-        self.scroll = self.scroll.saturating_sub(distance);
+        let (scroll_line, _scroll_column) = &mut self.scroll;
+        *scroll_line = scroll_line.saturating_sub(distance);
     }
 
     pub fn scroll_down(&mut self, distance: usize) {
-        self.scroll += distance;
+        let (scroll_line, _scroll_column) = &mut self.scroll;
+        *scroll_line += distance;
+    }
+
+    pub fn scroll_left(&mut self, distance: usize) {
+        let (_scroll_line, scroll_column) = &mut self.scroll;
+        *scroll_column = scroll_column.saturating_sub(distance);
+    }
+
+    pub fn scroll_right(&mut self, distance: usize) {
+        let (_scroll_line, scroll_column) = &mut self.scroll;
+        *scroll_column += distance;
     }
 }
