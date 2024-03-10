@@ -1,6 +1,7 @@
 mod buffer;
 mod conversion;
 mod editor;
+mod history;
 mod mode;
 mod position;
 mod rope;
