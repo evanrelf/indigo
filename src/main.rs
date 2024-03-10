@@ -43,6 +43,10 @@ fn main() -> anyhow::Result<()> {
         #[allow(clippy::single_match)]
         match event::read()? {
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+                (KeyModifiers::NONE, KeyCode::Char('h')) => editor.move_left(1),
+                (KeyModifiers::NONE, KeyCode::Char('j')) => editor.move_down(1),
+                (KeyModifiers::NONE, KeyCode::Char('k')) => editor.move_up(1),
+                (KeyModifiers::NONE, KeyCode::Char('l')) => editor.move_right(1),
                 (KeyModifiers::CONTROL, KeyCode::Char('c')) => break,
                 _ => {}
             },
@@ -85,7 +89,7 @@ fn render_cursor(editor: &Editor, area: Rect, buffer: &mut Buffer) -> anyhow::Re
     let column = u16::try_from(column)? + area.left();
 
     buffer
-        .get_mut(line, column)
+        .get_mut(column, line)
         .set_fg(Color::White)
         .set_bg(Color::Black);
 
