@@ -11,7 +11,7 @@ use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
 use ratatui::{
-    prelude::{Buffer as Surface, Color, Rect, Style, Widget as _},
+    prelude::{Buffer as Surface, Color, Constraint, Layout, Rect, Style, Widget as _},
     widgets::Paragraph,
 };
 use ropey::Rope;
@@ -113,11 +113,15 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
 }
 
 fn render(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Result<()> {
-    render_text(editor, area, surface)?;
-    render_cursor(editor, area, surface)?;
-    // TODO: Covering buffer text, because the terminal hasn't been split up into dedicated
-    // areas yet.
-    render_status_bar(editor, area, surface);
+    let areas = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(area);
+
+    let buffer_area = areas[0];
+    let status_bar_area = areas[1];
+
+    render_text(editor, buffer_area, surface)?;
+    render_cursor(editor, buffer_area, surface)?;
+    render_status_bar(editor, status_bar_area, surface);
+
     Ok(())
 }
 
