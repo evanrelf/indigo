@@ -5,6 +5,7 @@ mod history;
 mod mode;
 mod position;
 mod rope;
+mod selection;
 mod terminal;
 
 use crate::{editor::Editor, mode::Mode, position::Position, rope::RopeExt as _};
@@ -83,8 +84,8 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
                 (KeyModifiers::SHIFT, KeyCode::Char('J')) => buffer.extend_down(1)?,
                 (KeyModifiers::SHIFT, KeyCode::Char('K')) => buffer.extend_up(1)?,
                 (KeyModifiers::SHIFT, KeyCode::Char('L')) => buffer.extend_right(1)?,
-                (KeyModifiers::NONE, KeyCode::Char(';')) => buffer.reduce(),
-                (KeyModifiers::ALT, KeyCode::Char(';')) => buffer.flip(),
+                (KeyModifiers::NONE, KeyCode::Char(';')) => buffer.selection.reduce(),
+                (KeyModifiers::ALT, KeyCode::Char(';')) => buffer.selection.flip(),
                 (KeyModifiers::NONE, KeyCode::Char('i')) => editor.mode = Mode::Insert,
                 (KeyModifiers::NONE, KeyCode::Char('a')) => {
                     buffer.move_right(1)?;
@@ -161,8 +162,8 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Re
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Result<()> {
     let buffer = &editor.buffer;
 
-    let anchor_index = buffer.anchor.to_char_index(&editor.buffer.text)?;
-    let cursor_index = buffer.cursor.to_char_index(&editor.buffer.text)?;
+    let anchor_index = buffer.selection.anchor.to_char_index(&editor.buffer.text)?;
+    let cursor_index = buffer.selection.cursor.to_char_index(&editor.buffer.text)?;
     let start_index = min(anchor_index, cursor_index);
     let end_index = max(anchor_index, cursor_index);
 
