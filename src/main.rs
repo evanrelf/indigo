@@ -48,8 +48,6 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    terminal::exit()?;
-
     Ok(())
 }
 

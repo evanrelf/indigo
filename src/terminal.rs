@@ -2,7 +2,11 @@ use ratatui::{backend::CrosstermBackend, Terminal};
 use std::{
     io::Stdout,
     ops::{Deref, DerefMut},
+    sync::atomic::{AtomicBool, Ordering},
 };
+
+// The steps performed by `enter` and `exit` appear to be idempotent, however using multiple
+// `ratatui::Terminal`s is ill advised.
 
 pub struct TerminalGuard(Terminal<CrosstermBackend<Stdout>>);
 
@@ -30,16 +34,33 @@ impl DerefMut for TerminalGuard {
 
 impl Drop for TerminalGuard {
     fn drop(&mut self) {
-        let result = exit();
-        // Ignore the `Result` if we're already panicking; aborting is undesirable.
+        // If we're panicking, the panic hook installed by `enter` will have already called `exit`.
         if !std::thread::panicking() {
-            result.unwrap();
+            // It's okay to `unwrap` because we're not panicking, so this won't turn into an abort.
+            exit().unwrap();
         }
     }
 }
 
 pub fn enter() -> anyhow::Result<TerminalGuard> {
+    // Ensure the panic hook isn't installed more than once, because we have no safe or guaranteed
+    // way of uninstalling it.
+    static PANIC_HOOK_INSTALLED: AtomicBool = AtomicBool::new(false);
+
     let mut stdout = std::io::stdout();
+
+    if !PANIC_HOOK_INSTALLED.load(Ordering::SeqCst) {
+        let previous_hook = std::panic::take_hook();
+
+        // Restoring terminal state before the panic hook runs so that its output shows up.
+        std::panic::set_hook(Box::new(move |panic_info| {
+            // Ignoring the `Result` because we're already panicking; aborting is undesirable.
+            let _ = exit();
+            previous_hook(panic_info);
+        }));
+
+        PANIC_HOOK_INSTALLED.store(true, Ordering::SeqCst);
+    }
 
     crossterm::terminal::enable_raw_mode()?;
 
@@ -49,15 +70,6 @@ pub fn enter() -> anyhow::Result<TerminalGuard> {
         crossterm::cursor::Hide,
         crossterm::event::EnableMouseCapture,
     )?;
-
-    let previous_hook = std::panic::take_hook();
-
-    std::panic::set_hook(Box::new(move |panic_info| {
-        // Restoring terminal state before the panic hook runs so that its output shows up. Ignoring
-        // the `Result` because we're already panicking; aborting is undesirable.
-        let _ = exit();
-        previous_hook(panic_info);
-    }));
 
     let terminal_guard = TerminalGuard::new(stdout)?;
 
