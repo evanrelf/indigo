@@ -5,6 +5,7 @@ use std::cmp::{max, min};
 #[derive(Debug)]
 pub struct Buffer {
     pub text: Rope,
+    pub anchor: Position,
     pub cursor: Position,
     pub target_column: Option<usize>,
 }
@@ -108,6 +109,7 @@ impl Default for Buffer {
     fn default() -> Self {
         Self {
             text: Rope::from("\n"),
+            anchor: Position { line: 0, column: 0 },
             cursor: Position { line: 0, column: 0 },
             target_column: None,
         }
