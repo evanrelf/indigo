@@ -2,6 +2,31 @@ use ropey::Rope;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, ops::RangeBounds};
 
+// TODO: Separate `Replica` from `Rope`, so that a `Buffer` can exist without the CRDT bits (they
+// can be added later).
+
+// TODO: At least for the purposes of `Buffer` undo/redo (maybe not necessarily for the CRDT
+// operations), include the deleted string in the `Deletion` operation so that it can be inverted to
+// an `Insertion`. Something like this:
+//
+// ```rust
+// enum Operation {
+//     Insert { index: usize, text: String },
+//     Delete { index: usize, text: String },
+// }
+//
+// impl Operation {
+//     fn invert(self) -> Self {
+//         match self {
+//             Self::Invert { index, text } => Self::Delete { index, text },
+//             Self::Delete { index, text } => Self::Invert { index, text },
+//         }
+//     }
+// }
+// ```
+//
+// Could benefit from optimizations (small strings stored on the stack, copy-on-write or interning)
+
 pub struct Buffer {
     text: Rope,
     crdt: cola::Replica,
