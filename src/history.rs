@@ -1,33 +1,33 @@
-use std::sync::Arc;
+use imbl::Vector;
 
 // <https:///github.com/zaboople/klonk/blob/master/TheGURQ.md>
 // <https://github.com/evanrelf/indigo/blob/haskell1/src/Indigo/Core/History.hs>
 
 pub struct History<T> {
-    before: Vec<Arc<T>>,
-    after: Vec<Arc<T>>,
+    before: Vector<T>,
+    after: Vector<T>,
 }
 
 impl<T> History<T> {
     pub fn new() -> Self {
         Self {
-            before: Vec::new(),
-            after: Vec::new(),
+            before: Vector::new(),
+            after: Vector::new(),
         }
     }
 
     /// Actions occurring before the frame of reference, from newest to oldest.
-    pub fn before(&self) -> &[Arc<T>] {
+    pub fn before(&self) -> &Vector<T> {
         &self.before
     }
 
     /// Action that just occurred from the frame of reference.
-    pub fn now(&self) -> Option<Arc<T>> {
-        self.before.first().cloned()
+    pub fn now(&self) -> Option<&T> {
+        self.before.front()
     }
 
     /// Actions occurring after the frame of reference, from oldest to newest.
-    pub fn after(&self) -> &[Arc<T>] {
+    pub fn after(&self) -> &Vector<T> {
         &self.after
     }
 
@@ -53,48 +53,60 @@ impl<T> History<T> {
 
     pub fn act(&mut self, action: T)
     where
-        T: Action,
+        T: Action + Clone,
     {
         if self.after.is_empty() {
-            self.before.push(Arc::new(action));
+            self.before.push_back(action);
         } else {
             let after = std::mem::take(&mut self.after);
 
             let reversed = after.iter().cloned().rev();
 
-            let inverted = after.iter().map(|action| Arc::new(action.invert()));
+            let inverted = after.iter().map(Action::invert);
 
             self.before.extend(reversed);
 
             self.before.extend(inverted);
 
-            self.before.push(Arc::new(action));
+            self.before.push_back(action);
         }
     }
 
     /// Shift the frame of reference one action earlier.
-    pub fn shift_earlier(&mut self) {
-        if let Some(action) = self.before.pop() {
-            self.after.push(action);
+    pub fn shift_earlier(&mut self)
+    where
+        T: Clone,
+    {
+        if let Some(action) = self.before.pop_back() {
+            self.after.push_back(action);
         }
     }
 
     /// Shift the frame of reference one action later.
-    pub fn shift_later(&mut self) {
-        if let Some(action) = self.after.pop() {
-            self.before.push(action);
+    pub fn shift_later(&mut self)
+    where
+        T: Clone,
+    {
+        if let Some(action) = self.after.pop_back() {
+            self.before.push_back(action);
         }
     }
 
     /// Shift the frame of reference to the epoch (beginning of history).
-    pub fn shift_epoch(&mut self) {
+    pub fn shift_epoch(&mut self)
+    where
+        T: Clone,
+    {
         while !self.is_epoch() {
             self.shift_earlier();
         }
     }
 
     /// Shift the frame of reference to the present (end of history).
-    pub fn shift_present(&mut self) {
+    pub fn shift_present(&mut self)
+    where
+        T: Clone,
+    {
         while !self.is_present() {
             self.shift_later();
         }
@@ -124,7 +136,7 @@ mod tests {
 
     fn make_history<T>(actions: Vec<T>) -> History<T>
     where
-        T: Action,
+        T: Action + Clone,
     {
         let mut history = History::new();
         for action in actions {

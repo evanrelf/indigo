@@ -9,6 +9,7 @@ camino = "1.1.6"
 clap = { version = "4.5.1", default-features = false, features = ["derive", "error-context", "help", "std", "usage"] }
 cola = { version = "0.4.4", features = ["encode", "serde"] }
 crossterm = { version = "0.27.0", default-features = false, features = ["events"] }
+imbl = { version = "2.0.3" }
 ratatui = "0.26.1"
 ropey = { version = "1.6.1", default-features = false, features = ["simd"] }
 serde = { version = "1.0.197", features = ["derive"] }
