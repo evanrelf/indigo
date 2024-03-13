@@ -143,3 +143,84 @@ impl Position {
         Ok(())
     }
 }
+
+impl From<(usize, usize)> for Position {
+    fn from((line, column): (usize, usize)) -> Self {
+        Self { line, column }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn position_default() {
+        assert_eq!(Position::default(), Position::from((0, 0)));
+    }
+
+    #[test]
+    fn position_ord() {
+        assert!(Position::from((0, 0)) < Position::from((0, 1)));
+        assert!(Position::from((0, 0)) < Position::from((1, 0)));
+        assert!(Position::from((5, 5)) < Position::from((5, 6)));
+        assert!(Position::from((5, 5)) < Position::from((6, 0)));
+    }
+
+    // TODO: Test strict conversion functions instead
+
+    #[test]
+    fn from_char_index() {
+        let rope = Rope::default();
+        let index = 1;
+        assert!(Position::from_char_index(index, &rope).is_err());
+
+        let rope = Rope::from_str("foo\nbar");
+        let index = 7;
+        assert!(matches!(
+            Position::from_char_index(index, &rope),
+            Ok(Position { line: 1, column: 2 })
+        ));
+
+        let rope = Rope::from_str("foo\nbar\n");
+        let index = 8;
+        assert!(matches!(
+            Position::from_char_index(index, &rope),
+            Ok(Position { line: 1, column: 3 })
+        ));
+
+        let rope = Rope::from_str("foo\nbar\n");
+        let index = 7;
+        assert!(matches!(
+            Position::from_char_index(index, &rope),
+            Ok(Position { line: 1, column: 3 })
+        ));
+    }
+
+    #[test]
+    fn to_char_index() {
+        let rope = Rope::default();
+        let position = Position { line: 0, column: 0 };
+        assert!(position.to_char_index(&rope).is_err());
+
+        let rope = Rope::from_str("foo\nbar");
+        let position = Position { line: 0, column: 4 };
+        assert!(matches!(position.to_char_index(&rope), Ok(3)));
+
+        let rope = Rope::from_str("foo\nbar");
+        let position = Position { line: 9, column: 0 };
+        assert!(matches!(position.to_char_index(&rope), Ok(6)));
+
+        let rope = Rope::from_str("foo\nbar\n");
+        let position = Position { line: 9, column: 0 };
+        assert!(matches!(position.to_char_index(&rope), Ok(7)));
+
+        let rope = Rope::from_str("foo\nbar");
+        let position = Position { line: 1, column: 2 };
+        assert!(matches!(position.to_char_index(&rope), Ok(6)));
+
+        let rope = Rope::from_str("foo\nbar\n");
+        let position = Position { line: 1, column: 3 };
+        assert!(matches!(position.to_char_index(&rope), Ok(7)));
+    }
+}
