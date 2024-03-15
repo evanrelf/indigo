@@ -6,6 +6,7 @@ mod editor;
 mod history;
 mod mode;
 mod position;
+mod refs;
 mod rope;
 mod selection;
 mod text;
