@@ -1,4 +1,5 @@
 mod buffer;
+mod buffer2;
 mod conversion;
 mod crdt;
 mod editor;
