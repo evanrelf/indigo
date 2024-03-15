@@ -1,4 +1,4 @@
-use crate::position::Position;
+use crate::Position;
 use std::cmp::{max, min};
 
 #[derive(Debug, Default)]
@@ -9,18 +9,22 @@ pub struct Selection {
 }
 
 impl Selection {
+    #[must_use]
     pub fn start(&self) -> Position {
         min(self.anchor, self.cursor)
     }
 
+    #[must_use]
     pub fn end(&self) -> Position {
         max(self.anchor, self.cursor)
     }
 
+    #[must_use]
     pub fn is_forward(&self) -> bool {
         self.anchor <= self.cursor
     }
 
+    #[must_use]
     pub fn is_backward(&self) -> bool {
         self.anchor > self.cursor
     }

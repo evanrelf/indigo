@@ -1,4 +1,4 @@
-use crate::{buffer::Buffer, mode::Mode, position::Position, rope::RopeExt as _, world::World};
+use crate::{Buffer, Mode, Position, RopeExt as _, World};
 use camino::Utf8PathBuf;
 use std::{
     cmp::min,

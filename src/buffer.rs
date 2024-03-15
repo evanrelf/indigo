@@ -1,4 +1,4 @@
-use crate::{position::Position, rope::RopeExt as _, selection::Selection};
+use crate::{Position, RopeExt as _, Selection};
 use ropey::Rope;
 use std::cmp::{max, min};
 
