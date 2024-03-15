@@ -1,9 +1,9 @@
-use crate::{Buffer, Selection};
+use crate::{Selection, Text};
 use slotmap::SlotMap;
 
 #[derive(Debug, Default)]
 pub struct World {
-    buffers: SlotMap<BufferKey, Buffer>,
+    texts: SlotMap<TextKey, Text>,
     selections: SlotMap<SelectionKey, Selection>,
 }
 
@@ -39,17 +39,17 @@ where
     }
 }
 
-slotmap::new_key_type! { pub struct BufferKey; }
+slotmap::new_key_type! { pub struct TextKey; }
 
-impl Has<Buffer> for World {
-    type Key = BufferKey;
+impl Has<Text> for World {
+    type Key = TextKey;
 
-    fn has(&self) -> &SlotMap<Self::Key, Buffer> {
-        &self.buffers
+    fn has(&self) -> &SlotMap<Self::Key, Text> {
+        &self.texts
     }
 
-    fn has_mut(&mut self) -> &mut SlotMap<Self::Key, Buffer> {
-        &mut self.buffers
+    fn has_mut(&mut self) -> &mut SlotMap<Self::Key, Text> {
+        &mut self.texts
     }
 }
 
