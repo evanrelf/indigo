@@ -1,4 +1,4 @@
-use crate::{buffer::Buffer, mode::Mode, position::Position, rope::RopeExt as _};
+use crate::{buffer::Buffer, mode::Mode, position::Position, rope::RopeExt as _, world::World};
 use camino::Utf8PathBuf;
 use std::{
     cmp::min,
@@ -8,6 +8,7 @@ use std::{
 
 #[derive(Debug)]
 pub struct Editor {
+    pub world: World,
     pub path: Option<Utf8PathBuf>,
     pub buffer: Buffer,
     pub scroll: Position,
@@ -60,6 +61,7 @@ impl Editor {
 impl Default for Editor {
     fn default() -> Self {
         Self {
+            world: World::default(),
             path: None,
             buffer: Buffer::default(),
             scroll: Position { line: 0, column: 0 },
