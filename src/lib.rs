@@ -8,9 +8,6 @@ mod position;
 mod rope;
 mod selection;
 mod text;
-mod world;
-
-pub(crate) use crate::world::World;
 
 pub use crate::{
     buffer::Buffer, conversion::Conversion, editor::Editor, mode::Mode, position::Position,
