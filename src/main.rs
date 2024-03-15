@@ -2,12 +2,14 @@ mod buffer;
 mod conversion;
 mod crdt;
 mod editor;
+mod has;
 mod history;
 mod mode;
 mod position;
 mod rope;
 mod selection;
 mod terminal;
+mod world;
 
 use crate::{editor::Editor, mode::Mode, position::Position, rope::RopeExt as _};
 use camino::Utf8PathBuf;
