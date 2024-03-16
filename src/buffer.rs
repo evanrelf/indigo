@@ -107,35 +107,47 @@ impl Buffer {
     }
 
     pub fn insert_char(&mut self, char: char) -> anyhow::Result<()> {
-        let index = self.selection.cursor.to_char_index(&self.text)?;
+        let mut text = self.text.clone();
 
-        self.text.insert_char(index, char);
+        let cursor_index = self.selection.cursor.to_char_index(&text)?;
 
-        self.selection.cursor = Position::from_char_index(index + 1, &self.text)?;
+        text.insert_char(cursor_index, char);
+
+        self.selection.cursor = Position::from_char_index(cursor_index + 1, &text)?;
+
+        self.text = text;
 
         Ok(())
     }
 
     pub fn insert(&mut self, str: &str) -> anyhow::Result<()> {
-        let index = self.selection.cursor.to_char_index(&self.text)?;
+        let mut text = self.text.clone();
 
-        self.text.insert(index, str);
+        let cursor_index = self.selection.cursor.to_char_index(&text)?;
 
-        self.selection.cursor = Position::from_char_index(index + str.len(), &self.text)?;
+        text.insert(cursor_index, str);
+
+        self.selection.cursor = Position::from_char_index(cursor_index + str.len(), &text)?;
+
+        self.text = text;
 
         Ok(())
     }
 
     pub fn backspace(&mut self) -> anyhow::Result<()> {
-        let index = self.selection.cursor.to_char_index(&self.text)?;
+        let mut text = self.text.clone();
 
-        if index == 0 {
+        let cursor_index = self.selection.cursor.to_char_index(&text)?;
+
+        if cursor_index == 0 {
             return Ok(());
         }
 
-        self.text.remove(index - 1..index);
+        text.remove(cursor_index - 1..cursor_index);
 
-        self.selection.cursor = Position::from_char_index(index - 1, &self.text)?;
+        self.selection.cursor = Position::from_char_index(cursor_index - 1, &text)?;
+
+        self.text = text;
 
         Ok(())
     }
