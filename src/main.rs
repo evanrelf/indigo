@@ -55,17 +55,24 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-// Whether to follow Kakoune's behavior when entering insert mode.
-//
-// Kakoune treats selection ranges like fat cursors:
-// * When you hit `i` the ranges flip backward so the cursor is at the start.
-// * When you hit `a` the ranges flip forward so the cursor is at the end.
-//
-// Set this to `true` to use Kakoune's behavior. Set this to `false` to stop the selection from
-// flipping, leaving the cursor where it is.
-const KAKOUNE_STYLE_INSERT: bool = true;
+// TODO: Pick a style
+enum InsertStyle {
+    /// Flip the selection to face the direction of insertion. You can think of the entire selection
+    /// like a "fat cursor". This is how Kakoune works.
+    Flip,
+
+    /// Keep the selection as is, allowing text to be inserted inside the initial selection range.
+    /// The cursor remains in place like `Reduce`, but the rest of the selection is kept.
+    Stay,
+
+    /// Reduce the selection when entering insert mode. The cursor remains in place like `Stay`, but
+    /// the rest of the selection is lost.
+    Reduce,
+}
 
 fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
+    let insert_style = InsertStyle::Reduce;
+
     let mut quit = false;
 
     let buffer = &mut editor.buffer;
@@ -89,16 +96,27 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
                 (KeyModifiers::NONE, KeyCode::Char(';')) => buffer.selection.reduce(),
                 (KeyModifiers::ALT, KeyCode::Char(';')) => buffer.selection.flip(),
                 (KeyModifiers::NONE, KeyCode::Char('i')) => {
-                    if KAKOUNE_STYLE_INSERT {
-                        buffer.selection.flip_backward();
+                    match insert_style {
+                        InsertStyle::Flip => buffer.selection.flip_backward(),
+                        InsertStyle::Stay => {}
+                        InsertStyle::Reduce => buffer.selection.reduce(),
                     }
                     editor.mode = Mode::Insert { after: false }
                 }
                 (KeyModifiers::NONE, KeyCode::Char('a')) => {
-                    if KAKOUNE_STYLE_INSERT {
-                        buffer.selection.flip_forward();
+                    match insert_style {
+                        InsertStyle::Flip => {
+                            buffer.selection.flip_forward();
+                            buffer.extend_right(1)?;
+                        }
+                        InsertStyle::Stay => {
+                            buffer.extend_right(1)?;
+                        }
+                        InsertStyle::Reduce => {
+                            buffer.selection.reduce();
+                            buffer.move_right(1)?;
+                        }
                     }
-                    buffer.extend_right(1)?;
                     editor.mode = Mode::Insert { after: true };
                 }
                 (KeyModifiers::NONE, KeyCode::Up) => editor.scroll_up(1),
