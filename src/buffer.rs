@@ -2,17 +2,6 @@ use crate::{Position, RopeExt as _, Selection};
 use ropey::Rope;
 use std::cmp::{max, min};
 
-// TODO: Create new `Text` type wrapping `Rope` that handles inserting and deleting via operations.
-// `insert_char` and `backspace` will be dropped. The former is a special case of inserting a
-// string, the latter is too TUI-related; `remove` is the more general primitive.
-//
-// `Buffer` becomes responsible _only_ for things that relate to the `Text` _and_ the `Selection`,
-// such as cursor+anchor movement, inserting and deleting with implicit indexing/positioning,
-// modifying selection with a regular expression, etc.
-
-// TODO: I guess undo/redo history (for text and selection) should live in the buffer? But not file
-// path, since it could still be a virtual buffer like scratch or the command-line or whatever.
-
 #[derive(Debug)]
 pub struct Buffer {
     pub text: Rope,
