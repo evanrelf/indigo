@@ -109,11 +109,18 @@ impl Buffer {
     pub fn insert_char(&mut self, char: char) -> anyhow::Result<()> {
         let mut text = self.text.clone();
 
+        let anchor_index = self.selection.anchor.to_char_index(&text)?;
         let cursor_index = self.selection.cursor.to_char_index(&text)?;
+
+        let move_anchor = self.selection.is_backward() || self.selection.is_reduced();
 
         text.insert_char(cursor_index, char);
 
         self.selection.cursor = Position::from_char_index(cursor_index + 1, &text)?;
+
+        if move_anchor {
+            self.selection.anchor = Position::from_char_index(anchor_index + 1, &text)?;
+        }
 
         self.text = text;
 
@@ -123,11 +130,18 @@ impl Buffer {
     pub fn insert(&mut self, str: &str) -> anyhow::Result<()> {
         let mut text = self.text.clone();
 
+        let anchor_index = self.selection.anchor.to_char_index(&text)?;
         let cursor_index = self.selection.cursor.to_char_index(&text)?;
+
+        let move_anchor = self.selection.is_backward() || self.selection.is_reduced();
 
         text.insert(cursor_index, str);
 
         self.selection.cursor = Position::from_char_index(cursor_index + str.len(), &text)?;
+
+        if move_anchor {
+            self.selection.anchor = Position::from_char_index(anchor_index + str.len(), &text)?;
+        }
 
         self.text = text;
 
@@ -137,7 +151,10 @@ impl Buffer {
     pub fn backspace(&mut self) -> anyhow::Result<()> {
         let mut text = self.text.clone();
 
+        let anchor_index = self.selection.anchor.to_char_index(&text)?;
         let cursor_index = self.selection.cursor.to_char_index(&text)?;
+
+        let move_anchor = self.selection.is_backward() || self.selection.is_reduced();
 
         if cursor_index == 0 {
             return Ok(());
@@ -146,6 +163,10 @@ impl Buffer {
         text.remove(cursor_index - 1..cursor_index);
 
         self.selection.cursor = Position::from_char_index(cursor_index - 1, &text)?;
+
+        if move_anchor {
+            self.selection.anchor = Position::from_char_index(anchor_index - 1, &text)?;
+        }
 
         self.text = text;
 

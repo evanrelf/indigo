@@ -103,7 +103,6 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
             },
             _ => {}
         },
-        // TODO: Fix bug where selection grows in size when typing
         Mode::Insert => match event {
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
                 (KeyModifiers::NONE, KeyCode::Char(char)) => buffer.insert_char(char)?,
