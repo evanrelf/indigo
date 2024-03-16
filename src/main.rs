@@ -55,6 +55,16 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
+// Whether to follow Kakoune's behavior when entering insert mode.
+//
+// Kakoune treats selection ranges like fat cursors:
+// * When you hit `i` the ranges flip backward so the cursor is at the start.
+// * When you hit `a` the ranges flip forward so the cursor is at the end.
+//
+// Set this to `true` to use Kakoune's behavior. Set this to `false` to stop the selection from
+// flipping, leaving the cursor where it is.
+const KAKOUNE_STYLE_INSERT: bool = true;
+
 fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
     let mut quit = false;
 
@@ -79,11 +89,15 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
                 (KeyModifiers::NONE, KeyCode::Char(';')) => buffer.selection.reduce(),
                 (KeyModifiers::ALT, KeyCode::Char(';')) => buffer.selection.flip(),
                 (KeyModifiers::NONE, KeyCode::Char('i')) => {
-                    buffer.selection.flip_backward();
+                    if KAKOUNE_STYLE_INSERT {
+                        buffer.selection.flip_backward();
+                    }
                     editor.mode = Mode::Insert { after: false }
                 }
                 (KeyModifiers::NONE, KeyCode::Char('a')) => {
-                    buffer.selection.flip_forward();
+                    if KAKOUNE_STYLE_INSERT {
+                        buffer.selection.flip_forward();
+                    }
                     buffer.extend_right(1)?;
                     editor.mode = Mode::Insert { after: true };
                 }
