@@ -3,7 +3,7 @@ mod terminal;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
-use indigo::{Editor, Mode, Position, RopeExt as _};
+use indigo::{Buffer, Editor, Mode, Position, RopeExt as _};
 use ratatui::{
     prelude::{Buffer as Surface, Color, Constraint, Layout, Rect, Style, Widget as _},
     widgets::Paragraph,
@@ -29,7 +29,7 @@ fn main() -> anyhow::Result<()> {
     if let Some(path) = args.file {
         let file = File::open(&path)?;
         editor.path = Some(path);
-        editor.buffer.text = Rope::from_reader(BufReader::new(file))?;
+        editor.buffer = Buffer::new(Rope::from_reader(BufReader::new(file))?)?;
     }
 
     let mut terminal = terminal::enter()?;
@@ -147,7 +147,7 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
                 (KeyModifiers::NONE, KeyCode::Backspace) => buffer.backspace()?,
                 (KeyModifiers::CONTROL, KeyCode::Char('s')) => editor.save()?,
                 (KeyModifiers::NONE, KeyCode::Esc) => {
-                    if *after && !buffer.selection.is_reduced() {
+                    if *after && !buffer.selection().is_reduced() {
                         buffer.extend_left(1)?;
                     }
                     editor.mode = Mode::Normal;
@@ -178,9 +178,9 @@ fn render(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Result<
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Result<()> {
     let buffer = &editor.buffer;
 
-    let text = Cow::<'_, str>::from(&buffer.text);
+    let text = Cow::<'_, str>::from(buffer.text());
 
-    let last_line = buffer.text.len_lines_indigo().saturating_sub(1);
+    let last_line = buffer.text().len_lines_indigo().saturating_sub(1);
 
     let scroll_line = u16::try_from(min(last_line, editor.scroll.line))?;
     let scroll_column = u16::try_from(editor.scroll.column)?;
@@ -195,13 +195,19 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Re
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Result<()> {
     let buffer = &editor.buffer;
 
-    let anchor_index = buffer.selection.anchor.to_char_index(&editor.buffer.text)?;
-    let cursor_index = buffer.selection.cursor.to_char_index(&editor.buffer.text)?;
+    let anchor_index = buffer
+        .selection()
+        .anchor
+        .to_char_index(editor.buffer.text())?;
+    let cursor_index = buffer
+        .selection()
+        .cursor
+        .to_char_index(editor.buffer.text())?;
     let start_index = min(anchor_index, cursor_index);
     let end_index = max(anchor_index, cursor_index);
 
     for index in start_index..=end_index {
-        let position = Position::from_char_index(index, &editor.buffer.text)?;
+        let position = Position::from_char_index(index, editor.buffer.text())?;
 
         if editor.scroll.line > position.line {
             return Ok(());

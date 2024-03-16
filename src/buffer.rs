@@ -4,11 +4,31 @@ use std::cmp::{max, min};
 
 #[derive(Debug)]
 pub struct Buffer {
-    pub text: Rope,
+    text: Rope,
+    // TODO: Make private
     pub selection: Selection,
 }
 
 impl Buffer {
+    pub fn new(text: Rope) -> anyhow::Result<Self> {
+        anyhow::ensure!(!text.len_chars() > 0);
+
+        Ok(Self {
+            text,
+            selection: Selection::default(),
+        })
+    }
+
+    #[must_use]
+    pub fn text(&self) -> &Rope {
+        &self.text
+    }
+
+    #[must_use]
+    pub fn selection(&self) -> &Selection {
+        &self.selection
+    }
+
     pub fn extend_to(&mut self, line: usize, column: usize) -> anyhow::Result<()> {
         self.selection.cursor.line = line;
         self.selection.cursor.column = column;

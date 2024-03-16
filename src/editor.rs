@@ -18,8 +18,8 @@ impl Editor {
     pub fn save(&self) -> anyhow::Result<()> {
         if let Some(path) = &self.path {
             let file = File::create(path)?;
-            let mut writer = BufWriter::with_capacity(self.buffer.text.len_bytes(), file);
-            self.buffer.text.write_to(&mut writer)?;
+            let mut writer = BufWriter::with_capacity(self.buffer.text().len_bytes(), file);
+            self.buffer.text().write_to(&mut writer)?;
             writer.flush()?;
         } else {
             anyhow::bail!("No path");
@@ -29,7 +29,7 @@ impl Editor {
     }
 
     pub fn scroll_to(&mut self, line: usize, column: usize) {
-        let last_line = self.buffer.text.len_lines_indigo().saturating_sub(1);
+        let last_line = self.buffer.text().len_lines_indigo().saturating_sub(1);
         self.scroll.line = min(line, last_line);
         self.scroll.column = column;
     }
