@@ -1,5 +1,5 @@
 #[derive(Debug)]
 pub enum Mode {
     Normal,
-    Insert,
+    Insert { after: bool },
 }

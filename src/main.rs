@@ -78,10 +78,14 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
                 (KeyModifiers::SHIFT, KeyCode::Char('L')) => buffer.extend_right(1)?,
                 (KeyModifiers::NONE, KeyCode::Char(';')) => buffer.selection.reduce(),
                 (KeyModifiers::ALT, KeyCode::Char(';')) => buffer.selection.flip(),
-                (KeyModifiers::NONE, KeyCode::Char('i')) => editor.mode = Mode::Insert,
+                (KeyModifiers::NONE, KeyCode::Char('i')) => {
+                    buffer.selection.flip_backward();
+                    editor.mode = Mode::Insert { after: false }
+                }
                 (KeyModifiers::NONE, KeyCode::Char('a')) => {
-                    buffer.move_right(1)?;
-                    editor.mode = Mode::Insert;
+                    buffer.selection.flip_forward();
+                    buffer.extend_right(1)?;
+                    editor.mode = Mode::Insert { after: true };
                 }
                 (KeyModifiers::NONE, KeyCode::Up) => editor.scroll_up(1),
                 (KeyModifiers::NONE, KeyCode::Down) => editor.scroll_down(1),
@@ -103,14 +107,19 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
             },
             _ => {}
         },
-        Mode::Insert => match event {
+        Mode::Insert { after } => match event {
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
                 (KeyModifiers::NONE, KeyCode::Char(char)) => buffer.insert_char(char)?,
                 (KeyModifiers::SHIFT, KeyCode::Char(char)) => buffer.insert_char(char)?,
                 (KeyModifiers::NONE, KeyCode::Enter) => buffer.insert_char('\n')?,
                 (KeyModifiers::NONE, KeyCode::Backspace) => buffer.backspace()?,
                 (KeyModifiers::CONTROL, KeyCode::Char('s')) => editor.save()?,
-                (KeyModifiers::NONE, KeyCode::Esc) => editor.mode = Mode::Normal,
+                (KeyModifiers::NONE, KeyCode::Esc) => {
+                    if *after && !buffer.selection.is_reduced() {
+                        buffer.extend_left(1)?;
+                    }
+                    editor.mode = Mode::Normal;
+                }
                 _ => {}
             },
             Event::Paste(string) => buffer.insert(string)?,
@@ -201,7 +210,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) -> anyho
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let mode = match editor.mode {
         Mode::Normal => "N",
-        Mode::Insert => "I",
+        Mode::Insert { .. } => "I",
     };
 
     let path = match &editor.path {
