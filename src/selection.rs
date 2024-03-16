@@ -29,6 +29,11 @@ impl Selection {
         self.anchor > self.cursor
     }
 
+    #[must_use]
+    pub fn is_reduced(&self) -> bool {
+        self.anchor == self.cursor
+    }
+
     pub fn flip(&mut self) {
         std::mem::swap(&mut self.anchor, &mut self.cursor);
     }
