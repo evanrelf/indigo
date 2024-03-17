@@ -1,36 +1,44 @@
 #[derive(Debug)]
 pub struct History<T> {
-    before: Vec<T>,
-    after: Vec<T>,
+    before: Vec<Vec<T>>,
+    after: Vec<Vec<T>>,
 }
 
 impl<T> History<T> {
-    pub fn push(&mut self, state: T)
+    pub fn push(&mut self, value: T)
     where
         T: PartialEq,
     {
-        if let Some(before) = self.before.last() {
-            if *before == state {
+        if let Some(group) = self.before.last_mut() {
+            group.push(value);
+        } else {
+            self.before.push(vec![value]);
+        }
+        self.after.clear();
+    }
+
+    pub fn new_group(&mut self) {
+        if let Some(group) = self.before.last_mut() {
+            if group.is_empty() {
                 return;
             }
         }
-
-        self.before.push(state);
+        self.before.push(Vec::new());
         self.after.clear();
     }
 
     #[must_use]
-    pub fn undo(&mut self) -> Option<&T> {
-        let state = self.before.pop()?;
-        self.after.push(state);
-        Some(self.after.last().unwrap())
+    pub fn undo(&mut self) -> Option<&[T]> {
+        let value = self.before.pop()?;
+        self.after.push(value);
+        Some(self.after.last().unwrap().as_slice())
     }
 
     #[must_use]
-    pub fn redo(&mut self) -> Option<&T> {
-        let state = self.after.pop()?;
-        self.before.push(state);
-        Some(self.before.last().unwrap())
+    pub fn redo(&mut self) -> Option<&[T]> {
+        let value = self.after.pop()?;
+        self.before.push(value);
+        Some(self.before.last().unwrap().as_slice())
     }
 }
 
@@ -40,38 +48,5 @@ impl<T> Default for History<T> {
             before: Vec::new(),
             after: Vec::new(),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test() {
-        let mut history = History::default();
-        let mut value: u8 = 0;
-
-        history.push(value);
-        value = 1;
-
-        history.push(value);
-        value = 2;
-
-        history.push(value);
-        value = 3;
-
-        assert_eq!(history.undo(), Some(2u8).as_ref());
-        assert_eq!(history.undo(), Some(1u8).as_ref());
-        assert_eq!(history.undo(), Some(0u8).as_ref());
-        assert_eq!(history.undo(), None);
-
-        assert_eq!(history.redo(), Some(0u8).as_ref());
-
-        history.push(42u8);
-
-        assert_eq!(history.redo(), None);
-
-        let _ = value;
     }
 }

@@ -7,22 +7,17 @@ pub struct Buffer {
     text: Rope,
     // TODO: Make private
     pub selection: Selection,
-    history: History<(Rope, Selection)>,
+    pub history: History<(Action, Selection, Selection)>,
 }
 
 impl Buffer {
     pub fn new(text: Rope) -> anyhow::Result<Self> {
         anyhow::ensure!(!text.len_chars() > 0);
 
-        let selection = Selection::default();
-
-        let mut history = History::default();
-        history.push((text.clone(), selection));
-
         Ok(Self {
             text,
-            selection,
-            history,
+            selection: Selection::default(),
+            history: History::default(),
         })
     }
 
@@ -213,6 +208,8 @@ impl Buffer {
 
         let move_anchor = self.selection.is_backward() || self.selection.is_reduced();
 
+        let before_selection = self.selection;
+
         text.insert(cursor_index, str);
 
         if move_anchor {
@@ -222,6 +219,12 @@ impl Buffer {
         self.selection.cursor = Position::from_char_index(cursor_index + str.len(), &text)?;
 
         self.text = text;
+
+        self.history.push((
+            Action::Insert(cursor_index, String::from(str)),
+            before_selection,
+            self.selection,
+        ));
 
         Ok(())
     }
@@ -238,7 +241,13 @@ impl Buffer {
             return Ok(());
         }
 
-        text.remove(cursor_index - 1..cursor_index);
+        let range = cursor_index - 1..cursor_index;
+
+        let string = text.slice(range.clone()).to_string();
+
+        let before_selection = self.selection;
+
+        text.remove(range.clone());
 
         if move_anchor {
             self.selection.anchor = Position::from_char_index(anchor_index - 1, &text)?;
@@ -248,48 +257,67 @@ impl Buffer {
 
         self.text = text;
 
+        self.history.push((
+            Action::Delete(range.start, string),
+            before_selection,
+            self.selection,
+        ));
+
         Ok(())
     }
 
     pub fn delete(&mut self) -> anyhow::Result<()> {
-        self.record();
+        self.history.new_group();
 
         let mut text = self.text.clone();
 
         let start_index = self.selection.start().to_char_index(&text)?;
         let end_index = self.selection.end().to_char_index(&text)?;
 
-        text.remove(start_index..=end_index);
+        let range = start_index..=end_index;
+
+        let string = text.slice(range.clone()).to_string();
+
+        let before_selection = self.selection;
+
+        text.remove(range.clone());
 
         self.selection.anchor = Position::from_char_index(start_index, &text)?;
         self.selection.cursor = Position::from_char_index(start_index, &text)?;
 
         self.text = text;
 
-        self.record();
+        self.history.push((
+            Action::Delete(*range.start(), string),
+            before_selection,
+            self.selection,
+        ));
+
+        self.history.new_group();
 
         Ok(())
     }
 
-    pub fn record(&mut self) {
-        self.history.push((self.text.clone(), self.selection));
-    }
-
     pub fn undo(&mut self) {
-        while let Some((text, selection)) = self.history.undo() {
-            if self.text != *text {
-                self.text = text.clone();
-                self.selection = *selection;
+        while let Some(group) = self.history.undo() {
+            if !group.is_empty() {
+                for (action, before_selection, _after_selection) in group.iter().rev() {
+                    let action = action.clone().invert();
+                    action.apply(&mut self.text);
+                    self.selection = *before_selection;
+                }
                 return;
             }
         }
     }
 
     pub fn redo(&mut self) {
-        while let Some((text, selection)) = self.history.redo() {
-            if self.text != *text {
-                self.text = text.clone();
-                self.selection = *selection;
+        while let Some(group) = self.history.redo() {
+            if !group.is_empty() {
+                for (action, _before_selection, after_selection) in group {
+                    action.apply(&mut self.text);
+                    self.selection = *after_selection;
+                }
                 return;
             }
         }
@@ -309,3 +337,47 @@ impl Default for Buffer {
 const SPACES: [char; 3] = [' ', '\t', '\n'];
 
 const HSPACES: [char; 2] = [' ', '\t'];
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Action {
+    Insert(usize, String),
+    Delete(usize, String),
+}
+
+impl Action {
+    pub fn invert(self) -> Self {
+        match self {
+            Self::Insert(index, string) => Self::Delete(index, string),
+            Self::Delete(index, string) => Self::Insert(index, string),
+        }
+    }
+
+    pub fn apply(&self, rope: &mut Rope) {
+        match self {
+            Self::Insert(index, string) => rope.insert(*index, string),
+            Self::Delete(index, string) => rope.remove(*index..*index + string.len()),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn action_demo() {
+        let mut rope = Rope::from("hello");
+
+        let action = Action::Insert(5, String::from(" world"));
+        action.apply(&mut rope);
+        assert_eq!(rope, Rope::from("hello world"));
+
+        let action = action.invert();
+        action.apply(&mut rope);
+        assert_eq!(rope, Rope::from("hello"));
+
+        let action = action.invert();
+        action.apply(&mut rope);
+        assert_eq!(rope, Rope::from("hello world"));
+    }
+}

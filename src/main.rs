@@ -189,7 +189,7 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                         InsertStyle::Stay => {}
                         InsertStyle::Reduce => buffer.selection.reduce(),
                     }
-                    buffer.record();
+                    buffer.history.new_group();
                     editor.mode = Mode::Insert { after: false };
                 }
                 (M::NONE, Char('u')) => buffer.undo(),
@@ -201,12 +201,12 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                         InsertStyle::Stay => {}
                         InsertStyle::Reduce => buffer.selection.reduce(),
                     }
-                    buffer.record();
+                    buffer.history.new_group();
                     editor.mode = Mode::Insert { after: false };
                 }
                 (M::NONE | M::SHIFT, Char('I')) => {
                     buffer.move_line_non_blank_start()?;
-                    buffer.record();
+                    buffer.history.new_group();
                     editor.mode = Mode::Insert { after: false };
                 }
                 (M::NONE, Char('a')) => {
@@ -223,7 +223,7 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                             buffer.move_right(1)?;
                         }
                     }
-                    buffer.record();
+                    buffer.history.new_group();
                     editor.mode = Mode::Insert { after: true };
                 }
                 (M::NONE | M::SHIFT, Char('A')) => {
@@ -231,7 +231,7 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                     // TODO: Don't move right if it would move to the next line, e.g. if you're on
                     // a line with only a single '\n'.
                     buffer.move_right(1)?;
-                    buffer.record();
+                    buffer.history.new_group();
                     editor.mode = Mode::Insert { after: false };
                 }
                 (M::NONE, Up) => editor.scroll_up(1),
@@ -321,7 +321,7 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                     if *after && !buffer.selection().is_reduced() {
                         buffer.extend_left(1)?;
                     }
-                    buffer.record();
+                    buffer.history.new_group();
                     editor.mode = Mode::Normal;
                 }
                 _ => {}
