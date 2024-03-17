@@ -143,11 +143,11 @@ impl Buffer {
 
         text.insert_char(cursor_index, char);
 
-        self.selection.cursor = Position::from_char_index(cursor_index + 1, &text)?;
-
         if move_anchor {
             self.selection.anchor = Position::from_char_index(anchor_index + 1, &text)?;
         }
+
+        self.selection.cursor = Position::from_char_index(cursor_index + 1, &text)?;
 
         self.text = text;
 
@@ -164,11 +164,11 @@ impl Buffer {
 
         text.insert(cursor_index, str);
 
-        self.selection.cursor = Position::from_char_index(cursor_index + str.len(), &text)?;
-
         if move_anchor {
             self.selection.anchor = Position::from_char_index(anchor_index + str.len(), &text)?;
         }
+
+        self.selection.cursor = Position::from_char_index(cursor_index + str.len(), &text)?;
 
         self.text = text;
 
@@ -189,11 +189,11 @@ impl Buffer {
 
         text.remove(cursor_index - 1..cursor_index);
 
-        self.selection.cursor = Position::from_char_index(cursor_index - 1, &text)?;
-
         if move_anchor {
             self.selection.anchor = Position::from_char_index(anchor_index - 1, &text)?;
         }
+
+        self.selection.cursor = Position::from_char_index(cursor_index - 1, &text)?;
 
         self.text = text;
 
