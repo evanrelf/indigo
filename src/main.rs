@@ -153,6 +153,16 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                 (M::ALT, Char(';')) => buffer.selection.flip(),
                 (ALT_SHIFT, Char(';')) => buffer.selection.flip_forward(),
                 (M::NONE, Char('d')) => buffer.delete()?,
+                (M::NONE, Char('c')) => {
+                    buffer.delete()?;
+                    match insert_style {
+                        InsertStyle::Flip => buffer.selection.flip_backward(),
+                        InsertStyle::Stay => {}
+                        InsertStyle::Reduce => buffer.selection.reduce(),
+                    }
+                    buffer.record();
+                    editor.mode = Mode::Insert { after: false };
+                }
                 (M::NONE, Char('u')) => buffer.undo(),
                 (M::NONE | M::SHIFT, Char('U')) => buffer.redo(),
                 (M::NONE, Char('g')) => editor.mode = Mode::Goto,
