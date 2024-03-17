@@ -4,10 +4,7 @@ use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
 use indigo::{Buffer, Editor, Mode, Position, RopeExt as _};
-use ratatui::{
-    prelude::{Buffer as Surface, Color, Constraint, Layout, Rect, Style, Widget as _},
-    widgets::Paragraph,
-};
+use ratatui::prelude::{Buffer as Surface, Color, Constraint, Layout, Rect, Style};
 use ropey::Rope;
 use std::{
     borrow::Cow,
@@ -215,28 +212,32 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
 }
 
 fn render(editor: &Editor, areas: Areas, surface: &mut Surface) -> anyhow::Result<()> {
-    render_text(editor, areas.buffer, surface)?;
+    render_text(editor, areas.buffer, surface);
     render_selection(editor, areas.buffer, surface)?;
     render_status_bar(editor, areas.status_bar, surface);
 
     Ok(())
 }
 
-fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Result<()> {
-    let buffer = &editor.buffer;
+fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
+    if area.height == 0 || area.width == 0 {
+        return;
+    }
 
-    let text = Cow::<'_, str>::from(buffer.text());
+    for y in area.top()..area.bottom() {
+        let line_index = usize::from(y) + editor.scroll.line;
 
-    let last_line = buffer.text().len_lines_indigo().saturating_sub(1);
+        let Some(line) = editor.buffer.text().get_line(line_index) else {
+            break;
+        };
 
-    let scroll_line = u16::try_from(min(last_line, editor.scroll.line))?;
-    let scroll_column = u16::try_from(editor.scroll.column)?;
+        // TODO: Use `chunks_at_char` instead of allocating a contiguous `&str`.
+        let Some(line) = line.get_slice(editor.scroll.column..).map(Cow::<str>::from) else {
+            continue;
+        };
 
-    Paragraph::new(text)
-        .scroll((scroll_line, scroll_column))
-        .render(area, surface);
-
-    Ok(())
+        surface.set_stringn(area.x, y, line, usize::from(area.width), Style::default());
+    }
 }
 
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Result<()> {
