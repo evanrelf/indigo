@@ -88,6 +88,25 @@ enum InsertStyle {
     Reduce,
 }
 
+fn show_cursor(editor: &mut Editor, areas: Areas) {
+    let area = areas.buffer;
+
+    if area.height == 0 {
+        return;
+    }
+
+    let cursor_line = editor.buffer.selection().cursor.line;
+    let last_line = editor.buffer.text().len_lines_indigo() - 1;
+    let top_line = editor.scroll.line;
+    let bottom_line = editor.scroll.line + usize::from(area.height - 1);
+
+    if cursor_line < top_line {
+        editor.scroll.line = min(cursor_line, last_line);
+    } else if cursor_line > bottom_line {
+        editor.scroll.line = min(cursor_line - usize::from(area.height - 1), last_line);
+    }
+}
+
 fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Result<bool> {
     let area = areas.buffer;
 
@@ -101,6 +120,7 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
     match &editor.mode {
         Mode::Normal => match event {
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+                (KeyModifiers::NONE, KeyCode::Char(' ')) => show_cursor(editor, areas),
                 (KeyModifiers::NONE, KeyCode::Char('h')) => buffer.move_left(1)?,
                 (KeyModifiers::NONE, KeyCode::Char('j')) => buffer.move_down(1)?,
                 (KeyModifiers::NONE, KeyCode::Char('k')) => buffer.move_up(1)?,
