@@ -105,10 +105,24 @@ fn show_cursor(editor: &mut Editor, areas: Areas) {
     }
 }
 
+fn localize(area: Rect, global_line: u16, global_column: u16) -> Option<(u16, u16)> {
+    let line_inside = (area.top()..area.bottom()).contains(&global_line);
+    let column_inside = (area.left()..area.right()).contains(&global_column);
+    if line_inside && column_inside {
+        let local_line = global_line - area.top();
+        let local_column = global_column - area.left();
+        Some((local_line, local_column))
+    } else {
+        None
+    }
+}
+
 #[allow(clippy::too_many_lines)]
 fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Result<bool> {
     #[allow(clippy::enum_glob_use)]
-    use crossterm::event::{KeyCode::*, KeyModifiers as M};
+    use crossterm::event::{
+        KeyCode::*, KeyModifiers as M, MouseButton as MB, MouseEventKind as MEK,
+    };
 
     let area = areas.buffer;
 
@@ -203,6 +217,24 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                 (M::NONE, MouseEventKind::ScrollDown) => editor.scroll_down(3),
                 (M::SHIFT, MouseEventKind::ScrollUp) => editor.scroll_up(6),
                 (M::SHIFT, MouseEventKind::ScrollDown) => editor.scroll_down(6),
+                (M::NONE, MEK::Down(MB::Left)) => {
+                    if let Some((line, column)) =
+                        localize(areas.buffer, mouse_event.row, mouse_event.column)
+                    {
+                        let line = usize::from(line) + editor.scroll.line;
+                        let column = usize::from(column) + editor.scroll.column;
+                        buffer.move_to(line, column)?;
+                    }
+                }
+                (M::NONE, MEK::Drag(MB::Left)) => {
+                    if let Some((line, column)) =
+                        localize(areas.buffer, mouse_event.row, mouse_event.column)
+                    {
+                        let line = usize::from(line) + editor.scroll.line;
+                        let column = usize::from(column) + editor.scroll.column;
+                        buffer.extend_to(line, column)?;
+                    }
+                }
                 _ => {}
             },
             _ => {}
