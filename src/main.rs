@@ -265,7 +265,7 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                         buffer.move_to(line, column)?;
                     }
                 }
-                (M::NONE, MEK::Drag(MB::Left)) => {
+                (M::NONE, MEK::Drag(MB::Left) | MEK::Down(MB::Right)) => {
                     if let Some((line, column)) =
                         localize(areas.buffer, mouse_event.row, mouse_event.column)
                     {
