@@ -136,7 +136,7 @@ impl Buffer {
         self.extend_horizontally(Direction::Forward, distance)
     }
 
-    pub fn extend_line_begin(&mut self) -> anyhow::Result<()> {
+    pub fn extend_line_start(&mut self) -> anyhow::Result<()> {
         self.extend_horizontally_while(Direction::Backward, |_, peek| peek != Some('\n'))
     }
 
@@ -176,8 +176,8 @@ impl Buffer {
         Ok(())
     }
 
-    pub fn move_line_begin(&mut self) -> anyhow::Result<()> {
-        self.extend_line_begin()?;
+    pub fn move_line_start(&mut self) -> anyhow::Result<()> {
+        self.extend_line_start()?;
         self.selection.reduce();
         Ok(())
     }
