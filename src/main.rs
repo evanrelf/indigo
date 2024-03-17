@@ -355,23 +355,23 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) -> anyho
         let position = Position::from_char_index(index, editor.buffer.text())?;
 
         if editor.scroll.line > position.line {
-            return Ok(());
+            continue;
         }
 
         let line = u16::try_from(position.line - editor.scroll.line)? + area.top();
 
         if !(area.top()..area.bottom()).contains(&line) {
-            return Ok(());
+            continue;
         }
 
         if editor.scroll.column > position.column {
-            return Ok(());
+            continue;
         }
 
         let column = u16::try_from(position.column - editor.scroll.column)? + area.left();
 
         if !(area.left()..area.right()).contains(&column) {
-            return Ok(());
+            continue;
         }
 
         let bg_color = if index == cursor_index && char == '\n' {
