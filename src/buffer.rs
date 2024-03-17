@@ -201,24 +201,8 @@ impl Buffer {
     }
 
     pub fn insert_char(&mut self, char: char) -> anyhow::Result<()> {
-        let mut text = self.text.clone();
-
-        let anchor_index = self.selection.anchor.to_char_index(&text)?;
-        let cursor_index = self.selection.cursor.to_char_index(&text)?;
-
-        let move_anchor = self.selection.is_backward() || self.selection.is_reduced();
-
-        text.insert_char(cursor_index, char);
-
-        if move_anchor {
-            self.selection.anchor = Position::from_char_index(anchor_index + 1, &text)?;
-        }
-
-        self.selection.cursor = Position::from_char_index(cursor_index + 1, &text)?;
-
-        self.text = text;
-
-        Ok(())
+        let mut bytes = [0; 4];
+        self.insert(char.encode_utf8(&mut bytes))
     }
 
     pub fn insert(&mut self, str: &str) -> anyhow::Result<()> {
