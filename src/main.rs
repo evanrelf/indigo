@@ -1,5 +1,6 @@
 mod terminal;
 
+use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
@@ -255,6 +256,8 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) -> anyho
     let end_index = max(anchor_index, cursor_index);
 
     for index in start_index..=end_index {
+        let char = buffer.text().get_char(index).context("bad index")?;
+
         let position = Position::from_char_index(index, editor.buffer.text())?;
 
         if editor.scroll.line > position.line {
@@ -277,17 +280,22 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) -> anyho
             return Ok(());
         }
 
-        if index == cursor_index {
-            surface
-                .get_mut(column, line)
-                .set_fg(Color::Black)
-                .set_bg(Color::Rgb(0xFF, 0xD3, 0x3D));
+        let orange = Color::Rgb(0xD1, 0x58, 0x02);
+        let dark_yellow = Color::Rgb(0xFF, 0xD3, 0x3D);
+        let light_yellow = Color::Rgb(0xFF, 0xF5, 0xB1);
+
+        let bg_color = if index == cursor_index && char == '\n' {
+            orange
+        } else if index == cursor_index {
+            dark_yellow
         } else {
-            surface
-                .get_mut(column, line)
-                .set_fg(Color::Black)
-                .set_bg(Color::Rgb(0xFF, 0xF5, 0xB1));
-        }
+            light_yellow
+        };
+
+        surface
+            .get_mut(column, line)
+            .set_fg(Color::Black)
+            .set_bg(bg_color);
     }
 
     Ok(())
