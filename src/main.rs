@@ -3,7 +3,7 @@ mod terminal;
 use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
-use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
+use crossterm::event::{self, Event, MouseEventKind};
 use indigo::{Buffer, Editor, Mode, Position, RopeExt as _};
 use ratatui::prelude::{Buffer as Surface, Color, Constraint, Layout, Rect, Style};
 use ropey::Rope;
@@ -107,6 +107,9 @@ fn show_cursor(editor: &mut Editor, areas: Areas) {
 
 #[allow(clippy::too_many_lines)]
 fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Result<bool> {
+    #[allow(clippy::enum_glob_use)]
+    use crossterm::event::{KeyCode::*, KeyModifiers as M};
+
     let area = areas.buffer;
 
     let insert_style = InsertStyle::Reduce;
@@ -123,27 +126,22 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
     match &editor.mode {
         Mode::Normal => match event {
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-                (KeyModifiers::NONE, KeyCode::Char(' ')) => show_cursor(editor, areas),
-                (KeyModifiers::NONE, KeyCode::Char('h')) => buffer.move_left(1)?,
-                (KeyModifiers::NONE, KeyCode::Char('j')) => buffer.move_down(1)?,
-                (KeyModifiers::NONE, KeyCode::Char('k')) => buffer.move_up(1)?,
-                (KeyModifiers::NONE, KeyCode::Char('l')) => buffer.move_right(1)?,
-                (KeyModifiers::NONE, KeyCode::Char('H')) => buffer.extend_left(1)?,
-                (KeyModifiers::NONE, KeyCode::Char('J')) => buffer.extend_down(1)?,
-                (KeyModifiers::NONE, KeyCode::Char('K')) => buffer.extend_up(1)?,
-                (KeyModifiers::NONE, KeyCode::Char('L')) => buffer.extend_right(1)?,
-                (KeyModifiers::SHIFT, KeyCode::Char('H')) => buffer.extend_left(1)?,
-                (KeyModifiers::SHIFT, KeyCode::Char('J')) => buffer.extend_down(1)?,
-                (KeyModifiers::SHIFT, KeyCode::Char('K')) => buffer.extend_up(1)?,
-                (KeyModifiers::SHIFT, KeyCode::Char('L')) => buffer.extend_right(1)?,
-                (KeyModifiers::NONE, KeyCode::Char(';')) => buffer.selection.reduce(),
-                (KeyModifiers::ALT, KeyCode::Char(';')) => buffer.selection.flip(),
-                (KeyModifiers::NONE, KeyCode::Char('d')) => buffer.delete()?,
-                (KeyModifiers::NONE, KeyCode::Char('u')) => buffer.undo(),
-                (KeyModifiers::NONE, KeyCode::Char('U')) => buffer.redo(),
-                (KeyModifiers::SHIFT, KeyCode::Char('U')) => buffer.redo(),
-                (KeyModifiers::NONE, KeyCode::Char('g')) => editor.mode = Mode::Goto,
-                (KeyModifiers::NONE, KeyCode::Char('i')) => {
+                (M::NONE, Char(' ')) => show_cursor(editor, areas),
+                (M::NONE, Char('h')) => buffer.move_left(1)?,
+                (M::NONE, Char('j')) => buffer.move_down(1)?,
+                (M::NONE, Char('k')) => buffer.move_up(1)?,
+                (M::NONE, Char('l')) => buffer.move_right(1)?,
+                (M::NONE | M::SHIFT, Char('H')) => buffer.extend_left(1)?,
+                (M::NONE | M::SHIFT, Char('J')) => buffer.extend_down(1)?,
+                (M::NONE | M::SHIFT, Char('K')) => buffer.extend_up(1)?,
+                (M::NONE | M::SHIFT, Char('L')) => buffer.extend_right(1)?,
+                (M::NONE, Char(';')) => buffer.selection.reduce(),
+                (M::ALT, Char(';')) => buffer.selection.flip(),
+                (M::NONE, Char('d')) => buffer.delete()?,
+                (M::NONE, Char('u')) => buffer.undo(),
+                (M::NONE | M::SHIFT, Char('U')) => buffer.redo(),
+                (M::NONE, Char('g')) => editor.mode = Mode::Goto,
+                (M::NONE, Char('i')) => {
                     match insert_style {
                         InsertStyle::Flip => buffer.selection.flip_backward(),
                         InsertStyle::Stay => {}
@@ -152,7 +150,7 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                     buffer.record();
                     editor.mode = Mode::Insert { after: false };
                 }
-                (KeyModifiers::NONE, KeyCode::Char('a')) => {
+                (M::NONE, Char('a')) => {
                     match insert_style {
                         InsertStyle::Flip => {
                             buffer.selection.flip_forward();
@@ -169,55 +167,47 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                     buffer.record();
                     editor.mode = Mode::Insert { after: true };
                 }
-                (KeyModifiers::NONE, KeyCode::Up) => editor.scroll_up(1),
-                (KeyModifiers::NONE, KeyCode::Down) => editor.scroll_down(1),
-                (KeyModifiers::NONE, KeyCode::Left) => editor.scroll_left(1),
-                (KeyModifiers::NONE, KeyCode::Right) => editor.scroll_right(1),
-                (KeyModifiers::CONTROL, KeyCode::Char('d')) => {
+                (M::NONE, Up) => editor.scroll_up(1),
+                (M::NONE, Down) => editor.scroll_down(1),
+                (M::NONE, Left) => editor.scroll_left(1),
+                (M::NONE, Right) => editor.scroll_right(1),
+                (M::CONTROL, Char('d')) => {
                     editor.scroll_down(usize::from(area.height / 2));
                 }
-                (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
+                (M::CONTROL, Char('u')) => {
                     editor.scroll_up(usize::from(area.height / 2));
                 }
-                (KeyModifiers::CONTROL, KeyCode::Char('s')) => editor.save()?,
-                (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
-                (KeyModifiers::CONTROL, KeyCode::Char('p')) => panic!(),
+                (M::CONTROL, Char('s')) => editor.save()?,
+                (M::CONTROL, Char('c')) => quit = true,
+                (M::CONTROL, Char('p')) => panic!(),
                 _ => {}
             },
             Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-                (KeyModifiers::ALT, MouseEventKind::ScrollUp) => editor.scroll_up(1),
-                (KeyModifiers::ALT, MouseEventKind::ScrollDown) => editor.scroll_down(1),
-                (KeyModifiers::NONE, MouseEventKind::ScrollUp) => editor.scroll_up(3),
-                (KeyModifiers::NONE, MouseEventKind::ScrollDown) => editor.scroll_down(3),
-                (KeyModifiers::SHIFT, MouseEventKind::ScrollUp) => editor.scroll_up(6),
-                (KeyModifiers::SHIFT, MouseEventKind::ScrollDown) => editor.scroll_down(6),
+                (M::ALT, MouseEventKind::ScrollUp) => editor.scroll_up(1),
+                (M::ALT, MouseEventKind::ScrollDown) => editor.scroll_down(1),
+                (M::NONE, MouseEventKind::ScrollUp) => editor.scroll_up(3),
+                (M::NONE, MouseEventKind::ScrollDown) => editor.scroll_down(3),
+                (M::SHIFT, MouseEventKind::ScrollUp) => editor.scroll_up(6),
+                (M::SHIFT, MouseEventKind::ScrollDown) => editor.scroll_down(6),
                 _ => {}
             },
             _ => {}
         },
         Mode::Goto => match event {
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-                (KeyModifiers::NONE, KeyCode::Char('h')) => {
+                (M::NONE, Char('h')) => {
                     buffer.move_line_begin()?;
                     editor.mode = Mode::Normal;
                 }
-                (KeyModifiers::NONE, KeyCode::Char('l')) => {
+                (M::NONE, Char('l')) => {
                     buffer.move_line_end()?;
                     editor.mode = Mode::Normal;
                 }
-                (KeyModifiers::NONE, KeyCode::Char('H')) => {
+                (M::NONE | M::SHIFT, Char('H')) => {
                     buffer.extend_line_begin()?;
                     editor.mode = Mode::Normal;
                 }
-                (KeyModifiers::NONE, KeyCode::Char('L')) => {
-                    buffer.extend_line_end()?;
-                    editor.mode = Mode::Normal;
-                }
-                (KeyModifiers::SHIFT, KeyCode::Char('H')) => {
-                    buffer.extend_line_begin()?;
-                    editor.mode = Mode::Normal;
-                }
-                (KeyModifiers::SHIFT, KeyCode::Char('L')) => {
+                (M::NONE | M::SHIFT, Char('L')) => {
                     buffer.extend_line_end()?;
                     editor.mode = Mode::Normal;
                 }
@@ -229,12 +219,12 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
         },
         Mode::Insert { after } => match event {
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-                (KeyModifiers::NONE, KeyCode::Char(char)) => buffer.insert_char(char)?,
-                (KeyModifiers::SHIFT, KeyCode::Char(char)) => buffer.insert_char(char)?,
-                (KeyModifiers::NONE, KeyCode::Enter) => buffer.insert_char('\n')?,
-                (KeyModifiers::NONE, KeyCode::Backspace) => buffer.backspace()?,
-                (KeyModifiers::CONTROL, KeyCode::Char('s')) => editor.save()?,
-                (KeyModifiers::NONE, KeyCode::Esc) => {
+                (M::NONE, Char(char)) => buffer.insert_char(char)?,
+                (M::SHIFT, Char(char)) => buffer.insert_char(char)?,
+                (M::NONE, Enter) => buffer.insert_char('\n')?,
+                (M::NONE, Backspace) => buffer.backspace()?,
+                (M::CONTROL, Char('s')) => editor.save()?,
+                (M::NONE, Esc) => {
                     if *after && !buffer.selection().is_reduced() {
                         buffer.extend_left(1)?;
                     }
