@@ -150,6 +150,11 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                     buffer.record();
                     editor.mode = Mode::Insert { after: false };
                 }
+                (M::NONE | M::SHIFT, Char('I')) => {
+                    buffer.move_line_non_blank_start()?;
+                    buffer.record();
+                    editor.mode = Mode::Insert { after: false };
+                }
                 (M::NONE, Char('a')) => {
                     match insert_style {
                         InsertStyle::Flip => {
@@ -166,6 +171,14 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                     }
                     buffer.record();
                     editor.mode = Mode::Insert { after: true };
+                }
+                (M::NONE | M::SHIFT, Char('A')) => {
+                    buffer.move_line_end()?;
+                    // TODO: Don't move right if it would move to the next line, e.g. if you're on
+                    // a line with only a single '\n'.
+                    buffer.move_right(1)?;
+                    buffer.record();
+                    editor.mode = Mode::Insert { after: false };
                 }
                 (M::NONE, Up) => editor.scroll_up(1),
                 (M::NONE, Down) => editor.scroll_down(1),
