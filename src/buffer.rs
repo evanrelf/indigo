@@ -103,6 +103,44 @@ impl Buffer {
         Ok(())
     }
 
+    pub fn extend_line_begin(&mut self) -> anyhow::Result<()> {
+        let mut index = self.selection.cursor.to_char_index(&self.text)?;
+
+        for char in self.text.chars_at(index).reversed() {
+            if char == '\n' {
+                break;
+            }
+
+            index -= 1;
+        }
+
+        self.selection.cursor = Position::from_char_index(index, &self.text)?;
+
+        self.selection.target_column = None;
+
+        Ok(())
+    }
+
+    pub fn extend_line_end(&mut self) -> anyhow::Result<()> {
+        let mut index = self.selection.cursor.to_char_index(&self.text)?;
+
+        for char in self.text.chars_at(index) {
+            if char == '\n' {
+                break;
+            }
+
+            index += 1;
+        }
+
+        index = index.saturating_sub(1);
+
+        self.selection.cursor = Position::from_char_index(index, &self.text)?;
+
+        self.selection.target_column = None;
+
+        Ok(())
+    }
+
     pub fn move_to(&mut self, line: usize, column: usize) -> anyhow::Result<()> {
         self.extend_to(line, column)?;
         self.selection.reduce();
@@ -129,6 +167,18 @@ impl Buffer {
 
     pub fn move_right(&mut self, distance: usize) -> anyhow::Result<()> {
         self.extend_right(distance)?;
+        self.selection.reduce();
+        Ok(())
+    }
+
+    pub fn move_line_begin(&mut self) -> anyhow::Result<()> {
+        self.extend_line_begin()?;
+        self.selection.reduce();
+        Ok(())
+    }
+
+    pub fn move_line_end(&mut self) -> anyhow::Result<()> {
+        self.extend_line_end()?;
         self.selection.reduce();
         Ok(())
     }

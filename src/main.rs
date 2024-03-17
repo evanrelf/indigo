@@ -197,6 +197,30 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
         },
         Mode::Goto => match event {
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+                (KeyModifiers::NONE, KeyCode::Char('h')) => {
+                    buffer.move_line_begin()?;
+                    editor.mode = Mode::Normal;
+                }
+                (KeyModifiers::NONE, KeyCode::Char('l')) => {
+                    buffer.move_line_end()?;
+                    editor.mode = Mode::Normal;
+                }
+                (KeyModifiers::NONE, KeyCode::Char('H')) => {
+                    buffer.extend_line_begin()?;
+                    editor.mode = Mode::Normal;
+                }
+                (KeyModifiers::NONE, KeyCode::Char('L')) => {
+                    buffer.extend_line_end()?;
+                    editor.mode = Mode::Normal;
+                }
+                (KeyModifiers::SHIFT, KeyCode::Char('H')) => {
+                    buffer.extend_line_begin()?;
+                    editor.mode = Mode::Normal;
+                }
+                (KeyModifiers::SHIFT, KeyCode::Char('L')) => {
+                    buffer.extend_line_end()?;
+                    editor.mode = Mode::Normal;
+                }
                 _ => {
                     editor.mode = Mode::Normal;
                 }
