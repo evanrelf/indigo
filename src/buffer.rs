@@ -11,7 +11,7 @@ pub struct Buffer {
     text: Rope,
     // TODO: Make private
     pub selection: Selection,
-    pub history: History<(Action, Selection, Selection)>,
+    pub history: History<(RopeEdit, Selection, Selection)>,
 }
 
 impl Buffer {
@@ -227,7 +227,7 @@ impl Buffer {
         self.text = text;
 
         self.history.push((
-            Action::Insert(cursor_index, string),
+            RopeEdit::Insert(cursor_index, string),
             before_selection,
             self.selection,
         ));
@@ -264,7 +264,7 @@ impl Buffer {
         self.text = text;
 
         self.history.push((
-            Action::Delete(range.start, string),
+            RopeEdit::Delete(range.start, string),
             before_selection,
             self.selection,
         ));
@@ -294,7 +294,7 @@ impl Buffer {
         self.text = text;
 
         self.history.push((
-            Action::Delete(*range.start(), string),
+            RopeEdit::Delete(*range.start(), string),
             before_selection,
             self.selection,
         ));
@@ -344,13 +344,13 @@ const SPACES: [char; 3] = [' ', '\t', '\n'];
 
 const HSPACES: [char; 2] = [' ', '\t'];
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum Action {
+#[derive(Clone, Debug)]
+pub enum RopeEdit {
     Insert(usize, Rc<str>),
     Delete(usize, Rc<str>),
 }
 
-impl Action {
+impl RopeEdit {
     pub fn invert(self) -> Self {
         match self {
             Self::Insert(index, string) => Self::Delete(index, string),
@@ -374,7 +374,7 @@ mod tests {
     fn action_demo() {
         let mut rope = Rope::from("hello");
 
-        let action = Action::Insert(5, Rc::from(" world"));
+        let action = RopeEdit::Insert(5, Rc::from(" world"));
         action.apply(&mut rope);
         assert_eq!(rope, Rope::from("hello world"));
 

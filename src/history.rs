@@ -5,10 +5,7 @@ pub struct History<T> {
 }
 
 impl<T> History<T> {
-    pub fn push(&mut self, value: T)
-    where
-        T: PartialEq,
-    {
+    pub fn push(&mut self, value: T) {
         if let Some(group) = self.before.last_mut() {
             group.push(value);
         } else {
