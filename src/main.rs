@@ -56,17 +56,17 @@ fn main() -> anyhow::Result<()> {
 
 #[derive(Clone, Copy, Default)]
 struct Areas {
-    buffer: Rect,
     status_bar: Rect,
+    buffer: Rect,
 }
 
 impl Areas {
     fn new(area: Rect) -> Self {
-        let areas = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(area);
+        let areas = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).split(area);
 
         Self {
-            buffer: areas[0],
-            status_bar: areas[1],
+            status_bar: areas[0],
+            buffer: areas[1],
         }
     }
 }
@@ -263,9 +263,9 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
 }
 
 fn render(editor: &Editor, areas: Areas, surface: &mut Surface) -> anyhow::Result<()> {
+    render_status_bar(editor, areas.status_bar, surface);
     render_text(editor, areas.buffer, surface);
     render_selection(editor, areas.buffer, surface)?;
-    render_status_bar(editor, areas.status_bar, surface);
 
     Ok(())
 }
@@ -276,7 +276,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 
     for y in area.top()..area.bottom() {
-        let line_index = usize::from(y) + editor.scroll.line;
+        let line_index = editor.scroll.line + usize::from(y - area.top());
 
         let Some(line) = editor.buffer.text().get_line(line_index) else {
             break;
