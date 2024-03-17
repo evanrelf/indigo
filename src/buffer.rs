@@ -74,10 +74,10 @@ impl Buffer {
             Direction::Forward => self.text.chars_at(index).peekable(),
         };
 
-        while let Some(next) = chars.next() {
+        while let Some(this) = chars.next() {
             let peek = chars.peek().copied();
 
-            if !predicate(next, peek) {
+            if !predicate(this, peek) {
                 break;
             }
 
@@ -140,9 +140,15 @@ impl Buffer {
         self.extend_horizontally_while(Direction::Backward, |_, peek| peek != Some('\n'))
     }
 
+    pub fn extend_line_non_blank_start(&mut self) -> anyhow::Result<()> {
+        self.extend_line_start()?;
+        self.extend_horizontally_while(Direction::Forward, |this, _| HSPACES.contains(&this))?;
+        Ok(())
+    }
+
     pub fn extend_line_end(&mut self) -> anyhow::Result<()> {
-        self.extend_horizontally_while(Direction::Forward, |next, peek| {
-            next != '\n' && peek != Some('\n')
+        self.extend_horizontally_while(Direction::Forward, |this, peek| {
+            this != '\n' && peek != Some('\n')
         })
     }
 
@@ -178,6 +184,12 @@ impl Buffer {
 
     pub fn move_line_start(&mut self) -> anyhow::Result<()> {
         self.extend_line_start()?;
+        self.selection.reduce();
+        Ok(())
+    }
+
+    pub fn move_line_non_blank_start(&mut self) -> anyhow::Result<()> {
+        self.extend_line_non_blank_start()?;
         self.selection.reduce();
         Ok(())
     }
@@ -309,3 +321,7 @@ impl Default for Buffer {
         }
     }
 }
+
+const SPACES: [char; 3] = [' ', '\t', '\n'];
+
+const HSPACES: [char; 2] = [' ', '\t'];

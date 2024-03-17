@@ -199,12 +199,20 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                     buffer.move_line_start()?;
                     editor.mode = Mode::Normal;
                 }
+                (M::NONE, Char('i')) => {
+                    buffer.move_line_non_blank_start()?;
+                    editor.mode = Mode::Normal;
+                }
                 (M::NONE, Char('l')) => {
                     buffer.move_line_end()?;
                     editor.mode = Mode::Normal;
                 }
                 (M::NONE | M::SHIFT, Char('H')) => {
                     buffer.extend_line_start()?;
+                    editor.mode = Mode::Normal;
+                }
+                (M::NONE | M::SHIFT, Char('I')) => {
+                    buffer.extend_line_non_blank_start()?;
                     editor.mode = Mode::Normal;
                 }
                 (M::NONE | M::SHIFT, Char('L')) => {
