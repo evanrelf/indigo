@@ -112,7 +112,7 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
 
     let area = areas.buffer;
 
-    let insert_style = InsertStyle::Reduce;
+    let insert_style = InsertStyle::Flip;
 
     let mut quit = false;
 
