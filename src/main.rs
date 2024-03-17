@@ -3,7 +3,7 @@ mod terminal;
 use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
-use crossterm::event::{self, Event, MouseEventKind};
+use crossterm::event::{self, Event, KeyModifiers, MouseEventKind};
 use indigo::{Buffer, Editor, Mode, Position, RopeExt as _};
 use ratatui::prelude::{Buffer as Surface, Color, Constraint, Layout, Rect, Style};
 use ropey::Rope;
@@ -137,6 +137,7 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                 (M::NONE | M::SHIFT, Char('L')) => buffer.extend_right(1)?,
                 (M::NONE, Char(';')) => buffer.selection.reduce(),
                 (M::ALT, Char(';')) => buffer.selection.flip(),
+                (ALT_SHIFT, Char(';')) => buffer.selection.flip_forward(),
                 (M::NONE, Char('d')) => buffer.delete()?,
                 (M::NONE, Char('u')) => buffer.undo(),
                 (M::NONE | M::SHIFT, Char('U')) => buffer.redo(),
@@ -373,6 +374,8 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         surface.get_mut(x, y).set_fg(Color::White).set_bg(bg_color);
     }
 }
+
+const ALT_SHIFT: KeyModifiers = KeyModifiers::ALT.union(KeyModifiers::SHIFT);
 
 const LIGHT_BLUE: Color = Color::Rgb(0xF1, 0xF8, 0xFF);
 const DARK_BLUE: Color = Color::Rgb(0x03, 0x66, 0xD6);

@@ -43,6 +43,8 @@ impl Drop for TerminalGuard {
 }
 
 pub fn enter() -> anyhow::Result<TerminalGuard> {
+    use crossterm::event::KeyboardEnhancementFlags as KEF;
+
     // Ensure the panic hook isn't installed more than once, because we have no safe or guaranteed
     // way of uninstalling it.
     static PANIC_HOOK_INSTALLED: AtomicBool = AtomicBool::new(false);
@@ -70,6 +72,7 @@ pub fn enter() -> anyhow::Result<TerminalGuard> {
         crossterm::cursor::Hide,
         crossterm::event::EnableMouseCapture,
         crossterm::event::EnableBracketedPaste,
+        crossterm::event::PushKeyboardEnhancementFlags(KEF::DISAMBIGUATE_ESCAPE_CODES),
     )?;
 
     let terminal_guard = TerminalGuard::new(stdout)?;
@@ -82,6 +85,7 @@ pub fn exit() -> anyhow::Result<()> {
 
     crossterm::execute!(
         stdout,
+        crossterm::event::PopKeyboardEnhancementFlags,
         crossterm::event::DisableBracketedPaste,
         crossterm::event::DisableMouseCapture,
         crossterm::cursor::Show,
