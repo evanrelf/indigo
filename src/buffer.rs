@@ -1,6 +1,10 @@
 use crate::{Direction, History, Position, RopeExt as _, Selection};
 use ropey::Rope;
-use std::cmp::{max, min};
+use std::{
+    borrow::Cow,
+    cmp::{max, min},
+    rc::Rc,
+};
 
 #[derive(Debug)]
 pub struct Buffer {
@@ -208,6 +212,8 @@ impl Buffer {
 
         let move_anchor = self.selection.is_backward() || self.selection.is_reduced();
 
+        let string = Rc::from(str);
+
         let before_selection = self.selection;
 
         text.insert(cursor_index, str);
@@ -221,7 +227,7 @@ impl Buffer {
         self.text = text;
 
         self.history.push((
-            Action::Insert(cursor_index, String::from(str)),
+            Action::Insert(cursor_index, string),
             before_selection,
             self.selection,
         ));
@@ -243,7 +249,7 @@ impl Buffer {
 
         let range = cursor_index - 1..cursor_index;
 
-        let string = text.slice(range.clone()).to_string();
+        let string = Rc::from(Cow::from(text.slice(range.clone())));
 
         let before_selection = self.selection;
 
@@ -276,7 +282,7 @@ impl Buffer {
 
         let range = start_index..=end_index;
 
-        let string = text.slice(range.clone()).to_string();
+        let string = Rc::from(Cow::from(text.slice(range.clone()).to_string()));
 
         let before_selection = self.selection;
 
@@ -340,8 +346,8 @@ const HSPACES: [char; 2] = [' ', '\t'];
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Action {
-    Insert(usize, String),
-    Delete(usize, String),
+    Insert(usize, Rc<str>),
+    Delete(usize, Rc<str>),
 }
 
 impl Action {
@@ -368,7 +374,7 @@ mod tests {
     fn action_demo() {
         let mut rope = Rope::from("hello");
 
-        let action = Action::Insert(5, String::from(" world"));
+        let action = Action::Insert(5, Rc::from(" world"));
         action.apply(&mut rope);
         assert_eq!(rope, Rope::from("hello world"));
 
