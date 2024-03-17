@@ -1,4 +1,4 @@
-use crate::Position;
+use crate::{Direction, Position};
 use std::cmp::{max, min};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -20,13 +20,22 @@ impl Selection {
     }
 
     #[must_use]
+    pub fn direction(&self) -> Direction {
+        if self.anchor <= self.cursor {
+            Direction::Forward
+        } else {
+            Direction::Backward
+        }
+    }
+
+    #[must_use]
     pub fn is_forward(&self) -> bool {
-        self.anchor <= self.cursor
+        self.direction() == Direction::Forward
     }
 
     #[must_use]
     pub fn is_backward(&self) -> bool {
-        self.anchor > self.cursor
+        self.direction() == Direction::Backward
     }
 
     #[must_use]
