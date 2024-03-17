@@ -1,4 +1,4 @@
-use crate::{History, Position, RopeExt as _, Selection};
+use crate::{Direction, History, Position, RopeExt as _, Selection};
 use ropey::Rope;
 use std::cmp::{max, min};
 
@@ -43,13 +43,70 @@ impl Buffer {
         self.selection.cursor.correct(&self.text)
     }
 
-    pub fn extend_up(&mut self, distance: usize) -> anyhow::Result<()> {
+    fn extend_horizontally(&mut self, direction: Direction, distance: usize) -> anyhow::Result<()> {
+        let mut index = self.selection.cursor.to_char_index(&self.text)?;
+
+        index = match direction {
+            Direction::Backward => index.saturating_sub(distance),
+            Direction::Forward => index + distance,
+        };
+
+        self.selection.cursor = Position::from_char_index(index, &self.text)?;
+
+        self.selection.target_column = None;
+
+        Ok(())
+    }
+
+    fn extend_horizontally_while(
+        &mut self,
+        direction: Direction,
+        mut predicate: impl FnMut(char, Option<char>) -> bool,
+    ) -> anyhow::Result<()> {
+        let mut index = self.selection.cursor.to_char_index(&self.text)?;
+
+        let mut chars = match direction {
+            Direction::Backward => {
+                let mut iter = self.text.chars_at(index).reversed();
+                let _ = iter.prev();
+                iter.peekable()
+            }
+            Direction::Forward => self.text.chars_at(index).peekable(),
+        };
+
+        while let Some(next) = chars.next() {
+            let peek = chars.peek().copied();
+
+            if !predicate(next, peek) {
+                break;
+            }
+
+            index = match direction {
+                Direction::Backward => index.saturating_sub(1),
+                Direction::Forward => index + 1,
+            }
+        }
+
+        self.selection.cursor = Position::from_char_index(index, &self.text)?;
+
+        self.selection.target_column = None;
+
+        Ok(())
+    }
+
+    fn extend_vertically(&mut self, direction: Direction, distance: usize) -> anyhow::Result<()> {
         self.selection.target_column = match self.selection.target_column {
             None => Some(self.selection.cursor.column),
             Some(target_column) => Some(max(self.selection.cursor.column, target_column)),
         };
 
-        self.selection.cursor.line = self.selection.cursor.line.saturating_sub(distance);
+        self.selection.cursor.line = match direction {
+            Direction::Backward => self.selection.cursor.line.saturating_sub(distance),
+            Direction::Forward => {
+                let last_line = self.text.len_lines_indigo().saturating_sub(1);
+                min(last_line, self.selection.cursor.line + distance)
+            }
+        };
         self.selection.cursor.column = self
             .selection
             .target_column
@@ -61,84 +118,32 @@ impl Buffer {
         }
 
         Ok(())
+    }
+
+    pub fn extend_up(&mut self, distance: usize) -> anyhow::Result<()> {
+        self.extend_vertically(Direction::Backward, distance)
     }
 
     pub fn extend_down(&mut self, distance: usize) -> anyhow::Result<()> {
-        self.selection.target_column = match self.selection.target_column {
-            None => Some(self.selection.cursor.column),
-            Some(target_column) => Some(max(self.selection.cursor.column, target_column)),
-        };
-
-        let last_line = self.text.len_lines_indigo().saturating_sub(1);
-
-        self.selection.cursor.line = min(last_line, self.selection.cursor.line + distance);
-        self.selection.cursor.column = self
-            .selection
-            .target_column
-            .unwrap_or(self.selection.cursor.column);
-        self.selection.cursor.correct(&self.text)?;
-
-        if self.selection.target_column.unwrap_or(0) <= self.selection.cursor.column {
-            self.selection.target_column = None;
-        }
-
-        Ok(())
+        self.extend_vertically(Direction::Forward, distance)
     }
 
     pub fn extend_left(&mut self, distance: usize) -> anyhow::Result<()> {
-        self.selection.cursor = self
-            .selection
-            .cursor
-            .via_char_index(&self.text, |index| index.saturating_sub(distance))?;
-        self.selection.target_column = None;
-        Ok(())
+        self.extend_horizontally(Direction::Backward, distance)
     }
 
     pub fn extend_right(&mut self, distance: usize) -> anyhow::Result<()> {
-        self.selection.cursor = self
-            .selection
-            .cursor
-            .via_char_index(&self.text, |index| index + distance)?;
-        self.selection.target_column = None;
-        Ok(())
+        self.extend_horizontally(Direction::Forward, distance)
     }
 
     pub fn extend_line_begin(&mut self) -> anyhow::Result<()> {
-        let mut index = self.selection.cursor.to_char_index(&self.text)?;
-
-        for char in self.text.chars_at(index).reversed() {
-            if char == '\n' {
-                break;
-            }
-
-            index -= 1;
-        }
-
-        self.selection.cursor = Position::from_char_index(index, &self.text)?;
-
-        self.selection.target_column = None;
-
-        Ok(())
+        self.extend_horizontally_while(Direction::Backward, |_, peek| peek != Some('\n'))
     }
 
     pub fn extend_line_end(&mut self) -> anyhow::Result<()> {
-        let mut index = self.selection.cursor.to_char_index(&self.text)?;
-
-        for char in self.text.chars_at(index) {
-            if char == '\n' {
-                break;
-            }
-
-            index += 1;
-        }
-
-        index = index.saturating_sub(1);
-
-        self.selection.cursor = Position::from_char_index(index, &self.text)?;
-
-        self.selection.target_column = None;
-
-        Ok(())
+        self.extend_horizontally_while(Direction::Forward, |next, peek| {
+            next != '\n' && peek != Some('\n')
+        })
     }
 
     pub fn move_to(&mut self, line: usize, column: usize) -> anyhow::Result<()> {
