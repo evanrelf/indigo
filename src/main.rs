@@ -37,7 +37,7 @@ fn main() -> anyhow::Result<()> {
         let mut result = Ok(());
 
         terminal.draw(|frame| {
-            areas = Areas::new(frame.size());
+            areas = Areas::new(&editor, frame.size());
             let surface = frame.buffer_mut();
             result = render(&editor, areas, surface);
         })?;
@@ -57,16 +57,44 @@ fn main() -> anyhow::Result<()> {
 #[derive(Clone, Copy, Default)]
 struct Areas {
     status_bar: Rect,
+    line_numbers: Rect,
     buffer: Rect,
 }
 
 impl Areas {
-    fn new(area: Rect) -> Self {
-        let areas = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).split(area);
+    fn new(editor: &Editor, area: Rect) -> Self {
+        let areas = Layout::vertical([
+            // status_bar
+            Constraint::Length(1),
+            // line_numbers + buffer
+            Constraint::Fill(1),
+        ])
+        .split(area);
+
+        let status_bar = areas[0];
+
+        let line_numbers_width = {
+            let n = editor.buffer.text().len_lines_indigo();
+            let digits = 1 + max(1, n).ilog10();
+            u16::try_from(max(2, digits) + 1).unwrap()
+        };
+
+        let areas = Layout::horizontal([
+            // line_numbers
+            Constraint::Length(line_numbers_width),
+            // buffer
+            Constraint::Fill(1),
+        ])
+        .split(areas[1]);
+
+        let line_numbers = areas[0];
+
+        let buffer = areas[1];
 
         Self {
-            status_bar: areas[0],
-            buffer: areas[1],
+            status_bar,
+            line_numbers,
+            buffer,
         }
     }
 }
@@ -308,10 +336,62 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
 
 fn render(editor: &Editor, areas: Areas, surface: &mut Surface) -> anyhow::Result<()> {
     render_status_bar(editor, areas.status_bar, surface);
+    render_line_numbers(editor, areas.line_numbers, surface);
     render_text(editor, areas.buffer, surface);
     render_selection(editor, areas.buffer, surface)?;
 
     Ok(())
+}
+
+fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
+    let mode = match editor.mode {
+        Mode::Normal => "normal",
+        Mode::Goto => "goto",
+        Mode::Insert { .. } => "insert",
+    };
+
+    let path = match &editor.path {
+        Some(path) => path.as_str(),
+        None => "",
+    };
+
+    let x = area.left();
+    let y = area.bottom() - 1;
+    let string = format!("{mode} {path}");
+    surface.set_string(x, y, string, Style::new());
+
+    let bg_color = match editor.mode {
+        Mode::Normal | Mode::Goto => DARK_BLUE,
+        Mode::Insert { .. } => DARK_GREEN,
+    };
+
+    for x in area.left()..area.right() {
+        surface.get_mut(x, y).set_fg(Color::White).set_bg(bg_color);
+    }
+}
+
+fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
+    if area.width == 0 {
+        return;
+    }
+
+    let total_lines = editor.buffer.text().len_lines_indigo();
+
+    let number_width = usize::from(area.width) - 1;
+
+    for y in area.top()..area.bottom() {
+        let line_number = usize::from(y) + editor.scroll.line;
+
+        if line_number <= total_lines {
+            surface.set_stringn(
+                area.x,
+                y,
+                format!("{line_number:>number_width$}│"),
+                number_width + 1,
+                Style::default(),
+            );
+        }
+    }
 }
 
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
@@ -389,33 +469,6 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) -> anyho
     }
 
     Ok(())
-}
-
-fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let mode = match editor.mode {
-        Mode::Normal => "normal",
-        Mode::Goto => "goto",
-        Mode::Insert { .. } => "insert",
-    };
-
-    let path = match &editor.path {
-        Some(path) => path.as_str(),
-        None => "",
-    };
-
-    let x = area.left();
-    let y = area.bottom() - 1;
-    let string = format!("{mode} {path}");
-    surface.set_string(x, y, string, Style::new());
-
-    let bg_color = match editor.mode {
-        Mode::Normal | Mode::Goto => DARK_BLUE,
-        Mode::Insert { .. } => DARK_GREEN,
-    };
-
-    for x in area.left()..area.right() {
-        surface.get_mut(x, y).set_fg(Color::White).set_bg(bg_color);
-    }
 }
 
 const ALT_SHIFT: KeyModifiers = KeyModifiers::ALT.union(KeyModifiers::SHIFT);
