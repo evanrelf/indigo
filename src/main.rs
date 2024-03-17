@@ -87,7 +87,7 @@ enum InsertStyle {
 }
 
 // TODO: Call this automatically when the buffer or mode changes.
-fn show_cursor(editor: &mut Editor, areas: Areas) {
+fn scroll_to_cursor(editor: &mut Editor, areas: Areas) {
     let area = areas.buffer;
 
     if area.height == 0 {
@@ -141,7 +141,7 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
     match &editor.mode {
         Mode::Normal => match event {
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-                (M::NONE, Char(' ')) => show_cursor(editor, areas),
+                (M::NONE, Char(' ')) => scroll_to_cursor(editor, areas),
                 (M::NONE, Char('h')) => buffer.move_left(1)?,
                 (M::NONE, Char('j')) => buffer.move_down(1)?,
                 (M::NONE, Char('k')) => buffer.move_up(1)?,
