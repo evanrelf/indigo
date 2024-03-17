@@ -35,17 +35,18 @@ fn main() -> anyhow::Result<()> {
     let mut terminal = terminal::enter()?;
 
     loop {
+        let mut area = Rect::default();
         let mut result = Ok(());
 
         terminal.draw(|frame| {
-            let area = frame.size();
+            area = frame.size();
             let surface = frame.buffer_mut();
             result = render(&editor, area, surface);
         })?;
 
         result?;
 
-        let quit = handle_event(&mut editor, &event::read()?)?;
+        let quit = handle_event(&mut editor, area, &event::read()?)?;
 
         if quit {
             break;
@@ -70,7 +71,7 @@ enum InsertStyle {
     Reduce,
 }
 
-fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
+fn handle_event(editor: &mut Editor, area: Rect, event: &Event) -> anyhow::Result<bool> {
     let insert_style = InsertStyle::Reduce;
 
     let mut quit = false;
@@ -128,6 +129,12 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
                 (KeyModifiers::NONE, KeyCode::Down) => editor.scroll_down(1),
                 (KeyModifiers::NONE, KeyCode::Left) => editor.scroll_left(1),
                 (KeyModifiers::NONE, KeyCode::Right) => editor.scroll_right(1),
+                (KeyModifiers::CONTROL, KeyCode::Char('d')) => {
+                    editor.scroll_down(usize::from(area.height / 2));
+                }
+                (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
+                    editor.scroll_up(usize::from(area.height / 2));
+                }
                 (KeyModifiers::CONTROL, KeyCode::Char('s')) => editor.save()?,
                 (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
                 (KeyModifiers::CONTROL, KeyCode::Char('p')) => panic!(),
