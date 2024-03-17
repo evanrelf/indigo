@@ -1,4 +1,4 @@
-use crate::{Position, RopeExt as _, Selection};
+use crate::{History, Position, RopeExt as _, Selection};
 use ropey::Rope;
 use std::cmp::{max, min};
 
@@ -7,15 +7,22 @@ pub struct Buffer {
     text: Rope,
     // TODO: Make private
     pub selection: Selection,
+    history: History<(Rope, Selection)>,
 }
 
 impl Buffer {
     pub fn new(text: Rope) -> anyhow::Result<Self> {
         anyhow::ensure!(!text.len_chars() > 0);
 
+        let selection = Selection::default();
+
+        let mut history = History::default();
+        history.push((text.clone(), selection));
+
         Ok(Self {
             text,
-            selection: Selection::default(),
+            selection,
+            history,
         })
     }
 
@@ -192,6 +199,30 @@ impl Buffer {
 
         Ok(())
     }
+
+    pub fn record(&mut self) {
+        self.history.push((self.text.clone(), self.selection));
+    }
+
+    pub fn undo(&mut self) {
+        while let Some((text, selection)) = self.history.undo() {
+            if self.text != *text {
+                self.text = text.clone();
+                self.selection = *selection;
+                return;
+            }
+        }
+    }
+
+    pub fn redo(&mut self) {
+        while let Some((text, selection)) = self.history.redo() {
+            if self.text != *text {
+                self.text = text.clone();
+                self.selection = *selection;
+                return;
+            }
+        }
+    }
 }
 
 impl Default for Buffer {
@@ -199,6 +230,7 @@ impl Default for Buffer {
         Self {
             text: Rope::from("\n"),
             selection: Selection::default(),
+            history: History::default(),
         }
     }
 }

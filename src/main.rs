@@ -77,7 +77,7 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
 
     let buffer = &mut editor.buffer;
 
-    #[allow(clippy::single_match)]
+    #[allow(clippy::single_match, clippy::match_same_arms)]
     match &editor.mode {
         Mode::Normal => match event {
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
@@ -95,13 +95,17 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
                 (KeyModifiers::SHIFT, KeyCode::Char('L')) => buffer.extend_right(1)?,
                 (KeyModifiers::NONE, KeyCode::Char(';')) => buffer.selection.reduce(),
                 (KeyModifiers::ALT, KeyCode::Char(';')) => buffer.selection.flip(),
+                (KeyModifiers::NONE, KeyCode::Char('u')) => buffer.undo(),
+                (KeyModifiers::NONE, KeyCode::Char('U')) => buffer.redo(),
+                (KeyModifiers::SHIFT, KeyCode::Char('U')) => buffer.redo(),
                 (KeyModifiers::NONE, KeyCode::Char('i')) => {
                     match insert_style {
                         InsertStyle::Flip => buffer.selection.flip_backward(),
                         InsertStyle::Stay => {}
                         InsertStyle::Reduce => buffer.selection.reduce(),
                     }
-                    editor.mode = Mode::Insert { after: false }
+                    buffer.record();
+                    editor.mode = Mode::Insert { after: false };
                 }
                 (KeyModifiers::NONE, KeyCode::Char('a')) => {
                     match insert_style {
@@ -117,6 +121,7 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
                             buffer.move_right(1)?;
                         }
                     }
+                    buffer.record();
                     editor.mode = Mode::Insert { after: true };
                 }
                 (KeyModifiers::NONE, KeyCode::Up) => editor.scroll_up(1),
@@ -150,6 +155,7 @@ fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
                     if *after && !buffer.selection().is_reduced() {
                         buffer.extend_left(1)?;
                     }
+                    buffer.record();
                     editor.mode = Mode::Normal;
                 }
                 _ => {}

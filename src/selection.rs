@@ -1,7 +1,7 @@
 use crate::Position;
 use std::cmp::{max, min};
 
-#[derive(Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Selection {
     pub anchor: Position,
     pub cursor: Position,
