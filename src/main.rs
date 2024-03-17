@@ -86,6 +86,7 @@ enum InsertStyle {
     Reduce,
 }
 
+// TODO: Call this automatically when the buffer or mode changes.
 fn show_cursor(editor: &mut Editor, areas: Areas) {
     let area = areas.buffer;
 
