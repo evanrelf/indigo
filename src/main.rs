@@ -133,6 +133,7 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                 (KeyModifiers::SHIFT, KeyCode::Char('L')) => buffer.extend_right(1)?,
                 (KeyModifiers::NONE, KeyCode::Char(';')) => buffer.selection.reduce(),
                 (KeyModifiers::ALT, KeyCode::Char(';')) => buffer.selection.flip(),
+                (KeyModifiers::NONE, KeyCode::Char('d')) => buffer.delete()?,
                 (KeyModifiers::NONE, KeyCode::Char('u')) => buffer.undo(),
                 (KeyModifiers::NONE, KeyCode::Char('U')) => buffer.redo(),
                 (KeyModifiers::SHIFT, KeyCode::Char('U')) => buffer.redo(),

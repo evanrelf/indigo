@@ -200,6 +200,26 @@ impl Buffer {
         Ok(())
     }
 
+    pub fn delete(&mut self) -> anyhow::Result<()> {
+        self.record();
+
+        let mut text = self.text.clone();
+
+        let start_index = self.selection.start().to_char_index(&text)?;
+        let end_index = self.selection.end().to_char_index(&text)?;
+
+        text.remove(start_index..=end_index);
+
+        self.selection.anchor = Position::from_char_index(start_index, &text)?;
+        self.selection.cursor = Position::from_char_index(start_index, &text)?;
+
+        self.text = text;
+
+        self.record();
+
+        Ok(())
+    }
+
     pub fn record(&mut self) {
         self.history.push((self.text.clone(), self.selection));
     }
