@@ -35,18 +35,18 @@ fn main() -> anyhow::Result<()> {
     let mut terminal = terminal::enter()?;
 
     loop {
-        let mut area = Rect::default();
+        let mut areas = Areas::default();
         let mut result = Ok(());
 
         terminal.draw(|frame| {
-            area = frame.size();
+            areas = Areas::new(frame.size());
             let surface = frame.buffer_mut();
-            result = render(&editor, area, surface);
+            result = render(&editor, areas, surface);
         })?;
 
         result?;
 
-        let quit = handle_event(&mut editor, area, &event::read()?)?;
+        let quit = handle_event(&mut editor, areas, &event::read()?)?;
 
         if quit {
             break;
@@ -54,6 +54,23 @@ fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+#[derive(Clone, Copy, Default)]
+struct Areas {
+    buffer: Rect,
+    status_bar: Rect,
+}
+
+impl Areas {
+    fn new(area: Rect) -> Self {
+        let areas = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(area);
+
+        Self {
+            buffer: areas[0],
+            status_bar: areas[1],
+        }
+    }
 }
 
 // TODO: Pick a style
@@ -71,7 +88,9 @@ enum InsertStyle {
     Reduce,
 }
 
-fn handle_event(editor: &mut Editor, area: Rect, event: &Event) -> anyhow::Result<bool> {
+fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Result<bool> {
+    let area = areas.buffer;
+
     let insert_style = InsertStyle::Reduce;
 
     let mut quit = false;
@@ -175,15 +194,10 @@ fn handle_event(editor: &mut Editor, area: Rect, event: &Event) -> anyhow::Resul
     Ok(quit)
 }
 
-fn render(editor: &Editor, area: Rect, surface: &mut Surface) -> anyhow::Result<()> {
-    let areas = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(area);
-
-    let buffer_area = areas[0];
-    let status_bar_area = areas[1];
-
-    render_text(editor, buffer_area, surface)?;
-    render_selection(editor, buffer_area, surface)?;
-    render_status_bar(editor, status_bar_area, surface);
+fn render(editor: &Editor, areas: Areas, surface: &mut Surface) -> anyhow::Result<()> {
+    render_text(editor, areas.buffer, surface)?;
+    render_selection(editor, areas.buffer, surface)?;
+    render_status_bar(editor, areas.status_bar, surface);
 
     Ok(())
 }
