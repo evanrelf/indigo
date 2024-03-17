@@ -105,6 +105,7 @@ fn show_cursor(editor: &mut Editor, areas: Areas) {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Result<bool> {
     let area = areas.buffer;
 
@@ -114,7 +115,11 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
 
     let buffer = &mut editor.buffer;
 
-    #[allow(clippy::single_match, clippy::match_same_arms)]
+    #[allow(
+        clippy::single_match,
+        clippy::match_single_binding,
+        clippy::match_same_arms
+    )]
     match &editor.mode {
         Mode::Normal => match event {
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
@@ -137,6 +142,7 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                 (KeyModifiers::NONE, KeyCode::Char('u')) => buffer.undo(),
                 (KeyModifiers::NONE, KeyCode::Char('U')) => buffer.redo(),
                 (KeyModifiers::SHIFT, KeyCode::Char('U')) => buffer.redo(),
+                (KeyModifiers::NONE, KeyCode::Char('g')) => editor.mode = Mode::Goto,
                 (KeyModifiers::NONE, KeyCode::Char('i')) => {
                     match insert_style {
                         InsertStyle::Flip => buffer.selection.flip_backward(),
@@ -186,6 +192,14 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                 (KeyModifiers::SHIFT, MouseEventKind::ScrollUp) => editor.scroll_up(6),
                 (KeyModifiers::SHIFT, MouseEventKind::ScrollDown) => editor.scroll_down(6),
                 _ => {}
+            },
+            _ => {}
+        },
+        Mode::Goto => match event {
+            Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+                _ => {
+                    editor.mode = Mode::Normal;
+                }
             },
             _ => {}
         },
@@ -304,8 +318,9 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) -> anyho
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let mode = match editor.mode {
-        Mode::Normal => "N",
-        Mode::Insert { .. } => "I",
+        Mode::Normal => "normal",
+        Mode::Goto => "goto",
+        Mode::Insert { .. } => "insert",
     };
 
     let path = match &editor.path {
