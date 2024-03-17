@@ -330,16 +330,12 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) -> anyho
             return Ok(());
         }
 
-        let orange = Color::Rgb(0xD1, 0x58, 0x02);
-        let dark_yellow = Color::Rgb(0xFF, 0xD3, 0x3D);
-        let light_yellow = Color::Rgb(0xFF, 0xF5, 0xB1);
-
         let bg_color = if index == cursor_index && char == '\n' {
-            orange
+            ORANGE
         } else if index == cursor_index {
-            dark_yellow
+            DARK_YELLOW
         } else {
-            light_yellow
+            LIGHT_YELLOW
         };
 
         surface
@@ -366,6 +362,21 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let x = area.left();
     let y = area.bottom() - 1;
     let string = format!("{mode} {path}");
-    let style = Style::new().fg(Color::Blue);
-    surface.set_string(x, y, string, style);
+    surface.set_string(x, y, string, Style::new());
+
+    let bg_color = match editor.mode {
+        Mode::Normal | Mode::Goto => DARK_BLUE,
+        Mode::Insert { .. } => DARK_GREEN,
+    };
+
+    for x in area.left()..area.right() {
+        surface.get_mut(x, y).set_fg(Color::White).set_bg(bg_color);
+    }
 }
+
+const LIGHT_BLUE: Color = Color::Rgb(0xF1, 0xF8, 0xFF);
+const DARK_BLUE: Color = Color::Rgb(0x03, 0x66, 0xD6);
+const DARK_GREEN: Color = Color::Rgb(0x81, 0x95, 0x00);
+const LIGHT_YELLOW: Color = Color::Rgb(0xFF, 0xF5, 0xB1);
+const DARK_YELLOW: Color = Color::Rgb(0xFF, 0xD3, 0x3D);
+const ORANGE: Color = Color::Rgb(0xD1, 0x58, 0x02);
