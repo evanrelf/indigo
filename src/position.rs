@@ -7,6 +7,8 @@ pub struct Position {
     pub column: usize,
 }
 
+// TODO: Change conversions to use graphemes, add new correction to grapheme boundaries
+
 impl Position {
     /// Convert a character index in a rope into a position.
     ///
