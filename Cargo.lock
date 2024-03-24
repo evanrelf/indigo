@@ -214,6 +214,7 @@ dependencies = [
  "imbl",
  "ratatui",
  "ropey",
+ "unicode-segmentation",
 ]
 
 [[package]]
