@@ -7,28 +7,40 @@ pub struct Position {
     pub column: usize,
 }
 
-// TODO: Change conversions to use graphemes, add new correction to grapheme boundaries
+// TODO: Add functions for moving position with respect to grapheme boundaries.
 
 impl Position {
-    /// Convert a character index in a rope into a position.
+    /// Convert a character index in a rope into a valid position.
     ///
-    /// If the index exceeds the length of the rope, it is snapped to the last character. Fails if
-    /// the rope is empty.
+    /// - If the index doesn't fall on a grapheme boundary (it is not on the first code point of a
+    ///   grapheme), it is snapped to the previous grapheme boundary.
+    /// - If the index exceeds the length of the rope, it is snapped to the last character.
+    /// - Fails if the rope is empty.
     ///
     /// If you need to know if a correction was made, use [`Position::from_char_index_strict`].
     pub fn from_char_index(index: usize, rope: &Rope) -> anyhow::Result<Self> {
         Self::from_char_index_strict(index, rope).map(Conversion::into_inner)
     }
 
-    /// Convert a character index in a rope into a position.
+    /// Convert a character index in a rope into a valid position.
     ///
-    /// If the index exceeds the length of the rope, it is snapped to the last character. Fails if
-    /// the rope is empty.
-    pub fn from_char_index_strict(index: usize, rope: &Rope) -> anyhow::Result<Conversion<Self>> {
+    /// - If the index doesn't fall on a grapheme boundary (it is not on the first code point of a
+    ///   grapheme), it is snapped to the previous grapheme boundary.
+    /// - If the index exceeds the length of the rope, it is snapped to the last character.
+    /// - Fails if the rope is empty.
+    pub fn from_char_index_strict(
+        mut index: usize,
+        rope: &Rope,
+    ) -> anyhow::Result<Conversion<Self>> {
         let mut corrected = false;
 
         if rope.len_chars() == 0 {
             anyhow::bail!("Rope is empty");
+        }
+
+        if !rope.try_is_grapheme_boundary(index)? {
+            corrected = true;
+            index = rope.get_prev_grapheme_boundary(index)?;
         }
 
         let index = if rope.len_chars() <= index {
@@ -52,22 +64,26 @@ impl Position {
         }
     }
 
-    /// Convert a position in a rope into a character index.
+    /// Convert a position in a rope into a valid character index.
     ///
-    /// If the position's column exceeds the length of a line, it is snapped to the last column. If
-    /// the position exceeds the length of the rope, it is snapped to the last character. Fails if
-    /// the rope is empty.
+    /// - If the position doesn't fall on a grapheme boundary (it is not on the first code point of
+    ///   a grapheme), it is snapped to the previous grapheme boundary.
+    /// - If the position's column exceeds the length of a line, it is snapped to the last column.
+    /// - If the position exceeds the length of the rope, it is snapped to the last character. Fails
+    ///   if the rope is empty.
     ///
     /// If you need to know if a correction was made, use [`Position::to_char_index_strict`].
     pub fn to_char_index(self, rope: &Rope) -> anyhow::Result<usize> {
         self.to_char_index_strict(rope).map(Conversion::into_inner)
     }
 
-    /// Convert a position in a rope into a character index.
+    /// Convert a position in a rope into a valid character index.
     ///
-    /// If the position's column exceeds the length of a line, it is snapped to the last column. If
-    /// the position exceeds the length of the rope, it is snapped to the last character. Fails if
-    /// the rope is empty.
+    /// - If the position doesn't fall on a grapheme boundary (it is not on the first code point of
+    ///   a grapheme), it is snapped to the previous grapheme boundary.
+    /// - If the position's column exceeds the length of a line, it is snapped to the last column.
+    /// - If the position exceeds the length of the rope, it is snapped to the last character. Fails
+    ///   if the rope is empty.
     pub fn to_char_index_strict(self, rope: &Rope) -> anyhow::Result<Conversion<usize>> {
         if rope.len_chars() == 0 {
             anyhow::bail!("Rope is empty");
@@ -75,6 +91,7 @@ impl Position {
 
         let mut line_corrected = false;
         let mut column_corrected = false;
+        let mut index_corrected = false;
 
         let last_line = rope.len_lines_indigo().saturating_sub(1);
         let line = if self.line > last_line {
@@ -94,9 +111,14 @@ impl Position {
             self.column
         };
 
-        let index = column + rope.line_to_char(line);
+        let mut index = column + rope.line_to_char(line);
 
-        if line_corrected || column_corrected {
+        if !rope.try_is_grapheme_boundary(index)? {
+            index_corrected = true;
+            index = rope.get_prev_grapheme_boundary(index)?;
+        }
+
+        if line_corrected || column_corrected || index_corrected {
             Ok(Conversion::Corrected(index))
         } else {
             Ok(Conversion::Valid(index))
@@ -105,9 +127,11 @@ impl Position {
 
     /// Correct a position so it's valid in the provided rope.
     ///
-    /// If the position's column exceeds the length of a line, it is snapped to the last column. If
-    /// the position exceeds the length of the rope, it is snapped to the last character. Fails
-    /// if the rope is empty.
+    /// - If the position doesn't fall on a grapheme boundary (it is not on the first code point of
+    ///   a grapheme), it is snapped to the previous grapheme boundary.
+    /// - If the position's column exceeds the length of a line, it is snapped to the last column.
+    /// - If the position exceeds the length of the rope, it is snapped to the last character.
+    /// - Fails if the rope is empty.
     pub fn correct(&mut self, rope: &Rope) -> anyhow::Result<()> {
         let index = self.to_char_index(rope)?;
         *self = Self::from_char_index(index, rope)?;
