@@ -1,6 +1,7 @@
 pub mod graphemes_iter;
 pub mod graphemes_step;
 
+use crate::rope::graphemes_iter::RopeGraphemes;
 use ropey::{Rope, RopeSlice};
 
 pub trait RopeExt {
@@ -10,6 +11,8 @@ pub trait RopeExt {
     // See the unit tests below for examples, and this GitHub issue for more info:
     // https://github.com/cessen/ropey/issues/60
     fn len_lines_indigo(&self) -> usize;
+
+    fn graphemes(&self) -> RopeGraphemes<'_>;
 }
 
 impl RopeExt for RopeSlice<'_> {
@@ -20,6 +23,10 @@ impl RopeExt for RopeSlice<'_> {
         let last_char = self.char(self.len_chars() - 1);
         self.len_lines() - if last_char == '\n' { 1 } else { 0 }
     }
+
+    fn graphemes(&self) -> RopeGraphemes<'_> {
+        RopeGraphemes::new(self)
+    }
 }
 
 impl RopeExt for Rope {
@@ -29,6 +36,10 @@ impl RopeExt for Rope {
         }
         let last_char = self.char(self.len_chars() - 1);
         self.len_lines() - if last_char == '\n' { 1 } else { 0 }
+    }
+
+    fn graphemes(&self) -> RopeGraphemes<'_> {
+        RopeGraphemes::new(&self.slice(0..))
     }
 }
 

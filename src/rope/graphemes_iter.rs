@@ -3,7 +3,7 @@
 use ropey::{iter::Chunks, RopeSlice};
 use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
 
-struct RopeGraphemes<'a> {
+pub struct RopeGraphemes<'a> {
     text: RopeSlice<'a>,
     chunks: Chunks<'a>,
     cur_chunk: &'a str,
@@ -12,7 +12,7 @@ struct RopeGraphemes<'a> {
 }
 
 impl<'a> RopeGraphemes<'a> {
-    fn new<'b>(slice: &RopeSlice<'b>) -> RopeGraphemes<'b> {
+    pub fn new<'b>(slice: &RopeSlice<'b>) -> RopeGraphemes<'b> {
         let mut chunks = slice.chunks();
         let first_chunk = chunks.next().unwrap_or("");
         RopeGraphemes {
