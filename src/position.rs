@@ -103,37 +103,6 @@ impl Position {
         }
     }
 
-    pub fn via_char_index<F>(self, rope: &Rope, update: F) -> anyhow::Result<Self>
-    where
-        F: FnOnce(usize) -> usize,
-    {
-        self.via_char_index_strict(rope, update)
-            .map(Conversion::into_inner)
-    }
-
-    pub fn via_char_index_strict<F>(
-        self,
-        rope: &Rope,
-        update: F,
-    ) -> anyhow::Result<Conversion<Self>>
-    where
-        F: FnOnce(usize) -> usize,
-    {
-        let mut corrected = false;
-
-        let index = self.to_char_index_strict(rope)?.map(update);
-        corrected |= index.is_corrected();
-
-        let position = Self::from_char_index_strict(index.into_inner(), rope)?;
-        corrected |= position.is_corrected();
-
-        if corrected {
-            Ok(Conversion::Corrected(position.into_inner()))
-        } else {
-            Ok(Conversion::Valid(position.into_inner()))
-        }
-    }
-
     /// Correct a position so it's valid in the provided rope.
     ///
     /// If the position's column exceeds the length of a line, it is snapped to the last column. If
