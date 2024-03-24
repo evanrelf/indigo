@@ -78,7 +78,7 @@ pub fn get_next_grapheme_boundary(slice: &RopeSlice, char_idx: usize) -> anyhow:
 }
 
 /// Returns whether the given char position is a grapheme boundary.
-pub fn is_grapheme_boundary(slice: &RopeSlice, char_idx: usize) -> anyhow::Result<bool> {
+pub fn try_is_grapheme_boundary(slice: &RopeSlice, char_idx: usize) -> anyhow::Result<bool> {
     // Bounds check
     anyhow::ensure!(char_idx <= slice.len_chars());
 

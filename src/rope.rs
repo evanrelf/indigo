@@ -14,11 +14,23 @@ pub trait RopeExt {
 
     fn graphemes(&self) -> RopeGraphemes<'_>;
 
+    fn prev_grapheme_boundary(&self, char_idx: usize) -> usize {
+        self.get_prev_grapheme_boundary(char_idx).unwrap()
+    }
+
     fn get_prev_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<usize>;
+
+    fn next_grapheme_boundary(&self, char_idx: usize) -> usize {
+        self.get_next_grapheme_boundary(char_idx).unwrap()
+    }
 
     fn get_next_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<usize>;
 
-    fn is_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<bool>;
+    fn is_grapheme_boundary(&self, char_idx: usize) -> bool {
+        self.try_is_grapheme_boundary(char_idx).unwrap()
+    }
+
+    fn try_is_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<bool>;
 }
 
 impl RopeExt for RopeSlice<'_> {
@@ -42,8 +54,8 @@ impl RopeExt for RopeSlice<'_> {
         graphemes_step::get_next_grapheme_boundary(self, char_idx)
     }
 
-    fn is_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<bool> {
-        graphemes_step::is_grapheme_boundary(self, char_idx)
+    fn try_is_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<bool> {
+        graphemes_step::try_is_grapheme_boundary(self, char_idx)
     }
 }
 
@@ -68,8 +80,8 @@ impl RopeExt for Rope {
         self.slice(0..).get_next_grapheme_boundary(char_idx)
     }
 
-    fn is_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<bool> {
-        self.slice(0..).is_grapheme_boundary(char_idx)
+    fn try_is_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<bool> {
+        self.slice(0..).try_is_grapheme_boundary(char_idx)
     }
 }
 
