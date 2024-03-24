@@ -1,5 +1,5 @@
-pub mod graphemes_iter;
-pub mod graphemes_step;
+mod graphemes_iter;
+mod graphemes_step;
 
 use crate::rope::graphemes_iter::RopeGraphemes;
 use ropey::{Rope, RopeSlice};
@@ -13,6 +13,12 @@ pub trait RopeExt {
     fn len_lines_indigo(&self) -> usize;
 
     fn graphemes(&self) -> RopeGraphemes<'_>;
+
+    fn prev_grapheme_boundary(&self, char_idx: usize) -> usize;
+
+    fn next_grapheme_boundary(&self, char_idx: usize) -> usize;
+
+    fn is_grapheme_boundary(&self, char_idx: usize) -> bool;
 }
 
 impl RopeExt for RopeSlice<'_> {
@@ -27,6 +33,18 @@ impl RopeExt for RopeSlice<'_> {
     fn graphemes(&self) -> RopeGraphemes<'_> {
         RopeGraphemes::new(self)
     }
+
+    fn prev_grapheme_boundary(&self, char_idx: usize) -> usize {
+        graphemes_step::prev_grapheme_boundary(self, char_idx)
+    }
+
+    fn next_grapheme_boundary(&self, char_idx: usize) -> usize {
+        graphemes_step::next_grapheme_boundary(self, char_idx)
+    }
+
+    fn is_grapheme_boundary(&self, char_idx: usize) -> bool {
+        graphemes_step::is_grapheme_boundary(self, char_idx)
+    }
 }
 
 impl RopeExt for Rope {
@@ -40,6 +58,18 @@ impl RopeExt for Rope {
 
     fn graphemes(&self) -> RopeGraphemes<'_> {
         RopeGraphemes::new(&self.slice(0..))
+    }
+
+    fn prev_grapheme_boundary(&self, char_idx: usize) -> usize {
+        self.slice(0..).prev_grapheme_boundary(char_idx)
+    }
+
+    fn next_grapheme_boundary(&self, char_idx: usize) -> usize {
+        self.slice(0..).next_grapheme_boundary(char_idx)
+    }
+
+    fn is_grapheme_boundary(&self, char_idx: usize) -> bool {
+        self.slice(0..).is_grapheme_boundary(char_idx)
     }
 }
 

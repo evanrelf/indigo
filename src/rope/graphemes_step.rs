@@ -4,7 +4,7 @@ use ropey::{str_utils::byte_to_char_idx, RopeSlice};
 use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
 
 /// Finds the previous grapheme boundary before the given char position.
-fn prev_grapheme_boundary(slice: &RopeSlice, char_idx: usize) -> usize {
+pub fn prev_grapheme_boundary(slice: &RopeSlice, char_idx: usize) -> usize {
     // Bounds check
     debug_assert!(char_idx <= slice.len_chars());
 
@@ -41,7 +41,7 @@ fn prev_grapheme_boundary(slice: &RopeSlice, char_idx: usize) -> usize {
 }
 
 /// Finds the next grapheme boundary after the given char position.
-fn next_grapheme_boundary(slice: &RopeSlice, char_idx: usize) -> usize {
+pub fn next_grapheme_boundary(slice: &RopeSlice, char_idx: usize) -> usize {
     // Bounds check
     debug_assert!(char_idx <= slice.len_chars());
 
@@ -78,7 +78,7 @@ fn next_grapheme_boundary(slice: &RopeSlice, char_idx: usize) -> usize {
 }
 
 /// Returns whether the given char position is a grapheme boundary.
-fn is_grapheme_boundary(slice: &RopeSlice, char_idx: usize) -> bool {
+pub fn is_grapheme_boundary(slice: &RopeSlice, char_idx: usize) -> bool {
     // Bounds check
     debug_assert!(char_idx <= slice.len_chars());
 
