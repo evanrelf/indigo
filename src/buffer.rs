@@ -370,7 +370,7 @@ impl RopeEdit {
     pub fn apply(&self, rope: &mut Rope) {
         match self {
             Self::Insert(index, string) => rope.insert(*index, string),
-            Self::Delete(index, string) => rope.remove(*index..*index + string.len()),
+            Self::Delete(index, string) => rope.remove(*index..*index + str_width(string)),
         }
     }
 }
