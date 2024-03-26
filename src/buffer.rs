@@ -276,6 +276,8 @@ impl Buffer {
     }
 
     pub fn delete(&mut self) -> anyhow::Result<()> {
+        // TODO: Prevent deleting all text in the buffer (currently cannot handle empty buffers)
+
         self.history.new_group();
 
         let mut text = self.text.clone();
