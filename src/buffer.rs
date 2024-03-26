@@ -16,7 +16,7 @@ pub struct Buffer {
 
 impl Buffer {
     pub fn new(text: Rope) -> anyhow::Result<Self> {
-        anyhow::ensure!(!text.len_chars() > 0);
+        anyhow::ensure!(text.len_chars() > 0);
 
         Ok(Self {
             text,
