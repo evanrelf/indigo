@@ -1,4 +1,4 @@
-use crate::{Conversion, RopeExt as _};
+use crate::{Conversion, Direction, RopeExt as _};
 use ropey::Rope;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
@@ -6,8 +6,6 @@ pub struct Position {
     pub line: usize,
     pub column: usize,
 }
-
-// TODO: Add functions for moving position with respect to grapheme boundaries.
 
 impl Position {
     /// Convert a character index in a rope into a valid position.
@@ -136,6 +134,36 @@ impl Position {
         let index = self.to_char_index(rope)?;
         *self = Self::from_char_index(index, rope)?;
         Ok(())
+    }
+
+    pub fn move_horizontally(
+        &mut self,
+        direction: Direction,
+        mut distance: usize,
+        rope: &Rope,
+    ) -> anyhow::Result<()> {
+        let mut index = self.to_char_index(rope)?;
+        while distance > 0 {
+            let next_index = match direction {
+                Direction::Backward => rope.get_prev_grapheme_boundary(index).unwrap(),
+                Direction::Forward => rope.get_next_grapheme_boundary(index).unwrap(),
+            };
+            if index == next_index {
+                break;
+            }
+            index = next_index;
+            distance -= 1;
+        }
+        *self = Self::from_char_index(index, rope).unwrap();
+        Ok(())
+    }
+
+    pub fn move_left(&mut self, distance: usize, rope: &Rope) -> anyhow::Result<()> {
+        self.move_horizontally(Direction::Backward, distance, rope)
+    }
+
+    pub fn move_right(&mut self, distance: usize, rope: &Rope) -> anyhow::Result<()> {
+        self.move_horizontally(Direction::Backward, distance, rope)
     }
 }
 

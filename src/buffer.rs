@@ -46,22 +46,19 @@ impl Buffer {
         self.selection.cursor.correct(&self.text)
     }
 
-    fn extend_horizontally(&mut self, direction: Direction, distance: usize) -> anyhow::Result<()> {
-        let mut index = self.selection.cursor.to_char_index(&self.text)?;
-
-        index = match direction {
-            Direction::Backward => index.saturating_sub(distance),
-            Direction::Forward => index + distance,
-        };
-
-        self.selection.cursor = Position::from_char_index(index, &self.text)?;
-
+    pub fn extend_horizontally(
+        &mut self,
+        direction: Direction,
+        distance: usize,
+    ) -> anyhow::Result<()> {
+        self.selection
+            .cursor
+            .move_horizontally(direction, distance, &self.text)?;
         self.selection.target_column = None;
-
         Ok(())
     }
 
-    fn extend_horizontally_while(
+    pub fn extend_horizontally_while(
         &mut self,
         direction: Direction,
         mut predicate: impl FnMut(char, Option<char>) -> bool,
@@ -97,7 +94,11 @@ impl Buffer {
         Ok(())
     }
 
-    fn extend_vertically(&mut self, direction: Direction, distance: usize) -> anyhow::Result<()> {
+    pub fn extend_vertically(
+        &mut self,
+        direction: Direction,
+        distance: usize,
+    ) -> anyhow::Result<()> {
         self.selection.target_column = match self.selection.target_column {
             None => Some(self.selection.cursor.column),
             Some(target_column) => Some(max(self.selection.cursor.column, target_column)),
