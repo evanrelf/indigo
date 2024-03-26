@@ -5,6 +5,7 @@ use std::{
     cmp::{max, min},
     rc::Rc,
 };
+use unicode_width::UnicodeWidthChar as _;
 
 #[derive(Debug)]
 pub struct Buffer {
@@ -221,11 +222,13 @@ impl Buffer {
 
         text.insert(cursor_index, str);
 
+        let width = str_width(str);
+
         if move_anchor {
-            self.selection.anchor = Position::from_char_index(anchor_index + str.len(), &text)?;
+            self.selection.anchor = Position::from_char_index(anchor_index + width, &text)?;
         }
 
-        self.selection.cursor = Position::from_char_index(cursor_index + str.len(), &text)?;
+        self.selection.cursor = Position::from_char_index(cursor_index + width, &text)?;
 
         self.text = text;
 
@@ -368,6 +371,17 @@ impl RopeEdit {
             Self::Insert(index, string) => rope.insert(*index, string),
             Self::Delete(index, string) => rope.remove(*index..*index + string.len()),
         }
+    }
+}
+
+fn str_width(str: &str) -> usize {
+    str.chars().map(char_width).sum::<usize>()
+}
+
+fn char_width(char: char) -> usize {
+    match char {
+        '\n' => 1,
+        _ => char.width().unwrap_or(1), // Give control characters a width of 1,
     }
 }
 

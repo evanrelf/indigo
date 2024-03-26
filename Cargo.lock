@@ -215,6 +215,7 @@ dependencies = [
  "ratatui",
  "ropey",
  "unicode-segmentation",
+ "unicode-width",
 ]
 
 [[package]]
