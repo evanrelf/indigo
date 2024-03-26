@@ -322,6 +322,11 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                 }
                 _ => {}
             },
+            Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
+                (M::NONE, MouseEventKind::ScrollUp) => editor.scroll_up(3),
+                (M::NONE, MouseEventKind::ScrollDown) => editor.scroll_down(3),
+                _ => {}
+            },
             Event::Paste(string) => buffer.insert(string)?,
             _ => {}
         },
