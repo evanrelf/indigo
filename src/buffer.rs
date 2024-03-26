@@ -254,7 +254,10 @@ impl Buffer {
             return Ok(());
         }
 
-        let range = cursor_index - 1..cursor_index;
+        let begin_index =
+            Position::from_char_index(cursor_index - 1, &text)?.to_char_index(&text)?;
+
+        let range = begin_index..cursor_index;
 
         let string = Rc::from(Cow::from(text.slice(range.clone())));
 
@@ -262,11 +265,13 @@ impl Buffer {
 
         text.remove(range.clone());
 
+        let width = str_width(&string);
+
         if move_anchor {
-            self.selection.anchor = Position::from_char_index(anchor_index - 1, &text)?;
+            self.selection.anchor = Position::from_char_index(anchor_index - width, &text)?;
         }
 
-        self.selection.cursor = Position::from_char_index(cursor_index - 1, &text)?;
+        self.selection.cursor = Position::from_char_index(cursor_index - width, &text)?;
 
         self.text = text;
 
@@ -287,9 +292,10 @@ impl Buffer {
         let mut text = self.text.clone();
 
         let start_index = self.selection.start().to_char_index(&text)?;
-        let end_index = self.selection.end().to_char_index(&text)?;
+        let end_index =
+            text.get_next_grapheme_boundary(self.selection.end().to_char_index(&text)?)?;
 
-        let range = start_index..=end_index;
+        let range = start_index..end_index;
 
         let string = Rc::from(Cow::from(text.slice(range.clone()).to_string()));
 
@@ -303,7 +309,7 @@ impl Buffer {
         self.text = text;
 
         self.history.push((
-            RopeEdit::Delete(*range.start(), string),
+            RopeEdit::Delete(range.start, string),
             before_selection,
             self.selection,
         ));
@@ -376,14 +382,11 @@ impl RopeEdit {
 }
 
 fn str_width(str: &str) -> usize {
-    str.chars().map(char_width).sum::<usize>()
+    str.chars().map(char_width).sum()
 }
 
 fn char_width(char: char) -> usize {
-    match char {
-        '\n' => 1,
-        _ => char.width().unwrap_or(1), // Give control characters a width of 1,
-    }
+    char.width().unwrap_or(1).max(1)
 }
 
 #[cfg(test)]
