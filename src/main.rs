@@ -250,12 +250,8 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
                 _ => {}
             },
             Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-                (M::ALT, MouseEventKind::ScrollUp) => editor.scroll_up(1),
-                (M::ALT, MouseEventKind::ScrollDown) => editor.scroll_down(1),
                 (M::NONE, MouseEventKind::ScrollUp) => editor.scroll_up(3),
                 (M::NONE, MouseEventKind::ScrollDown) => editor.scroll_down(3),
-                (M::SHIFT, MouseEventKind::ScrollUp) => editor.scroll_up(6),
-                (M::SHIFT, MouseEventKind::ScrollDown) => editor.scroll_down(6),
                 (M::NONE, MEK::Down(MB::Left)) => {
                     if let Some((line, column)) =
                         localize(areas.buffer, mouse_event.row, mouse_event.column)
