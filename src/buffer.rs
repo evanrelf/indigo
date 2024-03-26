@@ -15,14 +15,17 @@ pub struct Buffer {
 }
 
 impl Buffer {
-    pub fn new(text: Rope) -> anyhow::Result<Self> {
-        anyhow::ensure!(text.len_chars() > 0);
-
-        Ok(Self {
-            text,
-            selection: Selection::default(),
-            history: History::default(),
-        })
+    #[must_use]
+    pub fn new(text: Rope) -> Self {
+        if text.len_chars() == 0 {
+            Self::default()
+        } else {
+            Self {
+                text,
+                selection: Selection::default(),
+                history: History::default(),
+            }
+        }
     }
 
     #[must_use]

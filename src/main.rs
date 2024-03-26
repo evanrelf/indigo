@@ -27,7 +27,7 @@ fn main() -> anyhow::Result<()> {
     if let Some(path) = args.file {
         let file = File::open(&path)?;
         editor.path = Some(path);
-        editor.buffer = Buffer::new(Rope::from_reader(BufReader::new(file))?)?;
+        editor.buffer = Buffer::new(Rope::from_reader(BufReader::new(file))?);
     }
 
     let mut terminal = terminal::enter()?;
