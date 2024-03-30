@@ -1,9 +1,13 @@
 use crate::{Conversion, Direction, RopeExt as _};
 use ropey::Rope;
 
+// TODO: Create two different position types: one for graphemes, one for cells. Scroll should care
+// about cells, cursor should care about graphemes.
+
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Position {
     pub line: usize,
+    // TODO: Name this `char_offset` for grapheme-related position
     pub column: usize,
 }
 
