@@ -1,31 +1,31 @@
 // TODO: Remove
+#![allow(clippy::diverging_sub_expression)]
+#![allow(unreachable_code)]
 #![allow(unused_variables)]
 
 use crate::Direction;
 use ropey::Rope;
 
-// TODO: Change from `char_index` representation to `line` + `offset` representation. Otherwise you
-// can't do an after insert (`a`/`A`) at the end of a line, only at the end of the rope.
-
 #[derive(Clone, Copy)]
 pub struct WeakPosition {
-    pub char_index: usize,
+    pub line: usize,
+    pub char_offset: usize,
 }
 
 impl WeakPosition {
     #[must_use]
-    pub fn new(char_index: usize) -> Self {
-        Self { char_index }
+    pub fn new(line: usize, char_offset: usize) -> Self {
+        Self { line, char_offset }
     }
 
     #[must_use]
     pub fn upgrade(self, rope: &Rope) -> Option<Position<'_>> {
-        Position::new(rope, self.char_index)
+        Position::new(rope, self.line, self.char_offset)
     }
 
     #[must_use]
     pub fn upgrade_mut(self, rope: &mut Rope) -> Option<PositionMut<'_>> {
-        PositionMut::new(rope, self.char_index)
+        PositionMut::new(rope, self.line, self.char_offset)
     }
 }
 
@@ -43,46 +43,52 @@ impl From<PositionMut<'_>> for WeakPosition {
 
 pub struct Position<'a> {
     rope: &'a Rope,
-    char_index: usize,
+    line: usize,
+    char_offset: usize,
 }
 
 impl Position<'_> {
     #[must_use]
-    pub fn new(rope: &Rope, char_index: usize) -> Option<Position<'_>> {
-        if char_index <= rope.len_chars() {
-            Some(Position { rope, char_index })
-        } else {
-            None
+    pub fn new(rope: &Rope, line: usize, char_offset: usize) -> Option<Position<'_>> {
+        if line >= rope.len_lines() {
+            return None;
         }
+
+        if char_offset >= rope.line(line).len_chars() {
+            return None;
+        }
+
+        Some(Position {
+            rope,
+            line,
+            char_offset,
+        })
     }
 
     #[must_use]
-    pub fn char_index(&self) -> usize {
-        self.char_index
+    pub fn char_index(&self) -> Option<usize> {
+        to_char_index(self.rope, self.downgrade())
     }
 
     #[must_use]
     pub fn downgrade(&self) -> WeakPosition {
-        WeakPosition::new(self.char_index)
+        WeakPosition::new(self.line, self.char_offset)
     }
 
     pub fn move_up(&mut self, distance: usize) {
-        self.char_index =
-            move_vertically(self.rope, self.char_index, Direction::Backward, distance);
+        todo!()
     }
 
     pub fn move_down(&mut self, distance: usize) {
-        self.char_index = move_vertically(self.rope, self.char_index, Direction::Forward, distance);
+        todo!()
     }
 
     pub fn move_left(&mut self, distance: usize) {
-        self.char_index =
-            move_horizontally(self.rope, self.char_index, Direction::Backward, distance);
+        todo!()
     }
 
     pub fn move_right(&mut self, distance: usize) {
-        self.char_index =
-            move_horizontally(self.rope, self.char_index, Direction::Forward, distance);
+        todo!()
     }
 }
 
@@ -90,54 +96,59 @@ impl<'a> From<PositionMut<'a>> for Position<'a> {
     fn from(position_mut: PositionMut<'a>) -> Position<'a> {
         Position {
             rope: position_mut.rope,
-            char_index: position_mut.char_index,
+            line: position_mut.line,
+            char_offset: position_mut.char_offset,
         }
     }
 }
 
 pub struct PositionMut<'a> {
     rope: &'a mut Rope,
-    char_index: usize,
+    line: usize,
+    char_offset: usize,
 }
 
 impl PositionMut<'_> {
-    pub fn new(rope: &mut Rope, char_index: usize) -> Option<PositionMut<'_>> {
-        if char_index <= rope.len_chars() {
-            Some(PositionMut { rope, char_index })
-        } else {
-            None
+    pub fn new(rope: &mut Rope, line: usize, char_offset: usize) -> Option<PositionMut<'_>> {
+        if line >= rope.len_lines() {
+            return None;
         }
+
+        if char_offset >= rope.line(line).len_chars() {
+            return None;
+        }
+
+        Some(PositionMut {
+            rope,
+            line,
+            char_offset,
+        })
     }
 
     #[must_use]
-    pub fn char_index(&self) -> usize {
-        self.char_index
+    pub fn char_index(&self) -> Option<usize> {
+        to_char_index(self.rope, self.downgrade())
     }
 
     #[must_use]
     pub fn downgrade(&self) -> WeakPosition {
-        WeakPosition {
-            char_index: self.char_index,
-        }
+        WeakPosition::new(self.line, self.char_offset)
     }
 
     pub fn move_up(&mut self, distance: usize) {
-        self.char_index =
-            move_vertically(self.rope, self.char_index, Direction::Backward, distance);
+        todo!()
     }
 
     pub fn move_down(&mut self, distance: usize) {
-        self.char_index = move_vertically(self.rope, self.char_index, Direction::Forward, distance);
+        todo!()
     }
 
     pub fn move_left(&mut self, distance: usize) {
-        self.char_index =
-            move_horizontally(self.rope, self.char_index, Direction::Backward, distance);
+        todo!()
     }
 
     pub fn move_right(&mut self, distance: usize) {
-        self.char_index =
-            move_horizontally(self.rope, self.char_index, Direction::Forward, distance);
+        todo!()
     }
 
     pub fn insert_before(&mut self, text: &str) {
@@ -145,7 +156,9 @@ impl PositionMut<'_> {
     }
 
     pub fn insert_after(&mut self, text: &str) {
-        if self.char_index == self.rope.len_chars() {
+        let char_index: usize = todo!();
+
+        if char_index == self.rope.len_chars() {
             return;
         }
 
@@ -153,7 +166,9 @@ impl PositionMut<'_> {
     }
 
     pub fn delete_before(&mut self, count: usize) {
-        if self.char_index == 0 {
+        let char_index: usize = todo!();
+
+        if char_index == 0 {
             return;
         }
 
@@ -161,7 +176,9 @@ impl PositionMut<'_> {
     }
 
     pub fn delete(&mut self) {
-        if self.char_index == self.rope.len_chars() {
+        let char_index: usize = todo!();
+
+        if char_index == self.rope.len_chars() {
             return;
         }
 
@@ -169,12 +186,24 @@ impl PositionMut<'_> {
     }
 
     pub fn delete_after(&mut self, count: usize) {
-        if self.char_index == self.rope.len_chars() {
+        let char_index: usize = todo!();
+
+        if char_index == self.rope.len_chars() {
             return;
         }
 
         todo!()
     }
+}
+
+#[must_use]
+fn to_char_index(rope: &Rope, weak_position: WeakPosition) -> Option<usize> {
+    todo!()
+}
+
+#[must_use]
+fn from_char_index(rope: &Rope, char_index: usize) -> Option<WeakPosition> {
+    todo!()
 }
 
 #[must_use]
@@ -192,7 +221,7 @@ fn move_vertically(
     rope: &Rope,
     char_index: usize,
     direction: Direction,
-    grapheme_distance: usize,
+    line_distance: usize,
 ) -> usize {
     todo!()
 }
@@ -200,4 +229,18 @@ fn move_vertically(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn new() {
+        assert!(Position::new(&Rope::from(""), 0, 0).is_none());
+        assert!(Position::new(&Rope::from("x"), 0, 0).is_some());
+        assert!(Position::new(&Rope::from("x"), 0, 1).is_none());
+        assert!(Position::new(&Rope::from("x\nx\n"), 1, 1).is_some());
+        assert!(Position::new(&Rope::from("x\nx\n"), 1, 2).is_none());
+        assert!(PositionMut::new(&mut Rope::from(""), 0, 0).is_none());
+        assert!(PositionMut::new(&mut Rope::from("x"), 0, 0).is_some());
+        assert!(PositionMut::new(&mut Rope::from("x"), 0, 1).is_none());
+        assert!(PositionMut::new(&mut Rope::from("x\nx\n"), 1, 1).is_some());
+        assert!(PositionMut::new(&mut Rope::from("x\nx\n"), 1, 2).is_none());
+    }
 }
