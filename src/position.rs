@@ -1,6 +1,10 @@
 use crate::{Conversion, Direction, RopeExt as _};
 use ropey::Rope;
 
+// TODO: Separate insert-specific cursor position that represents positions _between_ graphemes,
+// rather than graphemes themselves, to enable inserting in an empty buffer or at the end of a
+// buffer.
+
 // TODO: Create two different position types: one for graphemes, one for cells. Scroll should care
 // about cells, cursor should care about graphemes.
 
