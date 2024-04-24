@@ -310,6 +310,7 @@ fn handle_event(editor: &mut Editor, areas: Areas, event: &Event) -> anyhow::Res
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
                 (M::NONE, Char(char)) => buffer.insert_char(char)?,
                 (M::SHIFT, Char(char)) => buffer.insert_char(char)?,
+                (M::NONE, Tab) => buffer.insert_char('\t')?,
                 (M::NONE, Enter) => buffer.insert_char('\n')?,
                 (M::NONE, Backspace) => buffer.backspace()?,
                 (M::CONTROL, Char('s')) => editor.save()?,
