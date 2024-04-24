@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.80"
+anyhow = "1.0.82"
 camino = "1.1.6"
-clap = { version = "4.5.1", default-features = false, features = ["derive", "error-context", "help", "std", "usage"] }
+clap = { version = "4.5.4", default-features = false, features = ["derive", "error-context", "help", "std", "usage"] }
 crossterm = { version = "0.27.0", default-features = false, features = ["events"] }
-ratatui = "0.26.1"
+ratatui = "0.26.2"
 ropey = { version = "1.6.1", default-features = false, features = ["simd"] }
 unicode-segmentation = "1.11.0"
 unicode-width = "0.1.11"
