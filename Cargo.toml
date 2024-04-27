@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.82"
 clap = { version = "4.5.4", features = ["derive"] }
+ropey = "1.6.1"
 
 [lints]
 clippy.bool_to_int_with_if = "allow"
