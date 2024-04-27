@@ -13,7 +13,6 @@ use std::{
     fs::File,
     io::BufReader,
 };
-use unicode_width::UnicodeWidthStr as _;
 
 #[derive(clap::Parser, Debug)]
 struct Args {
@@ -402,41 +401,19 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
         return;
     }
 
-    let mut width_budget;
-
     for y in area.top()..area.bottom() {
-        width_budget = usize::from(area.width);
-
         let line_index = editor.scroll.line + usize::from(y - area.top());
 
         let Some(line) = editor.buffer.text().get_line(line_index) else {
             break;
         };
 
-        let Some(slice) = line.get_slice(editor.scroll.column..) else {
+        // TODO: Use `chunks_at_char` instead of allocating a contiguous `&str`.
+        let Some(line) = line.get_slice(editor.scroll.column..).map(Cow::<str>::from) else {
             continue;
         };
 
-        for grapheme in slice.graphemes() {
-            if width_budget == 0 {
-                break;
-            }
-
-            let str = Cow::<str>::from(grapheme);
-
-            let width = str.width();
-
-            if width <= width_budget {
-                width_budget -= width;
-                surface.set_stringn(
-                    (area.x + (area.width - u16::try_from(width_budget).unwrap())) - 1,
-                    y,
-                    str,
-                    width,
-                    Style::default(),
-                );
-            }
-        }
+        surface.set_stringn(area.x, y, line, usize::from(area.width), Style::default());
     }
 }
 
