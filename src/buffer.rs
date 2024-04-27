@@ -382,7 +382,7 @@ impl RopeEdit {
 }
 
 fn str_width(str: &str) -> usize {
-    str.chars().map(char_width).sum()
+    str.chars().map(char_width).sum::<usize>().max(1)
 }
 
 fn char_width(char: char) -> usize {
