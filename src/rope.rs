@@ -3,6 +3,8 @@ mod graphemes_step;
 
 use crate::rope::graphemes_iter::RopeGraphemes;
 use ropey::{Rope, RopeSlice};
+use std::borrow::Cow;
+use unicode_width::UnicodeWidthStr as _;
 
 pub trait RopeExt {
     // `ropey` counts lines in a non-intuitive way, at least for my purposes. This method provides
@@ -11,6 +13,8 @@ pub trait RopeExt {
     // See the unit tests below for examples, and this GitHub issue for more info:
     // https://github.com/cessen/ropey/issues/60
     fn len_lines_indigo(&self) -> usize;
+
+    fn width(&self) -> usize;
 
     fn graphemes(&self) -> RopeGraphemes<'_>;
 
@@ -42,6 +46,10 @@ impl RopeExt for RopeSlice<'_> {
         self.len_lines() - if last_char == '\n' { 1 } else { 0 }
     }
 
+    fn width(&self) -> usize {
+        Cow::<str>::from(*self).width()
+    }
+
     fn graphemes(&self) -> RopeGraphemes<'_> {
         RopeGraphemes::new(self)
     }
@@ -66,6 +74,10 @@ impl RopeExt for Rope {
         }
         let last_char = self.char(self.len_chars() - 1);
         self.len_lines() - if last_char == '\n' { 1 } else { 0 }
+    }
+
+    fn width(&self) -> usize {
+        Cow::<str>::from(self).width()
     }
 
     fn graphemes(&self) -> RopeGraphemes<'_> {
