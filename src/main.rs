@@ -10,13 +10,18 @@ struct Args {
 
 struct Editor {
     text: Rope,
+    // Byte offset
+    cursor: usize,
 }
 
 impl Editor {
     fn new(path: Utf8PathBuf) -> anyhow::Result<Self> {
         let file = File::open(path)?;
         let rope = Rope::from_reader(BufReader::new(file))?;
-        Ok(Self { text: rope })
+        Ok(Self {
+            text: rope,
+            cursor: 0,
+        })
     }
 }
 
