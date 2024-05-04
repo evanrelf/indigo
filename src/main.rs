@@ -1,10 +1,9 @@
-mod editor;
 mod terminal;
 
-use crate::editor::Editor;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
+use indigo::{editor, Editor};
 use ratatui::{
     prelude::{Buffer as Surface, Rect, Widget as _},
     widgets::Paragraph,
