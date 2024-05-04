@@ -105,7 +105,7 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
     let number_width = usize::from(area.width) - 1;
 
     for y in area.top()..area.bottom() {
-        let line_number = usize::from(y) + editor.vertical_scroll;
+        let line_number = usize::from(y) + editor.vertical_scroll();
 
         if line_number <= total_lines {
             surface.set_stringn(
@@ -122,7 +122,7 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     let horizontal_scroll = 0;
 
-    'line: for (y, line) in editor.text().lines_at(editor.vertical_scroll).enumerate() {
+    'line: for (y, line) in editor.text().lines_at(editor.vertical_scroll()).enumerate() {
         let y = area.top() + u16::try_from(y).unwrap();
 
         if y >= area.bottom() {

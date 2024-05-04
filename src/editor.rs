@@ -1,13 +1,14 @@
+use crate::RopeExt as _;
 use camino::Utf8PathBuf;
 use ropey::Rope;
-use std::{fs::File, io::BufReader};
+use std::{cmp::min, fs::File, io::BufReader};
 
 pub struct Editor {
     text: Rope,
     // Byte offset
     pub cursor: usize,
     // Line offset
-    pub vertical_scroll: usize,
+    vertical_scroll: usize,
 }
 
 impl Editor {
@@ -24,5 +25,15 @@ impl Editor {
     #[must_use]
     pub fn text(&self) -> &Rope {
         &self.text
+    }
+
+    #[must_use]
+    pub fn vertical_scroll(&self) -> usize {
+        self.vertical_scroll
+    }
+
+    pub fn scroll_to(&mut self, line: usize) {
+        let last_line = self.text().len_lines_indigo().saturating_sub(1);
+        self.vertical_scroll = min(line, last_line);
     }
 }
