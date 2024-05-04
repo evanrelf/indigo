@@ -1,4 +1,5 @@
 pub mod actions;
-pub mod editor;
+mod editor;
+mod rope;
 
-pub use editor::Editor;
+pub use crate::{editor::Editor, rope::RopeExt};

@@ -235,6 +235,8 @@ dependencies = [
  "crossterm",
  "ratatui",
  "ropey",
+ "unicode-segmentation",
+ "unicode-width",
 ]
 
 [[package]]
