@@ -2,7 +2,7 @@ mod terminal;
 
 use camino::Utf8PathBuf;
 use clap::Parser as _;
-use crossterm::event::{self, Event, KeyCode, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
 use indigo::{actions, Editor, RopeExt as _};
 use ratatui::prelude::{Buffer as Surface, Constraint, Layout, Rect, Style};
 use std::{borrow::Cow, cmp::max};
@@ -100,14 +100,12 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let vertical_scroll = 0;
-
     let total_lines = editor.text.len_lines_indigo();
 
     let number_width = usize::from(area.width) - 1;
 
     for y in area.top()..area.bottom() {
-        let line_number = usize::from(y) + vertical_scroll;
+        let line_number = usize::from(y) + editor.vertical_scroll;
 
         if line_number <= total_lines {
             surface.set_stringn(
@@ -122,10 +120,9 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let vertical_scroll = 0;
     let horizontal_scroll = 0;
 
-    'line: for (y, line) in editor.text.lines_at(vertical_scroll).enumerate() {
+    'line: for (y, line) in editor.text.lines_at(editor.vertical_scroll).enumerate() {
         let y = area.top() + u16::try_from(y).unwrap();
 
         if y >= area.bottom() {
@@ -173,6 +170,11 @@ fn handle_event(editor: &mut Editor, _areas: Areas, event: &Event) -> bool {
             (KeyModifiers::NONE, KeyCode::Char('h')) => actions::move_left(editor),
             (KeyModifiers::NONE, KeyCode::Char('l')) => actions::move_right(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
+            _ => {}
+        },
+        Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => actions::scroll_up(editor),
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => actions::scroll_down(editor),
             _ => {}
         },
         _ => {}

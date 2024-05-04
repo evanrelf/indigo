@@ -6,6 +6,8 @@ pub struct Editor {
     pub text: Rope,
     // Byte offset
     pub cursor: usize,
+    // Line offset
+    pub vertical_scroll: usize,
 }
 
 impl Editor {
@@ -15,6 +17,7 @@ impl Editor {
         Ok(Self {
             text: rope,
             cursor: 0,
+            vertical_scroll: 0,
         })
     }
 }
