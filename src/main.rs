@@ -1,5 +1,7 @@
+mod editor;
 mod terminal;
 
+use crate::editor::Editor;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
@@ -7,29 +9,10 @@ use ratatui::{
     prelude::{Buffer as Surface, Rect, Widget as _},
     widgets::Paragraph,
 };
-use ropey::Rope;
-use std::{fs::File, io::BufReader};
 
 #[derive(Debug, clap::Parser)]
 struct Args {
     file: Utf8PathBuf,
-}
-
-struct Editor {
-    text: Rope,
-    // Byte offset
-    cursor: usize,
-}
-
-impl Editor {
-    fn new(path: Utf8PathBuf) -> anyhow::Result<Self> {
-        let file = File::open(path)?;
-        let rope = Rope::from_reader(BufReader::new(file))?;
-        Ok(Self {
-            text: rope,
-            cursor: 0,
-        })
-    }
 }
 
 fn main() -> anyhow::Result<()> {
