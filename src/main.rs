@@ -4,7 +4,7 @@ use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
 use indigo::{actions, Editor, RopeExt as _};
-use ratatui::prelude::{Buffer as Surface, Rect, Style};
+use ratatui::prelude::{Buffer as Surface, Constraint, Layout, Rect, Style};
 use std::borrow::Cow;
 
 #[derive(Debug, clap::Parser)]
@@ -40,17 +40,41 @@ fn main() -> anyhow::Result<()> {
 
 #[derive(Clone, Copy, Default)]
 struct Areas {
+    status_bar: Rect,
     text: Rect,
 }
 
 impl Areas {
     fn new(_editor: &Editor, area: Rect) -> Self {
-        Self { text: area }
+        let areas = Layout::vertical([
+            // status_bar
+            Constraint::Length(1),
+            // text
+            Constraint::Fill(1),
+        ])
+        .split(area);
+
+        let status_bar = areas[0];
+
+        let text = areas[1];
+
+        Self { status_bar, text }
     }
 }
 
 fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
+    render_status_bar(editor, areas.status_bar, surface);
     render_text(editor, areas.text, surface);
+}
+
+fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
+    surface.set_stringn(
+        area.x,
+        area.y,
+        format!("Cursor: {}", editor.cursor),
+        usize::from(area.width),
+        Style::default(),
+    );
 }
 
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
