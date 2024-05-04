@@ -1,3 +1,5 @@
+mod terminal;
+
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use ropey::Rope;
