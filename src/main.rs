@@ -46,12 +46,8 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     let vertical_scroll = 0;
     let horizontal_scroll = 0;
 
-    'line: for y in area.top()..area.bottom() {
-        let line_index = vertical_scroll + usize::from(y - area.top());
-
-        let Some(line) = editor.text.get_line(line_index) else {
-            break 'line;
-        };
+    'line: for (y, line) in editor.text.lines_at(vertical_scroll).enumerate() {
+        let y = area.top() + u16::try_from(y).unwrap();
 
         let Some(line) = line.get_slice(horizontal_scroll..) else {
             continue 'line;
