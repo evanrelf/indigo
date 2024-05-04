@@ -19,16 +19,16 @@ fn main() -> anyhow::Result<()> {
 
     let mut terminal = terminal::enter()?;
 
-    let mut area = Rect::default();
+    let mut areas = Areas::default();
 
     loop {
         terminal.draw(|frame| {
-            area = frame.size();
+            areas = Areas::new(&editor, frame.size());
             let surface = frame.buffer_mut();
-            render(&editor, area, surface);
+            render(&editor, areas, surface);
         })?;
 
-        let quit = handle_event(&mut editor, area, &event::read()?);
+        let quit = handle_event(&mut editor, areas, &event::read()?);
 
         if quit {
             break;
@@ -38,8 +38,19 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
-    render_text(editor, area, surface);
+#[derive(Clone, Copy, Default)]
+struct Areas {
+    text: Rect,
+}
+
+impl Areas {
+    fn new(_editor: &Editor, area: Rect) -> Self {
+        Self { text: area }
+    }
+}
+
+fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
+    render_text(editor, areas.text, surface);
 }
 
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
@@ -85,7 +96,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
-fn handle_event(editor: &mut Editor, _area: Rect, event: &Event) -> bool {
+fn handle_event(editor: &mut Editor, _areas: Areas, event: &Event) -> bool {
     let mut quit = false;
 
     #[allow(clippy::single_match)]
