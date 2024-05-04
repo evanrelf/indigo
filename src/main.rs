@@ -58,7 +58,7 @@ impl Areas {
         let status_bar = areas[0];
 
         let line_numbers_width = {
-            let n = editor.text.len_lines_indigo();
+            let n = editor.text().len_lines_indigo();
             let digits = 1 + max(1, n).ilog10();
             u16::try_from(max(2, digits) + 1).unwrap()
         };
@@ -100,7 +100,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let total_lines = editor.text.len_lines_indigo();
+    let total_lines = editor.text().len_lines_indigo();
 
     let number_width = usize::from(area.width) - 1;
 
@@ -122,7 +122,7 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     let horizontal_scroll = 0;
 
-    'line: for (y, line) in editor.text.lines_at(editor.vertical_scroll).enumerate() {
+    'line: for (y, line) in editor.text().lines_at(editor.vertical_scroll).enumerate() {
         let y = area.top() + u16::try_from(y).unwrap();
 
         if y >= area.bottom() {

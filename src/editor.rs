@@ -3,7 +3,7 @@ use ropey::Rope;
 use std::{fs::File, io::BufReader};
 
 pub struct Editor {
-    pub text: Rope,
+    text: Rope,
     // Byte offset
     pub cursor: usize,
     // Line offset
@@ -19,5 +19,10 @@ impl Editor {
             cursor: 0,
             vertical_scroll: 0,
         })
+    }
+
+    #[must_use]
+    pub fn text(&self) -> &Rope {
+        &self.text
     }
 }
