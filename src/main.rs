@@ -51,8 +51,8 @@ fn handle_event(editor: &mut Editor, _area: Rect, event: &Event) -> bool {
     #[allow(clippy::single_match)]
     match event {
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-            (KeyModifiers::NONE, KeyCode::Char('h')) => move_left(editor),
-            (KeyModifiers::NONE, KeyCode::Char('l')) => move_right(editor),
+            (KeyModifiers::NONE, KeyCode::Char('h')) => editor::actions::move_left(editor),
+            (KeyModifiers::NONE, KeyCode::Char('l')) => editor::actions::move_right(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
             _ => {}
         },
@@ -60,12 +60,4 @@ fn handle_event(editor: &mut Editor, _area: Rect, event: &Event) -> bool {
     }
 
     quit
-}
-
-fn move_left(editor: &mut Editor) {
-    editor.cursor = editor.cursor.saturating_sub(1);
-}
-
-fn move_right(editor: &mut Editor) {
-    editor.cursor += 1;
 }

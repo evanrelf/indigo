@@ -1,3 +1,5 @@
+pub mod actions;
+
 use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::{fs::File, io::BufReader};
