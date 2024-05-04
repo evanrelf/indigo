@@ -5,7 +5,7 @@ use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
 use indigo::{actions, Editor, RopeExt as _};
 use ratatui::prelude::{Buffer as Surface, Constraint, Layout, Rect, Style};
-use std::borrow::Cow;
+use std::{borrow::Cow, cmp::max};
 
 #[derive(Debug, clap::Parser)]
 struct Args {
@@ -41,29 +41,51 @@ fn main() -> anyhow::Result<()> {
 #[derive(Clone, Copy, Default)]
 struct Areas {
     status_bar: Rect,
+    line_numbers: Rect,
     text: Rect,
 }
 
 impl Areas {
-    fn new(_editor: &Editor, area: Rect) -> Self {
+    fn new(editor: &Editor, area: Rect) -> Self {
         let areas = Layout::vertical([
             // status_bar
             Constraint::Length(1),
-            // text
+            // line_numbers + text
             Constraint::Fill(1),
         ])
         .split(area);
 
         let status_bar = areas[0];
 
+        let line_numbers_width = {
+            let n = editor.text.len_lines_indigo();
+            let digits = 1 + max(1, n).ilog10();
+            u16::try_from(max(2, digits) + 1).unwrap()
+        };
+
+        let areas = Layout::horizontal([
+            // line_numbers
+            Constraint::Length(line_numbers_width),
+            // text
+            Constraint::Fill(1),
+        ])
+        .split(areas[1]);
+
+        let line_numbers = areas[0];
+
         let text = areas[1];
 
-        Self { status_bar, text }
+        Self {
+            status_bar,
+            line_numbers,
+            text,
+        }
     }
 }
 
 fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
     render_status_bar(editor, areas.status_bar, surface);
+    render_line_numbers(editor, areas.line_numbers, surface);
     render_text(editor, areas.text, surface);
 }
 
@@ -75,6 +97,28 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         usize::from(area.width),
         Style::default(),
     );
+}
+
+fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
+    let vertical_scroll = 0;
+
+    let total_lines = editor.text.len_lines_indigo();
+
+    let number_width = usize::from(area.width) - 1;
+
+    for y in area.top()..area.bottom() {
+        let line_number = usize::from(y) + vertical_scroll;
+
+        if line_number <= total_lines {
+            surface.set_stringn(
+                area.x,
+                y,
+                format!("{line_number:>number_width$}│"),
+                number_width + 1,
+                Style::default(),
+            );
+        }
+    }
 }
 
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
