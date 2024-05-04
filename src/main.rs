@@ -3,7 +3,7 @@ mod terminal;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
-use indigo::{editor, Editor};
+use indigo::{actions, Editor};
 use ratatui::{
     prelude::{Buffer as Surface, Rect, Widget as _},
     widgets::Paragraph,
@@ -50,8 +50,8 @@ fn handle_event(editor: &mut Editor, _area: Rect, event: &Event) -> bool {
     #[allow(clippy::single_match)]
     match event {
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-            (KeyModifiers::NONE, KeyCode::Char('h')) => editor::actions::move_left(editor),
-            (KeyModifiers::NONE, KeyCode::Char('l')) => editor::actions::move_right(editor),
+            (KeyModifiers::NONE, KeyCode::Char('h')) => actions::move_left(editor),
+            (KeyModifiers::NONE, KeyCode::Char('l')) => actions::move_right(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
             _ => {}
         },
