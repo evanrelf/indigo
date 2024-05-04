@@ -9,9 +9,13 @@ pub fn move_right(editor: &mut Editor) {
 }
 
 pub fn scroll_up(editor: &mut Editor) {
-    editor.scroll_to(editor.vertical_scroll().saturating_sub(3));
+    let line = editor.vertical_scroll().saturating_sub(3);
+    let char_offset = 0;
+    editor.scroll_to(line, char_offset);
 }
 
 pub fn scroll_down(editor: &mut Editor) {
-    editor.scroll_to(editor.vertical_scroll() + 3);
+    let line = editor.vertical_scroll() + 3;
+    let char_offset = 0;
+    editor.scroll_to(line, char_offset);
 }

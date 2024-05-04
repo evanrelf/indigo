@@ -7,8 +7,10 @@ pub struct Editor {
     text: Rope,
     // Byte offset
     pub cursor: usize,
-    // Line offset
+    // Line number
     vertical_scroll: usize,
+    // Unicode code point (char) offset
+    horizontal_scroll: usize,
 }
 
 impl Editor {
@@ -19,6 +21,7 @@ impl Editor {
             text: rope,
             cursor: 0,
             vertical_scroll: 0,
+            horizontal_scroll: 0,
         })
     }
 
@@ -32,8 +35,14 @@ impl Editor {
         self.vertical_scroll
     }
 
-    pub fn scroll_to(&mut self, line: usize) {
+    #[must_use]
+    pub fn horizontal_scroll(&self) -> usize {
+        self.horizontal_scroll
+    }
+
+    pub fn scroll_to(&mut self, line: usize, char_offset: usize) {
         let last_line = self.text().len_lines_indigo().saturating_sub(1);
         self.vertical_scroll = min(line, last_line);
+        self.horizontal_scroll = char_offset;
     }
 }

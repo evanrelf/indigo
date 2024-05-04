@@ -120,8 +120,6 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let horizontal_scroll = 0;
-
     'line: for (y, line) in editor.text().lines_at(editor.vertical_scroll()).enumerate() {
         let y = area.top() + u16::try_from(y).unwrap();
 
@@ -129,7 +127,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
             break 'line;
         }
 
-        let Some(line) = line.get_slice(horizontal_scroll..) else {
+        let Some(line) = line.get_slice(editor.horizontal_scroll()..) else {
             continue 'line;
         };
 
