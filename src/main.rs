@@ -3,7 +3,10 @@ mod terminal;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
-use ratatui::widgets::{Paragraph, Widget as _};
+use ratatui::{
+    prelude::{Buffer as Surface, Rect, Widget as _},
+    widgets::Paragraph,
+};
 use ropey::Rope;
 use std::{fs::File, io::BufReader};
 
@@ -36,29 +39,46 @@ fn main() -> anyhow::Result<()> {
 
     let mut terminal = terminal::enter()?;
 
+    let mut area = Rect::default();
+
     loop {
         terminal.draw(|frame| {
-            let area = frame.size();
+            area = frame.size();
             let surface = frame.buffer_mut();
-            Paragraph::new(format!("Cursor: {}\n{}", editor.cursor, editor.text))
-                .render(area, surface);
+            render(&editor, area, surface);
         })?;
 
-        #[allow(clippy::single_match)]
-        match event::read()? {
-            Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-                (KeyModifiers::NONE, KeyCode::Char('h')) => {
-                    editor.cursor = editor.cursor.saturating_sub(1);
-                }
-                (KeyModifiers::NONE, KeyCode::Char('l')) => {
-                    editor.cursor += 1;
-                }
-                (KeyModifiers::CONTROL, KeyCode::Char('c')) => break,
-                _ => {}
-            },
-            _ => {}
+        let quit = handle_event(&mut editor, area, &event::read()?);
+
+        if quit {
+            break;
         }
     }
 
     Ok(())
+}
+
+fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
+    Paragraph::new(format!("Cursor: {}\n{}", editor.cursor, editor.text)).render(area, surface);
+}
+
+fn handle_event(editor: &mut Editor, _area: Rect, event: &Event) -> bool {
+    let mut quit = false;
+
+    #[allow(clippy::single_match)]
+    match event {
+        Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+            (KeyModifiers::NONE, KeyCode::Char('h')) => {
+                editor.cursor = editor.cursor.saturating_sub(1);
+            }
+            (KeyModifiers::NONE, KeyCode::Char('l')) => {
+                editor.cursor += 1;
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
+            _ => {}
+        },
+        _ => {}
+    }
+
+    quit
 }
