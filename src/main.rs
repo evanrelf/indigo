@@ -64,6 +64,12 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
                 continue 'line;
             }
 
+            if let Some('\t') = grapheme.get_char(0) {
+                surface.set_stringn(x, y, "        ", 8, Style::default());
+                x += 8;
+                continue 'grapheme;
+            };
+
             let width = grapheme.width();
 
             if width == 0 {
