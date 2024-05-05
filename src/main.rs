@@ -180,6 +180,10 @@ fn handle_event(editor: &mut Editor, _areas: Areas, event: &Event) -> bool {
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::NONE, KeyCode::Char('h')) => actions::move_left(editor),
             (KeyModifiers::NONE, KeyCode::Char('l')) => actions::move_right(editor),
+            (KeyModifiers::NONE, KeyCode::Up) => actions::scroll_up(editor),
+            (KeyModifiers::NONE, KeyCode::Down) => actions::scroll_down(editor),
+            (KeyModifiers::NONE, KeyCode::Left) => actions::scroll_left(editor),
+            (KeyModifiers::NONE, KeyCode::Right) => actions::scroll_right(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
             _ => {}
         },
