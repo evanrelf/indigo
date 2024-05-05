@@ -5,11 +5,11 @@ use std::{cmp::min, fs::File, io::BufReader};
 
 pub struct Editor {
     text: Rope,
-    // Byte offset
-    pub cursor: usize,
+    // Char offset
+    cursor: usize,
     // Line number
     vertical_scroll: usize,
-    // Unicode code point (char) offset
+    // Char offset
     horizontal_scroll: usize,
 }
 
@@ -31,6 +31,11 @@ impl Editor {
     }
 
     #[must_use]
+    pub fn cursor(&self) -> usize {
+        self.cursor
+    }
+
+    #[must_use]
     pub fn vertical_scroll(&self) -> usize {
         self.vertical_scroll
     }
@@ -38,6 +43,18 @@ impl Editor {
     #[must_use]
     pub fn horizontal_scroll(&self) -> usize {
         self.horizontal_scroll
+    }
+
+    pub fn move_left(&mut self) {
+        if let Ok(cursor) = self.text.get_prev_grapheme_boundary(self.cursor) {
+            self.cursor = cursor;
+        }
+    }
+
+    pub fn move_right(&mut self) {
+        if let Ok(cursor) = self.text.get_next_grapheme_boundary(self.cursor) {
+            self.cursor = cursor;
+        }
     }
 
     pub fn scroll_to(&mut self, line: usize, char_offset: usize) {

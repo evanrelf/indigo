@@ -93,7 +93,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     surface.set_stringn(
         area.x,
         area.y,
-        format!("Cursor: {}", editor.cursor),
+        format!("Cursor: {}", editor.cursor()),
         usize::from(area.width),
         Style::default(),
     );
