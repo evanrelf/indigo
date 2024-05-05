@@ -90,10 +90,23 @@ fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
+    let char_index = editor.cursor();
+
+    let eof = char_index == editor.text().len_chars();
+
+    let slice = editor.text().slice(char_index..);
+
+    let status_bar = if let Some(grapheme) = slice.graphemes().next() {
+        let width = grapheme.width();
+        format!("char_index={char_index}, eof={eof}, grapheme=\"{grapheme}\", width={width}")
+    } else {
+        format!("char_index={char_index}, eof={eof}, grapheme=n/a, width=n/a")
+    };
+
     surface.set_stringn(
         area.x,
         area.y,
-        format!("Cursor: {}", editor.cursor()),
+        status_bar,
         usize::from(area.width),
         Style::default(),
     );
