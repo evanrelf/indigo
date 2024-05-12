@@ -9,8 +9,6 @@ pub struct Editor {
     cursor: usize,
     // Line number
     vertical_scroll: usize,
-    // Char offset
-    horizontal_scroll: usize,
 }
 
 impl Editor {
@@ -21,7 +19,6 @@ impl Editor {
             text: rope,
             cursor: 0,
             vertical_scroll: 0,
-            horizontal_scroll: 0,
         })
     }
 
@@ -40,11 +37,6 @@ impl Editor {
         self.vertical_scroll
     }
 
-    #[must_use]
-    pub fn horizontal_scroll(&self) -> usize {
-        self.horizontal_scroll
-    }
-
     pub fn move_left(&mut self) {
         if let Ok(cursor) = self.text.get_prev_grapheme_boundary(self.cursor) {
             self.cursor = cursor;
@@ -57,9 +49,8 @@ impl Editor {
         }
     }
 
-    pub fn scroll_to(&mut self, line: usize, char_offset: usize) {
+    pub fn scroll_to(&mut self, line: usize) {
         let last_line = self.text().len_lines_indigo().saturating_sub(1);
         self.vertical_scroll = min(line, last_line);
-        self.horizontal_scroll = char_offset;
     }
 }

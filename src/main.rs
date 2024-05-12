@@ -141,10 +141,6 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
             break 'line;
         }
 
-        let Some(line) = line.get_slice(editor.horizontal_scroll()..) else {
-            continue 'line;
-        };
-
         let mut x = area.x;
 
         'grapheme: for grapheme in line.graphemes() {
@@ -186,10 +182,6 @@ fn handle_event(
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::NONE, KeyCode::Char('h')) => actions::move_left(editor),
             (KeyModifiers::NONE, KeyCode::Char('l')) => actions::move_right(editor),
-            (KeyModifiers::NONE, KeyCode::Up) => actions::scroll_up(editor),
-            (KeyModifiers::NONE, KeyCode::Down) => actions::scroll_down(editor),
-            (KeyModifiers::NONE, KeyCode::Left) => actions::scroll_left(editor),
-            (KeyModifiers::NONE, KeyCode::Right) => actions::scroll_right(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
             (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
             _ => {}
