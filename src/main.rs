@@ -1,5 +1,6 @@
 mod terminal;
 
+use crate::terminal::TerminalGuard;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
@@ -28,7 +29,7 @@ fn main() -> anyhow::Result<()> {
             render(&editor, areas, surface);
         })?;
 
-        let quit = handle_event(&mut editor, areas, &event::read()?);
+        let quit = handle_event(&mut editor, &mut terminal, areas, &event::read()?)?;
 
         if quit {
             break;
@@ -172,7 +173,12 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
-fn handle_event(editor: &mut Editor, _areas: Areas, event: &Event) -> bool {
+fn handle_event(
+    editor: &mut Editor,
+    terminal: &mut TerminalGuard,
+    _areas: Areas,
+    event: &Event,
+) -> anyhow::Result<bool> {
     let mut quit = false;
 
     #[allow(clippy::single_match)]
@@ -184,6 +190,7 @@ fn handle_event(editor: &mut Editor, _areas: Areas, event: &Event) -> bool {
             (KeyModifiers::NONE, KeyCode::Down) => actions::scroll_down(editor),
             (KeyModifiers::NONE, KeyCode::Left) => actions::scroll_left(editor),
             (KeyModifiers::NONE, KeyCode::Right) => actions::scroll_right(editor),
+            (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
             (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
             _ => {}
         },
@@ -195,5 +202,5 @@ fn handle_event(editor: &mut Editor, _areas: Areas, event: &Event) -> bool {
         _ => {}
     }
 
-    quit
+    Ok(quit)
 }
