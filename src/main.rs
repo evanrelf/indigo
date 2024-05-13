@@ -98,10 +98,11 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let slice = editor.text().slice(char_index..);
 
     let status_bar = if let Some(grapheme) = slice.graphemes().next() {
+        let chars = grapheme.chars().count();
         let width = grapheme.width();
-        format!("char_index={char_index}, eof={eof}, grapheme=\"{grapheme}\", width={width}")
+        format!("char_index={char_index}, eof={eof}, grapheme=\"{grapheme}\", chars={chars}, width={width}")
     } else {
-        format!("char_index={char_index}, eof={eof}, grapheme=n/a, width=n/a")
+        format!("char_index={char_index}, eof={eof}, grapheme=n/a, chars=n/a, width=n/a")
     };
 
     surface.set_stringn(
