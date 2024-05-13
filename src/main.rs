@@ -91,7 +91,7 @@ fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let char_index = editor.cursor();
+    let char_index = editor.cursor().char_index();
 
     let eof = char_index == editor.text().len_chars();
 

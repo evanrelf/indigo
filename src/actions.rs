@@ -1,11 +1,11 @@
 use crate::Editor;
 
 pub fn move_left(editor: &mut Editor) {
-    editor.move_left();
+    editor.with_cursor(|cursor| cursor.move_left(1));
 }
 
 pub fn move_right(editor: &mut Editor) {
-    editor.move_right();
+    editor.with_cursor(|cursor| cursor.move_right(1));
 }
 
 pub fn scroll_up(editor: &mut Editor) {

@@ -1,12 +1,12 @@
-use crate::RopeExt as _;
+use crate::{Cursor, RopeExt as _};
 use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::{cmp::min, fs::File, io::BufReader};
 
 pub struct Editor {
     text: Rope,
-    // Char offset
-    cursor: usize,
+    // Char gap index
+    cursor_char_index: usize,
     // Line number
     vertical_scroll: usize,
 }
@@ -17,7 +17,7 @@ impl Editor {
         let rope = Rope::from_reader(BufReader::new(file))?;
         Ok(Self {
             text: rope,
-            cursor: 0,
+            cursor_char_index: 0,
             vertical_scroll: 0,
         })
     }
@@ -28,25 +28,20 @@ impl Editor {
     }
 
     #[must_use]
-    pub fn cursor(&self) -> usize {
-        self.cursor
+    pub fn cursor(&self) -> Cursor {
+        Cursor::from_char_index(&self.text, self.cursor_char_index).unwrap()
+    }
+
+    pub fn with_cursor<T>(&mut self, func: impl Fn(&mut Cursor) -> T) -> T {
+        let mut cursor = self.cursor();
+        let result = func(&mut cursor);
+        self.cursor_char_index = cursor.char_index();
+        result
     }
 
     #[must_use]
     pub fn vertical_scroll(&self) -> usize {
         self.vertical_scroll
-    }
-
-    pub fn move_left(&mut self) {
-        if let Ok(cursor) = self.text.get_prev_grapheme_boundary(self.cursor) {
-            self.cursor = cursor;
-        }
-    }
-
-    pub fn move_right(&mut self) {
-        if let Ok(cursor) = self.text.get_next_grapheme_boundary(self.cursor) {
-            self.cursor = cursor;
-        }
     }
 
     pub fn scroll_to(&mut self, line: usize) {
