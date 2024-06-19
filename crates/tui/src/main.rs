@@ -95,9 +95,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let eof = char_index == editor.text().len_chars();
 
-    let slice = editor.text().slice(char_index..);
-
-    let status_bar = if let Some(grapheme) = slice.graphemes().next() {
+    let status_bar = if let Some(grapheme) = editor.cursor().grapheme() {
         let chars = grapheme.chars().count();
         let width = grapheme.width();
         format!("char_index={char_index}, eof={eof}, grapheme=\"{grapheme}\", chars={chars}, width={width}")

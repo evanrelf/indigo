@@ -1,5 +1,5 @@
 use crate::RopeExt as _;
-use ropey::Rope;
+use ropey::{Rope, RopeSlice};
 
 #[derive(Clone, Copy, Default)]
 pub struct CursorState {
@@ -114,6 +114,28 @@ pub trait CursorExt {
         let (_rope, state) = self.cursor_parts();
 
         state.char_index
+    }
+
+    fn char(&self) -> Option<char> {
+        let (rope, state) = self.cursor_parts();
+
+        if state.char_index < rope.len_chars() {
+            Some(rope.char(state.char_index))
+        } else {
+            None
+        }
+    }
+
+    fn grapheme(&self) -> Option<RopeSlice> {
+        let (rope, state) = self.cursor_parts();
+
+        if state.char_index < rope.len_chars() {
+            let start = state.char_index;
+            let end = rope.next_grapheme_boundary(start);
+            Some(rope.slice(start..end))
+        } else {
+            None
+        }
     }
 
     fn move_left(&mut self, grapheme_distance: usize) -> bool {
@@ -273,5 +295,31 @@ mod tests {
         cursor.backspace(1);
         assert_eq!(cursor.rope.to_string(), "कि मपि   नम");
         assert_eq!(cursor.char_index(), 11);
+    }
+
+    #[test]
+    fn querying() {
+        let rope = Rope::from("कि मपि   नमस्ते🇯🇵x");
+        let mut cursor = Cursor::new(&rope);
+        assert_eq!(cursor.char(), Some('क'));
+        assert_eq!(
+            cursor.grapheme().map(|slice| slice.to_string()),
+            Some(String::from("कि"))
+        );
+        cursor.move_right(99);
+        assert_eq!(cursor.char(), None);
+        assert_eq!(cursor.grapheme(), None);
+        cursor.move_left(1);
+        assert_eq!(cursor.char(), Some('x'));
+        assert_eq!(
+            cursor.grapheme().map(|slice| slice.to_string()),
+            Some(String::from("x"))
+        );
+        cursor.move_left(1);
+        assert_eq!(cursor.char(), Some('🇯'));
+        assert_eq!(
+            cursor.grapheme().map(|slice| slice.to_string()),
+            Some(String::from("🇯🇵"))
+        );
     }
 }
