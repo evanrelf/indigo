@@ -4,7 +4,7 @@ mod graphemes_step;
 use crate::rope::graphemes_iter::RopeGraphemes;
 use ropey::{Rope, RopeSlice};
 use std::borrow::Cow;
-use unicode_width::UnicodeWidthStr as _;
+use unicode_width::UnicodeWidthStr;
 
 pub trait RopeExt {
     // `ropey` counts lines in a non-intuitive way, at least for my purposes. This method provides
@@ -14,11 +14,35 @@ pub trait RopeExt {
     // https://github.com/cessen/ropey/issues/60
     fn len_lines_indigo(&self) -> usize;
 
-    // TODO: Implement custom width to accomodate emoji with zero-width joiners. `unicode-width`
-    // doesn't support this at the moment: https://github.com/unicode-rs/unicode-width/issues/4.
-    //
-    // WezTerm dealt with this here: https://github.com/wez/wezterm/commit/1ab438c1e266ab24.
-    fn width(&self) -> usize;
+    fn width(&self) -> usize {
+        fn grapheme_width(slice: RopeSlice) -> usize {
+            // TODO: Implement custom width to accomodate emoji with zero-width joiners.
+            // `unicode-width` doesn't support this at the moment:
+            // https://github.com/unicode-rs/unicode-width/issues/4.
+            //
+            // WezTerm dealt with this here: https://github.com/wez/wezterm/commit/1ab438c1e266ab24.
+
+            // const EMOJI_MODIFIER_BASE: icu_properties::sets::CodePointSetDataBorrowed =
+            //     icu_properties::sets::emoji_modifier_base();
+
+            // const EMOJI_MODIFIER: icu_properties::sets::CodePointSetDataBorrowed =
+            //     icu_properties::sets::emoji_modifier();
+
+            let cow = Cow::<str>::from(slice);
+            let str = cow.as_ref();
+
+            // for char in str.chars() {
+            //     if EMOJI_MODIFIER_BASE.contains(char) || EMOJI_MODIFIER.contains(char) {
+            //         // panic!("grapheme: {}, char: {}", str, char);
+            //         return 2;
+            //     }
+            // }
+
+            UnicodeWidthStr::width(str)
+        }
+
+        self.graphemes().map(grapheme_width).sum()
+    }
 
     fn graphemes(&self) -> RopeGraphemes<'_>;
 
@@ -50,10 +74,6 @@ impl RopeExt for RopeSlice<'_> {
         self.len_lines() - if last_char == '\n' { 1 } else { 0 }
     }
 
-    fn width(&self) -> usize {
-        Cow::<str>::from(*self).width()
-    }
-
     fn graphemes(&self) -> RopeGraphemes<'_> {
         RopeGraphemes::new(self)
     }
@@ -78,10 +98,6 @@ impl RopeExt for Rope {
         }
         let last_char = self.char(self.len_chars() - 1);
         self.len_lines() - if last_char == '\n' { 1 } else { 0 }
-    }
-
-    fn width(&self) -> usize {
-        Cow::<str>::from(self).width()
     }
 
     fn graphemes(&self) -> RopeGraphemes<'_> {
