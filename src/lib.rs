@@ -3,4 +3,8 @@ mod cursor;
 mod editor;
 mod rope;
 
-pub use crate::{cursor::Cursor, editor::Editor, rope::RopeExt};
+pub use crate::{
+    cursor::{Cursor, CursorExt, CursorMut},
+    editor::Editor,
+    rope::RopeExt,
+};

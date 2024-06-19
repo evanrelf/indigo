@@ -1,10 +1,15 @@
 use crate::RopeExt as _;
 use ropey::Rope;
 
-pub struct Cursor<'a> {
-    rope: &'a Rope,
+#[derive(Default)]
+pub struct CursorState {
     // Char gap index
     char_index: usize,
+}
+
+pub struct Cursor<'a> {
+    rope: &'a Rope,
+    state: CursorState,
 }
 
 impl<'a> Cursor<'a> {
@@ -12,7 +17,7 @@ impl<'a> Cursor<'a> {
     pub fn new(rope: &'a Rope) -> Self {
         Self {
             rope,
-            char_index: 0,
+            state: CursorState::default(),
         }
     }
 
@@ -20,25 +25,62 @@ impl<'a> Cursor<'a> {
     pub fn from_char_index(rope: &'a Rope, char_index: usize) -> Option<Self> {
         // Gap at end of file counts as grapheme boundary
         if let Ok(true) = rope.try_is_grapheme_boundary(char_index) {
-            Some(Self { rope, char_index })
+            let state = CursorState { char_index };
+            Some(Self { rope, state })
         } else {
             None
         }
     }
+}
+
+pub struct CursorMut<'a> {
+    rope: &'a mut Rope,
+    state: CursorState,
+}
+
+impl<'a> CursorMut<'a> {
+    #[must_use]
+    pub fn new(rope: &'a mut Rope) -> Self {
+        Self {
+            rope,
+            state: CursorState::default(),
+        }
+    }
+
+    #[must_use]
+    pub fn from_char_index(rope: &'a mut Rope, char_index: usize) -> Option<Self> {
+        // Gap at end of file counts as grapheme boundary
+        if let Ok(true) = rope.try_is_grapheme_boundary(char_index) {
+            let state = CursorState { char_index };
+            Some(Self { rope, state })
+        } else {
+            None
+        }
+    }
+}
+
+pub trait CursorExt {
+    fn cursor_parts(&self) -> (&Rope, &CursorState);
+
+    fn cursor_parts_mut(&mut self) -> (&Rope, &mut CursorState);
 
     /// Char gap index
     #[must_use]
-    pub fn char_index(&self) -> usize {
-        self.char_index
+    fn char_index(&self) -> usize {
+        let (_rope, state) = self.cursor_parts();
+
+        state.char_index
     }
 
-    pub fn move_left(&mut self, grapheme_distance: usize) -> bool {
+    fn move_left(&mut self, grapheme_distance: usize) -> bool {
+        let (rope, state) = self.cursor_parts_mut();
+
         let mut moved = false;
 
         for _ in 1..=grapheme_distance {
-            match self.rope.get_prev_grapheme_boundary(self.char_index) {
-                Ok(char_index) if self.char_index != char_index => {
-                    self.char_index = char_index;
+            match rope.get_prev_grapheme_boundary(state.char_index) {
+                Ok(char_index) if state.char_index != char_index => {
+                    state.char_index = char_index;
                     moved = true;
                 }
                 _ => break,
@@ -48,13 +90,15 @@ impl<'a> Cursor<'a> {
         moved
     }
 
-    pub fn move_right(&mut self, grapheme_distance: usize) -> bool {
+    fn move_right(&mut self, grapheme_distance: usize) -> bool {
+        let (rope, state) = self.cursor_parts_mut();
+
         let mut moved = false;
 
         for _ in 1..=grapheme_distance {
-            match self.rope.get_next_grapheme_boundary(self.char_index) {
-                Ok(char_index) if self.char_index != char_index => {
-                    self.char_index = char_index;
+            match rope.get_next_grapheme_boundary(state.char_index) {
+                Ok(char_index) if state.char_index != char_index => {
+                    state.char_index = char_index;
                     moved = true;
                 }
                 _ => break,
@@ -62,6 +106,26 @@ impl<'a> Cursor<'a> {
         }
 
         moved
+    }
+}
+
+impl<'a> CursorExt for Cursor<'a> {
+    fn cursor_parts(&self) -> (&'a Rope, &CursorState) {
+        (self.rope, &self.state)
+    }
+
+    fn cursor_parts_mut(&mut self) -> (&'a Rope, &mut CursorState) {
+        (self.rope, &mut self.state)
+    }
+}
+
+impl<'a> CursorExt for CursorMut<'a> {
+    fn cursor_parts(&self) -> (&Rope, &CursorState) {
+        (self.rope, &self.state)
+    }
+
+    fn cursor_parts_mut(&mut self) -> (&Rope, &mut CursorState) {
+        (self.rope, &mut self.state)
     }
 }
 

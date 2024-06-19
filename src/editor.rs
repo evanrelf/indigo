@@ -1,4 +1,4 @@
-use crate::{Cursor, RopeExt as _};
+use crate::{Cursor, CursorExt as _, CursorMut, RopeExt as _};
 use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::{cmp::min, fs::File, io::BufReader};
@@ -32,8 +32,13 @@ impl Editor {
         Cursor::from_char_index(&self.text, self.cursor_char_index).unwrap()
     }
 
-    pub fn with_cursor<T>(&mut self, func: impl Fn(&mut Cursor) -> T) -> T {
-        let mut cursor = self.cursor();
+    #[must_use]
+    pub fn cursor_mut(&mut self) -> CursorMut {
+        CursorMut::from_char_index(&mut self.text, self.cursor_char_index).unwrap()
+    }
+
+    pub fn with_cursor<T>(&mut self, func: impl Fn(&mut CursorMut) -> T) -> T {
+        let mut cursor = self.cursor_mut();
         let result = func(&mut cursor);
         self.cursor_char_index = cursor.char_index();
         result

@@ -1,4 +1,4 @@
-use crate::Editor;
+use crate::{CursorExt as _, Editor};
 use ratatui::prelude::Rect;
 
 pub fn move_left(editor: &mut Editor) {
