@@ -7,6 +7,8 @@ anyhow = "1.0.82"
 camino = "1.1.6"
 clap = { version = "4.5.4", features = ["derive"] }
 crossterm = "0.27.0"
+indigo-core = { path = "crates/core/" }
+indigo-tui = { path = "crates/tui/" }
 ratatui = "0.26.2"
 ropey = "1.6.1"
 unicode-segmentation = "1.11.0"

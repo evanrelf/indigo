@@ -231,12 +231,21 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "camino",
- "clap",
- "crossterm",
- "ratatui",
  "ropey",
  "unicode-segmentation",
  "unicode-width",
+]
+
+[[package]]
+name = "indigo-tui"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "camino",
+ "clap",
+ "crossterm",
+ "indigo-core",
+ "ratatui",
 ]
 
 [[package]]

@@ -186,10 +186,10 @@ fn handle_event(
             (KeyModifiers::NONE, KeyCode::Char('h')) => actions::move_left(editor),
             (KeyModifiers::NONE, KeyCode::Char('l')) => actions::move_right(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
-                actions::scroll_half_page_up(editor, areas.text);
+                actions::scroll_half_page_up(editor, usize::from(areas.text.height));
             }
             (KeyModifiers::CONTROL, KeyCode::Char('d')) => {
-                actions::scroll_half_page_down(editor, areas.text);
+                actions::scroll_half_page_down(editor, usize::from(areas.text.height));
             }
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
             (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
