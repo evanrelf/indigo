@@ -173,7 +173,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 fn handle_event(
     editor: &mut Editor,
     terminal: &mut TerminalGuard,
-    _areas: Areas,
+    areas: Areas,
     event: &Event,
 ) -> anyhow::Result<bool> {
     let mut quit = false;
@@ -183,6 +183,12 @@ fn handle_event(
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::NONE, KeyCode::Char('h')) => actions::move_left(editor),
             (KeyModifiers::NONE, KeyCode::Char('l')) => actions::move_right(editor),
+            (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
+                actions::scroll_half_page_up(editor, areas.text);
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('d')) => {
+                actions::scroll_half_page_down(editor, areas.text);
+            }
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
             (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
             _ => {}
