@@ -1,9 +1,8 @@
-[package]
-name = "indigo"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+resolver = "2"
+members = ["crates/*"]
 
-[dependencies]
+[workspace.dependencies]
 anyhow = "1.0.82"
 camino = "1.1.6"
 clap = { version = "4.5.4", features = ["derive"] }
@@ -13,7 +12,7 @@ ropey = "1.6.1"
 unicode-segmentation = "1.11.0"
 unicode-width = "0.1.12"
 
-[lints]
+[workspace.lints]
 clippy.bool_to_int_with_if = "allow"
 clippy.missing_errors_doc = "allow"
 clippy.missing_panics_doc = "allow"
