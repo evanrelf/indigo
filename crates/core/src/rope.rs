@@ -14,6 +14,10 @@ pub trait RopeExt {
     // https://github.com/cessen/ropey/issues/60
     fn len_lines_indigo(&self) -> usize;
 
+    // TODO: Implement custom width to accomodate emoji with zero-width joiners. `unicode-width`
+    // doesn't support this at the moment: https://github.com/unicode-rs/unicode-width/issues/4.
+    //
+    // WezTerm dealt with this here: https://github.com/wez/wezterm/commit/1ab438c1e266ab24.
     fn width(&self) -> usize;
 
     fn graphemes(&self) -> RopeGraphemes<'_>;
