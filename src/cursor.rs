@@ -1,5 +1,6 @@
 use crate::RopeExt as _;
 use ropey::Rope;
+use std::cmp::min;
 
 #[derive(Default)]
 pub struct CursorState {
@@ -56,6 +57,29 @@ impl<'a> CursorMut<'a> {
         } else {
             None
         }
+    }
+
+    pub fn insert_char(&mut self, char: char) {
+        self.rope.insert_char(self.state.char_index, char);
+        self.state.char_index += 1;
+    }
+
+    pub fn insert(&mut self, string: &str) {
+        self.rope.insert(self.state.char_index, string);
+        self.state.char_index += string.chars().count();
+    }
+
+    pub fn backspace(&mut self, count: usize) {
+        let start = self.state.char_index.saturating_sub(count);
+        let end = self.state.char_index;
+        self.rope.remove(start..end);
+        self.state.char_index -= end - start;
+    }
+
+    pub fn delete(&mut self, count: usize) {
+        let start = self.state.char_index;
+        let end = min(start + count, self.rope.len_chars());
+        self.rope.remove(start..end);
     }
 }
 
@@ -168,5 +192,57 @@ mod tests {
         let moved = cursor.move_left(99);
         assert_eq!(cursor.char_index(), 0);
         assert!(moved);
+    }
+
+    #[test]
+    fn insertion() {
+        let mut rope = Rope::new();
+        let mut cursor = CursorMut::new(&mut rope);
+        assert_eq!(cursor.cursor_parts().0.chars().count(), 0);
+        assert_eq!(cursor.cursor_parts().0.chars().count(), cursor.char_index());
+
+        cursor.insert_char('x');
+        assert_eq!(cursor.cursor_parts().0.chars().count(), 1);
+        assert_eq!(cursor.cursor_parts().0.chars().count(), cursor.char_index());
+
+        cursor.insert("yz");
+        assert_eq!(cursor.cursor_parts().0.chars().count(), 3);
+        assert_eq!(cursor.cursor_parts().0.chars().count(), cursor.char_index());
+
+        cursor.move_left(99);
+
+        cursor.insert("");
+        assert_eq!(cursor.cursor_parts().0.chars().count(), 3);
+        assert_eq!(cursor.char_index(), 0);
+
+        cursor.insert("🇯🇵");
+        assert_eq!(cursor.cursor_parts().0.chars().count(), 5);
+        assert_eq!(cursor.char_index(), 2);
+
+        assert_eq!(cursor.cursor_parts().0.to_string(), "🇯🇵xyz");
+    }
+
+    #[test]
+    fn deletion() {
+        let mut rope = Rope::new();
+        let mut cursor = CursorMut::new(&mut rope);
+        cursor.backspace(99);
+        cursor.delete(99);
+
+        cursor.insert("Hello, world!");
+        assert_eq!(cursor.char_index(), 13);
+
+        cursor.backspace(1);
+        assert_eq!(cursor.cursor_parts().0.to_string(), "Hello, world");
+        assert_eq!(cursor.char_index(), 12);
+
+        cursor.move_left(7);
+        cursor.delete(99);
+        assert_eq!(cursor.cursor_parts().0.to_string(), "Hello");
+        assert_eq!(cursor.char_index(), 5);
+
+        cursor.backspace(99);
+        assert_eq!(cursor.cursor_parts().0.to_string(), "");
+        assert_eq!(cursor.char_index(), 0);
     }
 }
