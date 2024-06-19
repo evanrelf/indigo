@@ -181,6 +181,8 @@ fn handle_event(
     #[allow(clippy::single_match)]
     match event {
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+            (KeyModifiers::NONE, KeyCode::Backspace) => actions::backspace(editor),
+            (KeyModifiers::NONE, KeyCode::Char('d')) => actions::delete(editor),
             (KeyModifiers::NONE, KeyCode::Char('h')) => actions::move_left(editor),
             (KeyModifiers::NONE, KeyCode::Char('l')) => actions::move_right(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('u')) => {

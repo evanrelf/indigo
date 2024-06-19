@@ -30,3 +30,11 @@ pub fn scroll_half_page_down(editor: &mut Editor, area: Rect) {
     let line = editor.vertical_scroll() + usize::from(area.height / 2);
     editor.scroll_to(line);
 }
+
+pub fn backspace(editor: &mut Editor) {
+    editor.with_cursor(|cursor| cursor.backspace(1));
+}
+
+pub fn delete(editor: &mut Editor) {
+    editor.with_cursor(|cursor| cursor.delete(1));
+}
