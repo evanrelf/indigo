@@ -31,12 +31,6 @@ pub trait RopeExt {
             let cow = Cow::<str>::from(slice);
             let str = cow.as_ref();
 
-            // Temporary workaround for drawing bug caused by this change:
-            // https://github.com/unicode-rs/unicode-width/pull/45
-            if str == "\n" {
-                return 0;
-            }
-
             // for char in str.chars() {
             //     if EMOJI_MODIFIER_BASE.contains(char) || EMOJI_MODIFIER.contains(char) {
             //         // panic!("grapheme: {}, char: {}", str, char);

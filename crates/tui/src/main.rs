@@ -147,11 +147,21 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
                 continue 'line;
             }
 
-            if let Some('\t') = grapheme.get_char(0) {
-                surface.set_stringn(x, y, "        ", 8, Style::default());
-                x += 8;
-                continue 'grapheme;
-            };
+            match grapheme.get_char(0) {
+                Some('\t') => {
+                    surface.set_stringn(x, y, "        ", 8, Style::default());
+                    x += 8;
+                    continue 'grapheme;
+                }
+                // Rendering got messed up because somebody changed the width of `\n` from 0 to 1:
+                // https://github.com/unicode-rs/unicode-width/pull/45
+                //
+                // Because we're rendering line by line, and `\n` indicates the line has ended, we
+                // can `continue` to the next line immediately. Otherwise we'd want to render this
+                // as a space (` `) or an indicator character something (like `:set list` in Vim).
+                Some('\n') => continue 'grapheme,
+                _ => {}
+            }
 
             let width = grapheme.width();
 
