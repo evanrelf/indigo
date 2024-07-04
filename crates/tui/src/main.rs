@@ -5,7 +5,10 @@ use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
 use indigo_core::{actions, CursorExt as _, Editor, RopeExt as _};
-use ratatui::prelude::{Buffer as Surface, Constraint, Layout, Rect, Style};
+use ratatui::{
+    prelude::{Buffer as Surface, Constraint, Layout, Rect, Style},
+    style::Color,
+};
 use std::{borrow::Cow, cmp::max};
 
 #[derive(Debug, clap::Parser)]
@@ -88,6 +91,7 @@ fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
     render_status_bar(editor, areas.status_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
     render_text(editor, areas.text, surface);
+    render_cursor(editor, areas.text, surface);
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
@@ -176,6 +180,24 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
             x += u16::try_from(width).unwrap();
         }
     }
+}
+
+fn render_cursor(editor: &Editor, area: Rect, surface: &mut Surface) {
+    let line_index = editor.text().char_to_line(editor.cursor().char_index());
+
+    if line_index < editor.vertical_scroll() {
+        return;
+    }
+
+    let y = area.top() + u16::try_from(line_index - editor.vertical_scroll()).unwrap();
+
+    if y >= area.bottom() {
+        return;
+    }
+
+    let x = area.left();
+
+    surface.get_mut(x, y).set_bg(Color::Rgb(0xff, 0xd3, 0x3d));
 }
 
 fn handle_event(
