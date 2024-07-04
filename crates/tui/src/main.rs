@@ -4,7 +4,7 @@ use crate::terminal::TerminalGuard;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
-use indigo_core::{actions, CursorExt as _, Editor, RopeExt as _};
+use indigo_core::{actions, Cursor, CursorExt as _, Editor, RopeExt as _};
 use ratatui::{
     prelude::{Buffer as Surface, Constraint, Layout, Rect, Style},
     style::Color,
@@ -163,7 +163,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
                 // Because we're rendering line by line, and `\n` indicates the line has ended, we
                 // can `continue` to the next line immediately. Otherwise we'd want to render this
                 // as a space (` `) or an indicator character something (like `:set list` in Vim).
-                Some('\n') => continue 'grapheme,
+                Some('\n') => continue 'line,
                 _ => {}
             }
 
@@ -183,7 +183,11 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_cursor(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let line_index = editor.text().char_to_line(editor.cursor().char_index());
+    let char_index = editor.cursor().char_index();
+
+    let grapheme_index = editor.cursor().grapheme_index();
+
+    let line_index = editor.text().char_to_line(char_index);
 
     if line_index < editor.vertical_scroll() {
         return;
@@ -195,9 +199,40 @@ fn render_cursor(editor: &Editor, area: Rect, surface: &mut Surface) {
         return;
     }
 
-    let x = area.left();
+    let line = editor.text().line(line_index);
 
-    surface.get_mut(x, y).set_bg(Color::Rgb(0xff, 0xd3, 0x3d));
+    let line_char_index = editor.text().line_to_char(line_index);
+
+    let mut g = Cursor::from_char_index(editor.text(), line_char_index)
+        .unwrap()
+        .grapheme_index();
+    let mut x = usize::from(area.left());
+    let mut width = 1;
+
+    for grapheme in line.graphemes() {
+        width = if let Some('\t') = grapheme.get_char(0) {
+            8
+        } else {
+            grapheme.width()
+        };
+
+        if g >= grapheme_index {
+            break;
+        }
+
+        if x >= usize::from(area.width) {
+            return;
+        }
+
+        x += width;
+        g += 1;
+    }
+
+    let x = u16::try_from(x).unwrap();
+
+    for x in x..x + u16::try_from(width).unwrap() {
+        surface.get_mut(x, y).set_bg(Color::Rgb(0xff, 0xd3, 0x3d));
+    }
 }
 
 fn handle_event(
