@@ -5,6 +5,8 @@ use ropey::{Rope, RopeSlice};
 pub struct CursorState {
     // Char gap index
     char_index: usize,
+    // Grapheme gap index
+    grapheme_index: usize,
 }
 
 #[derive(Clone)]
@@ -26,7 +28,11 @@ impl<'a> Cursor<'a> {
     pub fn from_char_index(rope: &'a Rope, char_index: usize) -> Option<Self> {
         // Gap at end of file counts as grapheme boundary
         if let Ok(true) = rope.try_is_grapheme_boundary(char_index) {
-            let state = CursorState { char_index };
+            let grapheme_index = rope.slice(..char_index).graphemes().count();
+            let state = CursorState {
+                char_index,
+                grapheme_index,
+            };
             Some(Self { rope, state })
         } else {
             None
@@ -52,7 +58,11 @@ impl<'a> CursorMut<'a> {
     pub fn from_char_index(rope: &'a mut Rope, char_index: usize) -> Option<Self> {
         // Gap at end of file counts as grapheme boundary
         if let Ok(true) = rope.try_is_grapheme_boundary(char_index) {
-            let state = CursorState { char_index };
+            let grapheme_index = rope.slice(..char_index).graphemes().count();
+            let state = CursorState {
+                char_index,
+                grapheme_index,
+            };
             Some(Self { rope, state })
         } else {
             None
@@ -78,11 +88,13 @@ impl<'a> CursorMut<'a> {
     pub fn insert_char(&mut self, char: char) {
         self.rope.insert_char(self.state.char_index, char);
         self.state.char_index += 1;
+        self.state.grapheme_index += 1;
     }
 
     pub fn insert(&mut self, string: &str) {
         self.rope.insert(self.state.char_index, string);
         self.state.char_index += string.chars().count();
+        self.state.grapheme_index += Rope::from(string).graphemes().count();
     }
 
     pub fn backspace(&mut self, count: usize) {
@@ -92,6 +104,7 @@ impl<'a> CursorMut<'a> {
         let end = self.state.char_index;
         self.rope.remove(start..end);
         self.state.char_index = start;
+        self.state.grapheme_index = self.state.grapheme_index.saturating_sub(count);
     }
 
     pub fn delete(&mut self, count: usize) {
@@ -116,6 +129,14 @@ pub trait CursorExt {
         state.char_index
     }
 
+    /// Grapheme gap index
+    #[must_use]
+    fn grapheme_index(&self) -> usize {
+        let (_rope, state) = self.cursor_parts();
+
+        state.grapheme_index
+    }
+
     fn char(&self) -> Option<char> {
         let (rope, state) = self.cursor_parts();
 
@@ -138,15 +159,16 @@ pub trait CursorExt {
         }
     }
 
-    fn move_left(&mut self, grapheme_distance: usize) -> bool {
+    fn move_left(&mut self, distance: usize) -> bool {
         let (rope, state) = self.cursor_parts_mut();
 
         let mut moved = false;
 
-        for _ in 1..=grapheme_distance {
+        for _ in 1..=distance {
             match rope.get_prev_grapheme_boundary(state.char_index) {
                 Ok(char_index) if state.char_index != char_index => {
                     state.char_index = char_index;
+                    state.grapheme_index -= 1;
                     moved = true;
                 }
                 _ => break,
@@ -156,15 +178,16 @@ pub trait CursorExt {
         moved
     }
 
-    fn move_right(&mut self, grapheme_distance: usize) -> bool {
+    fn move_right(&mut self, distance: usize) -> bool {
         let (rope, state) = self.cursor_parts_mut();
 
         let mut moved = false;
 
-        for _ in 1..=grapheme_distance {
+        for _ in 1..=distance {
             match rope.get_next_grapheme_boundary(state.char_index) {
                 Ok(char_index) if state.char_index != char_index => {
                     state.char_index = char_index;
+                    state.grapheme_index += 1;
                     moved = true;
                 }
                 _ => break,
@@ -306,20 +329,28 @@ mod tests {
             cursor.grapheme().map(|slice| slice.to_string()),
             Some(String::from("कि"))
         );
+        assert_eq!(cursor.char_index(), 0);
+        assert_eq!(cursor.grapheme_index(), 0);
         cursor.move_right(99);
         assert_eq!(cursor.char(), None);
         assert_eq!(cursor.grapheme(), None);
+        assert_eq!(cursor.char_index(), 18);
+        assert_eq!(cursor.grapheme_index(), 13);
         cursor.move_left(1);
         assert_eq!(cursor.char(), Some('x'));
         assert_eq!(
             cursor.grapheme().map(|slice| slice.to_string()),
             Some(String::from("x"))
         );
+        assert_eq!(cursor.char_index(), 17);
+        assert_eq!(cursor.grapheme_index(), 12);
         cursor.move_left(1);
         assert_eq!(cursor.char(), Some('🇯'));
         assert_eq!(
             cursor.grapheme().map(|slice| slice.to_string()),
             Some(String::from("🇯🇵"))
         );
+        assert_eq!(cursor.char_index(), 15);
+        assert_eq!(cursor.grapheme_index(), 11);
     }
 }
