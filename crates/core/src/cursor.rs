@@ -28,7 +28,7 @@ impl<'a> Cursor<'a> {
     pub fn from_char_index(rope: &'a Rope, char_index: usize) -> Option<Self> {
         // Gap at end of file counts as grapheme boundary
         if let Ok(true) = rope.try_is_grapheme_boundary(char_index) {
-            let grapheme_index = rope.slice(..char_index).graphemes().count();
+            let grapheme_index = char_to_grapheme(rope, char_index);
             let state = CursorState {
                 char_index,
                 grapheme_index,
@@ -58,7 +58,7 @@ impl<'a> CursorMut<'a> {
     pub fn from_char_index(rope: &'a mut Rope, char_index: usize) -> Option<Self> {
         // Gap at end of file counts as grapheme boundary
         if let Ok(true) = rope.try_is_grapheme_boundary(char_index) {
-            let grapheme_index = rope.slice(..char_index).graphemes().count();
+            let grapheme_index = char_to_grapheme(rope, char_index);
             let state = CursorState {
                 char_index,
                 grapheme_index,
@@ -89,12 +89,14 @@ impl<'a> CursorMut<'a> {
         self.rope.insert_char(self.state.char_index, char);
         self.state.char_index += 1;
         self.state.grapheme_index += 1;
+        self.assert_invariants();
     }
 
     pub fn insert(&mut self, string: &str) {
         self.rope.insert(self.state.char_index, string);
         self.state.char_index += string.chars().count();
         self.state.grapheme_index += Rope::from(string).graphemes().count();
+        self.assert_invariants();
     }
 
     pub fn backspace(&mut self, count: usize) {
@@ -105,6 +107,7 @@ impl<'a> CursorMut<'a> {
         self.rope.remove(start..end);
         self.state.char_index = start;
         self.state.grapheme_index = self.state.grapheme_index.saturating_sub(count);
+        self.assert_invariants();
     }
 
     pub fn delete(&mut self, count: usize) {
@@ -113,6 +116,7 @@ impl<'a> CursorMut<'a> {
         end_cursor.move_right(count);
         let end = end_cursor.state.char_index;
         self.rope.remove(start..end);
+        self.assert_invariants();
     }
 }
 
@@ -175,6 +179,8 @@ pub trait CursorExt {
             }
         }
 
+        self.assert_invariants();
+
         moved
     }
 
@@ -194,7 +200,22 @@ pub trait CursorExt {
             }
         }
 
+        self.assert_invariants();
+
         moved
+    }
+
+    fn assert_invariants(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
+        let (rope, state) = self.cursor_parts();
+
+        assert_eq!(
+            state.grapheme_index,
+            char_to_grapheme(rope, state.char_index)
+        );
     }
 }
 
@@ -216,6 +237,10 @@ impl<'a> CursorExt for CursorMut<'a> {
     fn cursor_parts_mut(&mut self) -> (&Rope, &mut CursorState) {
         (self.rope, &mut self.state)
     }
+}
+
+fn char_to_grapheme(rope: &Rope, char_index: usize) -> usize {
+    rope.slice(..char_index).graphemes().count()
 }
 
 #[cfg(test)]
