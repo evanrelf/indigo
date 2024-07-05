@@ -9,7 +9,7 @@ pub struct CursorState {
     grapheme_index: usize,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Cursor<'a> {
     rope: &'a Rope,
     state: CursorState,
