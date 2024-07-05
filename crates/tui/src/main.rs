@@ -102,7 +102,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let status_bar = if let Some(grapheme) = editor.cursor().grapheme() {
         let chars = grapheme.chars().collect::<Vec<_>>();
         let display_width = grapheme.width();
-        format!("char_index={char_index}, eof={eof}, grapheme=\"{grapheme}\", chars={chars:?}, display_width={display_width}")
+        format!("char_index={char_index}, eof={eof}, grapheme=\"{grapheme:?}\", chars={chars:?}, display_width={display_width}")
     } else {
         format!("char_index={char_index}, eof={eof}, grapheme=n/a, chars=n/a, display_width=n/a")
     };
