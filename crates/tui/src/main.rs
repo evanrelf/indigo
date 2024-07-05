@@ -89,6 +89,7 @@ impl Areas {
 
 fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
     render_line_numbers(editor, areas.line_numbers, surface);
+    render_tildes(editor, areas.line_numbers, surface);
     render_text(editor, areas.text, surface);
     render_cursor(editor, areas.text, surface);
     render_status_bar(editor, areas.status_bar, surface);
@@ -102,15 +103,31 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
     for y in area.top()..area.bottom() {
         let line_number = usize::from(y - area.top()) + editor.vertical_scroll() + 1;
 
-        if line_number <= total_lines {
-            surface.set_stringn(
-                area.x,
-                y,
-                format!("{line_number:>number_width$}│"),
-                number_width + 1,
-                Style::default(),
-            );
+        if line_number > total_lines {
+            break;
         }
+
+        surface.set_stringn(
+            area.x,
+            y,
+            format!("{line_number:>number_width$}│"),
+            number_width + 1,
+            Style::default(),
+        );
+    }
+}
+
+fn render_tildes(editor: &Editor, area: Rect, surface: &mut Surface) {
+    let total_lines = editor.text().len_lines_indigo();
+
+    for y in area.top()..area.bottom() {
+        let line_number = usize::from(y - area.top()) + editor.vertical_scroll() + 1;
+
+        if line_number <= total_lines {
+            continue;
+        }
+
+        surface.get_mut(area.x, y).set_char('~');
     }
 }
 
