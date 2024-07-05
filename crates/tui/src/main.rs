@@ -52,14 +52,14 @@ struct Areas {
 impl Areas {
     fn new(editor: &Editor, area: Rect) -> Self {
         let areas = Layout::vertical([
-            // status_bar
-            Constraint::Length(1),
             // line_numbers + text
             Constraint::Fill(1),
+            // status_bar
+            Constraint::Length(1),
         ])
         .split(area);
 
-        let status_bar = areas[0];
+        let status_bar = areas[1];
 
         let line_numbers_width = {
             let n = editor.text().len_lines_indigo();
@@ -73,7 +73,7 @@ impl Areas {
             // text
             Constraint::Fill(1),
         ])
-        .split(areas[1]);
+        .split(areas[0]);
 
         let line_numbers = areas[0];
 
@@ -88,32 +88,10 @@ impl Areas {
 }
 
 fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
-    render_status_bar(editor, areas.status_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
     render_text(editor, areas.text, surface);
     render_cursor(editor, areas.text, surface);
-}
-
-fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let char_index = editor.cursor().char_index();
-
-    let eof = char_index == editor.text().len_chars();
-
-    let status_bar = if let Some(grapheme) = editor.cursor().grapheme() {
-        let chars = grapheme.chars().collect::<Vec<_>>();
-        let display_width = grapheme.width();
-        format!("char_index={char_index}, eof={eof}, grapheme=\"{grapheme:?}\", chars={chars:?}, display_width={display_width}")
-    } else {
-        format!("char_index={char_index}, eof={eof}, grapheme=n/a, chars=n/a, display_width=n/a")
-    };
-
-    surface.set_stringn(
-        area.x,
-        area.y,
-        status_bar,
-        usize::from(area.width),
-        Style::default(),
-    );
+    render_status_bar(editor, areas.status_bar, surface);
 }
 
 fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
@@ -122,7 +100,7 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
     let number_width = usize::from(area.width) - 1;
 
     for y in area.top()..area.bottom() {
-        let line_number = usize::from(y) + editor.vertical_scroll();
+        let line_number = usize::from(y - area.top()) + editor.vertical_scroll() + 1;
 
         if line_number <= total_lines {
             surface.set_stringn(
@@ -231,6 +209,28 @@ fn render_cursor(editor: &Editor, area: Rect, surface: &mut Surface) {
     for x in x..x + u16::try_from(width).unwrap() {
         surface.get_mut(x, y).set_bg(Color::Rgb(0xff, 0xd3, 0x3d));
     }
+}
+
+fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
+    let char_index = editor.cursor().char_index();
+
+    let eof = char_index == editor.text().len_chars();
+
+    let status_bar = if let Some(grapheme) = editor.cursor().grapheme() {
+        let chars = grapheme.chars().collect::<Vec<_>>();
+        let display_width = grapheme.width();
+        format!("char_index={char_index}, eof={eof}, grapheme=\"{grapheme:?}\", chars={chars:?}, display_width={display_width}")
+    } else {
+        format!("char_index={char_index}, eof={eof}, grapheme=n/a, chars=n/a, display_width=n/a")
+    };
+
+    surface.set_stringn(
+        area.x,
+        area.y,
+        status_bar,
+        usize::from(area.width),
+        Style::default(),
+    );
 }
 
 fn handle_event(
