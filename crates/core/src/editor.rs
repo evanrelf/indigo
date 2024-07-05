@@ -29,12 +29,22 @@ impl Editor {
 
     #[must_use]
     pub fn cursor(&self) -> Cursor {
-        Cursor::from_char_index(&self.text, self.cursor_char_index).unwrap()
+        self.cursor_at(self.cursor_char_index).unwrap()
+    }
+
+    #[must_use]
+    pub fn cursor_at(&self, char_index: usize) -> Option<Cursor> {
+        Cursor::from_char_index(&self.text, char_index)
     }
 
     #[must_use]
     pub fn cursor_mut(&mut self) -> CursorMut {
-        CursorMut::from_char_index(&mut self.text, self.cursor_char_index).unwrap()
+        self.cursor_mut_at(self.cursor_char_index).unwrap()
+    }
+
+    #[must_use]
+    pub fn cursor_mut_at(&mut self, char_index: usize) -> Option<CursorMut> {
+        CursorMut::from_char_index(&mut self.text, char_index)
     }
 
     pub fn with_cursor<T>(&mut self, func: impl Fn(&mut CursorMut) -> T) -> T {
