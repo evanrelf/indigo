@@ -15,20 +15,10 @@ pub struct Range<'a> {
 
 impl<'a> Range<'a> {
     #[must_use]
-    pub fn anchor(&self) -> Cursor {
-        let Self { rope, state } = self;
-        Cursor {
+    pub fn new(rope: &'a Rope) -> Self {
+        Self {
             rope,
-            state: state.anchor,
-        }
-    }
-
-    #[must_use]
-    pub fn head(&self) -> Cursor {
-        let Self { rope, state } = self;
-        Cursor {
-            rope,
-            state: state.head,
+            state: RangeState::default(),
         }
     }
 }
@@ -39,6 +29,14 @@ pub struct RangeMut<'a> {
 }
 
 impl<'a> RangeMut<'a> {
+    #[must_use]
+    pub fn new(rope: &'a mut Rope) -> Self {
+        Self {
+            rope,
+            state: RangeState::default(),
+        }
+    }
+
     #[must_use]
     pub fn downgrade(self) -> Range<'a> {
         Range {

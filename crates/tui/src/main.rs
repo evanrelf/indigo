@@ -4,7 +4,7 @@ use crate::terminal::TerminalGuard;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
-use indigo_core::{actions, CursorExt as _, Editor, RopeExt as _};
+use indigo_core::{actions, CursorExt as _, Editor, RangeExt as _, RopeExt as _};
 use ratatui::{
     prelude::{Buffer as Surface, Constraint, Layout, Rect, Style},
     style::Color,
