@@ -4,7 +4,7 @@ use crate::terminal::TerminalGuard;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
-use indigo_core::{actions, CursorExt as _, Editor, RopeExt as _};
+use indigo_core::{actions, CursorExt as _, Editor, RangeExt as _, RopeExt as _};
 use ratatui::{
     prelude::{Buffer as Surface, Constraint, Layout, Rect, Style},
     style::Color,
@@ -91,7 +91,7 @@ fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
     render_line_numbers(editor, areas.line_numbers, surface);
     render_tildes(editor, areas.line_numbers, surface);
     render_text(editor, areas.text, surface);
-    render_cursor(editor, areas.text, surface);
+    render_range(editor, areas.text, surface);
     render_status_bar(editor, areas.status_bar, surface);
 }
 
@@ -177,61 +177,67 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
-fn render_cursor(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let cursor = editor.range().into_head();
+fn render_range(editor: &Editor, area: Rect, surface: &mut Surface) {
+    let range = editor.range();
+    let anchor = range.anchor();
+    let head = range.head();
 
-    let char_index = cursor.char_index();
+    for cursor in [anchor, head] {
+        let char_index = cursor.char_index();
 
-    let grapheme_index = cursor.grapheme_index();
+        let grapheme_index = cursor.grapheme_index();
 
-    let line_index = editor.text().char_to_line(char_index);
+        let line_index = editor.text().char_to_line(char_index);
 
-    if line_index < editor.vertical_scroll() {
-        return;
-    }
-
-    let y = area.top() + u16::try_from(line_index - editor.vertical_scroll()).unwrap();
-
-    if y >= area.bottom() {
-        return;
-    }
-
-    let line = editor.text().line(line_index);
-
-    let line_char_index = editor.text().line_to_char(line_index);
-
-    let mut g = editor.cursor_at(line_char_index).unwrap().grapheme_index();
-    let mut x = usize::from(area.left());
-    let mut width = 1;
-
-    for grapheme in line.graphemes() {
-        width = if let Some('\t') = grapheme.get_char(0) {
-            8
-        } else {
-            grapheme.width()
-        };
-
-        if g >= grapheme_index {
-            break;
-        }
-
-        if x >= usize::from(area.width) {
+        if line_index < editor.vertical_scroll() {
             return;
         }
 
-        x += width;
-        g += 1;
-    }
+        let y = area.top() + u16::try_from(line_index - editor.vertical_scroll()).unwrap();
 
-    let x = u16::try_from(x).unwrap();
+        if y >= area.bottom() {
+            return;
+        }
 
-    for x in x..x + u16::try_from(width).unwrap() {
-        surface.get_mut(x, y).set_bg(Color::Rgb(0xff, 0xd3, 0x3d));
+        let line = editor.text().line(line_index);
+
+        let line_char_index = editor.text().line_to_char(line_index);
+
+        let mut g = editor.cursor_at(line_char_index).unwrap().grapheme_index();
+        let mut x = usize::from(area.left());
+        let mut width = 1;
+
+        for grapheme in line.graphemes() {
+            width = if let Some('\t') = grapheme.get_char(0) {
+                8
+            } else {
+                grapheme.width()
+            };
+
+            if g >= grapheme_index {
+                break;
+            }
+
+            if x >= usize::from(area.width) {
+                return;
+            }
+
+            x += width;
+            g += 1;
+        }
+
+        let x = u16::try_from(x).unwrap();
+
+        for x in x..x + u16::try_from(width).unwrap() {
+            surface.get_mut(x, y).set_bg(Color::Rgb(0xff, 0xd3, 0x3d));
+        }
     }
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let cursor = editor.range().into_head();
+    let range = editor.range();
+
+    let cursor = range.head();
 
     let char_index = cursor.char_index();
 

@@ -36,38 +36,6 @@ impl<'a> Range<'a> {
             },
         }
     }
-
-    #[must_use]
-    pub fn into_cursors(self) -> (Cursor<'a>, Cursor<'a>) {
-        let Self { rope, state } = self;
-        let anchor = Cursor {
-            rope,
-            state: state.anchor,
-        };
-        let head = Cursor {
-            rope,
-            state: state.head,
-        };
-        (anchor, head)
-    }
-
-    #[must_use]
-    pub fn into_anchor(self) -> Cursor<'a> {
-        let Self { rope, state } = self;
-        Cursor {
-            rope,
-            state: state.anchor,
-        }
-    }
-
-    #[must_use]
-    pub fn into_head(self) -> Cursor<'a> {
-        let Self { rope, state } = self;
-        Cursor {
-            rope,
-            state: state.head,
-        }
-    }
 }
 
 pub struct RangeMut<'a> {
@@ -113,21 +81,27 @@ impl<'a> RangeMut<'a> {
     }
 
     #[must_use]
-    pub fn into_anchor(self) -> CursorMut<'a> {
-        let Self { rope, state } = self;
+    pub fn anchor_mut(&mut self) -> CursorMut {
         CursorMut {
-            rope,
-            state: state.anchor,
+            rope: self.rope,
+            state: self.state.anchor,
         }
     }
 
     #[must_use]
-    pub fn into_head(self) -> CursorMut<'a> {
-        let Self { rope, state } = self;
+    pub fn head_mut(&mut self) -> CursorMut {
         CursorMut {
-            rope,
-            state: state.head,
+            rope: self.rope,
+            state: self.state.head,
         }
+    }
+
+    pub fn with_anchor<T>(&mut self, func: impl Fn(&mut CursorMut) -> T) -> T {
+        todo!()
+    }
+
+    pub fn with_head<T>(&mut self, func: impl Fn(&mut CursorMut) -> T) -> T {
+        todo!()
     }
 
     pub fn insert_char(&mut self, char: char) {
@@ -151,6 +125,24 @@ pub trait RangeExt {
     fn range_parts(&self) -> (&Rope, &RangeState);
 
     fn range_parts_mut(&mut self) -> (&Rope, &mut RangeState);
+
+    #[must_use]
+    fn anchor(&self) -> Cursor {
+        let (rope, state) = self.range_parts();
+        Cursor {
+            rope,
+            state: state.anchor,
+        }
+    }
+
+    #[must_use]
+    fn head(&self) -> Cursor {
+        let (rope, state) = self.range_parts();
+        Cursor {
+            rope,
+            state: state.head,
+        }
+    }
 
     fn move_left(&mut self, distance: usize) -> bool {
         todo!()
