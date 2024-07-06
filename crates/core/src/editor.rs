@@ -1,13 +1,12 @@
-use crate::{Cursor, CursorExt as _, CursorMut, RopeExt as _};
+use crate::cursor::CursorState;
+use crate::{Cursor, CursorMut, RopeExt as _};
 use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::{cmp::min, fs::File, io::BufReader};
 
 pub struct Editor {
     text: Rope,
-    // Char gap index
-    cursor_char_index: usize,
-    // Line number
+    cursor: CursorState,
     vertical_scroll: usize,
 }
 
@@ -17,7 +16,7 @@ impl Editor {
         let rope = Rope::from_reader(BufReader::new(file))?;
         Ok(Self {
             text: rope,
-            cursor_char_index: 0,
+            cursor: CursorState::default(),
             vertical_scroll: 0,
         })
     }
@@ -29,7 +28,10 @@ impl Editor {
 
     #[must_use]
     pub fn cursor(&self) -> Cursor {
-        self.cursor_at(self.cursor_char_index).unwrap()
+        Cursor {
+            rope: &self.text,
+            state: self.cursor,
+        }
     }
 
     #[must_use]
@@ -39,7 +41,10 @@ impl Editor {
 
     #[must_use]
     pub fn cursor_mut(&mut self) -> CursorMut {
-        self.cursor_mut_at(self.cursor_char_index).unwrap()
+        CursorMut {
+            rope: &mut self.text,
+            state: self.cursor,
+        }
     }
 
     #[must_use]
@@ -50,7 +55,7 @@ impl Editor {
     pub fn with_cursor<T>(&mut self, func: impl Fn(&mut CursorMut) -> T) -> T {
         let mut cursor = self.cursor_mut();
         let result = func(&mut cursor);
-        self.cursor_char_index = cursor.char_index();
+        self.cursor = cursor.state;
         result
     }
 
