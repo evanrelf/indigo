@@ -165,7 +165,7 @@ pub trait RangeExt {
     }
 }
 
-impl<'a> RangeExt for Range<'a> {
+impl RangeExt for Range<'_> {
     fn range_parts(&self) -> (&Rope, &RangeState) {
         (self.rope, &self.state)
     }
@@ -175,7 +175,7 @@ impl<'a> RangeExt for Range<'a> {
     }
 }
 
-impl<'a> RangeExt for RangeMut<'a> {
+impl RangeExt for RangeMut<'_> {
     fn range_parts(&self) -> (&Rope, &RangeState) {
         (self.rope, &self.state)
     }

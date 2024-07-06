@@ -183,17 +183,17 @@ pub trait CursorExt {
     }
 }
 
-impl<'a> CursorExt for Cursor<'a> {
-    fn cursor_parts(&self) -> (&'a Rope, &CursorState) {
+impl CursorExt for Cursor<'_> {
+    fn cursor_parts(&self) -> (&Rope, &CursorState) {
         (self.rope, &self.state)
     }
 
-    fn cursor_parts_mut(&mut self) -> (&'a Rope, &mut CursorState) {
+    fn cursor_parts_mut(&mut self) -> (&Rope, &mut CursorState) {
         (self.rope, &mut self.state)
     }
 }
 
-impl<'a> CursorExt for CursorMut<'a> {
+impl CursorExt for CursorMut<'_> {
     fn cursor_parts(&self) -> (&Rope, &CursorState) {
         (self.rope, &self.state)
     }
