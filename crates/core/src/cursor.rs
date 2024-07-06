@@ -5,14 +5,12 @@ use ropey::{Rope, RopeSlice};
 pub struct CursorState {
     // Char gap index
     char_index: usize,
-    // Grapheme gap index
-    grapheme_index: usize,
 }
 
 #[derive(Clone, Copy)]
 pub struct Cursor<'a> {
-    rope: &'a Rope,
-    state: CursorState,
+    pub(crate) rope: &'a Rope,
+    pub(crate) state: CursorState,
 }
 
 impl<'a> Cursor<'a> {
@@ -28,11 +26,7 @@ impl<'a> Cursor<'a> {
     pub fn from_char_index(rope: &'a Rope, char_index: usize) -> Option<Self> {
         // Gap at end of file counts as grapheme boundary
         if let Ok(true) = rope.try_is_grapheme_boundary(char_index) {
-            let grapheme_index = char_to_grapheme(rope, char_index);
-            let state = CursorState {
-                char_index,
-                grapheme_index,
-            };
+            let state = CursorState { char_index };
             Some(Self { rope, state })
         } else {
             None
@@ -41,8 +35,8 @@ impl<'a> Cursor<'a> {
 }
 
 pub struct CursorMut<'a> {
-    rope: &'a mut Rope,
-    state: CursorState,
+    pub(crate) rope: &'a mut Rope,
+    pub(crate) state: CursorState,
 }
 
 impl<'a> CursorMut<'a> {
@@ -58,11 +52,7 @@ impl<'a> CursorMut<'a> {
     pub fn from_char_index(rope: &'a mut Rope, char_index: usize) -> Option<Self> {
         // Gap at end of file counts as grapheme boundary
         if let Ok(true) = rope.try_is_grapheme_boundary(char_index) {
-            let grapheme_index = char_to_grapheme(rope, char_index);
-            let state = CursorState {
-                char_index,
-                grapheme_index,
-            };
+            let state = CursorState { char_index };
             Some(Self { rope, state })
         } else {
             None
@@ -88,15 +78,11 @@ impl<'a> CursorMut<'a> {
     pub fn insert_char(&mut self, char: char) {
         self.rope.insert_char(self.state.char_index, char);
         self.state.char_index += 1;
-        self.state.grapheme_index += 1;
-        self.assert_invariants();
     }
 
     pub fn insert(&mut self, string: &str) {
         self.rope.insert(self.state.char_index, string);
         self.state.char_index += string.chars().count();
-        self.state.grapheme_index += Rope::from(string).graphemes().count();
-        self.assert_invariants();
     }
 
     pub fn backspace(&mut self, count: usize) {
@@ -106,8 +92,6 @@ impl<'a> CursorMut<'a> {
         let end = self.state.char_index;
         self.rope.remove(start..end);
         self.state.char_index = start;
-        self.state.grapheme_index = self.state.grapheme_index.saturating_sub(count);
-        self.assert_invariants();
     }
 
     pub fn delete(&mut self, count: usize) {
@@ -116,7 +100,6 @@ impl<'a> CursorMut<'a> {
         end_cursor.move_right(count);
         let end = end_cursor.state.char_index;
         self.rope.remove(start..end);
-        self.assert_invariants();
     }
 }
 
@@ -136,9 +119,9 @@ pub trait CursorExt {
     /// Grapheme gap index
     #[must_use]
     fn grapheme_index(&self) -> usize {
-        let (_rope, state) = self.cursor_parts();
+        let (rope, state) = self.cursor_parts();
 
-        state.grapheme_index
+        char_to_grapheme(rope, state.char_index)
     }
 
     fn char(&self) -> Option<char> {
@@ -172,14 +155,11 @@ pub trait CursorExt {
             match rope.get_prev_grapheme_boundary(state.char_index) {
                 Ok(char_index) if state.char_index != char_index => {
                     state.char_index = char_index;
-                    state.grapheme_index -= 1;
                     moved = true;
                 }
                 _ => break,
             }
         }
-
-        self.assert_invariants();
 
         moved
     }
@@ -193,29 +173,13 @@ pub trait CursorExt {
             match rope.get_next_grapheme_boundary(state.char_index) {
                 Ok(char_index) if state.char_index != char_index => {
                     state.char_index = char_index;
-                    state.grapheme_index += 1;
                     moved = true;
                 }
                 _ => break,
             }
         }
 
-        self.assert_invariants();
-
         moved
-    }
-
-    fn assert_invariants(&self) {
-        if !cfg!(debug_assertions) {
-            return;
-        }
-
-        let (rope, state) = self.cursor_parts();
-
-        assert_eq!(
-            state.grapheme_index,
-            char_to_grapheme(rope, state.char_index)
-        );
     }
 }
 

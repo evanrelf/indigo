@@ -1,4 +1,7 @@
-use crate::cursor::CursorState;
+// TODO
+#![allow(unused_variables)]
+
+use crate::cursor::{Cursor, CursorMut, CursorState};
 use ropey::Rope;
 
 #[derive(Clone, Copy, Default)]
@@ -21,6 +24,50 @@ impl<'a> Range<'a> {
             state: RangeState::default(),
         }
     }
+
+    #[must_use]
+    pub fn from_cursor(cursor: Cursor<'a>) -> Self {
+        let Cursor { rope, state } = cursor;
+        Self {
+            rope,
+            state: RangeState {
+                anchor: state,
+                head: state,
+            },
+        }
+    }
+
+    #[must_use]
+    pub fn into_cursors(self) -> (Cursor<'a>, Cursor<'a>) {
+        let Self { rope, state } = self;
+        let anchor = Cursor {
+            rope,
+            state: state.anchor,
+        };
+        let head = Cursor {
+            rope,
+            state: state.head,
+        };
+        (anchor, head)
+    }
+
+    #[must_use]
+    pub fn into_anchor(self) -> Cursor<'a> {
+        let Self { rope, state } = self;
+        Cursor {
+            rope,
+            state: state.anchor,
+        }
+    }
+
+    #[must_use]
+    pub fn into_head(self) -> Cursor<'a> {
+        let Self { rope, state } = self;
+        Cursor {
+            rope,
+            state: state.head,
+        }
+    }
 }
 
 pub struct RangeMut<'a> {
@@ -38,6 +85,18 @@ impl<'a> RangeMut<'a> {
     }
 
     #[must_use]
+    pub fn from_cursor(cursor: CursorMut<'a>) -> Self {
+        let CursorMut { rope, state } = cursor;
+        Self {
+            rope,
+            state: RangeState {
+                anchor: state,
+                head: state,
+            },
+        }
+    }
+
+    #[must_use]
     pub fn downgrade(self) -> Range<'a> {
         Range {
             rope: self.rope,
@@ -50,6 +109,24 @@ impl<'a> RangeMut<'a> {
         Range {
             rope: self.rope,
             state: self.state,
+        }
+    }
+
+    #[must_use]
+    pub fn into_anchor(self) -> CursorMut<'a> {
+        let Self { rope, state } = self;
+        CursorMut {
+            rope,
+            state: state.anchor,
+        }
+    }
+
+    #[must_use]
+    pub fn into_head(self) -> CursorMut<'a> {
+        let Self { rope, state } = self;
+        CursorMut {
+            rope,
+            state: state.head,
         }
     }
 
