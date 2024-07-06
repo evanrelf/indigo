@@ -4,7 +4,7 @@ use crate::terminal::TerminalGuard;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
-use indigo_core::{actions, CursorExt as _, Editor, RangeExt as _, RopeExt as _};
+use indigo_core::{actions, Cursor, CursorExt as _, Editor, RangeExt as _, RopeExt as _};
 use ratatui::{
     prelude::{Buffer as Surface, Constraint, Layout, Rect, Style},
     style::Color,
@@ -203,7 +203,9 @@ fn render_range(editor: &Editor, area: Rect, surface: &mut Surface) {
 
         let line_char_index = editor.text().line_to_char(line_index);
 
-        let mut g = editor.cursor_at(line_char_index).unwrap().grapheme_index();
+        let mut g = Cursor::from_char_index(editor.text(), line_char_index)
+            .unwrap()
+            .grapheme_index();
         let mut x = usize::from(area.left());
         let mut width = 1;
 

@@ -1,5 +1,5 @@
 use crate::range::RangeState;
-use crate::{Cursor, CursorMut, Range, RangeMut, RopeExt as _};
+use crate::{Range, RangeMut, RopeExt as _};
 use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::{cmp::min, fs::File, io::BufReader};
@@ -40,16 +40,6 @@ impl Editor {
             rope: &mut self.text,
             state: self.range,
         }
-    }
-
-    #[must_use]
-    pub fn cursor_at(&self, char_index: usize) -> Option<Cursor> {
-        Cursor::from_char_index(&self.text, char_index)
-    }
-
-    #[must_use]
-    pub fn cursor_mut_at(&mut self, char_index: usize) -> Option<CursorMut> {
-        CursorMut::from_char_index(&mut self.text, char_index)
     }
 
     pub fn with_range<T>(&mut self, func: impl Fn(&mut Range) -> T) -> T {
