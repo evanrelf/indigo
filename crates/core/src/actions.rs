@@ -1,4 +1,4 @@
-use crate::Editor;
+use crate::{Editor, RangeExt as _};
 
 pub fn move_left(editor: &mut Editor) {
     editor.with_range(|range| range.move_left(1));
@@ -29,9 +29,9 @@ pub fn scroll_half_page_down(editor: &mut Editor, height: usize) {
 }
 
 pub fn backspace(editor: &mut Editor) {
-    editor.with_range(|range| range.backspace(1));
+    editor.with_range_mut(|range| range.backspace(1));
 }
 
 pub fn delete(editor: &mut Editor) {
-    editor.with_range(|range| range.delete(1));
+    editor.with_range_mut(|range| range.delete(1));
 }

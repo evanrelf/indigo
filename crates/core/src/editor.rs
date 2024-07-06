@@ -30,7 +30,7 @@ impl Editor {
     pub fn range(&self) -> Range {
         Range {
             rope: &self.text,
-            state: &self.range,
+            state: self.range,
         }
     }
 
@@ -38,7 +38,7 @@ impl Editor {
     pub fn range_mut(&mut self) -> RangeMut {
         RangeMut {
             rope: &mut self.text,
-            state: &mut self.range,
+            state: self.range,
         }
     }
 
@@ -52,10 +52,17 @@ impl Editor {
         CursorMut::from_char_index(&mut self.text, char_index)
     }
 
-    pub fn with_range<T>(&mut self, func: impl Fn(&mut RangeMut) -> T) -> T {
+    pub fn with_range<T>(&mut self, func: impl Fn(&mut Range) -> T) -> T {
+        let mut range = self.range();
+        let result = func(&mut range);
+        self.range = range.state;
+        result
+    }
+
+    pub fn with_range_mut<T>(&mut self, func: impl Fn(&mut RangeMut) -> T) -> T {
         let mut range = self.range_mut();
         let result = func(&mut range);
-        self.range = *range.state;
+        self.range = range.state;
         result
     }
 

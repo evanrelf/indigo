@@ -7,6 +7,6 @@ mod rope;
 pub use crate::{
     cursor::{Cursor, CursorExt, CursorMut},
     editor::Editor,
-    range::{Range, RangeMut},
+    range::{Range, RangeExt, RangeMut},
     rope::RopeExt,
 };
