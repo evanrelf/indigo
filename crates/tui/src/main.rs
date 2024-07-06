@@ -61,7 +61,7 @@ struct Areas {
 
 impl Areas {
     fn new(editor: &Editor, area: Rect) -> Self {
-        let areas = Layout::vertical([
+        let vertical_areas = Layout::vertical([
             // line_numbers + text
             Constraint::Fill(1),
             // status_bar
@@ -69,7 +69,7 @@ impl Areas {
         ])
         .split(area);
 
-        let status_bar = areas[1];
+        let status_bar = vertical_areas[1];
 
         let line_numbers_width = {
             let n = editor.text().len_lines_indigo();
@@ -77,17 +77,17 @@ impl Areas {
             u16::try_from(max(2, digits) + 1).unwrap()
         };
 
-        let areas = Layout::horizontal([
+        let horizontal_areas = Layout::horizontal([
             // line_numbers
             Constraint::Length(line_numbers_width),
             // text
             Constraint::Fill(1),
         ])
-        .split(areas[0]);
+        .split(vertical_areas[0]);
 
-        let line_numbers = areas[0];
+        let line_numbers = horizontal_areas[0];
 
-        let text = areas[1];
+        let text = horizontal_areas[1];
 
         Self {
             status_bar,
