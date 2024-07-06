@@ -157,11 +157,28 @@ pub trait RangeExt {
     }
 
     fn move_left(&mut self, distance: usize) -> bool {
-        self.with_head(|cursor| cursor.move_left(distance))
+        let result = self.extend_left(distance);
+        self.reduce();
+        result
     }
 
     fn move_right(&mut self, distance: usize) -> bool {
+        let result = self.extend_right(distance);
+        self.reduce();
+        result
+    }
+
+    fn extend_left(&mut self, distance: usize) -> bool {
+        self.with_head(|cursor| cursor.move_left(distance))
+    }
+
+    fn extend_right(&mut self, distance: usize) -> bool {
         self.with_head(|cursor| cursor.move_right(distance))
+    }
+
+    fn reduce(&mut self) {
+        let (_rope, state) = self.range_parts_mut();
+        state.anchor = state.head;
     }
 }
 

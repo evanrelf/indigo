@@ -8,6 +8,14 @@ pub fn move_right(editor: &mut Editor) {
     editor.with_range(|range| range.move_right(1));
 }
 
+pub fn extend_left(editor: &mut Editor) {
+    editor.with_range(|range| range.extend_left(1));
+}
+
+pub fn extend_right(editor: &mut Editor) {
+    editor.with_range(|range| range.extend_right(1));
+}
+
 pub fn scroll_up(editor: &mut Editor) {
     let line = editor.vertical_scroll().saturating_sub(3);
     editor.scroll_to(line);

@@ -277,6 +277,8 @@ fn handle_event(
             (KeyModifiers::NONE, KeyCode::Char('d')) => actions::delete(editor),
             (KeyModifiers::NONE, KeyCode::Char('h')) => actions::move_left(editor),
             (KeyModifiers::NONE, KeyCode::Char('l')) => actions::move_right(editor),
+            (KeyModifiers::SHIFT, KeyCode::Char('h' | 'H')) => actions::extend_left(editor),
+            (KeyModifiers::SHIFT, KeyCode::Char('l' | 'L')) => actions::extend_right(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
                 actions::scroll_half_page_up(editor, usize::from(areas.text.height));
             }
