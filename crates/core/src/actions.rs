@@ -1,11 +1,11 @@
-use crate::{CursorExt as _, Editor};
+use crate::{Editor, RangeExt as _};
 
 pub fn move_left(editor: &mut Editor) {
-    editor.with_cursor(|cursor| cursor.move_left(1));
+    editor.with_range(|range| range.move_left(1));
 }
 
 pub fn move_right(editor: &mut Editor) {
-    editor.with_cursor(|cursor| cursor.move_right(1));
+    editor.with_range(|range| range.move_right(1));
 }
 
 pub fn scroll_up(editor: &mut Editor) {
@@ -29,9 +29,9 @@ pub fn scroll_half_page_down(editor: &mut Editor, height: usize) {
 }
 
 pub fn backspace(editor: &mut Editor) {
-    editor.with_cursor(|cursor| cursor.backspace(1));
+    editor.with_range(|range| range.backspace(1));
 }
 
 pub fn delete(editor: &mut Editor) {
-    editor.with_cursor(|cursor| cursor.delete(1));
+    editor.with_range(|range| range.delete(1));
 }

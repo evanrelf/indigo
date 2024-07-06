@@ -12,8 +12,8 @@ pub struct RangeState {
 
 #[derive(Clone, Copy)]
 pub struct Range<'a> {
-    rope: &'a Rope,
-    state: RangeState,
+    pub(crate) rope: &'a Rope,
+    pub(crate) state: RangeState,
 }
 
 impl<'a> Range<'a> {
@@ -71,8 +71,8 @@ impl<'a> Range<'a> {
 }
 
 pub struct RangeMut<'a> {
-    rope: &'a mut Rope,
-    state: RangeState,
+    pub(crate) rope: &'a mut Rope,
+    pub(crate) state: RangeState,
 }
 
 impl<'a> RangeMut<'a> {

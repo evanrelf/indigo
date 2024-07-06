@@ -1,12 +1,12 @@
-use crate::cursor::CursorState;
-use crate::{Cursor, CursorMut, RopeExt as _};
+use crate::range::RangeState;
+use crate::{Cursor, CursorMut, Range, RangeMut, RopeExt as _};
 use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::{cmp::min, fs::File, io::BufReader};
 
 pub struct Editor {
     text: Rope,
-    cursor: CursorState,
+    range: RangeState,
     vertical_scroll: usize,
 }
 
@@ -16,7 +16,7 @@ impl Editor {
         let rope = Rope::from_reader(BufReader::new(file))?;
         Ok(Self {
             text: rope,
-            cursor: CursorState::default(),
+            range: RangeState::default(),
             vertical_scroll: 0,
         })
     }
@@ -27,10 +27,18 @@ impl Editor {
     }
 
     #[must_use]
-    pub fn cursor(&self) -> Cursor {
-        Cursor {
+    pub fn range(&self) -> Range {
+        Range {
             rope: &self.text,
-            state: self.cursor,
+            state: self.range,
+        }
+    }
+
+    #[must_use]
+    pub fn range_mut(&mut self) -> RangeMut {
+        RangeMut {
+            rope: &mut self.text,
+            state: self.range,
         }
     }
 
@@ -40,22 +48,14 @@ impl Editor {
     }
 
     #[must_use]
-    pub fn cursor_mut(&mut self) -> CursorMut {
-        CursorMut {
-            rope: &mut self.text,
-            state: self.cursor,
-        }
-    }
-
-    #[must_use]
     pub fn cursor_mut_at(&mut self, char_index: usize) -> Option<CursorMut> {
         CursorMut::from_char_index(&mut self.text, char_index)
     }
 
-    pub fn with_cursor<T>(&mut self, func: impl Fn(&mut CursorMut) -> T) -> T {
-        let mut cursor = self.cursor_mut();
-        let result = func(&mut cursor);
-        self.cursor = cursor.state;
+    pub fn with_range<T>(&mut self, func: impl Fn(&mut RangeMut) -> T) -> T {
+        let mut range = self.range_mut();
+        let result = func(&mut range);
+        self.range = range.state;
         result
     }
 

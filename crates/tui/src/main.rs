@@ -178,9 +178,11 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_cursor(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let char_index = editor.cursor().char_index();
+    let cursor = editor.range().into_head();
 
-    let grapheme_index = editor.cursor().grapheme_index();
+    let char_index = cursor.char_index();
+
+    let grapheme_index = cursor.grapheme_index();
 
     let line_index = editor.text().char_to_line(char_index);
 
@@ -229,11 +231,13 @@ fn render_cursor(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let char_index = editor.cursor().char_index();
+    let cursor = editor.range().into_head();
+
+    let char_index = cursor.char_index();
 
     let eof = char_index == editor.text().len_chars();
 
-    let status_bar = if let Some(grapheme) = editor.cursor().grapheme() {
+    let status_bar = if let Some(grapheme) = cursor.grapheme() {
         let chars = grapheme.chars().collect::<Vec<_>>();
         let display_width = grapheme.width();
         format!("char_index={char_index}, eof={eof}, grapheme=\"{grapheme:?}\", chars={chars:?}, display_width={display_width}")
