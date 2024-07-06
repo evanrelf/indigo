@@ -1,4 +1,4 @@
-use crate::{Editor, RangeExt as _};
+use crate::Editor;
 
 pub fn move_left(editor: &mut Editor) {
     editor.with_range(|range| range.move_left(1));
