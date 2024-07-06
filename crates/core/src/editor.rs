@@ -7,7 +7,7 @@ use std::{cmp::min, fs::File, io::BufReader};
 pub struct Editor {
     text: Rope,
     range: RangeState,
-    pub repeat: usize,
+    pub count: usize,
     vertical_scroll: usize,
 }
 
@@ -18,7 +18,7 @@ impl Editor {
         Ok(Self {
             text: rope,
             range: RangeState::default(),
-            repeat: 0,
+            count: 0,
             vertical_scroll: 0,
         })
     }
@@ -48,7 +48,7 @@ impl Editor {
         let mut range = self.range();
         let result = func(&mut range);
         self.range = range.state;
-        self.repeat = 0;
+        self.count = 0;
         result
     }
 
@@ -56,7 +56,7 @@ impl Editor {
         let mut range = self.range_mut();
         let result = func(&mut range);
         self.range = range.state;
-        self.repeat = 0;
+        self.count = 0;
         result
     }
 

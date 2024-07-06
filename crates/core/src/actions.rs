@@ -2,22 +2,22 @@ use crate::{Editor, RangeExt as _};
 use std::cmp::max;
 
 pub fn move_left(editor: &mut Editor) {
-    let distance = max(1, editor.repeat);
+    let distance = max(1, editor.count);
     editor.with_range(|range| range.move_left(distance));
 }
 
 pub fn move_right(editor: &mut Editor) {
-    let distance = max(1, editor.repeat);
+    let distance = max(1, editor.count);
     editor.with_range(|range| range.move_right(distance));
 }
 
 pub fn extend_left(editor: &mut Editor) {
-    let distance = max(1, editor.repeat);
+    let distance = max(1, editor.count);
     editor.with_range(|range| range.extend_left(distance));
 }
 
 pub fn extend_right(editor: &mut Editor) {
-    let distance = max(1, editor.repeat);
+    let distance = max(1, editor.count);
     editor.with_range(|range| range.extend_right(distance));
 }
 

@@ -237,7 +237,7 @@ fn render_range(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let repeat = editor.repeat;
+    let count = editor.count;
 
     let range = editor.range();
 
@@ -250,9 +250,9 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let status_bar = if let Some(grapheme) = cursor.grapheme() {
         let chars = grapheme.chars().collect::<Vec<_>>();
         let display_width = grapheme.width();
-        format!("repeat={repeat}, char_index={char_index}, eof={eof}, grapheme=\"{grapheme:?}\", chars={chars:?}, display_width={display_width}")
+        format!("count={count}, char_index={char_index}, eof={eof}, grapheme=\"{grapheme:?}\", chars={chars:?}, display_width={display_width}")
     } else {
-        format!("repeat={repeat}, char_index={char_index}, eof={eof}, grapheme=n/a, chars=n/a, display_width=n/a")
+        format!("count={count}, char_index={char_index}, eof={eof}, grapheme=n/a, chars=n/a, display_width=n/a")
     };
 
     surface.set_stringn(
@@ -277,10 +277,10 @@ fn handle_event(
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::NONE, KeyCode::Char(c @ ('0'..='9'))) => {
                 let n = usize::from(u8::try_from(c).unwrap() - b'0');
-                editor.repeat = editor.repeat.saturating_mul(10);
-                editor.repeat = editor.repeat.saturating_add(n);
+                editor.count = editor.count.saturating_mul(10);
+                editor.count = editor.count.saturating_add(n);
             }
-            (KeyModifiers::NONE, KeyCode::Esc) => editor.repeat = 0,
+            (KeyModifiers::NONE, KeyCode::Esc) => editor.count = 0,
             (KeyModifiers::NONE, KeyCode::Backspace) => actions::backspace(editor),
             (KeyModifiers::NONE, KeyCode::Char('d')) => actions::delete(editor),
             (KeyModifiers::NONE, KeyCode::Char('h')) => actions::move_left(editor),
