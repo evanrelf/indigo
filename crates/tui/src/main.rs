@@ -26,11 +26,21 @@ fn main() -> anyhow::Result<()> {
     let mut areas = Areas::default();
 
     loop {
+        crossterm::queue!(
+            terminal.backend_mut(),
+            crossterm::terminal::BeginSynchronizedUpdate
+        )?;
+
         terminal.draw(|frame| {
             areas = Areas::new(&editor, frame.size());
             let surface = frame.buffer_mut();
             render(&editor, areas, surface);
         })?;
+
+        crossterm::execute!(
+            terminal.backend_mut(),
+            crossterm::terminal::EndSynchronizedUpdate
+        )?;
 
         let quit = handle_event(&mut editor, &mut terminal, areas, &event::read()?)?;
 
