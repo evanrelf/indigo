@@ -3,7 +3,7 @@ mod graphemes_step;
 
 use crate::rope::graphemes_iter::RopeGraphemes;
 use ropey::{Rope, RopeSlice};
-use std::borrow::Cow;
+use std::{borrow::Cow, cmp::max};
 use unicode_width::UnicodeWidthStr;
 
 pub trait RopeExt {
@@ -42,7 +42,7 @@ pub trait RopeExt {
             //     }
             // }
 
-            UnicodeWidthStr::width(str)
+            max(1, UnicodeWidthStr::width(str))
         }
 
         self.graphemes().map(grapheme_width).sum()
