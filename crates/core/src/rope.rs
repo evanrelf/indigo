@@ -14,6 +14,10 @@ pub trait RopeExt {
 
     fn graphemes(&self) -> RopeGraphemes<'_>;
 
+    // TODO: Implement this, like `unicode-segmentation`:
+    // https://docs.rs/unicode-segmentation/latest/unicode_segmentation/trait.UnicodeSegmentation.html#tymethod.grapheme_indices
+    // fn grapheme_indices(&self) -> RopeGraphemeIndices<'_>;
+
     fn prev_grapheme_boundary(&self, char_idx: usize) -> usize {
         self.get_prev_grapheme_boundary(char_idx).unwrap()
     }
