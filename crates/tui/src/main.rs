@@ -6,8 +6,9 @@ use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
 use indigo_core::{actions, Cursor, CursorExt as _, Editor, RangeExt as _, RopeExt as _};
 use ratatui::{
-    prelude::{Buffer as Surface, Constraint, Layout, Rect, Style},
+    prelude::{Buffer as Surface, Constraint, Layout, Rect, Style, Widget as _},
     style::Color,
+    text::Line,
 };
 use std::{borrow::Cow, cmp::max};
 
@@ -101,148 +102,109 @@ fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
     render_line_numbers(editor, areas.line_numbers, surface);
     render_tildes(editor, areas.line_numbers, surface);
     render_text(editor, areas.text, surface);
-    render_range(editor, areas.text, surface);
+    render_selection(editor, areas.text, surface);
     render_status_bar(editor, areas.status_bar, surface);
 }
 
 fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
     let total_lines = editor.text().len_lines_indigo();
 
-    let number_width = usize::from(area.width) - 1;
-
-    for y in area.top()..area.bottom() {
-        let line_number = usize::from(y - area.top()) + editor.vertical_scroll() + 1;
+    for (i, row) in area.rows().enumerate() {
+        let line_number = i + editor.vertical_scroll() + 1;
 
         if line_number > total_lines {
             break;
         }
 
-        surface.set_stringn(
-            area.x,
-            y,
-            format!("{line_number:>number_width$}│"),
-            number_width + 1,
-            Style::default(),
-        );
+        Line::raw(format!("{line_number}│"))
+            .right_aligned()
+            .render(row, surface);
     }
 }
 
 fn render_tildes(editor: &Editor, area: Rect, surface: &mut Surface) {
     let total_lines = editor.text().len_lines_indigo();
 
-    for y in area.top()..area.bottom() {
-        let line_number = usize::from(y - area.top()) + editor.vertical_scroll() + 1;
+    for (i, row) in area.rows().enumerate() {
+        let line_number = i + editor.vertical_scroll() + 1;
 
         if line_number <= total_lines {
             continue;
         }
 
-        surface.get_mut(area.x, y).set_char('~');
+        Line::raw("~").render(row, surface);
     }
 }
 
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
-    'line: for (y, line) in editor.text().lines_at(editor.vertical_scroll()).enumerate() {
-        let y = area.top() + u16::try_from(y).unwrap();
+    let lines = editor.text().lines_at(editor.vertical_scroll());
 
-        if y >= area.bottom() {
-            break 'line;
-        }
+    let rows = area.rows();
 
-        let mut x = area.x;
+    'line: for (line, row) in lines.zip(rows) {
+        let mut x = row.x;
 
         'grapheme: for grapheme in line.graphemes() {
-            if x >= area.width {
+            let string = match grapheme.get_char(0) {
+                Some('\t') => Cow::Borrowed("        "),
+                Some('\n') => Cow::Borrowed(" "),
+                _ => Cow::<str>::from(grapheme),
+            };
+
+            let width_usize = grapheme.width();
+
+            let width_u16 = u16::try_from(width_usize).unwrap();
+
+            if x + width_u16 > row.right() {
                 continue 'line;
             }
 
-            match grapheme.get_char(0) {
-                Some('\t') => {
-                    surface.set_stringn(x, y, "        ", 8, Style::default());
-                    x += 8;
-                    continue 'grapheme;
-                }
-                // Rendering got messed up because somebody changed the width of `\n` from 0 to 1:
-                // https://github.com/unicode-rs/unicode-width/pull/45
-                //
-                // Because we're rendering line by line, and `\n` indicates the line has ended, we
-                // can `continue` to the next line immediately. Otherwise we'd want to render this
-                // as a space (` `) or an indicator character something (like `:set list` in Vim).
-                Some('\n') => continue 'line,
-                _ => {}
-            }
-
-            let width = grapheme.width();
-
-            if width == 0 {
+            if width_usize == 0 {
                 continue 'grapheme;
             }
 
-            let string = Cow::<str>::from(grapheme);
+            surface.set_stringn(x, row.y, string, width_usize, Style::default());
 
-            surface.set_stringn(x, y, string, width, Style::default());
-
-            x += u16::try_from(width).unwrap();
+            x += width_u16;
         }
     }
 }
 
-fn render_range(editor: &Editor, area: Rect, surface: &mut Surface) {
+fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
     let range = editor.range();
-    let anchor = range.anchor();
-    let head = range.head();
 
-    for cursor in [anchor, head] {
-        let char_index = cursor.char_index();
+    let style = Style::default().bg(Color::Rgb(0xff, 0xd3, 0x3d));
 
-        let grapheme_index = cursor.grapheme_index();
+    let anchor_rect = cursor_area(range.anchor(), editor, area);
+    surface.set_style(anchor_rect, style);
 
-        let line_index = editor.text().char_to_line(char_index);
+    let head_rect = cursor_area(range.head(), editor, area);
+    surface.set_style(head_rect, style);
+}
 
-        if line_index < editor.vertical_scroll() {
-            return;
-        }
+fn cursor_area(cursor: Cursor, editor: &Editor, area: Rect) -> Rect {
+    let width = match cursor.grapheme() {
+        Some(grapheme) => u16::try_from(grapheme.width()).unwrap(),
+        None => 1, // Cursor at end of file
+    };
 
-        let y = area.top() + u16::try_from(line_index - editor.vertical_scroll()).unwrap();
+    let char_index = cursor.char_index();
 
-        if y >= area.bottom() {
-            return;
-        }
+    let line_index = editor.text().char_to_line(char_index);
 
-        let line = editor.text().line(line_index);
+    let line_char_index = editor.text().line_to_char(line_index);
 
-        let line_char_index = editor.text().line_to_char(line_index);
+    let prefix_width = editor.text().slice(line_char_index..char_index).width();
 
-        let mut g = Cursor::from_char_index(editor.text(), line_char_index)
-            .unwrap()
-            .grapheme_index();
-        let mut x = usize::from(area.left());
-        let mut width = 1;
+    let x = area.x + u16::try_from(prefix_width).unwrap();
 
-        for grapheme in line.graphemes() {
-            width = if let Some('\t') = grapheme.get_char(0) {
-                8
-            } else {
-                grapheme.width()
-            };
+    let y = area.y + u16::try_from(line_index - editor.vertical_scroll()).unwrap();
 
-            if g >= grapheme_index {
-                break;
-            }
-
-            if x >= usize::from(area.width) {
-                return;
-            }
-
-            x += width;
-            g += 1;
-        }
-
-        let x = u16::try_from(x).unwrap();
-
-        for x in x..x + u16::try_from(width).unwrap() {
-            surface.get_mut(x, y).set_bg(Color::Rgb(0xff, 0xd3, 0x3d));
-        }
+    Rect {
+        x,
+        y,
+        width,
+        height: 1,
     }
 }
 
@@ -265,13 +227,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         format!("count={count}, char_index={char_index}, eof={eof}, grapheme=n/a, chars=n/a, display_width=n/a")
     };
 
-    surface.set_stringn(
-        area.x,
-        area.y,
-        status_bar,
-        usize::from(area.width),
-        Style::default(),
-    );
+    Line::raw(status_bar).render(area, surface);
 }
 
 fn handle_event(
@@ -282,7 +238,6 @@ fn handle_event(
 ) -> anyhow::Result<bool> {
     let mut quit = false;
 
-    #[allow(clippy::single_match)]
     match event {
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::NONE, KeyCode::Char(c @ ('0'..='9'))) => {

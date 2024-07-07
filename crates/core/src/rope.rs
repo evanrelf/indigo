@@ -15,7 +15,11 @@ pub trait RopeExt {
     fn len_lines_indigo(&self) -> usize;
 
     fn width(&self) -> usize {
-        fn grapheme_width(slice: RopeSlice) -> usize {
+        fn grapheme_width(grapheme: RopeSlice) -> usize {
+            if let Some('\t') = grapheme.get_char(0) {
+                return 8;
+            }
+
             // TODO: Implement custom width to accomodate emoji with zero-width joiners.
             // `unicode-width` doesn't support this at the moment:
             // https://github.com/unicode-rs/unicode-width/issues/4.
@@ -28,7 +32,7 @@ pub trait RopeExt {
             // const EMOJI_MODIFIER: icu_properties::sets::CodePointSetDataBorrowed =
             //     icu_properties::sets::emoji_modifier();
 
-            let cow = Cow::<str>::from(slice);
+            let cow = Cow::<str>::from(grapheme);
             let str = cow.as_ref();
 
             // for char in str.chars() {
