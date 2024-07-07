@@ -59,22 +59,6 @@ impl<'a> CursorMut<'a> {
         }
     }
 
-    #[must_use]
-    pub fn downgrade(self) -> Cursor<'a> {
-        Cursor {
-            rope: self.rope,
-            state: self.state,
-        }
-    }
-
-    #[must_use]
-    pub fn downgraded(&self) -> Cursor {
-        Cursor {
-            rope: self.rope,
-            state: self.state,
-        }
-    }
-
     pub fn insert_char(&mut self, char: char) {
         self.rope.insert_char(self.state.char_index, char);
         self.state.char_index += 1;
@@ -86,7 +70,10 @@ impl<'a> CursorMut<'a> {
     }
 
     pub fn backspace(&mut self, count: usize) {
-        let mut start_cursor = self.downgraded();
+        let mut start_cursor = Cursor {
+            rope: self.rope,
+            state: self.state,
+        };
         start_cursor.move_left(count);
         let start = start_cursor.state.char_index;
         let end = self.state.char_index;
@@ -96,7 +83,10 @@ impl<'a> CursorMut<'a> {
 
     pub fn delete(&mut self, count: usize) {
         let start = self.state.char_index;
-        let mut end_cursor = self.downgraded();
+        let mut end_cursor = Cursor {
+            rope: self.rope,
+            state: self.state,
+        };
         end_cursor.move_right(count);
         let end = end_cursor.state.char_index;
         self.rope.remove(start..end);

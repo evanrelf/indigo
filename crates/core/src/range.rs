@@ -38,22 +38,6 @@ impl<'a> RangeMut<'a> {
     }
 
     #[must_use]
-    pub fn downgrade(self) -> Range<'a> {
-        Range {
-            rope: self.rope,
-            state: self.state,
-        }
-    }
-
-    #[must_use]
-    pub fn downgraded(&self) -> Range {
-        Range {
-            rope: self.rope,
-            state: self.state,
-        }
-    }
-
-    #[must_use]
     fn anchor_mut(&mut self) -> CursorMut {
         let Self { rope, state } = self;
         CursorMut {
