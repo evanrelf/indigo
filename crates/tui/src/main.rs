@@ -4,7 +4,9 @@ use crate::terminal::TerminalGuard;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
-use indigo_core::{actions, Cursor, CursorExt as _, Editor, RangeExt as _, RopeExt as _};
+use indigo_core::{
+    actions, Cursor, CursorExt as _, DisplayWidth as _, Editor, RangeExt as _, RopeExt as _,
+};
 use ratatui::{
     prelude::{Buffer as Surface, Constraint, Layout, Rect, Style, Widget as _},
     style::Color,
@@ -151,7 +153,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
                 _ => Cow::<str>::from(grapheme),
             };
 
-            let width_usize = grapheme.width();
+            let width_usize = grapheme.display_width();
 
             let width_u16 = u16::try_from(width_usize).unwrap();
 
@@ -184,7 +186,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
 
 fn cursor_area(cursor: Cursor, editor: &Editor, area: Rect) -> Rect {
     let width = match cursor.grapheme() {
-        Some(grapheme) => u16::try_from(grapheme.width()).unwrap(),
+        Some(grapheme) => u16::try_from(grapheme.display_width()).unwrap(),
         None => 1, // Cursor at end of file
     };
 
@@ -194,7 +196,10 @@ fn cursor_area(cursor: Cursor, editor: &Editor, area: Rect) -> Rect {
 
     let line_char_index = editor.text().line_to_char(line_index);
 
-    let prefix_width = editor.text().slice(line_char_index..char_index).width();
+    let prefix_width = editor
+        .text()
+        .slice(line_char_index..char_index)
+        .display_width();
 
     let x = area.x + u16::try_from(prefix_width).unwrap();
 
@@ -221,7 +226,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let status_bar = if let Some(grapheme) = cursor.grapheme() {
         let chars = grapheme.chars().collect::<Vec<_>>();
-        let display_width = grapheme.width();
+        let display_width = grapheme.display_width();
         format!("count={count}, char_index={char_index}, eof={eof}, grapheme=\"{grapheme:?}\", chars={chars:?}, display_width={display_width}")
     } else {
         format!("count={count}, char_index={char_index}, eof={eof}, grapheme=n/a, chars=n/a, display_width=n/a")

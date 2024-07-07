@@ -3,8 +3,6 @@ mod graphemes_step;
 
 use crate::rope::graphemes_iter::RopeGraphemes;
 use ropey::{Rope, RopeSlice};
-use std::{borrow::Cow, cmp::max};
-use unicode_width::UnicodeWidthStr;
 
 pub trait RopeExt {
     // `ropey` counts lines in a non-intuitive way, at least for my purposes. This method provides
@@ -13,40 +11,6 @@ pub trait RopeExt {
     // See the unit tests below for examples, and this GitHub issue for more info:
     // https://github.com/cessen/ropey/issues/60
     fn len_lines_indigo(&self) -> usize;
-
-    fn width(&self) -> usize {
-        fn grapheme_width(grapheme: RopeSlice) -> usize {
-            if let Some('\t') = grapheme.get_char(0) {
-                return 8;
-            }
-
-            // TODO: Implement custom width to accomodate emoji with zero-width joiners.
-            // `unicode-width` doesn't support this at the moment:
-            // https://github.com/unicode-rs/unicode-width/issues/4.
-            //
-            // WezTerm dealt with this here: https://github.com/wez/wezterm/commit/1ab438c1e266ab24.
-
-            // const EMOJI_MODIFIER_BASE: icu_properties::sets::CodePointSetDataBorrowed =
-            //     icu_properties::sets::emoji_modifier_base();
-
-            // const EMOJI_MODIFIER: icu_properties::sets::CodePointSetDataBorrowed =
-            //     icu_properties::sets::emoji_modifier();
-
-            let cow = Cow::<str>::from(grapheme);
-            let str = cow.as_ref();
-
-            // for char in str.chars() {
-            //     if EMOJI_MODIFIER_BASE.contains(char) || EMOJI_MODIFIER.contains(char) {
-            //         // panic!("grapheme: {}, char: {}", str, char);
-            //         return 2;
-            //     }
-            // }
-
-            max(1, UnicodeWidthStr::width(str))
-        }
-
-        self.graphemes().map(grapheme_width).sum()
-    }
 
     fn graphemes(&self) -> RopeGraphemes<'_>;
 
