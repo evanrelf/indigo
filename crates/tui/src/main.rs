@@ -173,13 +173,13 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
     let range = editor.range();
 
-    let style = Style::default().bg(Color::Rgb(0xff, 0xd3, 0x3d));
-
     let anchor_rect = cursor_area(range.anchor(), editor, area);
-    surface.set_style(anchor_rect, style);
+    let anchor_style = Style::default().bg(Color::Rgb(0xff, 0xf5, 0xb1));
+    surface.set_style(anchor_rect, anchor_style);
 
     let head_rect = cursor_area(range.head(), editor, area);
-    surface.set_style(head_rect, style);
+    let head_style = Style::default().bg(Color::Rgb(0xff, 0xd3, 0x3d));
+    surface.set_style(head_rect, head_style);
 }
 
 fn cursor_area(cursor: Cursor, editor: &Editor, area: Rect) -> Rect {
