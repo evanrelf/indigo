@@ -26,7 +26,7 @@ fn main() -> anyhow::Result<()> {
     let mut areas = Areas::default();
 
     loop {
-        crossterm::queue!(
+        crossterm::execute!(
             terminal.backend_mut(),
             crossterm::terminal::BeginSynchronizedUpdate
         )?;
