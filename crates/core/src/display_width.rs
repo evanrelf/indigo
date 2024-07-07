@@ -8,6 +8,12 @@ pub trait DisplayWidth {
     fn display_width(&self) -> usize;
 }
 
+impl DisplayWidth for char {
+    fn display_width(&self) -> usize {
+        self.to_string().as_str().display_width()
+    }
+}
+
 impl DisplayWidth for &str {
     fn display_width(&self) -> usize {
         self.graphemes(true).map(grapheme_width).sum()
@@ -68,6 +74,9 @@ mod tests {
         let s = "";
         assert_eq!(s.display_width(), 0);
 
+        let c = '\x00'; // null
+        assert_eq!(c.display_width(), 1);
+
         let s = "\x00"; // null
         assert_eq!(s.display_width(), 1);
 
@@ -82,6 +91,9 @@ mod tests {
 
         let s = "👩🏻‍❤️‍💋‍👩🏻";
         assert_eq!(s.display_width(), 12); // TODO: I want this to be 2 :(
+
+        let c = '\t';
+        assert_eq!(c.display_width(), 8);
 
         let s = "\t";
         assert_eq!(s.display_width(), 8);
