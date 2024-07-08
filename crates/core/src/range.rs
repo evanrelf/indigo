@@ -85,6 +85,7 @@ impl<'a> RangeMut<'a> {
         self.with_head_mut(|cursor| cursor.insert(string));
     }
 
+    // TODO: Move anchor into valid position
     pub fn backspace(&mut self, count: usize) {
         self.with_head_mut(|cursor| cursor.backspace(count));
     }
@@ -183,5 +184,25 @@ impl RangeExt for RangeMut<'_> {
 
     fn range_parts_mut(&mut self) -> (&Rope, &mut RangeState) {
         (self.rope, &mut self.state)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bug() {
+        let mut rope = Rope::from("foo\n");
+        let mut range = RangeMut::new(&mut rope);
+        range.move_right(3);
+        assert_eq!(range.anchor().char(), Some('\n'));
+        assert_eq!(range.head().char(), Some('\n'));
+        range.move_right(1);
+        assert_eq!(range.anchor().char(), None);
+        assert_eq!(range.head().char(), None);
+        range.backspace(1);
+        // TODO 1: Make this test fail
+        // TODO 2: Fix the bug this test demonstrates
     }
 }
