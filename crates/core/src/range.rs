@@ -141,15 +141,15 @@ pub trait RangeExt {
     }
 
     fn move_left(&mut self, distance: usize) -> bool {
-        let result = self.extend_left(distance);
+        let moved = self.extend_left(distance);
         self.reduce();
-        result
+        moved
     }
 
     fn move_right(&mut self, distance: usize) -> bool {
-        let result = self.extend_right(distance);
+        let moved = self.extend_right(distance);
         self.reduce();
-        result
+        moved
     }
 
     fn extend_left(&mut self, distance: usize) -> bool {
