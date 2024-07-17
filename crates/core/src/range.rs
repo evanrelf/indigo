@@ -9,8 +9,8 @@ pub(crate) struct RangeState {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Range<'a> {
-    pub(crate) rope: &'a Rope,
-    pub(crate) state: RangeState,
+    rope: &'a Rope,
+    state: RangeState,
 }
 
 impl<'a> Range<'a> {
@@ -37,8 +37,8 @@ impl<'a> Range<'a> {
 
 #[derive(Debug)]
 pub struct RangeMut<'a> {
-    pub(crate) rope: &'a mut Rope,
-    pub(crate) state: RangeState,
+    rope: &'a mut Rope,
+    state: RangeState,
 }
 
 impl<'a> RangeMut<'a> {

@@ -30,24 +30,18 @@ impl Editor {
 
     #[must_use]
     pub fn range(&self) -> Range {
-        Range {
-            rope: &self.text,
-            state: self.range,
-        }
+        Range::from_state(&self.text, self.range).unwrap()
     }
 
     #[must_use]
     pub fn range_mut(&mut self) -> RangeMut {
-        RangeMut {
-            rope: &mut self.text,
-            state: self.range,
-        }
+        RangeMut::from_state(&mut self.text, self.range).unwrap()
     }
 
     pub fn with_range<T>(&mut self, func: impl Fn(&mut Range) -> T) -> T {
         let mut range = self.range();
         let result = func(&mut range);
-        self.range = range.state;
+        self.range = range.into_state();
         self.count = 0;
         result
     }
@@ -55,7 +49,7 @@ impl Editor {
     pub fn with_range_mut<T>(&mut self, func: impl Fn(&mut RangeMut) -> T) -> T {
         let mut range = self.range_mut();
         let result = func(&mut range);
-        self.range = range.state;
+        self.range = range.into_state();
         self.count = 0;
         result
     }
