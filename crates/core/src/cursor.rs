@@ -23,9 +23,13 @@ impl<'a> Cursor<'a> {
     }
 
     pub fn from_char_index(rope: &'a Rope, char_index: usize) -> Result<Self, Self> {
+        let state = CursorState { char_index };
+        Self::from_state(rope, state)
+    }
+
+    pub(crate) fn from_state(rope: &'a Rope, state: CursorState) -> Result<Self, Self> {
         // Gap at end of file counts as grapheme boundary
-        if let Ok(true) = rope.try_is_grapheme_boundary(char_index) {
-            let state = CursorState { char_index };
+        if let Ok(true) = rope.try_is_grapheme_boundary(state.char_index) {
             Ok(Self { rope, state })
         } else {
             let state = CursorState {
@@ -33,6 +37,10 @@ impl<'a> Cursor<'a> {
             };
             Err(Self { rope, state })
         }
+    }
+
+    pub(crate) fn into_state(self) -> CursorState {
+        self.state
     }
 }
 
@@ -51,9 +59,13 @@ impl<'a> CursorMut<'a> {
     }
 
     pub fn from_char_index(rope: &'a mut Rope, char_index: usize) -> Result<Self, Self> {
+        let state = CursorState { char_index };
+        Self::from_state(rope, state)
+    }
+
+    pub(crate) fn from_state(rope: &'a mut Rope, state: CursorState) -> Result<Self, Self> {
         // Gap at end of file counts as grapheme boundary
-        if let Ok(true) = rope.try_is_grapheme_boundary(char_index) {
-            let state = CursorState { char_index };
+        if let Ok(true) = rope.try_is_grapheme_boundary(state.char_index) {
             Ok(Self { rope, state })
         } else {
             let state = CursorState {
@@ -61,6 +73,10 @@ impl<'a> CursorMut<'a> {
             };
             Err(Self { rope, state })
         }
+    }
+
+    pub(crate) fn into_state(self) -> CursorState {
+        self.state
     }
 
     pub fn insert_char(&mut self, char: char) {
