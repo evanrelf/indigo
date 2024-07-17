@@ -1,4 +1,5 @@
 use crate::cursor::{Cursor, CursorExt, CursorMut, CursorState};
+use anyhow::Context as _;
 use ropey::Rope;
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -22,12 +23,20 @@ impl<'a> Range<'a> {
         }
     }
 
-    // TODO: Return `Result<Self, Self>`
-    pub(crate) fn from_state(rope: &'a Rope, state: RangeState) -> Option<Self> {
-        let anchor = Cursor::from_state(rope, state.anchor).ok()?.into_state();
-        let head = Cursor::from_state(rope, state.head).ok()?.into_state();
+    pub(crate) fn from_state(rope: &'a Rope, state: RangeState) -> anyhow::Result<Self> {
+        let anchor = Cursor::from_state(rope, state.anchor)
+            .ok()
+            .context("Failed to create Range anchor from state")?
+            .into_state();
+
+        let head = Cursor::from_state(rope, state.head)
+            .ok()
+            .context("Failed to create Range head from state")?
+            .into_state();
+
         let state = RangeState { anchor, head };
-        Some(Self { rope, state })
+
+        Ok(Self { rope, state })
     }
 
     pub(crate) fn into_state(self) -> RangeState {
@@ -50,12 +59,20 @@ impl<'a> RangeMut<'a> {
         }
     }
 
-    // TODO: Return `Result<Self, Self>`
-    pub(crate) fn from_state(rope: &'a mut Rope, state: RangeState) -> Option<Self> {
-        let anchor = Cursor::from_state(rope, state.anchor).ok()?.into_state();
-        let head = Cursor::from_state(rope, state.head).ok()?.into_state();
+    pub(crate) fn from_state(rope: &'a mut Rope, state: RangeState) -> anyhow::Result<Self> {
+        let anchor = Cursor::from_state(rope, state.anchor)
+            .ok()
+            .context("Failed to create RangeMut anchor from state")?
+            .into_state();
+
+        let head = Cursor::from_state(rope, state.head)
+            .ok()
+            .context("Failed to create RangeMut head from state")?
+            .into_state();
+
         let state = RangeState { anchor, head };
-        Some(Self { rope, state })
+
+        Ok(Self { rope, state })
     }
 
     pub(crate) fn into_state(self) -> RangeState {
