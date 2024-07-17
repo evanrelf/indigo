@@ -1,13 +1,13 @@
 use crate::cursor::{Cursor, CursorExt, CursorMut, CursorState};
 use ropey::Rope;
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub(crate) struct RangeState {
     anchor: CursorState,
     head: CursorState,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Range<'a> {
     pub(crate) rope: &'a Rope,
     pub(crate) state: RangeState,
@@ -23,6 +23,7 @@ impl<'a> Range<'a> {
     }
 }
 
+#[derive(Debug)]
 pub struct RangeMut<'a> {
     pub(crate) rope: &'a mut Rope,
     pub(crate) state: RangeState,
@@ -40,40 +41,28 @@ impl<'a> RangeMut<'a> {
     #[must_use]
     fn anchor_mut(&mut self) -> CursorMut {
         let Self { rope, state } = self;
-        CursorMut {
-            rope,
-            state: state.anchor,
-        }
+        CursorMut::from_state(rope, state.anchor).unwrap()
     }
 
     #[must_use]
     fn head_mut(&mut self) -> CursorMut {
         let Self { rope, state } = self;
-        CursorMut {
-            rope,
-            state: state.head,
-        }
+        CursorMut::from_state(rope, state.head).unwrap()
     }
 
     fn with_anchor_mut<T>(&mut self, func: impl Fn(&mut CursorMut) -> T) -> T {
         let Self { rope, state } = self;
-        let mut anchor = CursorMut {
-            rope,
-            state: state.anchor,
-        };
+        let mut anchor = CursorMut::from_state(rope, state.anchor).unwrap();
         let result = func(&mut anchor);
-        state.anchor = anchor.state;
+        state.anchor = anchor.into_state();
         result
     }
 
     fn with_head_mut<T>(&mut self, func: impl Fn(&mut CursorMut) -> T) -> T {
         let Self { rope, state } = self;
-        let mut head = CursorMut {
-            rope,
-            state: state.head,
-        };
+        let mut head = CursorMut::from_state(rope, state.head).unwrap();
         let result = func(&mut head);
-        state.head = head.state;
+        state.head = head.into_state();
         result
     }
 
@@ -127,40 +116,28 @@ pub trait RangeExt: RangeParts {
     #[must_use]
     fn anchor(&self) -> Cursor {
         let (rope, state) = self.range_parts();
-        Cursor {
-            rope,
-            state: state.anchor,
-        }
+        Cursor::from_state(rope, state.anchor).unwrap()
     }
 
     #[must_use]
     fn head(&self) -> Cursor {
         let (rope, state) = self.range_parts();
-        Cursor {
-            rope,
-            state: state.head,
-        }
+        Cursor::from_state(rope, state.head).unwrap()
     }
 
     fn with_anchor<T>(&mut self, func: impl Fn(&mut Cursor) -> T) -> T {
         let (rope, state) = self.range_parts_mut();
-        let mut anchor = Cursor {
-            rope,
-            state: state.anchor,
-        };
+        let mut anchor = Cursor::from_state(rope, state.anchor).unwrap();
         let result = func(&mut anchor);
-        state.anchor = anchor.state;
+        state.anchor = anchor.into_state();
         result
     }
 
     fn with_head<T>(&mut self, func: impl Fn(&mut Cursor) -> T) -> T {
         let (rope, state) = self.range_parts_mut();
-        let mut head = Cursor {
-            rope,
-            state: state.head,
-        };
+        let mut head = Cursor::from_state(rope, state.head).unwrap();
         let result = func(&mut head);
-        state.head = head.state;
+        state.head = head.into_state();
         result
     }
 

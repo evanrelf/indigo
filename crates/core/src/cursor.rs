@@ -1,16 +1,16 @@
 use crate::RopeExt as _;
 use ropey::{Rope, RopeSlice};
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub(crate) struct CursorState {
     // Char gap index
     char_index: usize,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Cursor<'a> {
-    pub(crate) rope: &'a Rope,
-    pub(crate) state: CursorState,
+    rope: &'a Rope,
+    state: CursorState,
 }
 
 impl<'a> Cursor<'a> {
@@ -44,9 +44,10 @@ impl<'a> Cursor<'a> {
     }
 }
 
+#[derive(Debug)]
 pub struct CursorMut<'a> {
-    pub(crate) rope: &'a mut Rope,
-    pub(crate) state: CursorState,
+    rope: &'a mut Rope,
+    state: CursorState,
 }
 
 impl<'a> CursorMut<'a> {
