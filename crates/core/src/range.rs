@@ -21,6 +21,18 @@ impl<'a> Range<'a> {
             state: RangeState::default(),
         }
     }
+
+    // TODO: Return `Result<Self, Self>`
+    pub(crate) fn from_state(rope: &'a Rope, state: RangeState) -> Option<Self> {
+        let anchor = Cursor::from_state(rope, state.anchor).ok()?.into_state();
+        let head = Cursor::from_state(rope, state.head).ok()?.into_state();
+        let state = RangeState { anchor, head };
+        Some(Self { rope, state })
+    }
+
+    pub(crate) fn into_state(self) -> RangeState {
+        self.state
+    }
 }
 
 #[derive(Debug)]
@@ -36,6 +48,18 @@ impl<'a> RangeMut<'a> {
             rope,
             state: RangeState::default(),
         }
+    }
+
+    // TODO: Return `Result<Self, Self>`
+    pub(crate) fn from_state(rope: &'a mut Rope, state: RangeState) -> Option<Self> {
+        let anchor = Cursor::from_state(rope, state.anchor).ok()?.into_state();
+        let head = Cursor::from_state(rope, state.head).ok()?.into_state();
+        let state = RangeState { anchor, head };
+        Some(Self { rope, state })
+    }
+
+    pub(crate) fn into_state(self) -> RangeState {
+        self.state
     }
 
     #[must_use]
