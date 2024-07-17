@@ -2,7 +2,7 @@ use crate::RopeExt as _;
 use ropey::{Rope, RopeSlice};
 
 #[derive(Clone, Copy, Default)]
-pub struct CursorState {
+pub(crate) struct CursorState {
     // Char gap index
     char_index: usize,
 }
@@ -97,11 +97,34 @@ impl<'a> CursorMut<'a> {
     }
 }
 
-pub trait CursorExt {
+trait CursorParts {
     fn cursor_parts(&self) -> (&Rope, &CursorState);
 
     fn cursor_parts_mut(&mut self) -> (&Rope, &mut CursorState);
+}
 
+impl CursorParts for Cursor<'_> {
+    fn cursor_parts(&self) -> (&Rope, &CursorState) {
+        (self.rope, &self.state)
+    }
+
+    fn cursor_parts_mut(&mut self) -> (&Rope, &mut CursorState) {
+        (self.rope, &mut self.state)
+    }
+}
+
+impl CursorParts for CursorMut<'_> {
+    fn cursor_parts(&self) -> (&Rope, &CursorState) {
+        (self.rope, &self.state)
+    }
+
+    fn cursor_parts_mut(&mut self) -> (&Rope, &mut CursorState) {
+        (self.rope, &mut self.state)
+    }
+}
+
+#[allow(private_bounds)]
+pub trait CursorExt: CursorParts {
     /// Char gap index
     #[must_use]
     fn char_index(&self) -> usize {
@@ -177,25 +200,7 @@ pub trait CursorExt {
     }
 }
 
-impl CursorExt for Cursor<'_> {
-    fn cursor_parts(&self) -> (&Rope, &CursorState) {
-        (self.rope, &self.state)
-    }
-
-    fn cursor_parts_mut(&mut self) -> (&Rope, &mut CursorState) {
-        (self.rope, &mut self.state)
-    }
-}
-
-impl CursorExt for CursorMut<'_> {
-    fn cursor_parts(&self) -> (&Rope, &CursorState) {
-        (self.rope, &self.state)
-    }
-
-    fn cursor_parts_mut(&mut self) -> (&Rope, &mut CursorState) {
-        (self.rope, &mut self.state)
-    }
-}
+impl<T> CursorExt for T where T: CursorParts {}
 
 fn char_to_grapheme(rope: &Rope, char_index: usize) -> usize {
     rope.slice(..char_index).graphemes().count()

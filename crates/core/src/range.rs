@@ -2,7 +2,7 @@ use crate::cursor::{Cursor, CursorExt, CursorMut, CursorState};
 use ropey::Rope;
 
 #[derive(Clone, Copy, Default)]
-pub struct RangeState {
+pub(crate) struct RangeState {
     anchor: CursorState,
     head: CursorState,
 }
@@ -96,11 +96,34 @@ impl<'a> RangeMut<'a> {
     }
 }
 
-pub trait RangeExt {
+trait RangeParts {
     fn range_parts(&self) -> (&Rope, &RangeState);
 
     fn range_parts_mut(&mut self) -> (&Rope, &mut RangeState);
+}
 
+impl RangeParts for Range<'_> {
+    fn range_parts(&self) -> (&Rope, &RangeState) {
+        (self.rope, &self.state)
+    }
+
+    fn range_parts_mut(&mut self) -> (&Rope, &mut RangeState) {
+        (self.rope, &mut self.state)
+    }
+}
+
+impl RangeParts for RangeMut<'_> {
+    fn range_parts(&self) -> (&Rope, &RangeState) {
+        (self.rope, &self.state)
+    }
+
+    fn range_parts_mut(&mut self) -> (&Rope, &mut RangeState) {
+        (self.rope, &mut self.state)
+    }
+}
+
+#[allow(private_bounds)]
+pub trait RangeExt: RangeParts {
     #[must_use]
     fn anchor(&self) -> Cursor {
         let (rope, state) = self.range_parts();
@@ -167,25 +190,7 @@ pub trait RangeExt {
     }
 }
 
-impl RangeExt for Range<'_> {
-    fn range_parts(&self) -> (&Rope, &RangeState) {
-        (self.rope, &self.state)
-    }
-
-    fn range_parts_mut(&mut self) -> (&Rope, &mut RangeState) {
-        (self.rope, &mut self.state)
-    }
-}
-
-impl RangeExt for RangeMut<'_> {
-    fn range_parts(&self) -> (&Rope, &RangeState) {
-        (self.rope, &self.state)
-    }
-
-    fn range_parts_mut(&mut self) -> (&Rope, &mut RangeState) {
-        (self.rope, &mut self.state)
-    }
-}
+impl<T> RangeExt for T where T: RangeParts {}
 
 #[cfg(test)]
 mod tests {
