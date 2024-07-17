@@ -22,14 +22,16 @@ impl<'a> Cursor<'a> {
         }
     }
 
-    #[must_use]
-    pub fn from_char_index(rope: &'a Rope, char_index: usize) -> Option<Self> {
+    pub fn from_char_index(rope: &'a Rope, char_index: usize) -> Result<Self, Self> {
         // Gap at end of file counts as grapheme boundary
         if let Ok(true) = rope.try_is_grapheme_boundary(char_index) {
             let state = CursorState { char_index };
-            Some(Self { rope, state })
+            Ok(Self { rope, state })
         } else {
-            None
+            let state = CursorState {
+                char_index: rope.len_chars(),
+            };
+            Err(Self { rope, state })
         }
     }
 }
@@ -48,14 +50,16 @@ impl<'a> CursorMut<'a> {
         }
     }
 
-    #[must_use]
-    pub fn from_char_index(rope: &'a mut Rope, char_index: usize) -> Option<Self> {
+    pub fn from_char_index(rope: &'a mut Rope, char_index: usize) -> Result<Self, Self> {
         // Gap at end of file counts as grapheme boundary
         if let Ok(true) = rope.try_is_grapheme_boundary(char_index) {
             let state = CursorState { char_index };
-            Some(Self { rope, state })
+            Ok(Self { rope, state })
         } else {
-            None
+            let state = CursorState {
+                char_index: rope.len_chars(),
+            };
+            Err(Self { rope, state })
         }
     }
 
@@ -204,12 +208,12 @@ mod tests {
     #[test]
     fn construction() {
         let rope = Rope::default();
-        assert!(Cursor::from_char_index(&rope, 0).is_some());
-        assert!(Cursor::from_char_index(&rope, 1).is_none());
+        assert!(Cursor::from_char_index(&rope, 0).is_ok());
+        assert!(Cursor::from_char_index(&rope, 1).is_err());
 
         let rope = Rope::from("xyz");
-        assert!(Cursor::from_char_index(&rope, 3).is_some());
-        assert!(Cursor::from_char_index(&rope, 4).is_none());
+        assert!(Cursor::from_char_index(&rope, 3).is_ok());
+        assert!(Cursor::from_char_index(&rope, 4).is_err());
     }
 
     #[test]
