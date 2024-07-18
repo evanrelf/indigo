@@ -29,7 +29,12 @@ pub struct Edits {
 impl Edits {
     #[must_use]
     pub fn new() -> Self {
-        Self { edits: Vec::new() }
+        Self::default()
+    }
+
+    #[must_use]
+    pub fn empty() -> Self {
+        Self::default()
     }
 
     #[must_use]
@@ -39,12 +44,12 @@ impl Edits {
         }
     }
 
-    pub fn retain(&mut self, length: usize) {
-        self.push(Edit::retain(length));
+    pub fn retain(&mut self, char_length: usize) {
+        self.push(Edit::retain(char_length));
     }
 
-    pub fn delete(&mut self, length: usize) {
-        self.push(Edit::delete(length));
+    pub fn delete(&mut self, char_length: usize) {
+        self.push(Edit::delete(char_length));
     }
 
     pub fn insert(&mut self, text: &str) {
@@ -75,8 +80,14 @@ impl Edits {
         todo!()
     }
 
-    pub fn apply(&self, rope: &Rope) -> anyhow::Result<Rope> {
-        todo!()
+    pub fn apply(&self, rope: &mut Rope) -> anyhow::Result<()> {
+        let mut char_index = 0;
+
+        for edit in &self.edits {
+            char_index = edit.apply(char_index, rope)?;
+        }
+
+        Ok(())
     }
 
     #[must_use]
@@ -85,7 +96,6 @@ impl Edits {
     }
 }
 
-// TODO: Char length?
 // TODO: More efficient encoding?
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum Edit {
@@ -96,13 +106,13 @@ pub enum Edit {
 
 impl Edit {
     #[must_use]
-    pub fn retain(length: usize) -> Self {
-        Self::Retain(length)
+    pub fn retain(char_length: usize) -> Self {
+        Self::Retain(char_length)
     }
 
     #[must_use]
-    pub fn delete(length: usize) -> Self {
-        Self::Delete(length)
+    pub fn delete(char_length: usize) -> Self {
+        Self::Delete(char_length)
     }
 
     #[must_use]
@@ -141,13 +151,51 @@ impl Edit {
             (_, other) => Some(other),
         }
     }
+
+    pub fn apply(&self, char_index: usize, rope: &mut Rope) -> anyhow::Result<usize> {
+        let char_index = match self {
+            Self::Retain(n) => char_index + n,
+            Self::Delete(n) => {
+                rope.try_remove(char_index..char_index + n)?;
+                char_index
+            }
+            Self::Insert(s) => {
+                rope.try_insert(char_index, s)?;
+                char_index + s.chars().count()
+            }
+        };
+        anyhow::ensure!(
+            char_index <= rope.len_chars(),
+            "char_index exceeds end of rope"
+        );
+        Ok(char_index)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    // TODO: Write tests for `Edits`
+    // TODO: Write more tests for `Edits`
+
+    #[test]
+    fn edits_apply() {
+        let mut edits = Edits::empty();
+        edits.retain(7);
+        edits.delete(5);
+        edits.insert("Evan");
+        edits.delete(1);
+        edits.insert("...");
+        edits.insert("?");
+
+        let mut rope = Rope::from("Hello, world!");
+        edits.apply(&mut rope).unwrap();
+        assert_eq!(rope, Rope::from("Hello, Evan...?"));
+
+        let mut rope = Rope::from("Hello, world!");
+        edits.retain(1);
+        assert!(edits.apply(&mut rope).is_err());
+    }
 
     #[test]
     fn edit_merge_empty() {
@@ -209,5 +257,19 @@ mod tests {
     #[test]
     fn edit_merge_shrink() {
         // TODO: Add merging logic that shrinks edits
+    }
+
+    #[test]
+    fn edit_apply() {
+        let mut rope = Rope::from("Hello, world!");
+        let char_index = 0;
+        let char_index = Edit::retain(7).apply(char_index, &mut rope).unwrap();
+        let char_index = Edit::delete(5).apply(char_index, &mut rope).unwrap();
+        let char_index = Edit::insert("Evan").apply(char_index, &mut rope).unwrap();
+        let char_index = Edit::delete(1).apply(char_index, &mut rope).unwrap();
+        let char_index = Edit::insert("...").apply(char_index, &mut rope).unwrap();
+        let char_index = Edit::insert("?").apply(char_index, &mut rope).unwrap();
+        assert_eq!(rope, Rope::from("Hello, Evan...?"));
+        assert!(Edit::retain(1).apply(char_index, &mut rope).is_err());
     }
 }
