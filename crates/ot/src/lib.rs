@@ -1,32 +1,15 @@
 use ropey::Rope;
 use serde::{Deserialize, Serialize};
-use std::rc::Rc;
-
-/*
-pub trait Operation: Sized {
-    type Error;
-
-    fn compose(&self, other: &Self) -> Result<Self, Self::Error>;
-
-    fn transform(&self, other: &Self) -> Result<(Self, Self), Self::Error>;
-
-    fn apply(&self, target: ()) -> Result<(), Self::Error>;
-
-    fn invert(&self, target: ()) -> Self;
-
-    // #[must_use]
-    // fn parent(&self) -> usize;
-}
-*/
+use std::{ops::Deref, rc::Rc};
 
 // TODO: More efficient encoding?
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct Edits {
+pub struct EditSeq {
     edits: Vec<Edit>,
     // TODO: Track input (rope this can apply to) and output (length of rope after edits) lengths?
 }
 
-impl Edits {
+impl EditSeq {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -83,6 +66,11 @@ impl Edits {
         todo!()
     }
 
+    #[must_use]
+    pub fn invert(&self, rope: &Rope) -> Self {
+        todo!()
+    }
+
     pub fn apply(&self, rope: &mut Rope) -> anyhow::Result<()> {
         let mut char_index = 0;
 
@@ -92,14 +80,37 @@ impl Edits {
 
         Ok(())
     }
+}
 
-    #[must_use]
-    pub fn invert(&self, rope: &Rope) -> Self {
-        todo!()
+impl Deref for EditSeq {
+    type Target = [Edit];
+
+    fn deref(&self) -> &Self::Target {
+        &self.edits
     }
 }
 
-impl Extend<Edit> for Edits {
+impl IntoIterator for EditSeq {
+    type Item = Edit;
+
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.edits.into_iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a EditSeq {
+    type Item = &'a Edit;
+
+    type IntoIter = std::slice::Iter<'a, Edit>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.edits.iter()
+    }
+}
+
+impl Extend<Edit> for EditSeq {
     fn extend<T>(&mut self, edits: T)
     where
         T: IntoIterator<Item = Edit>,
@@ -190,11 +201,11 @@ impl Edit {
 mod tests {
     use super::*;
 
-    // TODO: Write more tests for `Edits`
+    // TODO: Write more tests for `EditSeq`
 
     #[test]
-    fn edits_push() {
-        let mut edits = Edits::empty();
+    fn edit_seq_push() {
+        let mut edits = EditSeq::empty();
         edits.extend([
             Edit::insert("Hello,"),
             Edit::insert(" world!"),
@@ -203,7 +214,7 @@ mod tests {
             Edit::delete(100),
         ]);
         assert_eq!(
-            edits.edits,
+            *edits,
             [
                 Edit::insert("Hello, world!"),
                 Edit::retain(100),
@@ -214,7 +225,7 @@ mod tests {
 
     #[test]
     fn edits_apply() {
-        let mut edits = Edits::empty();
+        let mut edits = EditSeq::empty();
         edits.retain(7);
         edits.delete(5);
         edits.insert("Evan");
