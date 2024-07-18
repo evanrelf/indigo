@@ -99,6 +99,17 @@ impl Edits {
     }
 }
 
+impl Extend<Edit> for Edits {
+    fn extend<T>(&mut self, edits: T)
+    where
+        T: IntoIterator<Item = Edit>,
+    {
+        for edit in edits {
+            self.push(edit);
+        }
+    }
+}
+
 // TODO: More efficient encoding?
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum Edit {
@@ -180,6 +191,26 @@ mod tests {
     use super::*;
 
     // TODO: Write more tests for `Edits`
+
+    #[test]
+    fn edits_push() {
+        let mut edits = Edits::empty();
+        edits.extend([
+            Edit::insert("Hello,"),
+            Edit::insert(" world!"),
+            Edit::retain(42),
+            Edit::retain(58),
+            Edit::delete(100),
+        ]);
+        assert_eq!(
+            edits.edits,
+            [
+                Edit::insert("Hello, world!"),
+                Edit::retain(100),
+                Edit::delete(100)
+            ]
+        );
+    }
 
     #[test]
     fn edits_apply() {
