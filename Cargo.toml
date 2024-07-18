@@ -13,6 +13,7 @@ indigo-ot = { path = "crates/ot/" }
 indigo-tui = { path = "crates/tui/" }
 ratatui = "0.27.0"
 ropey = "1.6.1"
+serde = { version = "1.0.204", features = ["derive", "rc"] }
 unicode-segmentation = "1.11.0"
 unicode-width = "0.1.13"
 

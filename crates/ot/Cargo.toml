@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 ropey = { workspace = true }
+serde = { workspace = true }
 
 [lints]
 workspace = true
