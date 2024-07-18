@@ -338,6 +338,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "indigo-ot"
+version = "0.1.0"
+dependencies = [
+ "ropey",
+]
+
+[[package]]
 name = "indigo-tui"
 version = "0.1.0"
 dependencies = [
