@@ -44,16 +44,19 @@ impl Edits {
         }
     }
 
-    pub fn retain(&mut self, char_length: usize) {
+    pub fn retain(&mut self, char_length: usize) -> &mut Self {
         self.push(Edit::retain(char_length));
+        self
     }
 
-    pub fn delete(&mut self, char_length: usize) {
+    pub fn delete(&mut self, char_length: usize) -> &mut Self {
         self.push(Edit::delete(char_length));
+        self
     }
 
-    pub fn insert(&mut self, text: &str) {
+    pub fn insert(&mut self, text: &str) -> &mut Self {
         self.push(Edit::insert(text));
+        self
     }
 
     pub fn push(&mut self, edit: Edit) {
