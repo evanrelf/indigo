@@ -27,19 +27,16 @@ impl EditSeq {
         }
     }
 
-    pub fn retain(&mut self, char_length: usize) -> &mut Self {
+    pub fn retain(&mut self, char_length: usize) {
         self.push(Edit::retain(char_length));
-        self
     }
 
-    pub fn delete(&mut self, char_length: usize) -> &mut Self {
-        self.push(Edit::delete(char_length));
-        self
+    pub fn delete(&mut self, text: &str) {
+        self.push(Edit::delete(text));
     }
 
-    pub fn insert(&mut self, text: &str) -> &mut Self {
+    pub fn insert(&mut self, text: &str) {
         self.push(Edit::insert(text));
-        self
     }
 
     pub fn push(&mut self, edit: Edit) {
@@ -66,9 +63,14 @@ impl EditSeq {
         todo!()
     }
 
-    #[must_use]
-    pub fn invert(&self, rope: &Rope) -> Self {
-        todo!()
+    pub fn invert(&mut self) {
+        for edit in &mut self.edits {
+            match edit {
+                Edit::Retain(_) => {}
+                Edit::Delete(s) => *edit = Edit::Insert(s.clone()),
+                Edit::Insert(s) => *edit = Edit::Delete(s.clone()),
+            }
+        }
     }
 
     pub fn apply(&self, rope: &mut Rope) -> anyhow::Result<()> {
@@ -125,7 +127,10 @@ impl Extend<Edit> for EditSeq {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum Edit {
     Retain(usize),
-    Delete(usize),
+    // TODO: Check that deleted text matches in rope.
+    // TODO: Store `usize` rather than `Rc<str>` for `Delete`, recover string from rope when
+    // inverting? Gain efficiency at the cost of added complexity.
+    Delete(Rc<str>),
     Insert(Rc<str>),
 }
 
@@ -136,8 +141,8 @@ impl Edit {
     }
 
     #[must_use]
-    pub fn delete(char_length: usize) -> Self {
-        Self::Delete(char_length)
+    pub fn delete(text: &str) -> Self {
+        Self::Delete(Rc::from(text))
     }
 
     #[must_use]
@@ -150,19 +155,19 @@ impl Edit {
 
         match (self, other) {
             // Discard empty edits
-            (_, Retain(0) | Delete(0)) => None,
-            (_, Insert(r)) if r.is_empty() => None,
-            (Insert(l), Insert(r)) if l.is_empty() => {
+            (_, Retain(0)) => None,
+            (_, Delete(r) | Insert(r)) if r.is_empty() => None,
+            (Insert(l), Insert(r)) | (Delete(l), Delete(r)) if l.is_empty() => {
                 let _ = std::mem::replace(l, r);
                 None
             }
 
-            (Retain(l), Retain(r)) | (Delete(l), Delete(r)) => {
+            (Retain(l), Retain(r)) => {
                 *l += r;
                 None
             }
 
-            (Insert(l), Insert(r)) => {
+            (Insert(l), Insert(r)) | (Delete(l), Delete(r)) => {
                 let mut s = String::with_capacity(l.len() + r.len());
                 s.push_str(l);
                 s.push_str(&r);
@@ -180,8 +185,8 @@ impl Edit {
     pub fn apply(&self, char_index: usize, rope: &mut Rope) -> anyhow::Result<usize> {
         let char_index = match self {
             Self::Retain(n) => char_index + n,
-            Self::Delete(n) => {
-                rope.try_remove(char_index..char_index + n)?;
+            Self::Delete(s) => {
+                rope.try_remove(char_index..char_index + s.chars().count())?;
                 char_index
             }
             Self::Insert(s) => {
@@ -211,25 +216,42 @@ mod tests {
             Edit::insert(" world!"),
             Edit::retain(42),
             Edit::retain(58),
-            Edit::delete(100),
+            Edit::delete(" omg"),
+            Edit::delete(" wtf"),
+            Edit::delete(" bbq"),
         ]);
         assert_eq!(
             *edits,
             [
                 Edit::insert("Hello, world!"),
                 Edit::retain(100),
-                Edit::delete(100)
+                Edit::delete(" omg wtf bbq"),
             ]
         );
+    }
+
+    #[test]
+    fn edits_invert() {
+        let mut edits = EditSeq::empty();
+        edits.delete("H");
+        edits.insert("Y");
+        edits.retain("ello".chars().count());
+        edits.insert("w");
+        edits.delete(", world!");
+        edits.insert(" and pink");
+        let mut inverted = edits.clone();
+        inverted.invert();
+        inverted.invert();
+        assert_eq!(edits, inverted);
     }
 
     #[test]
     fn edits_apply() {
         let mut edits = EditSeq::empty();
         edits.retain(7);
-        edits.delete(5);
+        edits.delete("world");
         edits.insert("Evan");
-        edits.delete(1);
+        edits.delete("!");
         edits.insert("...");
         edits.insert("?");
 
@@ -248,34 +270,34 @@ mod tests {
         let mut e1 = Edit::retain(42);
         let e2 = Edit::retain(0);
         assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::Retain(42));
+        assert_eq!(e1, Edit::retain(42));
 
         let mut e1 = Edit::retain(0);
         let e2 = Edit::retain(42);
         assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::Retain(42));
+        assert_eq!(e1, Edit::retain(42));
 
         // Delete 0
-        let mut e1 = Edit::delete(42);
-        let e2 = Edit::delete(0);
+        let mut e1 = Edit::delete("foo");
+        let e2 = Edit::delete("");
         assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::Delete(42));
+        assert_eq!(e1, Edit::delete("foo"));
 
-        let mut e1 = Edit::delete(0);
-        let e2 = Edit::delete(42);
+        let mut e1 = Edit::delete("");
+        let e2 = Edit::delete("foo");
         assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::Delete(42));
+        assert_eq!(e1, Edit::delete("foo"));
 
         // Insert ""
         let mut e1 = Edit::insert("hello");
         let e2 = Edit::insert("");
         assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::Insert(Rc::from("hello")));
+        assert_eq!(e1, Edit::insert("hello"));
 
         let mut e1 = Edit::insert("");
         let e2 = Edit::insert("hello");
         assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::Insert(Rc::from("hello")));
+        assert_eq!(e1, Edit::insert("hello"));
     }
 
     #[test]
@@ -284,19 +306,19 @@ mod tests {
         let mut e1 = Edit::retain(25);
         let e2 = Edit::retain(50);
         assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::Retain(75));
+        assert_eq!(e1, Edit::retain(75));
 
         // Delete
-        let mut e1 = Edit::delete(25);
-        let e2 = Edit::delete(50);
+        let mut e1 = Edit::delete("foo");
+        let e2 = Edit::delete("bar");
         assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::Delete(75));
+        assert_eq!(e1, Edit::delete("foobar"));
 
         // Insert
         let mut e1 = Edit::insert("hello");
         let e2 = Edit::insert(" world");
         assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::Insert(Rc::from("hello world")));
+        assert_eq!(e1, Edit::insert("hello world"));
     }
 
     #[test]
@@ -309,9 +331,9 @@ mod tests {
         let mut rope = Rope::from("Hello, world!");
         let char_index = 0;
         let char_index = Edit::retain(7).apply(char_index, &mut rope).unwrap();
-        let char_index = Edit::delete(5).apply(char_index, &mut rope).unwrap();
+        let char_index = Edit::delete("world").apply(char_index, &mut rope).unwrap();
         let char_index = Edit::insert("Evan").apply(char_index, &mut rope).unwrap();
-        let char_index = Edit::delete(1).apply(char_index, &mut rope).unwrap();
+        let char_index = Edit::delete("!").apply(char_index, &mut rope).unwrap();
         let char_index = Edit::insert("...").apply(char_index, &mut rope).unwrap();
         let char_index = Edit::insert("?").apply(char_index, &mut rope).unwrap();
         assert_eq!(rope, Rope::from("Hello, Evan...?"));
