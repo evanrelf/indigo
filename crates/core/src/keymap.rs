@@ -12,10 +12,11 @@ impl Keymap {
         Self::default()
     }
 
-    pub fn map(&mut self, mode: &str, key: &str, action: fn(&mut Editor)) {
+    pub fn map(&mut self, mode: &str, key: &str, action: fn(&mut Editor)) -> &mut Self {
         let mode = mode.parse().unwrap();
         let key = key.parse().unwrap();
         self.mappings.insert((mode, key), action);
+        self
     }
 
     #[must_use]
