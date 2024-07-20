@@ -220,6 +220,8 @@ fn cursor_area(cursor: Cursor, editor: &Editor, area: Rect) -> Option<Rect> {
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
+    let mode = editor.mode();
+
     let count = editor.count;
 
     let range = editor.range();
@@ -233,9 +235,9 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let status_bar = if let Some(grapheme) = cursor.grapheme() {
         let chars = grapheme.chars().collect::<Vec<_>>();
         let display_width = grapheme.display_width();
-        format!("count={count}, char_index={char_index}, eof={eof}, grapheme=\"{grapheme:?}\", chars={chars:?}, display_width={display_width}")
+        format!("mode={mode}, count={count}, char_index={char_index}, eof={eof}, grapheme=\"{grapheme:?}\", chars={chars:?}, display_width={display_width}")
     } else {
-        format!("count={count}, char_index={char_index}, eof={eof}, grapheme=n/a, chars=n/a, display_width=n/a")
+        format!("mode={mode}, count={count}, char_index={char_index}, eof={eof}, grapheme=n/a, chars=n/a, display_width=n/a")
     };
 
     Line::raw(status_bar).render(area, surface);
