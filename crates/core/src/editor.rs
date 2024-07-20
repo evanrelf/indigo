@@ -1,5 +1,4 @@
-use crate::range::RangeState;
-use crate::{Range, RangeMut, RopeExt as _};
+use crate::{range::RangeState, Mode, Range, RangeMut, RopeExt as _};
 use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::{cmp::min, fs::File, io::BufReader};
@@ -7,6 +6,7 @@ use std::{cmp::min, fs::File, io::BufReader};
 pub struct Editor {
     text: Rope,
     range: RangeState,
+    mode: Mode,
     pub count: usize,
     vertical_scroll: usize,
 }
@@ -18,6 +18,7 @@ impl Editor {
         Ok(Self {
             text: rope,
             range: RangeState::default(),
+            mode: Mode::default(),
             count: 0,
             vertical_scroll: 0,
         })
@@ -36,6 +37,16 @@ impl Editor {
     #[must_use]
     pub fn range_mut(&mut self) -> RangeMut {
         RangeMut::from_state(&mut self.text, self.range).unwrap()
+    }
+
+    #[must_use]
+    pub fn mode(&self) -> &Mode {
+        &self.mode
+    }
+
+    #[must_use]
+    pub fn mode_mut(&mut self) -> &mut Mode {
+        &mut self.mode
     }
 
     pub fn with_range<T>(&mut self, func: impl Fn(&mut Range) -> T) -> T {
