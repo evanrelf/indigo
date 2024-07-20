@@ -1,5 +1,5 @@
 use std::{fmt::Display, str::FromStr};
-use winnow::{ascii::Caseless, combinator::alt, prelude::*};
+use winnow::{combinator::alt, prelude::*};
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 pub enum Mode {
@@ -27,8 +27,8 @@ impl FromStr for Mode {
 
 fn mode(input: &mut &str) -> PResult<Mode> {
     alt((
-        alt((Caseless("normal"), Caseless("n"))).value(Mode::Normal),
-        alt((Caseless("insert"), Caseless("i"))).value(Mode::Insert),
+        alt(("normal", "n")).value(Mode::Normal),
+        alt(("insert", "i")).value(Mode::Insert),
     ))
     .parse_next(input)
 }
