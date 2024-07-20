@@ -271,6 +271,7 @@ fn handle_event_normal(
                 editor.count = editor.count.saturating_add(n);
             }
             (KeyModifiers::NONE, KeyCode::Esc) => editor.count = 0,
+            (KeyModifiers::NONE, KeyCode::Char('i')) => editor.mode = Mode::Insert,
             (KeyModifiers::NONE, KeyCode::Char('h')) => actions::move_left(editor),
             (KeyModifiers::NONE, KeyCode::Char('l')) => actions::move_right(editor),
             (KeyModifiers::SHIFT, KeyCode::Char('h' | 'H')) => actions::extend_left(editor),
@@ -306,6 +307,7 @@ fn handle_event_insert(
 
     match event {
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+            (KeyModifiers::NONE, KeyCode::Esc) => editor.mode = Mode::Normal,
             (KeyModifiers::NONE, KeyCode::Backspace) => actions::backspace(editor),
             (KeyModifiers::NONE, KeyCode::Char('d')) => actions::delete(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
