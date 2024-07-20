@@ -1,3 +1,6 @@
+// TODO: Remove
+#![allow(unused_variables)]
+
 use ropey::Rope;
 use serde::{Deserialize, Serialize};
 use std::{ops::Deref, rc::Rc};
