@@ -1,7 +1,7 @@
 use std::{fmt::Display, str::FromStr};
 use winnow::{ascii::Caseless, combinator::alt, prelude::*};
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 pub enum Mode {
     #[default]
     Normal,
