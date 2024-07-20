@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use flagset::FlagSet;
 
 mod c {
@@ -8,8 +9,8 @@ mod i {
     pub use indigo_core::{Key, KeyCode, KeyModifier};
 }
 
-pub fn key_c2i(key: c::KeyEvent) -> Option<i::Key> {
-    Some(i::Key {
+pub fn key_c2i(key: c::KeyEvent) -> anyhow::Result<i::Key> {
+    Ok(i::Key {
         modifiers: key_modifiers_c2i(key.modifiers)?,
         code: key_code_c2i(key.code)?,
     })
@@ -24,14 +25,14 @@ pub fn key_i2c(key: i::Key) -> c::KeyEvent {
     }
 }
 
-pub fn key_modifiers_c2i(modifiers: c::KeyModifiers) -> Option<FlagSet<i::KeyModifier>> {
+pub fn key_modifiers_c2i(modifiers: c::KeyModifiers) -> anyhow::Result<FlagSet<i::KeyModifier>> {
     modifiers
         .iter_names()
         .map(|m| match m {
-            ("SHIFT", _) => Some(i::KeyModifier::Shift),
-            ("CONTROL", _) => Some(i::KeyModifier::Control),
-            ("ALT", _) => Some(i::KeyModifier::Alt),
-            _ => None,
+            ("SHIFT", _) => Ok(i::KeyModifier::Shift),
+            ("CONTROL", _) => Ok(i::KeyModifier::Control),
+            ("ALT", _) => Ok(i::KeyModifier::Alt),
+            (m, _) => Err(anyhow!("Unsupported crossterm key modifier '{m}'")),
         })
         .try_fold(FlagSet::default(), |x, y| y.map(|y| x | y))
 }
@@ -47,18 +48,18 @@ pub fn key_modifiers_i2c(modifiers: FlagSet<i::KeyModifier>) -> c::KeyModifiers 
         .fold(c::KeyModifiers::NONE, |x, y| x | y)
 }
 
-pub fn key_code_c2i(code: c::KeyCode) -> Option<i::KeyCode> {
+pub fn key_code_c2i(code: c::KeyCode) -> anyhow::Result<i::KeyCode> {
     match code {
-        c::KeyCode::Backspace => Some(i::KeyCode::Backspace),
-        c::KeyCode::Enter => Some(i::KeyCode::Enter),
-        c::KeyCode::Left => Some(i::KeyCode::Left),
-        c::KeyCode::Right => Some(i::KeyCode::Right),
-        c::KeyCode::Up => Some(i::KeyCode::Up),
-        c::KeyCode::Down => Some(i::KeyCode::Down),
-        c::KeyCode::Tab => Some(i::KeyCode::Tab),
-        c::KeyCode::Char(c) => Some(i::KeyCode::Char(c)),
-        c::KeyCode::Esc => Some(i::KeyCode::Escape),
-        _ => None,
+        c::KeyCode::Backspace => Ok(i::KeyCode::Backspace),
+        c::KeyCode::Enter => Ok(i::KeyCode::Enter),
+        c::KeyCode::Left => Ok(i::KeyCode::Left),
+        c::KeyCode::Right => Ok(i::KeyCode::Right),
+        c::KeyCode::Up => Ok(i::KeyCode::Up),
+        c::KeyCode::Down => Ok(i::KeyCode::Down),
+        c::KeyCode::Tab => Ok(i::KeyCode::Tab),
+        c::KeyCode::Char(c) => Ok(i::KeyCode::Char(c)),
+        c::KeyCode::Esc => Ok(i::KeyCode::Escape),
+        _ => Err(anyhow!("Unsupported crossterm key code '{code:?}'")),
     }
 }
 
@@ -89,9 +90,9 @@ mod tests {
             kind: c::KeyEventKind::Press,
             state: c::KeyEventState::NONE,
         };
-        assert_eq!(Some(i), key_c2i(c));
-        assert_eq!(Some(i), key_c2i(key_i2c(i)));
-        assert_eq!(c, key_i2c(i));
-        assert_eq!(Some(c), key_c2i(c).map(key_i2c));
+        assert_eq!(key_c2i(c).unwrap(), i);
+        assert_eq!(key_c2i(key_i2c(i)).unwrap(), i);
+        assert_eq!(key_i2c(i), c);
+        assert_eq!(key_c2i(c).map(key_i2c).unwrap(), c);
     }
 }
