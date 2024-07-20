@@ -5,7 +5,7 @@ use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
 use indigo_core::{
-    actions, Cursor, CursorExt as _, DisplayWidth as _, Editor, RangeExt as _, RopeExt as _,
+    actions, Cursor, CursorExt as _, DisplayWidth as _, Editor, Mode, RangeExt as _, RopeExt as _,
 };
 use ratatui::{
     prelude::{Buffer as Surface, Constraint, Layout, Rect, Style, Widget as _},
@@ -249,6 +249,18 @@ fn handle_event(
     areas: Areas,
     event: &Event,
 ) -> anyhow::Result<bool> {
+    match editor.mode() {
+        Mode::Normal => handle_event_normal(editor, terminal, areas, event),
+        Mode::Insert => handle_event_insert(editor, terminal, areas, event),
+    }
+}
+
+fn handle_event_normal(
+    editor: &mut Editor,
+    terminal: &mut TerminalGuard,
+    areas: Areas,
+    event: &Event,
+) -> anyhow::Result<bool> {
     let mut quit = false;
 
     match event {
@@ -259,12 +271,43 @@ fn handle_event(
                 editor.count = editor.count.saturating_add(n);
             }
             (KeyModifiers::NONE, KeyCode::Esc) => editor.count = 0,
-            (KeyModifiers::NONE, KeyCode::Backspace) => actions::backspace(editor),
-            (KeyModifiers::NONE, KeyCode::Char('d')) => actions::delete(editor),
             (KeyModifiers::NONE, KeyCode::Char('h')) => actions::move_left(editor),
             (KeyModifiers::NONE, KeyCode::Char('l')) => actions::move_right(editor),
             (KeyModifiers::SHIFT, KeyCode::Char('h' | 'H')) => actions::extend_left(editor),
             (KeyModifiers::SHIFT, KeyCode::Char('l' | 'L')) => actions::extend_right(editor),
+            (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
+                actions::scroll_half_page_up(editor, usize::from(areas.text.height));
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('d')) => {
+                actions::scroll_half_page_down(editor, usize::from(areas.text.height));
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
+            (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
+            _ => {}
+        },
+        Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => actions::scroll_up(editor),
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => actions::scroll_down(editor),
+            _ => {}
+        },
+        _ => {}
+    }
+
+    Ok(quit)
+}
+
+fn handle_event_insert(
+    editor: &mut Editor,
+    terminal: &mut TerminalGuard,
+    areas: Areas,
+    event: &Event,
+) -> anyhow::Result<bool> {
+    let mut quit = false;
+
+    match event {
+        Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+            (KeyModifiers::NONE, KeyCode::Backspace) => actions::backspace(editor),
+            (KeyModifiers::NONE, KeyCode::Char('d')) => actions::delete(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
                 actions::scroll_half_page_up(editor, usize::from(areas.text.height));
             }
