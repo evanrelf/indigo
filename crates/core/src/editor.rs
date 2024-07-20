@@ -10,6 +10,7 @@ pub struct Editor {
     pub count: usize,
     pub height: usize,
     vertical_scroll: usize,
+    pub quit: bool,
 }
 
 impl Editor {
@@ -23,6 +24,7 @@ impl Editor {
             count: 0,
             height: 0,
             vertical_scroll: 0,
+            quit: false,
         })
     }
 

@@ -47,9 +47,9 @@ fn main() -> anyhow::Result<()> {
             crossterm::terminal::EndSynchronizedUpdate
         )?;
 
-        let quit = handle_event(&mut editor, &mut terminal, &event::read()?)?;
+        handle_event(&mut editor, &mut terminal, &event::read()?)?;
 
-        if quit {
+        if editor.quit {
             break;
         }
     }
@@ -249,7 +249,7 @@ fn handle_event(
     editor: &mut Editor,
     terminal: &mut TerminalGuard,
     event: &Event,
-) -> anyhow::Result<bool> {
+) -> anyhow::Result<()> {
     match editor.mode {
         Mode::Normal => handle_event_normal(editor, terminal, event),
         Mode::Insert => handle_event_insert(editor, terminal, event),
@@ -260,9 +260,7 @@ fn handle_event_normal(
     editor: &mut Editor,
     terminal: &mut TerminalGuard,
     event: &Event,
-) -> anyhow::Result<bool> {
-    let mut quit = false;
-
+) -> anyhow::Result<()> {
     match event {
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::NONE, KeyCode::Char(c @ ('0'..='9'))) => {
@@ -279,7 +277,7 @@ fn handle_event_normal(
             (KeyModifiers::CONTROL, KeyCode::Char('u')) => actions::scroll_half_page_up(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('d')) => actions::scroll_half_page_down(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
-            (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
+            (KeyModifiers::CONTROL, KeyCode::Char('c')) => editor.quit = true,
             _ => {}
         },
         Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
@@ -290,16 +288,14 @@ fn handle_event_normal(
         _ => {}
     }
 
-    Ok(quit)
+    Ok(())
 }
 
 fn handle_event_insert(
     editor: &mut Editor,
     terminal: &mut TerminalGuard,
     event: &Event,
-) -> anyhow::Result<bool> {
-    let mut quit = false;
-
+) -> anyhow::Result<()> {
     match event {
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::NONE, KeyCode::Esc) => editor.mode = Mode::Normal,
@@ -308,7 +304,7 @@ fn handle_event_insert(
             (KeyModifiers::CONTROL, KeyCode::Char('u')) => actions::scroll_half_page_up(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('d')) => actions::scroll_half_page_down(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
-            (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
+            (KeyModifiers::CONTROL, KeyCode::Char('c')) => editor.quit = true,
             _ => {}
         },
         Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
@@ -319,5 +315,5 @@ fn handle_event_insert(
         _ => {}
     }
 
-    Ok(quit)
+    Ok(())
 }
