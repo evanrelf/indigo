@@ -1,3 +1,4 @@
+mod key;
 mod terminal;
 
 use crate::terminal::TerminalGuard;
