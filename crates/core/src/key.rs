@@ -10,6 +10,10 @@ use winnow::{
     token::one_of,
 };
 
+// TODO: Render using Unicode symbols, like macOS? ⌃⌥ ⇧⇥ ↵ ␣⌫ ⌦ ⎋ etc. Maybe not since they're hard
+// to type.
+// http://xahlee.info/comp/unicode_computing_symbols.html
+
 // TODO: Strict mode? Would forbid alternatives, abbreviations, repeated modifiers, incorrectly
 // ordered modifiers, etc.
 
@@ -107,7 +111,6 @@ where
 
 impl Display for Key {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
-        let ch;
         let code = match self.code {
             KeyCode::Backspace => "backspace",
             KeyCode::Enter => "enter",
@@ -117,15 +120,13 @@ impl Display for Key {
             KeyCode::Down => "down",
             KeyCode::Tab => "tab",
             KeyCode::Escape => "escape",
-            KeyCode::Char(c) => {
-                ch = format!("{c}");
-                &ch
-            }
+            KeyCode::Char(c) => &c.to_string(),
         };
         if self.modifiers.is_empty() && matches!(self.code, KeyCode::Char(_)) {
             write!(f, "{code}")?;
         } else {
             write!(f, "<")?;
+            // TODO: Define canonical ordering of modifiers for consistency
             for modifier in self.modifiers {
                 let modifier = match modifier {
                     KeyModifier::Shift => "s",
@@ -134,8 +135,7 @@ impl Display for Key {
                 };
                 write!(f, "{modifier}-")?;
             }
-            write!(f, "{code}")?;
-            write!(f, ">")?;
+            write!(f, "{code}>")?;
         }
         Ok(())
     }
