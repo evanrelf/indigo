@@ -32,7 +32,7 @@ pub fn key_modifiers_c2i(modifiers: c::KeyModifiers) -> anyhow::Result<FlagSet<i
             ("SHIFT", _) => Ok(i::KeyModifier::Shift),
             ("CONTROL", _) => Ok(i::KeyModifier::Control),
             ("ALT", _) => Ok(i::KeyModifier::Alt),
-            (m, _) => Err(anyhow!("Unsupported crossterm key modifier '{m}'")),
+            (_, m) => Err(anyhow!("Unsupported crossterm key modifier: {m:?}")),
         })
         .try_fold(FlagSet::default(), |x, y| y.map(|y| x | y))
 }
@@ -59,7 +59,7 @@ pub fn key_code_c2i(code: c::KeyCode) -> anyhow::Result<i::KeyCode> {
         c::KeyCode::Tab => Ok(i::KeyCode::Tab),
         c::KeyCode::Char(c) => Ok(i::KeyCode::Char(c)),
         c::KeyCode::Esc => Ok(i::KeyCode::Escape),
-        _ => Err(anyhow!("Unsupported crossterm key code '{code:?}'")),
+        _ => Err(anyhow!("Unsupported crossterm key code: {code:?}")),
     }
 }
 

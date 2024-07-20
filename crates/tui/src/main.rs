@@ -1,10 +1,11 @@
+mod event;
 mod key;
 mod terminal;
 
 use crate::terminal::TerminalGuard;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
-use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEventKind};
+use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEventKind};
 use indigo_core::{
     actions, Cursor, CursorExt as _, DisplayWidth as _, Editor, Mode, RangeExt as _, RopeExt as _,
 };
@@ -47,7 +48,7 @@ fn main() -> anyhow::Result<()> {
             crossterm::terminal::EndSynchronizedUpdate
         )?;
 
-        handle_event(&mut editor, &mut terminal, &event::read()?)?;
+        handle_event(&mut editor, &mut terminal, &crossterm::event::read()?)?;
 
         if editor.quit {
             break;
