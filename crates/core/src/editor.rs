@@ -8,6 +8,7 @@ pub struct Editor {
     range: RangeState,
     pub mode: Mode,
     pub count: usize,
+    pub height: usize,
     vertical_scroll: usize,
 }
 
@@ -20,6 +21,7 @@ impl Editor {
             range: RangeState::default(),
             mode: Mode::default(),
             count: 0,
+            height: 0,
             vertical_scroll: 0,
         })
     }

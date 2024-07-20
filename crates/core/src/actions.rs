@@ -31,13 +31,13 @@ pub fn scroll_down(editor: &mut Editor) {
     editor.scroll_to(line);
 }
 
-pub fn scroll_half_page_up(editor: &mut Editor, height: usize) {
-    let line = editor.vertical_scroll().saturating_sub(height / 2);
+pub fn scroll_half_page_up(editor: &mut Editor) {
+    let line = editor.vertical_scroll().saturating_sub(editor.height / 2);
     editor.scroll_to(line);
 }
 
-pub fn scroll_half_page_down(editor: &mut Editor, height: usize) {
-    let line = editor.vertical_scroll() + height / 2;
+pub fn scroll_half_page_down(editor: &mut Editor) {
+    let line = editor.vertical_scroll() + editor.height / 2;
     editor.scroll_to(line);
 }
 

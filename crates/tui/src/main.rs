@@ -37,6 +37,7 @@ fn main() -> anyhow::Result<()> {
 
         terminal.draw(|frame| {
             areas = Areas::new(&editor, frame.size());
+            editor.height = usize::from(areas.text.height);
             let surface = frame.buffer_mut();
             render(&editor, areas, surface);
         })?;
@@ -46,7 +47,7 @@ fn main() -> anyhow::Result<()> {
             crossterm::terminal::EndSynchronizedUpdate
         )?;
 
-        let quit = handle_event(&mut editor, &mut terminal, areas, &event::read()?)?;
+        let quit = handle_event(&mut editor, &mut terminal, &event::read()?)?;
 
         if quit {
             break;
@@ -247,19 +248,17 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 fn handle_event(
     editor: &mut Editor,
     terminal: &mut TerminalGuard,
-    areas: Areas,
     event: &Event,
 ) -> anyhow::Result<bool> {
     match editor.mode {
-        Mode::Normal => handle_event_normal(editor, terminal, areas, event),
-        Mode::Insert => handle_event_insert(editor, terminal, areas, event),
+        Mode::Normal => handle_event_normal(editor, terminal, event),
+        Mode::Insert => handle_event_insert(editor, terminal, event),
     }
 }
 
 fn handle_event_normal(
     editor: &mut Editor,
     terminal: &mut TerminalGuard,
-    areas: Areas,
     event: &Event,
 ) -> anyhow::Result<bool> {
     let mut quit = false;
@@ -277,12 +276,8 @@ fn handle_event_normal(
             (KeyModifiers::NONE, KeyCode::Char('l')) => actions::move_right(editor),
             (KeyModifiers::SHIFT, KeyCode::Char('h' | 'H')) => actions::extend_left(editor),
             (KeyModifiers::SHIFT, KeyCode::Char('l' | 'L')) => actions::extend_right(editor),
-            (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
-                actions::scroll_half_page_up(editor, usize::from(areas.text.height));
-            }
-            (KeyModifiers::CONTROL, KeyCode::Char('d')) => {
-                actions::scroll_half_page_down(editor, usize::from(areas.text.height));
-            }
+            (KeyModifiers::CONTROL, KeyCode::Char('u')) => actions::scroll_half_page_up(editor),
+            (KeyModifiers::CONTROL, KeyCode::Char('d')) => actions::scroll_half_page_down(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
             (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
             _ => {}
@@ -301,7 +296,6 @@ fn handle_event_normal(
 fn handle_event_insert(
     editor: &mut Editor,
     terminal: &mut TerminalGuard,
-    areas: Areas,
     event: &Event,
 ) -> anyhow::Result<bool> {
     let mut quit = false;
@@ -311,12 +305,8 @@ fn handle_event_insert(
             (KeyModifiers::NONE, KeyCode::Esc) => editor.mode = Mode::Normal,
             (KeyModifiers::NONE, KeyCode::Backspace) => actions::backspace(editor),
             (KeyModifiers::NONE, KeyCode::Char('d')) => actions::delete(editor),
-            (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
-                actions::scroll_half_page_up(editor, usize::from(areas.text.height));
-            }
-            (KeyModifiers::CONTROL, KeyCode::Char('d')) => {
-                actions::scroll_half_page_down(editor, usize::from(areas.text.height));
-            }
+            (KeyModifiers::CONTROL, KeyCode::Char('u')) => actions::scroll_half_page_up(editor),
+            (KeyModifiers::CONTROL, KeyCode::Char('d')) => actions::scroll_half_page_down(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
             (KeyModifiers::CONTROL, KeyCode::Char('c')) => quit = true,
             _ => {}
