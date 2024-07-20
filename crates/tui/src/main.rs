@@ -220,7 +220,7 @@ fn cursor_area(cursor: Cursor, editor: &Editor, area: Rect) -> Option<Rect> {
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let mode = editor.mode();
+    let mode = &editor.mode;
 
     let count = editor.count;
 
@@ -249,7 +249,7 @@ fn handle_event(
     areas: Areas,
     event: &Event,
 ) -> anyhow::Result<bool> {
-    match editor.mode() {
+    match editor.mode {
         Mode::Normal => handle_event_normal(editor, terminal, areas, event),
         Mode::Insert => handle_event_insert(editor, terminal, areas, event),
     }

@@ -6,7 +6,7 @@ use std::{cmp::min, fs::File, io::BufReader};
 pub struct Editor {
     text: Rope,
     range: RangeState,
-    mode: Mode,
+    pub mode: Mode,
     pub count: usize,
     vertical_scroll: usize,
 }
@@ -37,16 +37,6 @@ impl Editor {
     #[must_use]
     pub fn range_mut(&mut self) -> RangeMut {
         RangeMut::from_state(&mut self.text, self.range).unwrap()
-    }
-
-    #[must_use]
-    pub fn mode(&self) -> &Mode {
-        &self.mode
-    }
-
-    #[must_use]
-    pub fn mode_mut(&mut self) -> &mut Mode {
-        &mut self.mode
     }
 
     pub fn with_range<T>(&mut self, func: impl Fn(&mut Range) -> T) -> T {
