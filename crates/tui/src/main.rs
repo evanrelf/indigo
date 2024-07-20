@@ -274,6 +274,7 @@ fn handle_event_normal(
             (KeyModifiers::NONE, KeyCode::Char('l')) => actions::move_right(editor),
             (KeyModifiers::SHIFT, KeyCode::Char('h' | 'H')) => actions::extend_left(editor),
             (KeyModifiers::SHIFT, KeyCode::Char('l' | 'L')) => actions::extend_right(editor),
+            (KeyModifiers::NONE, KeyCode::Char('d')) => actions::delete(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('u')) => actions::scroll_half_page_up(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('d')) => actions::scroll_half_page_down(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
@@ -300,7 +301,7 @@ fn handle_event_insert(
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::NONE, KeyCode::Esc) => editor.mode = Mode::Normal,
             (KeyModifiers::NONE, KeyCode::Backspace) => actions::backspace(editor),
-            (KeyModifiers::NONE, KeyCode::Char('d')) => actions::delete(editor),
+            (KeyModifiers::NONE, KeyCode::Delete) => actions::delete(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('u')) => actions::scroll_half_page_up(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('d')) => actions::scroll_half_page_down(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
