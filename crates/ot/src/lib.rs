@@ -60,11 +60,13 @@ impl EditSeq {
         if let Some(Edit::Retain(n)) = self.edits.last_mut() {
             *n += byte_length;
         } else {
-            self.edits.push(Edit::retain(byte_length));
+            self.edits.push(Edit::Retain(byte_length));
         }
     }
 
-    pub fn delete(&mut self, text: &str) {
+    pub fn delete(&mut self, text: impl Into<Rc<str>>) {
+        let text = text.into();
+
         if text.is_empty() {
             return;
         }
@@ -74,14 +76,16 @@ impl EditSeq {
         if let Some(Edit::Delete(last)) = self.edits.last_mut() {
             let mut s = String::with_capacity(last.len() + text.len());
             s.push_str(last);
-            s.push_str(text);
+            s.push_str(&text);
             *last = Rc::from(s);
         } else {
-            self.edits.push(Edit::delete(text));
+            self.edits.push(Edit::Delete(text));
         }
     }
 
-    pub fn insert(&mut self, text: &str) {
+    pub fn insert(&mut self, text: impl Into<Rc<str>>) {
+        let text = text.into();
+
         if text.is_empty() {
             return;
         }
@@ -91,18 +95,18 @@ impl EditSeq {
         if let Some(Edit::Insert(last)) = self.edits.last_mut() {
             let mut s = String::with_capacity(last.len() + text.len());
             s.push_str(last);
-            s.push_str(text);
+            s.push_str(&text);
             *last = Rc::from(s);
         } else {
-            self.edits.push(Edit::insert(text));
+            self.edits.push(Edit::Insert(text));
         }
     }
 
     pub fn push(&mut self, edit: Edit) {
         match edit {
             Edit::Retain(n) => self.retain(n),
-            Edit::Delete(s) => self.delete(&s),
-            Edit::Insert(s) => self.insert(&s),
+            Edit::Delete(s) => self.delete(s),
+            Edit::Insert(s) => self.insert(s),
         }
     }
 
@@ -136,6 +140,21 @@ impl EditSeq {
                 Edit::Insert(s) => *edit = Edit::Delete(s.clone()),
             }
         }
+    }
+
+    #[must_use]
+    pub fn inverted(&self) -> Self {
+        let mut inverted = Self::with_capacity(self.len());
+
+        for edit in &self.edits {
+            match edit {
+                Edit::Retain(n) => inverted.retain(*n),
+                Edit::Delete(s) => inverted.insert(s.clone()),
+                Edit::Insert(s) => inverted.delete(s.clone()),
+            }
+        }
+
+        inverted
     }
 
     pub fn apply(&self, rope: &mut Rope) -> Result<(), EditError> {
@@ -207,21 +226,6 @@ pub enum Edit {
 }
 
 impl Edit {
-    #[must_use]
-    pub fn retain(byte_length: usize) -> Self {
-        Self::Retain(byte_length)
-    }
-
-    #[must_use]
-    pub fn delete(text: &str) -> Self {
-        Self::Delete(Rc::from(text))
-    }
-
-    #[must_use]
-    pub fn insert(text: &str) -> Self {
-        Self::Insert(Rc::from(text))
-    }
-
     pub fn apply(&self, byte_index: usize, rope: &mut Rope) -> Result<usize, EditError> {
         let char_index = rope.try_byte_to_char(byte_index)?;
 
@@ -265,20 +269,20 @@ mod tests {
     fn edit_seq_push() {
         let mut edits = EditSeq::new();
         edits.extend([
-            Edit::insert("Hello,"),
-            Edit::insert(" world!"),
-            Edit::retain(42),
-            Edit::retain(58),
-            Edit::delete(" omg"),
-            Edit::delete(" wtf"),
-            Edit::delete(" bbq"),
+            Edit::Insert(Rc::from("Hello,")),
+            Edit::Insert(Rc::from(" world!")),
+            Edit::Retain(42),
+            Edit::Retain(58),
+            Edit::Delete(Rc::from(" omg")),
+            Edit::Delete(Rc::from(" wtf")),
+            Edit::Delete(Rc::from(" bbq")),
         ]);
         assert_eq!(
             *edits,
             [
-                Edit::insert("Hello, world!"),
-                Edit::retain(100),
-                Edit::delete(" omg wtf bbq"),
+                Edit::Insert(Rc::from("Hello, world!")),
+                Edit::Retain(100),
+                Edit::Delete(Rc::from(" omg wtf bbq")),
             ]
         );
     }
@@ -321,13 +325,23 @@ mod tests {
     fn edit_apply() {
         let mut rope = Rope::from("Hello, world!");
         let byte_index = 0;
-        let byte_index = Edit::retain(7).apply(byte_index, &mut rope).unwrap();
-        let byte_index = Edit::delete("world").apply(byte_index, &mut rope).unwrap();
-        let byte_index = Edit::insert("Evan").apply(byte_index, &mut rope).unwrap();
-        let byte_index = Edit::delete("!").apply(byte_index, &mut rope).unwrap();
-        let byte_index = Edit::insert("...").apply(byte_index, &mut rope).unwrap();
-        let byte_index = Edit::insert("?").apply(byte_index, &mut rope).unwrap();
+        let byte_index = Edit::Retain(7).apply(byte_index, &mut rope).unwrap();
+        let byte_index = Edit::Delete(Rc::from("world"))
+            .apply(byte_index, &mut rope)
+            .unwrap();
+        let byte_index = Edit::Insert(Rc::from("Evan"))
+            .apply(byte_index, &mut rope)
+            .unwrap();
+        let byte_index = Edit::Delete(Rc::from("!"))
+            .apply(byte_index, &mut rope)
+            .unwrap();
+        let byte_index = Edit::Insert(Rc::from("..."))
+            .apply(byte_index, &mut rope)
+            .unwrap();
+        let byte_index = Edit::Insert(Rc::from("?"))
+            .apply(byte_index, &mut rope)
+            .unwrap();
         assert_eq!(rope, Rope::from("Hello, Evan...?"));
-        assert!(Edit::retain(1).apply(byte_index, &mut rope).is_err());
+        assert!(Edit::Retain(1).apply(byte_index, &mut rope).is_err());
     }
 }
