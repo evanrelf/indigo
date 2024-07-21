@@ -132,18 +132,8 @@ impl EditSeq {
         todo!()
     }
 
-    pub fn invert(&mut self) {
-        for edit in &mut self.edits {
-            match edit {
-                Edit::Retain(_) => {}
-                Edit::Delete(s) => *edit = Edit::Insert(s.clone()),
-                Edit::Insert(s) => *edit = Edit::Delete(s.clone()),
-            }
-        }
-    }
-
     #[must_use]
-    pub fn inverted(&self) -> Self {
+    pub fn invert(&self) -> Self {
         let mut inverted = Self::with_capacity(self.len());
 
         for edit in &self.edits {
@@ -296,9 +286,7 @@ mod tests {
         edits.insert("w");
         edits.delete(", world!");
         edits.insert(" and pink");
-        let mut inverted = edits.clone();
-        inverted.invert();
-        inverted.invert();
+        let inverted = edits.invert().invert();
         assert_eq!(edits, inverted);
     }
 
