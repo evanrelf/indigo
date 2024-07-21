@@ -5,11 +5,19 @@ use ropey::Rope;
 use serde::{Deserialize, Serialize};
 use std::{ops::Deref, rc::Rc};
 
+// TODO: Use `thiserror` instead of `anyhow` for errors
+// TODO: Move merge logic out of `Edit` and into `EditSeq::{retain,delete,insert}`
+// TODO: Make `EditSeq::push` call `EditSeq::{retain,delete,insert}`
+// TODO: Use byte lengths instead of char lengths for greater efficiency
+//       (`string.len()` is O(1), `string.chars().count()` is O(n))
+// TODO: Make `Edit::Delete` use a number instead of a string
+
 // TODO: More efficient encoding?
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct EditSeq {
     edits: Vec<Edit>,
-    // TODO: Track input (rope this can apply to) and output (length of rope after edits) lengths?
+    source_length: usize,
+    target_length: usize,
 }
 
 impl EditSeq {
@@ -19,14 +27,11 @@ impl EditSeq {
     }
 
     #[must_use]
-    pub fn empty() -> Self {
-        Self::default()
-    }
-
-    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             edits: Vec::with_capacity(capacity),
+            source_length: 0,
+            target_length: 0,
         }
     }
 
@@ -43,6 +48,19 @@ impl EditSeq {
     }
 
     pub fn push(&mut self, edit: Edit) {
+        match edit {
+            Edit::Retain(n) => {
+                self.source_length += n;
+                self.target_length += n;
+            }
+            Edit::Delete(ref s) => {
+                self.source_length += s.chars().count();
+            }
+            Edit::Insert(ref s) => {
+                self.target_length += s.chars().count();
+            }
+        }
+
         // Check if there's an existing edit to merge with
         if let Some(last) = self.edits.last_mut() {
             // There's an existing edit; try to merge
@@ -59,10 +77,18 @@ impl EditSeq {
     }
 
     pub fn compose(&self, other: &Self) -> anyhow::Result<Self> {
+        if self.target_length != other.source_length {
+            anyhow::bail!("Left target length doesn't match right source length");
+        }
+
         todo!()
     }
 
     pub fn transform(&self, other: &Self) -> anyhow::Result<(Self, Self)> {
+        if self.source_length != other.source_length {
+            anyhow::bail!("Left source length doesn't match right source length");
+        }
+
         todo!()
     }
 
@@ -77,6 +103,10 @@ impl EditSeq {
     }
 
     pub fn apply(&self, rope: &mut Rope) -> anyhow::Result<()> {
+        if self.source_length != rope.len_chars() {
+            anyhow::bail!("Source length doesn't match rope length");
+        }
+
         let mut char_index = 0;
 
         for edit in &self.edits {
@@ -213,7 +243,7 @@ mod tests {
 
     #[test]
     fn edit_seq_push() {
-        let mut edits = EditSeq::empty();
+        let mut edits = EditSeq::new();
         edits.extend([
             Edit::insert("Hello,"),
             Edit::insert(" world!"),
@@ -235,7 +265,7 @@ mod tests {
 
     #[test]
     fn edits_invert() {
-        let mut edits = EditSeq::empty();
+        let mut edits = EditSeq::new();
         edits.delete("H");
         edits.insert("Y");
         edits.retain("ello".chars().count());
@@ -250,7 +280,7 @@ mod tests {
 
     #[test]
     fn edits_apply() {
-        let mut edits = EditSeq::empty();
+        let mut edits = EditSeq::new();
         edits.retain(7);
         edits.delete("world");
         edits.insert("Evan");
