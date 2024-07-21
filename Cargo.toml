@@ -14,6 +14,7 @@ indigo-btree = { path = "crates/btree/" }
 indigo-core = { path = "crates/core/" }
 indigo-ot = { path = "crates/ot/" }
 indigo-tui = { path = "crates/tui/" }
+indigo-world = { path = "crates/world/" }
 ratatui = "0.27.0"
 ropey = "1.6.1"
 serde = { version = "1.0.204", features = ["derive", "rc"] }
