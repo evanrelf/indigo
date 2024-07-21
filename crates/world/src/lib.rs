@@ -1,4 +1,5 @@
 // TODO: Remove
+#![allow(clippy::needless_pass_by_value)]
 #![allow(unused_variables)]
 
 use downcast_rs::{impl_downcast, Downcast};
@@ -72,6 +73,7 @@ impl<T: Any> Event for T {}
 
 pub trait Hook {}
 
+#[derive(Clone, Copy)]
 pub struct HookId {
     event: TypeId,
     hook: usize,
