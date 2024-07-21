@@ -75,7 +75,7 @@ impl EditSeq {
             let mut s = String::with_capacity(last.len() + text.len());
             s.push_str(last);
             s.push_str(text);
-            let _ = std::mem::replace(last, Rc::from(s));
+            *last = Rc::from(s);
         } else {
             self.edits.push(Edit::delete(text));
         }
@@ -92,7 +92,7 @@ impl EditSeq {
             let mut s = String::with_capacity(last.len() + text.len());
             s.push_str(last);
             s.push_str(text);
-            let _ = std::mem::replace(last, Rc::from(s));
+            *last = Rc::from(s);
         } else {
             self.edits.push(Edit::insert(text));
         }
