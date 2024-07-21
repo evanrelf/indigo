@@ -1,3 +1,7 @@
+// TODO: Remove
+#![allow(unused_variables)]
+
+use downcast_rs::{impl_downcast, Downcast};
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
@@ -5,7 +9,9 @@ use std::{
 
 #[derive(Default)]
 pub struct World {
-    state: HashMap<TypeId, Box<dyn Any>>,
+    state: HashMap<TypeId, Box<dyn State>>,
+    hooks: HashMap<TypeId, HashMap<usize, Box<dyn Hook>>>,
+    hook_id: usize,
 }
 
 impl World {
@@ -14,7 +20,7 @@ impl World {
         Self::default()
     }
 
-    pub fn insert_state<S: State>(&mut self, state: S) {
+    pub fn insert_state(&mut self, state: impl State) {
         self.state.insert(state.type_id(), Box::new(state));
     }
 
@@ -36,10 +42,55 @@ impl World {
     pub fn remove_state<S: State>(&mut self) -> Option<S> {
         self.state
             .remove(&TypeId::of::<S>())
-            .map(|s| *s.downcast().unwrap())
+            .map(|s| *s.downcast().unwrap_or_else(|_| unreachable!()))
+    }
+
+    pub fn insert_hook(&mut self, hook: impl Hook) -> HookId {
+        todo!();
+    }
+
+    pub fn trigger_hooks(&self, event: impl Event) {
+        todo!()
+    }
+
+    pub fn remove_hook(&mut self, hook_id: HookId) {
+        todo!()
     }
 }
 
-pub trait State: Any {}
+pub trait State: Downcast {}
+
+impl_downcast!(State);
 
 impl<T: Any> State for T {}
+
+pub trait Event: Downcast {}
+
+impl_downcast!(Event);
+
+impl<T: Any> Event for T {}
+
+pub trait Hook {}
+
+pub struct HookId {
+    event: TypeId,
+    hook: usize,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_state() {
+        let mut world = World::new();
+        world.insert_state(0u8);
+        assert_eq!(world.get_state::<u8>(), Some(&0));
+        world.insert_state(1u8);
+        assert_eq!(world.get_state::<u8>(), Some(&1));
+        assert_eq!(world.get_state_mut::<u8>(), Some(&mut 1));
+        assert_eq!(world.remove_state::<u8>(), Some(1));
+        assert_eq!(world.remove_state::<u8>(), None);
+        assert_eq!(world.get_state::<u8>(), None);
+    }
+}

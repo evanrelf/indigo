@@ -8,6 +8,7 @@ arrayvec = "0.7.4"
 camino = "1.1.7"
 clap = { version = "4.5.8", features = ["derive"] }
 crossterm = "0.27.0"
+downcast-rs = "1.2.1"
 flagset = "0.4.6"
 icu_properties = "1.5.1"
 indigo-btree = { path = "crates/btree/" }
