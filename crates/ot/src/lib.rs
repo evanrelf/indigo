@@ -8,16 +8,14 @@ use std::{ops::Deref, rc::Rc};
 // TODO: Use `thiserror` instead of `anyhow` for errors
 // TODO: Move merge logic out of `Edit` and into `EditSeq::{retain,delete,insert}`
 // TODO: Make `EditSeq::push` call `EditSeq::{retain,delete,insert}`
-// TODO: Use byte lengths instead of char lengths for greater efficiency
-//       (`string.len()` is O(1), `string.chars().count()` is O(n))
 // TODO: Make `Edit::Delete` use a number instead of a string
 
 // TODO: More efficient encoding?
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct EditSeq {
     edits: Vec<Edit>,
-    source_length: usize,
-    target_length: usize,
+    source_bytes: usize,
+    target_bytes: usize,
 }
 
 impl EditSeq {
@@ -30,13 +28,13 @@ impl EditSeq {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             edits: Vec::with_capacity(capacity),
-            source_length: 0,
-            target_length: 0,
+            source_bytes: 0,
+            target_bytes: 0,
         }
     }
 
-    pub fn retain(&mut self, char_length: usize) {
-        self.push(Edit::retain(char_length));
+    pub fn retain(&mut self, byte_length: usize) {
+        self.push(Edit::retain(byte_length));
     }
 
     pub fn delete(&mut self, text: &str) {
@@ -50,14 +48,14 @@ impl EditSeq {
     pub fn push(&mut self, edit: Edit) {
         match edit {
             Edit::Retain(n) => {
-                self.source_length += n;
-                self.target_length += n;
+                self.source_bytes += n;
+                self.target_bytes += n;
             }
             Edit::Delete(ref s) => {
-                self.source_length += s.chars().count();
+                self.source_bytes += s.len();
             }
             Edit::Insert(ref s) => {
-                self.target_length += s.chars().count();
+                self.target_bytes += s.len();
             }
         }
 
@@ -77,7 +75,7 @@ impl EditSeq {
     }
 
     pub fn compose(&self, other: &Self) -> anyhow::Result<Self> {
-        if self.target_length != other.source_length {
+        if self.target_bytes != other.source_bytes {
             anyhow::bail!("Left target length doesn't match right source length");
         }
 
@@ -85,7 +83,7 @@ impl EditSeq {
     }
 
     pub fn transform(&self, other: &Self) -> anyhow::Result<(Self, Self)> {
-        if self.source_length != other.source_length {
+        if self.source_bytes != other.source_bytes {
             anyhow::bail!("Left source length doesn't match right source length");
         }
 
@@ -103,14 +101,14 @@ impl EditSeq {
     }
 
     pub fn apply(&self, rope: &mut Rope) -> anyhow::Result<()> {
-        if self.source_length != rope.len_chars() {
+        if self.source_bytes != rope.len_bytes() {
             anyhow::bail!("Source length doesn't match rope length");
         }
 
-        let mut char_index = 0;
+        let mut byte_index = 0;
 
         for edit in &self.edits {
-            char_index = edit.apply(char_index, rope)?;
+            byte_index = edit.apply(byte_index, rope)?;
         }
 
         Ok(())
@@ -169,8 +167,8 @@ pub enum Edit {
 
 impl Edit {
     #[must_use]
-    pub fn retain(char_length: usize) -> Self {
-        Self::Retain(char_length)
+    pub fn retain(byte_length: usize) -> Self {
+        Self::Retain(byte_length)
     }
 
     #[must_use]
@@ -215,23 +213,32 @@ impl Edit {
         }
     }
 
-    pub fn apply(&self, char_index: usize, rope: &mut Rope) -> anyhow::Result<usize> {
-        let char_index = match self {
-            Self::Retain(n) => char_index + n,
+    pub fn apply(&self, byte_index: usize, rope: &mut Rope) -> anyhow::Result<usize> {
+        let char_index = rope.try_byte_to_char(byte_index)?;
+
+        anyhow::ensure!(
+            byte_index == rope.char_to_byte(char_index),
+            "Unsupported byte index: in the middle of a multi-byte char"
+        );
+
+        let byte_index = match self {
+            Self::Retain(n) => byte_index + n,
             Self::Delete(s) => {
-                rope.try_remove(char_index..char_index + s.chars().count())?;
-                char_index
+                rope.try_remove(char_index..char_index + s.len())?;
+                byte_index
             }
             Self::Insert(s) => {
                 rope.try_insert(char_index, s)?;
-                char_index + s.chars().count()
+                byte_index + s.len()
             }
         };
+
         anyhow::ensure!(
-            char_index <= rope.len_chars(),
-            "char_index exceeds end of rope"
+            byte_index <= rope.len_bytes(),
+            "Invalid byte index: exceeds end of rope"
         );
-        Ok(char_index)
+
+        Ok(byte_index)
     }
 }
 
@@ -268,7 +275,7 @@ mod tests {
         let mut edits = EditSeq::new();
         edits.delete("H");
         edits.insert("Y");
-        edits.retain("ello".chars().count());
+        edits.retain("ello".len());
         edits.insert("w");
         edits.delete(", world!");
         edits.insert(" and pink");
@@ -362,14 +369,14 @@ mod tests {
     #[test]
     fn edit_apply() {
         let mut rope = Rope::from("Hello, world!");
-        let char_index = 0;
-        let char_index = Edit::retain(7).apply(char_index, &mut rope).unwrap();
-        let char_index = Edit::delete("world").apply(char_index, &mut rope).unwrap();
-        let char_index = Edit::insert("Evan").apply(char_index, &mut rope).unwrap();
-        let char_index = Edit::delete("!").apply(char_index, &mut rope).unwrap();
-        let char_index = Edit::insert("...").apply(char_index, &mut rope).unwrap();
-        let char_index = Edit::insert("?").apply(char_index, &mut rope).unwrap();
+        let byte_index = 0;
+        let byte_index = Edit::retain(7).apply(byte_index, &mut rope).unwrap();
+        let byte_index = Edit::delete("world").apply(byte_index, &mut rope).unwrap();
+        let byte_index = Edit::insert("Evan").apply(byte_index, &mut rope).unwrap();
+        let byte_index = Edit::delete("!").apply(byte_index, &mut rope).unwrap();
+        let byte_index = Edit::insert("...").apply(byte_index, &mut rope).unwrap();
+        let byte_index = Edit::insert("?").apply(byte_index, &mut rope).unwrap();
         assert_eq!(rope, Rope::from("Hello, Evan...?"));
-        assert!(Edit::retain(1).apply(char_index, &mut rope).is_err());
+        assert!(Edit::retain(1).apply(byte_index, &mut rope).is_err());
     }
 }
