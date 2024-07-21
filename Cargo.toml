@@ -19,6 +19,7 @@ indigo-world = { path = "crates/world/" }
 ratatui = "0.27.0"
 ropey = "1.6.1"
 serde = { version = "1.0.204", features = ["derive", "rc"] }
+thiserror = "1.0.63"
 unicode-segmentation = "1.11.0"
 unicode-width = "0.1.13"
 winnow = "0.6.14"

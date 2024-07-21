@@ -4,11 +4,29 @@
 use ropey::Rope;
 use serde::{Deserialize, Serialize};
 use std::{ops::Deref, rc::Rc};
+use thiserror::Error;
 
-// TODO: Use `thiserror` instead of `anyhow` for errors
 // TODO: Move merge logic out of `Edit` and into `EditSeq::{retain,delete,insert}`
 // TODO: Make `EditSeq::push` call `EditSeq::{retain,delete,insert}`
 // TODO: Make `Edit::Delete` use a number instead of a string
+
+#[derive(Debug, Error)]
+pub enum EditError {
+    #[error("length mismatch: {left} != {right}")]
+    LengthMismatch { left: usize, right: usize },
+
+    #[error("byte index {byte_index} in the middle of a multi-byte char with index {char_index}")]
+    ByteIndexMisaligned {
+        byte_index: usize,
+        char_index: usize,
+    },
+
+    #[error("byte index {byte_index} exceeds rope length {len_bytes}")]
+    ByteIndexPastEof { byte_index: usize, len_bytes: usize },
+
+    #[error(transparent)]
+    RopeyError(#[from] ropey::Error),
+}
 
 // TODO: More efficient encoding?
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -74,17 +92,23 @@ impl EditSeq {
         }
     }
 
-    pub fn compose(&self, other: &Self) -> anyhow::Result<Self> {
+    pub fn compose(&self, other: &Self) -> Result<Self, EditError> {
         if self.target_bytes != other.source_bytes {
-            anyhow::bail!("Left target length doesn't match right source length");
+            return Err(EditError::LengthMismatch {
+                left: self.target_bytes,
+                right: other.source_bytes,
+            });
         }
 
         todo!()
     }
 
-    pub fn transform(&self, other: &Self) -> anyhow::Result<(Self, Self)> {
+    pub fn transform(&self, other: &Self) -> Result<(Self, Self), EditError> {
         if self.source_bytes != other.source_bytes {
-            anyhow::bail!("Left source length doesn't match right source length");
+            return Err(EditError::LengthMismatch {
+                left: self.source_bytes,
+                right: other.source_bytes,
+            });
         }
 
         todo!()
@@ -100,9 +124,12 @@ impl EditSeq {
         }
     }
 
-    pub fn apply(&self, rope: &mut Rope) -> anyhow::Result<()> {
+    pub fn apply(&self, rope: &mut Rope) -> Result<(), EditError> {
         if self.source_bytes != rope.len_bytes() {
-            anyhow::bail!("Source length doesn't match rope length");
+            return Err(EditError::LengthMismatch {
+                left: self.source_bytes,
+                right: rope.len_bytes(),
+            });
         }
 
         let mut byte_index = 0;
@@ -213,13 +240,15 @@ impl Edit {
         }
     }
 
-    pub fn apply(&self, byte_index: usize, rope: &mut Rope) -> anyhow::Result<usize> {
+    pub fn apply(&self, byte_index: usize, rope: &mut Rope) -> Result<usize, EditError> {
         let char_index = rope.try_byte_to_char(byte_index)?;
 
-        anyhow::ensure!(
-            byte_index == rope.char_to_byte(char_index),
-            "Unsupported byte index: in the middle of a multi-byte char"
-        );
+        if byte_index != rope.char_to_byte(char_index) {
+            return Err(EditError::ByteIndexMisaligned {
+                byte_index,
+                char_index,
+            });
+        }
 
         let byte_index = match self {
             Self::Retain(n) => byte_index + n,
@@ -233,10 +262,12 @@ impl Edit {
             }
         };
 
-        anyhow::ensure!(
-            byte_index <= rope.len_bytes(),
-            "Invalid byte index: exceeds end of rope"
-        );
+        if byte_index > rope.len_bytes() {
+            return Err(EditError::ByteIndexPastEof {
+                byte_index,
+                len_bytes: rope.len_bytes(),
+            });
+        }
 
         Ok(byte_index)
     }
