@@ -345,14 +345,14 @@ dependencies = [
 
 [[package]]
 name = "indigo-btree"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "arrayvec",
 ]
 
 [[package]]
 name = "indigo-core"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "anyhow",
  "camino",
@@ -366,7 +366,7 @@ dependencies = [
 
 [[package]]
 name = "indigo-ot"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "ropey",
  "serde",
@@ -375,7 +375,7 @@ dependencies = [
 
 [[package]]
 name = "indigo-tui"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "anyhow",
  "camino",
@@ -388,7 +388,7 @@ dependencies = [
 
 [[package]]
 name = "indigo-world"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "downcast-rs",
 ]
