@@ -6,8 +6,6 @@ use serde::{Deserialize, Serialize};
 use std::{ops::Deref, rc::Rc};
 use thiserror::Error;
 
-// TODO: Move merge logic out of `Edit` and into `EditSeq::{retain,delete,insert}`
-// TODO: Make `EditSeq::push` call `EditSeq::{retain,delete,insert}`
 // TODO: Make `Edit::Delete` use a number instead of a string
 
 #[derive(Debug, Error)]
@@ -52,43 +50,59 @@ impl EditSeq {
     }
 
     pub fn retain(&mut self, byte_length: usize) {
-        self.push(Edit::retain(byte_length));
+        if byte_length == 0 {
+            return;
+        }
+
+        self.source_bytes += byte_length;
+        self.target_bytes += byte_length;
+
+        if let Some(Edit::Retain(n)) = self.edits.last_mut() {
+            *n += byte_length;
+        } else {
+            self.edits.push(Edit::retain(byte_length));
+        }
     }
 
     pub fn delete(&mut self, text: &str) {
-        self.push(Edit::delete(text));
+        if text.is_empty() {
+            return;
+        }
+
+        self.source_bytes += text.len();
+
+        if let Some(Edit::Delete(last)) = self.edits.last_mut() {
+            let mut s = String::with_capacity(last.len() + text.len());
+            s.push_str(last);
+            s.push_str(text);
+            let _ = std::mem::replace(last, Rc::from(s));
+        } else {
+            self.edits.push(Edit::delete(text));
+        }
     }
 
     pub fn insert(&mut self, text: &str) {
-        self.push(Edit::insert(text));
+        if text.is_empty() {
+            return;
+        }
+
+        self.target_bytes += text.len();
+
+        if let Some(Edit::Insert(last)) = self.edits.last_mut() {
+            let mut s = String::with_capacity(last.len() + text.len());
+            s.push_str(last);
+            s.push_str(text);
+            let _ = std::mem::replace(last, Rc::from(s));
+        } else {
+            self.edits.push(Edit::insert(text));
+        }
     }
 
     pub fn push(&mut self, edit: Edit) {
         match edit {
-            Edit::Retain(n) => {
-                self.source_bytes += n;
-                self.target_bytes += n;
-            }
-            Edit::Delete(ref s) => {
-                self.source_bytes += s.len();
-            }
-            Edit::Insert(ref s) => {
-                self.target_bytes += s.len();
-            }
-        }
-
-        // Check if there's an existing edit to merge with
-        if let Some(last) = self.edits.last_mut() {
-            // There's an existing edit; try to merge
-            if let Some(edit) = last.merge(edit) {
-                // Merge failed; push
-                self.edits.push(edit);
-            } else {
-                // Merge succeeded
-            }
-        } else {
-            // This is the first edit; push
-            self.edits.push(edit);
+            Edit::Retain(n) => self.retain(n),
+            Edit::Delete(s) => self.delete(&s),
+            Edit::Insert(s) => self.insert(&s),
         }
     }
 
@@ -208,38 +222,6 @@ impl Edit {
         Self::Insert(Rc::from(text))
     }
 
-    pub fn merge(&mut self, other: Self) -> Option<Self> {
-        use Edit::{Delete, Insert, Retain};
-
-        match (self, other) {
-            // Discard empty edits
-            (_, Retain(0)) => None,
-            (_, Delete(r) | Insert(r)) if r.is_empty() => None,
-            (Insert(l), Insert(r)) | (Delete(l), Delete(r)) if l.is_empty() => {
-                let _ = std::mem::replace(l, r);
-                None
-            }
-
-            (Retain(l), Retain(r)) => {
-                *l += r;
-                None
-            }
-
-            (Insert(l), Insert(r)) | (Delete(l), Delete(r)) => {
-                let mut s = String::with_capacity(l.len() + r.len());
-                s.push_str(l);
-                s.push_str(&r);
-                let _ = std::mem::replace(l, Rc::from(s));
-                None
-            }
-
-            // TODO: Merge more edits (e.g. cancel out delete "x" and insert "x")
-
-            // Merge failed, return ownership of `other`
-            (_, other) => Some(other),
-        }
-    }
-
     pub fn apply(&self, byte_index: usize, rope: &mut Rope) -> Result<usize, EditError> {
         let char_index = rope.try_byte_to_char(byte_index)?;
 
@@ -333,68 +315,6 @@ mod tests {
         let mut rope = Rope::from("Hello, world!");
         edits.retain(1);
         assert!(edits.apply(&mut rope).is_err());
-    }
-
-    #[test]
-    fn edit_merge_empty() {
-        // Retain 0
-        let mut e1 = Edit::retain(42);
-        let e2 = Edit::retain(0);
-        assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::retain(42));
-
-        let mut e1 = Edit::retain(0);
-        let e2 = Edit::retain(42);
-        assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::retain(42));
-
-        // Delete 0
-        let mut e1 = Edit::delete("foo");
-        let e2 = Edit::delete("");
-        assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::delete("foo"));
-
-        let mut e1 = Edit::delete("");
-        let e2 = Edit::delete("foo");
-        assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::delete("foo"));
-
-        // Insert ""
-        let mut e1 = Edit::insert("hello");
-        let e2 = Edit::insert("");
-        assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::insert("hello"));
-
-        let mut e1 = Edit::insert("");
-        let e2 = Edit::insert("hello");
-        assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::insert("hello"));
-    }
-
-    #[test]
-    fn edit_merge_grow() {
-        // Retain
-        let mut e1 = Edit::retain(25);
-        let e2 = Edit::retain(50);
-        assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::retain(75));
-
-        // Delete
-        let mut e1 = Edit::delete("foo");
-        let e2 = Edit::delete("bar");
-        assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::delete("foobar"));
-
-        // Insert
-        let mut e1 = Edit::insert("hello");
-        let e2 = Edit::insert(" world");
-        assert_eq!(e1.merge(e2), None);
-        assert_eq!(e1, Edit::insert("hello world"));
-    }
-
-    #[test]
-    fn edit_merge_shrink() {
-        // TODO: Add merging logic that shrinks edits
     }
 
     #[test]
