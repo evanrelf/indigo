@@ -279,6 +279,8 @@ mod tests {
 
     #[test]
     fn edits_invert() {
+        let mut rope = Rope::from("Hello, world!");
+
         let mut edits = EditSeq::new();
         edits.delete("H");
         edits.insert("Y");
@@ -286,8 +288,14 @@ mod tests {
         edits.insert("w");
         edits.delete(", world!");
         edits.insert(" and pink");
-        let inverted = edits.invert().invert();
-        assert_eq!(edits, inverted);
+
+        assert_eq!(edits.invert().invert(), edits);
+
+        edits.apply(&mut rope).unwrap();
+        assert_eq!(rope, Rope::from("Yellow and pink"));
+
+        edits.invert().apply(&mut rope).unwrap();
+        assert_eq!(rope, Rope::from("Hello, world!"));
     }
 
     #[test]
