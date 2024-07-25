@@ -6,8 +6,6 @@ use serde::{Deserialize, Serialize};
 use std::{ops::Deref, rc::Rc};
 use thiserror::Error;
 
-// TODO: Make `Edit::Delete` use a number instead of a string
-
 #[derive(Debug, Error)]
 pub enum EditError {
     #[error("length mismatch: {left} != {right}")]
@@ -77,6 +75,20 @@ impl EditSeq {
         }
     }
 
+    pub fn delete_n(&mut self, char_length: usize) {
+        if char_length == 0 {
+            return;
+        }
+
+        self.source_chars += char_length;
+
+        if let Some(Edit::DeleteN(n)) = self.edits.last_mut() {
+            *n += char_length;
+        } else {
+            self.edits.push(Edit::DeleteN(char_length));
+        }
+    }
+
     pub fn insert(&mut self, text: impl Into<Rc<str>>) {
         let text = text.into();
 
@@ -100,6 +112,7 @@ impl EditSeq {
         match edit {
             Edit::Retain(n) => self.retain(n),
             Edit::Delete(s) => self.delete(s),
+            Edit::DeleteN(n) => self.delete_n(n),
             Edit::Insert(s) => self.insert(s),
         }
     }
@@ -140,6 +153,11 @@ impl EditSeq {
                         char_index -= s.chars().count();
                     }
                 }
+                Edit::DeleteN(n) => {
+                    if position < char_index {
+                        char_index -= n;
+                    }
+                }
                 Edit::Insert(s) => {
                     if position <= char_index {
                         char_index += s.chars().count();
@@ -160,6 +178,7 @@ impl EditSeq {
             match edit {
                 Edit::Retain(n) => inverted.retain(*n),
                 Edit::Delete(s) => inverted.insert(s.clone()),
+                Edit::DeleteN(n) => todo!(),
                 Edit::Insert(s) => inverted.delete(s.clone()),
             }
         }
@@ -228,10 +247,8 @@ impl Extend<Edit> for EditSeq {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum Edit {
     Retain(usize),
-    // TODO: Check that deleted text matches in rope.
-    // TODO: Store `usize` rather than `Rc<str>` for `Delete`, recover string from rope when
-    // inverting? Gain efficiency at the cost of added complexity.
     Delete(Rc<str>),
+    DeleteN(usize),
     Insert(Rc<str>),
 }
 
@@ -241,6 +258,10 @@ impl Edit {
             Self::Retain(n) => char_index + n,
             Self::Delete(s) => {
                 rope.try_remove(char_index..char_index + s.chars().count())?;
+                char_index
+            }
+            Self::DeleteN(n) => {
+                rope.try_remove(char_index..char_index + n)?;
                 char_index
             }
             Self::Insert(s) => {
@@ -274,16 +295,16 @@ mod tests {
             Edit::Insert(Rc::from(" world!")),
             Edit::Retain(42),
             Edit::Retain(58),
-            Edit::Delete(Rc::from(" omg")),
-            Edit::Delete(Rc::from(" wtf")),
-            Edit::Delete(Rc::from(" bbq")),
+            Edit::DeleteN(4),
+            Edit::DeleteN(4),
+            Edit::DeleteN(4),
         ]);
         assert_eq!(
             *edits,
             [
                 Edit::Insert(Rc::from("Hello, world!")),
                 Edit::Retain(100),
-                Edit::Delete(Rc::from(" omg wtf bbq")),
+                Edit::DeleteN(12),
             ]
         );
     }
@@ -296,7 +317,7 @@ mod tests {
         assert_eq!(rope.char(index), 'o');
 
         let mut edits = EditSeq::new();
-        edits.delete("Hello, ");
+        edits.delete_n("Hello, ".chars().count());
         edits.retain("world".chars().count());
         edits.insert("!!!");
         edits.retain("!".chars().count());
@@ -309,7 +330,7 @@ mod tests {
         assert_eq!(rope.char(index), 'o');
 
         let mut edits = EditSeq::new();
-        edits.delete("w");
+        edits.delete_n("w".chars().count());
         edits.insert("the whole w");
         edits.retain("orld!!!!".chars().count());
         edits.apply(&mut rope).unwrap();
@@ -346,9 +367,9 @@ mod tests {
     fn edits_apply() {
         let mut edits = EditSeq::new();
         edits.retain(7);
-        edits.delete("world");
+        edits.delete_n("world".chars().count());
         edits.insert("Evan");
-        edits.delete("!");
+        edits.delete_n("!".chars().count());
         edits.insert("...");
         edits.insert("?");
 
@@ -366,13 +387,13 @@ mod tests {
         let mut rope = Rope::from("Hello, world!");
         let char_index = 0;
         let char_index = Edit::Retain(7).apply(char_index, &mut rope).unwrap();
-        let char_index = Edit::Delete(Rc::from("world"))
+        let char_index = Edit::DeleteN("world".chars().count())
             .apply(char_index, &mut rope)
             .unwrap();
         let char_index = Edit::Insert(Rc::from("Evan"))
             .apply(char_index, &mut rope)
             .unwrap();
-        let char_index = Edit::Delete(Rc::from("!"))
+        let char_index = Edit::DeleteN("!".chars().count())
             .apply(char_index, &mut rope)
             .unwrap();
         let char_index = Edit::Insert(Rc::from("..."))
