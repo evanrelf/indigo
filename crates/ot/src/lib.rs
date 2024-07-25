@@ -133,6 +133,32 @@ impl EditSeq {
     }
 
     #[must_use]
+    pub fn transform_index(&self, mut byte_index: usize) -> usize {
+        let mut position = 0;
+
+        for edit in &self.edits {
+            match edit {
+                Edit::Retain(n) => {
+                    position += n;
+                }
+                Edit::Delete(s) => {
+                    if position < byte_index {
+                        byte_index -= s.len();
+                    }
+                }
+                Edit::Insert(s) => {
+                    if position <= byte_index {
+                        byte_index += s.len();
+                    }
+                    position += s.len();
+                }
+            }
+        }
+
+        byte_index
+    }
+
+    #[must_use]
     pub fn invert(&self) -> Self {
         let mut inverted = Self::with_capacity(self.len());
 
@@ -275,6 +301,39 @@ mod tests {
                 Edit::Delete(Rc::from(" omg wtf bbq")),
             ]
         );
+    }
+
+    #[test]
+    fn edits_transform_index() {
+        let mut rope = Rope::from("Hello, world!");
+
+        let mut index = 8;
+        assert_eq!(rope.byte(index), b'o');
+
+        let mut edits = EditSeq::new();
+        edits.delete("Hello, ");
+        edits.retain("world".len());
+        edits.insert("!!!");
+        edits.retain("!".len());
+
+        edits.apply(&mut rope).unwrap();
+        assert_eq!(rope, Rope::from("world!!!!"));
+
+        index = edits.transform_index(index);
+        assert_eq!(index, 1);
+        assert_eq!(rope.byte(index), b'o');
+
+        let mut edits = EditSeq::new();
+        edits.delete("w");
+        edits.insert("the whole w");
+        edits.retain("orld!!!!".len());
+        edits.apply(&mut rope).unwrap();
+        assert_eq!(rope, Rope::from("the whole world!!!!"));
+        assert_eq!(rope.byte(index), b'h');
+
+        index = edits.transform_index(index);
+        assert_eq!(index, 11);
+        assert_eq!(rope.byte(index), b'o');
     }
 
     #[test]
