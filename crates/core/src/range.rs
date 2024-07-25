@@ -1,5 +1,6 @@
 use crate::cursor::{Cursor, CursorExt, CursorMut, CursorState};
 use anyhow::Context as _;
+use indigo_ot::EditSeq;
 use ropey::Rope;
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -106,11 +107,23 @@ impl<'a> RangeMut<'a> {
     }
 
     pub fn insert_char(&mut self, char: char) {
-        self.with_head_mut(|cursor| cursor.insert_char(char));
+        let mut edits = EditSeq::new();
+        edits.retain(self.state.head.char_index);
+        edits.insert(char.to_string());
+        edits.retain(self.rope.len_chars() - self.state.head.char_index);
+        edits.apply(self.rope).unwrap();
+        self.state.anchor.char_index = edits.transform_index(self.state.anchor.char_index);
+        self.state.head.char_index = edits.transform_index(self.state.head.char_index);
     }
 
     pub fn insert(&mut self, string: &str) {
-        self.with_head_mut(|cursor| cursor.insert(string));
+        let mut edits = EditSeq::new();
+        edits.retain(self.state.head.char_index);
+        edits.insert(string);
+        edits.retain(self.rope.len_chars() - self.state.head.char_index);
+        edits.apply(self.rope).unwrap();
+        self.state.anchor.char_index = edits.transform_index(self.state.anchor.char_index);
+        self.state.head.char_index = edits.transform_index(self.state.head.char_index);
     }
 
     // TODO: Move anchor into valid position

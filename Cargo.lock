@@ -358,6 +358,7 @@ dependencies = [
  "camino",
  "flagset",
  "icu_properties",
+ "indigo-ot",
  "ropey",
  "unicode-segmentation",
  "unicode-width",

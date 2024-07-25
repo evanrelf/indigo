@@ -1,10 +1,11 @@
 use crate::RopeExt as _;
+use indigo_ot::EditSeq;
 use ropey::{Rope, RopeSlice};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub(crate) struct CursorState {
     // Char gap index
-    char_index: usize,
+    pub(crate) char_index: usize,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -81,13 +82,21 @@ impl<'a> CursorMut<'a> {
     }
 
     pub fn insert_char(&mut self, char: char) {
-        self.rope.insert_char(self.state.char_index, char);
-        self.state.char_index += 1;
+        let mut edits = EditSeq::new();
+        edits.retain(self.state.char_index);
+        edits.insert(char.to_string());
+        edits.retain(self.rope.len_chars() - self.state.char_index);
+        edits.apply(self.rope).unwrap();
+        self.state.char_index = edits.transform_index(self.state.char_index);
     }
 
     pub fn insert(&mut self, string: &str) {
-        self.rope.insert(self.state.char_index, string);
-        self.state.char_index += string.chars().count();
+        let mut edits = EditSeq::new();
+        edits.retain(self.state.char_index);
+        edits.insert(string);
+        edits.retain(self.rope.len_chars() - self.state.char_index);
+        edits.apply(self.rope).unwrap();
+        self.state.char_index = edits.transform_index(self.state.char_index);
     }
 
     pub fn backspace(&mut self, count: usize) {
