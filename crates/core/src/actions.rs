@@ -1,6 +1,8 @@
 use crate::{Editor, RangeExt as _};
 use std::cmp::max;
 
+// TODO: Replace `with_range{,_mut}` with `range{,_mut}`?
+
 pub fn move_left(editor: &mut Editor) {
     let distance = max(1, editor.count);
     editor.with_range(|range| range.move_left(distance));
@@ -39,6 +41,10 @@ pub fn scroll_half_page_up(editor: &mut Editor) {
 pub fn scroll_half_page_down(editor: &mut Editor) {
     let line = editor.vertical_scroll() + editor.height / 2;
     editor.scroll_to(line);
+}
+
+pub fn insert_char(editor: &mut Editor, c: char) {
+    editor.with_range_mut(|range| range.insert_char(c));
 }
 
 pub fn backspace(editor: &mut Editor) {
