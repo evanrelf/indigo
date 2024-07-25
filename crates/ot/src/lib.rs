@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::{ops::Deref, rc::Rc};
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Clone, Debug, Error)]
 pub enum EditError {
     #[error("length mismatch: {left} != {right}")]
     LengthMismatch { left: usize, right: usize },
@@ -56,36 +56,17 @@ impl EditSeq {
         }
     }
 
-    pub fn delete(&mut self, text: impl Into<Rc<str>>) {
-        let text = text.into();
-
-        if text.is_empty() {
-            return;
-        }
-
-        self.source_chars += text.chars().count();
-
-        if let Some(Edit::Delete(last)) = self.edits.last_mut() {
-            let mut s = String::with_capacity(last.chars().count() + text.chars().count());
-            s.push_str(last);
-            s.push_str(&text);
-            *last = Rc::from(s);
-        } else {
-            self.edits.push(Edit::Delete(text));
-        }
-    }
-
-    pub fn delete_n(&mut self, char_length: usize) {
+    pub fn delete(&mut self, char_length: usize) {
         if char_length == 0 {
             return;
         }
 
         self.source_chars += char_length;
 
-        if let Some(Edit::DeleteN(n)) = self.edits.last_mut() {
+        if let Some(Edit::Delete(n)) = self.edits.last_mut() {
             *n += char_length;
         } else {
-            self.edits.push(Edit::DeleteN(char_length));
+            self.edits.push(Edit::Delete(char_length));
         }
     }
 
@@ -111,8 +92,7 @@ impl EditSeq {
     pub fn push(&mut self, edit: Edit) {
         match edit {
             Edit::Retain(n) => self.retain(n),
-            Edit::Delete(s) => self.delete(s),
-            Edit::DeleteN(n) => self.delete_n(n),
+            Edit::Delete(n) => self.delete(n),
             Edit::Insert(s) => self.insert(s),
         }
     }
@@ -148,12 +128,7 @@ impl EditSeq {
                 Edit::Retain(n) => {
                     position += n;
                 }
-                Edit::Delete(s) => {
-                    if position < char_index {
-                        char_index -= s.chars().count();
-                    }
-                }
-                Edit::DeleteN(n) => {
+                Edit::Delete(n) => {
                     if position < char_index {
                         char_index -= n;
                     }
@@ -170,20 +145,35 @@ impl EditSeq {
         char_index
     }
 
-    #[must_use]
-    pub fn invert(&self) -> Self {
+    pub fn invert(&self, rope: &Rope) -> Result<Self, EditError> {
+        let length_mismatch = || EditError::LengthMismatch {
+            left: self.source_chars,
+            right: rope.len_chars(),
+        };
+
+        if self.source_chars != rope.len_chars() {
+            return Err(length_mismatch());
+        }
+
         let mut inverted = Self::with_capacity(self.len());
 
         for edit in &self.edits {
             match edit {
                 Edit::Retain(n) => inverted.retain(*n),
-                Edit::Delete(s) => inverted.insert(s.clone()),
-                Edit::DeleteN(n) => todo!(),
-                Edit::Insert(s) => inverted.delete(s.clone()),
+                Edit::Delete(n) => {
+                    let start = inverted.target_chars;
+                    let end = start + n;
+                    let s = rope
+                        .get_slice(start..end)
+                        .ok_or_else(length_mismatch)?
+                        .to_string();
+                    inverted.insert(s);
+                }
+                Edit::Insert(s) => inverted.delete(s.chars().count()),
             }
         }
 
-        inverted
+        Ok(inverted)
     }
 
     pub fn apply(&self, rope: &mut Rope) -> Result<(), EditError> {
@@ -247,8 +237,7 @@ impl Extend<Edit> for EditSeq {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum Edit {
     Retain(usize),
-    Delete(Rc<str>),
-    DeleteN(usize),
+    Delete(usize),
     Insert(Rc<str>),
 }
 
@@ -256,11 +245,7 @@ impl Edit {
     pub fn apply(&self, char_index: usize, rope: &mut Rope) -> Result<usize, EditError> {
         let char_index = match self {
             Self::Retain(n) => char_index + n,
-            Self::Delete(s) => {
-                rope.try_remove(char_index..char_index + s.chars().count())?;
-                char_index
-            }
-            Self::DeleteN(n) => {
+            Self::Delete(n) => {
                 rope.try_remove(char_index..char_index + n)?;
                 char_index
             }
@@ -295,16 +280,16 @@ mod tests {
             Edit::Insert(Rc::from(" world!")),
             Edit::Retain(42),
             Edit::Retain(58),
-            Edit::DeleteN(4),
-            Edit::DeleteN(4),
-            Edit::DeleteN(4),
+            Edit::Delete(4),
+            Edit::Delete(4),
+            Edit::Delete(4),
         ]);
         assert_eq!(
             *edits,
             [
                 Edit::Insert(Rc::from("Hello, world!")),
                 Edit::Retain(100),
-                Edit::DeleteN(12),
+                Edit::Delete(12),
             ]
         );
     }
@@ -317,7 +302,7 @@ mod tests {
         assert_eq!(rope.char(index), 'o');
 
         let mut edits = EditSeq::new();
-        edits.delete_n("Hello, ".chars().count());
+        edits.delete("Hello, ".chars().count());
         edits.retain("world".chars().count());
         edits.insert("!!!");
         edits.retain("!".chars().count());
@@ -330,7 +315,7 @@ mod tests {
         assert_eq!(rope.char(index), 'o');
 
         let mut edits = EditSeq::new();
-        edits.delete_n("w".chars().count());
+        edits.delete("w".chars().count());
         edits.insert("the whole w");
         edits.retain("orld!!!!".chars().count());
         edits.apply(&mut rope).unwrap();
@@ -344,32 +329,34 @@ mod tests {
 
     #[test]
     fn edits_invert() {
-        let mut rope = Rope::from("Hello, world!");
+        let rope1 = Rope::from("Hello, world!");
 
         let mut edits = EditSeq::new();
-        edits.delete("H");
+        edits.delete("H".chars().count());
         edits.insert("Y");
         edits.retain("ello".chars().count());
         edits.insert("w");
-        edits.delete(", world!");
+        edits.delete(", world!".chars().count());
         edits.insert(" and pink");
 
-        assert_eq!(edits.invert().invert(), edits);
+        let mut rope2 = rope1.clone();
+        edits.apply(&mut rope2).unwrap();
+        assert_eq!(rope2, Rope::from("Yellow and pink"));
 
-        edits.apply(&mut rope).unwrap();
-        assert_eq!(rope, Rope::from("Yellow and pink"));
+        assert_eq!(edits.invert(&rope1).unwrap().invert(&rope2).unwrap(), edits);
 
-        edits.invert().apply(&mut rope).unwrap();
-        assert_eq!(rope, Rope::from("Hello, world!"));
+        let mut rope3 = rope2.clone();
+        edits.invert(&rope1).unwrap().apply(&mut rope3).unwrap();
+        assert_eq!(rope3, Rope::from("Hello, world!"));
     }
 
     #[test]
     fn edits_apply() {
         let mut edits = EditSeq::new();
         edits.retain(7);
-        edits.delete_n("world".chars().count());
+        edits.delete("world".chars().count());
         edits.insert("Evan");
-        edits.delete_n("!".chars().count());
+        edits.delete("!".chars().count());
         edits.insert("...");
         edits.insert("?");
 
@@ -387,13 +374,13 @@ mod tests {
         let mut rope = Rope::from("Hello, world!");
         let char_index = 0;
         let char_index = Edit::Retain(7).apply(char_index, &mut rope).unwrap();
-        let char_index = Edit::DeleteN("world".chars().count())
+        let char_index = Edit::Delete("world".chars().count())
             .apply(char_index, &mut rope)
             .unwrap();
         let char_index = Edit::Insert(Rc::from("Evan"))
             .apply(char_index, &mut rope)
             .unwrap();
-        let char_index = Edit::DeleteN("!".chars().count())
+        let char_index = Edit::Delete("!".chars().count())
             .apply(char_index, &mut rope)
             .unwrap();
         let char_index = Edit::Insert(Rc::from("..."))
