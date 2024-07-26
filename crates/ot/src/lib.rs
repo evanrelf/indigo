@@ -7,7 +7,7 @@ use std::{ops::Deref, rc::Rc};
 use thiserror::Error;
 
 #[derive(Clone, Debug, Error)]
-pub enum EditError {
+pub enum Error {
     #[error("length mismatch: {left} != {right}")]
     LengthMismatch { left: usize, right: usize },
 
@@ -97,9 +97,9 @@ impl EditSeq {
         }
     }
 
-    pub fn compose(&self, other: &Self) -> Result<Self, EditError> {
+    pub fn compose(&self, other: &Self) -> Result<Self, Error> {
         if self.target_chars != other.source_chars {
-            return Err(EditError::LengthMismatch {
+            return Err(Error::LengthMismatch {
                 left: self.target_chars,
                 right: other.source_chars,
             });
@@ -108,9 +108,9 @@ impl EditSeq {
         todo!()
     }
 
-    pub fn transform(&self, other: &Self) -> Result<(Self, Self), EditError> {
+    pub fn transform(&self, other: &Self) -> Result<(Self, Self), Error> {
         if self.source_chars != other.source_chars {
-            return Err(EditError::LengthMismatch {
+            return Err(Error::LengthMismatch {
                 left: self.source_chars,
                 right: other.source_chars,
             });
@@ -145,8 +145,8 @@ impl EditSeq {
         char_index
     }
 
-    pub fn invert(&self, rope: &Rope) -> Result<Self, EditError> {
-        let length_mismatch = || EditError::LengthMismatch {
+    pub fn invert(&self, rope: &Rope) -> Result<Self, Error> {
+        let length_mismatch = || Error::LengthMismatch {
             left: self.source_chars,
             right: rope.len_chars(),
         };
@@ -176,9 +176,9 @@ impl EditSeq {
         Ok(inverted)
     }
 
-    pub fn apply(&self, rope: &mut Rope) -> Result<(), EditError> {
+    pub fn apply(&self, rope: &mut Rope) -> Result<(), Error> {
         if self.source_chars != rope.len_chars() {
-            return Err(EditError::LengthMismatch {
+            return Err(Error::LengthMismatch {
                 left: self.source_chars,
                 right: rope.len_chars(),
             });
@@ -242,7 +242,7 @@ pub enum Edit {
 }
 
 impl Edit {
-    pub fn apply(&self, char_index: usize, rope: &mut Rope) -> Result<usize, EditError> {
+    pub fn apply(&self, char_index: usize, rope: &mut Rope) -> Result<usize, Error> {
         let char_index = match self {
             Self::Retain(n) => char_index + n,
             Self::Delete(n) => {
@@ -256,7 +256,7 @@ impl Edit {
         };
 
         if char_index > rope.len_chars() {
-            return Err(EditError::CharIndexPastEof {
+            return Err(Error::CharIndexPastEof {
                 char_index,
                 len_chars: rope.len_chars(),
             });
