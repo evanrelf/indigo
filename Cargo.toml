@@ -6,7 +6,7 @@ members = ["crates/*"]
 anyhow = "1.0.86"
 arrayvec = "0.7.4"
 camino = "1.1.7"
-clap = { version = "4.5.8", features = ["derive"] }
+clap = { version = "4.5.11", features = ["derive"] }
 crossterm = "0.27.0"
 downcast-rs = "1.2.1"
 flagset = "0.4.6"
@@ -22,7 +22,7 @@ serde = { version = "1.0.204", features = ["derive", "rc"] }
 thiserror = "1.0.63"
 unicode-segmentation = "1.11.0"
 unicode-width = "0.1.13"
-winnow = "0.6.14"
+winnow = "0.6.16"
 
 [workspace.lints]
 clippy.bool_to_int_with_if = "allow"
