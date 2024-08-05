@@ -11,7 +11,7 @@ use indigo_core::{
 };
 use ratatui::{
     prelude::{Buffer as Surface, Constraint, Layout, Rect, Style, Widget as _},
-    style::Color,
+    style::{Color, Modifier},
     text::Line,
 };
 use std::{borrow::Cow, cmp::max};
@@ -60,14 +60,17 @@ fn main() -> anyhow::Result<()> {
 
 #[derive(Clone, Copy, Default)]
 struct Areas {
-    status_bar: Rect,
+    navigation_bar: Rect,
     line_numbers: Rect,
     text: Rect,
+    status_bar: Rect,
 }
 
 impl Areas {
     fn new(editor: &Editor, area: Rect) -> Self {
         let vertical_areas = Layout::vertical([
+            // navigation_bar
+            Constraint::Length(1),
             // line_numbers + text
             Constraint::Fill(1),
             // status_bar
@@ -75,13 +78,13 @@ impl Areas {
         ])
         .split(area);
 
-        let status_bar = vertical_areas[1];
-
         let line_numbers_width = {
             let n = editor.text().len_lines_indigo();
             let digits = 1 + max(1, n).ilog10();
             u16::try_from(max(2, digits) + 1).unwrap()
         };
+
+        let navigation_bar = vertical_areas[0];
 
         let horizontal_areas = Layout::horizontal([
             // line_numbers
@@ -89,26 +92,36 @@ impl Areas {
             // text
             Constraint::Fill(1),
         ])
-        .split(vertical_areas[0]);
+        .split(vertical_areas[1]);
+
+        let status_bar = vertical_areas[2];
 
         let line_numbers = horizontal_areas[0];
 
         let text = horizontal_areas[1];
 
         Self {
-            status_bar,
+            navigation_bar,
             line_numbers,
             text,
+            status_bar,
         }
     }
 }
 
 fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
+    render_navigation_bar(editor, areas.navigation_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
     render_tildes(editor, areas.line_numbers, surface);
     render_text(editor, areas.text, surface);
     render_selection(editor, areas.text, surface);
     render_status_bar(editor, areas.status_bar, surface);
+}
+
+fn render_navigation_bar(_editor: &Editor, area: Rect, surface: &mut Surface) {
+    Line::raw(" ")
+        .style(Style::new().add_modifier(Modifier::UNDERLINED))
+        .render(area, surface);
 }
 
 fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
@@ -121,8 +134,17 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
             break;
         }
 
+        let last = line_number == total_lines;
+
+        let bottom = row.y + 1 == area.bottom();
+
         Line::raw(format!("{line_number}│"))
             .right_aligned()
+            .style(Style::new().add_modifier(if last || bottom {
+                Modifier::UNDERLINED
+            } else {
+                Modifier::empty()
+            }))
             .render(row, surface);
     }
 }
@@ -137,7 +159,15 @@ fn render_tildes(editor: &Editor, area: Rect, surface: &mut Surface) {
             continue;
         }
 
-        Line::raw("~").render(row, surface);
+        let bottom = row.y + 1 == area.bottom();
+
+        Line::raw("~")
+            .style(Style::new().add_modifier(if bottom {
+                Modifier::UNDERLINED
+            } else {
+                Modifier::empty()
+            }))
+            .render(row, surface);
     }
 }
 
@@ -172,6 +202,10 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 
             x += width_u16;
         }
+    }
+
+    if let Some(bottom_row) = area.rows().last() {
+        surface.set_style(bottom_row, Style::new().add_modifier(Modifier::UNDERLINED));
     }
 }
 
