@@ -11,7 +11,7 @@ pub struct RopeGraphemes<'a> {
     cursor: GraphemeCursor,
 }
 
-impl<'a> RopeGraphemes<'a> {
+impl RopeGraphemes<'_> {
     pub fn new<'b>(slice: &RopeSlice<'b>) -> RopeGraphemes<'b> {
         let mut chunks = slice.chunks();
         let first_chunk = chunks.next().unwrap_or("");
