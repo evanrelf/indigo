@@ -43,25 +43,6 @@ fn grapheme_width(grapheme: &str) -> usize {
         return 8;
     }
 
-    // TODO: Implement custom width to accomodate emoji with zero-width joiners.
-    // `unicode-width` doesn't support this at the moment:
-    // https://github.com/unicode-rs/unicode-width/issues/4.
-    //
-    // WezTerm dealt with this here: https://github.com/wez/wezterm/commit/1ab438c1e266ab24.
-
-    // const EMOJI_MODIFIER_BASE: icu_properties::sets::CodePointSetDataBorrowed =
-    //     icu_properties::sets::emoji_modifier_base();
-
-    // const EMOJI_MODIFIER: icu_properties::sets::CodePointSetDataBorrowed =
-    //     icu_properties::sets::emoji_modifier();
-
-    // for char in str.chars() {
-    //     if EMOJI_MODIFIER_BASE.contains(char) || EMOJI_MODIFIER.contains(char) {
-    //         // panic!("grapheme: {}, char: {}", str, char);
-    //         return 2;
-    //     }
-    // }
-
     max(1, UnicodeWidthStr::width(grapheme))
 }
 
@@ -90,7 +71,7 @@ mod tests {
         assert_eq!(s.display_width(), 2);
 
         let s = "👩🏻‍❤️‍💋‍👩🏻";
-        assert_eq!(s.display_width(), 12); // TODO: I want this to be 2 :(
+        assert_eq!(s.display_width(), 2); // TODO: I want this to be 2 :(
 
         let c = '\t';
         assert_eq!(c.display_width(), 8);

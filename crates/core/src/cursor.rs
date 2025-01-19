@@ -321,11 +321,11 @@ mod tests {
         cursor.insert("कि मपि   नमस्ते");
         assert_eq!(cursor.char_index(), 15);
         cursor.backspace(1);
-        assert_eq!(cursor.rope.to_string(), "कि मपि   नमस्");
-        assert_eq!(cursor.char_index(), 13);
+        assert_eq!(cursor.rope.to_string(), "कि मपि   ");
+        assert_eq!(cursor.char_index(), 9);
         cursor.backspace(1);
-        assert_eq!(cursor.rope.to_string(), "कि मपि   नम");
-        assert_eq!(cursor.char_index(), 11);
+        assert_eq!(cursor.rope.to_string(), "कि मपि  ");
+        assert_eq!(cursor.char_index(), 8);
     }
 
     #[test]
@@ -343,7 +343,7 @@ mod tests {
         assert_eq!(cursor.char(), None);
         assert_eq!(cursor.grapheme(), None);
         assert_eq!(cursor.char_index(), 18);
-        assert_eq!(cursor.grapheme_index(), 13);
+        assert_eq!(cursor.grapheme_index(), 12);
         cursor.move_left(1);
         assert_eq!(cursor.char(), Some('x'));
         assert_eq!(
@@ -351,7 +351,7 @@ mod tests {
             Some(String::from("x"))
         );
         assert_eq!(cursor.char_index(), 17);
-        assert_eq!(cursor.grapheme_index(), 12);
+        assert_eq!(cursor.grapheme_index(), 11);
         cursor.move_left(1);
         assert_eq!(cursor.char(), Some('🇯'));
         assert_eq!(
@@ -359,6 +359,6 @@ mod tests {
             Some(String::from("🇯🇵"))
         );
         assert_eq!(cursor.char_index(), 15);
-        assert_eq!(cursor.grapheme_index(), 11);
+        assert_eq!(cursor.grapheme_index(), 10);
     }
 }
