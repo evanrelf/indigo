@@ -32,7 +32,7 @@ fn main() -> anyhow::Result<()> {
 
     loop {
         terminal.draw(|frame| {
-            areas = Areas::new(&editor, frame.size());
+            areas = Areas::new(&editor, frame.area());
             editor.height = usize::from(areas.text.height);
             let surface = frame.buffer_mut();
             render(&editor, areas, surface);
