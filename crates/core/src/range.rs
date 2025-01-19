@@ -1,6 +1,8 @@
-use crate::cursor::{Cursor, CursorExt, CursorMut, CursorState};
+use crate::{
+    cursor::{Cursor, CursorExt, CursorMut, CursorState},
+    ot::EditSeq,
+};
 use anyhow::Context as _;
-use indigo_ot::EditSeq;
 use ropey::Rope;
 
 #[derive(Clone, Copy, Debug, Default)]

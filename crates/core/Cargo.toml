@@ -7,8 +7,9 @@ anyhow = { workspace = true }
 camino = { workspace = true }
 flagset = { workspace = true }
 icu_properties = { workspace = true }
-indigo-ot = { workspace = true }
 ropey = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
 unicode-segmentation = { workspace = true }
 unicode-width = { workspace = true }
 winnow = { workspace = true }

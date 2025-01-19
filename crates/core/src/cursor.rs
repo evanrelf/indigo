@@ -1,5 +1,4 @@
-use crate::RopeExt as _;
-use indigo_ot::EditSeq;
+use crate::{ot::EditSeq, RopeExt as _};
 use ropey::{Rope, RopeSlice};
 
 #[derive(Clone, Copy, Debug, Default)]

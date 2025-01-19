@@ -7,6 +7,7 @@ mod hooks;
 mod key;
 mod keymap;
 mod mode;
+mod ot;
 mod range;
 mod rope;
 
@@ -19,6 +20,7 @@ pub use crate::{
     key::{Key, KeyCode, KeyModifier, Keys},
     keymap::Keymap,
     mode::Mode,
+    ot::{Edit, EditSeq, Error},
     range::{Range, RangeExt, RangeMut},
     rope::RopeExt,
 };
