@@ -109,13 +109,7 @@ impl<'a> RangeMut<'a> {
     }
 
     pub fn insert_char(&mut self, char: char) {
-        let mut edits = EditSeq::new();
-        edits.retain(self.state.head.char_index);
-        edits.insert(char.to_string());
-        edits.retain(self.rope.len_chars() - self.state.head.char_index);
-        edits.apply(self.rope).unwrap();
-        self.state.anchor.char_index = edits.transform_index(self.state.anchor.char_index);
-        self.state.head.char_index = edits.transform_index(self.state.head.char_index);
+        self.insert(&char.to_string());
     }
 
     pub fn insert(&mut self, string: &str) {

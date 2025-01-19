@@ -81,12 +81,7 @@ impl<'a> CursorMut<'a> {
     }
 
     pub fn insert_char(&mut self, char: char) {
-        let mut edits = EditSeq::new();
-        edits.retain(self.state.char_index);
-        edits.insert(char.to_string());
-        edits.retain(self.rope.len_chars() - self.state.char_index);
-        edits.apply(self.rope).unwrap();
-        self.state.char_index = edits.transform_index(self.state.char_index);
+        self.insert(&char.to_string());
     }
 
     pub fn insert(&mut self, string: &str) {
