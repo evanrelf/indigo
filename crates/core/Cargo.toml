@@ -6,7 +6,6 @@ edition = "2021"
 anyhow = { workspace = true }
 camino = { workspace = true }
 flagset = { workspace = true }
-icu_properties = { workspace = true }
 ropey = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
