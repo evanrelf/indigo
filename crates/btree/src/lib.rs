@@ -71,6 +71,28 @@ impl<K: Key, V: Value> Default for BTree<K, V> {
     }
 }
 
+impl<'a, K: Key, V: Value> Extend<(&'a K, V)> for BTree<K, V> {
+    fn extend<T>(&mut self, kvs: T)
+    where
+        T: IntoIterator<Item = (&'a K, V)>,
+    {
+        for (k, v) in kvs {
+            self.insert(k, v);
+        }
+    }
+}
+
+impl<K: Key, V: Value> Extend<Self> for BTree<K, V> {
+    fn extend<T>(&mut self, btrees: T)
+    where
+        T: IntoIterator<Item = Self>,
+    {
+        for btree in btrees {
+            self.append(btree);
+        }
+    }
+}
+
 const BASE: usize = 4;
 
 #[derive(Clone)]
