@@ -105,6 +105,9 @@ impl EditSeq {
             });
         }
 
+        // https://github.com/spebern/operational-transform-rs/blob/9faa17f0a2b282ac2e09dbb2d29fdaf2ae0bbb4a/operational-transform/src/lib.rs#L172
+        // https://github.com/helix-editor/helix/blob/ba4793fca0f8198ce57bf6bc1d46ed7649665b33/helix-core/src/transaction.rs#L153
+
         todo!()
     }
 
@@ -115,6 +118,8 @@ impl EditSeq {
                 right: other.source_chars,
             });
         }
+
+        // https://github.com/spebern/operational-transform-rs/blob/9faa17f0a2b282ac2e09dbb2d29fdaf2ae0bbb4a/operational-transform/src/lib.rs#L344
 
         todo!()
     }
@@ -392,4 +397,12 @@ mod tests {
         assert_eq!(rope, Rope::from("Hello, Evan...?"));
         assert!(Edit::Retain(1).apply(char_index, &mut rope).is_err());
     }
+
+    // TODO: Write property test for this with `quickcheck` or `proptest`.
+    //
+    // Given a string S and consecutive operations A and B, the following must hold:
+    //
+    // ```
+    // apply(apply(S, A), B) = apply(S, compose(A, B))
+    // ```
 }
