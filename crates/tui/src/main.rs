@@ -124,17 +124,8 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
             break;
         }
 
-        let last = line_number == total_lines;
-
-        let bottom = row.y + 1 == area.bottom();
-
         Line::raw(format!("{line_number}│"))
             .right_aligned()
-            .style(Style::new().add_modifier(if last || bottom {
-                Modifier::UNDERLINED
-            } else {
-                Modifier::empty()
-            }))
             .render(row, surface);
     }
 }
