@@ -85,13 +85,14 @@ impl<'a> RangeMut<'a> {
     #[must_use]
     fn anchor_mut(&mut self) -> CursorMut {
         let Self { rope, state } = self;
-        CursorMut::from_state(rope, state.anchor).unwrap()
+        CursorMut::from_state(rope, state.anchor)
+            .expect("Range's anchor state should always be valid")
     }
 
     #[must_use]
     fn head_mut(&mut self) -> CursorMut {
         let Self { rope, state } = self;
-        CursorMut::from_state(rope, state.head).unwrap()
+        CursorMut::from_state(rope, state.head).expect("Range's head state should always be valid")
     }
 
     fn with_anchor_mut<T>(&mut self, func: impl Fn(&mut CursorMut) -> T) -> T {

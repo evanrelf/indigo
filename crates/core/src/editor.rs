@@ -35,12 +35,14 @@ impl Editor {
 
     #[must_use]
     pub fn range(&self) -> Range {
-        Range::from_state(&self.text, self.range).unwrap()
+        Range::from_state(&self.text, self.range)
+            .expect("Editor's range state should always be valid")
     }
 
     #[must_use]
     pub fn range_mut(&mut self) -> RangeMut {
-        RangeMut::from_state(&mut self.text, self.range).unwrap()
+        RangeMut::from_state(&mut self.text, self.range)
+            .expect("Editor's range state should always be valid")
     }
 
     pub fn with_range<T>(&mut self, func: impl Fn(&mut Range) -> T) -> T {
