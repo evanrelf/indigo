@@ -128,7 +128,9 @@ impl<'a> RangeMut<'a> {
         self.with_head_mut(|cursor| cursor.backspace(count));
     }
 
-    // TODO: Disambiguate `Delete` key and deleting the contents of the `Range`
+    // TODO: Disambiguate `Delete` key and deleting the contents of the `Range`. The former treats
+    // the range like a fat cursor and deletes charaters following it, and the latter deletes the
+    // characters within it. Should be two different functions/actions.
     pub fn delete(&mut self, count: usize) {
         self.with_head_mut(|cursor| cursor.delete(count));
     }
