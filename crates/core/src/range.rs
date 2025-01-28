@@ -5,6 +5,14 @@ use crate::{
 use anyhow::Context as _;
 use ropey::Rope;
 
+// I want ranges to build on top of cursors, so that their correctness can compose, and I can
+// duplicate less code. However currently that is not the case, because ranges are built on cursor
+// internals; the private range code in this module is still responsible for enforcing internal
+// cursor invariants.
+//
+// I'm not currently concerned with the `pub(crate)` code in this module, because it is only used by
+// the editor in a trivial/innocent way.
+
 #[derive(Clone, Copy, Debug, Default)]
 pub(crate) struct RangeState {
     anchor: CursorState,

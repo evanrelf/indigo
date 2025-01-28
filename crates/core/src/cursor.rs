@@ -1,6 +1,11 @@
 use crate::{ot::EditSeq, RopeExt as _};
 use ropey::{Rope, RopeSlice};
 
+// I want cursors to be correct by construction; cursor code outside of this module should be safe
+// by definition. However currently that is not the case, because ranges are built on cursor
+// internals. Specifically, any code in this module that is `pub(crate)` is where I'm compromising
+// on this ideal, and should be scrutinized.
+
 #[derive(Clone, Copy, Debug, Default)]
 pub(crate) struct CursorState {
     // Char gap index
@@ -22,6 +27,8 @@ impl<'a> Cursor<'a> {
         }
     }
 
+    // `Ok` means the char index was valid in the rope. `Err` means the char index was not valid in
+    // the rope, but we we're able to correct it (i.e. snap to the end of the rope).
     pub fn from_char_index(rope: &'a Rope, char_index: usize) -> Result<Self, Self> {
         let state = CursorState { char_index };
         Self::from_state(rope, state)
