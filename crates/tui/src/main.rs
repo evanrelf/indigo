@@ -199,6 +199,8 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
         surface.set_style(anchor_rect, anchor_style);
     }
 
+    // TODO: Color all the text in between the anchor and the head
+
     if let Some(head_rect) = cursor_area(range.head(), editor, area) {
         let head_style = Style::default().bg(Color::Rgb(0xff, 0xd3, 0x3d));
         surface.set_style(head_rect, head_style);
