@@ -178,11 +178,7 @@ pub trait CursorExt: CursorParts {
     fn char(&self) -> Option<char> {
         let (rope, state) = self.cursor_parts();
 
-        if state.char_index < rope.len_chars() {
-            Some(rope.char(state.char_index))
-        } else {
-            None
-        }
+        rope.get_char(state.char_index)
     }
 
     fn grapheme(&self) -> Option<RopeSlice> {
