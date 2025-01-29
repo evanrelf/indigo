@@ -12,6 +12,8 @@ pub trait RopeExt {
     // https://github.com/cessen/ropey/issues/60
     fn len_lines_indigo(&self) -> usize;
 
+    fn char_to_grapheme(&self, char_index: usize) -> usize;
+
     fn graphemes(&self) -> RopeGraphemes<'_>;
 
     // TODO: Implement this, like `unicode-segmentation`:
@@ -46,6 +48,10 @@ impl RopeExt for RopeSlice<'_> {
         self.len_lines() - if last_char == '\n' { 1 } else { 0 }
     }
 
+    fn char_to_grapheme(&self, char_index: usize) -> usize {
+        self.slice(..char_index).graphemes().count()
+    }
+
     fn graphemes(&self) -> RopeGraphemes<'_> {
         RopeGraphemes::new(self)
     }
@@ -70,6 +76,10 @@ impl RopeExt for Rope {
         }
         let last_char = self.char(self.len_chars() - 1);
         self.len_lines() - if last_char == '\n' { 1 } else { 0 }
+    }
+
+    fn char_to_grapheme(&self, char_index: usize) -> usize {
+        self.slice(..char_index).graphemes().count()
     }
 
     fn graphemes(&self) -> RopeGraphemes<'_> {

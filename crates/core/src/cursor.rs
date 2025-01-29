@@ -172,7 +172,7 @@ pub trait CursorExt: CursorParts {
     fn grapheme_index(&self) -> usize {
         let (rope, state) = self.cursor_parts();
 
-        char_to_grapheme(rope, state.char_index)
+        rope.char_to_grapheme(state.char_index)
     }
 
     fn char(&self) -> Option<char> {
@@ -235,10 +235,6 @@ pub trait CursorExt: CursorParts {
 }
 
 impl<T> CursorExt for T where T: CursorParts {}
-
-fn char_to_grapheme(rope: &Rope, char_index: usize) -> usize {
-    rope.slice(..char_index).graphemes().count()
-}
 
 #[cfg(test)]
 mod tests {
