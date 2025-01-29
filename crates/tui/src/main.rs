@@ -10,7 +10,7 @@ use indigo_core::{
     actions, Cursor, CursorExt as _, DisplayWidth as _, Editor, Mode, RangeExt as _, RopeExt as _,
 };
 use ratatui::{
-    prelude::{Buffer as Surface, Constraint, Layout, Rect, Style, Widget as _},
+    prelude::{Buffer as Surface, Constraint, Layout, Position, Rect, Style, Widget as _},
     style::{Color, Modifier},
     text::Line,
 };
@@ -219,6 +219,8 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
+/// Map a rope index to an area of the terminal. Example use is rendering the cell(s) where a cursor
+/// sits in a different color.
 fn char_index_to_area(
     char_index: usize,
     rope: &Rope,
@@ -250,6 +252,27 @@ fn char_index_to_area(
         width,
         height: 1,
     })
+}
+
+/// Map position on the terminal to a character index in the rope indices. Example us is moving a
+/// cursor to where a mouse was clicked.
+///
+/// `Ok` means the position was valid in the rope. `Err` means the position was not valid in the
+/// rope, but we were able to correct it.
+///
+/// Examples of corrections: snapping to the beginning of the grapheme, snapping to the end of the
+/// line, and snapping to the end of the buffer.
+fn position_to_char_index(
+    position: Position,
+    rope: &Rope,
+    vertical_scroll: usize,
+    area: Rect,
+) -> Option<Result<usize, usize>> {
+    if !area.contains(position) {
+        return None;
+    }
+
+    todo!()
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {

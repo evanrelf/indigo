@@ -28,7 +28,7 @@ impl<'a> Cursor<'a> {
     }
 
     // `Ok` means the char index was valid in the rope. `Err` means the char index was not valid in
-    // the rope, but we we're able to correct it (i.e. snap to the end of the rope).
+    // the rope, but we were able to correct it (i.e. snap to the end of the rope).
     pub fn from_char_index(rope: &'a Rope, char_index: usize) -> Result<Self, Self> {
         let state = CursorState { char_index };
         Self::from_state(rope, state)
