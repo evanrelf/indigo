@@ -38,7 +38,9 @@ fn main() -> anyhow::Result<()> {
             render(&editor, areas, surface);
         })?;
 
-        handle_event(&mut editor, &mut terminal, &crossterm::event::read()?)?;
+        let event = crossterm::event::read()?;
+
+        handle_event(&mut editor, &mut terminal, &event)?;
 
         if editor.quit {
             break;
