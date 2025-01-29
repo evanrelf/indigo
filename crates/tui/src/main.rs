@@ -297,6 +297,8 @@ fn handle_event_normal(
             (KeyModifiers::NONE, KeyCode::Char('d')) => actions::delete(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('u')) => actions::scroll_half_page_up(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('d')) => actions::scroll_half_page_down(editor),
+            (KeyModifiers::CONTROL, KeyCode::Char('b')) => actions::scroll_full_page_up(editor),
+            (KeyModifiers::CONTROL, KeyCode::Char('f')) => actions::scroll_full_page_down(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
             (KeyModifiers::CONTROL, KeyCode::Char('c')) => editor.quit = true,
             _ => {}
@@ -327,6 +329,8 @@ fn handle_event_insert(
             (KeyModifiers::NONE, KeyCode::Tab) => actions::insert_char(editor, '\t'),
             (KeyModifiers::CONTROL, KeyCode::Char('u')) => actions::scroll_half_page_up(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('d')) => actions::scroll_half_page_down(editor),
+            (KeyModifiers::CONTROL, KeyCode::Char('b')) => actions::scroll_full_page_up(editor),
+            (KeyModifiers::CONTROL, KeyCode::Char('f')) => actions::scroll_full_page_down(editor),
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
             (KeyModifiers::CONTROL, KeyCode::Char('c')) => editor.quit = true,
             _ => {}

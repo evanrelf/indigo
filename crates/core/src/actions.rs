@@ -43,6 +43,16 @@ pub fn scroll_half_page_down(editor: &mut Editor) {
     editor.scroll_to(line);
 }
 
+pub fn scroll_full_page_up(editor: &mut Editor) {
+    let line = editor.vertical_scroll().saturating_sub(editor.height);
+    editor.scroll_to(line);
+}
+
+pub fn scroll_full_page_down(editor: &mut Editor) {
+    let line = editor.vertical_scroll() + editor.height;
+    editor.scroll_to(line);
+}
+
 pub fn insert_char(editor: &mut Editor, c: char) {
     editor.with_range_mut(|range| range.insert_char(c));
 }
