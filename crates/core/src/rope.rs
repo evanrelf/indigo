@@ -14,29 +14,35 @@ pub trait RopeExt {
 
     fn char_to_grapheme(&self, char_index: usize) -> usize;
 
+    fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice>;
+
+    fn grapheme(&self, char_index: usize) -> RopeSlice {
+        self.get_grapheme(char_index).unwrap()
+    }
+
     fn graphemes(&self) -> RopeGraphemes<'_>;
 
     // TODO: Implement this, like `unicode-segmentation`:
     // https://docs.rs/unicode-segmentation/latest/unicode_segmentation/trait.UnicodeSegmentation.html#tymethod.grapheme_indices
     // fn grapheme_indices(&self) -> RopeGraphemeIndices<'_>;
 
-    fn prev_grapheme_boundary(&self, char_idx: usize) -> usize {
-        self.get_prev_grapheme_boundary(char_idx).unwrap()
+    fn prev_grapheme_boundary(&self, char_index: usize) -> usize {
+        self.get_prev_grapheme_boundary(char_index).unwrap()
     }
 
-    fn get_prev_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<usize>;
+    fn get_prev_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<usize>;
 
-    fn next_grapheme_boundary(&self, char_idx: usize) -> usize {
-        self.get_next_grapheme_boundary(char_idx).unwrap()
+    fn next_grapheme_boundary(&self, char_index: usize) -> usize {
+        self.get_next_grapheme_boundary(char_index).unwrap()
     }
 
-    fn get_next_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<usize>;
+    fn get_next_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<usize>;
 
-    fn is_grapheme_boundary(&self, char_idx: usize) -> bool {
-        self.try_is_grapheme_boundary(char_idx).unwrap()
+    fn is_grapheme_boundary(&self, char_index: usize) -> bool {
+        self.try_is_grapheme_boundary(char_index).unwrap()
     }
 
-    fn try_is_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<bool>;
+    fn try_is_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<bool>;
 }
 
 impl RopeExt for RopeSlice<'_> {
@@ -52,20 +58,30 @@ impl RopeExt for RopeSlice<'_> {
         self.slice(..char_index).graphemes().count()
     }
 
+    fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice> {
+        if char_index < self.len_chars() {
+            let start = char_index;
+            let end = self.next_grapheme_boundary(start);
+            Some(self.slice(start..end))
+        } else {
+            None
+        }
+    }
+
     fn graphemes(&self) -> RopeGraphemes<'_> {
         RopeGraphemes::new(self)
     }
 
-    fn get_prev_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<usize> {
-        graphemes_step::get_prev_grapheme_boundary(self, char_idx)
+    fn get_prev_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<usize> {
+        graphemes_step::get_prev_grapheme_boundary(self, char_index)
     }
 
-    fn get_next_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<usize> {
-        graphemes_step::get_next_grapheme_boundary(self, char_idx)
+    fn get_next_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<usize> {
+        graphemes_step::get_next_grapheme_boundary(self, char_index)
     }
 
-    fn try_is_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<bool> {
-        graphemes_step::try_is_grapheme_boundary(self, char_idx)
+    fn try_is_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<bool> {
+        graphemes_step::try_is_grapheme_boundary(self, char_index)
     }
 }
 
@@ -82,20 +98,30 @@ impl RopeExt for Rope {
         self.slice(..char_index).graphemes().count()
     }
 
+    fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice> {
+        if char_index < self.len_chars() {
+            let start = char_index;
+            let end = self.next_grapheme_boundary(start);
+            Some(self.slice(start..end))
+        } else {
+            None
+        }
+    }
+
     fn graphemes(&self) -> RopeGraphemes<'_> {
         RopeGraphemes::new(&self.slice(0..))
     }
 
-    fn get_prev_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<usize> {
-        self.slice(0..).get_prev_grapheme_boundary(char_idx)
+    fn get_prev_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<usize> {
+        self.slice(0..).get_prev_grapheme_boundary(char_index)
     }
 
-    fn get_next_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<usize> {
-        self.slice(0..).get_next_grapheme_boundary(char_idx)
+    fn get_next_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<usize> {
+        self.slice(0..).get_next_grapheme_boundary(char_index)
     }
 
-    fn try_is_grapheme_boundary(&self, char_idx: usize) -> anyhow::Result<bool> {
-        self.slice(0..).try_is_grapheme_boundary(char_idx)
+    fn try_is_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<bool> {
+        self.slice(0..).try_is_grapheme_boundary(char_index)
     }
 }
 

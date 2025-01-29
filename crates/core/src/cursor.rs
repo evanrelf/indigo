@@ -184,13 +184,7 @@ pub trait CursorExt: CursorParts {
     fn grapheme(&self) -> Option<RopeSlice> {
         let (rope, state) = self.cursor_parts();
 
-        if state.char_index < rope.len_chars() {
-            let start = state.char_index;
-            let end = rope.next_grapheme_boundary(start);
-            Some(rope.slice(start..end))
-        } else {
-            None
-        }
+        rope.get_grapheme(state.char_index)
     }
 
     fn move_left(&mut self, distance: usize) -> bool {
