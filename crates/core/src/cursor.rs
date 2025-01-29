@@ -152,6 +152,13 @@ impl CursorParts for CursorMut<'_> {
 
 #[allow(private_bounds)]
 pub trait CursorExt: CursorParts {
+    #[must_use]
+    fn rope(&self) -> &Rope {
+        let (rope, _state) = self.cursor_parts();
+
+        rope
+    }
+
     /// Char gap index
     #[must_use]
     fn char_index(&self) -> usize {

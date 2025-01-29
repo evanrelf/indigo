@@ -173,6 +173,13 @@ impl RangeParts for RangeMut<'_> {
 #[allow(private_bounds)]
 pub trait RangeExt: RangeParts {
     #[must_use]
+    fn rope(&self) -> &Rope {
+        let (rope, _state) = self.range_parts();
+
+        rope
+    }
+
+    #[must_use]
     fn anchor(&self) -> Cursor {
         let (rope, state) = self.range_parts();
         Cursor::from_state(rope, state.anchor).unwrap()
