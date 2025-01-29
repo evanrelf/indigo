@@ -194,38 +194,37 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
     let range = editor.range();
 
-    if let Some(anchor_rect) = cursor_area(range.anchor(), editor, area) {
+    if let Some(anchor_rect) = cursor_area(range.anchor(), editor.vertical_scroll(), area) {
         let anchor_style = Style::default().bg(Color::Rgb(0xff, 0xf5, 0xb1));
         surface.set_style(anchor_rect, anchor_style);
     }
 
     // TODO: Color all the text in between the anchor and the head
 
-    if let Some(head_rect) = cursor_area(range.head(), editor, area) {
+    if let Some(head_rect) = cursor_area(range.head(), editor.vertical_scroll(), area) {
         let head_style = Style::default().bg(Color::Rgb(0xff, 0xd3, 0x3d));
         surface.set_style(head_rect, head_style);
     }
 }
 
-fn cursor_area(cursor: Cursor, editor: &Editor, area: Rect) -> Option<Rect> {
+fn cursor_area(cursor: Cursor, vertical_scroll: usize, area: Rect) -> Option<Rect> {
+    let rope = cursor.rope();
+
     let char_index = cursor.char_index();
 
-    let line_index = editor.text().char_to_line(char_index);
+    let line_index = rope.char_to_line(char_index);
 
-    if editor.vertical_scroll() > line_index {
+    if vertical_scroll > line_index {
         return None;
     }
 
-    let line_char_index = editor.text().line_to_char(line_index);
+    let line_char_index = rope.line_to_char(line_index);
 
-    let prefix_width = editor
-        .text()
-        .slice(line_char_index..char_index)
-        .display_width();
+    let prefix_width = rope.slice(line_char_index..char_index).display_width();
 
     let x = area.x + u16::try_from(prefix_width).unwrap();
 
-    let y = area.y + u16::try_from(line_index - editor.vertical_scroll()).unwrap();
+    let y = area.y + u16::try_from(line_index - vertical_scroll).unwrap();
 
     let width = match cursor.grapheme() {
         Some(grapheme) => u16::try_from(grapheme.display_width()).unwrap(),
