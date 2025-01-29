@@ -14,6 +14,7 @@ use ratatui::{
     style::{Color, Modifier},
     text::Line,
 };
+use ropey::Rope;
 use std::{borrow::Cow, cmp::max};
 
 #[derive(Debug, clap::Parser)]
@@ -196,24 +197,34 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
     let range = editor.range();
 
-    if let Some(anchor_rect) = cursor_area(range.anchor(), editor.vertical_scroll(), area) {
+    let cursor_area = |cursor: Cursor| {
+        char_index_to_area(
+            cursor.char_index(),
+            cursor.rope(),
+            editor.vertical_scroll(),
+            area,
+        )
+    };
+
+    if let Some(anchor_rect) = cursor_area(range.anchor()) {
         let anchor_style = Style::default().bg(Color::Rgb(0xff, 0xf5, 0xb1));
         surface.set_style(anchor_rect, anchor_style);
     }
 
     // TODO: Color all the text in between the anchor and the head
 
-    if let Some(head_rect) = cursor_area(range.head(), editor.vertical_scroll(), area) {
+    if let Some(head_rect) = cursor_area(range.head()) {
         let head_style = Style::default().bg(Color::Rgb(0xff, 0xd3, 0x3d));
         surface.set_style(head_rect, head_style);
     }
 }
 
-fn cursor_area(cursor: Cursor, vertical_scroll: usize, area: Rect) -> Option<Rect> {
-    let rope = cursor.rope();
-
-    let char_index = cursor.char_index();
-
+fn char_index_to_area(
+    char_index: usize,
+    rope: &Rope,
+    vertical_scroll: usize,
+    area: Rect,
+) -> Option<Rect> {
     let line_index = rope.char_to_line(char_index);
 
     if vertical_scroll > line_index {
@@ -228,7 +239,7 @@ fn cursor_area(cursor: Cursor, vertical_scroll: usize, area: Rect) -> Option<Rec
 
     let y = area.y + u16::try_from(line_index - vertical_scroll).unwrap();
 
-    let width = match cursor.grapheme() {
+    let width = match rope.get_grapheme(char_index) {
         Some(grapheme) => u16::try_from(grapheme.display_width()).unwrap(),
         None => 1, // Cursor at end of file
     };
