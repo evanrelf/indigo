@@ -227,15 +227,15 @@ fn char_index_to_area(
     vertical_scroll: usize,
     area: Rect,
 ) -> Option<Rect> {
-    let line_index = rope.char_to_line(char_index);
+    let line_index = rope.try_char_to_line(char_index).ok()?;
 
     if vertical_scroll > line_index {
         return None;
     }
 
-    let line_char_index = rope.line_to_char(line_index);
+    let line_char_index = rope.try_line_to_char(line_index).ok()?;
 
-    let prefix_width = rope.slice(line_char_index..char_index).display_width();
+    let prefix_width = rope.get_slice(line_char_index..char_index)?.display_width();
 
     let x = area.x + u16::try_from(prefix_width).unwrap();
 
@@ -268,11 +268,33 @@ fn position_to_char_index(
     vertical_scroll: usize,
     area: Rect,
 ) -> Option<Result<usize, usize>> {
+    // TODO: Move this general purpose (x, y) <-> index logic somewhere else.
+
     if !area.contains(position) {
         return None;
     }
 
-    todo!()
+    let x = usize::from(position.x - area.x);
+
+    let y = usize::from(position.y - area.y) + vertical_scroll;
+
+    let Some(line) = rope.get_line(y) else {
+        // Position goes beyond last line of rope, so we snap to last character of rope
+        return Some(Err(rope.len_chars()));
+    };
+
+    let line_char_index = rope
+        .try_line_to_char(y)
+        .expect("Line is known to exist at this point");
+
+    let line_length = line.len_chars();
+
+    if x > line_length {
+        // Position goes beyond last character of line, so we snap to last character of line
+        return Some(Err(line_char_index + (line_length - 1)));
+    }
+
+    Some(Ok(line_char_index + x))
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
