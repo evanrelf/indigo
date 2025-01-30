@@ -41,7 +41,7 @@ fn main() -> anyhow::Result<()> {
 
         let event = crossterm::event::read()?;
 
-        handle_event(&mut editor, &mut terminal, &event)?;
+        handle_event(&mut editor, &mut terminal, areas, &event)?;
 
         if editor.quit {
             break;
@@ -302,17 +302,19 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 fn handle_event(
     editor: &mut Editor,
     terminal: &mut TerminalGuard,
+    areas: Areas,
     event: &Event,
 ) -> anyhow::Result<()> {
     match editor.mode {
-        Mode::Normal => handle_event_normal(editor, terminal, event),
-        Mode::Insert => handle_event_insert(editor, terminal, event),
+        Mode::Normal => handle_event_normal(editor, terminal, areas, event),
+        Mode::Insert => handle_event_insert(editor, terminal, areas, event),
     }
 }
 
 fn handle_event_normal(
     editor: &mut Editor,
     terminal: &mut TerminalGuard,
+    _areas: Areas,
     event: &Event,
 ) -> anyhow::Result<()> {
     match event {
@@ -351,6 +353,7 @@ fn handle_event_normal(
 fn handle_event_insert(
     editor: &mut Editor,
     terminal: &mut TerminalGuard,
+    _areas: Areas,
     event: &Event,
 ) -> anyhow::Result<()> {
     match event {
