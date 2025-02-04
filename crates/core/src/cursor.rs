@@ -1,4 +1,4 @@
-use crate::{ot::EditSeq, RopeExt as _};
+use crate::{ot::EditSeq, RopeExt as _, RopePosition};
 use ropey::{Rope, RopeSlice};
 
 // I want cursors to be correct by construction; cursor code outside of this module should be safe
@@ -32,6 +32,16 @@ impl<'a> Cursor<'a> {
     pub fn from_char_index(rope: &'a Rope, char_index: usize) -> Result<Self, Self> {
         let state = CursorState { char_index };
         Self::from_state(rope, state)
+    }
+
+    // `Ok` means the position was valid in the rope. `Err` means the position was not valid in the
+    // rope, but we were able to correct it (i.e. snap to the end of the line or rope).
+    pub fn from_position(rope: &'a Rope, position: RopePosition) -> Result<Self, Self> {
+        let error_message = "Char index from `Rope::position_to_char_index` is valid (i.e. does not need correction)";
+        match rope.position_to_char_index(position) {
+            Err(char_index) => Err(Self::from_char_index(rope, char_index).expect(error_message)),
+            Ok(char_index) => Ok(Self::from_char_index(rope, char_index).expect(error_message)),
+        }
     }
 
     pub(crate) fn from_state(rope: &'a Rope, state: CursorState) -> Result<Self, Self> {

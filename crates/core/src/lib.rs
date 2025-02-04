@@ -22,5 +22,5 @@ pub use crate::{
     mode::Mode,
     ot::{Edit, EditSeq, Error},
     range::{Range, RangeExt, RangeMut},
-    rope::RopeExt,
+    rope::{RopeExt, RopePosition},
 };

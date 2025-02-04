@@ -8,6 +8,7 @@ use clap::Parser as _;
 use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEventKind};
 use indigo_core::{
     actions, Cursor, CursorExt as _, DisplayWidth as _, Editor, Mode, RangeExt as _, RopeExt as _,
+    RopePosition,
 };
 use ratatui::{
     prelude::{Buffer as Surface, Constraint, Layout, Position, Rect, Style, Widget as _},
@@ -274,27 +275,12 @@ fn position_to_char_index(
         return None;
     }
 
-    let x = usize::from(position.x - area.x);
-
-    let y = usize::from(position.y - area.y) + vertical_scroll;
-
-    let Some(line) = rope.get_line(y) else {
-        // Position goes beyond last line of rope, so we snap to last character of rope
-        return Some(Err(rope.len_chars()));
+    let rope_position = RopePosition {
+        y: usize::from(position.y - area.y) + vertical_scroll,
+        x: usize::from(position.x - area.x),
     };
 
-    let line_char_index = rope
-        .try_line_to_char(y)
-        .expect("Line is known to exist at this point");
-
-    let line_length = line.len_chars();
-
-    if x > line_length {
-        // Position goes beyond last character of line, so we snap to last character of line
-        return Some(Err(line_char_index + (line_length - 1)));
-    }
-
-    Some(Ok(line_char_index + x))
+    Some(rope.position_to_char_index(rope_position))
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
