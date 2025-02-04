@@ -12,7 +12,7 @@ pub trait RopeExt {
     // https://github.com/cessen/ropey/issues/60
     fn len_lines_indigo(&self) -> usize;
 
-    fn char_to_grapheme(&self, char_index: usize) -> usize;
+    fn char_index_to_grapheme_index(&self, char_index: usize) -> usize;
 
     fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice>;
 
@@ -54,7 +54,7 @@ impl RopeExt for RopeSlice<'_> {
         self.len_lines() - if last_char == '\n' { 1 } else { 0 }
     }
 
-    fn char_to_grapheme(&self, char_index: usize) -> usize {
+    fn char_index_to_grapheme_index(&self, char_index: usize) -> usize {
         self.slice(..char_index).graphemes().count()
     }
 
@@ -94,7 +94,7 @@ impl RopeExt for Rope {
         self.len_lines() - if last_char == '\n' { 1 } else { 0 }
     }
 
-    fn char_to_grapheme(&self, char_index: usize) -> usize {
+    fn char_index_to_grapheme_index(&self, char_index: usize) -> usize {
         self.slice(..char_index).graphemes().count()
     }
 

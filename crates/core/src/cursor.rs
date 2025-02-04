@@ -172,7 +172,7 @@ pub trait CursorExt: CursorParts {
     fn grapheme_index(&self) -> usize {
         let (rope, state) = self.cursor_parts();
 
-        rope.char_to_grapheme(state.char_index)
+        rope.char_index_to_grapheme_index(state.char_index)
     }
 
     fn char(&self) -> Option<char> {
