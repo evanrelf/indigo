@@ -4,16 +4,6 @@ mod graphemes_step;
 use crate::rope::graphemes_iter::RopeGraphemes;
 use ropey::{Rope, RopeSlice};
 
-// (x, y) or (column, line) is kind of a misnomer because characters in a rope have variable width
-// (could be a ZWSP or ZWJ, could be an emoji, could be only part of a multi-char grapheme, etc).
-#[derive(Clone, Copy)]
-pub struct RopePosition {
-    /// Line index
-    pub y: usize,
-    /// Char offset in line (e.g. 0 is the first character of the line)
-    pub x: usize,
-}
-
 pub trait RopeExt {
     // `ropey` counts lines in a non-intuitive way, at least for my purposes. This method provides
     // an alternative, Indigo-specific line count.
@@ -23,15 +13,6 @@ pub trait RopeExt {
     fn len_lines_indigo(&self) -> usize;
 
     fn char_index_to_grapheme_index(&self, char_index: usize) -> usize;
-
-    // Does not snap to graphemes.
-    fn char_index_to_position(
-        &self,
-        char_index: usize,
-    ) -> Option<Result<RopePosition, RopePosition>>;
-
-    // Does not snap to graphemes.
-    fn position_to_char_index(&self, position: RopePosition) -> Result<usize, usize>;
 
     fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice>;
 
@@ -77,57 +58,6 @@ impl RopeExt for RopeSlice<'_> {
         self.slice(..char_index).graphemes().count()
     }
 
-    fn char_index_to_position(
-        &self,
-        mut char_index: usize,
-    ) -> Option<Result<RopePosition, RopePosition>> {
-        let mut corrected = false;
-
-        if self.len_chars() == 0 {
-            return None;
-        }
-
-        if self.len_chars() <= char_index {
-            corrected = true;
-            // When index goes beyond end of rope, use last index
-            char_index = self.len_chars().saturating_sub(1);
-        }
-
-        let y = self.char_to_line(char_index);
-
-        let x = char_index - self.line_to_char(y);
-
-        let position = RopePosition { y, x };
-
-        if corrected {
-            Some(Err(position))
-        } else {
-            Some(Ok(position))
-        }
-    }
-
-    fn position_to_char_index(&self, position: RopePosition) -> Result<usize, usize> {
-        let RopePosition { y, x } = position;
-
-        let Some(line) = self.get_line(y) else {
-            // Position goes beyond last line of rope, so we snap to last character of rope
-            return Err(self.len_chars());
-        };
-
-        let line_char_index = self
-            .try_line_to_char(y)
-            .expect("Line is known to exist at this point");
-
-        let line_length = line.len_chars();
-
-        if x > line_length {
-            // Position goes beyond last character of line, so we snap to last character of line
-            return Err(line_char_index + line_length.saturating_sub(1));
-        }
-
-        Ok(line_char_index + x)
-    }
-
     fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice> {
         if char_index < self.len_chars() {
             let start = char_index;
@@ -166,17 +96,6 @@ impl RopeExt for Rope {
 
     fn char_index_to_grapheme_index(&self, char_index: usize) -> usize {
         self.slice(..char_index).graphemes().count()
-    }
-
-    fn char_index_to_position(
-        &self,
-        char_index: usize,
-    ) -> Option<Result<RopePosition, RopePosition>> {
-        self.slice(0..).char_index_to_position(char_index)
-    }
-
-    fn position_to_char_index(&self, position: RopePosition) -> Result<usize, usize> {
-        self.slice(0..).position_to_char_index(position)
     }
 
     fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice> {
@@ -264,19 +183,5 @@ mod tests {
         assert_eq!(Rope::from_str("x\ny\nz").get_line(0), Some("x\n".into()));
         assert_eq!(Rope::from_str("x\ny\nz").get_line(1), Some("y\n".into()));
         assert_eq!(Rope::from_str("x\ny\nz").get_line(2), Some("z".into()));
-    }
-
-    #[test]
-    fn rope_position_to_char_index() {
-        let f = |s, y, x| Rope::from_str(s).position_to_char_index(RopePosition { y, x });
-        assert_eq!(f("", 0, 0), Ok(0));
-        assert_eq!(f("", 1, 0), Err(0));
-        assert_eq!(f("", 0, 1), Err(0));
-        assert_eq!(f("x\ny", 1, 0), Ok(2));
-    }
-
-    #[test]
-    fn rope_char_index_to_position() {
-        // todo!()
     }
 }
