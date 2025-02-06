@@ -3,6 +3,7 @@ use ropey::Rope;
 
 // TODO:
 // - Use trait to avoid duplicated code between immutable and mutable types.
+// - Put common stuff in `RawRange` impl instead of "parts"?
 
 // CAUTION:
 // - Unsafe to construct a `Range{,Mut}` from two user-provided `Cursor`s. They could point to
@@ -42,6 +43,42 @@ impl RawRange {
         } else {
             Ok(Self { anchor, head })
         }
+    }
+
+    pub fn move_left(&mut self, rope: &Rope, distance: usize) {
+        todo!()
+    }
+
+    pub fn move_right(&mut self, rope: &Rope, distance: usize) {
+        todo!()
+    }
+
+    pub fn extend_left(&mut self, rope: &Rope, distance: usize) {
+        todo!()
+    }
+
+    pub fn extend_right(&mut self, rope: &Rope, distance: usize) {
+        todo!()
+    }
+
+    pub fn reduce(&mut self) {
+        self.anchor = self.head;
+    }
+
+    pub fn insert_char(&mut self, rope: &mut Rope, char: char) {
+        self.insert(rope, &char.to_string());
+    }
+
+    pub fn insert(&mut self, rope: &mut Rope, string: &str) {
+        todo!()
+    }
+
+    pub fn backspace(&mut self, rope: &mut Rope, count: usize) {
+        todo!()
+    }
+
+    pub fn delete(&mut self, rope: &mut Rope, count: usize) {
+        todo!()
     }
 }
 

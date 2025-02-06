@@ -1,6 +1,8 @@
 use crate::RopeExt as _;
 use ropey::Rope;
 
+// IS A CURSOR JUST A RANGE THAT ALWAYS REDUCES AFTER????
+
 // TODO:
 // - Use trait to avoid duplicated code between immutable and mutable types.
 
