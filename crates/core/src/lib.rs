@@ -1,5 +1,6 @@
 pub mod actions;
 mod cursor;
+pub mod cursor2; // TODO: Publish the module's stuff, not the module itself
 mod display_width;
 mod editor;
 mod event;
