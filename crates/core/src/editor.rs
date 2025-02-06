@@ -48,6 +48,18 @@ impl Editor {
     }
 
     #[must_use]
+    pub fn range2(&self) -> range2::Range {
+        range2::Range::new(&self.text, self.range2.anchor, self.range2.head)
+            .expect("Editor range always valid")
+    }
+
+    #[must_use]
+    pub fn range2_mut(&mut self) -> range2::RangeMut {
+        range2::RangeMut::new(&mut self.text, self.range2.anchor, self.range2.head)
+            .expect("Editor range always valid")
+    }
+
+    #[must_use]
     pub fn vertical_scroll(&self) -> usize {
         self.vertical_scroll
     }
