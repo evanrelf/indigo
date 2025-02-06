@@ -47,22 +47,6 @@ impl Editor {
             .expect("Editor's range state should always be valid")
     }
 
-    pub fn with_range<T>(&mut self, func: impl Fn(&mut Range) -> T) -> T {
-        let mut range = self.range();
-        let result = func(&mut range);
-        self.range = range.into_state();
-        self.count = 0;
-        result
-    }
-
-    pub fn with_range_mut<T>(&mut self, func: impl Fn(&mut RangeMut) -> T) -> T {
-        let mut range = self.range_mut();
-        let result = func(&mut range);
-        self.range = range.into_state();
-        self.count = 0;
-        result
-    }
-
     #[must_use]
     pub fn vertical_scroll(&self) -> usize {
         self.vertical_scroll

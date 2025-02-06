@@ -1,26 +1,28 @@
 use crate::{Editor, RangeExt as _};
 use std::cmp::max;
 
-// TODO: Replace `with_range{,_mut}` with `range{,_mut}`?
-
 pub fn move_left(editor: &mut Editor) {
     let distance = max(1, editor.count);
-    editor.with_range(|range| range.move_left(distance));
+    editor.range_mut().move_left(distance);
+    editor.count = 0;
 }
 
 pub fn move_right(editor: &mut Editor) {
     let distance = max(1, editor.count);
-    editor.with_range(|range| range.move_right(distance));
+    editor.range_mut().move_right(distance);
+    editor.count = 0;
 }
 
 pub fn extend_left(editor: &mut Editor) {
     let distance = max(1, editor.count);
-    editor.with_range(|range| range.extend_left(distance));
+    editor.range_mut().extend_left(distance);
+    editor.count = 0;
 }
 
 pub fn extend_right(editor: &mut Editor) {
     let distance = max(1, editor.count);
-    editor.with_range(|range| range.extend_right(distance));
+    editor.range_mut().extend_right(distance);
+    editor.count = 0;
 }
 
 pub fn scroll_up(editor: &mut Editor) {
@@ -54,13 +56,16 @@ pub fn scroll_full_page_down(editor: &mut Editor) {
 }
 
 pub fn insert_char(editor: &mut Editor, c: char) {
-    editor.with_range_mut(|range| range.insert_char(c));
+    editor.range_mut().insert_char(c);
+    editor.count = 0;
 }
 
 pub fn backspace(editor: &mut Editor) {
-    editor.with_range_mut(|range| range.backspace(1));
+    editor.range_mut().backspace(1);
+    editor.count = 0;
 }
 
 pub fn delete(editor: &mut Editor) {
-    editor.with_range_mut(|range| range.delete(1));
+    editor.range_mut().delete(1);
+    editor.count = 0;
 }
