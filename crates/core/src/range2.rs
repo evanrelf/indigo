@@ -1,16 +1,8 @@
-use crate::cursor2::{Cursor, CursorMut};
+use crate::rope::RopeExt;
 use ropey::Rope;
 
 // TODO:
 // - Use trait to avoid duplicated code between immutable and mutable types.
-// - Put common stuff in `RawRange` impl instead of "parts"?
-
-// CAUTION:
-// - Unsafe to construct a `Range{,Mut}` from two user-provided `Cursor`s. They could point to
-//   separate ropes that happen to share the same lifetime.
-// - Unsafe to construct a `{Cursor,Range}Mut` from an existing rope holding structure without
-//   consuming self. The new cursor/range could delete the whole rope and your indices would be
-//   invalidated.
 
 #[derive(Debug, Default)]
 pub struct RawRange {
@@ -22,21 +14,21 @@ impl RawRange {
     pub fn new(rope: &Rope, mut anchor: usize, mut head: usize) -> Result<Self, Self> {
         let mut corrected = false;
 
-        anchor = match Cursor::new(rope, anchor) {
-            Err(cursor) => {
-                corrected = true;
-                cursor.index()
-            }
-            Ok(cursor) => cursor.index(),
-        };
+        // Gap at end of file counts as grapheme boundary
+        if let Ok(true) = rope.try_is_grapheme_boundary(anchor) {
+            //
+        } else {
+            corrected = true;
+            anchor = rope.len_chars();
+        }
 
-        head = match Cursor::new(rope, head) {
-            Err(cursor) => {
-                corrected = true;
-                cursor.index()
-            }
-            Ok(cursor) => cursor.index(),
-        };
+        // Gap at end of file counts as grapheme boundary
+        if let Ok(true) = rope.try_is_grapheme_boundary(head) {
+            //
+        } else {
+            corrected = true;
+            head = rope.len_chars();
+        }
 
         if corrected {
             Err(Self { anchor, head })
@@ -102,32 +94,16 @@ impl<'a> Range<'a> {
     }
 
     #[must_use]
-    pub fn anchor(&self) -> Cursor<'_> {
-        Cursor::new(self.rope, self.range.anchor).expect("Anchor index is valid in rope")
+    pub fn anchor(&self) -> usize {
+        self.range.anchor
     }
 
     #[must_use]
-    pub fn head(&self) -> Cursor<'_> {
-        Cursor::new(self.rope, self.range.head).expect("Head index is valid in rope")
+    pub fn head(&self) -> usize {
+        self.range.head
     }
 
     // TODO: Add `set_{head, anchor}`
-}
-
-impl<'a> From<Cursor<'a>> for Range<'a> {
-    fn from(cursor: Cursor<'a>) -> Self {
-        let index = cursor.index();
-        let rope = cursor.rope();
-        Self::new(rope, index, index).expect("Cursor index is valid in rope")
-    }
-}
-
-impl<'a> From<CursorMut<'a>> for Range<'a> {
-    fn from(cursor: CursorMut<'a>) -> Self {
-        let index = cursor.index();
-        let rope = cursor.into_rope_mut();
-        Self::new(rope, index, index).expect("Cursor index is valid in rope")
-    }
 }
 
 #[derive(Debug)]
@@ -157,36 +133,14 @@ impl<'a> RangeMut<'a> {
     }
 
     #[must_use]
-    pub fn anchor(&self) -> Cursor<'_> {
-        Cursor::new(self.rope, self.range.anchor).expect("Anchor index is valid in rope")
-    }
-
-    /// Must trade in `RangeMut` for `CursorMut`. Upholding range invariants depends on coordinating
-    /// rope and state mutations.
-    #[must_use]
-    pub fn into_anchor_mut(self) -> CursorMut<'a> {
-        CursorMut::new(self.rope, self.range.anchor).expect("Anchor index is valid in rope")
+    pub fn anchor(&self) -> usize {
+        self.range.anchor
     }
 
     #[must_use]
-    pub fn head(&self) -> Cursor<'_> {
-        Cursor::new(self.rope, self.range.head).expect("Head index is valid in rope")
-    }
-
-    /// Must trade in `RangeMut` for `CursorMut`. Upholding range invariants depends on coordinating
-    /// rope and state mutations.
-    #[must_use]
-    pub fn into_head_mut(self) -> CursorMut<'a> {
-        CursorMut::new(self.rope, self.range.head).expect("Head index is valid in rope")
+    pub fn head(&self) -> usize {
+        self.range.head
     }
 
     // TODO: Add `set_{head, anchor}`
-}
-
-impl<'a> From<CursorMut<'a>> for RangeMut<'a> {
-    fn from(cursor: CursorMut<'a>) -> Self {
-        let index = cursor.index();
-        let rope = cursor.into_rope_mut();
-        Self::new(rope, index, index).expect("Cursor index is valid in rope")
-    }
 }
