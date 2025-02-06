@@ -1,3 +1,5 @@
+#![allow(unused_variables)] // TODO
+
 use crate::rope::RopeExt;
 use ropey::Rope;
 
