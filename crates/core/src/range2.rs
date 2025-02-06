@@ -11,6 +11,7 @@ use ropey::Rope;
 //   consuming self. The new cursor/range could delete the whole rope and your indices would be
 //   invalidated.
 
+#[derive(Default)]
 pub struct RangeState {
     anchor: usize, // char gap index
     head: usize,   // char gap index

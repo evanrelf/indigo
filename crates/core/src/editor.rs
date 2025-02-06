@@ -1,4 +1,4 @@
-use crate::{range::RangeState, Mode, Range, RangeMut, RopeExt as _};
+use crate::{range::RangeState, range2, Mode, Range, RangeMut, RopeExt as _};
 use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::{cmp::min, fs::File, io::BufReader};
@@ -6,6 +6,7 @@ use std::{cmp::min, fs::File, io::BufReader};
 pub struct Editor {
     text: Rope,
     range: RangeState,
+    range2: range2::RangeState,
     pub mode: Mode,
     pub count: usize,
     pub height: usize,
@@ -20,6 +21,7 @@ impl Editor {
         Ok(Self {
             text: rope,
             range: RangeState::default(),
+            range2: range2::RangeState::default(),
             mode: Mode::default(),
             count: 0,
             height: 0,
