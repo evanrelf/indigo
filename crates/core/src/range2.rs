@@ -13,8 +13,8 @@ use ropey::Rope;
 
 #[derive(Debug, Default)]
 pub struct RawRange {
-    anchor: usize, // char gap index
-    head: usize,   // char gap index
+    pub anchor: usize, // char gap index
+    pub head: usize,   // char gap index
 }
 
 impl RawRange {
