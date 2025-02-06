@@ -11,18 +11,54 @@ use ropey::Rope;
 //   consuming self. The new cursor/range could delete the whole rope and your indices would be
 //   invalidated.
 
-#[derive(Default)]
-pub struct RangeState {
+#[derive(Debug, Default)]
+pub struct RawRange {
     anchor: usize, // char gap index
     head: usize,   // char gap index
 }
 
-pub struct Range<'a> {
-    rope: &'a Rope,
-    state: RangeState,
+impl RawRange {
+    pub fn new(rope: &Rope, mut anchor: usize, mut head: usize) -> Result<Self, Self> {
+        let mut corrected = false;
+
+        anchor = match Cursor::new(rope, anchor) {
+            Err(cursor) => {
+                corrected = true;
+                cursor.index()
+            }
+            Ok(cursor) => cursor.index(),
+        };
+
+        head = match Cursor::new(rope, head) {
+            Err(cursor) => {
+                corrected = true;
+                cursor.index()
+            }
+            Ok(cursor) => cursor.index(),
+        };
+
+        if corrected {
+            Err(Self { anchor, head })
+        } else {
+            Ok(Self { anchor, head })
+        }
+    }
 }
 
-impl Range<'_> {
+#[derive(Debug)]
+pub struct Range<'a> {
+    rope: &'a Rope,
+    range: RawRange,
+}
+
+impl<'a> Range<'a> {
+    pub fn new(rope: &'a Rope, anchor: usize, head: usize) -> Result<Self, Self> {
+        match RawRange::new(rope, anchor, head) {
+            Err(range) => Err(Self { rope, range }),
+            Ok(range) => Ok(Self { rope, range }),
+        }
+    }
+
     #[must_use]
     pub fn rope(&self) -> &Rope {
         self.rope
@@ -30,12 +66,12 @@ impl Range<'_> {
 
     #[must_use]
     pub fn anchor(&self) -> Cursor<'_> {
-        Cursor::new(self.rope, self.state.anchor).expect("Anchor index is valid in rope")
+        Cursor::new(self.rope, self.range.anchor).expect("Anchor index is valid in rope")
     }
 
     #[must_use]
     pub fn head(&self) -> Cursor<'_> {
-        Cursor::new(self.rope, self.state.head).expect("Head index is valid in rope")
+        Cursor::new(self.rope, self.range.head).expect("Head index is valid in rope")
     }
 
     // TODO: Add `set_{head, anchor}`
@@ -45,13 +81,7 @@ impl<'a> From<Cursor<'a>> for Range<'a> {
     fn from(cursor: Cursor<'a>) -> Self {
         let index = cursor.index();
         let rope = cursor.rope();
-        Self {
-            rope,
-            state: RangeState {
-                anchor: index,
-                head: index,
-            },
-        }
+        Self::new(rope, index, index).expect("Cursor index is valid in rope")
     }
 }
 
@@ -59,22 +89,24 @@ impl<'a> From<CursorMut<'a>> for Range<'a> {
     fn from(cursor: CursorMut<'a>) -> Self {
         let index = cursor.index();
         let rope = cursor.into_rope_mut();
-        Self {
-            rope,
-            state: RangeState {
-                anchor: index,
-                head: index,
-            },
-        }
+        Self::new(rope, index, index).expect("Cursor index is valid in rope")
     }
 }
 
+#[derive(Debug)]
 pub struct RangeMut<'a> {
     rope: &'a mut Rope,
-    state: RangeState,
+    range: RawRange,
 }
 
 impl<'a> RangeMut<'a> {
+    pub fn new(rope: &'a mut Rope, anchor: usize, head: usize) -> Result<Self, Self> {
+        match RawRange::new(rope, anchor, head) {
+            Err(range) => Err(Self { rope, range }),
+            Ok(range) => Ok(Self { rope, range }),
+        }
+    }
+
     #[must_use]
     pub fn rope(&self) -> &Rope {
         self.rope
@@ -89,26 +121,26 @@ impl<'a> RangeMut<'a> {
 
     #[must_use]
     pub fn anchor(&self) -> Cursor<'_> {
-        Cursor::new(self.rope, self.state.anchor).expect("Anchor index is valid in rope")
+        Cursor::new(self.rope, self.range.anchor).expect("Anchor index is valid in rope")
     }
 
     /// Must trade in `RangeMut` for `CursorMut`. Upholding range invariants depends on coordinating
     /// rope and state mutations.
     #[must_use]
     pub fn into_anchor_mut(self) -> CursorMut<'a> {
-        CursorMut::new(self.rope, self.state.anchor).expect("Anchor index is valid in rope")
+        CursorMut::new(self.rope, self.range.anchor).expect("Anchor index is valid in rope")
     }
 
     #[must_use]
     pub fn head(&self) -> Cursor<'_> {
-        Cursor::new(self.rope, self.state.head).expect("Head index is valid in rope")
+        Cursor::new(self.rope, self.range.head).expect("Head index is valid in rope")
     }
 
     /// Must trade in `RangeMut` for `CursorMut`. Upholding range invariants depends on coordinating
     /// rope and state mutations.
     #[must_use]
     pub fn into_head_mut(self) -> CursorMut<'a> {
-        CursorMut::new(self.rope, self.state.head).expect("Head index is valid in rope")
+        CursorMut::new(self.rope, self.range.head).expect("Head index is valid in rope")
     }
 
     // TODO: Add `set_{head, anchor}`
@@ -118,12 +150,6 @@ impl<'a> From<CursorMut<'a>> for RangeMut<'a> {
     fn from(cursor: CursorMut<'a>) -> Self {
         let index = cursor.index();
         let rope = cursor.into_rope_mut();
-        Self {
-            rope,
-            state: RangeState {
-                anchor: index,
-                head: index,
-            },
-        }
+        Self::new(rope, index, index).expect("Cursor index is valid in rope")
     }
 }

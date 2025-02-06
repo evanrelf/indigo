@@ -6,7 +6,7 @@ use std::{cmp::min, fs::File, io::BufReader};
 pub struct Editor {
     text: Rope,
     range: RangeState,
-    range2: range2::RangeState,
+    range2: range2::RawRange,
     pub mode: Mode,
     pub count: usize,
     pub height: usize,
@@ -21,7 +21,7 @@ impl Editor {
         Ok(Self {
             text: rope,
             range: RangeState::default(),
-            range2: range2::RangeState::default(),
+            range2: range2::RawRange::default(),
             mode: Mode::default(),
             count: 0,
             height: 0,
