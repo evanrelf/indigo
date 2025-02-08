@@ -198,12 +198,12 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
     let cursor_area =
         |index: usize| char_index_to_area(index, editor.text(), editor.vertical_scroll(), area);
 
-    if let Some(anchor_rect) = cursor_area(range.anchor()) {
-        let anchor_style = Style::default().bg(Color::Rgb(0xff, 0xf5, 0xb1));
-        surface.set_style(anchor_rect, anchor_style);
+    for index in range.anchor()..range.head() {
+        if let Some(rect) = cursor_area(index) {
+            let style = Style::default().bg(Color::Rgb(0xff, 0xf5, 0xb1));
+            surface.set_style(rect, style);
+        }
     }
-
-    // TODO: Color all the text in between the anchor and the head
 
     if let Some(head_rect) = cursor_area(range.head()) {
         let head_style = Style::default().bg(Color::Rgb(0xff, 0xd3, 0x3d));
