@@ -198,7 +198,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
     let cursor_area =
         |index: usize| char_index_to_area(index, editor.text(), editor.vertical_scroll(), area);
 
-    for index in range.anchor()..range.head() {
+    for index in range.start()..=range.end() {
         if let Some(rect) = cursor_area(index) {
             let style = Style::default().bg(Color::Rgb(0xff, 0xf5, 0xb1));
             surface.set_style(rect, style);
