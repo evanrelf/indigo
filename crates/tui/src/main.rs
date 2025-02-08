@@ -6,9 +6,7 @@ use crate::terminal::TerminalGuard;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEventKind};
-use indigo_core::{
-    actions, Cursor, CursorExt as _, DisplayWidth as _, Editor, Mode, RangeExt as _, RopeExt as _,
-};
+use indigo_core::{actions, range2::RangeExt, DisplayWidth as _, Editor, Mode, RopeExt as _};
 use ratatui::{
     prelude::{Buffer as Surface, Constraint, Layout, Position, Rect, Style, Widget as _},
     style::{Color, Modifier},
@@ -195,16 +193,10 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let range = editor.range();
+    let range = editor.range2();
 
-    let cursor_area = |cursor: Cursor| {
-        char_index_to_area(
-            cursor.char_index(),
-            cursor.rope(),
-            editor.vertical_scroll(),
-            area,
-        )
-    };
+    let cursor_area =
+        |index: usize| char_index_to_area(index, editor.text(), editor.vertical_scroll(), area);
 
     if let Some(anchor_rect) = cursor_area(range.anchor()) {
         let anchor_style = Style::default().bg(Color::Rgb(0xff, 0xf5, 0xb1));
@@ -302,15 +294,13 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let count = editor.count;
 
-    let range = editor.range();
+    let rope = editor.text();
 
-    let cursor = range.head();
-
-    let char_index = cursor.char_index();
+    let char_index = editor.range2().head();
 
     let eof = char_index == editor.text().len_chars();
 
-    let status_bar = if let Some(grapheme) = cursor.grapheme() {
+    let status_bar = if let Some(grapheme) = rope.get_grapheme(char_index) {
         let chars = grapheme.chars().collect::<Vec<_>>();
         let display_width = grapheme.display_width();
         format!("mode={mode}, count={count}, char_index={char_index}, eof={eof}, grapheme=\"{grapheme:?}\", chars={chars:?}, display_width={display_width}")
