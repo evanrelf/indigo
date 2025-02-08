@@ -71,7 +71,7 @@ mod tests {
         assert_eq!(s.display_width(), 2);
 
         let s = "👩🏻‍❤️‍💋‍👩🏻";
-        assert_eq!(s.display_width(), 2); // TODO: I want this to be 2 :(
+        assert_eq!(s.display_width(), 2);
 
         let c = '\t';
         assert_eq!(c.display_width(), 8);
