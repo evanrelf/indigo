@@ -373,7 +373,7 @@ fn handle_event_normal(
                     editor.vertical_scroll(),
                     areas.text,
                 ) {
-                    actions::left_click(editor, index);
+                    actions::move_to(editor, index);
                 }
             }
             (KeyModifiers::NONE, MouseEventKind::Down(MouseButton::Right)) => {
@@ -387,7 +387,7 @@ fn handle_event_normal(
                     editor.vertical_scroll(),
                     areas.text,
                 ) {
-                    actions::right_click(editor, index);
+                    actions::extend_to(editor, index);
                 }
             }
             _ => {}

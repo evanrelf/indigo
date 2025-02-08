@@ -28,6 +28,10 @@ pub fn move_right(editor: &mut Editor) {
     editor.mode.set_count(0);
 }
 
+pub fn move_to(_editor: &mut Editor, _index: usize) {
+    // TODO: Allow changing range indices
+}
+
 pub fn extend_left(editor: &mut Editor) {
     let distance = max(1, editor.mode.count());
     editor.with_range_mut(|range| range.extend_left(distance));
@@ -40,15 +44,7 @@ pub fn extend_right(editor: &mut Editor) {
     editor.mode.set_count(0);
 }
 
-// TODO: Pick a better name. Should be named after the effect on the editor, not the input that
-// triggered it.
-pub fn left_click(_editor: &mut Editor, _index: usize) {
-    // TODO: Allow changing range indices
-}
-
-// TODO: Pick a better name. Should be named after the effect on the editor, not the input that
-// triggered it.
-pub fn right_click(_editor: &mut Editor, _index: usize) {
+pub fn extend_to(_editor: &mut Editor, _index: usize) {
     // TODO: Allow changing range indices
 }
 
