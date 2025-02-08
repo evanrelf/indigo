@@ -10,10 +10,6 @@ use winnow::{
     token::one_of,
 };
 
-// TODO: Render using Unicode symbols, like macOS? ⌃⌥ ⇧⇥ ↵ ␣⌫ ⌦ ⎋ etc. Maybe not since they're hard
-// to type.
-// http://xahlee.info/comp/unicode_computing_symbols.html
-
 // TODO: Strict mode? Would forbid alternatives, abbreviations, repeated modifiers, incorrectly
 // ordered modifiers, etc.
 
@@ -278,7 +274,9 @@ mod tests {
         assert_eq!(key.parse("<"), Ok(Key::from('<')));
         assert_eq!(key.parse(">"), Ok(Key::from('>')));
         assert_eq!(key.parse("a"), Ok(Key::from('a')));
+        // TODO: Distinguish between shift+a and A?
         assert_eq!(key.parse("<s-a>"), Ok(Key::from(([Shift], 'a'))));
+        assert_eq!(key.parse("A"), Ok(Key::from(([], 'A'))));
         assert_eq!(key.parse("<c-a>"), Ok(Key::from((Control, 'a'))));
         assert_eq!(key.parse("<c-a>"), Ok(Key::from(([Control], 'a'))));
         assert_eq!(key.parse("<c-s-a>"), Ok(Key::from(([Control, Shift], 'a'))));
