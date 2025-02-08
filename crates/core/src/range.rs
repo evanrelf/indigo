@@ -2,6 +2,7 @@
 
 use crate::{ot::EditSeq, rope::RopeExt};
 use ropey::Rope;
+use std::cmp::{max, min};
 
 // TODO: Implement `Clone` and `Copy` for all the types in this module?
 
@@ -91,8 +92,7 @@ impl<'a> RangeMut<'a> {
         self.range.head = edits.transform_index(self.range.head);
     }
 
-    // TODO: Delete entire contents of range, not just head cursor (shrinking length of range).
-    // TODO: Don't crash when deleting at EOF (cursor sitting past end of rope).
+    // TODO: Don't crash when range contains EOF.
     // TODO: Accept count. Can't naively write `edits.delete(count)`, otherwise you're implying
     // there exist that many characters to delete, and you'll get a length mismatch error.
     pub fn delete(&mut self) {
@@ -100,12 +100,12 @@ impl<'a> RangeMut<'a> {
             return;
         }
         let mut edits = EditSeq::new();
-        edits.retain(self.range.head);
-        edits.delete(1);
-        edits.retain(self.rope.len_chars().saturating_sub(self.range.head + 1));
+        edits.retain(self.start());
+        edits.delete((self.end() - self.start()) + 1);
+        edits.retain(self.rope.len_chars().saturating_sub(self.end() + 1));
         edits.apply(self.rope).unwrap();
-        self.range.anchor = edits.transform_index(self.range.anchor);
-        self.range.head = edits.transform_index(self.range.head);
+        self.range.anchor = self.start();
+        self.range.head = self.start();
     }
 
     // TODO: Add `set_{head, anchor}`?
@@ -181,6 +181,16 @@ pub trait RangeExt: AsRangeParts {
     fn head(&self) -> usize {
         let (_rope, range) = self.as_range_parts();
         range.head
+    }
+
+    #[must_use]
+    fn start(&self) -> usize {
+        min(self.anchor(), self.head())
+    }
+
+    #[must_use]
+    fn end(&self) -> usize {
+        max(self.anchor(), self.head())
     }
 
     fn move_left(&mut self, distance: usize) {
