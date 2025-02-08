@@ -13,7 +13,6 @@ flagset = "0.4.6"
 indigo-btree = { path = "crates/btree/" }
 indigo-core = { path = "crates/core/" }
 indigo-tui = { path = "crates/tui/" }
-indigo-world = { path = "crates/world/" }
 ratatui = "0.29.0"
 ropey = "1.6.1"
 serde = { version = "1.0.217", features = ["derive", "rc"] }
