@@ -15,6 +15,7 @@ pub enum Error {
     #[error("char index {char_index} exceeds rope length {len_chars}")]
     CharIndexPastEof { char_index: usize, len_chars: usize },
 
+    #[allow(clippy::enum_variant_names)]
     #[error(transparent)]
     RopeyError(#[from] ropey::Error),
 }

@@ -1,4 +1,4 @@
-use crate::{range::RawRange, Mode, Range, RangeMut, RopeExt as _};
+use crate::{mode::Mode, range::Range, range::RangeMut, range::RawRange, rope::RopeExt as _};
 use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::{cmp::min, fs::File, io::BufReader};

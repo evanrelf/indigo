@@ -1,6 +1,6 @@
 #![allow(unused_variables)] // TODO
 
-use crate::{EditSeq, RopeExt};
+use crate::{ot::EditSeq, rope::RopeExt};
 use ropey::Rope;
 
 // TODO: Implement `Clone` and `Copy` for all the types in this module?

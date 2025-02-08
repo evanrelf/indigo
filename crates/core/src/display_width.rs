@@ -1,4 +1,4 @@
-use crate::RopeExt as _;
+use crate::rope::RopeExt as _;
 use ropey::{Rope, RopeSlice};
 use std::{borrow::Cow, cmp::max};
 use unicode_segmentation::UnicodeSegmentation as _;

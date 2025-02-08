@@ -1,6 +1,6 @@
 #![allow(clippy::redundant_closure_for_method_calls)]
 
-use crate::{Editor, Mode, RangeExt as _};
+use crate::{editor::Editor, mode::Mode, range::RangeExt as _};
 use std::cmp::max;
 
 pub fn enter_normal_mode(editor: &mut Editor) {

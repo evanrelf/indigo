@@ -6,7 +6,7 @@ mod c {
 }
 
 mod i {
-    pub use indigo_core::Event;
+    pub use indigo_core::event::Event;
 }
 
 pub fn event_c2i(event: &c::Event) -> anyhow::Result<i::Event> {

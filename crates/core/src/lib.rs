@@ -1,20 +1,20 @@
 pub mod actions;
-mod display_width;
-mod editor;
-mod event;
-mod key;
-mod mode;
-mod ot;
-mod range;
-mod rope;
+pub mod display_width;
+pub mod editor;
+pub mod event;
+pub mod key;
+pub mod mode;
+pub mod ot;
+pub mod range;
+pub mod rope;
 
-pub use crate::{
-    display_width::DisplayWidth,
-    editor::Editor,
-    event::{Event, EventKind},
-    key::{Key, KeyCode, KeyModifier, Keys},
-    mode::Mode,
-    ot::{Edit, EditSeq, Error},
-    range::{Range, RangeExt, RangeMut},
-    rope::RopeExt,
-};
+// pub use crate::{
+//     display_width::DisplayWidth,
+//     editor::Editor,
+//     event::{Event, EventKind},
+//     key::{Key, KeyCode, KeyModifier, Keys},
+//     mode::Mode,
+//     ot::{Edit, EditSeq},
+//     range::{Range, RangeExt, RangeMut},
+//     rope::RopeExt,
+// };

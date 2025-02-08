@@ -6,7 +6,7 @@ mod c {
 }
 
 mod i {
-    pub use indigo_core::{Key, KeyCode, KeyModifier};
+    pub use indigo_core::key::{Key, KeyCode, KeyModifier};
 }
 
 pub fn key_c2i(key: c::KeyEvent) -> anyhow::Result<i::Key> {
