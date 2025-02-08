@@ -337,7 +337,13 @@ fn handle_event_normal(
                 editor.count = editor.count.saturating_add(n);
             }
             (KeyModifiers::NONE, KeyCode::Esc) => editor.count = 0,
-            (KeyModifiers::NONE, KeyCode::Char('i')) => editor.mode = Mode::Insert,
+            (KeyModifiers::NONE, KeyCode::Char('i')) => {
+                // TODO: Should these steps to enter insert mode be moved to an action?
+                editor.with_range_mut(|range| range.reduce());
+                editor.count = 0;
+                editor.mode = Mode::Insert;
+            }
+            // TODO: Add `a` for entering insert mode with the cursor moved to the right.
             (KeyModifiers::NONE, KeyCode::Char('h')) => actions::move_left(editor),
             (KeyModifiers::NONE, KeyCode::Char('l')) => actions::move_right(editor),
             (KeyModifiers::SHIFT, KeyCode::Char('h' | 'H')) => actions::extend_left(editor),
