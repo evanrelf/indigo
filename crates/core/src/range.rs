@@ -193,6 +193,21 @@ pub trait RangeExt: AsRangeParts {
         max(self.anchor(), self.head())
     }
 
+    #[must_use]
+    fn is_forward(&self) -> bool {
+        self.anchor() <= self.head()
+    }
+
+    #[must_use]
+    fn is_backward(&self) -> bool {
+        self.anchor() > self.head()
+    }
+
+    #[must_use]
+    fn is_reduced(&self) -> bool {
+        self.anchor() == self.head()
+    }
+
     fn move_left(&mut self, distance: usize) {
         self.extend_left(distance);
         self.reduce();
