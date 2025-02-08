@@ -55,6 +55,13 @@ impl EditSeq {
         }
     }
 
+    pub fn retain_rest(&mut self, rope: &Rope) {
+        // TODO: Return custom error if `source_chars` exceeds rope length.
+        let char_length = rope.len_chars() - self.source_chars;
+
+        self.retain(char_length);
+    }
+
     pub fn delete(&mut self, char_length: usize) {
         if char_length == 0 {
             return;
@@ -321,7 +328,7 @@ mod tests {
         let mut edits = EditSeq::new();
         edits.delete("w".chars().count());
         edits.insert("the whole w");
-        edits.retain("orld!!!!".chars().count());
+        edits.retain_rest(&rope);
         edits.apply(&mut rope).unwrap();
         assert_eq!(rope, Rope::from("the whole world!!!!"));
         assert_eq!(rope.char(index), 'h');
