@@ -6,7 +6,8 @@ use serde::{Deserialize, Serialize};
 use std::{ops::Deref, rc::Rc};
 use thiserror::Error;
 
-#[derive(Clone, Debug, Error)]
+// TODO: Add backtraces once this issue is resolved: https://github.com/dtolnay/thiserror/issues/390
+#[derive(Debug, Error)]
 pub enum Error {
     #[error("length mismatch: {left} != {right}")]
     LengthMismatch { left: usize, right: usize },
