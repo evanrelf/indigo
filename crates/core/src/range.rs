@@ -73,6 +73,7 @@ impl<'a> RangeMut<'a> {
         self.range.head = edits.transform_index(self.range.head);
     }
 
+    // TODO: Don't crash when backspacing with a non-reduced range.
     // TODO: Accept count. Can't naively write `edits.delete(count)`, otherwise you're implying
     // there exist that many characters to delete, and you'll get a length mismatch error.
     pub fn backspace(&mut self) {
@@ -82,12 +83,15 @@ impl<'a> RangeMut<'a> {
         let mut edits = EditSeq::new();
         edits.retain(self.range.head.saturating_sub(1));
         edits.delete(1);
+        // TODO: `EditSeq::retain_rest` (or implicitly do this) would be really nice.
         edits.retain(self.rope.len_chars().saturating_sub(self.range.head + 1));
         edits.apply(self.rope).unwrap();
         self.range.anchor = edits.transform_index(self.range.anchor);
         self.range.head = edits.transform_index(self.range.head);
     }
 
+    // TODO: Delete entire contents of range, not just head cursor (shrinking length of range).
+    // TODO: Don't crash when deleting at EOF (cursor sitting past end of rope).
     // TODO: Accept count. Can't naively write `edits.delete(count)`, otherwise you're implying
     // there exist that many characters to delete, and you'll get a length mismatch error.
     pub fn delete(&mut self) {
