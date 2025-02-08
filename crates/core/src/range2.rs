@@ -122,36 +122,54 @@ impl RangeParts for RangeMut<'_> {
 pub trait RangeExt: RangeParts {
     #[must_use]
     fn rope(&self) -> &Rope {
-        todo!()
+        let (rope, _range) = self.range_parts();
+        rope
     }
 
     #[must_use]
     fn anchor(&self) -> usize {
-        todo!()
+        let (_rope, range) = self.range_parts();
+        range.anchor
     }
 
     #[must_use]
     fn head(&self) -> usize {
-        todo!()
+        let (_rope, range) = self.range_parts();
+        range.head
     }
 
-    fn move_left(&mut self, distance: usize) -> bool {
-        todo!()
+    fn move_left(&mut self, distance: usize) {
+        self.extend_left(distance);
+        self.reduce();
     }
 
-    fn move_right(&mut self, distance: usize) -> bool {
-        todo!()
+    fn move_right(&mut self, distance: usize) {
+        self.extend_right(distance);
+        self.reduce();
     }
 
-    fn extend_left(&mut self, distance: usize) -> bool {
-        todo!()
+    fn extend_left(&mut self, distance: usize) {
+        let (rope, range) = self.range_parts_mut();
+        for _ in 1..=distance {
+            match rope.get_prev_grapheme_boundary(range.head) {
+                Ok(head) if range.head != head => range.head = head,
+                _ => break,
+            }
+        }
     }
 
-    fn extend_right(&mut self, distance: usize) -> bool {
-        todo!()
+    fn extend_right(&mut self, distance: usize) {
+        let (rope, range) = self.range_parts_mut();
+        for _ in 1..=distance {
+            match rope.get_next_grapheme_boundary(range.head) {
+                Ok(head) if range.head != head => range.head = head,
+                _ => break,
+            }
+        }
     }
 
     fn reduce(&mut self) {
-        todo!()
+        let (_rope, range) = self.range_parts_mut();
+        range.anchor = range.head;
     }
 }
