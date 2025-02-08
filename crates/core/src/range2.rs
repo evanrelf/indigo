@@ -92,49 +92,49 @@ fn new_impl(rope: &Rope, mut anchor: usize, mut head: usize) -> Result<RawRange,
     }
 }
 
-trait RangeParts {
-    fn range_parts(&self) -> (&Rope, &RawRange);
+trait AsRangeParts {
+    fn as_range_parts(&self) -> (&Rope, &RawRange);
 
-    fn range_parts_mut(&mut self) -> (&Rope, &mut RawRange);
+    fn as_range_parts_mut(&mut self) -> (&Rope, &mut RawRange);
 }
 
-impl RangeParts for Range<'_> {
-    fn range_parts(&self) -> (&Rope, &RawRange) {
+impl AsRangeParts for Range<'_> {
+    fn as_range_parts(&self) -> (&Rope, &RawRange) {
         (self.rope, &self.range)
     }
 
-    fn range_parts_mut(&mut self) -> (&Rope, &mut RawRange) {
+    fn as_range_parts_mut(&mut self) -> (&Rope, &mut RawRange) {
         (self.rope, &mut self.range)
     }
 }
 
-impl RangeParts for RangeMut<'_> {
-    fn range_parts(&self) -> (&Rope, &RawRange) {
+impl AsRangeParts for RangeMut<'_> {
+    fn as_range_parts(&self) -> (&Rope, &RawRange) {
         (self.rope, &self.range)
     }
 
-    fn range_parts_mut(&mut self) -> (&Rope, &mut RawRange) {
+    fn as_range_parts_mut(&mut self) -> (&Rope, &mut RawRange) {
         (self.rope, &mut self.range)
     }
 }
 
 #[allow(private_bounds)]
-pub trait RangeExt: RangeParts {
+pub trait RangeExt: AsRangeParts {
     #[must_use]
     fn rope(&self) -> &Rope {
-        let (rope, _range) = self.range_parts();
+        let (rope, _range) = self.as_range_parts();
         rope
     }
 
     #[must_use]
     fn anchor(&self) -> usize {
-        let (_rope, range) = self.range_parts();
+        let (_rope, range) = self.as_range_parts();
         range.anchor
     }
 
     #[must_use]
     fn head(&self) -> usize {
-        let (_rope, range) = self.range_parts();
+        let (_rope, range) = self.as_range_parts();
         range.head
     }
 
@@ -149,7 +149,7 @@ pub trait RangeExt: RangeParts {
     }
 
     fn extend_left(&mut self, distance: usize) {
-        let (rope, range) = self.range_parts_mut();
+        let (rope, range) = self.as_range_parts_mut();
         for _ in 1..=distance {
             match rope.get_prev_grapheme_boundary(range.head) {
                 Ok(head) if range.head != head => range.head = head,
@@ -159,7 +159,7 @@ pub trait RangeExt: RangeParts {
     }
 
     fn extend_right(&mut self, distance: usize) {
-        let (rope, range) = self.range_parts_mut();
+        let (rope, range) = self.as_range_parts_mut();
         for _ in 1..=distance {
             match rope.get_next_grapheme_boundary(range.head) {
                 Ok(head) if range.head != head => range.head = head,
@@ -169,7 +169,7 @@ pub trait RangeExt: RangeParts {
     }
 
     fn reduce(&mut self) {
-        let (_rope, range) = self.range_parts_mut();
+        let (_rope, range) = self.as_range_parts_mut();
         range.anchor = range.head;
     }
 }
