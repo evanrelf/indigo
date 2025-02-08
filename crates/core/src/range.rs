@@ -74,6 +74,7 @@ impl<'a> RangeMut<'a> {
         self.range.head = edits.transform_index(self.range.head);
     }
 
+    // TODO: Add grapheme awareness
     // TODO: Accept count. Can't naively write `edits.delete(count)`, otherwise you're implying
     // there exist that many characters to delete, and you'll get a length mismatch error.
     pub fn backspace(&mut self) {
@@ -89,6 +90,7 @@ impl<'a> RangeMut<'a> {
         self.range.head = edits.transform_index(self.range.head);
     }
 
+    // TODO: Add grapheme awareness
     // TODO: Don't crash when range contains EOF.
     // TODO: Accept count. Can't naively write `edits.delete(count)`, otherwise you're implying
     // there exist that many characters to delete, and you'll get a length mismatch error.
