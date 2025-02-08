@@ -4,9 +4,9 @@ use crate::rope::RopeExt;
 use ropey::Rope;
 
 #[derive(Debug, Default)]
-pub struct RawRange {
-    pub anchor: usize, // char gap index
-    pub head: usize,   // char gap index
+pub(crate) struct RawRange {
+    pub(crate) anchor: usize, // char gap index
+    pub(crate) head: usize,   // char gap index
 }
 
 #[derive(Debug)]
