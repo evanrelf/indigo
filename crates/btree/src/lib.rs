@@ -1,6 +1,6 @@
 // TODO: Remove
-#![allow(clippy::needless_pass_by_value)]
-#![allow(unused_variables)]
+#![expect(clippy::needless_pass_by_value)]
+#![expect(unused_variables)]
 
 use arrayvec::ArrayVec;
 use std::{cmp::Ordering, sync::Arc};

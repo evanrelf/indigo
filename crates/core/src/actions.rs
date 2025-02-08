@@ -1,4 +1,4 @@
-#![allow(clippy::redundant_closure_for_method_calls)]
+#![expect(clippy::redundant_closure_for_method_calls)]
 
 use crate::{
     editor::Editor,

@@ -1,5 +1,3 @@
-#![allow(unused_variables)] // TODO
-
 use crate::{ot::EditSeq, rope::RopeExt};
 use ropey::Rope;
 use std::cmp::{max, min};
