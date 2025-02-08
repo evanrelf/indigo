@@ -61,6 +61,8 @@ impl<'a> RangeMut<'a> {
         self.range.head = edits.transform_index(self.range.head);
     }
 
+    // TODO: Accept count. Can't naively write `edits.delete(count)`, otherwise you're implying
+    // there exist that many characters to delete, and you'll get a length mismatch error.
     pub fn backspace(&mut self) {
         if self.range.head == 0 {
             return;
@@ -74,6 +76,8 @@ impl<'a> RangeMut<'a> {
         self.range.head = edits.transform_index(self.range.head);
     }
 
+    // TODO: Accept count. Can't naively write `edits.delete(count)`, otherwise you're implying
+    // there exist that many characters to delete, and you'll get a length mismatch error.
     pub fn delete(&mut self) {
         if self.rope.len_chars() == 0 {
             return;
