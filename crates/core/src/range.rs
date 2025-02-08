@@ -4,6 +4,8 @@ use crate::{ot::EditSeq, rope::RopeExt};
 use ropey::Rope;
 use std::cmp::{max, min};
 
+// TODO: It's a GAP index! If anchor == head, then the width is 0! This should only be legal at EOF.
+// Gap index is the right way to go, don't back out on that, just make it work.
 // TODO: Implement `Clone` and `Copy` for all the types in this module?
 
 #[derive(Debug, Default)]
