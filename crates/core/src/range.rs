@@ -228,6 +228,25 @@ pub trait RangeExt: AsRangeParts {
         }
     }
 
+    fn flip(&mut self) {
+        if !self.is_reduced() {
+            let (_rope, range) = self.as_range_parts_mut();
+            std::mem::swap(&mut range.anchor, &mut range.head);
+        }
+    }
+
+    fn flip_forward(&mut self) {
+        if self.is_backward() {
+            self.flip();
+        }
+    }
+
+    fn flip_backward(&mut self) {
+        if self.is_forward() {
+            self.flip();
+        }
+    }
+
     fn extend_right(&mut self, distance: usize) {
         let (rope, range) = self.as_range_parts_mut();
         for _ in 1..=distance {
