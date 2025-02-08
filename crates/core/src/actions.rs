@@ -40,6 +40,18 @@ pub fn extend_right(editor: &mut Editor) {
     editor.mode.set_count(0);
 }
 
+// TODO: Pick a better name. Should be named after the effect on the editor, not the input that
+// triggered it.
+pub fn left_click(_editor: &mut Editor, _index: usize) {
+    // TODO: Allow changing range indices
+}
+
+// TODO: Pick a better name. Should be named after the effect on the editor, not the input that
+// triggered it.
+pub fn right_click(_editor: &mut Editor, _index: usize) {
+    // TODO: Allow changing range indices
+}
+
 pub fn scroll_up(editor: &mut Editor) {
     let line = editor.vertical_scroll().saturating_sub(3);
     editor.scroll_to(line);

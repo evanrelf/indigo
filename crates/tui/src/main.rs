@@ -5,7 +5,7 @@ mod terminal;
 use crate::terminal::TerminalGuard;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
-use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEventKind};
+use crossterm::event::{Event, KeyCode, KeyModifiers, MouseButton, MouseEventKind};
 use indigo_core::{actions, prelude::*};
 use ratatui::{
     prelude::{Buffer as Surface, Constraint, Layout, Position, Rect, Style, Widget as _},
@@ -249,8 +249,9 @@ fn char_index_to_area(
 /// Map position on the terminal to a character index in the rope indices. Example us is moving a
 /// cursor to where a mouse was clicked.
 ///
-/// `Ok` means the position was valid in the rope. `Err` means the position was not valid in the
-/// rope, but we were able to correct it.
+/// `None` means the position was not contained within the area. `Some(Ok(_))` means the position
+/// was valid in the rope. `Some(Err(_))` means the position was not valid in the rope, but we were
+/// able to correct it.
 ///
 /// Examples of corrections: snapping to the beginning of the grapheme, snapping to the end of the
 /// line, and snapping to the end of the buffer.
@@ -329,7 +330,7 @@ fn handle_event(
 fn handle_event_normal(
     editor: &mut Editor,
     terminal: &mut TerminalGuard,
-    _areas: Areas,
+    areas: Areas,
     event: &Event,
 ) -> anyhow::Result<()> {
     let Mode::Normal(ref mut normal_mode) = editor.mode else {
@@ -361,6 +362,34 @@ fn handle_event_normal(
         Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
             (KeyModifiers::NONE, MouseEventKind::ScrollUp) => actions::scroll_up(editor),
             (KeyModifiers::NONE, MouseEventKind::ScrollDown) => actions::scroll_down(editor),
+            (KeyModifiers::NONE, MouseEventKind::Down(MouseButton::Left)) => {
+                let position = Position {
+                    x: mouse_event.column,
+                    y: mouse_event.row,
+                };
+                if let Some(Err(index) | Ok(index)) = position_to_char_index(
+                    position,
+                    editor.text(),
+                    editor.vertical_scroll(),
+                    areas.text,
+                ) {
+                    actions::left_click(editor, index);
+                }
+            }
+            (KeyModifiers::NONE, MouseEventKind::Down(MouseButton::Right)) => {
+                let position = Position {
+                    x: mouse_event.column,
+                    y: mouse_event.row,
+                };
+                if let Some(Err(index) | Ok(index)) = position_to_char_index(
+                    position,
+                    editor.text(),
+                    editor.vertical_scroll(),
+                    areas.text,
+                ) {
+                    actions::right_click(editor, index);
+                }
+            }
             _ => {}
         },
         _ => {}
