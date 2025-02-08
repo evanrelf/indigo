@@ -362,6 +362,10 @@ fn handle_event_normal(
         Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
             (KeyModifiers::NONE, MouseEventKind::ScrollUp) => actions::scroll_up(editor),
             (KeyModifiers::NONE, MouseEventKind::ScrollDown) => actions::scroll_down(editor),
+            // TODO: Kakoune allows creating new selection ranges by control clicking. Would be
+            // awesome if Indigo could do the same, but also support control dragging to create
+            // vertical lines of selection ranges, akin to Vim's visual block mode. Could snap to
+            // the same column? Might be weird in the presence of wide characters.
             (KeyModifiers::NONE, MouseEventKind::Down(MouseButton::Left)) => {
                 let position = Position {
                     x: mouse_event.column,
