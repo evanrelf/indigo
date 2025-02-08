@@ -2,7 +2,6 @@ pub mod actions;
 mod display_width;
 mod editor;
 mod event;
-mod hooks;
 mod key;
 mod mode;
 mod ot;
@@ -13,7 +12,6 @@ pub use crate::{
     display_width::DisplayWidth,
     editor::Editor,
     event::{Event, EventKind},
-    hooks::{Hook, Hooks},
     key::{Key, KeyCode, KeyModifier, Keys},
     mode::Mode,
     ot::{Edit, EditSeq, Error},
