@@ -33,16 +33,34 @@ impl Editor {
         &self.text
     }
 
+    /// DOES NOT SAVE CHANGES FROM THE RANGE TO THE EDITOR.
     #[must_use]
     pub fn range(&self) -> Range {
         Range::new(&self.text, self.range.anchor, self.range.head)
             .expect("Editor range always valid")
     }
 
+    /// DOES NOT SAVE CHANGES FROM THE RANGE TO THE EDITOR.
     #[must_use]
     pub fn range_mut(&mut self) -> RangeMut {
         RangeMut::new(&mut self.text, self.range.anchor, self.range.head)
             .expect("Editor range always valid")
+    }
+
+    pub fn with_range<T>(&mut self, func: impl Fn(&mut Range) -> T) -> T {
+        let mut range = self.range();
+        let result = func(&mut range);
+        self.range = range.into_raw();
+        self.count = 0;
+        result
+    }
+
+    pub fn with_range_mut<T>(&mut self, func: impl Fn(&mut RangeMut) -> T) -> T {
+        let mut range = self.range_mut();
+        let result = func(&mut range);
+        self.range = range.into_raw();
+        self.count = 0;
+        result
     }
 
     #[must_use]

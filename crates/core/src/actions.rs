@@ -1,27 +1,29 @@
+#![allow(clippy::redundant_closure_for_method_calls)]
+
 use crate::{Editor, RangeExt as _};
 use std::cmp::max;
 
 pub fn move_left(editor: &mut Editor) {
     let distance = max(1, editor.count);
-    editor.range_mut().move_left(distance);
+    editor.with_range_mut(|range| range.move_left(distance));
     editor.count = 0;
 }
 
 pub fn move_right(editor: &mut Editor) {
     let distance = max(1, editor.count);
-    editor.range_mut().move_right(distance);
+    editor.with_range_mut(|range| range.move_right(distance));
     editor.count = 0;
 }
 
 pub fn extend_left(editor: &mut Editor) {
     let distance = max(1, editor.count);
-    editor.range_mut().extend_left(distance);
+    editor.with_range_mut(|range| range.extend_left(distance));
     editor.count = 0;
 }
 
 pub fn extend_right(editor: &mut Editor) {
     let distance = max(1, editor.count);
-    editor.range_mut().extend_right(distance);
+    editor.with_range_mut(|range| range.extend_right(distance));
     editor.count = 0;
 }
 
@@ -56,16 +58,16 @@ pub fn scroll_full_page_down(editor: &mut Editor) {
 }
 
 pub fn insert_char(editor: &mut Editor, c: char) {
-    editor.range_mut().insert_char(c);
+    editor.with_range_mut(|range| range.insert_char(c));
     editor.count = 0;
 }
 
 pub fn backspace(editor: &mut Editor) {
-    editor.range_mut().backspace();
+    editor.with_range_mut(|range| range.backspace());
     editor.count = 0;
 }
 
 pub fn delete(editor: &mut Editor) {
-    editor.range_mut().delete();
+    editor.with_range_mut(|range| range.delete());
     editor.count = 0;
 }

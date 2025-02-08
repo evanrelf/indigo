@@ -3,6 +3,8 @@
 use crate::{EditSeq, RopeExt};
 use ropey::Rope;
 
+// TODO: Implement `Clone` and `Copy` for all the types in this module?
+
 #[derive(Debug, Default)]
 pub(crate) struct RawRange {
     pub(crate) anchor: usize, // char gap index
@@ -21,6 +23,11 @@ impl<'a> Range<'a> {
             Err(range) => Err(Self { rope, range }),
             Ok(range) => Ok(Self { rope, range }),
         }
+    }
+
+    #[must_use]
+    pub(crate) fn into_raw(self) -> RawRange {
+        self.range
     }
 
     // TODO: Add `set_{head, anchor}`?
@@ -45,6 +52,11 @@ impl<'a> RangeMut<'a> {
     #[must_use]
     pub fn into_rope_mut(self) -> &'a mut Rope {
         self.rope
+    }
+
+    #[must_use]
+    pub(crate) fn into_raw(self) -> RawRange {
+        self.range
     }
 
     pub fn insert_char(&mut self, char: char) {
