@@ -61,21 +61,27 @@ impl<'a> RangeMut<'a> {
         self.range.head = edits.transform_index(self.range.head);
     }
 
-    pub fn backspace(&mut self, count: usize) {
+    pub fn backspace(&mut self) {
+        if self.range.head == 0 {
+            return;
+        }
         let mut edits = EditSeq::new();
-        edits.retain(self.range.head.saturating_sub(count));
-        edits.delete(count);
-        edits.retain(self.rope.len_chars() - self.range.head.saturating_sub(count));
+        edits.retain(self.range.head.saturating_sub(1));
+        edits.delete(1);
+        edits.retain(self.rope.len_chars().saturating_sub(self.range.head + 1));
         edits.apply(self.rope).unwrap();
         self.range.anchor = edits.transform_index(self.range.anchor);
         self.range.head = edits.transform_index(self.range.head);
     }
 
-    pub fn delete(&mut self, count: usize) {
+    pub fn delete(&mut self) {
+        if self.rope.len_chars() == 0 {
+            return;
+        }
         let mut edits = EditSeq::new();
         edits.retain(self.range.head);
-        edits.delete(count);
-        edits.retain(self.rope.len_chars() - self.range.head.saturating_sub(count));
+        edits.delete(1);
+        edits.retain(self.rope.len_chars().saturating_sub(self.range.head + 1));
         edits.apply(self.rope).unwrap();
         self.range.anchor = edits.transform_index(self.range.anchor);
         self.range.head = edits.transform_index(self.range.head);

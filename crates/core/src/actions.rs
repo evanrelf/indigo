@@ -61,11 +61,11 @@ pub fn insert_char(editor: &mut Editor, c: char) {
 }
 
 pub fn backspace(editor: &mut Editor) {
-    editor.range2_mut().backspace(1);
+    editor.range2_mut().backspace();
     editor.count = 0;
 }
 
 pub fn delete(editor: &mut Editor) {
-    editor.range2_mut().delete(1);
+    editor.range2_mut().delete();
     editor.count = 0;
 }
