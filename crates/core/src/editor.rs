@@ -7,7 +7,6 @@ pub struct Editor {
     text: Rope,
     range: RawRange,
     pub mode: Mode,
-    pub count: usize,
     pub height: usize,
     vertical_scroll: usize,
     pub quit: bool,
@@ -20,8 +19,7 @@ impl Editor {
         Ok(Self {
             text: rope,
             range: RawRange::default(),
-            mode: Mode::default(),
-            count: 0,
+            mode: Mode::Normal { count: 0 },
             height: 0,
             vertical_scroll: 0,
             quit: false,
@@ -51,7 +49,6 @@ impl Editor {
         let mut range = self.range();
         let result = func(&mut range);
         self.range = range.into_raw();
-        self.count = 0;
         result
     }
 
@@ -59,7 +56,6 @@ impl Editor {
         let mut range = self.range_mut();
         let result = func(&mut range);
         self.range = range.into_raw();
-        self.count = 0;
         result
     }
 

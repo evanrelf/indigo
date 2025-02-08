@@ -290,9 +290,12 @@ fn position_to_char_index(
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let mode = &editor.mode;
+    let mode = match editor.mode {
+        Mode::Normal { .. } => "normal",
+        Mode::Insert => "insert",
+    };
 
-    let count = editor.count;
+    let count = editor.mode.count();
 
     let rope = editor.text();
 
@@ -318,7 +321,7 @@ fn handle_event(
     event: &Event,
 ) -> anyhow::Result<()> {
     match editor.mode {
-        Mode::Normal => handle_event_normal(editor, terminal, areas, event),
+        Mode::Normal { .. } => handle_event_normal(editor, terminal, areas, event),
         Mode::Insert => handle_event_insert(editor, terminal, areas, event),
     }
 }
@@ -333,8 +336,8 @@ fn handle_event_normal(
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::NONE, KeyCode::Char(c @ ('0'..='9'))) => {
                 let n = usize::from(u8::try_from(c).unwrap() - b'0');
-                editor.count = editor.count.saturating_mul(10);
-                editor.count = editor.count.saturating_add(n);
+                let count = editor.mode.count().saturating_mul(10).saturating_add(n);
+                editor.mode.set_count(count);
             }
             (KeyModifiers::NONE, KeyCode::Esc) => actions::enter_normal_mode(editor),
             (KeyModifiers::NONE, KeyCode::Char('i')) => actions::enter_insert_mode(editor),

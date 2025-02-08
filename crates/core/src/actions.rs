@@ -4,38 +4,36 @@ use crate::{editor::Editor, mode::Mode, range::RangeExt as _};
 use std::cmp::max;
 
 pub fn enter_normal_mode(editor: &mut Editor) {
-    editor.count = 0;
-    editor.mode = Mode::Normal;
+    editor.mode = Mode::Normal { count: 0 };
 }
 
 pub fn enter_insert_mode(editor: &mut Editor) {
     editor.with_range_mut(|range| range.reduce());
-    editor.count = 0;
     editor.mode = Mode::Insert;
 }
 
 pub fn move_left(editor: &mut Editor) {
-    let distance = max(1, editor.count);
+    let distance = max(1, editor.mode.count());
     editor.with_range_mut(|range| range.move_left(distance));
-    editor.count = 0;
+    editor.mode.set_count(0);
 }
 
 pub fn move_right(editor: &mut Editor) {
-    let distance = max(1, editor.count);
+    let distance = max(1, editor.mode.count());
     editor.with_range_mut(|range| range.move_right(distance));
-    editor.count = 0;
+    editor.mode.set_count(0);
 }
 
 pub fn extend_left(editor: &mut Editor) {
-    let distance = max(1, editor.count);
+    let distance = max(1, editor.mode.count());
     editor.with_range_mut(|range| range.extend_left(distance));
-    editor.count = 0;
+    editor.mode.set_count(0);
 }
 
 pub fn extend_right(editor: &mut Editor) {
-    let distance = max(1, editor.count);
+    let distance = max(1, editor.mode.count());
     editor.with_range_mut(|range| range.extend_right(distance));
-    editor.count = 0;
+    editor.mode.set_count(0);
 }
 
 pub fn scroll_up(editor: &mut Editor) {
@@ -70,15 +68,15 @@ pub fn scroll_full_page_down(editor: &mut Editor) {
 
 pub fn insert_char(editor: &mut Editor, c: char) {
     editor.with_range_mut(|range| range.insert_char(c));
-    editor.count = 0;
+    editor.mode.set_count(0);
 }
 
 pub fn backspace(editor: &mut Editor) {
     editor.with_range_mut(|range| range.backspace());
-    editor.count = 0;
+    editor.mode.set_count(0);
 }
 
 pub fn delete(editor: &mut Editor) {
     editor.with_range_mut(|range| range.delete());
-    editor.count = 0;
+    editor.mode.set_count(0);
 }
