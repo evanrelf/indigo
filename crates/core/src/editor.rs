@@ -1,4 +1,8 @@
-use crate::{mode::Mode, range::Range, range::RangeMut, range::RawRange, rope::RopeExt as _};
+use crate::{
+    mode::{Mode, NormalMode},
+    range::{Range, RangeMut, RawRange},
+    rope::RopeExt as _,
+};
 use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::{cmp::min, fs::File, io::BufReader};
@@ -19,7 +23,7 @@ impl Editor {
         Ok(Self {
             text: rope,
             range: RawRange::default(),
-            mode: Mode::Normal { count: 0 },
+            mode: Mode::Normal(NormalMode { count: 0 }),
             height: 0,
             vertical_scroll: 0,
             quit: false,

@@ -1,10 +1,14 @@
 #![allow(clippy::redundant_closure_for_method_calls)]
 
-use crate::{editor::Editor, mode::Mode, range::RangeExt as _};
+use crate::{
+    editor::Editor,
+    mode::{Mode, NormalMode},
+    range::RangeExt as _,
+};
 use std::cmp::max;
 
 pub fn enter_normal_mode(editor: &mut Editor) {
-    editor.mode = Mode::Normal { count: 0 };
+    editor.mode = Mode::Normal(NormalMode { count: 0 });
 }
 
 pub fn enter_insert_mode(editor: &mut Editor) {

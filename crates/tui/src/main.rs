@@ -321,7 +321,7 @@ fn handle_event(
     event: &Event,
 ) -> anyhow::Result<()> {
     match editor.mode {
-        Mode::Normal { .. } => handle_event_normal(editor, terminal, areas, event),
+        Mode::Normal(_) => handle_event_normal(editor, terminal, areas, event),
         Mode::Insert => handle_event_insert(editor, terminal, areas, event),
     }
 }
@@ -332,12 +332,15 @@ fn handle_event_normal(
     _areas: Areas,
     event: &Event,
 ) -> anyhow::Result<()> {
+    let Mode::Normal(ref mut normal_mode) = editor.mode else {
+        unreachable!()
+    };
+
     match event {
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::NONE, KeyCode::Char(c @ ('0'..='9'))) => {
                 let n = usize::from(u8::try_from(c).unwrap() - b'0');
-                let count = editor.mode.count().saturating_mul(10).saturating_add(n);
-                editor.mode.set_count(count);
+                normal_mode.count = normal_mode.count.saturating_mul(10).saturating_add(n);
             }
             (KeyModifiers::NONE, KeyCode::Esc) => actions::enter_normal_mode(editor),
             (KeyModifiers::NONE, KeyCode::Char('i')) => actions::enter_insert_mode(editor),
