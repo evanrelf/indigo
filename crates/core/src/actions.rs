@@ -48,6 +48,21 @@ pub fn extend_to(_editor: &mut Editor, _index: usize) {
     // TODO: Allow changing range indices
 }
 
+pub fn flip(editor: &mut Editor) {
+    editor.with_range_mut(|range| range.flip());
+    editor.mode.set_count(0);
+}
+
+pub fn flip_forward(editor: &mut Editor) {
+    editor.with_range_mut(|range| range.flip_forward());
+    editor.mode.set_count(0);
+}
+
+pub fn reduce(editor: &mut Editor) {
+    editor.with_range_mut(|range| range.reduce());
+    editor.mode.set_count(0);
+}
+
 pub fn scroll_up(editor: &mut Editor) {
     let line = editor.vertical_scroll().saturating_sub(3);
     editor.scroll_to(line);
