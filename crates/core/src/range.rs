@@ -73,6 +73,7 @@ impl<'a> RangeMut<'a> {
         self.range.head = edits.transform_index(self.range.head);
     }
 
+    // TODO: wtf this always crashes
     // TODO: Don't crash when backspacing with a non-reduced range.
     // TODO: Accept count. Can't naively write `edits.delete(count)`, otherwise you're implying
     // there exist that many characters to delete, and you'll get a length mismatch error.

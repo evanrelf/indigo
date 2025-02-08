@@ -336,13 +336,8 @@ fn handle_event_normal(
                 editor.count = editor.count.saturating_mul(10);
                 editor.count = editor.count.saturating_add(n);
             }
-            (KeyModifiers::NONE, KeyCode::Esc) => editor.count = 0,
-            (KeyModifiers::NONE, KeyCode::Char('i')) => {
-                // TODO: Should these steps to enter insert mode be moved to an action?
-                editor.with_range_mut(|range| range.reduce());
-                editor.count = 0;
-                editor.mode = Mode::Insert;
-            }
+            (KeyModifiers::NONE, KeyCode::Esc) => actions::enter_normal_mode(editor),
+            (KeyModifiers::NONE, KeyCode::Char('i')) => actions::enter_insert_mode(editor),
             // TODO: Add `a` for entering insert mode with the cursor moved to the right.
             (KeyModifiers::NONE, KeyCode::Char('h')) => actions::move_left(editor),
             (KeyModifiers::NONE, KeyCode::Char('l')) => actions::move_right(editor),
@@ -376,7 +371,7 @@ fn handle_event_insert(
 ) -> anyhow::Result<()> {
     match event {
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-            (KeyModifiers::NONE, KeyCode::Esc) => editor.mode = Mode::Normal,
+            (KeyModifiers::NONE, KeyCode::Esc) => actions::enter_normal_mode(editor),
             (KeyModifiers::NONE, KeyCode::Backspace) => actions::backspace(editor),
             (KeyModifiers::NONE, KeyCode::Delete) => actions::delete(editor),
             (KeyModifiers::NONE, KeyCode::Char(c)) => actions::insert_char(editor, c),

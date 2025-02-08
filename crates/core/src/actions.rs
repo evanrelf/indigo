@@ -1,7 +1,18 @@
 #![allow(clippy::redundant_closure_for_method_calls)]
 
-use crate::{Editor, RangeExt as _};
+use crate::{Editor, Mode, RangeExt as _};
 use std::cmp::max;
+
+pub fn enter_normal_mode(editor: &mut Editor) {
+    editor.count = 0;
+    editor.mode = Mode::Normal;
+}
+
+pub fn enter_insert_mode(editor: &mut Editor) {
+    editor.with_range_mut(|range| range.reduce());
+    editor.count = 0;
+    editor.mode = Mode::Insert;
+}
 
 pub fn move_left(editor: &mut Editor) {
     let distance = max(1, editor.count);
