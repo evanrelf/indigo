@@ -6,7 +6,7 @@ use crate::terminal::TerminalGuard;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEventKind};
-use indigo_core::{actions, range2::RangeExt, DisplayWidth as _, Editor, Mode, RopeExt as _};
+use indigo_core::{actions, DisplayWidth as _, Editor, Mode, RangeExt, RopeExt as _};
 use ratatui::{
     prelude::{Buffer as Surface, Constraint, Layout, Position, Rect, Style, Widget as _},
     style::{Color, Modifier},
@@ -193,7 +193,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let range = editor.range2();
+    let range = editor.range();
 
     let cursor_area =
         |index: usize| char_index_to_area(index, editor.text(), editor.vertical_scroll(), area);
@@ -296,7 +296,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let rope = editor.text();
 
-    let char_index = editor.range2().head();
+    let char_index = editor.range().head();
 
     let eof = char_index == editor.text().len_chars();
 

@@ -1,12 +1,11 @@
-use crate::{range::RangeState, range2, Mode, Range, RangeMut, RopeExt as _};
+use crate::{range::RawRange, Mode, Range, RangeMut, RopeExt as _};
 use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::{cmp::min, fs::File, io::BufReader};
 
 pub struct Editor {
     text: Rope,
-    range: RangeState,
-    range2: range2::RawRange,
+    range: RawRange,
     pub mode: Mode,
     pub count: usize,
     pub height: usize,
@@ -20,8 +19,7 @@ impl Editor {
         let rope = Rope::from_reader(BufReader::new(file))?;
         Ok(Self {
             text: rope,
-            range: RangeState::default(),
-            range2: range2::RawRange::default(),
+            range: RawRange::default(),
             mode: Mode::default(),
             count: 0,
             height: 0,
@@ -37,25 +35,13 @@ impl Editor {
 
     #[must_use]
     pub fn range(&self) -> Range {
-        Range::from_state(&self.text, self.range)
-            .expect("Editor's range state should always be valid")
-    }
-
-    #[must_use]
-    pub fn range_mut(&mut self) -> RangeMut {
-        RangeMut::from_state(&mut self.text, self.range)
-            .expect("Editor's range state should always be valid")
-    }
-
-    #[must_use]
-    pub fn range2(&self) -> range2::Range {
-        range2::Range::new(&self.text, self.range2.anchor, self.range2.head)
+        Range::new(&self.text, self.range.anchor, self.range.head)
             .expect("Editor range always valid")
     }
 
     #[must_use]
-    pub fn range2_mut(&mut self) -> range2::RangeMut {
-        range2::RangeMut::new(&mut self.text, self.range2.anchor, self.range2.head)
+    pub fn range_mut(&mut self) -> RangeMut {
+        RangeMut::new(&mut self.text, self.range.anchor, self.range.head)
             .expect("Editor range always valid")
     }
 

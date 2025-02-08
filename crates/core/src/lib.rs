@@ -9,7 +9,6 @@ mod keymap;
 mod mode;
 mod ot;
 mod range;
-pub mod range2; // TODO: Publish the module's stuff, not the module itself
 mod rope;
 
 pub use crate::{
