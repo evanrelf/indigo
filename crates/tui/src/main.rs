@@ -6,10 +6,7 @@ use crate::terminal::TerminalGuard;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEventKind};
-use indigo_core::{
-    actions, display_width::DisplayWidth as _, editor::Editor, mode::Mode, range::RangeExt,
-    rope::RopeExt as _,
-};
+use indigo_core::{actions, prelude::*};
 use ratatui::{
     prelude::{Buffer as Surface, Constraint, Layout, Position, Rect, Style, Widget as _},
     style::{Color, Modifier},
