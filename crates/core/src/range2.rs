@@ -1,6 +1,6 @@
 #![allow(unused_variables)] // TODO
 
-use crate::rope::RopeExt;
+use crate::{EditSeq, RopeExt};
 use ropey::Rope;
 
 #[derive(Debug, Default)]
@@ -52,15 +52,33 @@ impl<'a> RangeMut<'a> {
     }
 
     pub fn insert(&mut self, string: &str) {
-        todo!()
+        let mut edits = EditSeq::new();
+        edits.retain(self.range.head);
+        edits.insert(string);
+        edits.retain(self.rope.len_chars() - self.range.head);
+        edits.apply(self.rope).unwrap();
+        self.range.anchor = edits.transform_index(self.range.anchor);
+        self.range.head = edits.transform_index(self.range.head);
     }
 
     pub fn backspace(&mut self, count: usize) {
-        todo!()
+        let mut edits = EditSeq::new();
+        edits.retain(self.range.head.saturating_sub(count));
+        edits.delete(count);
+        edits.retain(self.rope.len_chars() - self.range.head.saturating_sub(count));
+        edits.apply(self.rope).unwrap();
+        self.range.anchor = edits.transform_index(self.range.anchor);
+        self.range.head = edits.transform_index(self.range.head);
     }
 
     pub fn delete(&mut self, count: usize) {
-        todo!()
+        let mut edits = EditSeq::new();
+        edits.retain(self.range.head);
+        edits.delete(count);
+        edits.retain(self.rope.len_chars() - self.range.head.saturating_sub(count));
+        edits.apply(self.rope).unwrap();
+        self.range.anchor = edits.transform_index(self.range.anchor);
+        self.range.head = edits.transform_index(self.range.head);
     }
 
     // TODO: Add `set_{head, anchor}`?
@@ -173,3 +191,5 @@ pub trait RangeExt: AsRangeParts {
         range.anchor = range.head;
     }
 }
+
+impl<T> RangeExt for T where T: AsRangeParts {}
