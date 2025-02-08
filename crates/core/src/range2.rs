@@ -3,77 +3,10 @@
 use crate::rope::RopeExt;
 use ropey::Rope;
 
-// TODO:
-// - Use trait to avoid duplicated code between immutable and mutable types.
-
 #[derive(Debug, Default)]
 pub struct RawRange {
     pub anchor: usize, // char gap index
     pub head: usize,   // char gap index
-}
-
-impl RawRange {
-    pub fn new(rope: &Rope, mut anchor: usize, mut head: usize) -> Result<Self, Self> {
-        let mut corrected = false;
-
-        // Gap at end of file counts as grapheme boundary
-        if let Ok(true) = rope.try_is_grapheme_boundary(anchor) {
-            //
-        } else {
-            corrected = true;
-            anchor = rope.len_chars();
-        }
-
-        // Gap at end of file counts as grapheme boundary
-        if let Ok(true) = rope.try_is_grapheme_boundary(head) {
-            //
-        } else {
-            corrected = true;
-            head = rope.len_chars();
-        }
-
-        if corrected {
-            Err(Self { anchor, head })
-        } else {
-            Ok(Self { anchor, head })
-        }
-    }
-
-    pub fn move_left(&mut self, rope: &Rope, distance: usize) {
-        todo!()
-    }
-
-    pub fn move_right(&mut self, rope: &Rope, distance: usize) {
-        todo!()
-    }
-
-    pub fn extend_left(&mut self, rope: &Rope, distance: usize) {
-        todo!()
-    }
-
-    pub fn extend_right(&mut self, rope: &Rope, distance: usize) {
-        todo!()
-    }
-
-    pub fn reduce(&mut self) {
-        self.anchor = self.head;
-    }
-
-    pub fn insert_char(&mut self, rope: &mut Rope, char: char) {
-        self.insert(rope, &char.to_string());
-    }
-
-    pub fn insert(&mut self, rope: &mut Rope, string: &str) {
-        todo!()
-    }
-
-    pub fn backspace(&mut self, rope: &mut Rope, count: usize) {
-        todo!()
-    }
-
-    pub fn delete(&mut self, rope: &mut Rope, count: usize) {
-        todo!()
-    }
 }
 
 #[derive(Debug)]
@@ -84,28 +17,13 @@ pub struct Range<'a> {
 
 impl<'a> Range<'a> {
     pub fn new(rope: &'a Rope, anchor: usize, head: usize) -> Result<Self, Self> {
-        match RawRange::new(rope, anchor, head) {
+        match new_impl(rope, anchor, head) {
             Err(range) => Err(Self { rope, range }),
             Ok(range) => Ok(Self { rope, range }),
         }
     }
 
-    #[must_use]
-    pub fn rope(&self) -> &Rope {
-        self.rope
-    }
-
-    #[must_use]
-    pub fn anchor(&self) -> usize {
-        self.range.anchor
-    }
-
-    #[must_use]
-    pub fn head(&self) -> usize {
-        self.range.head
-    }
-
-    // TODO: Add `set_{head, anchor}`
+    // TODO: Add `set_{head, anchor}`?
 }
 
 #[derive(Debug)]
@@ -116,15 +34,10 @@ pub struct RangeMut<'a> {
 
 impl<'a> RangeMut<'a> {
     pub fn new(rope: &'a mut Rope, anchor: usize, head: usize) -> Result<Self, Self> {
-        match RawRange::new(rope, anchor, head) {
+        match new_impl(rope, anchor, head) {
             Err(range) => Err(Self { rope, range }),
             Ok(range) => Ok(Self { rope, range }),
         }
-    }
-
-    #[must_use]
-    pub fn rope(&self) -> &Rope {
-        self.rope
     }
 
     /// Must trade in `RangeMut` for `&mut Rope`. Upholding range invariants depends on coordinating
@@ -134,15 +47,111 @@ impl<'a> RangeMut<'a> {
         self.rope
     }
 
+    pub fn insert_char(&mut self, char: char) {
+        self.insert(&char.to_string());
+    }
+
+    pub fn insert(&mut self, string: &str) {
+        todo!()
+    }
+
+    pub fn backspace(&mut self, count: usize) {
+        todo!()
+    }
+
+    pub fn delete(&mut self, count: usize) {
+        todo!()
+    }
+
+    // TODO: Add `set_{head, anchor}`?
+}
+
+fn new_impl(rope: &Rope, mut anchor: usize, mut head: usize) -> Result<RawRange, RawRange> {
+    let mut corrected = false;
+
+    // Gap at end of file counts as grapheme boundary
+    if let Ok(true) = rope.try_is_grapheme_boundary(anchor) {
+        //
+    } else {
+        corrected = true;
+        anchor = rope.len_chars();
+    }
+
+    // Gap at end of file counts as grapheme boundary
+    if let Ok(true) = rope.try_is_grapheme_boundary(head) {
+        //
+    } else {
+        corrected = true;
+        head = rope.len_chars();
+    }
+
+    if corrected {
+        Err(RawRange { anchor, head })
+    } else {
+        Ok(RawRange { anchor, head })
+    }
+}
+
+trait RangeParts {
+    fn range_parts(&self) -> (&Rope, &RawRange);
+
+    fn range_parts_mut(&mut self) -> (&Rope, &mut RawRange);
+}
+
+impl RangeParts for Range<'_> {
+    fn range_parts(&self) -> (&Rope, &RawRange) {
+        (self.rope, &self.range)
+    }
+
+    fn range_parts_mut(&mut self) -> (&Rope, &mut RawRange) {
+        (self.rope, &mut self.range)
+    }
+}
+
+impl RangeParts for RangeMut<'_> {
+    fn range_parts(&self) -> (&Rope, &RawRange) {
+        (self.rope, &self.range)
+    }
+
+    fn range_parts_mut(&mut self) -> (&Rope, &mut RawRange) {
+        (self.rope, &mut self.range)
+    }
+}
+
+#[allow(private_bounds)]
+pub trait RangeExt: RangeParts {
     #[must_use]
-    pub fn anchor(&self) -> usize {
-        self.range.anchor
+    fn rope(&self) -> &Rope {
+        todo!()
     }
 
     #[must_use]
-    pub fn head(&self) -> usize {
-        self.range.head
+    fn anchor(&self) -> usize {
+        todo!()
     }
 
-    // TODO: Add `set_{head, anchor}`
+    #[must_use]
+    fn head(&self) -> usize {
+        todo!()
+    }
+
+    fn move_left(&mut self, distance: usize) -> bool {
+        todo!()
+    }
+
+    fn move_right(&mut self, distance: usize) -> bool {
+        todo!()
+    }
+
+    fn extend_left(&mut self, distance: usize) -> bool {
+        todo!()
+    }
+
+    fn extend_right(&mut self, distance: usize) -> bool {
+        todo!()
+    }
+
+    fn reduce(&mut self) {
+        todo!()
+    }
 }
