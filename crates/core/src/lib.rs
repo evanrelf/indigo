@@ -4,7 +4,6 @@ mod editor;
 mod event;
 mod hooks;
 mod key;
-mod keymap;
 mod mode;
 mod ot;
 mod range;
@@ -16,7 +15,6 @@ pub use crate::{
     event::{Event, EventKind},
     hooks::{Hook, Hooks},
     key::{Key, KeyCode, KeyModifier, Keys},
-    keymap::Keymap,
     mode::Mode,
     ot::{Edit, EditSeq, Error},
     range::{Range, RangeExt, RangeMut},
