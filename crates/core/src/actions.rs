@@ -93,8 +93,13 @@ pub fn scroll_full_page_down(editor: &mut Editor) {
     editor.scroll_to(line);
 }
 
-pub fn insert_char(editor: &mut Editor, c: char) {
-    editor.with_range_mut(|range| range.insert_char(c));
+pub fn insert_char(editor: &mut Editor, char: char) {
+    editor.with_range_mut(|range| range.insert_char(char));
+    editor.mode.set_count(0);
+}
+
+pub fn insert(editor: &mut Editor, string: &str) {
+    editor.with_range_mut(|range| range.insert(string));
     editor.mode.set_count(0);
 }
 

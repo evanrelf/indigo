@@ -434,6 +434,7 @@ fn handle_event_insert(
             (KeyModifiers::NONE, MouseEventKind::ScrollDown) => actions::scroll_down(editor),
             _ => {}
         },
+        Event::Paste(string) => actions::insert(editor, string),
         _ => {}
     }
 
