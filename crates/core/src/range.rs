@@ -74,21 +74,19 @@ impl<'a> RangeMut<'a> {
         self.range.head = edits.transform_index(self.range.head);
     }
 
-    // TODO: Add grapheme awareness
     // TODO: Accept count. Can't naively write `edits.delete(count)`, otherwise you're implying
     // there exist that many characters to delete, and you'll get a length mismatch error.
     // TODO: Implement backspace in terms of `move_left` (on a copy of the range) + `delete`.
     pub fn backspace(&mut self) {
-        if self.range.head == 0 {
-            return;
+        if let Ok(index) = self.rope.get_prev_grapheme_boundary(self.range.head) {
+            let mut edits = EditSeq::new();
+            edits.retain(index);
+            edits.delete(self.range.head - index);
+            edits.retain_rest(self.rope);
+            edits.apply(self.rope).unwrap();
+            self.range.anchor = edits.transform_index(self.range.anchor);
+            self.range.head = edits.transform_index(self.range.head);
         }
-        let mut edits = EditSeq::new();
-        edits.retain(self.range.head.saturating_sub(1));
-        edits.delete(1);
-        edits.retain_rest(self.rope);
-        edits.apply(self.rope).unwrap();
-        self.range.anchor = edits.transform_index(self.range.anchor);
-        self.range.head = edits.transform_index(self.range.head);
     }
 
     // TODO: Add grapheme awareness
