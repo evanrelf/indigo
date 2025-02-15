@@ -6,20 +6,12 @@ use std::cmp::{max, min, Ordering};
 // Gap index is the right way to go, don't back out on that, just make it work.
 // TODO: Implement `Clone` and `Copy` for all the types in this module?
 
+// Fields should be public because there are no invariants to enforce. Correctness is only
+// meaningful relative to a rope, which this type does not control.
 #[derive(Debug, Default, PartialEq)]
 pub(crate) struct RawRange {
-    anchor: usize, // char gap index
-    head: usize,   // char gap index
-}
-
-impl RawRange {
-    pub fn anchor(&self) -> usize {
-        self.anchor
-    }
-
-    pub fn head(&self) -> usize {
-        self.head
-    }
+    pub(crate) anchor: usize, // char gap index
+    pub(crate) head: usize,   // char gap index
 }
 
 #[derive(Debug)]
