@@ -8,8 +8,18 @@ use std::cmp::{max, min};
 
 #[derive(Debug, Default)]
 pub(crate) struct RawRange {
-    pub(crate) anchor: usize, // char gap index
-    pub(crate) head: usize,   // char gap index
+    anchor: usize, // char gap index
+    head: usize,   // char gap index
+}
+
+impl RawRange {
+    pub fn anchor(&self) -> usize {
+        self.anchor
+    }
+
+    pub fn head(&self) -> usize {
+        self.head
+    }
 }
 
 #[derive(Debug)]

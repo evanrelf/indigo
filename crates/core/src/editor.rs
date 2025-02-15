@@ -38,14 +38,14 @@ impl Editor {
     /// DOES NOT SAVE CHANGES FROM THE RANGE TO THE EDITOR.
     #[must_use]
     pub fn range(&self) -> Range {
-        Range::new(&self.text, self.range.anchor, self.range.head)
+        Range::new(&self.text, self.range.anchor(), self.range.head())
             .expect("Editor range always valid")
     }
 
     /// DOES NOT SAVE CHANGES FROM THE RANGE TO THE EDITOR.
     #[must_use]
     pub fn range_mut(&mut self) -> RangeMut {
-        RangeMut::new(&mut self.text, self.range.anchor, self.range.head)
+        RangeMut::new(&mut self.text, self.range.anchor(), self.range.head())
             .expect("Editor range always valid")
     }
 
