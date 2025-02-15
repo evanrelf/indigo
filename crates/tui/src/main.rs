@@ -291,6 +291,10 @@ fn position_to_char_index(
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
+    let start = editor.range().start();
+
+    let end = editor.range().end();
+
     let mode = match editor.mode {
         Mode::Normal { .. } => "normal",
         Mode::Insert => "insert",
@@ -298,19 +302,9 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let count = editor.mode.count();
 
-    let rope = editor.text();
+    let eof = editor.range().head() == editor.text().len_chars();
 
-    let char_index = editor.range().head();
-
-    let eof = char_index == editor.text().len_chars();
-
-    let status_bar = if let Some(grapheme) = rope.get_grapheme(char_index) {
-        let chars = grapheme.chars().collect::<Vec<_>>();
-        let display_width = grapheme.display_width();
-        format!("mode={mode}, count={count}, char_index={char_index}, eof={eof}, grapheme=\"{grapheme:?}\", chars={chars:?}, display_width={display_width}")
-    } else {
-        format!("mode={mode}, count={count}, char_index={char_index}, eof={eof}, grapheme=n/a, chars=n/a, display_width=n/a")
-    };
+    let status_bar = format!("[{start}, {end}] mode={mode} count={count} eof={eof}");
 
     Line::raw(status_bar).render(area, surface);
 }
