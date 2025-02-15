@@ -17,9 +17,13 @@ pub struct Editor {
 }
 
 impl Editor {
-    pub fn new(path: Utf8PathBuf) -> anyhow::Result<Self> {
-        let file = File::open(path)?;
-        let rope = Rope::from_reader(BufReader::new(file))?;
+    pub fn new(path: Option<Utf8PathBuf>) -> anyhow::Result<Self> {
+        let rope = if let Some(path) = path {
+            let file = File::open(path)?;
+            Rope::from_reader(BufReader::new(file))?
+        } else {
+            Rope::new()
+        };
         Ok(Self {
             text: rope,
             range: RawRange::default(),

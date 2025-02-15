@@ -17,7 +17,7 @@ use std::{borrow::Cow, cmp::max};
 
 #[derive(Debug, clap::Parser)]
 struct Args {
-    file: Utf8PathBuf,
+    file: Option<Utf8PathBuf>,
 }
 
 fn main() -> anyhow::Result<()> {
