@@ -1,4 +1,5 @@
 pub use crate::{
+    cursor::{Bias, Cursor, CursorMut, RawCursor},
     display_width::DisplayWidth,
     editor::Editor,
     index::{CharGapIndex, CharIndex},

@@ -1,4 +1,8 @@
-use crate::{ot::EditSeq, rope::RopeExt};
+use crate::{
+    cursor::{Bias, RawCursor},
+    ot::EditSeq,
+    rope::RopeExt as _,
+};
 use ropey::Rope;
 use std::cmp::{max, min, Ordering};
 
@@ -267,42 +271,6 @@ pub trait RangeExt: AsRangeParts {
 
 impl<T> RangeExt for T where T: AsRangeParts {}
 
-fn snap_to_gap_before(rope: &Rope, gap_index: usize) -> usize {
-    let last_gap = rope.len_chars();
-
-    if gap_index > last_gap {
-        return last_gap;
-    }
-
-    if let Ok(true) = rope.try_is_grapheme_boundary(gap_index) {
-        return gap_index;
-    }
-
-    if let Ok(before) = rope.get_prev_grapheme_boundary(gap_index) {
-        return before;
-    }
-
-    unreachable!()
-}
-
-fn snap_to_gap_after(rope: &Rope, gap_index: usize) -> usize {
-    let last_gap = rope.len_chars();
-
-    if gap_index > last_gap {
-        return last_gap;
-    }
-
-    if let Ok(true) = rope.try_is_grapheme_boundary(gap_index) {
-        return gap_index;
-    }
-
-    if let Ok(after) = rope.get_next_grapheme_boundary(gap_index) {
-        return after;
-    }
-
-    unreachable!()
-}
-
 fn snap_to_gaps(rope: &Rope, mut anchor: usize, mut head: usize) -> RawRange {
     if rope.len_chars() == 0 {
         return RawRange { anchor: 0, head: 0 };
@@ -310,12 +278,12 @@ fn snap_to_gaps(rope: &Rope, mut anchor: usize, mut head: usize) -> RawRange {
 
     match anchor.cmp(&head) {
         Ordering::Less | Ordering::Equal => {
-            anchor = snap_to_gap_before(rope, anchor);
-            head = snap_to_gap_after(rope, head);
+            anchor = RawCursor::new(rope, anchor, Bias::Before).index;
+            head = RawCursor::new(rope, head, Bias::After).index;
         }
         Ordering::Greater => {
-            head = snap_to_gap_before(rope, head);
-            anchor = snap_to_gap_after(rope, anchor);
+            head = RawCursor::new(rope, head, Bias::Before).index;
+            anchor = RawCursor::new(rope, anchor, Bias::After).index;
         }
     }
 
@@ -343,19 +311,9 @@ mod tests {
     fn snapping() {
         let r = |anchor, head| RawRange { anchor, head };
         let rope = Rope::new();
-        assert_eq!(snap_to_gap_before(&rope, 42), 0);
-        assert_eq!(snap_to_gap_after(&rope, 42), 0);
         assert_eq!(snap_to_gaps(&rope, 42, 42), r(0, 0));
         assert_eq!(snap_to_gaps(&rope, 42, 69), r(0, 0));
         let rope = Rope::from_str("👨🏻‍❤️‍💋‍👨🏻");
-        assert_eq!(snap_to_gap_before(&rope, 0), 0);
-        assert_eq!(snap_to_gap_before(&rope, 10), 10);
-        assert_eq!(snap_to_gap_before(&rope, 1), 0);
-        assert_eq!(snap_to_gap_before(&rope, 9), 0);
-        assert_eq!(snap_to_gap_after(&rope, 0), 0);
-        assert_eq!(snap_to_gap_after(&rope, 10), 10);
-        assert_eq!(snap_to_gap_after(&rope, 1), 10);
-        assert_eq!(snap_to_gap_after(&rope, 9), 10);
         assert_eq!(snap_to_gaps(&rope, 0, 0), r(0, 10));
         assert_eq!(snap_to_gaps(&rope, 1, 9), r(0, 10));
         assert_eq!(snap_to_gaps(&rope, 42, 42), r(0, 10));
