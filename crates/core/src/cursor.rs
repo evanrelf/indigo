@@ -37,7 +37,7 @@ impl RawCursor {
         unreachable!()
     }
 
-    fn move_left(&mut self, rope: &Rope, distance: usize) {
+    pub fn move_left(&mut self, rope: &Rope, distance: usize) {
         for _ in 1..=distance {
             match rope.get_prev_grapheme_boundary(self.index) {
                 Ok(index) if self.index != index => self.index = index,
@@ -46,7 +46,7 @@ impl RawCursor {
         }
     }
 
-    fn move_right(&mut self, rope: &Rope, distance: usize) {
+    pub fn move_right(&mut self, rope: &Rope, distance: usize) {
         for _ in 1..=distance {
             match rope.get_next_grapheme_boundary(self.index) {
                 Ok(index) if self.index != index => self.index = index,
@@ -100,25 +100,20 @@ impl<'a> Cursor<'a> {
     }
 
     #[must_use]
-    pub fn into_raw(self) -> RawCursor {
-        self.cursor
-    }
-
-    #[must_use]
-    fn rope(&self) -> &Rope {
+    pub fn rope(&self) -> &Rope {
         self.rope
     }
 
     #[must_use]
-    fn index(&self) -> usize {
+    pub fn index(&self) -> usize {
         self.cursor.index
     }
 
-    fn move_left(&mut self, distance: usize) {
+    pub fn move_left(&mut self, distance: usize) {
         self.cursor.move_left(self.rope, distance);
     }
 
-    fn move_right(&mut self, distance: usize) {
+    pub fn move_right(&mut self, distance: usize) {
         self.cursor.move_right(self.rope, distance);
     }
 }
@@ -135,33 +130,21 @@ impl<'a> CursorMut<'a> {
         Self { rope, cursor }
     }
 
-    /// Must trade in `CursorMut` for `&mut Rope`. Upholding cursor invariants depends on
-    /// coordinating rope and state mutations.
     #[must_use]
-    pub fn into_rope_mut(self) -> &'a mut Rope {
+    pub fn rope(&self) -> &Rope {
         self.rope
     }
 
     #[must_use]
-    pub fn into_raw(self) -> RawCursor {
-        self.cursor
-    }
-
-    #[must_use]
-    fn rope(&self) -> &Rope {
-        self.rope
-    }
-
-    #[must_use]
-    fn index(&self) -> usize {
+    pub fn index(&self) -> usize {
         self.cursor.index
     }
 
-    fn move_left(&mut self, distance: usize) {
+    pub fn move_left(&mut self, distance: usize) {
         self.cursor.move_left(self.rope, distance);
     }
 
-    fn move_right(&mut self, distance: usize) {
+    pub fn move_right(&mut self, distance: usize) {
         self.cursor.move_right(self.rope, distance);
     }
 
