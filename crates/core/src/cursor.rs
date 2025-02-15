@@ -65,6 +65,11 @@ impl RawCursor {
     }
 
     pub fn insert(&mut self, rope: &mut Rope, string: &str) {
+        let _ = self.insert_impl(rope, string);
+    }
+
+    #[must_use]
+    pub(crate) fn insert_impl(&mut self, rope: &mut Rope, string: &str) -> EditSeq {
         let mut edits = EditSeq::new();
         edits.retain(self.index);
         edits.insert(string);
@@ -75,24 +80,29 @@ impl RawCursor {
         // middle of a new grapheme, so we must snap after inserting.
         // Makes `insert_changes_grapheme_boundary` test pass.
         self.snap(rope, Bias::After);
+        edits
     }
 
     pub fn backspace(&mut self, rope: &mut Rope, count: usize) {
-        let mut index = None;
+        let _ = self.backspace_impl(rope, count);
+    }
+
+    #[must_use]
+    pub(crate) fn backspace_impl(&mut self, rope: &mut Rope, count: usize) -> EditSeq {
+        let mut index = self.index;
         for _ in 1..=count {
-            match rope.get_prev_grapheme_boundary(self.index) {
-                Ok(prev) if index != Some(prev) && self.index != prev => index = Some(prev),
+            match rope.get_prev_grapheme_boundary(index) {
+                Ok(prev) if index != prev => index = prev,
                 _ => break,
             }
         }
-        if let Some(index) = index {
-            let mut edits = EditSeq::new();
-            edits.retain(index);
-            edits.delete(self.index - index);
-            edits.retain_rest(rope);
-            edits.apply(rope).unwrap();
-            self.index = edits.transform_index(self.index);
-        }
+        let mut edits = EditSeq::new();
+        edits.retain(index);
+        edits.delete(self.index - index);
+        edits.retain_rest(rope);
+        edits.apply(rope).unwrap();
+        self.index = edits.transform_index(self.index);
+        edits
     }
 }
 

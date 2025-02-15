@@ -103,7 +103,8 @@ pub fn insert(editor: &mut Editor, string: &str) {
 }
 
 pub fn backspace(editor: &mut Editor) {
-    editor.with_range_mut(|range| range.backspace());
+    let count = max(1, editor.mode.count());
+    editor.with_range_mut(|range| range.backspace(count));
     editor.mode.set_count(0);
 }
 
