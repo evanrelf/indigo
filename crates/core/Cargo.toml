@@ -13,5 +13,8 @@ unicode-segmentation = { workspace = true }
 unicode-width = { workspace = true }
 winnow = { workspace = true }
 
+[dev-dependencies]
+arbtest = { workspace = true }
+
 [lints]
 workspace = true

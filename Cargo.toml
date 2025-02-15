@@ -4,6 +4,7 @@ members = ["crates/*"]
 
 [workspace.dependencies]
 anyhow = "1.0.95"
+arbtest = "0.3.2"
 arrayvec = "0.7.6"
 camino = "1.1.9"
 clap = { version = "4.5.26", features = ["derive"] }

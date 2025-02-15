@@ -1,12 +1,12 @@
 use crate::{ot::EditSeq, rope::RopeExt};
 use ropey::Rope;
-use std::cmp::{max, min};
+use std::cmp::{max, min, Ordering};
 
 // TODO: It's a GAP index! If anchor == head, then the width is 0! This should only be legal at EOF.
 // Gap index is the right way to go, don't back out on that, just make it work.
 // TODO: Implement `Clone` and `Copy` for all the types in this module?
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub(crate) struct RawRange {
     anchor: usize, // char gap index
     head: usize,   // char gap index
@@ -307,15 +307,50 @@ fn snap_to_gap_after(rope: &Rope, gap_index: usize) -> usize {
     unreachable!()
 }
 
+fn snap_to_gaps(rope: &Rope, mut anchor: usize, mut head: usize) -> RawRange {
+    if rope.len_chars() == 0 {
+        return RawRange { anchor: 0, head: 0 };
+    }
+
+    match anchor.cmp(&head) {
+        Ordering::Less | Ordering::Equal => {
+            anchor = snap_to_gap_before(rope, anchor);
+            head = snap_to_gap_after(rope, head);
+        }
+        Ordering::Greater => {
+            head = snap_to_gap_before(rope, head);
+            anchor = snap_to_gap_after(rope, anchor);
+        }
+    }
+
+    if anchor == head {
+        match rope.get_next_grapheme_boundary(head) {
+            Ok(after) if head != after => head = after,
+            _ => match rope.get_prev_grapheme_boundary(anchor) {
+                Ok(before) if anchor != before => anchor = before,
+                _ => unreachable!(),
+            },
+        }
+    }
+
+    RawRange { anchor, head }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arbtest::arbtest;
+
+    // Adjust budget with `ARBTEST_BUDGET_MS` environment variable
 
     #[test]
-    fn test_snapping() {
+    fn snapping() {
+        let r = |anchor, head| RawRange { anchor, head };
         let rope = Rope::new();
         assert_eq!(snap_to_gap_before(&rope, 42), 0);
         assert_eq!(snap_to_gap_after(&rope, 42), 0);
+        assert_eq!(snap_to_gaps(&rope, 42, 42), r(0, 0));
+        assert_eq!(snap_to_gaps(&rope, 42, 69), r(0, 0));
         let rope = Rope::from_str("👨🏻‍❤️‍💋‍👨🏻");
         assert_eq!(snap_to_gap_before(&rope, 0), 0);
         assert_eq!(snap_to_gap_before(&rope, 10), 10);
@@ -325,5 +360,21 @@ mod tests {
         assert_eq!(snap_to_gap_after(&rope, 10), 10);
         assert_eq!(snap_to_gap_after(&rope, 1), 10);
         assert_eq!(snap_to_gap_after(&rope, 9), 10);
+        assert_eq!(snap_to_gaps(&rope, 0, 0), r(0, 10));
+        assert_eq!(snap_to_gaps(&rope, 1, 9), r(0, 10));
+        assert_eq!(snap_to_gaps(&rope, 42, 42), r(0, 10));
+        assert_eq!(snap_to_gaps(&rope, 42, 69), r(0, 10));
+    }
+
+    #[test]
+    fn snapping_fuzz() {
+        arbtest(|u| {
+            let rope = Rope::from_str(u.arbitrary()?);
+            let anchor = u.arbitrary()?;
+            let head = u.arbitrary()?;
+            let result = std::panic::catch_unwind(|| snap_to_gaps(&rope, anchor, head));
+            assert!(result.is_ok());
+            Ok(())
+        });
     }
 }
