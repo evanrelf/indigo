@@ -230,6 +230,16 @@ pub trait RangeExt: AsRangeParts {
         }
     }
 
+    fn extend_right(&mut self, distance: usize) {
+        let (rope, range) = self.as_range_parts_mut();
+        for _ in 1..=distance {
+            match rope.get_next_grapheme_boundary(range.head) {
+                Ok(head) if range.head != head => range.head = head,
+                _ => break,
+            }
+        }
+    }
+
     fn flip(&mut self) {
         if !self.is_reduced() {
             let (_rope, range) = self.as_range_parts_mut();
@@ -246,16 +256,6 @@ pub trait RangeExt: AsRangeParts {
     fn flip_backward(&mut self) {
         if self.is_forward() {
             self.flip();
-        }
-    }
-
-    fn extend_right(&mut self, distance: usize) {
-        let (rope, range) = self.as_range_parts_mut();
-        for _ in 1..=distance {
-            match rope.get_next_grapheme_boundary(range.head) {
-                Ok(head) if range.head != head => range.head = head,
-                _ => break,
-            }
         }
     }
 
