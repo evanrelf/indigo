@@ -212,7 +212,7 @@ mod tests {
             let snap_bias = u.choose(&[Bias::Before, Bias::After])?;
             let mut cursor = CursorMut::new(&mut rope, gap_index, *snap_bias);
             let mut actions = Vec::new();
-            for _ in 0..u.choose_index(32)? {
+            for _ in 0..u.choose_index(100)? {
                 match u.choose_index(4)? {
                     0 => {
                         let arg = u.choose_index(99)?;
@@ -227,7 +227,7 @@ mod tests {
                     2 => {
                         let arg = u.arbitrary()?;
                         cursor.insert(arg);
-                        actions.push(format!("insert({arg})"));
+                        actions.push(format!("insert({arg:?})"));
                     }
                     3 => {
                         let arg = u.choose_index(99)?;
@@ -236,6 +236,7 @@ mod tests {
                     }
                     _ => break,
                 }
+                let actions = actions.join("\n  ");
                 let index = cursor.index();
                 let length = cursor.rope.len_chars();
                 let is_grapheme_boundary =
@@ -243,7 +244,7 @@ mod tests {
                 let is_eof = index == length;
                 assert!(
                     is_grapheme_boundary || is_eof,
-                    "not a grapheme boundary\nactions = {actions:?}\nindex = {index}\nrope = {rope:?}\nlength = {length}"
+                    "not a grapheme boundary\nactions =\n  {actions}\nindex = {index}\nrope = {rope:?}\nlength = {length}"
                 );
             }
             Ok(())
