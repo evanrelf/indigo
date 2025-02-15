@@ -3,7 +3,6 @@
 use crate::{
     editor::Editor,
     mode::{Mode, NormalMode},
-    range::RangeExt as _,
 };
 use std::cmp::max;
 

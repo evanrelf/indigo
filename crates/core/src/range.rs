@@ -13,9 +13,153 @@ use std::cmp::{max, min, Ordering};
 // Fields should be public because there are no invariants to enforce. Correctness is only
 // meaningful relative to a rope, which this type does not control.
 #[derive(Debug, Default, PartialEq)]
-pub(crate) struct RawRange {
-    pub(crate) anchor: usize, // char gap index
-    pub(crate) head: usize,   // char gap index
+pub struct RawRange {
+    pub anchor: usize, // char gap index
+    pub head: usize,   // char gap index
+}
+
+impl RawRange {
+    #[must_use]
+    pub fn new(rope: &Rope, mut anchor: usize, mut head: usize) -> Self {
+        // Gap at end of file counts as grapheme boundary
+        if let Ok(true) = rope.try_is_grapheme_boundary(anchor) {
+            //
+        } else {
+            anchor = rope.len_chars();
+        }
+
+        // Gap at end of file counts as grapheme boundary
+        if let Ok(true) = rope.try_is_grapheme_boundary(head) {
+            //
+        } else {
+            head = rope.len_chars();
+        }
+
+        Self { anchor, head }
+    }
+
+    #[must_use]
+    pub fn start(&self) -> usize {
+        min(self.anchor, self.head)
+    }
+
+    #[must_use]
+    pub fn end(&self) -> usize {
+        max(self.anchor, self.head)
+    }
+
+    #[must_use]
+    pub fn is_forward(&self) -> bool {
+        self.anchor <= self.head
+    }
+
+    #[must_use]
+    pub fn is_backward(&self) -> bool {
+        self.anchor > self.head
+    }
+
+    #[must_use]
+    pub fn is_reduced(&self) -> bool {
+        self.anchor == self.head
+    }
+
+    pub fn move_left(&mut self, rope: &Rope, distance: usize) {
+        self.extend_left(rope, distance);
+        self.reduce();
+    }
+
+    pub fn move_right(&mut self, rope: &Rope, distance: usize) {
+        self.extend_right(rope, distance);
+        self.reduce();
+    }
+
+    pub fn extend_left(&mut self, rope: &Rope, distance: usize) {
+        for _ in 1..=distance {
+            match rope.get_prev_grapheme_boundary(self.head) {
+                Ok(head) if self.head != head => self.head = head,
+                _ => break,
+            }
+        }
+    }
+
+    pub fn extend_right(&mut self, rope: &Rope, distance: usize) {
+        for _ in 1..=distance {
+            match rope.get_next_grapheme_boundary(self.head) {
+                Ok(head) if self.head != head => self.head = head,
+                _ => break,
+            }
+        }
+    }
+
+    pub fn flip(&mut self) {
+        if !self.is_reduced() {
+            std::mem::swap(&mut self.anchor, &mut self.head);
+        }
+    }
+
+    pub fn flip_forward(&mut self) {
+        if self.is_backward() {
+            self.flip();
+        }
+    }
+
+    pub fn flip_backward(&mut self) {
+        if self.is_forward() {
+            self.flip();
+        }
+    }
+
+    pub fn reduce(&mut self) {
+        self.anchor = self.head;
+    }
+
+    pub fn insert_char(&mut self, rope: &mut Rope, char: char) {
+        self.insert(rope, &char.to_string());
+    }
+
+    pub fn insert(&mut self, rope: &mut Rope, string: &str) {
+        let mut edits = EditSeq::new();
+        edits.retain(self.head);
+        edits.insert(string);
+        edits.retain_rest(rope);
+        edits.apply(rope).unwrap();
+        self.anchor = edits.transform_index(self.anchor);
+        self.head = edits.transform_index(self.head);
+    }
+
+    // TODO: Accept count. Can't naively write `edits.delete(count)`, otherwise you're implying
+    // there exist that many characters to delete, and you'll get a length mismatch error.
+    // TODO: Implement backspace in terms of `move_left` (on a copy of the range) + `delete`.
+    pub fn backspace(&mut self, rope: &mut Rope) {
+        if let Ok(index) = rope.get_prev_grapheme_boundary(self.head) {
+            let mut edits = EditSeq::new();
+            edits.retain(index);
+            edits.delete(self.head - index);
+            edits.retain_rest(rope);
+            edits.apply(rope).unwrap();
+            self.anchor = edits.transform_index(self.anchor);
+            self.head = edits.transform_index(self.head);
+        }
+    }
+
+    // TODO: Add grapheme awareness
+    // TODO: Don't crash when range contains EOF.
+    // TODO: Accept count. Can't naively write `edits.delete(count)`, otherwise you're implying
+    // there exist that many characters to delete, and you'll get a length mismatch error.
+    pub fn delete(&mut self, rope: &mut Rope) {
+        if rope.len_chars() == 0 {
+            return;
+        }
+        let mut edits = EditSeq::new();
+        edits.retain(self.start());
+        // TODO: Remove `+ 1` in favor of the end being the gap after the last grapheme, not the gap
+        // before the last grapheme.
+        edits.delete((self.end() - self.start()) + 1);
+        edits.retain_rest(rope);
+        edits.apply(rope).unwrap();
+        self.anchor = self.start();
+        self.head = self.start();
+    }
 }
 
 #[derive(Debug)]
@@ -27,13 +171,80 @@ pub struct Range<'a> {
 impl<'a> Range<'a> {
     #[must_use]
     pub fn new(rope: &'a Rope, anchor: usize, head: usize) -> Self {
-        let range = new_impl(rope, anchor, head);
+        let range = RawRange::new(rope, anchor, head);
         Self { rope, range }
     }
 
     #[must_use]
     pub(crate) fn into_raw(self) -> RawRange {
         self.range
+    }
+
+    #[must_use]
+    pub fn anchor(&self) -> usize {
+        self.range.anchor
+    }
+
+    #[must_use]
+    pub fn head(&self) -> usize {
+        self.range.head
+    }
+
+    #[must_use]
+    pub fn start(&self) -> usize {
+        self.range.start()
+    }
+
+    #[must_use]
+    pub fn end(&self) -> usize {
+        self.range.end()
+    }
+
+    #[must_use]
+    pub fn is_forward(&self) -> bool {
+        self.range.is_forward()
+    }
+
+    #[must_use]
+    pub fn is_backward(&self) -> bool {
+        self.range.is_backward()
+    }
+
+    #[must_use]
+    pub fn is_reduced(&self) -> bool {
+        self.range.is_reduced()
+    }
+
+    pub fn move_left(&mut self, distance: usize) {
+        self.range.move_left(self.rope, distance);
+    }
+
+    pub fn move_right(&mut self, distance: usize) {
+        self.range.move_right(self.rope, distance);
+    }
+
+    pub fn extend_left(&mut self, distance: usize) {
+        self.range.extend_left(self.rope, distance);
+    }
+
+    pub fn extend_right(&mut self, distance: usize) {
+        self.range.extend_right(self.rope, distance);
+    }
+
+    pub fn flip(&mut self) {
+        self.range.flip();
+    }
+
+    pub fn flip_forward(&mut self) {
+        self.range.flip_forward();
+    }
+
+    pub fn flip_backward(&mut self) {
+        self.range.flip_backward();
+    }
+
+    pub fn reduce(&mut self) {
+        self.range.reduce();
     }
 
     // TODO: Add `set_{head, anchor}`?
@@ -48,7 +259,7 @@ pub struct RangeMut<'a> {
 impl<'a> RangeMut<'a> {
     #[must_use]
     pub fn new(rope: &'a mut Rope, anchor: usize, head: usize) -> Self {
-        let range = new_impl(rope, anchor, head);
+        let range = RawRange::new(rope, anchor, head);
         Self { rope, range }
     }
 
@@ -64,202 +275,91 @@ impl<'a> RangeMut<'a> {
         self.range
     }
 
+    #[must_use]
+    pub fn anchor(&self) -> usize {
+        self.range.anchor
+    }
+
+    #[must_use]
+    pub fn head(&self) -> usize {
+        self.range.head
+    }
+
+    #[must_use]
+    pub fn start(&self) -> usize {
+        self.range.start()
+    }
+
+    #[must_use]
+    pub fn end(&self) -> usize {
+        self.range.end()
+    }
+
+    #[must_use]
+    pub fn is_forward(&self) -> bool {
+        self.range.is_forward()
+    }
+
+    #[must_use]
+    pub fn is_backward(&self) -> bool {
+        self.range.is_backward()
+    }
+
+    #[must_use]
+    pub fn is_reduced(&self) -> bool {
+        self.range.is_reduced()
+    }
+
+    pub fn move_left(&mut self, distance: usize) {
+        self.range.move_left(self.rope, distance);
+    }
+
+    pub fn move_right(&mut self, distance: usize) {
+        self.range.move_right(self.rope, distance);
+    }
+
+    pub fn extend_left(&mut self, distance: usize) {
+        self.range.extend_left(self.rope, distance);
+    }
+
+    pub fn extend_right(&mut self, distance: usize) {
+        self.range.extend_right(self.rope, distance);
+    }
+
+    pub fn flip(&mut self) {
+        self.range.flip();
+    }
+
+    pub fn flip_forward(&mut self) {
+        self.range.flip_forward();
+    }
+
+    pub fn flip_backward(&mut self) {
+        self.range.flip_backward();
+    }
+
+    pub fn reduce(&mut self) {
+        self.range.reduce();
+    }
+
     pub fn insert_char(&mut self, char: char) {
-        self.insert(&char.to_string());
+        self.range.insert_char(self.rope, char);
     }
 
     pub fn insert(&mut self, string: &str) {
-        let mut edits = EditSeq::new();
-        edits.retain(self.range.head);
-        edits.insert(string);
-        edits.retain_rest(self.rope);
-        edits.apply(self.rope).unwrap();
-        self.range.anchor = edits.transform_index(self.range.anchor);
-        self.range.head = edits.transform_index(self.range.head);
+        self.range.insert(self.rope, string);
     }
 
-    // TODO: Accept count. Can't naively write `edits.delete(count)`, otherwise you're implying
-    // there exist that many characters to delete, and you'll get a length mismatch error.
-    // TODO: Implement backspace in terms of `move_left` (on a copy of the range) + `delete`.
     pub fn backspace(&mut self) {
-        if let Ok(index) = self.rope.get_prev_grapheme_boundary(self.range.head) {
-            let mut edits = EditSeq::new();
-            edits.retain(index);
-            edits.delete(self.range.head - index);
-            edits.retain_rest(self.rope);
-            edits.apply(self.rope).unwrap();
-            self.range.anchor = edits.transform_index(self.range.anchor);
-            self.range.head = edits.transform_index(self.range.head);
-        }
+        self.range.backspace(self.rope);
     }
 
-    // TODO: Add grapheme awareness
-    // TODO: Don't crash when range contains EOF.
-    // TODO: Accept count. Can't naively write `edits.delete(count)`, otherwise you're implying
-    // there exist that many characters to delete, and you'll get a length mismatch error.
     pub fn delete(&mut self) {
-        if self.rope.len_chars() == 0 {
-            return;
-        }
-        let mut edits = EditSeq::new();
-        edits.retain(self.start());
-        // TODO: Remove `+ 1` in favor of the end being the gap after the last grapheme, not the gap
-        // before the last grapheme.
-        edits.delete((self.end() - self.start()) + 1);
-        edits.retain_rest(self.rope);
-        edits.apply(self.rope).unwrap();
-        self.range.anchor = self.start();
-        self.range.head = self.start();
+        self.range.delete(self.rope);
     }
 
     // TODO: Add `set_{head, anchor}`?
 }
-
-fn new_impl(rope: &Rope, mut anchor: usize, mut head: usize) -> RawRange {
-    // Gap at end of file counts as grapheme boundary
-    if let Ok(true) = rope.try_is_grapheme_boundary(anchor) {
-        //
-    } else {
-        anchor = rope.len_chars();
-    }
-
-    // Gap at end of file counts as grapheme boundary
-    if let Ok(true) = rope.try_is_grapheme_boundary(head) {
-        //
-    } else {
-        head = rope.len_chars();
-    }
-
-    RawRange { anchor, head }
-}
-
-trait AsRangeParts {
-    fn as_range_parts(&self) -> (&Rope, &RawRange);
-
-    fn as_range_parts_mut(&mut self) -> (&Rope, &mut RawRange);
-}
-
-impl AsRangeParts for Range<'_> {
-    fn as_range_parts(&self) -> (&Rope, &RawRange) {
-        (self.rope, &self.range)
-    }
-
-    fn as_range_parts_mut(&mut self) -> (&Rope, &mut RawRange) {
-        (self.rope, &mut self.range)
-    }
-}
-
-impl AsRangeParts for RangeMut<'_> {
-    fn as_range_parts(&self) -> (&Rope, &RawRange) {
-        (self.rope, &self.range)
-    }
-
-    fn as_range_parts_mut(&mut self) -> (&Rope, &mut RawRange) {
-        (self.rope, &mut self.range)
-    }
-}
-
-#[allow(private_bounds)]
-pub trait RangeExt: AsRangeParts {
-    #[must_use]
-    fn rope(&self) -> &Rope {
-        let (rope, _range) = self.as_range_parts();
-        rope
-    }
-
-    #[must_use]
-    fn anchor(&self) -> usize {
-        let (_rope, range) = self.as_range_parts();
-        range.anchor
-    }
-
-    #[must_use]
-    fn head(&self) -> usize {
-        let (_rope, range) = self.as_range_parts();
-        range.head
-    }
-
-    #[must_use]
-    fn start(&self) -> usize {
-        min(self.anchor(), self.head())
-    }
-
-    #[must_use]
-    fn end(&self) -> usize {
-        max(self.anchor(), self.head())
-    }
-
-    #[must_use]
-    fn is_forward(&self) -> bool {
-        self.anchor() <= self.head()
-    }
-
-    #[must_use]
-    fn is_backward(&self) -> bool {
-        self.anchor() > self.head()
-    }
-
-    #[must_use]
-    fn is_reduced(&self) -> bool {
-        self.anchor() == self.head()
-    }
-
-    fn move_left(&mut self, distance: usize) {
-        self.extend_left(distance);
-        self.reduce();
-    }
-
-    fn move_right(&mut self, distance: usize) {
-        self.extend_right(distance);
-        self.reduce();
-    }
-
-    fn extend_left(&mut self, distance: usize) {
-        let (rope, range) = self.as_range_parts_mut();
-        for _ in 1..=distance {
-            match rope.get_prev_grapheme_boundary(range.head) {
-                Ok(head) if range.head != head => range.head = head,
-                _ => break,
-            }
-        }
-    }
-
-    fn extend_right(&mut self, distance: usize) {
-        let (rope, range) = self.as_range_parts_mut();
-        for _ in 1..=distance {
-            match rope.get_next_grapheme_boundary(range.head) {
-                Ok(head) if range.head != head => range.head = head,
-                _ => break,
-            }
-        }
-    }
-
-    fn flip(&mut self) {
-        if !self.is_reduced() {
-            let (_rope, range) = self.as_range_parts_mut();
-            std::mem::swap(&mut range.anchor, &mut range.head);
-        }
-    }
-
-    fn flip_forward(&mut self) {
-        if self.is_backward() {
-            self.flip();
-        }
-    }
-
-    fn flip_backward(&mut self) {
-        if self.is_forward() {
-            self.flip();
-        }
-    }
-
-    fn reduce(&mut self) {
-        let (_rope, range) = self.as_range_parts_mut();
-        range.anchor = range.head;
-    }
-}
-
-impl<T> RangeExt for T where T: AsRangeParts {}
 
 fn snap_to_gaps(rope: &Rope, mut anchor: usize, mut head: usize) -> RawRange {
     if rope.len_chars() == 0 {

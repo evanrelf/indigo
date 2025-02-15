@@ -5,6 +5,6 @@ pub use crate::{
     index::{CharGapIndex, CharIndex},
     mode::{Mode, NormalMode},
     ot::EditSeq,
-    range::{Range, RangeExt, RangeMut},
+    range::{Range, RangeMut, RawRange},
     rope::RopeExt,
 };

@@ -1,6 +1,6 @@
 use crate::{
     mode::{Mode, NormalMode},
-    range::{Range, RangeExt as _, RangeMut, RawRange},
+    range::{Range, RangeMut, RawRange},
     rope::RopeExt as _,
 };
 use camino::Utf8PathBuf;
