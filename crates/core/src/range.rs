@@ -274,3 +274,56 @@ pub trait RangeExt: AsRangeParts {
 }
 
 impl<T> RangeExt for T where T: AsRangeParts {}
+
+fn snap_to_gap_before(rope: &Rope, gap_index: usize) -> usize {
+    if gap_index > rope.len_chars() {
+        return rope.len_chars();
+    }
+
+    if let Ok(true) = rope.try_is_grapheme_boundary(gap_index) {
+        return gap_index;
+    }
+
+    if let Ok(before) = rope.get_prev_grapheme_boundary(gap_index) {
+        return before;
+    }
+
+    unreachable!()
+}
+
+fn snap_to_gap_after(rope: &Rope, gap_index: usize) -> usize {
+    if gap_index > rope.len_chars() {
+        return rope.len_chars();
+    }
+
+    if let Ok(true) = rope.try_is_grapheme_boundary(gap_index) {
+        return gap_index;
+    }
+
+    if let Ok(after) = rope.get_next_grapheme_boundary(gap_index) {
+        return after;
+    }
+
+    unreachable!()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_snapping() {
+        let rope = Rope::new();
+        assert_eq!(snap_to_gap_before(&rope, 42), 0);
+        assert_eq!(snap_to_gap_after(&rope, 42), 0);
+        let rope = Rope::from_str("👨🏻‍❤️‍💋‍👨🏻");
+        assert_eq!(snap_to_gap_before(&rope, 0), 0);
+        assert_eq!(snap_to_gap_before(&rope, 10), 10);
+        assert_eq!(snap_to_gap_before(&rope, 1), 0);
+        assert_eq!(snap_to_gap_before(&rope, 9), 0);
+        assert_eq!(snap_to_gap_after(&rope, 0), 0);
+        assert_eq!(snap_to_gap_after(&rope, 10), 10);
+        assert_eq!(snap_to_gap_after(&rope, 1), 10);
+        assert_eq!(snap_to_gap_after(&rope, 9), 10);
+    }
+}
