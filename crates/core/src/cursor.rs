@@ -37,6 +37,11 @@ impl RawCursor {
         unreachable!()
     }
 
+    fn snap(&mut self, rope: &Rope, snap_bias: Bias) {
+        let gap_index = self.index;
+        *self = Self::new(rope, gap_index, snap_bias);
+    }
+
     pub fn move_left(&mut self, rope: &Rope, distance: usize) {
         for _ in 1..=distance {
             match rope.get_prev_grapheme_boundary(self.index) {
@@ -66,6 +71,10 @@ impl RawCursor {
         edits.retain_rest(rope);
         edits.apply(rope).unwrap();
         self.index = edits.transform_index(self.index);
+        // If the inserted string combines with existing text, the cursor would be left in the
+        // middle of a new grapheme, so we must snap after inserting.
+        // Makes `insert_changes_grapheme_boundary` test pass.
+        self.snap(rope, Bias::After);
     }
 
     pub fn backspace(&mut self, rope: &mut Rope, count: usize) {
@@ -182,9 +191,7 @@ mod tests {
         assert_eq!(RawCursor::new(&rope, 9, Bias::After).index, 10);
     }
 
-    // TODO: Fix me
     #[test]
-    #[ignore]
     fn insert_changes_grapheme_boundary() {
         let mut rope = Rope::from_str("\u{0301}"); // combining acute accent (´)
         let mut cursor = CursorMut::new(&mut rope, 0, Bias::Before);
