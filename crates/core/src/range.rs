@@ -276,8 +276,10 @@ pub trait RangeExt: AsRangeParts {
 impl<T> RangeExt for T where T: AsRangeParts {}
 
 fn snap_to_gap_before(rope: &Rope, gap_index: usize) -> usize {
-    if gap_index > rope.len_chars() {
-        return rope.len_chars();
+    let last_gap = rope.len_chars();
+
+    if gap_index > last_gap {
+        return last_gap;
     }
 
     if let Ok(true) = rope.try_is_grapheme_boundary(gap_index) {
@@ -292,8 +294,10 @@ fn snap_to_gap_before(rope: &Rope, gap_index: usize) -> usize {
 }
 
 fn snap_to_gap_after(rope: &Rope, gap_index: usize) -> usize {
-    if gap_index > rope.len_chars() {
-        return rope.len_chars();
+    let last_gap = rope.len_chars();
+
+    if gap_index > last_gap {
+        return last_gap;
     }
 
     if let Ok(true) = rope.try_is_grapheme_boundary(gap_index) {
