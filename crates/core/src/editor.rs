@@ -1,6 +1,6 @@
 use crate::{
     mode::{Mode, NormalMode},
-    range::{Range, RangeMut, RawRange},
+    range::{Range, RangeExt as _, RangeMut, RawRange},
     rope::RopeExt as _,
 };
 use camino::Utf8PathBuf;
@@ -42,15 +42,25 @@ impl Editor {
     /// DOES NOT SAVE CHANGES FROM THE RANGE TO THE EDITOR.
     #[must_use]
     pub fn range(&self) -> Range {
-        Range::new(&self.text, self.range.anchor, self.range.head)
-            .expect("Editor range always valid")
+        let range = Range::new(&self.text, self.range.anchor, self.range.head);
+        assert_eq!(
+            (self.range.anchor, self.range.head),
+            (range.anchor(), range.head()),
+            "Editor range was invalid"
+        );
+        range
     }
 
     /// DOES NOT SAVE CHANGES FROM THE RANGE TO THE EDITOR.
     #[must_use]
     pub fn range_mut(&mut self) -> RangeMut {
-        RangeMut::new(&mut self.text, self.range.anchor, self.range.head)
-            .expect("Editor range always valid")
+        let range = RangeMut::new(&mut self.text, self.range.anchor, self.range.head);
+        assert_eq!(
+            (self.range.anchor, self.range.head),
+            (range.anchor(), range.head()),
+            "Editor range was invalid"
+        );
+        range
     }
 
     pub fn with_range<T>(&mut self, func: impl Fn(&mut Range) -> T) -> T {

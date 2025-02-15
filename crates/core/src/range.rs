@@ -25,11 +25,10 @@ pub struct Range<'a> {
 }
 
 impl<'a> Range<'a> {
-    pub fn new(rope: &'a Rope, anchor: usize, head: usize) -> Result<Self, Self> {
-        match new_impl(rope, anchor, head) {
-            Err(range) => Err(Self { rope, range }),
-            Ok(range) => Ok(Self { rope, range }),
-        }
+    #[must_use]
+    pub fn new(rope: &'a Rope, anchor: usize, head: usize) -> Self {
+        let range = new_impl(rope, anchor, head);
+        Self { rope, range }
     }
 
     #[must_use]
@@ -47,11 +46,10 @@ pub struct RangeMut<'a> {
 }
 
 impl<'a> RangeMut<'a> {
-    pub fn new(rope: &'a mut Rope, anchor: usize, head: usize) -> Result<Self, Self> {
-        match new_impl(rope, anchor, head) {
-            Err(range) => Err(Self { rope, range }),
-            Ok(range) => Ok(Self { rope, range }),
-        }
+    #[must_use]
+    pub fn new(rope: &'a mut Rope, anchor: usize, head: usize) -> Self {
+        let range = new_impl(rope, anchor, head);
+        Self { rope, range }
     }
 
     /// Must trade in `RangeMut` for `&mut Rope`. Upholding range invariants depends on coordinating
@@ -117,14 +115,11 @@ impl<'a> RangeMut<'a> {
     // TODO: Add `set_{head, anchor}`?
 }
 
-fn new_impl(rope: &Rope, mut anchor: usize, mut head: usize) -> Result<RawRange, RawRange> {
-    let mut corrected = false;
-
+fn new_impl(rope: &Rope, mut anchor: usize, mut head: usize) -> RawRange {
     // Gap at end of file counts as grapheme boundary
     if let Ok(true) = rope.try_is_grapheme_boundary(anchor) {
         //
     } else {
-        corrected = true;
         anchor = rope.len_chars();
     }
 
@@ -132,15 +127,10 @@ fn new_impl(rope: &Rope, mut anchor: usize, mut head: usize) -> Result<RawRange,
     if let Ok(true) = rope.try_is_grapheme_boundary(head) {
         //
     } else {
-        corrected = true;
         head = rope.len_chars();
     }
 
-    if corrected {
-        Err(RawRange { anchor, head })
-    } else {
-        Ok(RawRange { anchor, head })
-    }
+    RawRange { anchor, head }
 }
 
 trait AsRangeParts {
