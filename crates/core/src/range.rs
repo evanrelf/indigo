@@ -395,8 +395,6 @@ mod tests {
     use super::*;
     use arbtest::arbtest;
 
-    // Adjust budget with `ARBTEST_BUDGET_MS` environment variable
-
     #[test]
     fn snapping() {
         let r = |anchor, head| RawRange { anchor, head };

@@ -164,6 +164,7 @@ impl<'a> CursorMut<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arbtest::arbtest;
 
     #[test]
     fn snapping() {
@@ -179,5 +180,66 @@ mod tests {
         assert_eq!(RawCursor::new(&rope, 10, Bias::After).index, 10);
         assert_eq!(RawCursor::new(&rope, 1, Bias::After).index, 10);
         assert_eq!(RawCursor::new(&rope, 9, Bias::After).index, 10);
+    }
+
+    // TODO: Fix me
+    #[test]
+    #[ignore]
+    fn insert_changes_grapheme_boundary() {
+        let mut rope = Rope::from_str("\u{0301}"); // combining acute accent (´)
+        let mut cursor = CursorMut::new(&mut rope, 0, Bias::Before);
+        cursor.insert("e");
+        let index = cursor.index();
+        assert!(
+            cursor.rope().try_is_grapheme_boundary(index).ok() == Some(true),
+            "cursor not on grapheme boundary\nrope = {rope:?}\nindex = {index}"
+        );
+    }
+
+    #[test]
+    #[ignore]
+    fn fuzz() {
+        arbtest(|u| {
+            let mut rope = Rope::new();
+            let gap_index = u.arbitrary()?;
+            let snap_bias = u.choose(&[Bias::Before, Bias::After])?;
+            let mut cursor = CursorMut::new(&mut rope, gap_index, *snap_bias);
+            let mut actions = Vec::new();
+            for _ in 0..u.choose_index(32)? {
+                match u.choose_index(4)? {
+                    0 => {
+                        let arg = u.choose_index(99)?;
+                        cursor.move_left(arg);
+                        actions.push(format!("move_left({arg})"));
+                    }
+                    1 => {
+                        let arg = u.choose_index(99)?;
+                        cursor.move_right(arg);
+                        actions.push(format!("move_right({arg})"));
+                    }
+                    2 => {
+                        let arg = u.arbitrary()?;
+                        cursor.insert(arg);
+                        actions.push(format!("insert({arg})"));
+                    }
+                    3 => {
+                        let arg = u.choose_index(99)?;
+                        cursor.backspace(arg);
+                        actions.push(format!("backspace({arg})"));
+                    }
+                    _ => break,
+                }
+                let index = cursor.index();
+                let length = cursor.rope.len_chars();
+                let is_grapheme_boundary =
+                    cursor.rope().try_is_grapheme_boundary(index).ok() == Some(true);
+                let is_eof = index == length;
+                assert!(
+                    is_grapheme_boundary || is_eof,
+                    "not a grapheme boundary\nactions = {actions:?}\nindex = {index}\nrope = {rope:?}\nlength = {length}"
+                );
+            }
+            Ok(())
+        });
     }
 }
