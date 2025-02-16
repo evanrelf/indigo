@@ -79,6 +79,8 @@ impl RawCursor {
         // If the inserted string combines with existing text, the cursor would be left in the
         // middle of a new grapheme, so we must snap after inserting.
         // Makes `insert_changes_grapheme_boundary` test pass.
+        // TODO: Eliminate need for explicit snapping, or reduce repetition of snapping in cursor
+        // and range code.
         self.snap(rope, Bias::After);
         edits
     }

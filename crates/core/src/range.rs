@@ -120,7 +120,11 @@ impl RawRange {
     pub fn insert(&mut self, rope: &mut Rope, string: &str) {
         let mut head = RawCursor { index: self.head };
         let edits = head.insert_impl(rope, string);
-        self.anchor = edits.transform_index(self.anchor);
+        let mut anchor = RawCursor {
+            index: edits.transform_index(self.anchor),
+        };
+        anchor.snap(rope, Bias::After);
+        self.anchor = anchor.index;
         self.head = head.index;
     }
 
@@ -409,6 +413,19 @@ mod tests {
         assert_eq!(snap_to_gaps(&rope, 1, 9), r(0, 10));
         assert_eq!(snap_to_gaps(&rope, 42, 42), r(0, 10));
         assert_eq!(snap_to_gaps(&rope, 42, 69), r(0, 10));
+    }
+
+    #[test]
+    fn insert_changes_grapheme_boundary() {
+        let mut rope = Rope::from_str("\u{0301}"); // combining acute accent (´)
+        let mut range = RangeMut::new(&mut rope, 0, 0);
+        range.insert("e");
+        let anchor = range.anchor();
+        let head = range.head();
+        assert!(
+            range.is_valid(),
+            "range not on grapheme boundary\nrope = {rope:?}\nanchor = {anchor}\nhead = {head}"
+        );
     }
 
     #[test]
