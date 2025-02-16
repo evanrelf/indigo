@@ -16,14 +16,14 @@ pub fn enter_insert_mode(editor: &mut Editor) {
 }
 
 pub fn move_left(editor: &mut Editor) {
-    let distance = max(1, editor.mode.count());
-    editor.with_range_mut(|range| range.move_left(distance));
+    let count = max(1, editor.mode.count());
+    editor.with_range_mut(|range| range.move_left(count));
     editor.mode.set_count(0);
 }
 
 pub fn move_right(editor: &mut Editor) {
-    let distance = max(1, editor.mode.count());
-    editor.with_range_mut(|range| range.move_right(distance));
+    let count = max(1, editor.mode.count());
+    editor.with_range_mut(|range| range.move_right(count));
     editor.mode.set_count(0);
 }
 
@@ -32,14 +32,14 @@ pub fn move_to(_editor: &mut Editor, _index: usize) {
 }
 
 pub fn extend_left(editor: &mut Editor) {
-    let distance = max(1, editor.mode.count());
-    editor.with_range_mut(|range| range.extend_left(distance));
+    let count = max(1, editor.mode.count());
+    editor.with_range_mut(|range| range.extend_left(count));
     editor.mode.set_count(0);
 }
 
 pub fn extend_right(editor: &mut Editor) {
-    let distance = max(1, editor.mode.count());
-    editor.with_range_mut(|range| range.extend_right(distance));
+    let count = max(1, editor.mode.count());
+    editor.with_range_mut(|range| range.extend_right(count));
     editor.mode.set_count(0);
 }
 

@@ -86,22 +86,22 @@ impl RawRange {
         self.anchor == self.head
     }
 
-    pub fn move_left(&mut self, rope: &Rope, distance: usize) {
-        self.extend_left(rope, distance);
+    pub fn move_left(&mut self, rope: &Rope, count: usize) {
+        self.extend_left(rope, count);
         self.reduce();
     }
 
-    pub fn move_right(&mut self, rope: &Rope, distance: usize) {
-        self.extend_right(rope, distance);
+    pub fn move_right(&mut self, rope: &Rope, count: usize) {
+        self.extend_right(rope, count);
         self.reduce();
     }
 
-    pub fn extend_left(&mut self, rope: &Rope, distance: usize) {
-        self.head.move_left(rope, distance);
+    pub fn extend_left(&mut self, rope: &Rope, count: usize) {
+        self.head.move_left(rope, count);
     }
 
-    pub fn extend_right(&mut self, rope: &Rope, distance: usize) {
-        self.head.move_right(rope, distance);
+    pub fn extend_right(&mut self, rope: &Rope, count: usize) {
+        self.head.move_right(rope, count);
     }
 
     pub fn flip(&mut self) {
@@ -236,20 +236,20 @@ impl<'a> Range<'a> {
         self.range.is_reduced()
     }
 
-    pub fn move_left(&mut self, distance: usize) {
-        self.range.move_left(self.rope, distance);
+    pub fn move_left(&mut self, count: usize) {
+        self.range.move_left(self.rope, count);
     }
 
-    pub fn move_right(&mut self, distance: usize) {
-        self.range.move_right(self.rope, distance);
+    pub fn move_right(&mut self, count: usize) {
+        self.range.move_right(self.rope, count);
     }
 
-    pub fn extend_left(&mut self, distance: usize) {
-        self.range.extend_left(self.rope, distance);
+    pub fn extend_left(&mut self, count: usize) {
+        self.range.extend_left(self.rope, count);
     }
 
-    pub fn extend_right(&mut self, distance: usize) {
-        self.range.extend_right(self.rope, distance);
+    pub fn extend_right(&mut self, count: usize) {
+        self.range.extend_right(self.rope, count);
     }
 
     pub fn flip(&mut self) {
@@ -345,20 +345,20 @@ impl<'a> RangeMut<'a> {
         self.range.is_reduced()
     }
 
-    pub fn move_left(&mut self, distance: usize) {
-        self.range.move_left(self.rope, distance);
+    pub fn move_left(&mut self, count: usize) {
+        self.range.move_left(self.rope, count);
     }
 
-    pub fn move_right(&mut self, distance: usize) {
-        self.range.move_right(self.rope, distance);
+    pub fn move_right(&mut self, count: usize) {
+        self.range.move_right(self.rope, count);
     }
 
-    pub fn extend_left(&mut self, distance: usize) {
-        self.range.extend_left(self.rope, distance);
+    pub fn extend_left(&mut self, count: usize) {
+        self.range.extend_left(self.rope, count);
     }
 
-    pub fn extend_right(&mut self, distance: usize) {
-        self.range.extend_right(self.rope, distance);
+    pub fn extend_right(&mut self, count: usize) {
+        self.range.extend_right(self.rope, count);
     }
 
     pub fn flip(&mut self) {

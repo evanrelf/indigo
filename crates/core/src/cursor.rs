@@ -29,8 +29,8 @@ impl RawCursor {
         self.gap_index == rope.len_chars()
     }
 
-    pub fn move_left(&mut self, rope: &Rope, distance: usize) {
-        for _ in 1..=distance {
+    pub fn move_left(&mut self, rope: &Rope, count: usize) {
+        for _ in 1..=count {
             match rope.get_prev_grapheme_boundary(self.gap_index) {
                 Ok(prev) if self.gap_index != prev => self.gap_index = prev,
                 _ => break,
@@ -38,8 +38,8 @@ impl RawCursor {
         }
     }
 
-    pub fn move_right(&mut self, rope: &Rope, distance: usize) {
-        for _ in 1..=distance {
+    pub fn move_right(&mut self, rope: &Rope, count: usize) {
+        for _ in 1..=count {
             match rope.get_next_grapheme_boundary(self.gap_index) {
                 Ok(next) if self.gap_index != next => self.gap_index = next,
                 _ => break,
@@ -148,12 +148,12 @@ impl<'a> Cursor<'a> {
         self.cursor.is_eof(self.rope)
     }
 
-    pub fn move_left(&mut self, distance: usize) {
-        self.cursor.move_left(self.rope, distance);
+    pub fn move_left(&mut self, count: usize) {
+        self.cursor.move_left(self.rope, count);
     }
 
-    pub fn move_right(&mut self, distance: usize) {
-        self.cursor.move_right(self.rope, distance);
+    pub fn move_right(&mut self, count: usize) {
+        self.cursor.move_right(self.rope, count);
     }
 
     pub(crate) fn is_valid(&self) -> bool {
@@ -188,12 +188,12 @@ impl<'a> CursorMut<'a> {
         self.cursor.is_eof(self.rope)
     }
 
-    pub fn move_left(&mut self, distance: usize) {
-        self.cursor.move_left(self.rope, distance);
+    pub fn move_left(&mut self, count: usize) {
+        self.cursor.move_left(self.rope, count);
     }
 
-    pub fn move_right(&mut self, distance: usize) {
-        self.cursor.move_right(self.rope, distance);
+    pub fn move_right(&mut self, count: usize) {
+        self.cursor.move_right(self.rope, count);
     }
 
     pub fn insert_char(&mut self, char: char) {
