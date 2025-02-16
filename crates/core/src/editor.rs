@@ -24,9 +24,10 @@ impl Editor {
         } else {
             Rope::new()
         };
+        let range = RawRange::new(&rope, 0, 0);
         Ok(Self {
             rope,
-            range: RawRange::default(),
+            range,
             mode: Mode::Normal(NormalMode { count: 0 }),
             height: 0,
             vertical_scroll: 0,
