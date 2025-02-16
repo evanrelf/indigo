@@ -70,7 +70,7 @@ impl Areas {
         .split(area);
 
         let line_numbers_width = {
-            let n = editor.text().len_lines_indigo();
+            let n = editor.rope().len_lines_indigo();
             let digits = 1 + max(1, n).ilog10();
             u16::try_from(max(2, digits) + 1)
                 .expect("Line number width should always be very small")
@@ -117,7 +117,7 @@ fn render_navigation_bar(_editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let total_lines = editor.text().len_lines_indigo();
+    let total_lines = editor.rope().len_lines_indigo();
 
     for (i, row) in area.rows().enumerate() {
         let line_number = i + editor.vertical_scroll() + 1;
@@ -133,7 +133,7 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_tildes(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let total_lines = editor.text().len_lines_indigo();
+    let total_lines = editor.rope().len_lines_indigo();
 
     for (i, row) in area.rows().enumerate() {
         let line_number = i + editor.vertical_scroll() + 1;
@@ -155,7 +155,7 @@ fn render_tildes(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let lines = editor.text().lines_at(editor.vertical_scroll());
+    let lines = editor.rope().lines_at(editor.vertical_scroll());
 
     let rows = area.rows();
 
@@ -196,7 +196,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
     let range = editor.range();
 
     let cursor_area =
-        |index: usize| char_index_to_area(index, editor.text(), editor.vertical_scroll(), area);
+        |index: usize| char_index_to_area(index, editor.rope(), editor.vertical_scroll(), area);
 
     let light_yellow = Color::Rgb(0xff, 0xf5, 0xb1);
     let dark_yellow = Color::Rgb(0xd7, 0x3a, 0x4a);
@@ -210,7 +210,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 
     if let Some(head_rect) = cursor_area(range.head.gap_index) {
-        let eof = range.head.gap_index == editor.text().len_chars();
+        let eof = range.head.gap_index == editor.rope().len_chars();
         let head_style = if eof {
             Style::default().bg(dark_yellow)
         } else {
@@ -311,7 +311,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let count = editor.mode.count();
 
-    let eof = editor.range().head.gap_index == editor.text().len_chars();
+    let eof = editor.range().head.gap_index == editor.rope().len_chars();
 
     let status_bar = format!("[{start}, {end}] mode={mode} count={count} eof={eof}");
 
@@ -381,7 +381,7 @@ fn handle_event_normal(
                 };
                 if let Some(Err(index) | Ok(index)) = position_to_char_index(
                     position,
-                    editor.text(),
+                    editor.rope(),
                     editor.vertical_scroll(),
                     areas.text,
                 ) {
@@ -395,7 +395,7 @@ fn handle_event_normal(
                 };
                 if let Some(Err(index) | Ok(index)) = position_to_char_index(
                     position,
-                    editor.text(),
+                    editor.rope(),
                     editor.vertical_scroll(),
                     areas.text,
                 ) {

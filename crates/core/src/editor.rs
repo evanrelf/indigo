@@ -8,7 +8,7 @@ use ropey::Rope;
 use std::{cmp::min, fs::File, io::BufReader};
 
 pub struct Editor {
-    text: Rope,
+    rope: Rope,
     range: RawRange,
     pub mode: Mode,
     pub height: usize,
@@ -25,7 +25,7 @@ impl Editor {
             Rope::new()
         };
         Ok(Self {
-            text: rope,
+            rope,
             range: RawRange::default(),
             mode: Mode::Normal(NormalMode { count: 0 }),
             height: 0,
@@ -35,8 +35,8 @@ impl Editor {
     }
 
     #[must_use]
-    pub fn text(&self) -> &Rope {
-        &self.text
+    pub fn rope(&self) -> &Rope {
+        &self.rope
     }
 
     #[must_use]
@@ -46,7 +46,7 @@ impl Editor {
 
     pub fn with_range<T>(&mut self, func: impl Fn(&mut Range) -> T) -> T {
         let mut range = Range::new(
-            &self.text,
+            &self.rope,
             self.range.anchor.gap_index,
             self.range.head.gap_index,
         );
@@ -59,7 +59,7 @@ impl Editor {
 
     pub fn with_range_mut<T>(&mut self, func: impl Fn(&mut RangeMut) -> T) -> T {
         let mut range = RangeMut::new(
-            &mut self.text,
+            &mut self.rope,
             self.range.anchor.gap_index,
             self.range.head.gap_index,
         );
@@ -76,7 +76,7 @@ impl Editor {
     }
 
     pub fn scroll_to(&mut self, line: usize) {
-        let last_line = self.text().len_lines_indigo().saturating_sub(1);
+        let last_line = self.rope().len_lines_indigo().saturating_sub(1);
         self.vertical_scroll = min(line, last_line);
     }
 }
