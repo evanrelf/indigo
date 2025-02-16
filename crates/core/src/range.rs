@@ -3,7 +3,7 @@ use crate::{
     ot::EditSeq,
     rope::RopeExt as _,
 };
-use ropey::Rope;
+use ropey::{Rope, RopeSlice};
 use std::cmp::{max, min};
 
 // TODO: It's a GAP index! If anchor == head, then the width is 0! This should only be legal at EOF.
@@ -42,6 +42,11 @@ impl RawRange {
         }
 
         Self { anchor, head }
+    }
+
+    #[must_use]
+    pub fn rope_slice<'a>(&self, rope: &'a Rope) -> RopeSlice<'a> {
+        rope.slice(self.start()..=self.end())
     }
 
     // TODO: Return `RawCursor`s
@@ -182,6 +187,16 @@ impl<'a> Range<'a> {
     }
 
     #[must_use]
+    pub fn rope(self) -> &'a Rope {
+        self.rope
+    }
+
+    #[must_use]
+    pub fn rope_slice(self) -> RopeSlice<'a> {
+        self.range.rope_slice(self.rope)
+    }
+
+    #[must_use]
     pub(crate) fn into_raw(self) -> RawRange {
         self.range
     }
@@ -273,11 +288,21 @@ impl<'a> RangeMut<'a> {
         Self { rope, range }
     }
 
+    #[must_use]
+    pub fn rope(self) -> &'a Rope {
+        self.rope
+    }
+
     /// Must trade in `RangeMut` for `&mut Rope`. Upholding range invariants depends on coordinating
     /// rope and state mutations.
     #[must_use]
     pub fn into_rope_mut(self) -> &'a mut Rope {
         self.rope
+    }
+
+    #[must_use]
+    pub fn rope_slice(self) -> RopeSlice<'a> {
+        self.range.rope_slice(self.rope)
     }
 
     #[must_use]
