@@ -118,21 +118,25 @@ impl RawRange {
     }
 
     pub fn insert(&mut self, rope: &mut Rope, string: &str) {
-        let mut head = RawCursor { index: self.head };
+        let mut head = RawCursor {
+            gap_index: self.head,
+        };
         let edits = head.insert_impl(rope, string);
         let mut anchor = RawCursor {
-            index: edits.transform_index(self.anchor),
+            gap_index: edits.transform_index(self.anchor),
         };
         anchor.snap(rope, Bias::After);
-        self.anchor = anchor.index;
-        self.head = head.index;
+        self.anchor = anchor.gap_index;
+        self.head = head.gap_index;
     }
 
     pub fn delete_before(&mut self, rope: &mut Rope, count: usize) {
-        let mut head = RawCursor { index: self.head };
+        let mut head = RawCursor {
+            gap_index: self.head,
+        };
         let edits = head.delete_before_impl(rope, count);
         self.anchor = edits.transform_index(self.anchor);
-        self.head = head.index;
+        self.head = head.gap_index;
     }
 
     // TODO: Add grapheme awareness
@@ -155,15 +159,21 @@ impl RawRange {
     }
 
     pub fn delete_after(&mut self, rope: &mut Rope, count: usize) {
-        let mut head = RawCursor { index: self.head };
+        let mut head = RawCursor {
+            gap_index: self.head,
+        };
         let edits = head.delete_after_impl(rope, count);
         self.anchor = edits.transform_index(self.anchor);
-        self.head = head.index;
+        self.head = head.gap_index;
     }
 
     pub(crate) fn is_valid(&self, rope: &Rope) -> bool {
-        let anchor = RawCursor { index: self.anchor };
-        let head = RawCursor { index: self.head };
+        let anchor = RawCursor {
+            gap_index: self.anchor,
+        };
+        let head = RawCursor {
+            gap_index: self.head,
+        };
         anchor.is_valid(rope) && head.is_valid(rope)
     }
 }
@@ -386,12 +396,12 @@ fn snap_to_gaps(rope: &Rope, mut anchor: usize, mut head: usize) -> RawRange {
 
     match anchor.cmp(&head) {
         Ordering::Less | Ordering::Equal => {
-            anchor = RawCursor::new(rope, anchor, Bias::Before).index;
-            head = RawCursor::new(rope, head, Bias::After).index;
+            anchor = RawCursor::new(rope, anchor, Bias::Before).gap_index;
+            head = RawCursor::new(rope, head, Bias::After).gap_index;
         }
         Ordering::Greater => {
-            head = RawCursor::new(rope, head, Bias::Before).index;
-            anchor = RawCursor::new(rope, anchor, Bias::After).index;
+            head = RawCursor::new(rope, head, Bias::Before).gap_index;
+            anchor = RawCursor::new(rope, anchor, Bias::After).gap_index;
         }
     }
 

@@ -9,7 +9,7 @@ pub enum Bias {
 
 #[derive(Debug, PartialEq)]
 pub struct RawCursor {
-    pub index: usize, // char gap index
+    pub gap_index: usize, // char gap index
 }
 
 impl RawCursor {
@@ -18,11 +18,13 @@ impl RawCursor {
         let last_gap = rope.len_chars();
 
         if gap_index > last_gap {
-            return Self { index: last_gap };
+            return Self {
+                gap_index: last_gap,
+            };
         }
 
         if let Ok(true) = rope.try_is_grapheme_boundary(gap_index) {
-            return Self { index: gap_index };
+            return Self { gap_index };
         }
 
         let snapped = match snap_bias {
@@ -31,26 +33,25 @@ impl RawCursor {
         };
 
         if let Ok(gap_index) = snapped {
-            return Self { index: gap_index };
+            return Self { gap_index };
         }
 
         unreachable!()
     }
 
     pub(crate) fn snap(&mut self, rope: &Rope, snap_bias: Bias) {
-        let gap_index = self.index;
-        *self = Self::new(rope, gap_index, snap_bias);
+        *self = Self::new(rope, self.gap_index, snap_bias);
     }
 
     #[must_use]
     pub fn is_eof(&self, rope: &Rope) -> bool {
-        self.index == rope.len_chars()
+        self.gap_index == rope.len_chars()
     }
 
     pub fn move_left(&mut self, rope: &Rope, distance: usize) {
         for _ in 1..=distance {
-            match rope.get_prev_grapheme_boundary(self.index) {
-                Ok(index) if self.index != index => self.index = index,
+            match rope.get_prev_grapheme_boundary(self.gap_index) {
+                Ok(prev) if self.gap_index != prev => self.gap_index = prev,
                 _ => break,
             }
         }
@@ -58,8 +59,8 @@ impl RawCursor {
 
     pub fn move_right(&mut self, rope: &Rope, distance: usize) {
         for _ in 1..=distance {
-            match rope.get_next_grapheme_boundary(self.index) {
-                Ok(index) if self.index != index => self.index = index,
+            match rope.get_next_grapheme_boundary(self.gap_index) {
+                Ok(next) if self.gap_index != next => self.gap_index = next,
                 _ => break,
             }
         }
@@ -76,11 +77,11 @@ impl RawCursor {
     #[must_use]
     pub(crate) fn insert_impl(&mut self, rope: &mut Rope, string: &str) -> EditSeq {
         let mut edits = EditSeq::new();
-        edits.retain(self.index);
+        edits.retain(self.gap_index);
         edits.insert(string);
         edits.retain_rest(rope);
         edits.apply(rope).unwrap();
-        self.index = edits.transform_index(self.index);
+        self.gap_index = edits.transform_index(self.gap_index);
         // If the inserted string combines with existing text, the cursor would be left in the
         // middle of a new grapheme, so we must snap after inserting.
         // Makes `insert_changes_grapheme_boundary` test pass.
@@ -96,19 +97,19 @@ impl RawCursor {
 
     #[must_use]
     pub(crate) fn delete_before_impl(&mut self, rope: &mut Rope, count: usize) -> EditSeq {
-        let mut index = self.index;
+        let mut gap_index = self.gap_index;
         for _ in 1..=count {
-            match rope.get_prev_grapheme_boundary(index) {
-                Ok(prev) if index != prev => index = prev,
+            match rope.get_prev_grapheme_boundary(gap_index) {
+                Ok(prev) if gap_index != prev => gap_index = prev,
                 _ => break,
             }
         }
         let mut edits = EditSeq::new();
-        edits.retain(index);
-        edits.delete(self.index - index);
+        edits.retain(gap_index);
+        edits.delete(self.gap_index - gap_index);
         edits.retain_rest(rope);
         edits.apply(rope).unwrap();
-        self.index = edits.transform_index(self.index);
+        self.gap_index = edits.transform_index(self.gap_index);
         edits
     }
 
@@ -118,24 +119,24 @@ impl RawCursor {
 
     #[must_use]
     pub(crate) fn delete_after_impl(&mut self, rope: &mut Rope, count: usize) -> EditSeq {
-        let mut index = self.index;
+        let mut gap_index = self.gap_index;
         for _ in 1..=count {
-            match rope.get_next_grapheme_boundary(index) {
-                Ok(prev) if index != prev => index = prev,
+            match rope.get_next_grapheme_boundary(gap_index) {
+                Ok(next) if gap_index != next => gap_index = next,
                 _ => break,
             }
         }
         let mut edits = EditSeq::new();
-        edits.retain(self.index);
-        edits.delete(index - self.index);
+        edits.retain(self.gap_index);
+        edits.delete(gap_index - self.gap_index);
         edits.retain_rest(rope);
         edits.apply(rope).unwrap();
-        self.index = edits.transform_index(self.index);
+        self.gap_index = edits.transform_index(self.gap_index);
         edits
     }
 
     pub(crate) fn is_valid(&self, rope: &Rope) -> bool {
-        rope.try_is_grapheme_boundary(self.index).ok() == Some(true)
+        rope.try_is_grapheme_boundary(self.gap_index).ok() == Some(true)
     }
 }
 
@@ -157,8 +158,8 @@ impl<'a> Cursor<'a> {
     }
 
     #[must_use]
-    pub fn index(&self) -> usize {
-        self.cursor.index
+    pub fn gap_index(&self) -> usize {
+        self.cursor.gap_index
     }
 
     #[must_use]
@@ -197,8 +198,8 @@ impl<'a> CursorMut<'a> {
     }
 
     #[must_use]
-    pub fn index(&self) -> usize {
-        self.cursor.index
+    pub fn gap_index(&self) -> usize {
+        self.cursor.gap_index
     }
 
     #[must_use]
@@ -243,17 +244,17 @@ mod tests {
     #[test]
     fn snapping() {
         let rope = Rope::new();
-        assert_eq!(RawCursor::new(&rope, 42, Bias::Before).index, 0);
-        assert_eq!(RawCursor::new(&rope, 42, Bias::After).index, 0);
+        assert_eq!(RawCursor::new(&rope, 42, Bias::Before).gap_index, 0);
+        assert_eq!(RawCursor::new(&rope, 42, Bias::After).gap_index, 0);
         let rope = Rope::from_str("👨🏻‍❤️‍💋‍👨🏻");
-        assert_eq!(RawCursor::new(&rope, 0, Bias::Before).index, 0);
-        assert_eq!(RawCursor::new(&rope, 10, Bias::Before).index, 10);
-        assert_eq!(RawCursor::new(&rope, 1, Bias::Before).index, 0);
-        assert_eq!(RawCursor::new(&rope, 9, Bias::Before).index, 0);
-        assert_eq!(RawCursor::new(&rope, 0, Bias::After).index, 0);
-        assert_eq!(RawCursor::new(&rope, 10, Bias::After).index, 10);
-        assert_eq!(RawCursor::new(&rope, 1, Bias::After).index, 10);
-        assert_eq!(RawCursor::new(&rope, 9, Bias::After).index, 10);
+        assert_eq!(RawCursor::new(&rope, 0, Bias::Before).gap_index, 0);
+        assert_eq!(RawCursor::new(&rope, 10, Bias::Before).gap_index, 10);
+        assert_eq!(RawCursor::new(&rope, 1, Bias::Before).gap_index, 0);
+        assert_eq!(RawCursor::new(&rope, 9, Bias::Before).gap_index, 0);
+        assert_eq!(RawCursor::new(&rope, 0, Bias::After).gap_index, 0);
+        assert_eq!(RawCursor::new(&rope, 10, Bias::After).gap_index, 10);
+        assert_eq!(RawCursor::new(&rope, 1, Bias::After).gap_index, 10);
+        assert_eq!(RawCursor::new(&rope, 9, Bias::After).gap_index, 10);
     }
 
     #[test]
@@ -261,10 +262,10 @@ mod tests {
         let mut rope = Rope::from_str("\u{0301}"); // combining acute accent (´)
         let mut cursor = CursorMut::new(&mut rope, 0, Bias::Before);
         cursor.insert("e");
-        let index = cursor.index();
+        let gap_index = cursor.gap_index();
         assert!(
             cursor.is_valid(),
-            "cursor not on grapheme boundary\nrope = {rope:?}\nindex = {index}"
+            "cursor not on grapheme boundary\nrope = {rope:?}\ngap_index = {gap_index}"
         );
     }
 
@@ -302,11 +303,11 @@ mod tests {
                     _ => break,
                 }
                 let actions = actions.join("\n  ");
-                let index = cursor.index();
+                let gap_index = cursor.gap_index();
                 let length = cursor.rope.len_chars();
                 assert!(
                     cursor.is_valid(),
-                    "not a grapheme boundary\nactions =\n  {actions}\nindex = {index}\nrope = {rope:?}\nlength = {length}"
+                    "not a grapheme boundary\nactions =\n  {actions}\ngap_index = {gap_index}\nrope = {rope:?}\nlength = {length}"
                 );
             }
             Ok(())
