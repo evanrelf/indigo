@@ -112,3 +112,9 @@ pub fn delete(editor: &mut Editor) {
     editor.with_range_mut(|range| range.delete());
     editor.mode.set_count(0);
 }
+
+pub fn delete_after(editor: &mut Editor) {
+    let count = max(1, editor.mode.count());
+    editor.with_range_mut(|range| range.delete_after(count));
+    editor.mode.set_count(0);
+}

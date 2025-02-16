@@ -154,6 +154,13 @@ impl RawRange {
         self.head = self.start();
     }
 
+    pub fn delete_after(&mut self, rope: &mut Rope, count: usize) {
+        let mut head = RawCursor { index: self.head };
+        let edits = head.delete_after_impl(rope, count);
+        self.anchor = edits.transform_index(self.anchor);
+        self.head = head.index;
+    }
+
     pub(crate) fn is_valid(&self, rope: &Rope) -> bool {
         let anchor = RawCursor { index: self.anchor };
         let head = RawCursor { index: self.head };
@@ -359,6 +366,10 @@ impl<'a> RangeMut<'a> {
 
     pub fn delete(&mut self) {
         self.range.delete(self.rope);
+    }
+
+    pub fn delete_after(&mut self, count: usize) {
+        self.range.delete_after(self.rope, count);
     }
 
     pub(crate) fn is_valid(&self) -> bool {

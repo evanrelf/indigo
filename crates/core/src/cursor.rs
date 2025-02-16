@@ -107,6 +107,28 @@ impl RawCursor {
         edits
     }
 
+    pub fn delete_after(&mut self, rope: &mut Rope, count: usize) {
+        let _ = self.delete_after_impl(rope, count);
+    }
+
+    #[must_use]
+    pub(crate) fn delete_after_impl(&mut self, rope: &mut Rope, count: usize) -> EditSeq {
+        let mut index = self.index;
+        for _ in 1..=count {
+            match rope.get_next_grapheme_boundary(index) {
+                Ok(prev) if index != prev => index = prev,
+                _ => break,
+            }
+        }
+        let mut edits = EditSeq::new();
+        edits.retain(self.index);
+        edits.delete(index - self.index);
+        edits.retain_rest(rope);
+        edits.apply(rope).unwrap();
+        self.index = edits.transform_index(self.index);
+        edits
+    }
+
     pub(crate) fn is_valid(&self, rope: &Rope) -> bool {
         rope.try_is_grapheme_boundary(self.index).ok() == Some(true)
     }
@@ -187,6 +209,10 @@ impl<'a> CursorMut<'a> {
 
     pub fn delete_before(&mut self, count: usize) {
         self.cursor.delete_before(self.rope, count);
+    }
+
+    pub fn delete_after(&mut self, count: usize) {
+        self.cursor.delete_after(self.rope, count);
     }
 
     pub(crate) fn is_valid(&self) -> bool {
