@@ -199,24 +199,23 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
         |index: usize| char_index_to_area(index, editor.rope(), editor.vertical_scroll(), area);
 
     let light_yellow = Color::Rgb(0xff, 0xf5, 0xb1);
-    let dark_yellow = Color::Rgb(0xd7, 0x3a, 0x4a);
-    let red = Color::Rgb(0xff, 0xd3, 0x3d);
+    let dark_yellow = Color::Rgb(0xff, 0xd3, 0x3d);
+    let red = Color::Rgb(0xd7, 0x3a, 0x4a);
+    let head_color = if range.head.is_eof(editor.rope()) {
+        red
+    } else {
+        dark_yellow
+    };
 
     for index in range.start()..=range.end() {
         if let Some(rect) = cursor_area(index) {
-            let style = Style::default().bg(light_yellow);
-            surface.set_style(rect, style);
+            let color = if index == range.head() {
+                head_color
+            } else {
+                light_yellow
+            };
+            surface.set_style(rect, Style::default().bg(color));
         }
-    }
-
-    if let Some(head_rect) = cursor_area(range.head.gap_index) {
-        let eof = range.head.gap_index == editor.rope().len_chars();
-        let head_style = if eof {
-            Style::default().bg(dark_yellow)
-        } else {
-            Style::default().bg(red)
-        };
-        surface.set_style(head_rect, head_style);
     }
 }
 
