@@ -39,40 +39,25 @@ impl Editor {
         &self.text
     }
 
-    /// DOES NOT SAVE CHANGES FROM THE RANGE TO THE EDITOR.
     #[must_use]
-    pub fn range(&self) -> Range {
-        let range = Range::new(&self.text, self.range.anchor, self.range.head);
-        assert_eq!(
-            (self.range.anchor, self.range.head),
-            (range.anchor(), range.head()),
-            "Editor range was invalid"
-        );
-        range
-    }
-
-    /// DOES NOT SAVE CHANGES FROM THE RANGE TO THE EDITOR.
-    #[must_use]
-    pub fn range_mut(&mut self) -> RangeMut {
-        let range = RangeMut::new(&mut self.text, self.range.anchor, self.range.head);
-        assert_eq!(
-            (self.range.anchor, self.range.head),
-            (range.anchor(), range.head()),
-            "Editor range was invalid"
-        );
-        range
+    pub fn range(&self) -> &RawRange {
+        &self.range
     }
 
     pub fn with_range<T>(&mut self, func: impl Fn(&mut Range) -> T) -> T {
-        let mut range = self.range();
+        let mut range = Range::new(&self.text, self.range.anchor, self.range.head);
+        assert!(range.is_valid(), "Editor range was invalid");
         let result = func(&mut range);
+        assert!(range.is_valid(), "Editor range was made invalid");
         self.range = range.into_raw();
         result
     }
 
     pub fn with_range_mut<T>(&mut self, func: impl Fn(&mut RangeMut) -> T) -> T {
-        let mut range = self.range_mut();
+        let mut range = RangeMut::new(&mut self.text, self.range.anchor, self.range.head);
+        assert!(range.is_valid(), "Editor range was invalid");
         let result = func(&mut range);
+        assert!(range.is_valid(), "Editor range was made invalid");
         self.range = range.into_raw();
         result
     }

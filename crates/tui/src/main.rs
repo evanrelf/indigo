@@ -209,8 +209,8 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
         }
     }
 
-    if let Some(head_rect) = cursor_area(range.head()) {
-        let eof = range.head() == editor.text().len_chars();
+    if let Some(head_rect) = cursor_area(range.head) {
+        let eof = range.head == editor.text().len_chars();
         let head_style = if eof {
             Style::default().bg(dark_yellow)
         } else {
@@ -311,7 +311,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let count = editor.mode.count();
 
-    let eof = editor.range().head() == editor.text().len_chars();
+    let eof = editor.range().head == editor.text().len_chars();
 
     let status_bar = format!("[{start}, {end}] mode={mode} count={count} eof={eof}");
 
