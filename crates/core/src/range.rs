@@ -1,5 +1,5 @@
 use crate::{
-    cursor::{Bias, RawCursor},
+    cursor::{snap, Bias, RawCursor},
     ot::EditSeq,
     rope::RopeExt as _,
 };
@@ -127,8 +127,11 @@ impl RawRange {
 
     pub fn insert(&mut self, rope: &mut Rope, string: &str) {
         let edits = self.head.insert_impl(rope, string);
-        self.anchor.gap_index = edits.transform_index(self.anchor.gap_index);
-        self.anchor.snap(rope, Bias::After);
+        self.anchor.gap_index = snap(
+            rope,
+            edits.transform_index(self.anchor.gap_index),
+            Bias::After,
+        );
     }
 
     pub fn delete_before(&mut self, rope: &mut Rope, count: usize) {

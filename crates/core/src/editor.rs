@@ -45,17 +45,14 @@ impl Editor {
         &self.range
     }
 
-    pub fn with_range<T>(&mut self, func: impl Fn(&mut Range) -> T) -> T {
-        let mut range = Range::new(
+    pub fn with_range<T>(&self, func: impl Fn(&Range) -> T) -> T {
+        let range = Range::new(
             &self.rope,
             self.range.anchor.gap_index,
             self.range.head.gap_index,
         );
         assert!(range.is_valid(), "Editor range was invalid");
-        let result = func(&mut range);
-        assert!(range.is_valid(), "Editor range was made invalid");
-        self.range = range.into_raw();
-        result
+        func(&range)
     }
 
     pub fn with_range_mut<T>(&mut self, func: impl Fn(&mut RangeMut) -> T) -> T {
