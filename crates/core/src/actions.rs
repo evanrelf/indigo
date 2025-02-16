@@ -1,5 +1,3 @@
-#![expect(clippy::redundant_closure_for_method_calls)]
-
 use crate::{
     editor::Editor,
     mode::{Mode, NormalMode},

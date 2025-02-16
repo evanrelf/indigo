@@ -27,6 +27,7 @@ clippy.bool_to_int_with_if = "allow"
 clippy.missing_errors_doc = "allow"
 clippy.missing_panics_doc = "allow"
 clippy.module_name_repetitions = "allow"
+clippy.redundant_closure_for_method_calls = "allow"
 clippy.pedantic = { level = "warn", priority = -1 }
 clippy.use_self = "warn"
 rust.dead_code = "allow" # TODO: Remove
