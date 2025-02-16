@@ -300,9 +300,9 @@ fn position_to_char_index(
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let start = editor.range().start();
+    let anchor = editor.range().anchor();
 
-    let end = editor.range().end();
+    let head = editor.range().head();
 
     let mode = match editor.mode {
         Mode::Normal { .. } => "normal",
@@ -313,7 +313,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let eof = editor.range().head() == editor.rope().len_chars();
 
-    let status_bar = format!("[{start}, {end}] mode={mode} count={count} eof={eof}");
+    let status_bar = format!("anchor={anchor} head={head} mode={mode} count={count} eof={eof}");
 
     Line::raw(status_bar).render(area, surface);
 }
