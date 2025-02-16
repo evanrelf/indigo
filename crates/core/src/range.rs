@@ -4,35 +4,41 @@ use crate::{
     rope::RopeExt as _,
 };
 use ropey::Rope;
-use std::cmp::{max, min, Ordering};
+use std::cmp::{max, min};
 
 // TODO: It's a GAP index! If anchor == head, then the width is 0! This should only be legal at EOF.
 // Gap index is the right way to go, don't back out on that, just make it work.
-// TODO: Implement `Clone` and `Copy` for all the types in this module?
 
 // Fields should be public because there are no invariants to enforce. Correctness is only
 // meaningful relative to a rope, which this type does not control.
-#[derive(Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct RawRange {
-    pub anchor: usize, // char gap index
-    pub head: usize,   // char gap index
+    pub anchor: RawCursor,
+    pub head: RawCursor,
 }
 
 impl RawRange {
     #[must_use]
-    pub fn new(rope: &Rope, mut anchor: usize, mut head: usize) -> Self {
+    pub fn new(rope: &Rope, anchor_gap_index: usize, head_gap_index: usize) -> Self {
+        let mut anchor = RawCursor {
+            gap_index: anchor_gap_index,
+        };
+        let mut head = RawCursor {
+            gap_index: head_gap_index,
+        };
+
         // Gap at end of file counts as grapheme boundary
-        if let Ok(true) = rope.try_is_grapheme_boundary(anchor) {
+        if let Ok(true) = rope.try_is_grapheme_boundary(anchor.gap_index) {
             //
         } else {
-            anchor = rope.len_chars();
+            anchor.gap_index = rope.len_chars();
         }
 
         // Gap at end of file counts as grapheme boundary
-        if let Ok(true) = rope.try_is_grapheme_boundary(head) {
+        if let Ok(true) = rope.try_is_grapheme_boundary(head.gap_index) {
             //
         } else {
-            head = rope.len_chars();
+            head.gap_index = rope.len_chars();
         }
 
         Self { anchor, head }
@@ -40,12 +46,12 @@ impl RawRange {
 
     #[must_use]
     pub fn start(&self) -> usize {
-        min(self.anchor, self.head)
+        min(self.anchor.gap_index, self.head.gap_index)
     }
 
     #[must_use]
     pub fn end(&self) -> usize {
-        max(self.anchor, self.head)
+        max(self.anchor.gap_index, self.head.gap_index)
     }
 
     #[must_use]
@@ -75,8 +81,8 @@ impl RawRange {
 
     pub fn extend_left(&mut self, rope: &Rope, distance: usize) {
         for _ in 1..=distance {
-            match rope.get_prev_grapheme_boundary(self.head) {
-                Ok(head) if self.head != head => self.head = head,
+            match rope.get_prev_grapheme_boundary(self.head.gap_index) {
+                Ok(prev) if self.head.gap_index != prev => self.head.gap_index = prev,
                 _ => break,
             }
         }
@@ -84,8 +90,8 @@ impl RawRange {
 
     pub fn extend_right(&mut self, rope: &Rope, distance: usize) {
         for _ in 1..=distance {
-            match rope.get_next_grapheme_boundary(self.head) {
-                Ok(head) if self.head != head => self.head = head,
+            match rope.get_next_grapheme_boundary(self.head.gap_index) {
+                Ok(next) if self.head.gap_index != next => self.head.gap_index = next,
                 _ => break,
             }
         }
@@ -110,7 +116,7 @@ impl RawRange {
     }
 
     pub fn reduce(&mut self) {
-        self.anchor = self.head;
+        self.anchor.gap_index = self.head.gap_index;
     }
 
     pub fn insert_char(&mut self, rope: &mut Rope, char: char) {
@@ -118,25 +124,14 @@ impl RawRange {
     }
 
     pub fn insert(&mut self, rope: &mut Rope, string: &str) {
-        let mut head = RawCursor {
-            gap_index: self.head,
-        };
-        let edits = head.insert_impl(rope, string);
-        let mut anchor = RawCursor {
-            gap_index: edits.transform_index(self.anchor),
-        };
-        anchor.snap(rope, Bias::After);
-        self.anchor = anchor.gap_index;
-        self.head = head.gap_index;
+        let edits = self.head.insert_impl(rope, string);
+        self.anchor.gap_index = edits.transform_index(self.anchor.gap_index);
+        self.anchor.snap(rope, Bias::After);
     }
 
     pub fn delete_before(&mut self, rope: &mut Rope, count: usize) {
-        let mut head = RawCursor {
-            gap_index: self.head,
-        };
-        let edits = head.delete_before_impl(rope, count);
-        self.anchor = edits.transform_index(self.anchor);
-        self.head = head.gap_index;
+        let edits = self.head.delete_before_impl(rope, count);
+        self.anchor.gap_index = edits.transform_index(self.anchor.gap_index);
     }
 
     // TODO: Add grapheme awareness
@@ -154,27 +149,17 @@ impl RawRange {
         edits.delete((self.end() - self.start()) + 1);
         edits.retain_rest(rope);
         edits.apply(rope).unwrap();
-        self.anchor = self.start();
-        self.head = self.start();
+        self.anchor.gap_index = self.start();
+        self.head.gap_index = self.start();
     }
 
     pub fn delete_after(&mut self, rope: &mut Rope, count: usize) {
-        let mut head = RawCursor {
-            gap_index: self.head,
-        };
-        let edits = head.delete_after_impl(rope, count);
-        self.anchor = edits.transform_index(self.anchor);
-        self.head = head.gap_index;
+        let edits = self.head.delete_after_impl(rope, count);
+        self.anchor.gap_index = edits.transform_index(self.anchor.gap_index);
     }
 
     pub(crate) fn is_valid(&self, rope: &Rope) -> bool {
-        let anchor = RawCursor {
-            gap_index: self.anchor,
-        };
-        let head = RawCursor {
-            gap_index: self.head,
-        };
-        anchor.is_valid(rope) && head.is_valid(rope)
+        self.anchor.is_valid(rope) && self.head.is_valid(rope)
     }
 }
 
@@ -186,8 +171,8 @@ pub struct Range<'a> {
 
 impl<'a> Range<'a> {
     #[must_use]
-    pub fn new(rope: &'a Rope, anchor: usize, head: usize) -> Self {
-        let range = RawRange::new(rope, anchor, head);
+    pub fn new(rope: &'a Rope, anchor_gap_index: usize, head_gap_index: usize) -> Self {
+        let range = RawRange::new(rope, anchor_gap_index, head_gap_index);
         Self { rope, range }
     }
 
@@ -198,12 +183,12 @@ impl<'a> Range<'a> {
 
     #[must_use]
     pub fn anchor(&self) -> usize {
-        self.range.anchor
+        self.range.anchor.gap_index
     }
 
     #[must_use]
     pub fn head(&self) -> usize {
-        self.range.head
+        self.range.head.gap_index
     }
 
     #[must_use]
@@ -278,8 +263,8 @@ pub struct RangeMut<'a> {
 
 impl<'a> RangeMut<'a> {
     #[must_use]
-    pub fn new(rope: &'a mut Rope, anchor: usize, head: usize) -> Self {
-        let range = RawRange::new(rope, anchor, head);
+    pub fn new(rope: &'a mut Rope, anchor_gap_index: usize, head_gap_index: usize) -> Self {
+        let range = RawRange::new(rope, anchor_gap_index, head_gap_index);
         Self { rope, range }
     }
 
@@ -297,12 +282,12 @@ impl<'a> RangeMut<'a> {
 
     #[must_use]
     pub fn anchor(&self) -> usize {
-        self.range.anchor
+        self.range.anchor.gap_index
     }
 
     #[must_use]
     pub fn head(&self) -> usize {
-        self.range.head
+        self.range.head.gap_index
     }
 
     #[must_use]
@@ -389,27 +374,25 @@ impl<'a> RangeMut<'a> {
     // TODO: Add `set_{head, anchor}`?
 }
 
-fn snap_to_gaps(rope: &Rope, mut anchor: usize, mut head: usize) -> RawRange {
+fn snap_to_gaps(rope: &Rope, range: RawRange) -> RawRange {
     if rope.len_chars() == 0 {
-        return RawRange { anchor: 0, head: 0 };
+        return RawRange::default();
     }
 
-    match anchor.cmp(&head) {
-        Ordering::Less | Ordering::Equal => {
-            anchor = RawCursor::new(rope, anchor, Bias::Before).gap_index;
-            head = RawCursor::new(rope, head, Bias::After).gap_index;
-        }
-        Ordering::Greater => {
-            head = RawCursor::new(rope, head, Bias::Before).gap_index;
-            anchor = RawCursor::new(rope, anchor, Bias::After).gap_index;
-        }
-    }
+    let (anchor_snap_bias, head_snap_bias) = if range.anchor <= range.head {
+        (Bias::Before, Bias::After)
+    } else {
+        (Bias::After, Bias::Before)
+    };
+
+    let mut anchor = RawCursor::new(rope, range.anchor.gap_index, anchor_snap_bias);
+    let mut head = RawCursor::new(rope, range.head.gap_index, head_snap_bias);
 
     if anchor == head {
-        match rope.get_next_grapheme_boundary(head) {
-            Ok(after) if head != after => head = after,
-            _ => match rope.get_prev_grapheme_boundary(anchor) {
-                Ok(before) if anchor != before => anchor = before,
+        match rope.get_next_grapheme_boundary(head.gap_index) {
+            Ok(after) if head.gap_index != after => head.gap_index = after,
+            _ => match rope.get_prev_grapheme_boundary(anchor.gap_index) {
+                Ok(before) if anchor.gap_index != before => anchor.gap_index = before,
                 _ => unreachable!(),
             },
         }
@@ -423,17 +406,27 @@ mod tests {
     use super::*;
     use arbtest::arbtest;
 
+    fn r(anchor_gap_index: usize, head_gap_index: usize) -> RawRange {
+        RawRange {
+            anchor: RawCursor {
+                gap_index: anchor_gap_index,
+            },
+            head: RawCursor {
+                gap_index: head_gap_index,
+            },
+        }
+    }
+
     #[test]
     fn snapping() {
-        let r = |anchor, head| RawRange { anchor, head };
         let rope = Rope::new();
-        assert_eq!(snap_to_gaps(&rope, 42, 42), r(0, 0));
-        assert_eq!(snap_to_gaps(&rope, 42, 69), r(0, 0));
+        assert_eq!(snap_to_gaps(&rope, r(42, 42)), r(0, 0));
+        assert_eq!(snap_to_gaps(&rope, r(42, 69)), r(0, 0));
         let rope = Rope::from_str("👨🏻‍❤️‍💋‍👨🏻");
-        assert_eq!(snap_to_gaps(&rope, 0, 0), r(0, 10));
-        assert_eq!(snap_to_gaps(&rope, 1, 9), r(0, 10));
-        assert_eq!(snap_to_gaps(&rope, 42, 42), r(0, 10));
-        assert_eq!(snap_to_gaps(&rope, 42, 69), r(0, 10));
+        assert_eq!(snap_to_gaps(&rope, r(0, 0)), r(0, 10));
+        assert_eq!(snap_to_gaps(&rope, r(1, 9)), r(0, 10));
+        assert_eq!(snap_to_gaps(&rope, r(42, 42)), r(0, 10));
+        assert_eq!(snap_to_gaps(&rope, r(42, 69)), r(0, 10));
     }
 
     #[test]
@@ -453,9 +446,8 @@ mod tests {
     fn snapping_fuzz() {
         arbtest(|u| {
             let rope = Rope::from_str(u.arbitrary()?);
-            let anchor = u.arbitrary()?;
-            let head = u.arbitrary()?;
-            let result = std::panic::catch_unwind(|| snap_to_gaps(&rope, anchor, head));
+            let range = r(u.arbitrary()?, u.arbitrary()?);
+            let result = std::panic::catch_unwind(|| snap_to_gaps(&rope, range));
             assert!(result.is_ok());
             Ok(())
         });
