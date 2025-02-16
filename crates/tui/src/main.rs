@@ -227,6 +227,8 @@ fn char_index_to_area(
     vertical_scroll: usize,
     area: Rect,
 ) -> Option<Rect> {
+    let char_index = snap(rope, char_index, Bias::Before);
+
     let line_index = rope.try_char_to_line(char_index).ok()?;
 
     if vertical_scroll > line_index {
