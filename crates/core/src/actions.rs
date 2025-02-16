@@ -102,9 +102,9 @@ pub fn insert(editor: &mut Editor, string: &str) {
     editor.mode.set_count(0);
 }
 
-pub fn backspace(editor: &mut Editor) {
+pub fn delete_before(editor: &mut Editor) {
     let count = max(1, editor.mode.count());
-    editor.with_range_mut(|range| range.backspace(count));
+    editor.with_range_mut(|range| range.delete_before(count));
     editor.mode.set_count(0);
 }
 

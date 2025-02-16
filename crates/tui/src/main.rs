@@ -419,7 +419,7 @@ fn handle_event_insert(
     match event {
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::NONE, KeyCode::Esc) => actions::enter_normal_mode(editor),
-            (KeyModifiers::NONE, KeyCode::Backspace) => actions::backspace(editor),
+            (KeyModifiers::NONE, KeyCode::Backspace) => actions::delete_before(editor),
             (KeyModifiers::NONE, KeyCode::Delete) => actions::delete(editor),
             (KeyModifiers::NONE, KeyCode::Char(c)) => actions::insert_char(editor, c),
             (KeyModifiers::NONE, KeyCode::Enter) => actions::insert_char(editor, '\n'),

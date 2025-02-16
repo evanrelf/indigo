@@ -85,12 +85,12 @@ impl RawCursor {
         edits
     }
 
-    pub fn backspace(&mut self, rope: &mut Rope, count: usize) {
-        let _ = self.backspace_impl(rope, count);
+    pub fn delete_before(&mut self, rope: &mut Rope, count: usize) {
+        let _ = self.delete_before_impl(rope, count);
     }
 
     #[must_use]
-    pub(crate) fn backspace_impl(&mut self, rope: &mut Rope, count: usize) -> EditSeq {
+    pub(crate) fn delete_before_impl(&mut self, rope: &mut Rope, count: usize) -> EditSeq {
         let mut index = self.index;
         for _ in 1..=count {
             match rope.get_prev_grapheme_boundary(index) {
@@ -185,8 +185,8 @@ impl<'a> CursorMut<'a> {
         self.cursor.insert(self.rope, string);
     }
 
-    pub fn backspace(&mut self, count: usize) {
-        self.cursor.backspace(self.rope, count);
+    pub fn delete_before(&mut self, count: usize) {
+        self.cursor.delete_before(self.rope, count);
     }
 
     pub(crate) fn is_valid(&self) -> bool {
@@ -255,8 +255,8 @@ mod tests {
                     }
                     3 => {
                         let arg = u.choose_index(99)?;
-                        cursor.backspace(arg);
-                        actions.push(format!("backspace({arg})"));
+                        cursor.delete_before(arg);
+                        actions.push(format!("delete_before({arg})"));
                     }
                     _ => break,
                 }

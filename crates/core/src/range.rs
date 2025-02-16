@@ -128,9 +128,9 @@ impl RawRange {
         self.head = head.index;
     }
 
-    pub fn backspace(&mut self, rope: &mut Rope, count: usize) {
+    pub fn delete_before(&mut self, rope: &mut Rope, count: usize) {
         let mut head = RawCursor { index: self.head };
-        let edits = head.backspace_impl(rope, count);
+        let edits = head.delete_before_impl(rope, count);
         self.anchor = edits.transform_index(self.anchor);
         self.head = head.index;
     }
@@ -353,8 +353,8 @@ impl<'a> RangeMut<'a> {
         self.range.insert(self.rope, string);
     }
 
-    pub fn backspace(&mut self, count: usize) {
-        self.range.backspace(self.rope, count);
+    pub fn delete_before(&mut self, count: usize) {
+        self.range.delete_before(self.rope, count);
     }
 
     pub fn delete(&mut self) {
