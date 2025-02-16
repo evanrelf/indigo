@@ -42,6 +42,11 @@ impl RawCursor {
         *self = Self::new(rope, gap_index, snap_bias);
     }
 
+    #[must_use]
+    pub fn is_eof(&self, rope: &Rope) -> bool {
+        self.index == rope.len_chars()
+    }
+
     pub fn move_left(&mut self, rope: &Rope, distance: usize) {
         for _ in 1..=distance {
             match rope.get_prev_grapheme_boundary(self.index) {
@@ -156,6 +161,11 @@ impl<'a> Cursor<'a> {
         self.cursor.index
     }
 
+    #[must_use]
+    pub fn is_eof(&self) -> bool {
+        self.cursor.is_eof(self.rope)
+    }
+
     pub fn move_left(&mut self, distance: usize) {
         self.cursor.move_left(self.rope, distance);
     }
@@ -189,6 +199,11 @@ impl<'a> CursorMut<'a> {
     #[must_use]
     pub fn index(&self) -> usize {
         self.cursor.index
+    }
+
+    #[must_use]
+    pub fn is_eof(&self) -> bool {
+        self.cursor.is_eof(self.rope)
     }
 
     pub fn move_left(&mut self, distance: usize) {
