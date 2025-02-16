@@ -92,21 +92,11 @@ impl RawRange {
     }
 
     pub fn extend_left(&mut self, rope: &Rope, distance: usize) {
-        for _ in 1..=distance {
-            match rope.get_prev_grapheme_boundary(self.head.gap_index) {
-                Ok(prev) if self.head.gap_index != prev => self.head.gap_index = prev,
-                _ => break,
-            }
-        }
+        self.head.move_left(rope, distance);
     }
 
     pub fn extend_right(&mut self, rope: &Rope, distance: usize) {
-        for _ in 1..=distance {
-            match rope.get_next_grapheme_boundary(self.head.gap_index) {
-                Ok(next) if self.head.gap_index != next => self.head.gap_index = next,
-                _ => break,
-            }
-        }
+        self.head.move_right(rope, distance);
     }
 
     pub fn flip(&mut self) {
