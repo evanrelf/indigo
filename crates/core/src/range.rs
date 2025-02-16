@@ -149,6 +149,12 @@ impl RawRange {
         self.anchor = self.start();
         self.head = self.start();
     }
+
+    pub(crate) fn is_valid(&self, rope: &Rope) -> bool {
+        let anchor = RawCursor { index: self.anchor };
+        let head = RawCursor { index: self.head };
+        anchor.is_valid(rope) && head.is_valid(rope)
+    }
 }
 
 #[derive(Debug)]
@@ -234,6 +240,10 @@ impl<'a> Range<'a> {
 
     pub fn reduce(&mut self) {
         self.range.reduce();
+    }
+
+    pub(crate) fn is_valid(&self) -> bool {
+        self.range.is_valid(self.rope)
     }
 
     // TODO: Add `set_{head, anchor}`?
@@ -345,6 +355,10 @@ impl<'a> RangeMut<'a> {
 
     pub fn delete(&mut self) {
         self.range.delete(self.rope);
+    }
+
+    pub(crate) fn is_valid(&self) -> bool {
+        self.range.is_valid(self.rope)
     }
 
     // TODO: Add `set_{head, anchor}`?

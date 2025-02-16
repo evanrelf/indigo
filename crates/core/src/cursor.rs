@@ -37,7 +37,7 @@ impl RawCursor {
         unreachable!()
     }
 
-    fn snap(&mut self, rope: &Rope, snap_bias: Bias) {
+    pub(crate) fn snap(&mut self, rope: &Rope, snap_bias: Bias) {
         let gap_index = self.index;
         *self = Self::new(rope, gap_index, snap_bias);
     }
@@ -104,6 +104,10 @@ impl RawCursor {
         self.index = edits.transform_index(self.index);
         edits
     }
+
+    pub(crate) fn is_valid(&self, rope: &Rope) -> bool {
+        rope.try_is_grapheme_boundary(self.index).ok() == Some(true)
+    }
 }
 
 pub struct Cursor<'a> {
@@ -134,6 +138,10 @@ impl<'a> Cursor<'a> {
 
     pub fn move_right(&mut self, distance: usize) {
         self.cursor.move_right(self.rope, distance);
+    }
+
+    pub(crate) fn is_valid(&self) -> bool {
+        self.cursor.is_valid(self.rope)
     }
 }
 
@@ -178,6 +186,10 @@ impl<'a> CursorMut<'a> {
     pub fn backspace(&mut self, count: usize) {
         self.cursor.backspace(self.rope, count);
     }
+
+    pub(crate) fn is_valid(&self) -> bool {
+        self.cursor.is_valid(self.rope)
+    }
 }
 
 #[cfg(test)]
@@ -208,7 +220,7 @@ mod tests {
         cursor.insert("e");
         let index = cursor.index();
         assert!(
-            cursor.rope().try_is_grapheme_boundary(index).ok() == Some(true),
+            cursor.is_valid(),
             "cursor not on grapheme boundary\nrope = {rope:?}\nindex = {index}"
         );
     }
@@ -249,11 +261,8 @@ mod tests {
                 let actions = actions.join("\n  ");
                 let index = cursor.index();
                 let length = cursor.rope.len_chars();
-                let is_grapheme_boundary =
-                    cursor.rope().try_is_grapheme_boundary(index).ok() == Some(true);
-                let is_eof = index == length;
                 assert!(
-                    is_grapheme_boundary || is_eof,
+                    cursor.is_valid(),
                     "not a grapheme boundary\nactions =\n  {actions}\nindex = {index}\nrope = {rope:?}\nlength = {length}"
                 );
             }
