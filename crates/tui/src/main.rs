@@ -311,7 +311,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let count = editor.mode.count();
 
-    let eof = editor.range().head.gap_index == editor.rope().len_chars();
+    let eof = editor.range().head() == editor.rope().len_chars();
 
     let status_bar = format!("[{start}, {end}] mode={mode} count={count} eof={eof}");
 

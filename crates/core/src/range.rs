@@ -44,6 +44,18 @@ impl RawRange {
         Self { anchor, head }
     }
 
+    // TODO: Return `RawCursor`s
+
+    #[must_use]
+    pub fn anchor(&self) -> usize {
+        self.anchor.gap_index
+    }
+
+    #[must_use]
+    pub fn head(&self) -> usize {
+        self.head.gap_index
+    }
+
     #[must_use]
     pub fn start(&self) -> usize {
         min(self.anchor.gap_index, self.head.gap_index)
@@ -183,12 +195,12 @@ impl<'a> Range<'a> {
 
     #[must_use]
     pub fn anchor(&self) -> usize {
-        self.range.anchor.gap_index
+        self.range.anchor()
     }
 
     #[must_use]
     pub fn head(&self) -> usize {
-        self.range.head.gap_index
+        self.range.head()
     }
 
     #[must_use]
@@ -282,12 +294,12 @@ impl<'a> RangeMut<'a> {
 
     #[must_use]
     pub fn anchor(&self) -> usize {
-        self.range.anchor.gap_index
+        self.range.anchor()
     }
 
     #[must_use]
     pub fn head(&self) -> usize {
-        self.range.head.gap_index
+        self.range.head()
     }
 
     #[must_use]
