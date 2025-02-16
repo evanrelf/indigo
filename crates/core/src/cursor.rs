@@ -19,32 +19,9 @@ pub struct RawCursor {
 impl RawCursor {
     #[must_use]
     pub fn new(rope: &Rope, gap_index: usize, snap_bias: Bias) -> Self {
-        let last_gap = rope.len_chars();
-
-        if gap_index > last_gap {
-            return Self {
-                gap_index: last_gap,
-            };
+        Self {
+            gap_index: snap(rope, gap_index, snap_bias),
         }
-
-        if let Ok(true) = rope.try_is_grapheme_boundary(gap_index) {
-            return Self { gap_index };
-        }
-
-        let snapped = match snap_bias {
-            Bias::Before => rope.get_prev_grapheme_boundary(gap_index),
-            Bias::After => rope.get_next_grapheme_boundary(gap_index),
-        };
-
-        if let Ok(gap_index) = snapped {
-            return Self { gap_index };
-        }
-
-        unreachable!()
-    }
-
-    pub(crate) fn snap(&mut self, rope: &Rope, snap_bias: Bias) {
-        *self = Self::new(rope, self.gap_index, snap_bias);
     }
 
     #[must_use]
@@ -91,7 +68,7 @@ impl RawCursor {
         // Makes `insert_changes_grapheme_boundary` test pass.
         // TODO: Eliminate need for explicit snapping, or reduce repetition of snapping in cursor
         // and range code.
-        self.snap(rope, Bias::After);
+        self.gap_index = snap(rope, self.gap_index, Bias::After);
         edits
     }
 
@@ -240,25 +217,51 @@ impl<'a> CursorMut<'a> {
     }
 }
 
+/// Snap character gap index to next grapheme boundary in given direction.
+// TODO: Move to `rope` module and give a better name?
+#[must_use]
+pub fn snap(rope: &Rope, gap_index: usize, bias: Bias) -> usize {
+    let last_gap = rope.len_chars();
+
+    if gap_index > last_gap {
+        return last_gap;
+    }
+
+    if let Ok(true) = rope.try_is_grapheme_boundary(gap_index) {
+        return gap_index;
+    }
+
+    let snapped = match bias {
+        Bias::Before => rope.get_prev_grapheme_boundary(gap_index),
+        Bias::After => rope.get_next_grapheme_boundary(gap_index),
+    };
+
+    if let Ok(gap_index) = snapped {
+        return gap_index;
+    }
+
+    unreachable!()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use arbtest::arbtest;
 
     #[test]
-    fn snapping() {
+    fn test_snap() {
         let rope = Rope::new();
-        assert_eq!(RawCursor::new(&rope, 42, Bias::Before).gap_index, 0);
-        assert_eq!(RawCursor::new(&rope, 42, Bias::After).gap_index, 0);
+        assert_eq!(snap(&rope, 42, Bias::Before), 0);
+        assert_eq!(snap(&rope, 42, Bias::After), 0);
         let rope = Rope::from_str("👨🏻‍❤️‍💋‍👨🏻");
-        assert_eq!(RawCursor::new(&rope, 0, Bias::Before).gap_index, 0);
-        assert_eq!(RawCursor::new(&rope, 10, Bias::Before).gap_index, 10);
-        assert_eq!(RawCursor::new(&rope, 1, Bias::Before).gap_index, 0);
-        assert_eq!(RawCursor::new(&rope, 9, Bias::Before).gap_index, 0);
-        assert_eq!(RawCursor::new(&rope, 0, Bias::After).gap_index, 0);
-        assert_eq!(RawCursor::new(&rope, 10, Bias::After).gap_index, 10);
-        assert_eq!(RawCursor::new(&rope, 1, Bias::After).gap_index, 10);
-        assert_eq!(RawCursor::new(&rope, 9, Bias::After).gap_index, 10);
+        assert_eq!(snap(&rope, 0, Bias::Before), 0);
+        assert_eq!(snap(&rope, 10, Bias::Before), 10);
+        assert_eq!(snap(&rope, 1, Bias::Before), 0);
+        assert_eq!(snap(&rope, 9, Bias::Before), 0);
+        assert_eq!(snap(&rope, 0, Bias::After), 0);
+        assert_eq!(snap(&rope, 10, Bias::After), 10);
+        assert_eq!(snap(&rope, 1, Bias::After), 10);
+        assert_eq!(snap(&rope, 9, Bias::After), 10);
     }
 
     #[test]
