@@ -111,9 +111,7 @@ fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
 }
 
 fn render_navigation_bar(_editor: &Editor, area: Rect, surface: &mut Surface) {
-    Line::raw(" ")
-        .style(Style::new().add_modifier(Modifier::UNDERLINED))
-        .render(area, surface);
+    Line::styled(" ", Modifier::UNDERLINED).render(area, surface);
 }
 
 fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
@@ -144,13 +142,13 @@ fn render_tildes(editor: &Editor, area: Rect, surface: &mut Surface) {
 
         let bottom = row.y + 1 == area.bottom();
 
-        Line::raw("~")
-            .style(Style::new().add_modifier(if bottom {
-                Modifier::UNDERLINED
-            } else {
-                Modifier::empty()
-            }))
-            .render(row, surface);
+        let style = if bottom {
+            Modifier::UNDERLINED
+        } else {
+            Modifier::empty()
+        };
+
+        Line::styled("~", style).render(row, surface);
     }
 }
 
@@ -186,7 +184,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 
     if let Some(bottom_row) = area.rows().last() {
-        surface.set_style(bottom_row, Style::new().add_modifier(Modifier::UNDERLINED));
+        surface.set_style(bottom_row, Modifier::UNDERLINED);
     }
 }
 
