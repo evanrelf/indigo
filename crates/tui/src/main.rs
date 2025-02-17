@@ -10,10 +10,10 @@ use indigo_core::{actions, cursor::snap, prelude::*};
 use ratatui::{
     prelude::{Buffer as Surface, Constraint, Layout, Position, Rect, Style, Widget as _},
     style::{Color, Modifier},
-    text::Line,
+    text::{Line, Span},
 };
 use ropey::Rope;
-use std::{borrow::Cow, cmp::max};
+use std::cmp::max;
 
 #[derive(Debug, clap::Parser)]
 struct Args {
@@ -159,21 +159,19 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let rows = area.rows();
 
-    'line: for (line, row) in lines.zip(rows) {
-        let mut x = row.x;
-
+    'line: for (line, mut rect) in lines.zip(rows) {
         'grapheme: for grapheme in line.graphemes() {
-            let string = match grapheme.get_char(0) {
-                Some('\t') => Cow::Borrowed("        "),
-                Some('\n') => Cow::Borrowed(" "),
-                _ => Cow::<str>::from(grapheme),
+            let span = match grapheme.get_char(0) {
+                Some('\t') => Span::raw("        "),
+                Some('\n') => Span::raw(" "),
+                _ => Span::raw(grapheme),
             };
 
             let width_usize = grapheme.display_width();
 
             let width_u16 = u16::try_from(width_usize).unwrap();
 
-            if x + width_u16 > row.right() {
+            if rect.x + width_u16 > rect.right() {
                 continue 'line;
             }
 
@@ -181,9 +179,9 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
                 continue 'grapheme;
             }
 
-            surface.set_stringn(x, row.y, string, width_usize, Style::default());
+            span.render(rect, surface);
 
-            x += width_u16;
+            rect.x += width_u16;
         }
     }
 
