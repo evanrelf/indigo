@@ -49,8 +49,6 @@ pub fn enter() -> anyhow::Result<TerminalGuard> {
     // way of uninstalling it.
     static PANIC_HOOK_INSTALLED: AtomicBool = AtomicBool::new(false);
 
-    let mut stdout = std::io::stdout();
-
     if !PANIC_HOOK_INSTALLED.load(Ordering::SeqCst) {
         let previous_hook = std::panic::take_hook();
 
@@ -65,6 +63,8 @@ pub fn enter() -> anyhow::Result<TerminalGuard> {
     }
 
     crossterm::terminal::enable_raw_mode()?;
+
+    let mut stdout = std::io::stdout();
 
     crossterm::execute!(
         stdout,
@@ -81,18 +81,18 @@ pub fn enter() -> anyhow::Result<TerminalGuard> {
 }
 
 pub fn exit() -> anyhow::Result<()> {
+    crossterm::terminal::disable_raw_mode()?;
+
     let mut stdout = std::io::stdout();
 
     crossterm::execute!(
         stdout,
-        crossterm::event::PopKeyboardEnhancementFlags,
-        crossterm::event::DisableBracketedPaste,
+        crossterm::terminal::LeaveAlternateScreen,
         crossterm::event::DisableMouseCapture,
         crossterm::cursor::Show,
-        crossterm::terminal::LeaveAlternateScreen,
+        crossterm::event::DisableBracketedPaste,
+        crossterm::event::PopKeyboardEnhancementFlags,
     )?;
-
-    crossterm::terminal::disable_raw_mode()?;
 
     Ok(())
 }
