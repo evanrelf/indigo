@@ -160,8 +160,8 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     'line: for (line, mut rect) in lines.zip(rows) {
         'grapheme: for grapheme in line.graphemes() {
             let span = match grapheme.get_char(0) {
-                Some('\t') => Span::raw("        "),
-                Some('\n') => Span::raw(" "),
+                Some('\t') => Span::styled("→       ", Color::Rgb(0xee, 0xee, 0xee)),
+                Some('\n') => Span::styled("¬", Color::Rgb(0xee, 0xee, 0xee)),
                 _ => Span::raw(grapheme),
             };
 
