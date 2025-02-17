@@ -8,9 +8,13 @@ use clap::Parser as _;
 use crossterm::event::{Event, KeyCode, KeyModifiers, MouseButton, MouseEventKind};
 use indigo_core::{actions, cursor::snap, prelude::*};
 use ratatui::{
-    prelude::{Buffer as Surface, Constraint, Layout, Position, Rect, Style, Widget as _},
+    prelude::{
+        Buffer as Surface, Constraint, Layout, Position, Rect, StatefulWidget as _, Style,
+        Widget as _,
+    },
     style::{Color, Modifier},
     text::{Line, Span},
+    widgets::{Scrollbar, ScrollbarOrientation, ScrollbarState},
 };
 use ropey::Rope;
 use std::cmp::max;
@@ -54,6 +58,7 @@ struct Areas {
     navigation_bar: Rect,
     line_numbers: Rect,
     text: Rect,
+    scrollbar: Rect,
     status_bar: Rect,
 }
 
@@ -62,7 +67,7 @@ impl Areas {
         let vertical_areas = Layout::vertical([
             // navigation_bar
             Constraint::Length(1),
-            // line_numbers + text
+            // line_numbers + text + scrollbar
             Constraint::Fill(1),
             // status_bar
             Constraint::Length(1),
@@ -83,19 +88,24 @@ impl Areas {
             Constraint::Length(line_numbers_width),
             // text
             Constraint::Fill(1),
+            // scrollbar
+            Constraint::Length(1),
         ])
         .split(vertical_areas[1]);
-
-        let status_bar = vertical_areas[2];
 
         let line_numbers = horizontal_areas[0];
 
         let text = horizontal_areas[1];
 
+        let scrollbar = horizontal_areas[2];
+
+        let status_bar = vertical_areas[2];
+
         Self {
             navigation_bar,
             line_numbers,
             text,
+            scrollbar,
             status_bar,
         }
     }
@@ -106,6 +116,7 @@ fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
     render_line_numbers(editor, areas.line_numbers, surface);
     render_tildes(editor, areas.line_numbers, surface);
     render_text(editor, areas.text, surface);
+    render_scrollbar(editor, areas.scrollbar, surface);
     render_selection(editor, areas.text, surface);
     render_status_bar(editor, areas.status_bar, surface);
 }
@@ -186,6 +197,18 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     if let Some(bottom_row) = area.rows().last() {
         surface.set_style(bottom_row, Modifier::UNDERLINED);
     }
+}
+
+fn render_scrollbar(editor: &Editor, area: Rect, surface: &mut Surface) {
+    let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
+
+    let total_lines = editor.rope().len_lines_indigo();
+
+    let content_length = total_lines.saturating_sub(usize::from(area.height));
+
+    let mut state = ScrollbarState::new(content_length).position(editor.vertical_scroll());
+
+    scrollbar.render(area, surface, &mut state);
 }
 
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
