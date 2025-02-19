@@ -87,15 +87,11 @@ impl RopeExt for RopeSlice<'_> {
 
 impl RopeExt for Rope {
     fn len_lines_indigo(&self) -> usize {
-        if self.len_chars() == 0 {
-            return 0;
-        }
-        let last_char = self.char(self.len_chars() - 1);
-        self.len_lines() - if last_char == '\n' { 1 } else { 0 }
+        self.slice(0..).len_lines_indigo()
     }
 
     fn char_index_to_grapheme_index(&self, char_index: usize) -> usize {
-        self.slice(..char_index).graphemes().count()
+        self.slice(0..).char_index_to_grapheme_index(char_index)
     }
 
     fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice> {
