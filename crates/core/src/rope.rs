@@ -1,7 +1,7 @@
 mod graphemes_iter;
 mod graphemes_step;
 
-use crate::rope::graphemes_iter::{RopeGraphemeBoundaries, RopeGraphemes};
+use crate::rope::graphemes_iter::{GraphemeBoundaries, Graphemes};
 use anyhow::Context as _;
 use ropey::{Rope, RopeSlice};
 
@@ -21,13 +21,13 @@ pub trait RopeExt {
         self.get_grapheme(char_index).unwrap()
     }
 
-    fn graphemes(&self) -> RopeGraphemes<'_>;
+    fn graphemes(&self) -> Graphemes<'_>;
 
-    fn grapheme_boundaries(&self) -> RopeGraphemeBoundaries<'_>;
+    fn grapheme_boundaries(&self) -> GraphemeBoundaries<'_>;
 
     // TODO: Implement this, like `unicode-segmentation`:
     // https://docs.rs/unicode-segmentation/latest/unicode_segmentation/trait.UnicodeSegmentation.html#tymethod.grapheme_indices
-    // fn grapheme_indices(&self) -> RopeGraphemeIndices<'_>;
+    // fn grapheme_indices(&self) -> GraphemeIndices<'_>;
 
     fn prev_grapheme_boundary(&self, char_index: usize) -> usize {
         self.get_prev_grapheme_boundary(char_index).unwrap()
@@ -71,12 +71,12 @@ impl RopeExt for RopeSlice<'_> {
         }
     }
 
-    fn graphemes(&self) -> RopeGraphemes<'_> {
-        RopeGraphemes::new(self)
+    fn graphemes(&self) -> Graphemes<'_> {
+        Graphemes::new(self)
     }
 
-    fn grapheme_boundaries(&self) -> RopeGraphemeBoundaries<'_> {
-        RopeGraphemeBoundaries::new(self)
+    fn grapheme_boundaries(&self) -> GraphemeBoundaries<'_> {
+        GraphemeBoundaries::new(self)
     }
 
     fn get_prev_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<usize> {
@@ -111,12 +111,12 @@ impl RopeExt for Rope {
         }
     }
 
-    fn graphemes(&self) -> RopeGraphemes<'_> {
-        RopeGraphemes::new(&self.slice(0..))
+    fn graphemes(&self) -> Graphemes<'_> {
+        Graphemes::new(&self.slice(0..))
     }
 
-    fn grapheme_boundaries(&self) -> RopeGraphemeBoundaries<'_> {
-        RopeGraphemeBoundaries::new(&self.slice(0..))
+    fn grapheme_boundaries(&self) -> GraphemeBoundaries<'_> {
+        GraphemeBoundaries::new(&self.slice(0..))
     }
 
     fn get_prev_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<usize> {

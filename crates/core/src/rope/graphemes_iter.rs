@@ -3,7 +3,7 @@
 use ropey::{iter::Chunks, RopeSlice};
 use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
 
-pub struct RopeGraphemes<'a> {
+pub struct Graphemes<'a> {
     text: RopeSlice<'a>,
     chunks: Chunks<'a>,
     cur_chunk: &'a str,
@@ -11,11 +11,11 @@ pub struct RopeGraphemes<'a> {
     cursor: GraphemeCursor,
 }
 
-impl RopeGraphemes<'_> {
-    pub fn new<'b>(slice: &RopeSlice<'b>) -> RopeGraphemes<'b> {
+impl Graphemes<'_> {
+    pub fn new<'b>(slice: &RopeSlice<'b>) -> Graphemes<'b> {
         let mut chunks = slice.chunks();
         let first_chunk = chunks.next().unwrap_or("");
-        RopeGraphemes {
+        Graphemes {
             text: *slice,
             chunks,
             cur_chunk: first_chunk,
@@ -25,7 +25,7 @@ impl RopeGraphemes<'_> {
     }
 }
 
-impl<'a> Iterator for RopeGraphemes<'a> {
+impl<'a> Iterator for Graphemes<'a> {
     type Item = RopeSlice<'a>;
 
     fn next(&mut self) -> Option<RopeSlice<'a>> {
@@ -68,7 +68,7 @@ impl<'a> Iterator for RopeGraphemes<'a> {
     }
 }
 
-pub struct RopeGraphemeBoundaries<'a> {
+pub struct GraphemeBoundaries<'a> {
     rope: RopeSlice<'a>,
     chunk: &'a str,
     chunk_byte_index: usize,
@@ -80,7 +80,7 @@ pub struct RopeGraphemeBoundaries<'a> {
 // terms of iterator to reduce duplicated code?
 // TODO: Allow starting iterator from a provided character index?
 
-impl<'a> RopeGraphemeBoundaries<'a> {
+impl<'a> GraphemeBoundaries<'a> {
     pub fn new(rope: &RopeSlice<'a>) -> Self {
         let (chunk, chunk_byte_index, _, _) = rope.chunk_at_byte(0);
         Self {
@@ -93,7 +93,7 @@ impl<'a> RopeGraphemeBoundaries<'a> {
     }
 }
 
-impl Iterator for RopeGraphemeBoundaries<'_> {
+impl Iterator for GraphemeBoundaries<'_> {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
