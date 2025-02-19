@@ -1,7 +1,7 @@
 mod graphemes_iter;
 mod graphemes_step;
 
-use crate::rope::graphemes_iter::RopeGraphemes;
+use crate::rope::graphemes_iter::{RopeGraphemeBoundaries, RopeGraphemes};
 use anyhow::Context as _;
 use ropey::{Rope, RopeSlice};
 
@@ -22,6 +22,8 @@ pub trait RopeExt {
     }
 
     fn graphemes(&self) -> RopeGraphemes<'_>;
+
+    fn grapheme_boundaries(&self) -> RopeGraphemeBoundaries<'_>;
 
     // TODO: Implement this, like `unicode-segmentation`:
     // https://docs.rs/unicode-segmentation/latest/unicode_segmentation/trait.UnicodeSegmentation.html#tymethod.grapheme_indices
@@ -73,6 +75,10 @@ impl RopeExt for RopeSlice<'_> {
         RopeGraphemes::new(self)
     }
 
+    fn grapheme_boundaries(&self) -> RopeGraphemeBoundaries<'_> {
+        RopeGraphemeBoundaries::new(self)
+    }
+
     fn get_prev_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<usize> {
         Ok(graphemes_step::prev_grapheme_boundary(self, char_index))
     }
@@ -109,6 +115,10 @@ impl RopeExt for Rope {
         RopeGraphemes::new(&self.slice(0..))
     }
 
+    fn grapheme_boundaries(&self) -> RopeGraphemeBoundaries<'_> {
+        RopeGraphemeBoundaries::new(&self.slice(0..))
+    }
+
     fn get_prev_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<usize> {
         self.slice(0..).get_prev_grapheme_boundary(char_index)
     }
@@ -125,6 +135,7 @@ impl RopeExt for Rope {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arbtest::arbtest;
 
     #[test]
     fn rope_length() {
@@ -180,5 +191,27 @@ mod tests {
         assert_eq!(Rope::from_str("x\ny\nz").get_line(0), Some("x\n".into()));
         assert_eq!(Rope::from_str("x\ny\nz").get_line(1), Some("y\n".into()));
         assert_eq!(Rope::from_str("x\ny\nz").get_line(2), Some("z".into()));
+    }
+
+    #[test]
+    fn grapheme_boundaries() {
+        arbtest(|u| {
+            let rope = Rope::from_str(u.arbitrary()?);
+            let step: Vec<usize> = {
+                let mut char_index = 0;
+                let mut bs = vec![0];
+                while let Ok(b) = rope.get_next_grapheme_boundary(char_index) {
+                    char_index = b;
+                    bs.push(b);
+                }
+                bs
+            };
+            let iter: Vec<usize> = rope.grapheme_boundaries().collect();
+            assert_eq!(
+                step, iter,
+                "mismatched grapheme boundaries\nrope = {rope:?}"
+            );
+            Ok(())
+        });
     }
 }
