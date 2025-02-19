@@ -33,7 +33,7 @@ impl FromStr for Keys {
     }
 }
 
-fn keys(input: &mut &str) -> PResult<Keys> {
+fn keys(input: &mut &str) -> ModalResult<Keys> {
     repeat(0.., key).map(Keys).parse_next(input)
 }
 
@@ -155,11 +155,11 @@ impl Hash for Key {
     }
 }
 
-fn key(input: &mut &str) -> PResult<Key> {
+fn key(input: &mut &str) -> ModalResult<Key> {
     alt((key_wrapped, key_bare)).parse_next(input)
 }
 
-fn key_wrapped(input: &mut &str) -> PResult<Key> {
+fn key_wrapped(input: &mut &str) -> ModalResult<Key> {
     let _ = "<".parse_next(input)?;
     let modifiers: Vec<_> = repeat(0.., terminated(key_modifier, "-")).parse_next(input)?;
     let modifiers = modifiers.into_iter().fold(FlagSet::default(), |x, y| x | y);
@@ -168,7 +168,7 @@ fn key_wrapped(input: &mut &str) -> PResult<Key> {
     Ok(Key { modifiers, code })
 }
 
-fn key_bare(input: &mut &str) -> PResult<Key> {
+fn key_bare(input: &mut &str) -> ModalResult<Key> {
     let modifiers = FlagSet::default();
     let code = key_code_bare.parse_next(input)?;
     Ok(Key { modifiers, code })
@@ -183,7 +183,7 @@ flags! {
     }
 }
 
-fn key_modifier(input: &mut &str) -> PResult<KeyModifier> {
+fn key_modifier(input: &mut &str) -> ModalResult<KeyModifier> {
     alt((
         alt(("shift", "s")).value(KeyModifier::Shift),
         alt(("control", "ctrl", "c")).value(KeyModifier::Control),
@@ -205,11 +205,11 @@ pub enum KeyCode {
     Char(char),
 }
 
-fn key_code(input: &mut &str) -> PResult<KeyCode> {
+fn key_code(input: &mut &str) -> ModalResult<KeyCode> {
     alt((key_code_wrapped, key_code_bare)).parse_next(input)
 }
 
-fn key_code_wrapped(input: &mut &str) -> PResult<KeyCode> {
+fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
     alt((
         alt(("backspace", "bs")).value(KeyCode::Backspace),
         alt(("enter", "return", "cr")).value(KeyCode::Enter),
@@ -225,7 +225,7 @@ fn key_code_wrapped(input: &mut &str) -> PResult<KeyCode> {
     .parse_next(input)
 }
 
-fn key_code_bare(input: &mut &str) -> PResult<KeyCode> {
+fn key_code_bare(input: &mut &str) -> ModalResult<KeyCode> {
     one_of(' '..='~').map(KeyCode::Char).parse_next(input)
 }
 
