@@ -2,6 +2,7 @@ mod graphemes_iter;
 mod graphemes_step;
 
 use crate::rope::graphemes_iter::RopeGraphemes;
+use anyhow::Context as _;
 use ropey::{Rope, RopeSlice};
 
 pub trait RopeExt {
@@ -73,15 +74,15 @@ impl RopeExt for RopeSlice<'_> {
     }
 
     fn get_prev_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<usize> {
-        graphemes_step::get_prev_grapheme_boundary(self, char_index)
+        Ok(graphemes_step::prev_grapheme_boundary(self, char_index))
     }
 
     fn get_next_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<usize> {
-        graphemes_step::get_next_grapheme_boundary(self, char_index)
+        graphemes_step::next_grapheme_boundary(self, char_index).context("")
     }
 
     fn try_is_grapheme_boundary(&self, char_index: usize) -> anyhow::Result<bool> {
-        graphemes_step::try_is_grapheme_boundary(self, char_index)
+        Ok(graphemes_step::is_grapheme_boundary(self, char_index))
     }
 }
 
