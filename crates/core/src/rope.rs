@@ -4,6 +4,12 @@ mod graphemes_step;
 use crate::rope::graphemes_iter::{GraphemeBoundaries, Graphemes};
 use ropey::{Rope, RopeSlice};
 
+#[derive(Clone, Copy)]
+pub enum Bias {
+    Before,
+    After,
+}
+
 pub trait RopeExt {
     fn as_slice(&self) -> RopeSlice<'_>;
 
@@ -58,6 +64,20 @@ pub trait RopeExt {
     fn is_grapheme_boundary(&self, char_index: usize) -> bool {
         let rope = self.as_slice();
         graphemes_step::is_grapheme_boundary(&rope, char_index)
+    }
+
+    fn snap_to_grapheme_boundary(&self, char_index: usize, bias: Bias) -> usize {
+        if self.is_grapheme_boundary(char_index) {
+            return char_index;
+        }
+        match bias {
+            Bias::Before => self
+                .prev_grapheme_boundary(char_index)
+                .unwrap_or_else(|| unreachable!()),
+            Bias::After => self
+                .next_grapheme_boundary(char_index)
+                .unwrap_or_else(|| self.as_slice().len_chars()),
+        }
     }
 }
 

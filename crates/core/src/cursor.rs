@@ -1,13 +1,10 @@
 #![allow(clippy::trivially_copy_pass_by_ref)]
 
-use crate::{ot::EditSeq, rope::RopeExt as _};
+use crate::{
+    ot::EditSeq,
+    rope::{Bias, RopeExt as _},
+};
 use ropey::Rope;
-
-#[derive(Clone, Copy)]
-pub enum Bias {
-    Before,
-    After,
-}
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct RawCursor {
@@ -18,7 +15,7 @@ impl RawCursor {
     #[must_use]
     pub fn new(rope: &Rope, gap_index: usize, snap_bias: Bias) -> Self {
         Self {
-            gap_index: snap(rope, gap_index, snap_bias),
+            gap_index: rope.snap_to_grapheme_boundary(gap_index, snap_bias),
         }
     }
 
@@ -66,7 +63,7 @@ impl RawCursor {
         // Makes `insert_changes_grapheme_boundary` test pass.
         // TODO: Eliminate need for explicit snapping, or reduce repetition of snapping in cursor
         // and range code.
-        self.gap_index = snap(rope, self.gap_index, Bias::After);
+        self.gap_index = rope.snap_to_grapheme_boundary(self.gap_index, Bias::After);
         edits
     }
 
@@ -219,41 +216,10 @@ impl<'a> CursorMut<'a> {
     }
 }
 
-#[must_use]
-pub fn snap(rope: &Rope, gap_index: usize, bias: Bias) -> usize {
-    if rope.is_grapheme_boundary(gap_index) {
-        return gap_index;
-    }
-    match bias {
-        Bias::Before => rope
-            .prev_grapheme_boundary(gap_index)
-            .unwrap_or_else(|| unreachable!()),
-        Bias::After => rope
-            .next_grapheme_boundary(gap_index)
-            .unwrap_or_else(|| rope.len_chars()),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use arbtest::arbtest;
-
-    #[test]
-    fn test_snap() {
-        let rope = Rope::new();
-        assert_eq!(snap(&rope, 42, Bias::Before), 0);
-        assert_eq!(snap(&rope, 42, Bias::After), 0);
-        let rope = Rope::from_str("👨🏻‍❤️‍💋‍👨🏻");
-        assert_eq!(snap(&rope, 0, Bias::Before), 0);
-        assert_eq!(snap(&rope, 10, Bias::Before), 10);
-        assert_eq!(snap(&rope, 1, Bias::Before), 0);
-        assert_eq!(snap(&rope, 9, Bias::Before), 0);
-        assert_eq!(snap(&rope, 0, Bias::After), 0);
-        assert_eq!(snap(&rope, 10, Bias::After), 10);
-        assert_eq!(snap(&rope, 1, Bias::After), 10);
-        assert_eq!(snap(&rope, 9, Bias::After), 10);
-    }
 
     #[test]
     fn insert_changes_grapheme_boundary() {

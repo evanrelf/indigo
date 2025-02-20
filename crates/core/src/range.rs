@@ -1,12 +1,6 @@
-use crate::{
-    cursor::{snap, Bias, RawCursor},
-    ot::EditSeq,
-};
+use crate::{cursor::RawCursor, ot::EditSeq, rope::Bias};
 use ropey::{Rope, RopeSlice};
 use std::cmp::{max, min};
-
-// TODO: It's a GAP index! If anchor == head, then the width is 0! This should only be legal at EOF.
-// Gap index is the right way to go, don't back out on that, just make it work.
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct RawRange {
@@ -32,8 +26,6 @@ impl RawRange {
         rope.slice(self.start()..=self.end())
     }
 
-    // TODO: Return `RawCursor`s
-
     #[must_use]
     pub fn anchor(&self) -> usize {
         self.anchor.gap_index
@@ -46,12 +38,12 @@ impl RawRange {
 
     #[must_use]
     pub fn start(&self) -> usize {
-        min(self.anchor.gap_index, self.head.gap_index)
+        min(self.anchor, self.head).gap_index
     }
 
     #[must_use]
     pub fn end(&self) -> usize {
-        max(self.anchor.gap_index, self.head.gap_index)
+        max(self.anchor, self.head).gap_index
     }
 
     #[must_use]
@@ -106,7 +98,7 @@ impl RawRange {
     }
 
     pub fn reduce(&mut self) {
-        self.anchor.gap_index = self.head.gap_index;
+        self.anchor = self.head;
     }
 
     pub fn insert_char(&mut self, rope: &mut Rope, char: char) {
@@ -115,7 +107,7 @@ impl RawRange {
 
     pub fn insert(&mut self, rope: &mut Rope, string: &str) {
         let edits = self.head.insert_impl(rope, string);
-        self.anchor.gap_index = snap(
+        self.anchor = RawCursor::new(
             rope,
             edits.transform_index(self.anchor.gap_index),
             Bias::After,

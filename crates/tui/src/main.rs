@@ -6,7 +6,7 @@ use crate::terminal::TerminalGuard;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use crossterm::event::{Event, KeyCode, KeyModifiers, MouseButton, MouseEventKind};
-use indigo_core::{actions, cursor::snap, prelude::*};
+use indigo_core::{actions, prelude::*};
 use ratatui::{
     prelude::{Buffer as Surface, Constraint, Layout, Position, Rect, Style, Widget as _},
     style::{Color, Modifier},
@@ -223,7 +223,7 @@ fn char_index_to_area(
     vertical_scroll: usize,
     area: Rect,
 ) -> Option<Rect> {
-    let char_index = snap(rope, char_index, Bias::Before);
+    let char_index = rope.snap_to_grapheme_boundary(char_index, Bias::Before);
 
     let line_index = rope.try_char_to_line(char_index).ok()?;
 
