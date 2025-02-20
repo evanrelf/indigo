@@ -29,8 +29,8 @@ impl RawCursor {
 
     pub fn move_left(&mut self, rope: &Rope, count: usize) {
         for _ in 1..=count {
-            match rope.get_prev_grapheme_boundary(self.gap_index) {
-                Ok(prev) if self.gap_index != prev => self.gap_index = prev,
+            match rope.prev_grapheme_boundary(self.gap_index) {
+                Some(prev) if self.gap_index != prev => self.gap_index = prev,
                 _ => break,
             }
         }
@@ -38,8 +38,8 @@ impl RawCursor {
 
     pub fn move_right(&mut self, rope: &Rope, count: usize) {
         for _ in 1..=count {
-            match rope.get_next_grapheme_boundary(self.gap_index) {
-                Ok(next) if self.gap_index != next => self.gap_index = next,
+            match rope.next_grapheme_boundary(self.gap_index) {
+                Some(next) if self.gap_index != next => self.gap_index = next,
                 _ => break,
             }
         }
@@ -78,8 +78,8 @@ impl RawCursor {
     pub(crate) fn delete_before_impl(&mut self, rope: &mut Rope, count: usize) -> EditSeq {
         let mut gap_index = self.gap_index;
         for _ in 1..=count {
-            match rope.get_prev_grapheme_boundary(gap_index) {
-                Ok(prev) if gap_index != prev => gap_index = prev,
+            match rope.prev_grapheme_boundary(gap_index) {
+                Some(prev) if gap_index != prev => gap_index = prev,
                 _ => break,
             }
         }
@@ -100,8 +100,8 @@ impl RawCursor {
     pub(crate) fn delete_after_impl(&mut self, rope: &mut Rope, count: usize) -> EditSeq {
         let mut gap_index = self.gap_index;
         for _ in 1..=count {
-            match rope.get_next_grapheme_boundary(gap_index) {
-                Ok(next) if gap_index != next => gap_index = next,
+            match rope.next_grapheme_boundary(gap_index) {
+                Some(next) if gap_index != next => gap_index = next,
                 _ => break,
             }
         }
@@ -115,9 +115,8 @@ impl RawCursor {
     }
 
     pub(crate) fn assert_valid(&self, rope: &Rope) {
-        assert_eq!(
-            rope.try_is_grapheme_boundary(self.gap_index).ok(),
-            Some(true),
+        assert!(
+            rope.is_grapheme_boundary(self.gap_index),
             "Cursor not on a grapheme boundary (gap_index={})",
             self.gap_index
         );
@@ -220,30 +219,19 @@ impl<'a> CursorMut<'a> {
     }
 }
 
-/// Snap character gap index to next grapheme boundary in given direction.
-// TODO: Move to `rope` module and give a better name?
 #[must_use]
 pub fn snap(rope: &Rope, gap_index: usize, bias: Bias) -> usize {
-    let last_gap = rope.len_chars();
-
-    if gap_index > last_gap {
-        return last_gap;
-    }
-
-    if let Ok(true) = rope.try_is_grapheme_boundary(gap_index) {
+    if rope.is_grapheme_boundary(gap_index) {
         return gap_index;
     }
-
-    let snapped = match bias {
-        Bias::Before => rope.get_prev_grapheme_boundary(gap_index),
-        Bias::After => rope.get_next_grapheme_boundary(gap_index),
-    };
-
-    if let Ok(gap_index) = snapped {
-        return gap_index;
+    match bias {
+        Bias::Before => rope
+            .prev_grapheme_boundary(gap_index)
+            .unwrap_or_else(|| unreachable!()),
+        Bias::After => rope
+            .next_grapheme_boundary(gap_index)
+            .unwrap_or_else(|| rope.len_chars()),
     }
-
-    unreachable!()
 }
 
 #[cfg(test)]

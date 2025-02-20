@@ -25,17 +25,11 @@ impl RawRange {
             gap_index: head_gap_index,
         };
 
-        // Gap at end of file counts as grapheme boundary
-        if let Ok(true) = rope.try_is_grapheme_boundary(anchor.gap_index) {
-            //
-        } else {
+        if !rope.is_grapheme_boundary(anchor.gap_index) {
             anchor.gap_index = rope.len_chars();
         }
 
-        // Gap at end of file counts as grapheme boundary
-        if let Ok(true) = rope.try_is_grapheme_boundary(head.gap_index) {
-            //
-        } else {
+        if !rope.is_grapheme_boundary(head.gap_index) {
             head.gap_index = rope.len_chars();
         }
 
@@ -418,10 +412,10 @@ fn snap_to_gaps(rope: &Rope, range: RawRange) -> RawRange {
     let mut head = RawCursor::new(rope, range.head.gap_index, head_snap_bias);
 
     if anchor == head {
-        match rope.get_next_grapheme_boundary(head.gap_index) {
-            Ok(after) if head.gap_index != after => head.gap_index = after,
-            _ => match rope.get_prev_grapheme_boundary(anchor.gap_index) {
-                Ok(before) if anchor.gap_index != before => anchor.gap_index = before,
+        match rope.next_grapheme_boundary(head.gap_index) {
+            Some(after) if head.gap_index != after => head.gap_index = after,
+            _ => match rope.prev_grapheme_boundary(anchor.gap_index) {
+                Some(before) if anchor.gap_index != before => anchor.gap_index = before,
                 _ => unreachable!(),
             },
         }
