@@ -5,108 +5,71 @@ use crate::rope::graphemes_iter::{GraphemeBoundaries, Graphemes};
 use ropey::{Rope, RopeSlice};
 
 pub trait RopeExt {
+    fn as_slice(&self) -> RopeSlice<'_>;
+
     // `ropey` counts lines in a non-intuitive way, at least for my purposes. This method provides
     // an alternative, Indigo-specific line count.
     //
     // See the unit tests below for examples, and this GitHub issue for more info:
     // https://github.com/cessen/ropey/issues/60
-    fn len_lines_indigo(&self) -> usize;
+    fn len_lines_indigo(&self) -> usize {
+        let rope = self.as_slice();
+        if rope.len_chars() == 0 {
+            return 0;
+        }
+        let last_char = rope.char(rope.len_chars() - 1);
+        rope.len_lines() - if last_char == '\n' { 1 } else { 0 }
+    }
 
-    fn char_index_to_grapheme_index(&self, char_index: usize) -> usize;
+    fn char_index_to_grapheme_index(&self, char_index: usize) -> usize {
+        self.as_slice().slice(..char_index).graphemes().count()
+    }
 
-    fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice>;
+    fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice> {
+        let rope = self.as_slice();
+        let start = char_index;
+        rope.next_grapheme_boundary(start)
+            .map(|end| rope.slice(start..end))
+    }
 
     fn grapheme(&self, char_index: usize) -> RopeSlice {
         self.get_grapheme(char_index).unwrap()
     }
 
-    fn graphemes(&self) -> Graphemes<'_>;
+    fn graphemes(&self) -> Graphemes<'_> {
+        Graphemes::new(&self.as_slice())
+    }
 
     // TODO: Implement this, like `unicode-segmentation`:
     // https://docs.rs/unicode-segmentation/latest/unicode_segmentation/trait.UnicodeSegmentation.html#tymethod.grapheme_indices
     // fn grapheme_indices(&self) -> GraphemeIndices<'_>;
-    fn grapheme_boundaries(&self) -> GraphemeBoundaries<'_>;
-
-    fn prev_grapheme_boundary(&self, char_index: usize) -> Option<usize>;
-
-    fn next_grapheme_boundary(&self, char_index: usize) -> Option<usize>;
-
-    fn is_grapheme_boundary(&self, char_index: usize) -> bool;
-}
-
-impl RopeExt for RopeSlice<'_> {
-    fn len_lines_indigo(&self) -> usize {
-        if self.len_chars() == 0 {
-            return 0;
-        }
-        let last_char = self.char(self.len_chars() - 1);
-        self.len_lines() - if last_char == '\n' { 1 } else { 0 }
-    }
-
-    fn char_index_to_grapheme_index(&self, char_index: usize) -> usize {
-        self.slice(..char_index).graphemes().count()
-    }
-
-    fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice> {
-        let start = char_index;
-        self.next_grapheme_boundary(start)
-            .map(|end| self.slice(start..end))
-    }
-
-    fn graphemes(&self) -> Graphemes<'_> {
-        Graphemes::new(self)
-    }
-
     fn grapheme_boundaries(&self) -> GraphemeBoundaries<'_> {
-        GraphemeBoundaries::new(self)
+        GraphemeBoundaries::new(&self.as_slice())
     }
 
     fn prev_grapheme_boundary(&self, char_index: usize) -> Option<usize> {
-        graphemes_step::prev_grapheme_boundary(self, char_index)
+        graphemes_step::prev_grapheme_boundary(&self.as_slice(), char_index)
     }
 
     fn next_grapheme_boundary(&self, char_index: usize) -> Option<usize> {
-        graphemes_step::next_grapheme_boundary(self, char_index)
+        graphemes_step::next_grapheme_boundary(&self.as_slice(), char_index)
     }
 
     fn is_grapheme_boundary(&self, char_index: usize) -> bool {
-        graphemes_step::is_grapheme_boundary(self, char_index)
+        let rope = self.as_slice();
+        graphemes_step::is_grapheme_boundary(&rope, char_index)
+    }
+}
+
+impl RopeExt for RopeSlice<'_> {
+    fn as_slice(&self) -> RopeSlice<'_> {
+        *self
     }
 }
 
 impl RopeExt for Rope {
-    fn len_lines_indigo(&self) -> usize {
-        self.slice(0..).len_lines_indigo()
-    }
-
-    fn char_index_to_grapheme_index(&self, char_index: usize) -> usize {
-        self.slice(0..).char_index_to_grapheme_index(char_index)
-    }
-
-    fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice> {
-        let start = char_index;
-        self.next_grapheme_boundary(start)
-            .map(|end| self.slice(start..end))
-    }
-
-    fn graphemes(&self) -> Graphemes<'_> {
-        Graphemes::new(&self.slice(0..))
-    }
-
-    fn grapheme_boundaries(&self) -> GraphemeBoundaries<'_> {
-        GraphemeBoundaries::new(&self.slice(0..))
-    }
-
-    fn prev_grapheme_boundary(&self, char_index: usize) -> Option<usize> {
-        self.slice(0..).prev_grapheme_boundary(char_index)
-    }
-
-    fn next_grapheme_boundary(&self, char_index: usize) -> Option<usize> {
-        self.slice(0..).next_grapheme_boundary(char_index)
-    }
-
-    fn is_grapheme_boundary(&self, char_index: usize) -> bool {
-        self.slice(0..).is_grapheme_boundary(char_index)
+    fn as_slice(&self) -> RopeSlice<'_> {
+        self.slice(0..)
     }
 }
 
