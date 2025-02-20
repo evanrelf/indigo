@@ -173,7 +173,7 @@ impl<'a> Range<'a> {
     }
 
     #[must_use]
-    pub(crate) fn into_raw(self) -> RawRange {
+    pub(crate) fn raw(&self) -> RawRange {
         self.range
     }
 
@@ -282,7 +282,7 @@ impl<'a> RangeMut<'a> {
     }
 
     #[must_use]
-    pub(crate) fn into_raw(self) -> RawRange {
+    pub(crate) fn raw(&self) -> RawRange {
         self.range
     }
 

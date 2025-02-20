@@ -64,7 +64,7 @@ impl Editor {
         range.assert_valid();
         let result = func(&mut range);
         range.assert_valid();
-        self.range = range.into_raw();
+        self.range = range.raw();
         result
     }
 
