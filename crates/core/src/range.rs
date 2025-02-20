@@ -9,8 +9,6 @@ use std::cmp::{max, min};
 // TODO: It's a GAP index! If anchor == head, then the width is 0! This should only be legal at EOF.
 // Gap index is the right way to go, don't back out on that, just make it work.
 
-// Fields should be public because there are no invariants to enforce. Correctness is only
-// meaningful relative to a rope, which this type does not control.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct RawRange {
     pub anchor: RawCursor,

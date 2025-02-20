@@ -9,8 +9,6 @@ pub enum Bias {
     After,
 }
 
-// Fields should be public because there are no invariants to enforce. Correctness is only
-// meaningful relative to a rope, which this type does not control.
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct RawCursor {
     pub gap_index: usize, // char gap index
