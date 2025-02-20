@@ -397,37 +397,9 @@ impl<'a> RangeMut<'a> {
     // TODO: Add `set_{head, anchor}`?
 }
 
-fn snap_to_gaps(rope: &Rope, range: RawRange) -> RawRange {
-    if rope.len_chars() == 0 {
-        return RawRange::default();
-    }
-
-    let (anchor_snap_bias, head_snap_bias) = if range.anchor <= range.head {
-        (Bias::Before, Bias::After)
-    } else {
-        (Bias::After, Bias::Before)
-    };
-
-    let mut anchor = RawCursor::new(rope, range.anchor.gap_index, anchor_snap_bias);
-    let mut head = RawCursor::new(rope, range.head.gap_index, head_snap_bias);
-
-    if anchor == head {
-        match rope.next_grapheme_boundary(head.gap_index) {
-            Some(after) if head.gap_index != after => head.gap_index = after,
-            _ => match rope.prev_grapheme_boundary(anchor.gap_index) {
-                Some(before) if anchor.gap_index != before => anchor.gap_index = before,
-                _ => unreachable!(),
-            },
-        }
-    }
-
-    RawRange { anchor, head }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use arbtest::arbtest;
 
     fn r(anchor_gap_index: usize, head_gap_index: usize) -> RawRange {
         RawRange {
@@ -441,33 +413,10 @@ mod tests {
     }
 
     #[test]
-    fn snapping() {
-        let rope = Rope::new();
-        assert_eq!(snap_to_gaps(&rope, r(42, 42)), r(0, 0));
-        assert_eq!(snap_to_gaps(&rope, r(42, 69)), r(0, 0));
-        let rope = Rope::from_str("👨🏻‍❤️‍💋‍👨🏻");
-        assert_eq!(snap_to_gaps(&rope, r(0, 0)), r(0, 10));
-        assert_eq!(snap_to_gaps(&rope, r(1, 9)), r(0, 10));
-        assert_eq!(snap_to_gaps(&rope, r(42, 42)), r(0, 10));
-        assert_eq!(snap_to_gaps(&rope, r(42, 69)), r(0, 10));
-    }
-
-    #[test]
     fn insert_changes_grapheme_boundary() {
         let mut rope = Rope::from_str("\u{0301}"); // combining acute accent (´)
         let mut range = RangeMut::new(&mut rope, 0, 0);
         range.insert("e");
         range.assert_valid();
-    }
-
-    #[test]
-    fn snapping_fuzz() {
-        arbtest(|u| {
-            let rope = Rope::from_str(u.arbitrary()?);
-            let range = r(u.arbitrary()?, u.arbitrary()?);
-            let result = std::panic::catch_unwind(|| snap_to_gaps(&rope, range));
-            assert!(result.is_ok());
-            Ok(())
-        });
     }
 }
