@@ -12,7 +12,6 @@ pub enum Error {
     #[error("char index {char_index} exceeds rope length {len_chars}")]
     CharIndexPastEof { char_index: usize, len_chars: usize },
 
-    #[allow(clippy::enum_variant_names)]
     #[error(transparent)]
     RopeyError(#[from] ropey::Error),
 }
@@ -309,8 +308,8 @@ mod tests {
     fn edits_transform_index() {
         let mut rope = Rope::from("Hello, world!");
 
-        let mut index = 8;
-        assert_eq!(rope.char(index), 'o');
+        let mut index = 9;
+        assert_eq!(rope.char(index), 'r');
 
         let mut edits = EditSeq::new();
         edits.delete("Hello, ".chars().count());
@@ -321,9 +320,10 @@ mod tests {
         edits.apply(&mut rope).unwrap();
         assert_eq!(rope, Rope::from("world!!!!"));
 
+        assert_eq!(rope.get_char(index), None);
         index = edits.transform_index(index);
-        assert_eq!(index, 1);
-        assert_eq!(rope.char(index), 'o');
+        assert_eq!(index, 2);
+        assert_eq!(rope.char(index), 'r');
 
         let mut edits = EditSeq::new();
         edits.delete("w".chars().count());
@@ -331,11 +331,11 @@ mod tests {
         edits.retain_rest(&rope);
         edits.apply(&mut rope).unwrap();
         assert_eq!(rope, Rope::from("the whole world!!!!"));
-        assert_eq!(rope.char(index), 'h');
 
+        assert_eq!(rope.char(index), 'e');
         index = edits.transform_index(index);
-        assert_eq!(index, 11);
-        assert_eq!(rope.char(index), 'o');
+        assert_eq!(index, 12);
+        assert_eq!(rope.char(index), 'r');
     }
 
     #[test]

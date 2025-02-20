@@ -24,7 +24,7 @@ impl Editor {
         } else {
             Rope::new()
         };
-        let range = RawRange::new(&rope, 0, 0).unwrap();
+        let range = RawRange::new_snapped(&rope, 0, 0);
         Ok(Self {
             rope,
             range,

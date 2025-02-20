@@ -205,14 +205,25 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let light_yellow = Color::Rgb(0xff, 0xf5, 0xb1);
     let dark_yellow = Color::Rgb(0xff, 0xd3, 0x3d);
-    // let red = Color::Rgb(0xd7, 0x3a, 0x4a);
+    let red = Color::Rgb(0xd7, 0x3a, 0x4a);
 
-    for rect in (range.start()..=range.end()).filter_map(cursor_area) {
+    for rect in (range.start()..range.end()).filter_map(cursor_area) {
         surface.set_style(rect, Style::default().bg(light_yellow));
     }
 
-    if let Some(rect) = cursor_area(range.head()) {
-        surface.set_style(rect, Style::default().bg(dark_yellow));
+    #[expect(clippy::collapsible_else_if)]
+    if range.is_empty() {
+        if let Some(rect) = cursor_area(range.head()) {
+            surface.set_style(rect, Style::default().bg(red));
+        }
+    } else if range.is_backward() {
+        if let Some(rect) = cursor_area(range.head()) {
+            surface.set_style(rect, Style::default().bg(dark_yellow));
+        }
+    } else {
+        if let Some(rect) = cursor_area(range.head().saturating_sub(1)) {
+            surface.set_style(rect, Style::default().bg(dark_yellow));
+        }
     }
 }
 
@@ -302,6 +313,12 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let head = editor.range().head();
 
+    let char_length = editor.range().char_length();
+
+    let grapheme_length = editor.range().grapheme_length(editor.rope());
+
+    let display_width = editor.range().rope_slice(editor.rope()).display_width();
+
     let eof = editor.range().head() == editor.rope().len_chars();
 
     let mode = match editor.mode {
@@ -314,6 +331,9 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let status_bar = [
         format!("anchor={anchor}"),
         format!("head={head}"),
+        format!("char_length={char_length}"),
+        format!("grapheme_length={grapheme_length}"),
+        format!("display_width={display_width}"),
         format!("eof={eof}"),
         format!("mode={mode}"),
         format!("count={count}"),

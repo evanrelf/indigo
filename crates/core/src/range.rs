@@ -1,4 +1,8 @@
-use crate::{cursor::RawCursor, ot::EditSeq, rope::Bias};
+use crate::{
+    cursor::RawCursor,
+    ot::EditSeq,
+    rope::{Bias, RopeExt as _},
+};
 use ropey::{Rope, RopeSlice};
 use std::cmp::{max, min};
 
@@ -13,11 +17,16 @@ impl RawRange {
     pub fn new(rope: &Rope, anchor_gap_index: usize, head_gap_index: usize) -> Option<Self> {
         let anchor = RawCursor::new(rope, anchor_gap_index)?;
         let head = RawCursor::new(rope, head_gap_index)?;
-        Some(Self { anchor, head })
+        let range = Self { anchor, head };
+        range.assert_valid(rope);
+        Some(range)
     }
 
     #[must_use]
-    pub fn new_snapped(rope: &Rope, anchor_gap_index: usize, head_gap_index: usize) -> Self {
+    pub fn new_snapped(rope: &Rope, anchor_gap_index: usize, mut head_gap_index: usize) -> Self {
+        if anchor_gap_index == head_gap_index && rope.len_chars() > 0 {
+            head_gap_index += 1;
+        }
         let (anchor_snap_bias, head_snap_bias) = if anchor_gap_index < head_gap_index {
             (Bias::Before, Bias::After)
         } else {
@@ -25,13 +34,16 @@ impl RawRange {
         };
         let anchor = RawCursor::new_snapped(rope, anchor_gap_index, anchor_snap_bias);
         let head = RawCursor::new_snapped(rope, head_gap_index, head_snap_bias);
-        Self { anchor, head }
+        let range = Self { anchor, head };
+        range.assert_valid(rope);
+        range
     }
 
     #[must_use]
     pub fn rope_slice<'a>(&self, rope: &'a Rope) -> RopeSlice<'a> {
-        self.assert_valid(rope);
-        rope.slice(self.start()..=self.end())
+        self.anchor.assert_valid(rope);
+        self.head.assert_valid(rope);
+        rope.slice(self.start()..self.end())
     }
 
     #[must_use]
@@ -55,6 +67,30 @@ impl RawRange {
     }
 
     #[must_use]
+    pub fn char_length(&self) -> usize {
+        self.end() - self.start()
+    }
+
+    #[must_use]
+    pub fn grapheme_length(&self, rope: &Rope) -> usize {
+        match self.char_length() {
+            0 => 0,
+            1 => 1,
+            _ => self.rope_slice(rope).graphemes().count(),
+        }
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.char_length() == 0
+    }
+
+    #[must_use]
+    pub fn is_eof(&self, rope: &Rope) -> bool {
+        self.anchor.is_eof(rope) && self.head.is_eof(rope)
+    }
+
+    #[must_use]
     pub fn is_forward(&self) -> bool {
         self.anchor <= self.head
     }
@@ -66,40 +102,76 @@ impl RawRange {
 
     pub fn move_left(&mut self, rope: &Rope, count: usize) {
         self.extend_left(rope, count);
-        self.reduce();
+        self.reduce(rope);
     }
 
     pub fn move_right(&mut self, rope: &Rope, count: usize) {
         self.extend_right(rope, count);
-        self.reduce();
+        self.reduce(rope);
     }
 
     pub fn extend_left(&mut self, rope: &Rope, count: usize) {
         self.head.move_left(rope, count);
+        if self.anchor() == 0 && self.head() == 0 {
+            self.head.move_right(rope, 1);
+            return;
+        }
+        if self.is_empty() {
+            self.anchor.move_right(rope, 1);
+            self.head.move_left(rope, 1);
+            assert_eq!(self.grapheme_length(rope), 2);
+            return;
+        }
+        if self.grapheme_length(rope) == 1 {
+            self.flip_forward(rope);
+        }
     }
 
+    // TODO: Allow moving both cursors to EOF
     pub fn extend_right(&mut self, rope: &Rope, count: usize) {
         self.head.move_right(rope, count);
+        if self.is_empty() {
+            self.anchor.move_left(rope, 1);
+            self.head.move_right(rope, 1);
+            assert_eq!(self.grapheme_length(rope), 2);
+            return;
+        }
+        if self.grapheme_length(rope) == 1 {
+            self.flip_forward(rope);
+        }
     }
 
-    pub fn flip(&mut self) {
+    pub fn flip(&mut self, rope: &Rope) {
+        if self.is_forward() && self.grapheme_length(rope) == 1 {
+            return;
+        }
         std::mem::swap(&mut self.anchor, &mut self.head);
     }
 
-    pub fn flip_forward(&mut self) {
+    pub fn flip_forward(&mut self, rope: &Rope) {
         if self.is_backward() {
-            self.flip();
+            self.flip(rope);
         }
     }
 
-    pub fn flip_backward(&mut self) {
+    pub fn flip_backward(&mut self, rope: &Rope) {
         if self.is_forward() {
-            self.flip();
+            self.flip(rope);
         }
     }
 
-    pub fn reduce(&mut self) {
-        self.anchor = self.head;
+    pub fn reduce(&mut self, rope: &Rope) {
+        if self.is_eof(rope) {
+            return;
+        }
+        if self.is_forward() {
+            self.anchor = self.head;
+            self.anchor.move_left(rope, 1);
+        } else {
+            self.anchor = self.head;
+            self.head.move_right(rope, 1);
+        }
+        assert_eq!(self.grapheme_length(rope), 1);
     }
 
     pub fn insert_char(&mut self, rope: &mut Rope, char: char) {
@@ -107,42 +179,62 @@ impl RawRange {
     }
 
     pub fn insert(&mut self, rope: &mut Rope, string: &str) {
-        let edits = self.head.insert_impl(rope, string);
-        self.anchor = RawCursor::new(rope, edits.transform_index(self.anchor.gap_index)).unwrap();
+        let mut range = *self;
+        range.reduce(rope);
+        let edits = range.anchor.insert_impl(rope, string);
+        *self = Self::new_snapped(
+            rope,
+            edits.transform_index(self.anchor.gap_index),
+            edits.transform_index(self.head.gap_index),
+        );
     }
 
     pub fn delete_before(&mut self, rope: &mut Rope, count: usize) {
-        let edits = self.head.delete_before_impl(rope, count);
+        let mut range = *self;
+        range.reduce(rope);
+        let edits = range.anchor.delete_before_impl(rope, count);
         self.anchor.gap_index = edits.transform_index(self.anchor.gap_index);
+        self.head.gap_index = edits.transform_index(self.head.gap_index);
     }
 
-    // TODO: Add grapheme awareness
-    // TODO: Don't crash when range contains EOF.
-    // TODO: Accept count. Can't naively write `edits.delete(count)`, otherwise you're implying
-    // there exist that many characters to delete, and you'll get a length mismatch error.
     pub fn delete(&mut self, rope: &mut Rope) {
-        if rope.len_chars() == 0 {
+        if self.is_empty() {
             return;
         }
         let mut edits = EditSeq::new();
         edits.retain(self.start());
-        // TODO: Remove `+ 1` in favor of the end being the gap after the last grapheme, not the gap
-        // before the last grapheme.
-        edits.delete((self.end() - self.start()) + 1);
+        edits.delete(self.char_length());
         edits.retain_rest(rope);
         edits.apply(rope).unwrap();
-        self.anchor.gap_index = self.start();
-        self.head.gap_index = self.start();
+        self.anchor.gap_index = edits.transform_index(self.anchor.gap_index);
+        self.head.gap_index = edits.transform_index(self.head.gap_index);
+        assert_eq!(self.anchor, self.head);
+        self.extend_right(rope, 1);
     }
 
     pub fn delete_after(&mut self, rope: &mut Rope, count: usize) {
-        let edits = self.head.delete_after_impl(rope, count);
+        let mut range = *self;
+        range.reduce(rope);
+        let edits = range.head.delete_after_impl(rope, count);
         self.anchor.gap_index = edits.transform_index(self.anchor.gap_index);
+        self.head.gap_index = edits.transform_index(self.head.gap_index);
     }
 
     pub(crate) fn assert_valid(&self, rope: &Rope) {
         self.anchor.assert_valid(rope);
         self.head.assert_valid(rope);
+        assert!(
+            !self.is_empty() || self.is_eof(rope),
+            "Range empty but not at EOF (anchor={}, head={})",
+            self.anchor.gap_index,
+            self.head.gap_index,
+        );
+        assert!(
+            self.is_forward() || self.grapheme_length(rope) > 1,
+            "Range reduced but not facing forward (anchor={}, head={})",
+            self.anchor.gap_index,
+            self.head.gap_index,
+        );
     }
 }
 
@@ -201,6 +293,26 @@ impl<'a> Range<'a> {
     }
 
     #[must_use]
+    pub fn char_length(&self) -> usize {
+        self.range.char_length()
+    }
+
+    #[must_use]
+    pub fn grapheme_length(&self) -> usize {
+        self.range.grapheme_length(self.rope)
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.range.is_empty()
+    }
+
+    #[must_use]
+    pub fn is_eof(&self) -> bool {
+        self.range.is_eof(self.rope)
+    }
+
+    #[must_use]
     pub fn is_forward(&self) -> bool {
         self.range.is_forward()
     }
@@ -227,19 +339,19 @@ impl<'a> Range<'a> {
     }
 
     pub fn flip(&mut self) {
-        self.range.flip();
+        self.range.flip(self.rope);
     }
 
     pub fn flip_forward(&mut self) {
-        self.range.flip_forward();
+        self.range.flip_forward(self.rope);
     }
 
     pub fn flip_backward(&mut self) {
-        self.range.flip_backward();
+        self.range.flip_backward(self.rope);
     }
 
     pub fn reduce(&mut self) {
-        self.range.reduce();
+        self.range.reduce(self.rope);
     }
 
     pub(crate) fn assert_valid(&self) {
@@ -311,6 +423,26 @@ impl<'a> RangeMut<'a> {
     }
 
     #[must_use]
+    pub fn char_length(&self) -> usize {
+        self.range.char_length()
+    }
+
+    #[must_use]
+    pub fn grapheme_length(&self) -> usize {
+        self.range.grapheme_length(self.rope)
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.range.is_empty()
+    }
+
+    #[must_use]
+    pub fn is_eof(&self) -> bool {
+        self.range.is_eof(self.rope)
+    }
+
+    #[must_use]
     pub fn is_forward(&self) -> bool {
         self.range.is_forward()
     }
@@ -337,19 +469,19 @@ impl<'a> RangeMut<'a> {
     }
 
     pub fn flip(&mut self) {
-        self.range.flip();
+        self.range.flip(self.rope);
     }
 
     pub fn flip_forward(&mut self) {
-        self.range.flip_forward();
+        self.range.flip_forward(self.rope);
     }
 
     pub fn flip_backward(&mut self) {
-        self.range.flip_backward();
+        self.range.flip_backward(self.rope);
     }
 
     pub fn reduce(&mut self) {
-        self.range.reduce();
+        self.range.reduce(self.rope);
     }
 
     pub fn insert_char(&mut self, char: char) {
@@ -383,21 +515,10 @@ impl<'a> RangeMut<'a> {
 mod tests {
     use super::*;
 
-    fn r(anchor_gap_index: usize, head_gap_index: usize) -> RawRange {
-        RawRange {
-            anchor: RawCursor {
-                gap_index: anchor_gap_index,
-            },
-            head: RawCursor {
-                gap_index: head_gap_index,
-            },
-        }
-    }
-
     #[test]
     fn insert_changes_grapheme_boundary() {
         let mut rope = Rope::from_str("\u{0301}"); // combining acute accent (´)
-        let mut range = RangeMut::new(&mut rope, 0, 0).unwrap();
+        let mut range = RangeMut::new_snapped(&mut rope, 0, 0);
         range.insert("e");
         range.assert_valid();
     }

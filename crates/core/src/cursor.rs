@@ -14,18 +14,26 @@ pub struct RawCursor {
 impl RawCursor {
     #[must_use]
     pub fn new(rope: &Rope, gap_index: usize) -> Option<Self> {
-        if rope.is_grapheme_boundary(gap_index) {
-            Some(Self { gap_index })
-        } else {
-            None
+        if !rope.is_grapheme_boundary(gap_index) {
+            return None;
         }
+        let cursor = Self { gap_index };
+        cursor.assert_valid(rope);
+        Some(cursor)
     }
 
     #[must_use]
     pub fn new_snapped(rope: &Rope, gap_index: usize, snap_bias: Bias) -> Self {
-        Self {
+        let cursor = Self {
             gap_index: rope.snap_to_grapheme_boundary(gap_index, snap_bias),
-        }
+        };
+        cursor.assert_valid(rope);
+        cursor
+    }
+
+    #[must_use]
+    pub fn gap_index(&self) -> usize {
+        self.gap_index
     }
 
     #[must_use]
