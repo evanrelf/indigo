@@ -196,22 +196,14 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let light_yellow = Color::Rgb(0xff, 0xf5, 0xb1);
     let dark_yellow = Color::Rgb(0xff, 0xd3, 0x3d);
-    let red = Color::Rgb(0xd7, 0x3a, 0x4a);
-    let head_color = if range.head.is_eof(editor.rope()) {
-        red
-    } else {
-        dark_yellow
-    };
+    // let red = Color::Rgb(0xd7, 0x3a, 0x4a);
 
-    for index in range.start()..=range.end() {
-        if let Some(rect) = cursor_area(index) {
-            let color = if index == range.head() {
-                head_color
-            } else {
-                light_yellow
-            };
-            surface.set_style(rect, Style::default().bg(color));
-        }
+    for rect in (range.start()..=range.end()).filter_map(cursor_area) {
+        surface.set_style(rect, Style::default().bg(light_yellow));
+    }
+
+    if let Some(rect) = cursor_area(range.head()) {
+        surface.set_style(rect, Style::default().bg(dark_yellow));
     }
 }
 
