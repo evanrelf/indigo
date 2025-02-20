@@ -116,8 +116,13 @@ impl RawCursor {
         edits
     }
 
-    pub(crate) fn is_valid(&self, rope: &Rope) -> bool {
-        rope.try_is_grapheme_boundary(self.gap_index).ok() == Some(true)
+    pub(crate) fn assert_valid(&self, rope: &Rope) {
+        assert_eq!(
+            rope.try_is_grapheme_boundary(self.gap_index).ok(),
+            Some(true),
+            "Cursor not on a grapheme boundary (gap_index={})",
+            self.gap_index
+        );
     }
 }
 
@@ -156,8 +161,8 @@ impl<'a> Cursor<'a> {
         self.cursor.move_right(self.rope, count);
     }
 
-    pub(crate) fn is_valid(&self) -> bool {
-        self.cursor.is_valid(self.rope)
+    pub(crate) fn assert_valid(&self) {
+        self.cursor.assert_valid(self.rope);
     }
 }
 
@@ -212,8 +217,8 @@ impl<'a> CursorMut<'a> {
         self.cursor.delete_after(self.rope, count);
     }
 
-    pub(crate) fn is_valid(&self) -> bool {
-        self.cursor.is_valid(self.rope)
+    pub(crate) fn assert_valid(&self) {
+        self.cursor.assert_valid(self.rope);
     }
 }
 
@@ -269,11 +274,7 @@ mod tests {
         let mut rope = Rope::from_str("\u{0301}"); // combining acute accent (´)
         let mut cursor = CursorMut::new(&mut rope, 0, Bias::Before);
         cursor.insert("e");
-        let gap_index = cursor.gap_index();
-        assert!(
-            cursor.is_valid(),
-            "cursor not on grapheme boundary\nrope = {rope:?}\ngap_index = {gap_index}"
-        );
+        cursor.assert_valid();
     }
 
     #[test]
@@ -310,12 +311,8 @@ mod tests {
                     _ => break,
                 }
                 let actions = actions.join("\n  ");
-                let gap_index = cursor.gap_index();
-                let length = cursor.rope.len_chars();
-                assert!(
-                    cursor.is_valid(),
-                    "not a grapheme boundary\nactions =\n  {actions}\ngap_index = {gap_index}\nrope = {rope:?}\nlength = {length}"
-                );
+                let _ = actions;
+                cursor.assert_valid();
             }
             Ok(())
         });

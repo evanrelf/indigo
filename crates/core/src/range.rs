@@ -168,8 +168,9 @@ impl RawRange {
         self.anchor.gap_index = edits.transform_index(self.anchor.gap_index);
     }
 
-    pub(crate) fn is_valid(&self, rope: &Rope) -> bool {
-        self.anchor.is_valid(rope) && self.head.is_valid(rope)
+    pub(crate) fn assert_valid(&self, rope: &Rope) {
+        self.anchor.assert_valid(rope);
+        self.head.assert_valid(rope);
     }
 }
 
@@ -268,8 +269,8 @@ impl<'a> Range<'a> {
         self.range.reduce();
     }
 
-    pub(crate) fn is_valid(&self) -> bool {
-        self.range.is_valid(self.rope)
+    pub(crate) fn assert_valid(&self) {
+        self.range.assert_valid(self.rope);
     }
 
     // TODO: Add `set_{head, anchor}`?
@@ -397,8 +398,8 @@ impl<'a> RangeMut<'a> {
         self.range.delete_after(self.rope, count);
     }
 
-    pub(crate) fn is_valid(&self) -> bool {
-        self.range.is_valid(self.rope)
+    pub(crate) fn assert_valid(&self) {
+        self.range.assert_valid(self.rope);
     }
 
     // TODO: Add `set_{head, anchor}`?
@@ -464,12 +465,7 @@ mod tests {
         let mut rope = Rope::from_str("\u{0301}"); // combining acute accent (´)
         let mut range = RangeMut::new(&mut rope, 0, 0);
         range.insert("e");
-        let anchor = range.anchor();
-        let head = range.head();
-        assert!(
-            range.is_valid(),
-            "range not on grapheme boundary\nrope = {rope:?}\nanchor = {anchor}\nhead = {head}"
-        );
+        range.assert_valid();
     }
 
     #[test]

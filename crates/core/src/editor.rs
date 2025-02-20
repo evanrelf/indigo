@@ -51,7 +51,7 @@ impl Editor {
             self.range.anchor.gap_index,
             self.range.head.gap_index,
         );
-        assert!(range.is_valid(), "Editor range was invalid");
+        range.assert_valid();
         func(&range)
     }
 
@@ -61,9 +61,9 @@ impl Editor {
             self.range.anchor.gap_index,
             self.range.head.gap_index,
         );
-        assert!(range.is_valid(), "Editor range was invalid");
+        range.assert_valid();
         let result = func(&mut range);
-        assert!(range.is_valid(), "Editor range was made invalid");
+        range.assert_valid();
         self.range = range.into_raw();
         result
     }
