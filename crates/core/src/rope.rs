@@ -46,9 +46,6 @@ pub trait RopeExt {
         Graphemes::new(&self.as_slice())
     }
 
-    // TODO: Implement this, like `unicode-segmentation`:
-    // https://docs.rs/unicode-segmentation/latest/unicode_segmentation/trait.UnicodeSegmentation.html#tymethod.grapheme_indices
-    // fn grapheme_indices(&self) -> GraphemeIndices<'_>;
     fn grapheme_boundaries(&self) -> GraphemeBoundaries<'_> {
         GraphemeBoundaries::new(&self.as_slice())
     }
