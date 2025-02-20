@@ -72,22 +72,6 @@ impl RawRange {
     }
 
     #[must_use]
-    pub fn char_length(&self) -> usize {
-        self.end() - self.start()
-    }
-
-    #[must_use]
-    pub fn grapheme_length(&self, rope: &Rope) -> usize {
-        // Checking `char_length` first because `Graphemes` iterator returns 1 grapheme for empty
-        // string (I guess an off by one error in this context?).
-        match self.char_length() {
-            0 => 0,
-            1 => 1,
-            _ => self.rope_slice(rope).graphemes().count(),
-        }
-    }
-
-    #[must_use]
     pub fn is_forward(&self) -> bool {
         self.anchor <= self.head
     }
@@ -239,16 +223,6 @@ impl<'a> Range<'a> {
     }
 
     #[must_use]
-    pub fn char_length(&self) -> usize {
-        self.range.char_length()
-    }
-
-    #[must_use]
-    pub fn grapheme_length(&self) -> usize {
-        self.range.grapheme_length(self.rope)
-    }
-
-    #[must_use]
     pub fn is_forward(&self) -> bool {
         self.range.is_forward()
     }
@@ -355,16 +329,6 @@ impl<'a> RangeMut<'a> {
     #[must_use]
     pub fn end(&self) -> usize {
         self.range.end()
-    }
-
-    #[must_use]
-    pub fn char_length(&self) -> usize {
-        self.range.char_length()
-    }
-
-    #[must_use]
-    pub fn grapheme_length(&self) -> usize {
-        self.range.grapheme_length(self.rope)
     }
 
     #[must_use]
