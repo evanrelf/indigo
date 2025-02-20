@@ -152,6 +152,26 @@ mod tests {
     }
 
     #[test]
+    fn graphemes() {
+        let a = |text: &str| {
+            Rope::from_str(text)
+                .graphemes()
+                .map(String::from)
+                .collect::<Vec<_>>()
+        };
+        let e = |graphemes: &'static [&str]| {
+            graphemes
+                .iter()
+                .copied()
+                .map(String::from)
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(a(""), e(&[]));
+        assert_eq!(a("hello"), e(&["h", "e", "l", "l", "o"]));
+        assert_eq!(a("x\t\n🇯🇵👨‍👨‍👧"), e(&["x", "\t", "\n", "🇯🇵", "👨‍👨‍👧"]));
+    }
+
+    #[test]
     fn grapheme_boundaries() {
         arbtest(|u| {
             let rope = Rope::from_str(u.arbitrary()?);
