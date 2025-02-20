@@ -1,7 +1,6 @@
 use crate::{
     cursor::{snap, Bias, RawCursor},
     ot::EditSeq,
-    rope::RopeExt as _,
 };
 use ropey::{Rope, RopeSlice};
 use std::cmp::{max, min};
@@ -18,21 +17,13 @@ pub struct RawRange {
 impl RawRange {
     #[must_use]
     pub fn new(rope: &Rope, anchor_gap_index: usize, head_gap_index: usize) -> Self {
-        let mut anchor = RawCursor {
-            gap_index: anchor_gap_index,
+        let (anchor_snap_bias, head_snap_bias) = if anchor_gap_index < head_gap_index {
+            (Bias::Before, Bias::After)
+        } else {
+            (Bias::After, Bias::Before)
         };
-        let mut head = RawCursor {
-            gap_index: head_gap_index,
-        };
-
-        if !rope.is_grapheme_boundary(anchor.gap_index) {
-            anchor.gap_index = rope.len_chars();
-        }
-
-        if !rope.is_grapheme_boundary(head.gap_index) {
-            head.gap_index = rope.len_chars();
-        }
-
+        let anchor = RawCursor::new(rope, anchor_gap_index, anchor_snap_bias);
+        let head = RawCursor::new(rope, head_gap_index, head_snap_bias);
         Self { anchor, head }
     }
 
