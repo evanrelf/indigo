@@ -301,6 +301,8 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let head = editor.range().head();
 
+    let eof = editor.range().head() == editor.rope().len_chars();
+
     let mode = match editor.mode {
         Mode::Normal { .. } => "normal",
         Mode::Insert => "insert",
@@ -308,9 +310,14 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let count = editor.mode.count();
 
-    let eof = editor.range().head() == editor.rope().len_chars();
-
-    let status_bar = format!("anchor={anchor} head={head} mode={mode} count={count} eof={eof}");
+    let status_bar = [
+        format!("anchor={anchor}"),
+        format!("head={head}"),
+        format!("eof={eof}"),
+        format!("mode={mode}"),
+        format!("count={count}"),
+    ]
+    .join(" ");
 
     Line::raw(status_bar).render(area, surface);
 }
