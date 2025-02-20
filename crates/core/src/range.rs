@@ -56,11 +56,6 @@ impl RawRange {
         self.anchor > self.head
     }
 
-    #[must_use]
-    pub fn is_reduced(&self) -> bool {
-        self.anchor == self.head
-    }
-
     pub fn move_left(&mut self, rope: &Rope, count: usize) {
         self.extend_left(rope, count);
         self.reduce();
@@ -80,9 +75,7 @@ impl RawRange {
     }
 
     pub fn flip(&mut self) {
-        if !self.is_reduced() {
-            std::mem::swap(&mut self.anchor, &mut self.head);
-        }
+        std::mem::swap(&mut self.anchor, &mut self.head);
     }
 
     pub fn flip_forward(&mut self) {
@@ -207,11 +200,6 @@ impl<'a> Range<'a> {
         self.range.is_backward()
     }
 
-    #[must_use]
-    pub fn is_reduced(&self) -> bool {
-        self.range.is_reduced()
-    }
-
     pub fn move_left(&mut self, count: usize) {
         self.range.move_left(self.rope, count);
     }
@@ -314,11 +302,6 @@ impl<'a> RangeMut<'a> {
     #[must_use]
     pub fn is_backward(&self) -> bool {
         self.range.is_backward()
-    }
-
-    #[must_use]
-    pub fn is_reduced(&self) -> bool {
-        self.range.is_reduced()
     }
 
     pub fn move_left(&mut self, count: usize) {
