@@ -1,4 +1,4 @@
-use ratatui::{backend::CrosstermBackend, Terminal};
+use ratatui::{Terminal, backend::CrosstermBackend};
 use std::{
     io::Stdout,
     ops::{Deref, DerefMut},

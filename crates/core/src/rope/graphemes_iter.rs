@@ -1,6 +1,6 @@
 //! From <https://github.com/cessen/ropey/blob/master/examples/graphemes_iter.rs>.
 
-use ropey::{iter::Chunks, RopeSlice};
+use ropey::{RopeSlice, iter::Chunks};
 use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
 
 pub struct Graphemes<'a> {

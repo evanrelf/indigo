@@ -1,4 +1,4 @@
-use flagset::{flags, FlagSet};
+use flagset::{FlagSet, flags};
 use std::{
     fmt::{Display, Formatter},
     hash::{Hash, Hasher},
