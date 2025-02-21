@@ -30,6 +30,7 @@ impl RawRange {
 
     #[must_use]
     pub fn rope_slice<'a>(&self, rope: &'a Rope) -> RopeSlice<'a> {
+        self.assert_valid(rope);
         rope.slice(self.start()..=self.end())
     }
 

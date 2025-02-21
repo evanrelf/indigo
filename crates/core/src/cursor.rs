@@ -61,6 +61,7 @@ impl RawCursor {
 
     #[must_use]
     pub(crate) fn insert_impl(&mut self, rope: &mut Rope, string: &str) -> EditSeq {
+        self.assert_valid(rope);
         let mut edits = EditSeq::new();
         edits.retain(self.gap_index);
         edits.insert(string);
@@ -82,6 +83,7 @@ impl RawCursor {
 
     #[must_use]
     pub(crate) fn delete_before_impl(&mut self, rope: &mut Rope, count: usize) -> EditSeq {
+        self.assert_valid(rope);
         let mut gap_index = self.gap_index;
         for _ in 1..=count {
             match rope.prev_grapheme_boundary(gap_index) {
@@ -104,6 +106,7 @@ impl RawCursor {
 
     #[must_use]
     pub(crate) fn delete_after_impl(&mut self, rope: &mut Rope, count: usize) -> EditSeq {
+        self.assert_valid(rope);
         let mut gap_index = self.gap_index;
         for _ in 1..=count {
             match rope.next_grapheme_boundary(gap_index) {
@@ -121,6 +124,11 @@ impl RawCursor {
     }
 
     pub(crate) fn assert_valid(&self, rope: &Rope) {
+        assert!(
+            self.gap_index <= rope.len_chars(),
+            "Cursor beyond end of rope (gap_index={})",
+            self.gap_index
+        );
         assert!(
             rope.is_grapheme_boundary(self.gap_index),
             "Cursor not on a grapheme boundary (gap_index={})",
