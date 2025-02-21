@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/*"]
 
 [workspace.dependencies]
-anyhow = "1.0.95"
+anyhow = "1.0.96"
 arbtest = "0.3.2"
 arrayvec = "0.7.6"
 camino = "1.1.9"
@@ -16,11 +16,11 @@ indigo-core = { path = "crates/core/" }
 indigo-tui = { path = "crates/tui/" }
 ratatui = "0.29.0"
 ropey = "1.6.1"
-serde = { version = "1.0.217", features = ["derive", "rc"] }
+serde = { version = "1.0.218", features = ["derive", "rc"] }
 thiserror = "2.0.11"
 unicode-segmentation = "1.12.0"
 unicode-width = "0.2.0"
-winnow = "0.7.2"
+winnow = "0.7.3"
 
 [workspace.lints]
 clippy.bool_to_int_with_if = "allow"
