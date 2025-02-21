@@ -10,14 +10,21 @@ pub struct RawRange {
 
 impl RawRange {
     #[must_use]
-    pub fn new(rope: &Rope, anchor_gap_index: usize, head_gap_index: usize) -> Self {
+    pub fn new(rope: &Rope, anchor_gap_index: usize, head_gap_index: usize) -> Option<Self> {
+        let anchor = RawCursor::new(rope, anchor_gap_index)?;
+        let head = RawCursor::new(rope, head_gap_index)?;
+        Some(Self { anchor, head })
+    }
+
+    #[must_use]
+    pub fn new_snapped(rope: &Rope, anchor_gap_index: usize, head_gap_index: usize) -> Self {
         let (anchor_snap_bias, head_snap_bias) = if anchor_gap_index < head_gap_index {
             (Bias::Before, Bias::After)
         } else {
             (Bias::After, Bias::Before)
         };
-        let anchor = RawCursor::new(rope, anchor_gap_index, anchor_snap_bias);
-        let head = RawCursor::new(rope, head_gap_index, head_snap_bias);
+        let anchor = RawCursor::new_snapped(rope, anchor_gap_index, anchor_snap_bias);
+        let head = RawCursor::new_snapped(rope, head_gap_index, head_snap_bias);
         Self { anchor, head }
     }
 
@@ -100,11 +107,7 @@ impl RawRange {
 
     pub fn insert(&mut self, rope: &mut Rope, string: &str) {
         let edits = self.head.insert_impl(rope, string);
-        self.anchor = RawCursor::new(
-            rope,
-            edits.transform_index(self.anchor.gap_index),
-            Bias::After,
-        );
+        self.anchor = RawCursor::new(rope, edits.transform_index(self.anchor.gap_index)).unwrap();
     }
 
     pub fn delete_before(&mut self, rope: &mut Rope, count: usize) {
@@ -150,8 +153,14 @@ pub struct Range<'a> {
 
 impl<'a> Range<'a> {
     #[must_use]
-    pub fn new(rope: &'a Rope, anchor_gap_index: usize, head_gap_index: usize) -> Self {
-        let range = RawRange::new(rope, anchor_gap_index, head_gap_index);
+    pub fn new(rope: &'a Rope, anchor_gap_index: usize, head_gap_index: usize) -> Option<Self> {
+        let range = RawRange::new(rope, anchor_gap_index, head_gap_index)?;
+        Some(Self { rope, range })
+    }
+
+    #[must_use]
+    pub fn new_snapped(rope: &'a Rope, anchor_gap_index: usize, head_gap_index: usize) -> Self {
+        let range = RawRange::new_snapped(rope, anchor_gap_index, head_gap_index);
         Self { rope, range }
     }
 
@@ -247,8 +256,14 @@ pub struct RangeMut<'a> {
 
 impl<'a> RangeMut<'a> {
     #[must_use]
-    pub fn new(rope: &'a mut Rope, anchor_gap_index: usize, head_gap_index: usize) -> Self {
-        let range = RawRange::new(rope, anchor_gap_index, head_gap_index);
+    pub fn new(rope: &'a mut Rope, anchor_gap_index: usize, head_gap_index: usize) -> Option<Self> {
+        let range = RawRange::new(rope, anchor_gap_index, head_gap_index)?;
+        Some(Self { rope, range })
+    }
+
+    #[must_use]
+    pub fn new_snapped(rope: &'a mut Rope, anchor_gap_index: usize, head_gap_index: usize) -> Self {
+        let range = RawRange::new_snapped(rope, anchor_gap_index, head_gap_index);
         Self { rope, range }
     }
 
@@ -381,7 +396,7 @@ mod tests {
     #[test]
     fn insert_changes_grapheme_boundary() {
         let mut rope = Rope::from_str("\u{0301}"); // combining acute accent (´)
-        let mut range = RangeMut::new(&mut rope, 0, 0);
+        let mut range = RangeMut::new(&mut rope, 0, 0).unwrap();
         range.insert("e");
         range.assert_valid();
     }

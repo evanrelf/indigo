@@ -13,7 +13,16 @@ pub struct RawCursor {
 
 impl RawCursor {
     #[must_use]
-    pub fn new(rope: &Rope, gap_index: usize, snap_bias: Bias) -> Self {
+    pub fn new(rope: &Rope, gap_index: usize) -> Option<Self> {
+        if rope.is_grapheme_boundary(gap_index) {
+            Some(Self { gap_index })
+        } else {
+            None
+        }
+    }
+
+    #[must_use]
+    pub fn new_snapped(rope: &Rope, gap_index: usize, snap_bias: Bias) -> Self {
         Self {
             gap_index: rope.snap_to_grapheme_boundary(gap_index, snap_bias),
         }
@@ -127,8 +136,14 @@ pub struct Cursor<'a> {
 
 impl<'a> Cursor<'a> {
     #[must_use]
-    pub fn new(rope: &'a Rope, gap_index: usize, snap_bias: Bias) -> Self {
-        let cursor = RawCursor::new(rope, gap_index, snap_bias);
+    pub fn new(rope: &'a Rope, gap_index: usize) -> Option<Self> {
+        let cursor = RawCursor::new(rope, gap_index)?;
+        Some(Self { rope, cursor })
+    }
+
+    #[must_use]
+    pub fn new_snapped(rope: &'a Rope, gap_index: usize, snap_bias: Bias) -> Self {
+        let cursor = RawCursor::new_snapped(rope, gap_index, snap_bias);
         Self { rope, cursor }
     }
 
@@ -167,8 +182,14 @@ pub struct CursorMut<'a> {
 
 impl<'a> CursorMut<'a> {
     #[must_use]
-    pub fn new(rope: &'a mut Rope, gap_index: usize, snap_bias: Bias) -> Self {
-        let cursor = RawCursor::new(rope, gap_index, snap_bias);
+    pub fn new(rope: &'a mut Rope, gap_index: usize) -> Option<Self> {
+        let cursor = RawCursor::new(rope, gap_index)?;
+        Some(Self { rope, cursor })
+    }
+
+    #[must_use]
+    pub fn new_snapped(rope: &'a mut Rope, gap_index: usize, snap_bias: Bias) -> Self {
+        let cursor = RawCursor::new_snapped(rope, gap_index, snap_bias);
         Self { rope, cursor }
     }
 
@@ -224,7 +245,7 @@ mod tests {
     #[test]
     fn insert_changes_grapheme_boundary() {
         let mut rope = Rope::from_str("\u{0301}"); // combining acute accent (´)
-        let mut cursor = CursorMut::new(&mut rope, 0, Bias::Before);
+        let mut cursor = CursorMut::new(&mut rope, 0).unwrap();
         cursor.insert("e");
         cursor.assert_valid();
     }
@@ -235,7 +256,7 @@ mod tests {
             let mut rope = Rope::new();
             let gap_index = u.arbitrary()?;
             let snap_bias = u.choose(&[Bias::Before, Bias::After])?;
-            let mut cursor = CursorMut::new(&mut rope, gap_index, *snap_bias);
+            let mut cursor = CursorMut::new_snapped(&mut rope, gap_index, *snap_bias);
             let mut actions = Vec::new();
             for _ in 0..u.choose_index(100)? {
                 match u.choose_index(4)? {

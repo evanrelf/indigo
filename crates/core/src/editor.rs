@@ -24,7 +24,7 @@ impl Editor {
         } else {
             Rope::new()
         };
-        let range = RawRange::new(&rope, 0, 0);
+        let range = RawRange::new(&rope, 0, 0).unwrap();
         Ok(Self {
             rope,
             range,
@@ -50,8 +50,8 @@ impl Editor {
             &self.rope,
             self.range.anchor.gap_index,
             self.range.head.gap_index,
-        );
-        range.assert_valid();
+        )
+        .unwrap();
         func(&range)
     }
 
@@ -60,8 +60,8 @@ impl Editor {
             &mut self.rope,
             self.range.anchor.gap_index,
             self.range.head.gap_index,
-        );
-        range.assert_valid();
+        )
+        .unwrap();
         let result = func(&mut range);
         range.assert_valid();
         self.range = range.raw();
