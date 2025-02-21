@@ -81,7 +81,7 @@ enum Node<K: Key, V: Value> {
 
 impl<K: Key, V: Value> Node<K, V> {
     fn insert(&mut self, key: &K, value: V) {
-        if let Self::Branch(ref mut branch) = self {
+        if let Self::Branch(branch) = self {
             branch.insert(key, value);
             return;
         }
