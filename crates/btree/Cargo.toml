@@ -1,6 +1,6 @@
 [package]
 name = "indigo-btree"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 arrayvec = { workspace = true }

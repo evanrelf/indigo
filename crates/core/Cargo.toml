@@ -1,6 +1,6 @@
 [package]
 name = "indigo-core"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 anyhow = { workspace = true }
