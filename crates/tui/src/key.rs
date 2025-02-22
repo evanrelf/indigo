@@ -52,7 +52,7 @@ pub fn key_code_c2i(code: c::KeyCode) -> anyhow::Result<i::KeyCode> {
     match code {
         c::KeyCode::Backspace => Ok(i::KeyCode::Backspace),
         c::KeyCode::Delete => Ok(i::KeyCode::Delete),
-        c::KeyCode::Enter => Ok(i::KeyCode::Enter),
+        c::KeyCode::Enter => Ok(i::KeyCode::Return),
         c::KeyCode::Left => Ok(i::KeyCode::Left),
         c::KeyCode::Right => Ok(i::KeyCode::Right),
         c::KeyCode::Up => Ok(i::KeyCode::Up),
@@ -68,7 +68,7 @@ pub fn key_code_i2c(code: i::KeyCode) -> c::KeyCode {
     match code {
         i::KeyCode::Backspace => c::KeyCode::Backspace,
         i::KeyCode::Delete => c::KeyCode::Delete,
-        i::KeyCode::Enter => c::KeyCode::Enter,
+        i::KeyCode::Return => c::KeyCode::Enter,
         i::KeyCode::Left => c::KeyCode::Left,
         i::KeyCode::Right => c::KeyCode::Right,
         i::KeyCode::Up => c::KeyCode::Up,

@@ -111,7 +111,7 @@ impl Display for Key {
         let code = match self.code {
             KeyCode::Backspace => "backspace",
             KeyCode::Delete => "delete",
-            KeyCode::Enter => "enter",
+            KeyCode::Return => "return",
             KeyCode::Left => "left",
             KeyCode::Right => "right",
             KeyCode::Up => "up",
@@ -197,7 +197,7 @@ fn key_modifier(input: &mut &str) -> ModalResult<KeyModifier> {
 pub enum KeyCode {
     Backspace,
     Delete,
-    Enter,
+    Return,
     Left,
     Right,
     Up,
@@ -215,7 +215,7 @@ fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
     alt((
         alt(("backspace", "bs")).value(KeyCode::Backspace),
         alt(("delete", "del")).value(KeyCode::Delete),
-        alt(("enter", "return", "cr")).value(KeyCode::Enter),
+        alt(("return", "ret", "enter", "cr")).value(KeyCode::Return),
         "left".value(KeyCode::Left),
         "right".value(KeyCode::Right),
         "up".value(KeyCode::Up),
@@ -247,7 +247,7 @@ mod tests {
         use KeyCode::*;
         use KeyModifier::*;
         assert_eq!(
-            keys.parse("%s\\bfn\\b<enter>E<a-k>test<enter><"),
+            keys.parse("%s\\bfn\\b<ret>E<a-k>test<ret><"),
             Ok(Keys(vec![
                 Key::from('%'),
                 Key::from('s'),
@@ -257,14 +257,14 @@ mod tests {
                 Key::from('n'),
                 Key::from('\\'),
                 Key::from('b'),
-                Key::from(Enter),
+                Key::from(Return),
                 Key::from('E'),
                 Key::from(([Alt], 'k')),
                 Key::from('t'),
                 Key::from('e'),
                 Key::from('s'),
                 Key::from('t'),
-                Key::from(Enter),
+                Key::from(Return),
                 Key::from('<'),
             ]))
         );

@@ -84,7 +84,7 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) {
             (m, C::Backspace) if m.is_empty() => actions::delete_before(editor),
             (m, C::Delete) if m.is_empty() => actions::delete_after(editor),
             (m, C::Char(c)) if m.is_empty() => actions::insert_char(editor, c),
-            (m, C::Enter) if m.is_empty() => actions::insert_char(editor, '\n'),
+            (m, C::Return) if m.is_empty() => actions::insert_char(editor, '\n'),
             (m, C::Tab) if m.is_empty() => actions::insert_char(editor, '\t'),
             (m, C::Char('u')) if m == M::Control => actions::scroll_half_page_up(editor),
             (m, C::Char('d')) if m == M::Control => actions::scroll_half_page_down(editor),
