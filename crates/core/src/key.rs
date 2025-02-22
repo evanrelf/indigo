@@ -282,6 +282,7 @@ impl From<char> for KeyCode {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arbtest::arbtest;
 
     #[test]
     fn test_parse_keys() {
@@ -332,6 +333,18 @@ mod tests {
         );
         assert_eq!(key.parse("<c-c-tab>"), Ok(Key::from(([Control], Tab))));
         assert!(key.parse("tab").is_err());
+    }
+
+    #[test]
+    fn test_parse_key_roundtrip() {
+        arbtest(|u| {
+            let key = u.arbitrary::<Key>()?;
+            match key.to_string().parse() {
+                Ok(parsed_key) => assert_eq!(key, parsed_key),
+                Err(e) => panic!("Failed to parse `{key:?}` printed as `{key}`:\n{e}"),
+            }
+            Ok(())
+        });
     }
 
     #[test]
