@@ -1,10 +1,15 @@
 use clap::Parser as _;
-use indigo_core::prelude::*;
+use indigo_core::{
+    event::{handle_event, Event},
+    prelude::*,
+};
 use std::io;
 
 #[derive(Debug, clap::Parser)]
 struct Args {
-    keys: Option<Keys>,
+    // TODO: Is there a more idiomatic way of writing this defaulting?
+    #[clap(default_value_t = Keys::default())]
+    keys: Keys,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -19,13 +24,17 @@ fn main() -> anyhow::Result<()> {
 
     let args = Args::parse();
 
-    if let Some(keys) = args.keys {
-        eprintln!("{keys}");
+    if !args.keys.0.is_empty() {
+        eprintln!("{}", args.keys);
     }
 
     let rope = Rope::from_reader(io::BufReader::new(io::stdin()))?;
 
-    let editor = Editor::from_rope(rope);
+    let mut editor = Editor::from_rope(rope);
+
+    for key in args.keys.0 {
+        handle_event(&mut editor, &Event::Key(key));
+    }
 
     editor.rope().write_to(io::LineWriter::new(io::stdout()))?;
 

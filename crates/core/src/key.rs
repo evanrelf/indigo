@@ -16,8 +16,9 @@ use arbitrary::Arbitrary;
 
 // TODO: Strict mode? Would forbid repeated modifiers, incorrectly ordered modifiers, etc.
 
+// TODO: Implement `IntoIterator` and `Iterator` in terms of `Vec`. Maybe just `Deref`?
 #[cfg_attr(test, derive(Arbitrary))]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Keys(pub Vec<Key>);
 
 impl Display for Keys {
