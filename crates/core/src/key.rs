@@ -1,4 +1,5 @@
 use flagset::{flags, FlagSet};
+use itertools::Itertools as _;
 use std::{
     fmt::{Display, Formatter},
     hash::{Hash, Hasher},
@@ -123,12 +124,11 @@ impl Display for Key {
             write!(f, "{code}")?;
         } else {
             write!(f, "<")?;
-            // TODO: Define canonical ordering of modifiers for consistency
-            for modifier in self.modifiers {
+            for modifier in self.modifiers.into_iter().sorted_unstable() {
                 let modifier = match modifier {
-                    KeyModifier::Shift => "s",
                     KeyModifier::Control => "c",
                     KeyModifier::Alt => "a",
+                    KeyModifier::Shift => "s",
                 };
                 write!(f, "{modifier}-")?;
             }
@@ -176,19 +176,19 @@ fn key_bare(input: &mut &str) -> ModalResult<Key> {
 }
 
 flags! {
-    #[derive(Hash)]
+    #[derive(Hash, Ord, PartialOrd)]
     pub enum KeyModifier: u8 {
-        Shift,
         Control,
         Alt,
+        Shift,
     }
 }
 
 fn key_modifier(input: &mut &str) -> ModalResult<KeyModifier> {
     alt((
-        alt(("shift", "s")).value(KeyModifier::Shift),
         alt(("control", "ctrl", "c")).value(KeyModifier::Control),
         alt(("option", "alt", "a")).value(KeyModifier::Alt),
+        alt(("shift", "s")).value(KeyModifier::Shift),
     ))
     .parse_next(input)
 }
@@ -294,16 +294,32 @@ mod tests {
     }
 
     #[test]
+    fn test_print_key() {
+        assert_eq!(
+            key.parse("<c-a-s-tab>").map(|k| k.to_string()).ok(),
+            Some(String::from("<c-a-s-tab>"))
+        );
+        assert_eq!(
+            key.parse("<s-c-a-tab>").map(|k| k.to_string()).ok(),
+            Some(String::from("<c-a-s-tab>"))
+        );
+        assert_eq!(
+            key.parse("<a-s-c-tab>").map(|k| k.to_string()).ok(),
+            Some(String::from("<c-a-s-tab>"))
+        );
+    }
+
+    #[test]
     fn test_parse_key_modifier() {
         use KeyModifier::*;
-        assert_eq!(key_modifier.parse("s"), Ok(Shift));
-        assert_eq!(key_modifier.parse("shift"), Ok(Shift));
         assert_eq!(key_modifier.parse("c"), Ok(Control));
         assert_eq!(key_modifier.parse("ctrl"), Ok(Control));
         assert_eq!(key_modifier.parse("control"), Ok(Control));
         assert_eq!(key_modifier.parse("a"), Ok(Alt));
         assert_eq!(key_modifier.parse("alt"), Ok(Alt));
         assert_eq!(key_modifier.parse("option"), Ok(Alt));
+        assert_eq!(key_modifier.parse("s"), Ok(Shift));
+        assert_eq!(key_modifier.parse("shift"), Ok(Shift));
         assert!(key_modifier.parse("abc").is_err());
     }
 
