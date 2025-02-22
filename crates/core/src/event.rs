@@ -34,14 +34,14 @@ fn is(x: &Key, y: &str) -> bool {
     x == y
 }
 
-pub fn handle_event(editor: &mut Editor, event: &Event) {
+pub fn handle_event(editor: &mut Editor, event: &Event) -> bool {
     match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, event),
         Mode::Insert => handle_event_insert(editor, event),
     }
 }
 
-pub fn handle_event_normal(editor: &mut Editor, event: &Event) {
+pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
     let Mode::Normal(ref mut normal_mode) = editor.mode else {
         unreachable!()
     };
@@ -74,12 +74,14 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) {
             _ if is(key, "<c-f>") => actions::scroll_full_page_down(editor),
             // _ if is(key, "<c-l>") => terminal.clear()?,
             _ if is(key, "<c-c>") => editor.quit = true,
-            _ => {}
+            _ => return false,
         },
     }
+
+    true
 }
 
-pub fn handle_event_insert(editor: &mut Editor, event: &Event) {
+pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
     let Mode::Insert = editor.mode else {
         unreachable!()
     };
@@ -98,7 +100,9 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) {
             _ if is(key, "<c-f>") => actions::scroll_full_page_down(editor),
             // _ if is(key, "<c-l>") => terminal.clear()?,
             _ if is(key, "<c-c>") => editor.quit = true,
-            _ => {}
+            _ => return false,
         },
     }
+
+    true
 }
