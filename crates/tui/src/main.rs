@@ -1,18 +1,18 @@
+mod areas;
 mod event;
 mod key;
 mod terminal;
 
-use crate::terminal::TerminalGuard;
+use crate::{areas::Areas, event::handle_event};
 use camino::Utf8PathBuf;
 use clap::Parser as _;
-use crossterm::event::{Event, KeyCode, KeyModifiers, MouseButton, MouseEventKind};
-use indigo_core::{actions, prelude::*};
+use indigo_core::prelude::*;
 use ratatui::{
-    prelude::{Buffer as Surface, Constraint, Layout, Position, Rect, Style, Widget as _},
+    prelude::{Buffer as Surface, Rect, Style, Widget as _},
     style::{Color, Modifier},
     text::{Line, Span},
 };
-use std::{cmp::max, fs::File, io::BufReader, num::NonZeroUsize};
+use std::{fs::File, io::BufReader};
 
 #[derive(Debug, clap::Parser)]
 struct Args {
@@ -62,58 +62,6 @@ fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
-}
-
-#[derive(Clone, Copy, Default)]
-struct Areas {
-    navigation_bar: Rect,
-    line_numbers: Rect,
-    text: Rect,
-    status_bar: Rect,
-}
-
-impl Areas {
-    fn new(editor: &Editor, area: Rect) -> Self {
-        let vertical_areas = Layout::vertical([
-            // navigation_bar
-            Constraint::Length(1),
-            // line_numbers + text
-            Constraint::Fill(1),
-            // status_bar
-            Constraint::Length(1),
-        ])
-        .split(area);
-
-        let line_numbers_width = {
-            let n = editor.rope().len_lines_indigo();
-            let digits = 1 + max(1, n).ilog10();
-            u16::try_from(max(2, digits) + 1)
-                .expect("Line number width should always be very small")
-        };
-
-        let navigation_bar = vertical_areas[0];
-
-        let horizontal_areas = Layout::horizontal([
-            // line_numbers
-            Constraint::Length(line_numbers_width),
-            // text
-            Constraint::Fill(1),
-        ])
-        .split(vertical_areas[1]);
-
-        let status_bar = vertical_areas[2];
-
-        let line_numbers = horizontal_areas[0];
-
-        let text = horizontal_areas[1];
-
-        Self {
-            navigation_bar,
-            line_numbers,
-            text,
-            status_bar,
-        }
-    }
 }
 
 fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
@@ -270,50 +218,6 @@ fn char_index_to_area(
     })
 }
 
-/// Map position on the terminal to a character index in the rope indices. Example us is moving a
-/// cursor to where a mouse was clicked.
-///
-/// `None` means the position was not contained within the area. `Some(Ok(_))` means the position
-/// was valid in the rope. `Some(Err(_))` means the position was not valid in the rope, but we were
-/// able to correct it.
-///
-/// Examples of corrections: snapping to the beginning of the grapheme, snapping to the end of the
-/// line, and snapping to the end of the buffer.
-fn position_to_char_index(
-    position: Position,
-    rope: &Rope,
-    vertical_scroll: usize,
-    area: Rect,
-) -> Option<Result<usize, usize>> {
-    // TODO: Move this general purpose (x, y) <-> index logic somewhere else.
-
-    if !area.contains(position) {
-        return None;
-    }
-
-    let x = usize::from(position.x - area.x);
-
-    let y = usize::from(position.y - area.y) + vertical_scroll;
-
-    let Some(line) = rope.get_line(y) else {
-        // Position goes beyond last line of rope, so we snap to last character of rope
-        return Some(Err(rope.len_chars()));
-    };
-
-    let line_char_index = rope
-        .try_line_to_char(y)
-        .expect("Line is known to exist at this point");
-
-    let line_length = line.len_chars();
-
-    if x > line_length {
-        // Position goes beyond last character of line, so we snap to last character of line
-        return Some(Err(line_char_index + (line_length - 1)));
-    }
-
-    Some(Ok(line_char_index + x))
-}
-
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let anchor = editor.range().anchor();
 
@@ -347,133 +251,4 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     .join(" ");
 
     Line::raw(status_bar).render(area, surface);
-}
-
-fn handle_event(
-    editor: &mut Editor,
-    terminal: &mut TerminalGuard,
-    areas: Areas,
-    event: &Event,
-) -> anyhow::Result<()> {
-    match editor.mode {
-        Mode::Normal(_) => handle_event_normal(editor, terminal, areas, event),
-        Mode::Insert => handle_event_insert(editor, terminal, areas, event),
-    }
-}
-
-fn handle_event_normal(
-    editor: &mut Editor,
-    terminal: &mut TerminalGuard,
-    areas: Areas,
-    event: &Event,
-) -> anyhow::Result<()> {
-    let Mode::Normal(ref mut normal_mode) = editor.mode else {
-        unreachable!()
-    };
-
-    match event {
-        Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-            (KeyModifiers::NONE, KeyCode::Char(c @ ('0'..='9'))) => {
-                let n = usize::from(u8::try_from(c).unwrap() - b'0');
-                normal_mode.count = normal_mode
-                    .count
-                    .saturating_mul(NonZeroUsize::new(10).unwrap())
-                    .saturating_add(n);
-            }
-            (KeyModifiers::NONE, KeyCode::Esc) => actions::enter_normal_mode(editor),
-            (KeyModifiers::NONE, KeyCode::Char('i')) => actions::enter_insert_mode(editor),
-            // TODO: Add `a` for entering insert mode with the cursor moved to the right.
-            (KeyModifiers::NONE, KeyCode::Char('h')) => actions::move_left(editor),
-            (KeyModifiers::NONE, KeyCode::Char('l')) => actions::move_right(editor),
-            (KeyModifiers::SHIFT, KeyCode::Char('h' | 'H')) => actions::extend_left(editor),
-            (KeyModifiers::SHIFT, KeyCode::Char('l' | 'L')) => actions::extend_right(editor),
-            (KeyModifiers::NONE, KeyCode::Char(';')) => actions::reduce(editor),
-            (KeyModifiers::ALT, KeyCode::Char(';')) => actions::flip(editor),
-            (ms, KeyCode::Char(';')) if ms == KeyModifiers::ALT | KeyModifiers::SHIFT => {
-                actions::flip_forward(editor);
-            }
-            (KeyModifiers::NONE, KeyCode::Char('d')) => actions::delete(editor),
-            (KeyModifiers::CONTROL, KeyCode::Char('u')) => actions::scroll_half_page_up(editor),
-            (KeyModifiers::CONTROL, KeyCode::Char('d')) => actions::scroll_half_page_down(editor),
-            (KeyModifiers::CONTROL, KeyCode::Char('b')) => actions::scroll_full_page_up(editor),
-            (KeyModifiers::CONTROL, KeyCode::Char('f')) => actions::scroll_full_page_down(editor),
-            (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
-            (KeyModifiers::CONTROL, KeyCode::Char('c')) => editor.quit = true,
-            _ => {}
-        },
-        Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => actions::scroll_up(editor),
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => actions::scroll_down(editor),
-            // TODO: Kakoune allows creating new selection ranges by control clicking. Would be
-            // awesome if Indigo could do the same, but also support control dragging to create
-            // vertical lines of selection ranges, akin to Vim's visual block mode. Could snap to
-            // the same column? Might be weird in the presence of wide characters.
-            (KeyModifiers::NONE, MouseEventKind::Down(MouseButton::Left)) => {
-                let position = Position {
-                    x: mouse_event.column,
-                    y: mouse_event.row,
-                };
-                if let Some(Err(index) | Ok(index)) = position_to_char_index(
-                    position,
-                    editor.rope(),
-                    editor.vertical_scroll(),
-                    areas.text,
-                ) {
-                    actions::move_to(editor, index);
-                }
-            }
-            (KeyModifiers::NONE, MouseEventKind::Down(MouseButton::Right)) => {
-                let position = Position {
-                    x: mouse_event.column,
-                    y: mouse_event.row,
-                };
-                if let Some(Err(index) | Ok(index)) = position_to_char_index(
-                    position,
-                    editor.rope(),
-                    editor.vertical_scroll(),
-                    areas.text,
-                ) {
-                    actions::extend_to(editor, index);
-                }
-            }
-            _ => {}
-        },
-        _ => {}
-    }
-
-    Ok(())
-}
-
-fn handle_event_insert(
-    editor: &mut Editor,
-    terminal: &mut TerminalGuard,
-    _areas: Areas,
-    event: &Event,
-) -> anyhow::Result<()> {
-    match event {
-        Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-            (KeyModifiers::NONE, KeyCode::Esc) => actions::enter_normal_mode(editor),
-            (KeyModifiers::NONE, KeyCode::Backspace) => actions::delete_before(editor),
-            (KeyModifiers::NONE, KeyCode::Delete) => actions::delete_after(editor),
-            (KeyModifiers::NONE, KeyCode::Char(c)) => actions::insert_char(editor, c),
-            (KeyModifiers::NONE, KeyCode::Enter) => actions::insert_char(editor, '\n'),
-            (KeyModifiers::NONE, KeyCode::Tab) => actions::insert_char(editor, '\t'),
-            (KeyModifiers::CONTROL, KeyCode::Char('u')) => actions::scroll_half_page_up(editor),
-            (KeyModifiers::CONTROL, KeyCode::Char('d')) => actions::scroll_half_page_down(editor),
-            (KeyModifiers::CONTROL, KeyCode::Char('b')) => actions::scroll_full_page_up(editor),
-            (KeyModifiers::CONTROL, KeyCode::Char('f')) => actions::scroll_full_page_down(editor),
-            (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
-            (KeyModifiers::CONTROL, KeyCode::Char('c')) => editor.quit = true,
-            _ => {}
-        },
-        Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => actions::scroll_up(editor),
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => actions::scroll_down(editor),
-            _ => {}
-        },
-        Event::Paste(string) => actions::insert(editor, string),
-        _ => {}
-    }
-
-    Ok(())
 }
