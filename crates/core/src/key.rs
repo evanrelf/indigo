@@ -11,8 +11,12 @@ use winnow::{
     token::one_of,
 };
 
+#[cfg(test)]
+use arbitrary::Arbitrary;
+
 // TODO: Strict mode? Would forbid repeated modifiers, incorrectly ordered modifiers, etc.
 
+#[cfg_attr(test, derive(Arbitrary))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Keys(pub Vec<Key>);
 
@@ -41,6 +45,20 @@ fn keys(input: &mut &str) -> ModalResult<Keys> {
 pub struct Key {
     pub modifiers: FlagSet<KeyModifier>,
     pub code: KeyCode,
+}
+
+#[cfg(test)]
+impl<'a> Arbitrary<'a> for Key {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let mut modifiers = FlagSet::default();
+        for modifier in FlagSet::<KeyModifier>::full() {
+            if u.arbitrary()? {
+                modifiers |= modifier;
+            }
+        }
+        let code = u.arbitrary()?;
+        Ok(Self { modifiers, code })
+    }
 }
 
 impl<C> From<C> for Key
@@ -175,6 +193,7 @@ fn key_bare(input: &mut &str) -> ModalResult<Key> {
 }
 
 flags! {
+    #[cfg_attr(test, derive(Arbitrary))]
     #[derive(Hash, Ord, PartialOrd)]
     pub enum KeyModifier: u8 {
         Control,
@@ -229,6 +248,29 @@ fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
 
 fn key_code_bare(input: &mut &str) -> ModalResult<KeyCode> {
     one_of(' '..='~').map(KeyCode::Char).parse_next(input)
+}
+
+#[cfg(test)]
+impl<'a> Arbitrary<'a> for KeyCode {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        if u.ratio(8, 10)? {
+            let i = u.int_in_range(b' '..=b'~')?;
+            let c = char::from(i);
+            Ok(Self::Char(c))
+        } else {
+            Ok(*u.choose(&[
+                Self::Backspace,
+                Self::Delete,
+                Self::Return,
+                Self::Left,
+                Self::Right,
+                Self::Up,
+                Self::Down,
+                Self::Tab,
+                Self::Escape,
+            ])?)
+        }
+    }
 }
 
 impl From<char> for KeyCode {
