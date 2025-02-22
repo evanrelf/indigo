@@ -17,13 +17,19 @@ pub fn enter_insert_mode(editor: &mut Editor) {
 
 pub fn move_left(editor: &mut Editor) {
     let count = editor.mode.count();
-    editor.with_range_mut(|range| range.move_left(count));
+    editor.with_range_mut(|range| {
+        range.extend_left(count);
+        range.reduce();
+    });
     editor.mode.set_count(NonZeroUsize::MIN);
 }
 
 pub fn move_right(editor: &mut Editor) {
     let count = editor.mode.count();
-    editor.with_range_mut(|range| range.move_right(count));
+    editor.with_range_mut(|range| {
+        range.extend_right(count);
+        range.reduce();
+    });
     editor.mode.set_count(NonZeroUsize::MIN);
 }
 

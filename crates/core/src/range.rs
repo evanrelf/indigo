@@ -103,16 +103,6 @@ impl RawRange {
         self.anchor > self.head
     }
 
-    pub fn move_left(&mut self, rope: &Rope, count: NonZeroUsize) {
-        self.extend_left(rope, count);
-        self.reduce(rope);
-    }
-
-    pub fn move_right(&mut self, rope: &Rope, count: NonZeroUsize) {
-        self.extend_right(rope, count);
-        self.reduce(rope);
-    }
-
     pub fn extend_left(&mut self, rope: &Rope, count: NonZeroUsize) {
         self.head.move_left(rope, count);
         if self.anchor() == 0 && self.head() == 0 {
@@ -325,14 +315,6 @@ impl<'a> Range<'a> {
         self.range.is_backward()
     }
 
-    pub fn move_left(&mut self, count: NonZeroUsize) {
-        self.range.move_left(self.rope, count);
-    }
-
-    pub fn move_right(&mut self, count: NonZeroUsize) {
-        self.range.move_right(self.rope, count);
-    }
-
     pub fn extend_left(&mut self, count: NonZeroUsize) {
         self.range.extend_left(self.rope, count);
     }
@@ -453,14 +435,6 @@ impl<'a> RangeMut<'a> {
     #[must_use]
     pub fn is_backward(&self) -> bool {
         self.range.is_backward()
-    }
-
-    pub fn move_left(&mut self, count: NonZeroUsize) {
-        self.range.move_left(self.rope, count);
-    }
-
-    pub fn move_right(&mut self, count: NonZeroUsize) {
-        self.range.move_right(self.rope, count);
     }
 
     pub fn extend_left(&mut self, count: NonZeroUsize) {
