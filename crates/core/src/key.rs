@@ -109,15 +109,15 @@ where
 impl Display for Key {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         let code = match self.code {
-            KeyCode::Backspace => "backspace",
-            KeyCode::Delete => "delete",
-            KeyCode::Return => "return",
+            KeyCode::Backspace => "bs",
+            KeyCode::Delete => "del",
+            KeyCode::Return => "ret",
             KeyCode::Left => "left",
             KeyCode::Right => "right",
             KeyCode::Up => "up",
             KeyCode::Down => "down",
             KeyCode::Tab => "tab",
-            KeyCode::Escape => "escape",
+            KeyCode::Escape => "esc",
             KeyCode::Char(c) => &c.to_string(),
         };
         if self.modifiers.is_empty() && matches!(self.code, KeyCode::Char(_)) {
