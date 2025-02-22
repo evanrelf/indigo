@@ -3,6 +3,7 @@ pub use crate::{
     display_width::DisplayWidth,
     editor::Editor,
     index::{CharGapIndex, CharIndex},
+    key::{Key, KeyCode, KeyModifier, Keys},
     mode::{Mode, NormalMode},
     ot::EditSeq,
     range::{Range, RangeMut, RawRange},
