@@ -315,6 +315,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "indigo-cli"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "camino",
+ "clap",
+ "indigo-core",
+]
+
+[[package]]
 name = "indigo-core"
 version = "0.0.0"
 dependencies = [

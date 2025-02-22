@@ -12,6 +12,7 @@ crossterm = "0.28.1"
 downcast-rs = "2.0.1"
 flagset = "0.4.6"
 indigo-btree = { path = "crates/btree/" }
+indigo-cli = { path = "crates/cli/" }
 indigo-core = { path = "crates/core/" }
 indigo-tui = { path = "crates/tui/" }
 ratatui = "0.29.0"
