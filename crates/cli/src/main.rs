@@ -3,7 +3,9 @@ use indigo_core::prelude::*;
 use std::io;
 
 #[derive(Debug, clap::Parser)]
-struct Args {}
+struct Args {
+    keys: Option<Keys>,
+}
 
 fn main() -> anyhow::Result<()> {
     #[cfg(debug_assertions)]
@@ -15,7 +17,11 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    let _args = Args::parse();
+    let args = Args::parse();
+
+    if let Some(keys) = args.keys {
+        eprintln!("{keys}");
+    }
 
     let rope = Rope::from_reader(io::BufReader::new(io::stdin()))?;
 
