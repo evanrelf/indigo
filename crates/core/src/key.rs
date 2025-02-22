@@ -11,8 +11,7 @@ use winnow::{
     token::one_of,
 };
 
-// TODO: Strict mode? Would forbid alternatives, abbreviations, repeated modifiers, incorrectly
-// ordered modifiers, etc.
+// TODO: Strict mode? Would forbid repeated modifiers, incorrectly ordered modifiers, etc.
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Keys(pub Vec<Key>);
@@ -186,9 +185,9 @@ flags! {
 
 fn key_modifier(input: &mut &str) -> ModalResult<KeyModifier> {
     alt((
-        alt(("control", "ctrl", "c")).value(KeyModifier::Control),
-        alt(("option", "alt", "a")).value(KeyModifier::Alt),
-        alt(("shift", "s")).value(KeyModifier::Shift),
+        "c".value(KeyModifier::Control),
+        "a".value(KeyModifier::Alt),
+        "s".value(KeyModifier::Shift),
     ))
     .parse_next(input)
 }
@@ -213,15 +212,15 @@ fn key_code(input: &mut &str) -> ModalResult<KeyCode> {
 
 fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
     alt((
-        alt(("backspace", "bs")).value(KeyCode::Backspace),
-        alt(("delete", "del")).value(KeyCode::Delete),
-        alt(("return", "ret", "enter", "cr")).value(KeyCode::Return),
+        "bs".value(KeyCode::Backspace),
+        "del".value(KeyCode::Delete),
+        "ret".value(KeyCode::Return),
         "left".value(KeyCode::Left),
         "right".value(KeyCode::Right),
         "up".value(KeyCode::Up),
         "down".value(KeyCode::Down),
         "tab".value(KeyCode::Tab),
-        alt(("escape", "esc")).value(KeyCode::Escape),
+        "esc".value(KeyCode::Escape),
         "lt".value(KeyCode::Char('<')),
         "gt".value(KeyCode::Char('>')),
     ))
@@ -313,13 +312,8 @@ mod tests {
     fn test_parse_key_modifier() {
         use KeyModifier::*;
         assert_eq!(key_modifier.parse("c"), Ok(Control));
-        assert_eq!(key_modifier.parse("ctrl"), Ok(Control));
-        assert_eq!(key_modifier.parse("control"), Ok(Control));
         assert_eq!(key_modifier.parse("a"), Ok(Alt));
-        assert_eq!(key_modifier.parse("alt"), Ok(Alt));
-        assert_eq!(key_modifier.parse("option"), Ok(Alt));
         assert_eq!(key_modifier.parse("s"), Ok(Shift));
-        assert_eq!(key_modifier.parse("shift"), Ok(Shift));
         assert!(key_modifier.parse("abc").is_err());
     }
 
@@ -333,10 +327,7 @@ mod tests {
         assert_eq!(key_code.parse("b"), Ok(Char('b')));
         assert_eq!(key_code.parse("B"), Ok(Char('B')));
         assert_eq!(key_code.parse("bs"), Ok(Backspace));
-        assert_eq!(key_code.parse("backspace"), Ok(Backspace));
         assert_eq!(key_code.parse("del"), Ok(Delete));
-        assert_eq!(key_code.parse("delete"), Ok(Delete));
-        assert_eq!(key_code.parse("escape"), Ok(Escape));
         assert_eq!(key_code.parse("esc"), Ok(Escape));
         assert!(key_code.parse("∆").is_err());
     }
