@@ -8,3 +8,5 @@ pub use crate::{
     range::{Range, RangeMut, RawRange},
     rope::{Bias, RopeExt},
 };
+
+pub use ropey::{Rope, RopeSlice};

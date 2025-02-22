@@ -10,7 +10,6 @@ crossterm = { workspace = true }
 flagset = { workspace = true }
 indigo-core = { workspace = true }
 ratatui = { workspace = true }
-ropey = { workspace = true }
 
 [lints]
 workspace = true

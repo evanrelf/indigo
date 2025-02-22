@@ -341,7 +341,6 @@ dependencies = [
  "flagset",
  "indigo-core",
  "ratatui",
- "ropey",
 ]
 
 [[package]]

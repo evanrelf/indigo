@@ -12,7 +12,6 @@ use ratatui::{
     style::{Color, Modifier},
     text::{Line, Span},
 };
-use ropey::Rope;
 use std::{cmp::max, num::NonZeroUsize};
 
 #[derive(Debug, clap::Parser)]
