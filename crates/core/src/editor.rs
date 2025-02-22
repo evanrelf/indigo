@@ -3,9 +3,8 @@ use crate::{
     range::{Range, RangeMut, RawRange},
     rope::RopeExt as _,
 };
-use camino::Utf8PathBuf;
 use ropey::Rope;
-use std::{cmp::min, fs::File, io::BufReader, num::NonZeroUsize};
+use std::{cmp::min, num::NonZeroUsize};
 
 pub struct Editor {
     rope: Rope,
@@ -17,15 +16,10 @@ pub struct Editor {
 }
 
 impl Editor {
-    pub fn new(path: Option<Utf8PathBuf>) -> anyhow::Result<Self> {
-        let rope = if let Some(path) = path {
-            let file = File::open(path)?;
-            Rope::from_reader(BufReader::new(file))?
-        } else {
-            Rope::new()
-        };
+    #[must_use]
+    pub fn from_rope(rope: Rope) -> Self {
         let range = RawRange::new_snapped(&rope, 0, 0);
-        Ok(Self {
+        Self {
             rope,
             range,
             mode: Mode::Normal(NormalMode {
@@ -34,7 +28,7 @@ impl Editor {
             height: 0,
             vertical_scroll: 0,
             quit: false,
-        })
+        }
     }
 
     #[must_use]

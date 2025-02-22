@@ -319,7 +319,6 @@ name = "indigo-cli"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "camino",
  "clap",
  "indigo-core",
 ]
@@ -330,7 +329,6 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "arbtest",
- "camino",
  "flagset",
  "ropey",
  "serde",

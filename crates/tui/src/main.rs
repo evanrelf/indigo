@@ -12,7 +12,7 @@ use ratatui::{
     style::{Color, Modifier},
     text::{Line, Span},
 };
-use std::{cmp::max, num::NonZeroUsize};
+use std::{cmp::max, fs::File, io::BufReader, num::NonZeroUsize};
 
 #[derive(Debug, clap::Parser)]
 struct Args {
@@ -31,7 +31,14 @@ fn main() -> anyhow::Result<()> {
 
     let args = Args::parse();
 
-    let mut editor = Editor::new(args.file)?;
+    let rope = if let Some(path) = args.file {
+        let file = File::open(path)?;
+        Rope::from_reader(BufReader::new(file))?
+    } else {
+        Rope::new()
+    };
+
+    let mut editor = Editor::from_rope(rope);
 
     let mut terminal = terminal::enter()?;
 

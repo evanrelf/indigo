@@ -1,11 +1,9 @@
-use camino::Utf8PathBuf;
 use clap::Parser as _;
 use indigo_core::prelude::*;
+use std::io;
 
 #[derive(Debug, clap::Parser)]
-struct Args {
-    file: Option<Utf8PathBuf>,
-}
+struct Args {}
 
 fn main() -> anyhow::Result<()> {
     #[cfg(debug_assertions)]
@@ -17,9 +15,13 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    let args = Args::parse();
+    let _args = Args::parse();
 
-    let mut _editor = Editor::new(args.file)?;
+    let rope = Rope::from_reader(io::BufReader::new(io::stdin()))?;
+
+    let editor = Editor::from_rope(rope);
+
+    editor.rope().write_to(io::stdout())?;
 
     Ok(())
 }
