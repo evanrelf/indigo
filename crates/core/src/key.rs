@@ -1,4 +1,4 @@
-use flagset::{FlagSet, flags};
+use flagset::{flags, FlagSet};
 use std::{
     fmt::{Display, Formatter},
     hash::{Hash, Hasher},
@@ -109,6 +109,7 @@ impl Display for Key {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         let code = match self.code {
             KeyCode::Backspace => "backspace",
+            KeyCode::Delete => "delete",
             KeyCode::Enter => "enter",
             KeyCode::Left => "left",
             KeyCode::Right => "right",
@@ -195,6 +196,7 @@ fn key_modifier(input: &mut &str) -> ModalResult<KeyModifier> {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum KeyCode {
     Backspace,
+    Delete,
     Enter,
     Left,
     Right,
@@ -212,6 +214,7 @@ fn key_code(input: &mut &str) -> ModalResult<KeyCode> {
 fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
     alt((
         alt(("backspace", "bs")).value(KeyCode::Backspace),
+        alt(("delete", "del")).value(KeyCode::Delete),
         alt(("enter", "return", "cr")).value(KeyCode::Enter),
         "left".value(KeyCode::Left),
         "right".value(KeyCode::Right),
@@ -315,6 +318,8 @@ mod tests {
         assert_eq!(key_code.parse("B"), Ok(Char('B')));
         assert_eq!(key_code.parse("bs"), Ok(Backspace));
         assert_eq!(key_code.parse("backspace"), Ok(Backspace));
+        assert_eq!(key_code.parse("del"), Ok(Delete));
+        assert_eq!(key_code.parse("delete"), Ok(Delete));
         assert_eq!(key_code.parse("escape"), Ok(Escape));
         assert_eq!(key_code.parse("esc"), Ok(Escape));
         assert!(key_code.parse("∆").is_err());
