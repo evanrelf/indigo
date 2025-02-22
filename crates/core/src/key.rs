@@ -37,6 +37,10 @@ impl FromStr for Keys {
     }
 }
 
+// TODO: Ignore whitespace and strip comments (syntax TBD) for nicer multi-line key sequences? Like
+// if you wanted to call the CLI from a script with a complex sequence of inputs, it'd be nice to
+// spread it across multiple lines and leave comments documenting the behavior. Similar to the
+// `regex` crate's "verbose mode": https://docs.rs/regex/latest/regex/#example-verbose-mode.
 fn keys(input: &mut &str) -> ModalResult<Keys> {
     repeat(0.., key).map(Keys).parse_next(input)
 }
@@ -247,12 +251,12 @@ fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
     alt((
         "bs".value(KeyCode::Backspace),
         "del".value(KeyCode::Delete),
-        "ret".value(KeyCode::Return),
+        "ret".value(KeyCode::Return), // TODO: Also parse '\n' and "\\n"?
         "left".value(KeyCode::Left),
         "right".value(KeyCode::Right),
         "up".value(KeyCode::Up),
         "down".value(KeyCode::Down),
-        "tab".value(KeyCode::Tab),
+        "tab".value(KeyCode::Tab), // TODO: Also parse '\t' and "\\t"?
         "esc".value(KeyCode::Escape),
         "lt".value(KeyCode::Char('<')),
         "gt".value(KeyCode::Char('>')),
