@@ -27,7 +27,7 @@ fn main() -> anyhow::Result<()> {
 
     let editor = Editor::from_rope(rope);
 
-    editor.rope().write_to(io::stdout())?;
+    editor.rope().write_to(io::LineWriter::new(io::stdout()))?;
 
     Ok(())
 }
