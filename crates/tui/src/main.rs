@@ -13,7 +13,7 @@ use ratatui::{
     text::{Line, Span},
 };
 use ropey::Rope;
-use std::cmp::max;
+use std::{cmp::max, num::NonZeroUsize};
 
 #[derive(Debug, clap::Parser)]
 struct Args {
@@ -369,7 +369,10 @@ fn handle_event_normal(
         Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::NONE, KeyCode::Char(c @ ('0'..='9'))) => {
                 let n = usize::from(u8::try_from(c).unwrap() - b'0');
-                normal_mode.count = normal_mode.count.saturating_mul(10).saturating_add(n);
+                normal_mode.count = normal_mode
+                    .count
+                    .saturating_mul(NonZeroUsize::new(10).unwrap())
+                    .saturating_add(n);
             }
             (KeyModifiers::NONE, KeyCode::Esc) => actions::enter_normal_mode(editor),
             (KeyModifiers::NONE, KeyCode::Char('i')) => actions::enter_insert_mode(editor),

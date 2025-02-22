@@ -4,7 +4,10 @@ use crate::{
     rope::{Bias, RopeExt as _},
 };
 use ropey::{Rope, RopeSlice};
-use std::cmp::{max, min};
+use std::{
+    cmp::{max, min},
+    num::NonZeroUsize,
+};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct RawRange {
@@ -100,25 +103,25 @@ impl RawRange {
         self.anchor > self.head
     }
 
-    pub fn move_left(&mut self, rope: &Rope, count: usize) {
+    pub fn move_left(&mut self, rope: &Rope, count: NonZeroUsize) {
         self.extend_left(rope, count);
         self.reduce(rope);
     }
 
-    pub fn move_right(&mut self, rope: &Rope, count: usize) {
+    pub fn move_right(&mut self, rope: &Rope, count: NonZeroUsize) {
         self.extend_right(rope, count);
         self.reduce(rope);
     }
 
-    pub fn extend_left(&mut self, rope: &Rope, count: usize) {
+    pub fn extend_left(&mut self, rope: &Rope, count: NonZeroUsize) {
         self.head.move_left(rope, count);
         if self.anchor() == 0 && self.head() == 0 {
-            self.head.move_right(rope, 1);
+            self.head.move_right(rope, NonZeroUsize::MIN);
             return;
         }
         if self.is_empty() {
-            self.anchor.move_right(rope, 1);
-            self.head.move_left(rope, 1);
+            self.anchor.move_right(rope, NonZeroUsize::MIN);
+            self.head.move_left(rope, NonZeroUsize::MIN);
             assert_eq!(self.grapheme_length(rope), 2);
             return;
         }
@@ -128,11 +131,11 @@ impl RawRange {
     }
 
     // TODO: Allow moving both cursors to EOF
-    pub fn extend_right(&mut self, rope: &Rope, count: usize) {
+    pub fn extend_right(&mut self, rope: &Rope, count: NonZeroUsize) {
         self.head.move_right(rope, count);
         if self.is_empty() {
-            self.anchor.move_left(rope, 1);
-            self.head.move_right(rope, 1);
+            self.anchor.move_left(rope, NonZeroUsize::MIN);
+            self.head.move_right(rope, NonZeroUsize::MIN);
             assert_eq!(self.grapheme_length(rope), 2);
             return;
         }
@@ -166,10 +169,10 @@ impl RawRange {
         }
         if self.is_forward() {
             self.anchor = self.head;
-            self.anchor.move_left(rope, 1);
+            self.anchor.move_left(rope, NonZeroUsize::MIN);
         } else {
             self.anchor = self.head;
-            self.head.move_right(rope, 1);
+            self.head.move_right(rope, NonZeroUsize::MIN);
         }
         assert_eq!(self.grapheme_length(rope), 1);
     }
@@ -189,7 +192,7 @@ impl RawRange {
         );
     }
 
-    pub fn delete_before(&mut self, rope: &mut Rope, count: usize) {
+    pub fn delete_before(&mut self, rope: &mut Rope, count: NonZeroUsize) {
         let mut range = *self;
         range.reduce(rope);
         let edits = range.anchor.delete_before_impl(rope, count);
@@ -209,10 +212,10 @@ impl RawRange {
         self.anchor.gap_index = edits.transform_index(self.anchor.gap_index);
         self.head.gap_index = edits.transform_index(self.head.gap_index);
         assert_eq!(self.anchor, self.head);
-        self.extend_right(rope, 1);
+        self.extend_right(rope, NonZeroUsize::MIN);
     }
 
-    pub fn delete_after(&mut self, rope: &mut Rope, count: usize) {
+    pub fn delete_after(&mut self, rope: &mut Rope, count: NonZeroUsize) {
         let mut range = *self;
         range.reduce(rope);
         let edits = range.head.delete_after_impl(rope, count);
@@ -322,19 +325,19 @@ impl<'a> Range<'a> {
         self.range.is_backward()
     }
 
-    pub fn move_left(&mut self, count: usize) {
+    pub fn move_left(&mut self, count: NonZeroUsize) {
         self.range.move_left(self.rope, count);
     }
 
-    pub fn move_right(&mut self, count: usize) {
+    pub fn move_right(&mut self, count: NonZeroUsize) {
         self.range.move_right(self.rope, count);
     }
 
-    pub fn extend_left(&mut self, count: usize) {
+    pub fn extend_left(&mut self, count: NonZeroUsize) {
         self.range.extend_left(self.rope, count);
     }
 
-    pub fn extend_right(&mut self, count: usize) {
+    pub fn extend_right(&mut self, count: NonZeroUsize) {
         self.range.extend_right(self.rope, count);
     }
 
@@ -452,19 +455,19 @@ impl<'a> RangeMut<'a> {
         self.range.is_backward()
     }
 
-    pub fn move_left(&mut self, count: usize) {
+    pub fn move_left(&mut self, count: NonZeroUsize) {
         self.range.move_left(self.rope, count);
     }
 
-    pub fn move_right(&mut self, count: usize) {
+    pub fn move_right(&mut self, count: NonZeroUsize) {
         self.range.move_right(self.rope, count);
     }
 
-    pub fn extend_left(&mut self, count: usize) {
+    pub fn extend_left(&mut self, count: NonZeroUsize) {
         self.range.extend_left(self.rope, count);
     }
 
-    pub fn extend_right(&mut self, count: usize) {
+    pub fn extend_right(&mut self, count: NonZeroUsize) {
         self.range.extend_right(self.rope, count);
     }
 
@@ -492,7 +495,7 @@ impl<'a> RangeMut<'a> {
         self.range.insert(self.rope, string);
     }
 
-    pub fn delete_before(&mut self, count: usize) {
+    pub fn delete_before(&mut self, count: NonZeroUsize) {
         self.range.delete_before(self.rope, count);
     }
 
@@ -500,7 +503,7 @@ impl<'a> RangeMut<'a> {
         self.range.delete(self.rope);
     }
 
-    pub fn delete_after(&mut self, count: usize) {
+    pub fn delete_after(&mut self, count: NonZeroUsize) {
         self.range.delete_after(self.rope, count);
     }
 

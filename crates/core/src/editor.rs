@@ -5,7 +5,7 @@ use crate::{
 };
 use camino::Utf8PathBuf;
 use ropey::Rope;
-use std::{cmp::min, fs::File, io::BufReader};
+use std::{cmp::min, fs::File, io::BufReader, num::NonZeroUsize};
 
 pub struct Editor {
     rope: Rope,
@@ -28,7 +28,9 @@ impl Editor {
         Ok(Self {
             rope,
             range,
-            mode: Mode::Normal(NormalMode { count: 0 }),
+            mode: Mode::Normal(NormalMode {
+                count: NonZeroUsize::MIN,
+            }),
             height: 0,
             vertical_scroll: 0,
             quit: false,

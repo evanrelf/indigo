@@ -5,6 +5,7 @@ use crate::{
     rope::{Bias, RopeExt as _},
 };
 use ropey::Rope;
+use std::num::NonZeroUsize;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct RawCursor {
@@ -41,8 +42,8 @@ impl RawCursor {
         self.gap_index == rope.len_chars()
     }
 
-    pub fn move_left(&mut self, rope: &Rope, count: usize) {
-        for _ in 1..=count {
+    pub fn move_left(&mut self, rope: &Rope, count: NonZeroUsize) {
+        for _ in 1..=count.get() {
             match rope.prev_grapheme_boundary(self.gap_index) {
                 Some(prev) if self.gap_index != prev => self.gap_index = prev,
                 _ => break,
@@ -50,8 +51,8 @@ impl RawCursor {
         }
     }
 
-    pub fn move_right(&mut self, rope: &Rope, count: usize) {
-        for _ in 1..=count {
+    pub fn move_right(&mut self, rope: &Rope, count: NonZeroUsize) {
+        for _ in 1..=count.get() {
             match rope.next_grapheme_boundary(self.gap_index) {
                 Some(next) if self.gap_index != next => self.gap_index = next,
                 _ => break,
@@ -85,15 +86,15 @@ impl RawCursor {
         edits
     }
 
-    pub fn delete_before(&mut self, rope: &mut Rope, count: usize) {
+    pub fn delete_before(&mut self, rope: &mut Rope, count: NonZeroUsize) {
         let _ = self.delete_before_impl(rope, count);
     }
 
     #[must_use]
-    pub(crate) fn delete_before_impl(&mut self, rope: &mut Rope, count: usize) -> EditSeq {
+    pub(crate) fn delete_before_impl(&mut self, rope: &mut Rope, count: NonZeroUsize) -> EditSeq {
         self.assert_valid(rope);
         let mut gap_index = self.gap_index;
-        for _ in 1..=count {
+        for _ in 1..=count.get() {
             match rope.prev_grapheme_boundary(gap_index) {
                 Some(prev) if gap_index != prev => gap_index = prev,
                 _ => break,
@@ -108,15 +109,15 @@ impl RawCursor {
         edits
     }
 
-    pub fn delete_after(&mut self, rope: &mut Rope, count: usize) {
+    pub fn delete_after(&mut self, rope: &mut Rope, count: NonZeroUsize) {
         let _ = self.delete_after_impl(rope, count);
     }
 
     #[must_use]
-    pub(crate) fn delete_after_impl(&mut self, rope: &mut Rope, count: usize) -> EditSeq {
+    pub(crate) fn delete_after_impl(&mut self, rope: &mut Rope, count: NonZeroUsize) -> EditSeq {
         self.assert_valid(rope);
         let mut gap_index = self.gap_index;
-        for _ in 1..=count {
+        for _ in 1..=count.get() {
             match rope.next_grapheme_boundary(gap_index) {
                 Some(next) if gap_index != next => gap_index = next,
                 _ => break,
@@ -178,11 +179,11 @@ impl<'a> Cursor<'a> {
         self.cursor.is_eof(self.rope)
     }
 
-    pub fn move_left(&mut self, count: usize) {
+    pub fn move_left(&mut self, count: NonZeroUsize) {
         self.cursor.move_left(self.rope, count);
     }
 
-    pub fn move_right(&mut self, count: usize) {
+    pub fn move_right(&mut self, count: NonZeroUsize) {
         self.cursor.move_right(self.rope, count);
     }
 
@@ -224,11 +225,11 @@ impl<'a> CursorMut<'a> {
         self.cursor.is_eof(self.rope)
     }
 
-    pub fn move_left(&mut self, count: usize) {
+    pub fn move_left(&mut self, count: NonZeroUsize) {
         self.cursor.move_left(self.rope, count);
     }
 
-    pub fn move_right(&mut self, count: usize) {
+    pub fn move_right(&mut self, count: NonZeroUsize) {
         self.cursor.move_right(self.rope, count);
     }
 
@@ -240,11 +241,11 @@ impl<'a> CursorMut<'a> {
         self.cursor.insert(self.rope, string);
     }
 
-    pub fn delete_before(&mut self, count: usize) {
+    pub fn delete_before(&mut self, count: NonZeroUsize) {
         self.cursor.delete_before(self.rope, count);
     }
 
-    pub fn delete_after(&mut self, count: usize) {
+    pub fn delete_after(&mut self, count: NonZeroUsize) {
         self.cursor.delete_after(self.rope, count);
     }
 
@@ -257,6 +258,7 @@ impl<'a> CursorMut<'a> {
 mod tests {
     use super::*;
     use arbtest::arbtest;
+    use std::cmp::max;
 
     #[test]
     fn insert_changes_grapheme_boundary() {
@@ -277,12 +279,12 @@ mod tests {
             for _ in 0..u.choose_index(100)? {
                 match u.choose_index(4)? {
                     0 => {
-                        let arg = u.choose_index(99)?;
+                        let arg = NonZeroUsize::new(max(1, u.choose_index(99)?)).unwrap();
                         cursor.move_left(arg);
                         actions.push(format!("move_left({arg})"));
                     }
                     1 => {
-                        let arg = u.choose_index(99)?;
+                        let arg = NonZeroUsize::new(max(1, u.choose_index(99)?)).unwrap();
                         cursor.move_right(arg);
                         actions.push(format!("move_right({arg})"));
                     }
@@ -293,7 +295,7 @@ mod tests {
                         actions.push(format!("insert({arg:?})"));
                     }
                     3 => {
-                        let arg = u.choose_index(99)?;
+                        let arg = NonZeroUsize::new(max(1, u.choose_index(99)?)).unwrap();
                         cursor.delete_before(arg);
                         actions.push(format!("delete_before({arg})"));
                     }
