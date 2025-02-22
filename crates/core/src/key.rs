@@ -47,6 +47,18 @@ pub struct Key {
     pub code: KeyCode,
 }
 
+impl Key {
+    pub fn normalize(&mut self) {
+        if !self.modifiers.contains(KeyModifier::Shift) {
+            return;
+        }
+        if let KeyCode::Char(mut c @ ('a'..='z' | 'A'..='Z')) = self.code {
+            self.modifiers -= KeyModifier::Shift;
+            c.make_ascii_uppercase();
+        }
+    }
+}
+
 #[cfg(test)]
 impl<'a> Arbitrary<'a> for Key {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
@@ -222,6 +234,8 @@ pub enum KeyCode {
     Down,
     Tab,
     Escape,
+    // TODO: Replace `char` with `AsciiChar` once it stabilizes.
+    // https://github.com/rust-lang/rust/issues/110998
     Char(char),
 }
 
