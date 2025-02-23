@@ -7,7 +7,6 @@ anyhow = { workspace = true }
 flagset = { workspace = true }
 itertools = { workspace = true }
 ropey = { workspace = true }
-serde = { workspace = true }
 thiserror = { workspace = true }
 unicode-segmentation = { workspace = true }
 unicode-width = { workspace = true }

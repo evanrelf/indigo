@@ -1,5 +1,4 @@
 use ropey::Rope;
-use serde::{Deserialize, Serialize};
 use std::{ops::Deref, rc::Rc};
 use thiserror::Error;
 
@@ -17,7 +16,7 @@ pub enum Error {
 }
 
 // TODO: More efficient encoding?
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct EditSeq {
     edits: Vec<Edit>,
     source_chars: usize,
@@ -244,7 +243,7 @@ impl Extend<Edit> for EditSeq {
 }
 
 // TODO: More efficient encoding?
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Edit {
     Retain(usize),
     Delete(usize),
