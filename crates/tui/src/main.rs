@@ -172,31 +172,31 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
+    const LIGHT_YELLOW: Color = Color::Rgb(0xff, 0xf5, 0xb1);
+    const DARK_YELLOW: Color = Color::Rgb(0xff, 0xd3, 0x3d);
+    const RED: Color = Color::Rgb(0xd7, 0x3a, 0x4a);
+
     let range = editor.range();
 
     let cursor_area =
         |index: usize| char_index_to_area(index, editor.rope(), editor.vertical_scroll(), area);
 
-    let light_yellow = Color::Rgb(0xff, 0xf5, 0xb1);
-    let dark_yellow = Color::Rgb(0xff, 0xd3, 0x3d);
-    let red = Color::Rgb(0xd7, 0x3a, 0x4a);
-
     for rect in (range.start()..range.end()).filter_map(cursor_area) {
-        surface.set_style(rect, Style::default().bg(light_yellow));
+        surface.set_style(rect, Style::default().bg(LIGHT_YELLOW));
     }
 
     #[expect(clippy::collapsible_else_if)]
     if range.is_empty() {
         if let Some(rect) = cursor_area(range.head()) {
-            surface.set_style(rect, Style::default().bg(red));
+            surface.set_style(rect, Style::default().bg(RED));
         }
     } else if range.is_backward() {
         if let Some(rect) = cursor_area(range.head()) {
-            surface.set_style(rect, Style::default().bg(dark_yellow));
+            surface.set_style(rect, Style::default().bg(DARK_YELLOW));
         }
     } else {
         if let Some(rect) = cursor_area(range.head().saturating_sub(1)) {
-            surface.set_style(rect, Style::default().bg(dark_yellow));
+            surface.set_style(rect, Style::default().bg(DARK_YELLOW));
         }
     }
 }
