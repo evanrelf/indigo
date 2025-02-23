@@ -2,13 +2,9 @@
 name = "indigo-cli"
 edition = "2024"
 
-[features]
-coz = ["dep:coz"]
-
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
-coz = { workspace = true, optional = true }
 indigo-core = { workspace = true }
 
 [lints]
