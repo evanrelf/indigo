@@ -9,6 +9,7 @@ arbtest = "0.3.2"
 arrayvec = "0.7.6"
 camino = "1.1.9"
 clap = { version = "4.5.30", features = ["derive"] }
+coz = "0.1.3"
 crossterm = "0.28.1"
 downcast-rs = "2.0.1"
 flagset = "0.4.6"
@@ -35,3 +36,7 @@ clippy.allow_attributes = "warn"
 clippy.pedantic = { level = "warn", priority = -1 }
 clippy.use_self = "warn"
 rust.dead_code = "allow" # TODO: Remove
+
+[profile.coz]
+inherits = "dev"
+opt-level = 3

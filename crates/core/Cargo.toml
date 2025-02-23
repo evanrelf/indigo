@@ -2,8 +2,12 @@
 name = "indigo-core"
 edition = "2024"
 
+[features]
+coz = ["dep:coz"]
+
 [dependencies]
 anyhow = { workspace = true }
+coz = { workspace = true, optional = true }
 flagset = { workspace = true }
 itertools = { workspace = true }
 ropey = { workspace = true }

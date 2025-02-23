@@ -2,10 +2,14 @@
 name = "indigo-tui"
 edition = "2024"
 
+[features]
+coz = ["dep:coz"]
+
 [dependencies]
 anyhow = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
+coz = { workspace = true, optional = true }
 crossterm = { workspace = true }
 flagset = { workspace = true }
 indigo-core = { workspace = true }
