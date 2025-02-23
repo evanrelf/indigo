@@ -22,7 +22,7 @@ struct Args {
     #[clap(long)]
     log_file: Option<Utf8PathBuf>,
 
-    #[clap(long, env = "INDIGO_LOG")]
+    #[clap(long, env = "INDIGO_LOG", default_value_t)]
     log_filter: String,
 }
 

@@ -11,7 +11,7 @@ struct Args {
     #[clap(default_value_t)]
     keys: Keys,
 
-    #[clap(long, env = "INDIGO_LOG")]
+    #[clap(long, env = "INDIGO_LOG", default_value_t)]
     log_filter: String,
 }
 
