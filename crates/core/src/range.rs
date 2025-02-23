@@ -90,7 +90,7 @@ impl RawRange {
 
     #[must_use]
     pub fn is_eof(&self, rope: &Rope) -> bool {
-        self.anchor.is_eof(rope) && self.head.is_eof(rope)
+        self.is_empty() && self.head.is_eof(rope)
     }
 
     #[must_use]
@@ -123,7 +123,7 @@ impl RawRange {
     // TODO: Allow moving both cursors to EOF
     pub fn extend_right(&mut self, rope: &Rope, count: NonZeroUsize) {
         self.head.move_right(rope, count);
-        if self.is_empty() {
+        if self.is_empty() && !self.is_eof(rope) {
             self.anchor.move_left(rope, NonZeroUsize::MIN);
             self.head.move_right(rope, NonZeroUsize::MIN);
             assert_eq!(self.grapheme_length(rope), 2);
