@@ -14,9 +14,6 @@ pub fn handle_event(
     areas: Areas,
     event: &Event,
 ) -> anyhow::Result<()> {
-    #[cfg(feature = "coz")]
-    coz::scope!("tui:handle_event");
-
     if let Ok(event) = event_c2i(event) {
         if indigo_core::event::handle_event(editor, &event) {
             return Ok(());
