@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+IFS=$'\n\t'
+
+exec cargo run --bin indigo-tui -- --log-file tui.log --log-filter debug "$@"
