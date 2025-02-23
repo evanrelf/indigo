@@ -192,4 +192,17 @@ mod tests {
             Ok(())
         });
     }
+
+    #[test]
+    fn grapheme_counts() {
+        arbtest(|u| {
+            let rope = Rope::from_str(u.arbitrary()?);
+            assert_eq!(
+                rope.grapheme_boundaries().count(),
+                rope.graphemes().count() + 1,
+                "mismatched grapheme boundary counts\nrope = {rope:?}"
+            );
+            Ok(())
+        });
+    }
 }
