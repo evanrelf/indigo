@@ -19,6 +19,7 @@ indigo-tui = { path = "crates/tui/" }
 ratatui = "0.29.0"
 ropey = "1.6.1"
 thiserror = "2.0.11"
+tracing = "0.1.41"
 unicode-segmentation = "1.12.0"
 unicode-width = "0.2.0"
 winnow = "0.7.3"

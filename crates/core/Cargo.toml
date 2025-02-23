@@ -6,6 +6,7 @@ edition = "2024"
 flagset = { workspace = true }
 ropey = { workspace = true }
 thiserror = { workspace = true }
+tracing = { workspace = true }
 unicode-segmentation = { workspace = true }
 unicode-width = { workspace = true }
 winnow = { workspace = true }

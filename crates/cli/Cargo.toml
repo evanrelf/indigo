@@ -6,6 +6,7 @@ edition = "2024"
 anyhow = { workspace = true }
 clap = { workspace = true }
 indigo-core = { workspace = true }
+tracing = { workspace = true }
 
 [lints]
 workspace = true
