@@ -176,58 +176,133 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
     const DARK_YELLOW: Color = Color::Rgb(0xff, 0xd3, 0x3d);
     const RED: Color = Color::Rgb(0xd7, 0x3a, 0x4a);
 
+    let rope = editor.rope();
     let range = editor.range();
+    let vertical_scroll = editor.vertical_scroll();
 
-    let cursor_area =
-        |index: usize| char_index_to_area(index, editor.rope(), editor.vertical_scroll(), area);
+    let start_line = rope.char_to_line(range.start());
 
-    for rect in (range.start()..range.end()).filter_map(cursor_area) {
-        surface.set_style(rect, Style::default().bg(LIGHT_YELLOW));
+    let end_line = rope.char_to_line(range.end().saturating_sub(1));
+
+    let grapheme_area = |char_index| char_index_to_area(char_index, rope, vertical_scroll, area);
+
+    let line_area = |line_index| line_index_to_area(line_index, rope, vertical_scroll, area);
+
+    if range.is_empty() {
+        if let Some(rect) = grapheme_area(range.head()) {
+            surface.set_style(rect, Style::default().bg(RED));
+        }
+        return;
+    }
+
+    for (line_index, mut line_rect) in (start_line..=end_line)
+        .filter_map(|line_index| line_area(line_index).map(|rect| (line_index, rect)))
+    {
+        if line_index == start_line {
+            if let Some(start_rect) = grapheme_area(range.start()) {
+                let delta = start_rect.x - line_rect.x;
+                line_rect.x += delta;
+                line_rect.width -= delta;
+            }
+        }
+        if line_index == end_line {
+            if let Some(end_rect) = grapheme_area(range.end().saturating_sub(1)) {
+                let delta = line_rect.right() - end_rect.right();
+                line_rect.width -= delta;
+            }
+        }
+        surface.set_style(line_rect, Style::default().bg(LIGHT_YELLOW));
     }
 
     #[expect(clippy::collapsible_else_if)]
-    if range.is_empty() {
-        if let Some(rect) = cursor_area(range.head()) {
-            surface.set_style(rect, Style::default().bg(RED));
-        }
-    } else if range.is_backward() {
-        if let Some(rect) = cursor_area(range.head()) {
+    if range.is_backward() {
+        if let Some(rect) = grapheme_area(range.head()) {
             surface.set_style(rect, Style::default().bg(DARK_YELLOW));
         }
     } else {
-        if let Some(rect) = cursor_area(range.head().saturating_sub(1)) {
+        if let Some(rect) = grapheme_area(range.head().saturating_sub(1)) {
             surface.set_style(rect, Style::default().bg(DARK_YELLOW));
         }
     }
 }
 
-/// Map a rope index to an area of the terminal. Example use is rendering the cell(s) where a cursor
-/// sits in a different color.
+fn line_index_to_area(
+    line_index: usize,
+    rope: &Rope,
+    vertical_scroll: usize,
+    area: Rect,
+) -> Option<Rect> {
+    if vertical_scroll > line_index {
+        return None;
+    }
+
+    let y = area.y + u16::try_from(line_index - vertical_scroll).unwrap();
+
+    if !(area.top()..area.bottom()).contains(&y) {
+        return None;
+    }
+
+    let x = area.x;
+
+    let line = rope.get_line(line_index)?;
+
+    // Assumes a minimum grapheme width of 1
+    let width = if line.len_chars() >= usize::from(area.width) {
+        // Avoid expensive display width calculation if we know it would exceed the viewport width
+        area.width
+    } else {
+        u16::try_from(line.display_width()).unwrap()
+    };
+
+    Some(Rect {
+        x,
+        y,
+        width,
+        height: 1,
+    })
+}
+
+// TODO: Should this be `gap_index` instead of `char_index`?
 fn char_index_to_area(
     char_index: usize,
     rope: &Rope,
     vertical_scroll: usize,
     area: Rect,
 ) -> Option<Rect> {
-    let char_index = rope.snap_to_grapheme_boundary(char_index, Bias::Before);
-
     let line_index = rope.try_char_to_line(char_index).ok()?;
 
     if vertical_scroll > line_index {
         return None;
     }
 
-    let line_char_index = rope.try_line_to_char(line_index).ok()?;
-
-    let prefix_width = rope.get_slice(line_char_index..char_index)?.display_width();
-
-    let x = area.x + u16::try_from(prefix_width).unwrap();
-
     let y = area.y + u16::try_from(line_index - vertical_scroll).unwrap();
 
-    let width = match rope.get_grapheme(char_index) {
-        Some(grapheme) => u16::try_from(grapheme.display_width()).unwrap(),
-        None => 1, // Cursor at end of file
+    if !(area.top()..area.bottom()).contains(&y) {
+        return None;
+    }
+
+    let line_char_index = rope.line_to_char(line_index);
+
+    let char_index = rope.snap_to_grapheme_boundary(char_index, Bias::Before);
+
+    let prefix_width = rope.slice(line_char_index..char_index).display_width();
+
+    // TODO: When horizontal scroll is introduced, still return portion of rect that is visible.
+    // Even if it starts to the left of the area, it might be wide enough to peek into the viewport.
+    let x = area.x + u16::try_from(prefix_width).unwrap();
+
+    if !(area.left()..area.right()).contains(&x) {
+        return None;
+    }
+
+    let width = if rope.len_chars() == char_index {
+        // Cursor at EOF
+        1
+    } else if let Some(grapheme) = rope.get_grapheme(char_index) {
+        u16::try_from(grapheme.display_width()).unwrap()
+    } else {
+        // We're at EOF, but we already checked for that
+        unreachable!()
     };
 
     Some(Rect {

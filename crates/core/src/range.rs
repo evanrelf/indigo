@@ -9,6 +9,8 @@ use std::{
     num::NonZeroUsize,
 };
 
+// TODO: Movement with counts is broken.
+
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct RawRange {
     pub anchor: RawCursor,
