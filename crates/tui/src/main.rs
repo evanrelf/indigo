@@ -45,12 +45,16 @@ fn main() -> anyhow::Result<()> {
     let mut areas = Areas::default();
 
     loop {
+        #[cfg(feature = "coz")]
+        coz::begin!("tui:draw");
         terminal.draw(|frame| {
             areas = Areas::new(&editor, frame.area());
             editor.height = usize::from(areas.text.height);
             let surface = frame.buffer_mut();
             render(&editor, areas, surface);
         })?;
+        #[cfg(feature = "coz")]
+        coz::end!("tui:draw");
 
         let event = crossterm::event::read()?;
 
@@ -65,6 +69,9 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
+    #[cfg(feature = "coz")]
+    coz::scope!("tui:render");
+
     render_navigation_bar(editor, areas.navigation_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
     render_tildes(editor, areas.line_numbers, surface);
@@ -74,10 +81,16 @@ fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
 }
 
 fn render_navigation_bar(_editor: &Editor, area: Rect, surface: &mut Surface) {
+    #[cfg(feature = "coz")]
+    coz::scope!("tui:render_navigation_bar");
+
     Line::styled(" ", Modifier::UNDERLINED).render(area, surface);
 }
 
 fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
+    #[cfg(feature = "coz")]
+    coz::scope!("tui:render_line_numbers");
+
     let total_lines = editor.rope().len_lines_indigo();
 
     for (i, row) in area.rows().enumerate() {
@@ -94,6 +107,9 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_tildes(editor: &Editor, area: Rect, surface: &mut Surface) {
+    #[cfg(feature = "coz")]
+    coz::scope!("tui:render_tildes");
+
     let total_lines = editor.rope().len_lines_indigo();
 
     for (i, row) in area.rows().enumerate() {
@@ -116,6 +132,9 @@ fn render_tildes(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
+    #[cfg(feature = "coz")]
+    coz::scope!("tui:render_text");
+
     let lines = editor.rope().lines_at(editor.vertical_scroll());
 
     let rows = area.rows();
@@ -152,6 +171,9 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
+    #[cfg(feature = "coz")]
+    coz::scope!("tui:render_selection");
+
     let range = editor.range();
 
     let cursor_area =
@@ -219,6 +241,9 @@ fn char_index_to_area(
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
+    #[cfg(feature = "coz")]
+    coz::scope!("tui:render_status_bar");
+
     let anchor = editor.range().anchor();
 
     let head = editor.range().head();
