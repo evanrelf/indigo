@@ -5,6 +5,8 @@
 use arrayvec::ArrayVec;
 use std::{cmp::Ordering, sync::Arc};
 
+// TODO: Caching grapheme counts and display widths would be a huge win.
+
 pub trait Key: Clone + Ord {}
 
 pub trait Value: Clone {}
