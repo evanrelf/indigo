@@ -16,7 +16,6 @@ indigo-btree = { path = "crates/btree/" }
 indigo-cli = { path = "crates/cli/" }
 indigo-core = { path = "crates/core/" }
 indigo-tui = { path = "crates/tui/" }
-itertools = "0.14.0"
 ratatui = "0.29.0"
 ropey = "1.6.1"
 thiserror = "2.0.11"

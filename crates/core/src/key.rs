@@ -1,5 +1,4 @@
 use flagset::{flags, FlagSet};
-use itertools::Itertools as _;
 use std::{
     fmt::{Display, Formatter},
     hash::{Hash, Hasher},
@@ -158,13 +157,14 @@ impl Display for Key {
             write!(f, "{code}")?;
         } else {
             write!(f, "<")?;
-            for modifier in self.modifiers.into_iter().sorted_unstable() {
-                let modifier = match modifier {
-                    KeyModifier::Control => "c",
-                    KeyModifier::Alt => "a",
-                    KeyModifier::Shift => "s",
-                };
-                write!(f, "{modifier}-")?;
+            if self.modifiers.contains(KeyModifier::Control) {
+                write!(f, "c-")?;
+            }
+            if self.modifiers.contains(KeyModifier::Alt) {
+                write!(f, "a-")?;
+            }
+            if self.modifiers.contains(KeyModifier::Shift) {
+                write!(f, "s-")?;
             }
             write!(f, "{code}>")?;
         }

@@ -4,7 +4,6 @@ edition = "2024"
 
 [dependencies]
 flagset = { workspace = true }
-itertools = { workspace = true }
 ropey = { workspace = true }
 thiserror = { workspace = true }
 unicode-segmentation = { workspace = true }
