@@ -8,8 +8,7 @@ use tracing_subscriber::EnvFilter;
 
 #[derive(Debug, clap::Parser)]
 struct Args {
-    // TODO: Is there a more idiomatic way of writing this defaulting?
-    #[clap(default_value_t = Keys::default())]
+    #[clap(default_value_t)]
     keys: Keys,
 
     #[clap(long, env = "INDIGO_LOG")]
