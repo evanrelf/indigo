@@ -341,7 +341,6 @@ dependencies = [
 name = "indigo-core"
 version = "0.0.0"
 dependencies = [
- "anyhow",
  "arbitrary",
  "arbtest",
  "flagset",

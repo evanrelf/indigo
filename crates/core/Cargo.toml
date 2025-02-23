@@ -3,7 +3,6 @@ name = "indigo-core"
 edition = "2024"
 
 [dependencies]
-anyhow = { workspace = true }
 flagset = { workspace = true }
 itertools = { workspace = true }
 ropey = { workspace = true }
