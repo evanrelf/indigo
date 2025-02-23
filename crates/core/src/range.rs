@@ -103,6 +103,7 @@ impl RawRange {
         self.anchor > self.head
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn extend_left(&mut self, rope: &Rope, count: NonZeroUsize) {
         self.head.move_left(rope, count);
         if self.anchor() == 0 && self.head() == 0 {
@@ -112,7 +113,14 @@ impl RawRange {
         if self.is_empty() {
             self.anchor.move_right(rope, NonZeroUsize::MIN);
             self.head.move_left(rope, NonZeroUsize::MIN);
-            assert_eq!(self.grapheme_length(rope), 2);
+            let grapheme_length = self.grapheme_length(rope);
+            if grapheme_length != 2 {
+                tracing::warn!(
+                    grapheme_length,
+                    text = ?self.rope_slice(rope),
+                    "Unexpected grapheme length != 2 after crossover",
+                );
+            }
             return;
         }
         if self.grapheme_length(rope) == 1 {
@@ -121,12 +129,20 @@ impl RawRange {
     }
 
     // TODO: Allow moving both cursors to EOF
+    #[tracing::instrument(skip_all)]
     pub fn extend_right(&mut self, rope: &Rope, count: NonZeroUsize) {
         self.head.move_right(rope, count);
         if self.is_empty() && !self.is_eof(rope) {
             self.anchor.move_left(rope, NonZeroUsize::MIN);
             self.head.move_right(rope, NonZeroUsize::MIN);
-            assert_eq!(self.grapheme_length(rope), 2);
+            let grapheme_length = self.grapheme_length(rope);
+            if grapheme_length != 2 {
+                tracing::warn!(
+                    grapheme_length,
+                    text = ?self.rope_slice(rope),
+                    "Unexpected grapheme length != 2 after crossover",
+                );
+            }
             return;
         }
         if self.grapheme_length(rope) == 1 {
@@ -153,6 +169,7 @@ impl RawRange {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn reduce(&mut self, rope: &Rope) {
         if self.is_eof(rope) {
             return;
@@ -164,7 +181,14 @@ impl RawRange {
             self.anchor = self.head;
             self.head.move_right(rope, NonZeroUsize::MIN);
         }
-        assert_eq!(self.grapheme_length(rope), 1);
+        let grapheme_length = self.grapheme_length(rope);
+        if grapheme_length != 1 {
+            tracing::warn!(
+                grapheme_length,
+                text = ?self.rope_slice(rope),
+                "Unexpected grapheme length != 1 after reduce",
+            );
+        }
     }
 
     pub fn insert_char(&mut self, rope: &mut Rope, char: char) {
