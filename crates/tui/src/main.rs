@@ -12,11 +12,18 @@ use ratatui::{
     style::{Color, Modifier},
     text::{Line, Span},
 };
-use std::{fs::File, io::BufReader};
+use std::{fs, io};
+use tracing_subscriber::EnvFilter;
 
 #[derive(Debug, clap::Parser)]
 struct Args {
     file: Option<Utf8PathBuf>,
+
+    #[clap(long)]
+    log_file: Option<Utf8PathBuf>,
+
+    #[clap(long, env = "INDIGO_LOG")]
+    log_filter: String,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -33,9 +40,20 @@ fn main() -> anyhow::Result<()> {
 
     let args = Args::parse();
 
+    if let Some(path) = args.log_file {
+        let file = fs::OpenOptions::new()
+            .append(true)
+            .create(true)
+            .open(path)?;
+        tracing_subscriber::fmt()
+            .with_env_filter(EnvFilter::new(args.log_filter))
+            .with_writer(file)
+            .init();
+    }
+
     let rope = if let Some(path) = args.file {
-        let file = File::open(path)?;
-        Rope::from_reader(BufReader::new(file))?
+        let file = fs::File::open(path)?;
+        Rope::from_reader(io::BufReader::new(file))?
     } else {
         Rope::new()
     };
