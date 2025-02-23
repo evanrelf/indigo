@@ -24,6 +24,8 @@ fn main() -> anyhow::Result<()> {
     if std::env::var("RUST_BACKTRACE").is_err() {
         // SAFETY: At this point the program is single-threaded. There are no other threads that
         // could be reading from or writing to the environment.
+        // TODO: Replace with `std::panic::set_backtrace_style` once it stabilizes.
+        // https://github.com/rust-lang/rust/issues/93346
         unsafe {
             std::env::set_var("RUST_BACKTRACE", "1");
         }
