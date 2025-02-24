@@ -1,6 +1,13 @@
 use ropey::{iter::Chunks, RopeSlice};
 use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
 
+// Unicode Text Segmentation: https://unicode.org/reports/tr29/
+
+// TODO: Move grapheme snapping functions from `rope` module.
+// TODO: Change `prev`/`next` to `floor`/`ceil` to mirror `std`.
+// TODO: Add char boundary functions.
+// See https://github.com/rust-lang/rust/issues/93743 for the last two ^
+
 #[must_use]
 pub fn char_prev_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> Option<usize> {
     let byte_index = rope.try_char_to_byte(char_index).ok()?;
