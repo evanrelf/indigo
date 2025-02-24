@@ -7,6 +7,7 @@ pub mod index;
 pub mod key;
 pub mod mode;
 pub mod ot;
+pub mod ot_byte;
 pub mod prelude;
 pub mod range;
 pub mod rope;
