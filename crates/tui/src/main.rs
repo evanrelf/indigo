@@ -318,7 +318,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let head = editor.range().head();
 
-    let char_length = editor.range().char_length();
+    let byte_length = editor.range().byte_length();
 
     let grapheme_length = editor.range().grapheme_length(editor.rope());
 
@@ -336,7 +336,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let status_bar = [
         format!("anchor={anchor}"),
         format!("head={head}"),
-        format!("char_length={char_length}"),
+        format!("byte_length={byte_length}"),
         format!("grapheme_length={grapheme_length}"),
         format!("display_width={display_width}"),
         format!("eof={eof}"),

@@ -9,44 +9,43 @@ use std::num::NonZeroUsize;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct RawCursor {
-    // TODO: Change char index to byte index for lower overhead grapheme operations
-    pub gap_index: usize, // char gap index
+    pub byte_gap_index: usize,
 }
 
 impl RawCursor {
     #[must_use]
-    pub fn new(rope: &Rope, gap_index: usize) -> Option<Self> {
-        if !rope.is_grapheme_boundary(gap_index) {
+    pub fn new(rope: &Rope, byte_gap_index: usize) -> Option<Self> {
+        if !rope.is_grapheme_boundary(byte_gap_index) {
             return None;
         }
-        let cursor = Self { gap_index };
+        let cursor = Self { byte_gap_index };
         cursor.assert_valid(rope);
         Some(cursor)
     }
 
     #[must_use]
-    pub fn new_snapped(rope: &Rope, gap_index: usize, snap_bias: Bias) -> Self {
+    pub fn new_snapped(rope: &Rope, byte_gap_index: usize, snap_bias: Bias) -> Self {
         let cursor = Self {
-            gap_index: rope.snap_to_grapheme_boundary(gap_index, snap_bias),
+            byte_gap_index: rope.snap_to_grapheme_boundary(byte_gap_index, snap_bias),
         };
         cursor.assert_valid(rope);
         cursor
     }
 
     #[must_use]
-    pub fn gap_index(&self) -> usize {
-        self.gap_index
+    pub fn byte_gap_index(&self) -> usize {
+        self.byte_gap_index
     }
 
     #[must_use]
     pub fn is_eof(&self, rope: &Rope) -> bool {
-        self.gap_index == rope.len_chars()
+        self.byte_gap_index == rope.len_bytes()
     }
 
     pub fn move_left(&mut self, rope: &Rope, count: NonZeroUsize) {
         for _ in 1..=count.get() {
-            match rope.prev_grapheme_boundary(self.gap_index) {
-                Some(prev) if self.gap_index != prev => self.gap_index = prev,
+            match rope.prev_grapheme_boundary(self.byte_gap_index) {
+                Some(prev) if self.byte_gap_index != prev => self.byte_gap_index = prev,
                 _ => break,
             }
         }
@@ -54,8 +53,8 @@ impl RawCursor {
 
     pub fn move_right(&mut self, rope: &Rope, count: NonZeroUsize) {
         for _ in 1..=count.get() {
-            match rope.next_grapheme_boundary(self.gap_index) {
-                Some(next) if self.gap_index != next => self.gap_index = next,
+            match rope.next_grapheme_boundary(self.byte_gap_index) {
+                Some(next) if self.byte_gap_index != next => self.byte_gap_index = next,
                 _ => break,
             }
         }
@@ -73,17 +72,17 @@ impl RawCursor {
     pub(crate) fn insert_impl(&mut self, rope: &mut Rope, string: &str) -> EditSeq {
         self.assert_valid(rope);
         let mut edits = EditSeq::new();
-        edits.retain(self.gap_index);
+        edits.retain(self.byte_gap_index);
         edits.insert(string);
         edits.retain_rest(rope);
         edits.apply(rope).unwrap();
-        self.gap_index = edits.transform_index(self.gap_index);
+        self.byte_gap_index = edits.transform_index(self.byte_gap_index);
         // If the inserted string combines with existing text, the cursor would be left in the
         // middle of a new grapheme, so we must snap after inserting.
         // Makes `insert_changes_grapheme_boundary` test pass.
         // TODO: Eliminate need for explicit snapping, or reduce repetition of snapping in cursor
         // and range code.
-        self.gap_index = rope.snap_to_grapheme_boundary(self.gap_index, Bias::After);
+        self.byte_gap_index = rope.snap_to_grapheme_boundary(self.byte_gap_index, Bias::After);
         edits
     }
 
@@ -94,19 +93,19 @@ impl RawCursor {
     #[must_use]
     pub(crate) fn delete_before_impl(&mut self, rope: &mut Rope, count: NonZeroUsize) -> EditSeq {
         self.assert_valid(rope);
-        let mut gap_index = self.gap_index;
+        let mut byte_gap_index = self.byte_gap_index;
         for _ in 1..=count.get() {
-            match rope.prev_grapheme_boundary(gap_index) {
-                Some(prev) if gap_index != prev => gap_index = prev,
+            match rope.prev_grapheme_boundary(byte_gap_index) {
+                Some(prev) if byte_gap_index != prev => byte_gap_index = prev,
                 _ => break,
             }
         }
         let mut edits = EditSeq::new();
-        edits.retain(gap_index);
-        edits.delete(self.gap_index - gap_index);
+        edits.retain(byte_gap_index);
+        edits.delete(self.byte_gap_index - byte_gap_index);
         edits.retain_rest(rope);
         edits.apply(rope).unwrap();
-        self.gap_index = edits.transform_index(self.gap_index);
+        self.byte_gap_index = edits.transform_index(self.byte_gap_index);
         edits
     }
 
@@ -117,32 +116,32 @@ impl RawCursor {
     #[must_use]
     pub(crate) fn delete_after_impl(&mut self, rope: &mut Rope, count: NonZeroUsize) -> EditSeq {
         self.assert_valid(rope);
-        let mut gap_index = self.gap_index;
+        let mut byte_gap_index = self.byte_gap_index;
         for _ in 1..=count.get() {
-            match rope.next_grapheme_boundary(gap_index) {
-                Some(next) if gap_index != next => gap_index = next,
+            match rope.next_grapheme_boundary(byte_gap_index) {
+                Some(next) if byte_gap_index != next => byte_gap_index = next,
                 _ => break,
             }
         }
         let mut edits = EditSeq::new();
-        edits.retain(self.gap_index);
-        edits.delete(gap_index - self.gap_index);
+        edits.retain(self.byte_gap_index);
+        edits.delete(byte_gap_index - self.byte_gap_index);
         edits.retain_rest(rope);
         edits.apply(rope).unwrap();
-        self.gap_index = edits.transform_index(self.gap_index);
+        self.byte_gap_index = edits.transform_index(self.byte_gap_index);
         edits
     }
 
     pub(crate) fn assert_valid(&self, rope: &Rope) {
         assert!(
-            self.gap_index <= rope.len_chars(),
-            "Cursor beyond end of rope (gap_index={})",
-            self.gap_index
+            self.byte_gap_index <= rope.len_bytes(),
+            "Cursor beyond end of rope (byte_gap_index={})",
+            self.byte_gap_index
         );
         assert!(
-            rope.is_grapheme_boundary(self.gap_index),
-            "Cursor not on a grapheme boundary (gap_index={})",
-            self.gap_index
+            rope.is_grapheme_boundary(self.byte_gap_index),
+            "Cursor not on a grapheme boundary (byte_gap_index={})",
+            self.byte_gap_index
         );
     }
 }
@@ -154,14 +153,14 @@ pub struct Cursor<'a> {
 
 impl<'a> Cursor<'a> {
     #[must_use]
-    pub fn new(rope: &'a Rope, gap_index: usize) -> Option<Self> {
-        let cursor = RawCursor::new(rope, gap_index)?;
+    pub fn new(rope: &'a Rope, byte_gap_index: usize) -> Option<Self> {
+        let cursor = RawCursor::new(rope, byte_gap_index)?;
         Some(Self { rope, cursor })
     }
 
     #[must_use]
-    pub fn new_snapped(rope: &'a Rope, gap_index: usize, snap_bias: Bias) -> Self {
-        let cursor = RawCursor::new_snapped(rope, gap_index, snap_bias);
+    pub fn new_snapped(rope: &'a Rope, byte_gap_index: usize, snap_bias: Bias) -> Self {
+        let cursor = RawCursor::new_snapped(rope, byte_gap_index, snap_bias);
         Self { rope, cursor }
     }
 
@@ -171,8 +170,8 @@ impl<'a> Cursor<'a> {
     }
 
     #[must_use]
-    pub fn gap_index(&self) -> usize {
-        self.cursor.gap_index
+    pub fn byte_gap_index(&self) -> usize {
+        self.cursor.byte_gap_index
     }
 
     #[must_use]
@@ -200,14 +199,14 @@ pub struct CursorMut<'a> {
 
 impl<'a> CursorMut<'a> {
     #[must_use]
-    pub fn new(rope: &'a mut Rope, gap_index: usize) -> Option<Self> {
-        let cursor = RawCursor::new(rope, gap_index)?;
+    pub fn new(rope: &'a mut Rope, byte_gap_index: usize) -> Option<Self> {
+        let cursor = RawCursor::new(rope, byte_gap_index)?;
         Some(Self { rope, cursor })
     }
 
     #[must_use]
-    pub fn new_snapped(rope: &'a mut Rope, gap_index: usize, snap_bias: Bias) -> Self {
-        let cursor = RawCursor::new_snapped(rope, gap_index, snap_bias);
+    pub fn new_snapped(rope: &'a mut Rope, byte_gap_index: usize, snap_bias: Bias) -> Self {
+        let cursor = RawCursor::new_snapped(rope, byte_gap_index, snap_bias);
         Self { rope, cursor }
     }
 
@@ -217,8 +216,8 @@ impl<'a> CursorMut<'a> {
     }
 
     #[must_use]
-    pub fn gap_index(&self) -> usize {
-        self.cursor.gap_index
+    pub fn byte_gap_index(&self) -> usize {
+        self.cursor.byte_gap_index
     }
 
     #[must_use]
@@ -273,9 +272,9 @@ mod tests {
     fn fuzz() {
         arbtest(|u| {
             let mut rope = Rope::new();
-            let gap_index = u.choose_index(rope.len_chars() + 100)?;
+            let byte_gap_index = u.arbitrary()?;
             let snap_bias = u.choose(&[Bias::Before, Bias::After])?;
-            let mut cursor = CursorMut::new_snapped(&mut rope, gap_index, *snap_bias);
+            let mut cursor = CursorMut::new_snapped(&mut rope, byte_gap_index, *snap_bias);
             let mut actions = Vec::new();
             for _ in 0..u.choose_index(100)? {
                 match u.choose_index(4)? {

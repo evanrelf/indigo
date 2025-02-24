@@ -27,19 +27,27 @@ pub trait RopeExt {
         rope.len_lines() - if last_char == '\n' { 1 } else { 0 }
     }
 
-    fn char_index_to_grapheme_index(&self, char_index: usize) -> usize {
-        self.as_slice().slice(..char_index).graphemes().count()
+    fn byte_index_to_grapheme_index(&self, byte_index: usize) -> Option<usize> {
+        let char_index = self.as_slice().try_byte_to_char(byte_index).ok()?;
+        Some(self.as_slice().slice(..char_index).graphemes().count())
     }
 
-    fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice> {
+    fn char_index_to_grapheme_index(&self, char_index: usize) -> Option<usize> {
+        Some(self.as_slice().get_slice(..char_index)?.graphemes().count())
+    }
+
+    fn get_grapheme(&self, byte_index: usize) -> Option<RopeSlice> {
         let rope = self.as_slice();
-        let start = char_index;
-        rope.next_grapheme_boundary(start)
-            .map(|end| rope.slice(start..end))
+        let start = byte_index;
+        let end = rope.next_grapheme_boundary(start)?;
+        // TODO: Add byte slice method
+        let start = rope.try_byte_to_char(start).ok()?;
+        let end = rope.byte_to_char(end);
+        Some(rope.slice(start..end))
     }
 
-    fn grapheme(&self, char_index: usize) -> RopeSlice {
-        self.get_grapheme(char_index).unwrap()
+    fn grapheme(&self, byte_index: usize) -> RopeSlice {
+        self.get_grapheme(byte_index).unwrap()
     }
 
     fn graphemes(&self) -> Graphemes<'_> {
@@ -50,55 +58,29 @@ pub trait RopeExt {
         GraphemeBoundaries::new(&self.as_slice())
     }
 
-    fn prev_grapheme_boundary(&self, char_index: usize) -> Option<usize> {
-        graphemes_step::char_prev_grapheme_boundary(&self.as_slice(), char_index)
-    }
-
-    fn next_grapheme_boundary(&self, char_index: usize) -> Option<usize> {
-        graphemes_step::char_next_grapheme_boundary(&self.as_slice(), char_index)
-    }
-
-    fn is_grapheme_boundary(&self, char_index: usize) -> bool {
-        graphemes_step::char_is_grapheme_boundary(&self.as_slice(), char_index)
-    }
-
-    fn snap_to_grapheme_boundary(&self, char_index: usize, bias: Bias) -> usize {
-        let length = self.as_slice().len_chars();
-        if char_index > length {
-            return length;
-        }
-        if self.is_grapheme_boundary(char_index) {
-            return char_index;
-        }
-        match bias {
-            Bias::Before => self.prev_grapheme_boundary(char_index).unwrap(),
-            Bias::After => self.next_grapheme_boundary(char_index).unwrap(),
-        }
-    }
-
-    fn byte_prev_grapheme_boundary(&self, byte_index: usize) -> Option<usize> {
+    fn prev_grapheme_boundary(&self, byte_index: usize) -> Option<usize> {
         graphemes_step::byte_prev_grapheme_boundary(&self.as_slice(), byte_index)
     }
 
-    fn byte_next_grapheme_boundary(&self, byte_index: usize) -> Option<usize> {
+    fn next_grapheme_boundary(&self, byte_index: usize) -> Option<usize> {
         graphemes_step::byte_next_grapheme_boundary(&self.as_slice(), byte_index)
     }
 
-    fn byte_is_grapheme_boundary(&self, byte_index: usize) -> bool {
+    fn is_grapheme_boundary(&self, byte_index: usize) -> bool {
         graphemes_step::byte_is_grapheme_boundary(&self.as_slice(), byte_index)
     }
 
-    fn byte_snap_to_grapheme_boundary(&self, byte_index: usize, bias: Bias) -> usize {
+    fn snap_to_grapheme_boundary(&self, byte_index: usize, bias: Bias) -> usize {
         let length = self.as_slice().len_bytes();
         if byte_index > length {
             return length;
         }
-        if self.byte_is_grapheme_boundary(byte_index) {
+        if self.is_grapheme_boundary(byte_index) {
             return byte_index;
         }
         match bias {
-            Bias::Before => self.byte_prev_grapheme_boundary(byte_index).unwrap(),
-            Bias::After => self.byte_next_grapheme_boundary(byte_index).unwrap(),
+            Bias::Before => self.prev_grapheme_boundary(byte_index).unwrap(),
+            Bias::After => self.next_grapheme_boundary(byte_index).unwrap(),
         }
     }
 }
@@ -201,10 +183,10 @@ mod tests {
         arbtest(|u| {
             let rope = Rope::from_str(u.arbitrary()?);
             let step: Vec<usize> = {
-                let mut char_index = 0;
+                let mut byte_index = 0;
                 let mut bs = vec![0];
-                while let Some(b) = rope.next_grapheme_boundary(char_index) {
-                    char_index = b;
+                while let Some(b) = rope.next_grapheme_boundary(byte_index) {
+                    byte_index = b;
                     bs.push(b);
                 }
                 bs

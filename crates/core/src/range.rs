@@ -29,7 +29,7 @@ impl RawRange {
 
     #[must_use]
     pub fn new_snapped(rope: &Rope, anchor_gap_index: usize, mut head_gap_index: usize) -> Self {
-        if anchor_gap_index == head_gap_index && rope.len_chars() > 0 {
+        if anchor_gap_index == head_gap_index && rope.len_bytes() > 0 {
             head_gap_index += 1;
         }
         let (anchor_snap_bias, head_snap_bias) = if anchor_gap_index < head_gap_index {
@@ -53,32 +53,32 @@ impl RawRange {
 
     #[must_use]
     pub fn anchor(&self) -> usize {
-        self.anchor.gap_index
+        self.anchor.byte_gap_index
     }
 
     #[must_use]
     pub fn head(&self) -> usize {
-        self.head.gap_index
+        self.head.byte_gap_index
     }
 
     #[must_use]
     pub fn start(&self) -> usize {
-        min(self.anchor, self.head).gap_index
+        min(self.anchor, self.head).byte_gap_index
     }
 
     #[must_use]
     pub fn end(&self) -> usize {
-        max(self.anchor, self.head).gap_index
+        max(self.anchor, self.head).byte_gap_index
     }
 
     #[must_use]
-    pub fn char_length(&self) -> usize {
+    pub fn byte_length(&self) -> usize {
         self.end() - self.start()
     }
 
     #[must_use]
     pub fn grapheme_length(&self, rope: &Rope) -> usize {
-        match self.char_length() {
+        match self.byte_length() {
             0 => 0,
             1 => 1,
             _ => self.rope_slice(rope).graphemes().count(),
@@ -87,7 +87,7 @@ impl RawRange {
 
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.char_length() == 0
+        self.byte_length() == 0
     }
 
     #[must_use]
@@ -203,8 +203,8 @@ impl RawRange {
         let edits = range.anchor.insert_impl(rope, string);
         *self = Self::new_snapped(
             rope,
-            edits.transform_index(self.anchor.gap_index),
-            edits.transform_index(self.head.gap_index),
+            edits.transform_index(self.anchor.byte_gap_index),
+            edits.transform_index(self.head.byte_gap_index),
         );
     }
 
@@ -212,8 +212,8 @@ impl RawRange {
         let mut range = *self;
         range.reduce(rope);
         let edits = range.anchor.delete_before_impl(rope, count);
-        self.anchor.gap_index = edits.transform_index(self.anchor.gap_index);
-        self.head.gap_index = edits.transform_index(self.head.gap_index);
+        self.anchor.byte_gap_index = edits.transform_index(self.anchor.byte_gap_index);
+        self.head.byte_gap_index = edits.transform_index(self.head.byte_gap_index);
     }
 
     pub fn delete(&mut self, rope: &mut Rope) {
@@ -222,11 +222,11 @@ impl RawRange {
         }
         let mut edits = EditSeq::new();
         edits.retain(self.start());
-        edits.delete(self.char_length());
+        edits.delete(self.byte_length());
         edits.retain_rest(rope);
         edits.apply(rope).unwrap();
-        self.anchor.gap_index = edits.transform_index(self.anchor.gap_index);
-        self.head.gap_index = edits.transform_index(self.head.gap_index);
+        self.anchor.byte_gap_index = edits.transform_index(self.anchor.byte_gap_index);
+        self.head.byte_gap_index = edits.transform_index(self.head.byte_gap_index);
         assert_eq!(self.anchor, self.head);
         self.extend_right(rope, NonZeroUsize::MIN);
     }
@@ -235,8 +235,8 @@ impl RawRange {
         let mut range = *self;
         range.reduce(rope);
         let edits = range.head.delete_after_impl(rope, count);
-        self.anchor.gap_index = edits.transform_index(self.anchor.gap_index);
-        self.head.gap_index = edits.transform_index(self.head.gap_index);
+        self.anchor.byte_gap_index = edits.transform_index(self.anchor.byte_gap_index);
+        self.head.byte_gap_index = edits.transform_index(self.head.byte_gap_index);
     }
 
     pub(crate) fn assert_valid(&self, rope: &Rope) {
@@ -245,14 +245,14 @@ impl RawRange {
         assert!(
             !self.is_empty() || self.is_eof(rope),
             "Range empty but not at EOF (anchor={}, head={})",
-            self.anchor.gap_index,
-            self.head.gap_index,
+            self.anchor.byte_gap_index,
+            self.head.byte_gap_index,
         );
         assert!(
             self.is_forward() || self.grapheme_length(rope) > 1,
             "Range reduced but not facing forward (anchor={}, head={})",
-            self.anchor.gap_index,
-            self.head.gap_index,
+            self.anchor.byte_gap_index,
+            self.head.byte_gap_index,
         );
     }
 }
@@ -312,8 +312,8 @@ impl<'a> Range<'a> {
     }
 
     #[must_use]
-    pub fn char_length(&self) -> usize {
-        self.range.char_length()
+    pub fn byte_length(&self) -> usize {
+        self.range.byte_length()
     }
 
     #[must_use]
@@ -434,8 +434,8 @@ impl<'a> RangeMut<'a> {
     }
 
     #[must_use]
-    pub fn char_length(&self) -> usize {
-        self.range.char_length()
+    pub fn byte_length(&self) -> usize {
+        self.range.byte_length()
     }
 
     #[must_use]

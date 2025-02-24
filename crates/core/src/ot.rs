@@ -1,5 +1,5 @@
 use ropey::Rope;
-use std::{ops::Deref, rc::Rc};
+use std::{borrow::Cow, ops::Deref, rc::Rc};
 use thiserror::Error;
 
 // TODO: Add backtraces once this issue is resolved: https://github.com/dtolnay/thiserror/issues/390
@@ -8,8 +8,8 @@ pub enum Error {
     #[error("length mismatch: {left} != {right}")]
     LengthMismatch { left: usize, right: usize },
 
-    #[error("char index {char_index} exceeds rope length {len_chars}")]
-    CharIndexPastEof { char_index: usize, len_chars: usize },
+    #[error("byte index {byte_index} exceeds rope length {len_bytes}")]
+    ByteIndexPastEof { byte_index: usize, len_bytes: usize },
 
     #[error(transparent)]
     RopeyError(#[from] ropey::Error),
@@ -19,8 +19,8 @@ pub enum Error {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct EditSeq {
     edits: Vec<Edit>,
-    source_chars: usize,
-    target_chars: usize,
+    source_bytes: usize,
+    target_bytes: usize,
 }
 
 impl EditSeq {
@@ -33,44 +33,44 @@ impl EditSeq {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             edits: Vec::with_capacity(capacity),
-            source_chars: 0,
-            target_chars: 0,
+            source_bytes: 0,
+            target_bytes: 0,
         }
     }
 
-    pub fn retain(&mut self, char_length: usize) {
-        if char_length == 0 {
+    pub fn retain(&mut self, byte_length: usize) {
+        if byte_length == 0 {
             return;
         }
 
-        self.source_chars += char_length;
-        self.target_chars += char_length;
+        self.source_bytes += byte_length;
+        self.target_bytes += byte_length;
 
         if let Some(Edit::Retain(n)) = self.edits.last_mut() {
-            *n += char_length;
+            *n += byte_length;
         } else {
-            self.edits.push(Edit::Retain(char_length));
+            self.edits.push(Edit::Retain(byte_length));
         }
     }
 
     pub fn retain_rest(&mut self, rope: &Rope) {
-        // TODO: Return custom error if `source_chars` exceeds rope length.
-        let char_length = rope.len_chars() - self.source_chars;
+        // TODO: Return custom error if `source_bytes` exceeds rope length.
+        let byte_length = rope.len_bytes() - self.source_bytes;
 
-        self.retain(char_length);
+        self.retain(byte_length);
     }
 
-    pub fn delete(&mut self, char_length: usize) {
-        if char_length == 0 {
+    pub fn delete(&mut self, byte_length: usize) {
+        if byte_length == 0 {
             return;
         }
 
-        self.source_chars += char_length;
+        self.source_bytes += byte_length;
 
         if let Some(Edit::Delete(n)) = self.edits.last_mut() {
-            *n += char_length;
+            *n += byte_length;
         } else {
-            self.edits.push(Edit::Delete(char_length));
+            self.edits.push(Edit::Delete(byte_length));
         }
     }
 
@@ -81,10 +81,10 @@ impl EditSeq {
             return;
         }
 
-        self.target_chars += text.chars().count();
+        self.target_bytes += text.len();
 
         if let Some(Edit::Insert(last)) = self.edits.last_mut() {
-            let mut s = String::with_capacity(last.chars().count() + text.chars().count());
+            let mut s = String::with_capacity(last.len() + text.len());
             s.push_str(last);
             s.push_str(&text);
             *last = Rc::from(s);
@@ -102,10 +102,10 @@ impl EditSeq {
     }
 
     pub fn compose(&self, other: &Self) -> Result<Self, Error> {
-        if self.target_chars != other.source_chars {
+        if self.target_bytes != other.source_bytes {
             return Err(Error::LengthMismatch {
-                left: self.target_chars,
-                right: other.source_chars,
+                left: self.target_bytes,
+                right: other.source_bytes,
             });
         }
 
@@ -116,10 +116,10 @@ impl EditSeq {
     }
 
     pub fn transform(&self, other: &Self) -> Result<(Self, Self), Error> {
-        if self.source_chars != other.source_chars {
+        if self.source_bytes != other.source_bytes {
             return Err(Error::LengthMismatch {
-                left: self.source_chars,
-                right: other.source_chars,
+                left: self.source_bytes,
+                right: other.source_bytes,
             });
         }
 
@@ -129,7 +129,7 @@ impl EditSeq {
     }
 
     #[must_use]
-    pub fn transform_index(&self, mut char_index: usize) -> usize {
+    pub fn transform_index(&self, mut byte_index: usize) -> usize {
         let mut position = 0;
 
         for edit in &self.edits {
@@ -138,29 +138,29 @@ impl EditSeq {
                     position += n;
                 }
                 Edit::Delete(n) => {
-                    if position < char_index {
-                        char_index -= n;
+                    if position < byte_index {
+                        byte_index -= n;
                     }
                 }
                 Edit::Insert(s) => {
-                    if position <= char_index {
-                        char_index += s.chars().count();
+                    if position <= byte_index {
+                        byte_index += s.len();
                     }
-                    position += s.chars().count();
+                    position += s.len();
                 }
             }
         }
 
-        char_index
+        byte_index
     }
 
     pub fn invert(&self, rope: &Rope) -> Result<Self, Error> {
         let length_mismatch = || Error::LengthMismatch {
-            left: self.source_chars,
-            right: rope.len_chars(),
+            left: self.source_bytes,
+            right: rope.len_bytes(),
         };
 
-        if self.source_chars != rope.len_chars() {
+        if self.source_bytes != rope.len_bytes() {
             return Err(length_mismatch());
         }
 
@@ -170,15 +170,12 @@ impl EditSeq {
             match edit {
                 Edit::Retain(n) => inverted.retain(*n),
                 Edit::Delete(n) => {
-                    let start = inverted.target_chars;
-                    let end = start + n;
-                    let s = rope
-                        .get_slice(start..end)
-                        .ok_or_else(length_mismatch)?
-                        .to_string();
+                    let start = rope.try_byte_to_char(inverted.target_bytes)?;
+                    let end = rope.try_byte_to_char(inverted.target_bytes + n)?;
+                    let s = Cow::<str>::from(rope.slice(start..end));
                     inverted.insert(s);
                 }
-                Edit::Insert(s) => inverted.delete(s.chars().count()),
+                Edit::Insert(s) => inverted.delete(s.len()),
             }
         }
 
@@ -186,17 +183,17 @@ impl EditSeq {
     }
 
     pub fn apply(&self, rope: &mut Rope) -> Result<(), Error> {
-        if self.source_chars != rope.len_chars() {
+        if self.source_bytes != rope.len_bytes() {
             return Err(Error::LengthMismatch {
-                left: self.source_chars,
-                right: rope.len_chars(),
+                left: self.source_bytes,
+                right: rope.len_bytes(),
             });
         }
 
-        let mut char_index = 0;
+        let mut byte_index = 0;
 
         for edit in &self.edits {
-            char_index = edit.apply(char_index, rope)?;
+            byte_index = edit.apply(byte_index, rope)?;
         }
 
         Ok(())
@@ -251,27 +248,30 @@ pub enum Edit {
 }
 
 impl Edit {
-    pub fn apply(&self, char_index: usize, rope: &mut Rope) -> Result<usize, Error> {
-        let char_index = match self {
-            Self::Retain(n) => char_index + n,
+    pub fn apply(&self, byte_index: usize, rope: &mut Rope) -> Result<usize, Error> {
+        let byte_index = match self {
+            Self::Retain(n) => byte_index + n,
             Self::Delete(n) => {
-                rope.try_remove(char_index..char_index + n)?;
-                char_index
+                let start = rope.try_byte_to_char(byte_index)?;
+                let end = rope.try_byte_to_char(byte_index + n)?;
+                rope.remove(start..end);
+                byte_index
             }
             Self::Insert(s) => {
-                rope.try_insert(char_index, s)?;
-                char_index + s.chars().count()
+                let char_index = rope.try_byte_to_char(byte_index)?;
+                rope.insert(char_index, s);
+                byte_index + s.len()
             }
         };
 
-        if char_index > rope.len_chars() {
-            return Err(Error::CharIndexPastEof {
-                char_index,
-                len_chars: rope.len_chars(),
+        if byte_index > rope.len_bytes() {
+            return Err(Error::ByteIndexPastEof {
+                byte_index,
+                len_bytes: rope.len_bytes(),
             });
         }
 
-        Ok(char_index)
+        Ok(byte_index)
     }
 }
 
@@ -308,33 +308,33 @@ mod tests {
         let mut rope = Rope::from("Hello, world!");
 
         let mut index = 9;
-        assert_eq!(rope.char(index), 'r');
+        assert_eq!(rope.byte(index), b'r');
 
         let mut edits = EditSeq::new();
-        edits.delete("Hello, ".chars().count());
-        edits.retain("world".chars().count());
+        edits.delete("Hello, ".len());
+        edits.retain("world".len());
         edits.insert("!!!");
-        edits.retain("!".chars().count());
+        edits.retain("!".len());
 
         edits.apply(&mut rope).unwrap();
         assert_eq!(rope, Rope::from("world!!!!"));
 
-        assert_eq!(rope.get_char(index), None);
+        assert_eq!(rope.get_byte(index), None);
         index = edits.transform_index(index);
         assert_eq!(index, 2);
-        assert_eq!(rope.char(index), 'r');
+        assert_eq!(rope.byte(index), b'r');
 
         let mut edits = EditSeq::new();
-        edits.delete("w".chars().count());
+        edits.delete("w".len());
         edits.insert("the whole w");
         edits.retain_rest(&rope);
         edits.apply(&mut rope).unwrap();
         assert_eq!(rope, Rope::from("the whole world!!!!"));
 
-        assert_eq!(rope.char(index), 'e');
+        assert_eq!(rope.byte(index), b'e');
         index = edits.transform_index(index);
         assert_eq!(index, 12);
-        assert_eq!(rope.char(index), 'r');
+        assert_eq!(rope.byte(index), b'r');
     }
 
     #[test]
@@ -342,11 +342,11 @@ mod tests {
         let rope1 = Rope::from("Hello, world!");
 
         let mut edits = EditSeq::new();
-        edits.delete("H".chars().count());
+        edits.delete("H".len());
         edits.insert("Y");
-        edits.retain("ello".chars().count());
+        edits.retain("ello".len());
         edits.insert("w");
-        edits.delete(", world!".chars().count());
+        edits.delete(", world!".len());
         edits.insert(" and pink");
 
         let mut rope2 = rope1.clone();
@@ -364,9 +364,9 @@ mod tests {
     fn edits_apply() {
         let mut edits = EditSeq::new();
         edits.retain(7);
-        edits.delete("world".chars().count());
+        edits.delete("world".len());
         edits.insert("Evan");
-        edits.delete("!".chars().count());
+        edits.delete("!".len());
         edits.insert("...");
         edits.insert("?");
 
@@ -382,25 +382,25 @@ mod tests {
     #[test]
     fn edit_apply() {
         let mut rope = Rope::from("Hello, world!");
-        let char_index = 0;
-        let char_index = Edit::Retain(7).apply(char_index, &mut rope).unwrap();
-        let char_index = Edit::Delete("world".chars().count())
-            .apply(char_index, &mut rope)
+        let byte_index = 0;
+        let byte_index = Edit::Retain(7).apply(byte_index, &mut rope).unwrap();
+        let byte_index = Edit::Delete("world".len())
+            .apply(byte_index, &mut rope)
             .unwrap();
-        let char_index = Edit::Insert(Rc::from("Evan"))
-            .apply(char_index, &mut rope)
+        let byte_index = Edit::Insert(Rc::from("Evan"))
+            .apply(byte_index, &mut rope)
             .unwrap();
-        let char_index = Edit::Delete("!".chars().count())
-            .apply(char_index, &mut rope)
+        let byte_index = Edit::Delete("!".len())
+            .apply(byte_index, &mut rope)
             .unwrap();
-        let char_index = Edit::Insert(Rc::from("..."))
-            .apply(char_index, &mut rope)
+        let byte_index = Edit::Insert(Rc::from("..."))
+            .apply(byte_index, &mut rope)
             .unwrap();
-        let char_index = Edit::Insert(Rc::from("?"))
-            .apply(char_index, &mut rope)
+        let byte_index = Edit::Insert(Rc::from("?"))
+            .apply(byte_index, &mut rope)
             .unwrap();
         assert_eq!(rope, Rope::from("Hello, Evan...?"));
-        assert!(Edit::Retain(1).apply(char_index, &mut rope).is_err());
+        assert!(Edit::Retain(1).apply(byte_index, &mut rope).is_err());
     }
 
     // TODO: Write property test for this with `quickcheck` or `proptest`.
