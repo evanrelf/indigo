@@ -11,4 +11,5 @@ pub mod ot;
 pub mod ot_byte;
 pub mod prelude;
 pub mod range;
+pub mod range_byte;
 pub mod rope;
