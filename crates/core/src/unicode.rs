@@ -1,8 +1,7 @@
-//! From <https://github.com/cessen/ropey/blob/master/examples/graphemes_step.rs>.
-
-use ropey::RopeSlice;
+use ropey::{iter::Chunks, RopeSlice};
 use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
 
+#[must_use]
 pub fn char_prev_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> Option<usize> {
     let byte_index = rope.try_char_to_byte(char_index).ok()?;
     let prev_byte_index = byte_prev_grapheme_boundary(rope, byte_index)?;
@@ -12,6 +11,7 @@ pub fn char_prev_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> Optio
     Some(prev_char_index)
 }
 
+#[must_use]
 pub fn byte_prev_grapheme_boundary(rope: &RopeSlice, byte_index: usize) -> Option<usize> {
     if byte_index > rope.len_bytes() {
         return Some(rope.len_bytes());
@@ -36,6 +36,7 @@ pub fn byte_prev_grapheme_boundary(rope: &RopeSlice, byte_index: usize) -> Optio
     }
 }
 
+#[must_use]
 pub fn char_next_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> Option<usize> {
     let byte_index = rope.try_char_to_byte(char_index).ok()?;
     let next_byte_index = byte_next_grapheme_boundary(rope, byte_index)?;
@@ -45,6 +46,7 @@ pub fn char_next_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> Optio
     Some(next_char_index)
 }
 
+#[must_use]
 pub fn byte_next_grapheme_boundary(rope: &RopeSlice, byte_index: usize) -> Option<usize> {
     if byte_index > rope.len_bytes() {
         return None;
@@ -69,6 +71,7 @@ pub fn byte_next_grapheme_boundary(rope: &RopeSlice, byte_index: usize) -> Optio
     }
 }
 
+#[must_use]
 pub fn char_is_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> bool {
     let Ok(byte_index) = rope.try_char_to_byte(char_index) else {
         return false;
@@ -76,6 +79,7 @@ pub fn char_is_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> bool {
     byte_is_grapheme_boundary(rope, byte_index)
 }
 
+#[must_use]
 pub fn byte_is_grapheme_boundary(rope: &RopeSlice, byte_index: usize) -> bool {
     if byte_index == 0 {
         return true;
@@ -97,6 +101,129 @@ pub fn byte_is_grapheme_boundary(rope: &RopeSlice, byte_index: usize) -> bool {
                 cursor.provide_context(prev_chunk, prev_chunk_byte_index);
             }
             _ => unreachable!(),
+        }
+    }
+}
+
+pub struct Graphemes<'a> {
+    text: RopeSlice<'a>,
+    chunks: Chunks<'a>,
+    cur_chunk: &'a str,
+    cur_chunk_start: usize,
+    cursor: GraphemeCursor,
+}
+
+impl Graphemes<'_> {
+    #[must_use]
+    pub fn new<'b>(slice: &RopeSlice<'b>) -> Graphemes<'b> {
+        let mut chunks = slice.chunks();
+        let first_chunk = chunks.next().unwrap_or("");
+        Graphemes {
+            text: *slice,
+            chunks,
+            cur_chunk: first_chunk,
+            cur_chunk_start: 0,
+            cursor: GraphemeCursor::new(0, slice.len_bytes(), true),
+        }
+    }
+}
+
+impl<'a> Iterator for Graphemes<'a> {
+    type Item = RopeSlice<'a>;
+
+    fn next(&mut self) -> Option<RopeSlice<'a>> {
+        let a = self.cursor.cur_cursor();
+        let b;
+        loop {
+            match self
+                .cursor
+                .next_boundary(self.cur_chunk, self.cur_chunk_start)
+            {
+                Ok(None) => {
+                    return None;
+                }
+                Ok(Some(n)) => {
+                    b = n;
+                    break;
+                }
+                Err(GraphemeIncomplete::NextChunk) => {
+                    self.cur_chunk_start += self.cur_chunk.len();
+                    self.cur_chunk = self.chunks.next().unwrap_or("");
+                }
+                Err(GraphemeIncomplete::PreContext(idx)) => {
+                    let (chunk, byte_idx, _, _) = self.text.chunk_at_byte(idx.saturating_sub(1));
+                    self.cursor.provide_context(chunk, byte_idx);
+                }
+                _ => unreachable!(),
+            }
+        }
+
+        if a < self.cur_chunk_start {
+            let a_char = self.text.byte_to_char(a);
+            let b_char = self.text.byte_to_char(b);
+
+            Some(self.text.slice(a_char..b_char))
+        } else {
+            let a2 = a - self.cur_chunk_start;
+            let b2 = b - self.cur_chunk_start;
+            Some((&self.cur_chunk[a2..b2]).into())
+        }
+    }
+}
+
+pub struct GraphemeBoundaries<'a> {
+    rope: RopeSlice<'a>,
+    chunk: &'a str,
+    chunk_byte_index: usize,
+    cursor: GraphemeCursor,
+    zero: bool,
+}
+
+// TODO: Make a double-ended grapheme boundary iterator, rewrite next and prev step functions in
+// terms of iterator to reduce duplicated code?
+// TODO: Allow starting iterator from a provided character index?
+
+impl<'a> GraphemeBoundaries<'a> {
+    #[must_use]
+    pub fn new(rope: &RopeSlice<'a>) -> Self {
+        let (chunk, chunk_byte_index, _, _) = rope.chunk_at_byte(0);
+        Self {
+            rope: *rope,
+            chunk,
+            chunk_byte_index,
+            cursor: GraphemeCursor::new(0, rope.len_bytes(), true),
+            zero: true,
+        }
+    }
+}
+
+impl Iterator for GraphemeBoundaries<'_> {
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.zero {
+            self.zero = false;
+            return Some(0);
+        }
+
+        loop {
+            match self.cursor.next_boundary(self.chunk, self.chunk_byte_index) {
+                Ok(result) => return result,
+                Err(GraphemeIncomplete::NextChunk) => {
+                    let (next_chunk, next_chunk_byte_index, _, _) = self
+                        .rope
+                        .chunk_at_byte(self.chunk_byte_index + self.chunk.len());
+                    self.chunk = next_chunk;
+                    self.chunk_byte_index = next_chunk_byte_index;
+                }
+                Err(GraphemeIncomplete::PreContext(byte_index)) => {
+                    let (prev_chunk, prev_chunk_byte_index, _, _) =
+                        self.rope.chunk_at_byte(byte_index - 1);
+                    self.cursor
+                        .provide_context(prev_chunk, prev_chunk_byte_index);
+                }
+                _ => unreachable!(),
+            }
         }
     }
 }

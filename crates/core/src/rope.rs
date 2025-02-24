@@ -1,7 +1,4 @@
-mod graphemes_iter;
-mod graphemes_step;
-
-use crate::rope::graphemes_iter::{GraphemeBoundaries, Graphemes};
+use crate::unicode;
 use ropey::{Rope, RopeSlice};
 
 #[derive(Clone, Copy)]
@@ -50,24 +47,24 @@ pub trait RopeExt {
         self.get_grapheme(byte_index).unwrap()
     }
 
-    fn graphemes(&self) -> Graphemes<'_> {
-        Graphemes::new(&self.as_slice())
+    fn graphemes(&self) -> unicode::Graphemes<'_> {
+        unicode::Graphemes::new(&self.as_slice())
     }
 
-    fn grapheme_boundaries(&self) -> GraphemeBoundaries<'_> {
-        GraphemeBoundaries::new(&self.as_slice())
+    fn grapheme_boundaries(&self) -> unicode::GraphemeBoundaries<'_> {
+        unicode::GraphemeBoundaries::new(&self.as_slice())
     }
 
     fn prev_grapheme_boundary(&self, byte_index: usize) -> Option<usize> {
-        graphemes_step::byte_prev_grapheme_boundary(&self.as_slice(), byte_index)
+        unicode::byte_prev_grapheme_boundary(&self.as_slice(), byte_index)
     }
 
     fn next_grapheme_boundary(&self, byte_index: usize) -> Option<usize> {
-        graphemes_step::byte_next_grapheme_boundary(&self.as_slice(), byte_index)
+        unicode::byte_next_grapheme_boundary(&self.as_slice(), byte_index)
     }
 
     fn is_grapheme_boundary(&self, byte_index: usize) -> bool {
-        graphemes_step::byte_is_grapheme_boundary(&self.as_slice(), byte_index)
+        unicode::byte_is_grapheme_boundary(&self.as_slice(), byte_index)
     }
 
     // TODO: Implement this and fix `byte_is_grapheme_boundary` panicking when feeding
