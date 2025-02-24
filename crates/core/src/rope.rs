@@ -59,30 +59,46 @@ pub trait RopeExt {
     }
 
     fn is_grapheme_boundary(&self, char_index: usize) -> bool {
-        let rope = self.as_slice();
-        graphemes_step::char_is_grapheme_boundary(&rope, char_index)
+        graphemes_step::char_is_grapheme_boundary(&self.as_slice(), char_index)
     }
 
     fn snap_to_grapheme_boundary(&self, char_index: usize, bias: Bias) -> usize {
-        if char_index > self.as_slice().len_chars() {
-            return 0;
+        let length = self.as_slice().len_chars();
+        if char_index > length {
+            return length;
         }
         if self.is_grapheme_boundary(char_index) {
             return char_index;
         }
         match bias {
-            Bias::Before => self.prev_grapheme_boundary(char_index).unwrap_or_else(|| {
-                unreachable!(
-                    "Character index {char_index} has no previous grapheme boundary\nrope = {:?}",
-                    self.as_slice()
-                )
-            }),
-            Bias::After => self.next_grapheme_boundary(char_index).unwrap_or_else(|| {
-                unreachable!(
-                    "Character index {char_index} has no next grapheme boundary\nrope = {:?}",
-                    self.as_slice()
-                )
-            }),
+            Bias::Before => self.prev_grapheme_boundary(char_index).unwrap(),
+            Bias::After => self.next_grapheme_boundary(char_index).unwrap(),
+        }
+    }
+
+    fn byte_prev_grapheme_boundary(&self, byte_index: usize) -> Option<usize> {
+        graphemes_step::byte_prev_grapheme_boundary(&self.as_slice(), byte_index)
+    }
+
+    fn byte_next_grapheme_boundary(&self, byte_index: usize) -> Option<usize> {
+        graphemes_step::byte_next_grapheme_boundary(&self.as_slice(), byte_index)
+    }
+
+    fn byte_is_grapheme_boundary(&self, byte_index: usize) -> bool {
+        graphemes_step::byte_is_grapheme_boundary(&self.as_slice(), byte_index)
+    }
+
+    fn byte_snap_to_grapheme_boundary(&self, byte_index: usize, bias: Bias) -> usize {
+        let length = self.as_slice().len_bytes();
+        if byte_index > length {
+            return length;
+        }
+        if self.byte_is_grapheme_boundary(byte_index) {
+            return byte_index;
+        }
+        match bias {
+            Bias::Before => self.byte_prev_grapheme_boundary(byte_index).unwrap(),
+            Bias::After => self.byte_next_grapheme_boundary(byte_index).unwrap(),
         }
     }
 }
