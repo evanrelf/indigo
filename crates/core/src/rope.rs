@@ -51,16 +51,16 @@ pub trait RopeExt {
     }
 
     fn prev_grapheme_boundary(&self, char_index: usize) -> Option<usize> {
-        graphemes_step::prev_grapheme_boundary(&self.as_slice(), char_index)
+        graphemes_step::char_prev_grapheme_boundary(&self.as_slice(), char_index)
     }
 
     fn next_grapheme_boundary(&self, char_index: usize) -> Option<usize> {
-        graphemes_step::next_grapheme_boundary(&self.as_slice(), char_index)
+        graphemes_step::char_next_grapheme_boundary(&self.as_slice(), char_index)
     }
 
     fn is_grapheme_boundary(&self, char_index: usize) -> bool {
         let rope = self.as_slice();
-        graphemes_step::is_grapheme_boundary(&rope, char_index)
+        graphemes_step::char_is_grapheme_boundary(&rope, char_index)
     }
 
     fn snap_to_grapheme_boundary(&self, char_index: usize, bias: Bias) -> usize {

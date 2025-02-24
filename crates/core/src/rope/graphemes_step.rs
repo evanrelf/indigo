@@ -3,17 +3,24 @@
 use ropey::RopeSlice;
 use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
 
-pub fn prev_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> Option<usize> {
-    if char_index > rope.len_chars() {
-        return Some(rope.len_chars());
+pub fn char_prev_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> Option<usize> {
+    let byte_index = rope.try_char_to_byte(char_index).ok()?;
+    let prev_byte_index = byte_prev_grapheme_boundary(rope, byte_index)?;
+    let prev_char_index = rope
+        .try_byte_to_char(prev_byte_index)
+        .expect("Previous grapheme boundary is valid char index");
+    Some(prev_char_index)
+}
+
+pub fn byte_prev_grapheme_boundary(rope: &RopeSlice, byte_index: usize) -> Option<usize> {
+    if byte_index > rope.len_bytes() {
+        return Some(rope.len_bytes());
     }
-    let byte_index = rope.char_to_byte(char_index);
     let (mut chunk, mut chunk_byte_index, _, _) = rope.chunk_at_byte(byte_index);
     let mut cursor = GraphemeCursor::new(byte_index, rope.len_bytes(), true);
     loop {
         match cursor.prev_boundary(chunk, chunk_byte_index) {
-            Ok(None) => return None,
-            Ok(Some(byte_index)) => return Some(rope.byte_to_char(byte_index)),
+            Ok(result) => return result,
             Err(GraphemeIncomplete::PrevChunk) => {
                 let (prev_chunk, prev_chunk_byte_index, _, _) =
                     rope.chunk_at_byte(chunk_byte_index - 1);
@@ -29,17 +36,24 @@ pub fn prev_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> Option<usi
     }
 }
 
-pub fn next_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> Option<usize> {
-    if char_index > rope.len_chars() {
+pub fn char_next_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> Option<usize> {
+    let byte_index = rope.try_char_to_byte(char_index).ok()?;
+    let next_byte_index = byte_next_grapheme_boundary(rope, byte_index)?;
+    let next_char_index = rope
+        .try_byte_to_char(next_byte_index)
+        .expect("Next grapheme boundary is valid char index");
+    Some(next_char_index)
+}
+
+pub fn byte_next_grapheme_boundary(rope: &RopeSlice, byte_index: usize) -> Option<usize> {
+    if byte_index > rope.len_bytes() {
         return None;
     }
-    let byte_index = rope.char_to_byte(char_index);
     let (mut chunk, mut chunk_byte_index, _, _) = rope.chunk_at_byte(byte_index);
     let mut cursor = GraphemeCursor::new(byte_index, rope.len_bytes(), true);
     loop {
         match cursor.next_boundary(chunk, chunk_byte_index) {
-            Ok(None) => return None,
-            Ok(Some(byte_index)) => return Some(rope.byte_to_char(byte_index)),
+            Ok(result) => return result,
             Err(GraphemeIncomplete::NextChunk) => {
                 let (next_chunk, next_chunk_byte_index, _, _) =
                     rope.chunk_at_byte(chunk_byte_index + chunk.len());
@@ -55,11 +69,17 @@ pub fn next_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> Option<usi
     }
 }
 
-pub fn is_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> bool {
-    if char_index > rope.len_chars() {
+pub fn char_is_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> bool {
+    let Ok(byte_index) = rope.try_char_to_byte(char_index) else {
+        return false;
+    };
+    byte_is_grapheme_boundary(rope, byte_index)
+}
+
+pub fn byte_is_grapheme_boundary(rope: &RopeSlice, byte_index: usize) -> bool {
+    if byte_index > rope.len_bytes() {
         return false;
     }
-    let byte_index = rope.char_to_byte(char_index);
     let (chunk, chunk_byte_index, _, _) = rope.chunk_at_byte(byte_index);
     let mut cursor = GraphemeCursor::new(byte_index, rope.len_bytes(), true);
     loop {
