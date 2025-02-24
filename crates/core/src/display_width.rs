@@ -39,7 +39,7 @@ impl DisplayWidth for Rope {
 }
 
 fn grapheme_width(grapheme: &str) -> usize {
-    if let Some('\t') = grapheme.chars().next() {
+    if let Some(b'\t') = grapheme.as_bytes().first() {
         return 8;
     }
 
