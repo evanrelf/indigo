@@ -9,6 +9,7 @@ use std::num::NonZeroUsize;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct RawCursor {
+    // TODO: Change char index to byte index for lower overhead grapheme operations
     pub gap_index: usize, // char gap index
 }
 
