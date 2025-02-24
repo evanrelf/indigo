@@ -273,7 +273,7 @@ mod tests {
     fn fuzz() {
         arbtest(|u| {
             let mut rope = Rope::new();
-            let gap_index = u.arbitrary()?;
+            let gap_index = u.choose_index(rope.len_chars() + 100)?;
             let snap_bias = u.choose(&[Bias::Before, Bias::After])?;
             let mut cursor = CursorMut::new_snapped(&mut rope, gap_index, *snap_bias);
             let mut actions = Vec::new();

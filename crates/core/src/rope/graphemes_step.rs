@@ -77,6 +77,9 @@ pub fn char_is_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> bool {
 }
 
 pub fn byte_is_grapheme_boundary(rope: &RopeSlice, byte_index: usize) -> bool {
+    if byte_index == 0 {
+        return true;
+    }
     if byte_index > rope.len_bytes() {
         return false;
     }

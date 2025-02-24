@@ -64,16 +64,25 @@ pub trait RopeExt {
     }
 
     fn snap_to_grapheme_boundary(&self, char_index: usize, bias: Bias) -> usize {
+        if char_index > self.as_slice().len_chars() {
+            return 0;
+        }
         if self.is_grapheme_boundary(char_index) {
             return char_index;
         }
         match bias {
-            Bias::Before => self
-                .prev_grapheme_boundary(char_index)
-                .unwrap_or_else(|| unreachable!()),
-            Bias::After => self
-                .next_grapheme_boundary(char_index)
-                .unwrap_or_else(|| self.as_slice().len_chars()),
+            Bias::Before => self.prev_grapheme_boundary(char_index).unwrap_or_else(|| {
+                unreachable!(
+                    "Character index {char_index} has no previous grapheme boundary\nrope = {:?}",
+                    self.as_slice()
+                )
+            }),
+            Bias::After => self.next_grapheme_boundary(char_index).unwrap_or_else(|| {
+                unreachable!(
+                    "Character index {char_index} has no next grapheme boundary\nrope = {:?}",
+                    self.as_slice()
+                )
+            }),
         }
     }
 }
