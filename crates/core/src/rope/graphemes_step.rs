@@ -86,6 +86,10 @@ pub fn byte_is_grapheme_boundary(rope: &RopeSlice, byte_index: usize) -> bool {
     let (chunk, chunk_byte_index, _, _) = rope.chunk_at_byte(byte_index);
     let mut cursor = GraphemeCursor::new(byte_index, rope.len_bytes(), true);
     loop {
+        // TODO: Why doesn't this fix the panic?
+        // if !chunk.is_char_boundary(chunk_byte_index) {
+        //     return false;
+        // }
         match cursor.is_boundary(chunk, chunk_byte_index) {
             Ok(is_boundary) => return is_boundary,
             Err(GraphemeIncomplete::PreContext(byte_index)) => {

@@ -70,6 +70,28 @@ pub trait RopeExt {
         graphemes_step::byte_is_grapheme_boundary(&self.as_slice(), byte_index)
     }
 
+    // TODO: Implement this and fix `byte_is_grapheme_boundary` panicking when feeding
+    // `GraphemeCursor::is_boundary` a byte index not on a char boundary. Related links:
+    // https://github.com/unicode-rs/unicode-segmentation/issues/120
+    // https://github.com/helix-editor/helix/issues/6645
+    // https://github.com/helix-editor/helix/pull/10310
+    #[expect(unused_variables)]
+    fn snap_to_char_boundary(&self, byte_index: usize, bias: Bias) -> usize {
+        let rope = self.as_slice();
+        let length = rope.len_bytes();
+        if byte_index > length {
+            return length;
+        }
+        let (chunk, chunk_byte_index, chunk_char_index, _) = rope.chunk_at_byte(byte_index);
+        if chunk.is_char_boundary(byte_index) {
+            return byte_index;
+        }
+        match bias {
+            Bias::Before => todo!(),
+            Bias::After => todo!(),
+        }
+    }
+
     fn snap_to_grapheme_boundary(&self, byte_index: usize, bias: Bias) -> usize {
         let length = self.as_slice().len_bytes();
         if byte_index > length {

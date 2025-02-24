@@ -1,6 +1,6 @@
 //! From <https://github.com/cessen/ropey/blob/master/examples/graphemes_iter.rs>.
 
-use ropey::{RopeSlice, iter::Chunks};
+use ropey::{iter::Chunks, RopeSlice};
 use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
 
 pub struct Graphemes<'a> {
@@ -104,8 +104,7 @@ impl Iterator for GraphemeBoundaries<'_> {
 
         loop {
             match self.cursor.next_boundary(self.chunk, self.chunk_byte_index) {
-                Ok(None) => return None,
-                Ok(Some(byte_index)) => return Some(self.rope.byte_to_char(byte_index)),
+                Ok(result) => return result,
                 Err(GraphemeIncomplete::NextChunk) => {
                     let (next_chunk, next_chunk_byte_index, _, _) = self
                         .rope
