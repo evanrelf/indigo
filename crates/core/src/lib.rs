@@ -1,5 +1,6 @@
 pub mod actions;
 pub mod cursor;
+pub mod cursor_byte;
 pub mod display_width;
 pub mod editor;
 pub mod event;

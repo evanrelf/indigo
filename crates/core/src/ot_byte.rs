@@ -1,5 +1,5 @@
 use ropey::Rope;
-use std::{ops::Deref, rc::Rc};
+use std::{borrow::Cow, ops::Deref, rc::Rc};
 use thiserror::Error;
 
 // TODO: Add backtraces once this issue is resolved: https://github.com/dtolnay/thiserror/issues/390
@@ -170,12 +170,9 @@ impl EditSeq {
             match edit {
                 Edit::Retain(n) => inverted.retain(*n),
                 Edit::Delete(n) => {
-                    let start = inverted.target_bytes;
-                    let end = start + n;
-                    let s = rope
-                        .get_slice(start..end)
-                        .ok_or_else(length_mismatch)?
-                        .to_string();
+                    let start = rope.try_byte_to_char(inverted.target_bytes)?;
+                    let end = rope.try_byte_to_char(inverted.target_bytes + n)?;
+                    let s = Cow::<str>::from(rope.slice(start..end));
                     inverted.insert(s);
                 }
                 Edit::Insert(s) => inverted.delete(s.len()),
@@ -255,11 +252,14 @@ impl Edit {
         let byte_index = match self {
             Self::Retain(n) => byte_index + n,
             Self::Delete(n) => {
-                rope.try_remove(byte_index..byte_index + n)?;
+                let start = rope.try_byte_to_char(byte_index)?;
+                let end = rope.try_byte_to_char(byte_index + n)?;
+                rope.remove(start..end);
                 byte_index
             }
             Self::Insert(s) => {
-                rope.try_insert(byte_index, s)?;
+                let char_index = rope.try_byte_to_char(byte_index)?;
+                rope.insert(char_index, s);
                 byte_index + s.len()
             }
         };
@@ -308,7 +308,7 @@ mod tests {
         let mut rope = Rope::from("Hello, world!");
 
         let mut index = 9;
-        assert_eq!(rope.char(index), 'r');
+        assert_eq!(rope.byte(index), b'r');
 
         let mut edits = EditSeq::new();
         edits.delete("Hello, ".len());
@@ -319,10 +319,10 @@ mod tests {
         edits.apply(&mut rope).unwrap();
         assert_eq!(rope, Rope::from("world!!!!"));
 
-        assert_eq!(rope.get_char(index), None);
+        assert_eq!(rope.get_byte(index), None);
         index = edits.transform_index(index);
         assert_eq!(index, 2);
-        assert_eq!(rope.char(index), 'r');
+        assert_eq!(rope.byte(index), b'r');
 
         let mut edits = EditSeq::new();
         edits.delete("w".len());
@@ -331,10 +331,10 @@ mod tests {
         edits.apply(&mut rope).unwrap();
         assert_eq!(rope, Rope::from("the whole world!!!!"));
 
-        assert_eq!(rope.char(index), 'e');
+        assert_eq!(rope.byte(index), b'e');
         index = edits.transform_index(index);
         assert_eq!(index, 12);
-        assert_eq!(rope.char(index), 'r');
+        assert_eq!(rope.byte(index), b'r');
     }
 
     #[test]
