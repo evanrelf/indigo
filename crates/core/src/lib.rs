@@ -10,5 +10,6 @@ pub mod mode;
 pub mod ot;
 pub mod prelude;
 pub mod range;
+pub mod range_unified;
 pub mod rope;
 pub mod unicode;
