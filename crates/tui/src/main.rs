@@ -38,13 +38,7 @@ fn main() -> anyhow::Result<()> {
 
     let args = Args::parse();
 
-    let etcetera = etcetera::choose_app_strategy(etcetera::AppStrategyArgs {
-        top_level_domain: String::from("com"),
-        author: String::from("Evan Relf"),
-        app_name: String::from("Indigo"),
-    })?;
-
-    let log_path = etcetera.in_state_dir("tui.log").unwrap();
+    let log_path = xdg()?.in_state_dir("tui.log").unwrap();
 
     fs::create_dir_all(log_path.parent().unwrap())?;
 
@@ -89,6 +83,16 @@ fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+fn xdg() -> anyhow::Result<etcetera::app_strategy::Xdg> {
+    use etcetera::app_strategy::{AppStrategyArgs, Xdg};
+
+    Ok(Xdg::new(AppStrategyArgs {
+        top_level_domain: String::from("com"),
+        author: String::from("Evan Relf"),
+        app_name: String::from("Indigo"),
+    })?)
 }
 
 fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
