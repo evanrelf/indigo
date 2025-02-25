@@ -1,4 +1,4 @@
-use ropey::{RopeSlice, iter::Chunks};
+use ropey::{iter::Chunks, RopeSlice};
 use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
 
 #[derive(Clone, Copy)]
@@ -83,16 +83,16 @@ pub fn next_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> Option<usi
 
 #[must_use]
 pub fn snap_to_grapheme_boundary(rope: &RopeSlice, char_index: usize, bias: SnapBias) -> usize {
+    let length = rope.len_chars();
+    if char_index > length {
+        return length;
+    }
     if is_grapheme_boundary(rope, char_index) {
         return char_index;
     }
     match bias {
-        SnapBias::Before => {
-            prev_grapheme_boundary(rope, char_index).unwrap_or_else(|| unreachable!())
-        }
-        SnapBias::After => {
-            next_grapheme_boundary(rope, char_index).unwrap_or_else(|| rope.len_chars())
-        }
+        SnapBias::Before => prev_grapheme_boundary(rope, char_index).unwrap(),
+        SnapBias::After => next_grapheme_boundary(rope, char_index).unwrap(),
     }
 }
 
