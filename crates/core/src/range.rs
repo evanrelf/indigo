@@ -223,7 +223,7 @@ impl RawRange {
         edits.apply(rope).unwrap();
         self.anchor.gap_index = edits.transform_index(self.anchor.gap_index);
         self.head.gap_index = edits.transform_index(self.head.gap_index);
-        assert_eq!(self.anchor, self.head);
+        debug_assert_eq!(self.anchor, self.head);
         self.extend_right(rope, NonZeroUsize::MIN);
     }
 
@@ -238,13 +238,13 @@ impl RawRange {
     pub(crate) fn assert_valid(&self, rope: &Rope) {
         self.anchor.assert_valid(rope);
         self.head.assert_valid(rope);
-        assert!(
+        debug_assert!(
             !self.is_empty() || self.is_eof(rope),
             "Range empty but not at EOF (anchor={}, head={})",
             self.anchor.gap_index,
             self.head.gap_index,
         );
-        assert!(
+        debug_assert!(
             self.is_forward() || self.grapheme_length(rope) > 1,
             "Range reduced but not facing forward (anchor={}, head={})",
             self.anchor.gap_index,

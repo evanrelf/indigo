@@ -130,12 +130,12 @@ impl RawCursor {
     }
 
     pub(crate) fn assert_valid(&self, rope: &Rope) {
-        assert!(
+        debug_assert!(
             self.gap_index <= rope.len_chars(),
             "Cursor beyond end of rope (gap_index={})",
             self.gap_index
         );
-        assert!(
+        debug_assert!(
             rope.is_grapheme_boundary(self.gap_index),
             "Cursor not on a grapheme boundary (gap_index={})",
             self.gap_index
