@@ -6,7 +6,6 @@ mod terminal;
 use crate::{areas::Areas, event::handle_event};
 use camino::Utf8PathBuf;
 use clap::Parser as _;
-use etcetera::AppStrategy as _;
 use indigo_core::prelude::*;
 use ratatui::{
     prelude::{Buffer as Surface, Rect, Style, Widget as _},
@@ -38,19 +37,7 @@ fn main() -> anyhow::Result<()> {
 
     let args = Args::parse();
 
-    let log_path = xdg()?.in_state_dir("tui.log").unwrap();
-
-    fs::create_dir_all(log_path.parent().unwrap())?;
-
-    let log_file = fs::OpenOptions::new()
-        .append(true)
-        .create(true)
-        .open(log_path)?;
-
-    tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::new(args.log_filter))
-        .with_writer(log_file)
-        .init();
+    init_tracing_subscriber(&args)?;
 
     let rope = if let Some(path) = args.file {
         let file = fs::File::open(path)?;
@@ -85,14 +72,30 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn xdg() -> anyhow::Result<etcetera::app_strategy::Xdg> {
-    use etcetera::app_strategy::{AppStrategyArgs, Xdg};
+fn init_tracing_subscriber(args: &Args) -> anyhow::Result<()> {
+    use etcetera::app_strategy::{AppStrategy as _, AppStrategyArgs, Xdg};
 
-    Ok(Xdg::new(AppStrategyArgs {
+    let xdg = Xdg::new(AppStrategyArgs {
         top_level_domain: String::from("com"),
         author: String::from("Evan Relf"),
         app_name: String::from("Indigo"),
-    })?)
+    })?;
+
+    let log_path = xdg.in_state_dir("tui.log").unwrap();
+
+    fs::create_dir_all(log_path.parent().unwrap())?;
+
+    let log_file = fs::OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(log_path)?;
+
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::new(args.log_filter.clone()))
+        .with_writer(log_file)
+        .init();
+
+    Ok(())
 }
 
 fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
