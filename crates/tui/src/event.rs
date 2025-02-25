@@ -1,5 +1,5 @@
 use crate::{
-    areas::{position_to_char_index, Areas},
+    areas::{Areas, position_to_char_index},
     key::{key_c2i, key_i2c},
     terminal::TerminalGuard,
 };
