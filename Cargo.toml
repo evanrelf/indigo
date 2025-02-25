@@ -35,3 +35,7 @@ clippy.allow_attributes = "warn"
 clippy.pedantic = { level = "warn", priority = -1 }
 clippy.use_self = "warn"
 rust.dead_code = "allow" # TODO: Remove
+
+[profile.profile]
+inherits = "release"
+debug = "full"
