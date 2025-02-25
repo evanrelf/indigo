@@ -1,9 +1,9 @@
 use clap::Parser as _;
 use indigo_core::{
-    event::{Event, handle_event},
+    event::{handle_event, Event},
     prelude::*,
 };
-use std::{env, io};
+use std::io;
 use tracing_subscriber::EnvFilter;
 
 #[derive(Debug, clap::Parser)]
@@ -17,13 +17,13 @@ struct Args {
 
 fn main() -> anyhow::Result<()> {
     #[cfg(debug_assertions)]
-    if env::var("RUST_BACKTRACE").is_err() {
+    if std::env::var("RUST_BACKTRACE").is_err() {
         // SAFETY: At this point the program is single-threaded. There are no other threads that
         // could be reading from or writing to the environment.
         // TODO: Replace with `std::panic::set_backtrace_style` once it stabilizes.
         // https://github.com/rust-lang/rust/issues/93346
         unsafe {
-            env::set_var("RUST_BACKTRACE", "1");
+            std::env::set_var("RUST_BACKTRACE", "1");
         }
     }
 
