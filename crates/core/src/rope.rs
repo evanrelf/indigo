@@ -1,14 +1,5 @@
-mod graphemes_iter;
-mod graphemes_step;
-
-use crate::rope::graphemes_iter::{GraphemeBoundaries, Graphemes};
+use crate::unicode::{self, GraphemeBoundaries, Graphemes, SnapBias};
 use ropey::{Rope, RopeSlice};
-
-#[derive(Clone, Copy)]
-pub enum Bias {
-    Before,
-    After,
-}
 
 pub trait RopeExt {
     fn as_slice(&self) -> RopeSlice<'_>;
@@ -51,30 +42,19 @@ pub trait RopeExt {
     }
 
     fn prev_grapheme_boundary(&self, char_index: usize) -> Option<usize> {
-        graphemes_step::prev_grapheme_boundary(&self.as_slice(), char_index)
+        unicode::prev_grapheme_boundary(&self.as_slice(), char_index)
     }
 
     fn next_grapheme_boundary(&self, char_index: usize) -> Option<usize> {
-        graphemes_step::next_grapheme_boundary(&self.as_slice(), char_index)
+        unicode::next_grapheme_boundary(&self.as_slice(), char_index)
     }
 
     fn is_grapheme_boundary(&self, char_index: usize) -> bool {
-        let rope = self.as_slice();
-        graphemes_step::is_grapheme_boundary(&rope, char_index)
+        unicode::is_grapheme_boundary(&self.as_slice(), char_index)
     }
 
-    fn snap_to_grapheme_boundary(&self, char_index: usize, bias: Bias) -> usize {
-        if self.is_grapheme_boundary(char_index) {
-            return char_index;
-        }
-        match bias {
-            Bias::Before => self
-                .prev_grapheme_boundary(char_index)
-                .unwrap_or_else(|| unreachable!()),
-            Bias::After => self
-                .next_grapheme_boundary(char_index)
-                .unwrap_or_else(|| self.as_slice().len_chars()),
-        }
+    fn snap_to_grapheme_boundary(&self, char_index: usize, bias: SnapBias) -> usize {
+        unicode::snap_to_grapheme_boundary(&self.as_slice(), char_index, bias)
     }
 }
 

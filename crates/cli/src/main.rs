@@ -1,6 +1,6 @@
 use clap::Parser as _;
 use indigo_core::{
-    event::{handle_event, Event},
+    event::{Event, handle_event},
     prelude::*,
 };
 use std::{env, io};

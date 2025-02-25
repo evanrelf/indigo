@@ -1,9 +1,6 @@
 #![allow(clippy::trivially_copy_pass_by_ref)]
 
-use crate::{
-    ot::EditSeq,
-    rope::{Bias, RopeExt as _},
-};
+use crate::{ot::EditSeq, rope::RopeExt as _, unicode::SnapBias};
 use ropey::Rope;
 use std::num::NonZeroUsize;
 
@@ -24,7 +21,7 @@ impl RawCursor {
     }
 
     #[must_use]
-    pub fn new_snapped(rope: &Rope, gap_index: usize, snap_bias: Bias) -> Self {
+    pub fn new_snapped(rope: &Rope, gap_index: usize, snap_bias: SnapBias) -> Self {
         let cursor = Self {
             gap_index: rope.snap_to_grapheme_boundary(gap_index, snap_bias),
         };
@@ -82,7 +79,7 @@ impl RawCursor {
         // Makes `insert_changes_grapheme_boundary` test pass.
         // TODO: Eliminate need for explicit snapping, or reduce repetition of snapping in cursor
         // and range code.
-        self.gap_index = rope.snap_to_grapheme_boundary(self.gap_index, Bias::After);
+        self.gap_index = rope.snap_to_grapheme_boundary(self.gap_index, SnapBias::After);
         edits
     }
 
@@ -159,7 +156,7 @@ impl<'a> Cursor<'a> {
     }
 
     #[must_use]
-    pub fn new_snapped(rope: &'a Rope, gap_index: usize, snap_bias: Bias) -> Self {
+    pub fn new_snapped(rope: &'a Rope, gap_index: usize, snap_bias: SnapBias) -> Self {
         let cursor = RawCursor::new_snapped(rope, gap_index, snap_bias);
         Self { rope, cursor }
     }
@@ -205,7 +202,7 @@ impl<'a> CursorMut<'a> {
     }
 
     #[must_use]
-    pub fn new_snapped(rope: &'a mut Rope, gap_index: usize, snap_bias: Bias) -> Self {
+    pub fn new_snapped(rope: &'a mut Rope, gap_index: usize, snap_bias: SnapBias) -> Self {
         let cursor = RawCursor::new_snapped(rope, gap_index, snap_bias);
         Self { rope, cursor }
     }
@@ -273,7 +270,7 @@ mod tests {
         arbtest(|u| {
             let mut rope = Rope::new();
             let gap_index = u.arbitrary()?;
-            let snap_bias = u.choose(&[Bias::Before, Bias::After])?;
+            let snap_bias = u.choose(&[SnapBias::Before, SnapBias::After])?;
             let mut cursor = CursorMut::new_snapped(&mut rope, gap_index, *snap_bias);
             let mut actions = Vec::new();
             for _ in 0..u.choose_index(100)? {

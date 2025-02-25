@@ -1,8 +1,4 @@
-use crate::{
-    cursor::RawCursor,
-    ot::EditSeq,
-    rope::{Bias, RopeExt as _},
-};
+use crate::{cursor::RawCursor, ot::EditSeq, rope::RopeExt as _, unicode::SnapBias};
 use ropey::{Rope, RopeSlice};
 use std::{
     cmp::{max, min},
@@ -33,9 +29,9 @@ impl RawRange {
             head_gap_index += 1;
         }
         let (anchor_snap_bias, head_snap_bias) = if anchor_gap_index < head_gap_index {
-            (Bias::Before, Bias::After)
+            (SnapBias::Before, SnapBias::After)
         } else {
-            (Bias::After, Bias::Before)
+            (SnapBias::After, SnapBias::Before)
         };
         let anchor = RawCursor::new_snapped(rope, anchor_gap_index, anchor_snap_bias);
         let head = RawCursor::new_snapped(rope, head_gap_index, head_snap_bias);
