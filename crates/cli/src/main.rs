@@ -3,7 +3,7 @@ use indigo_core::{
     event::{handle_event, Event},
     prelude::*,
 };
-use std::io;
+use std::{io, process::ExitCode};
 use tracing_subscriber::EnvFilter;
 
 #[derive(Debug, clap::Parser)]
@@ -15,7 +15,7 @@ struct Args {
     log_filter: String,
 }
 
-fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<ExitCode> {
     #[cfg(debug_assertions)]
     if std::env::var("RUST_BACKTRACE").is_err() {
         // SAFETY: At this point the program is single-threaded. There are no other threads that
@@ -48,5 +48,9 @@ fn main() -> anyhow::Result<()> {
 
     editor.rope().write_to(io::LineWriter::new(io::stdout()))?;
 
-    Ok(())
+    if let Some(exit_code) = editor.exit {
+        Ok(ExitCode::from(exit_code))
+    } else {
+        Ok(ExitCode::SUCCESS)
+    }
 }

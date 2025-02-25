@@ -73,7 +73,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "<c-b>") => actions::scroll_full_page_up(editor),
             _ if is(key, "<c-f>") => actions::scroll_full_page_down(editor),
             // _ if is(key, "<c-l>") => terminal.clear()?,
-            _ if is(key, "<c-c>") => editor.quit = true,
+            _ if is(key, "<c-c>") => editor.exit = Some(1),
             _ => return false,
         },
     }
@@ -99,7 +99,7 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "<c-b>") => actions::scroll_full_page_up(editor),
             _ if is(key, "<c-f>") => actions::scroll_full_page_down(editor),
             // _ if is(key, "<c-l>") => terminal.clear()?,
-            _ if is(key, "<c-c>") => editor.quit = true,
+            _ if is(key, "<c-c>") => editor.exit = Some(1),
             _ => return false,
         },
     }

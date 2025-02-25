@@ -12,7 +12,7 @@ use ratatui::{
     style::{Color, Modifier},
     text::{Line, Span},
 };
-use std::{fs, io};
+use std::{fs, io, process::ExitCode};
 use tracing_subscriber::EnvFilter;
 
 #[derive(Debug, clap::Parser)]
@@ -23,7 +23,7 @@ struct Args {
     log_filter: String,
 }
 
-fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<ExitCode> {
     #[cfg(debug_assertions)]
     if std::env::var("RUST_BACKTRACE").is_err() {
         // SAFETY: At this point the program is single-threaded. There are no other threads that
@@ -64,12 +64,10 @@ fn main() -> anyhow::Result<()> {
 
         handle_event(&mut editor, &mut terminal, areas, &event)?;
 
-        if editor.quit {
-            break;
+        if let Some(exit_code) = editor.exit {
+            return Ok(ExitCode::from(exit_code));
         }
     }
-
-    Ok(())
 }
 
 fn init_tracing_subscriber(args: &Args) -> anyhow::Result<()> {

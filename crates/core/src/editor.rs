@@ -12,7 +12,7 @@ pub struct Editor {
     pub mode: Mode,
     pub height: usize,
     vertical_scroll: usize,
-    pub quit: bool,
+    pub exit: Option<u8>,
 }
 
 impl Editor {
@@ -27,7 +27,7 @@ impl Editor {
             }),
             height: 0,
             vertical_scroll: 0,
-            quit: false,
+            exit: None,
         }
     }
 
