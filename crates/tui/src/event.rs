@@ -1,5 +1,5 @@
 use crate::{
-    areas::{Areas, position_to_char_index},
+    areas::{position_to_char_index, Areas},
     key::{key_c2i, key_i2c},
     terminal::TerminalGuard,
 };
@@ -22,6 +22,7 @@ pub fn handle_event(
     match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, terminal, areas, event),
         Mode::Insert => handle_event_insert(editor, terminal, areas, event),
+        Mode::Command(_) => handle_event_command(editor, terminal, areas, event),
     }
 }
 
@@ -108,6 +109,20 @@ fn handle_event_insert(
         Event::Paste(string) => actions::insert(editor, string),
         _ => {}
     }
+
+    Ok(())
+}
+
+#[expect(clippy::unnecessary_wraps)]
+fn handle_event_command(
+    editor: &mut Editor,
+    _terminal: &mut TerminalGuard,
+    _areas: Areas,
+    _event: &Event,
+) -> anyhow::Result<()> {
+    let Mode::Command(ref mut _command_mode) = editor.mode else {
+        unreachable!()
+    };
 
     Ok(())
 }

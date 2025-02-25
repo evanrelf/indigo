@@ -1,18 +1,20 @@
 use crate::{
     editor::Editor,
-    mode::{Mode, NormalMode},
+    mode::{CommandMode, Mode, NormalMode},
 };
 use std::num::NonZeroUsize;
 
 pub fn enter_normal_mode(editor: &mut Editor) {
-    editor.mode = Mode::Normal(NormalMode {
-        count: NonZeroUsize::MIN,
-    });
+    editor.mode = Mode::Normal(NormalMode::default());
 }
 
 pub fn enter_insert_mode(editor: &mut Editor) {
     editor.with_range_mut(|range| range.reduce());
     editor.mode = Mode::Insert;
+}
+
+pub fn enter_command_mode(editor: &mut Editor) {
+    editor.mode = Mode::Command(CommandMode::default());
 }
 
 pub fn move_left(editor: &mut Editor) {

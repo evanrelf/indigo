@@ -339,8 +339,9 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let eof = editor.range().head() == editor.rope().len_chars();
 
     let mode = match editor.mode {
-        Mode::Normal { .. } => "normal",
+        Mode::Normal(_) => "normal",
         Mode::Insert => "insert",
+        Mode::Command(_) => "command",
     };
 
     let count = editor.mode.count();

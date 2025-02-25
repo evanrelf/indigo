@@ -38,6 +38,7 @@ pub fn handle_event(editor: &mut Editor, event: &Event) -> bool {
     match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, event),
         Mode::Insert => handle_event_insert(editor, event),
+        Mode::Command(_) => handle_event_command(editor, event),
     }
 }
 
@@ -58,6 +59,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
         Event::Key(key) => match (key.modifiers, key.code) {
             (m, KeyCode::Char(c @ '0'..='9')) if m.is_empty() => update_count(c),
             _ if is(key, "<esc>") => actions::enter_normal_mode(editor),
+            _ if is(key, ":") => actions::enter_command_mode(editor),
             _ if is(key, "i") => actions::enter_insert_mode(editor),
             // TODO: Add `a` for entering insert mode with the cursor moved to the right.
             _ if is(key, "h") => actions::move_left(editor),
@@ -100,6 +102,21 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "<c-f>") => actions::scroll_full_page_down(editor),
             // _ if is(key, "<c-l>") => terminal.clear()?,
             _ if is(key, "<c-c>") => editor.exit = Some(1),
+            _ => return false,
+        },
+    }
+
+    true
+}
+
+pub fn handle_event_command(editor: &mut Editor, event: &Event) -> bool {
+    let Mode::Command(ref mut _command_mode) = editor.mode else {
+        unreachable!()
+    };
+
+    match event {
+        Event::Key(key) => match (key.modifiers, key.code) {
+            _ if is(key, "<esc>") => actions::enter_normal_mode(editor),
             _ => return false,
         },
     }
