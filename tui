@@ -3,4 +3,4 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-exec cargo run --bin indigo-tui -- --log-file tui.log --log-filter debug "$@"
+exec cargo run --bin indigo-tui -- --log-filter debug "$@"

@@ -6,6 +6,7 @@ mod terminal;
 use crate::{areas::Areas, event::handle_event};
 use camino::Utf8PathBuf;
 use clap::Parser as _;
+use etcetera::AppStrategy as _;
 use indigo_core::prelude::*;
 use ratatui::{
     prelude::{Buffer as Surface, Rect, Style, Widget as _},
@@ -18,9 +19,6 @@ use tracing_subscriber::EnvFilter;
 #[derive(Debug, clap::Parser)]
 struct Args {
     file: Option<Utf8PathBuf>,
-
-    #[clap(long)]
-    log_file: Option<Utf8PathBuf>,
 
     #[clap(long, env = "INDIGO_LOG", default_value_t)]
     log_filter: String,
@@ -40,16 +38,25 @@ fn main() -> anyhow::Result<()> {
 
     let args = Args::parse();
 
-    if let Some(path) = args.log_file {
-        let file = fs::OpenOptions::new()
-            .append(true)
-            .create(true)
-            .open(path)?;
-        tracing_subscriber::fmt()
-            .with_env_filter(EnvFilter::new(args.log_filter))
-            .with_writer(file)
-            .init();
-    }
+    let etcetera = etcetera::choose_app_strategy(etcetera::AppStrategyArgs {
+        top_level_domain: String::from("com"),
+        author: String::from("Evan Relf"),
+        app_name: String::from("Indigo"),
+    })?;
+
+    let log_path = etcetera.in_state_dir("tui.log").unwrap();
+
+    fs::create_dir_all(log_path.parent().unwrap())?;
+
+    let log_file = fs::OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(log_path)?;
+
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::new(args.log_filter))
+        .with_writer(log_file)
+        .init();
 
     let rope = if let Some(path) = args.file {
         let file = fs::File::open(path)?;
