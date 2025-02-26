@@ -4,6 +4,9 @@ use crate::{
 };
 use std::num::NonZeroUsize;
 
+// TODO: Don't assume editing operations target the file's rope. Could be editing the command's
+// rope!
+
 pub fn enter_normal_mode(editor: &mut Editor) {
     editor.mode = Mode::Normal(NormalMode::default());
 }
@@ -101,19 +104,31 @@ pub fn scroll_full_page_down(editor: &mut Editor) {
 }
 
 pub fn insert_char(editor: &mut Editor, char: char) {
-    editor.with_range_mut(|range| range.insert_char(char));
-    editor.mode.set_count(NonZeroUsize::MIN);
+    if let Mode::Command(ref mut command_mode) = editor.mode {
+        command_mode.with_cursor_mut(|cursor| cursor.insert_char(char));
+    } else {
+        editor.with_range_mut(|range| range.insert_char(char));
+        editor.mode.set_count(NonZeroUsize::MIN);
+    }
 }
 
 pub fn insert(editor: &mut Editor, string: &str) {
-    editor.with_range_mut(|range| range.insert(string));
-    editor.mode.set_count(NonZeroUsize::MIN);
+    if let Mode::Command(ref mut command_mode) = editor.mode {
+        command_mode.with_cursor_mut(|cursor| cursor.insert(string));
+    } else {
+        editor.with_range_mut(|range| range.insert(string));
+        editor.mode.set_count(NonZeroUsize::MIN);
+    }
 }
 
 pub fn delete_before(editor: &mut Editor) {
     let count = editor.mode.count();
-    editor.with_range_mut(|range| range.delete_before(count));
-    editor.mode.set_count(NonZeroUsize::MIN);
+    if let Mode::Command(ref mut command_mode) = editor.mode {
+        command_mode.with_cursor_mut(|cursor| cursor.delete_before(count));
+    } else {
+        editor.with_range_mut(|range| range.delete_before(count));
+        editor.mode.set_count(NonZeroUsize::MIN);
+    }
 }
 
 pub fn delete(editor: &mut Editor) {

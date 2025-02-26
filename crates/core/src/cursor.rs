@@ -172,6 +172,11 @@ impl<'a> Cursor<'a> {
     }
 
     #[must_use]
+    pub(crate) fn raw(&self) -> RawCursor {
+        self.cursor
+    }
+
+    #[must_use]
     pub fn is_eof(&self) -> bool {
         self.cursor.is_eof(self.rope)
     }
@@ -215,6 +220,11 @@ impl<'a> CursorMut<'a> {
     #[must_use]
     pub fn gap_index(&self) -> usize {
         self.cursor.gap_index
+    }
+
+    #[must_use]
+    pub(crate) fn raw(&self) -> RawCursor {
+        self.cursor
     }
 
     #[must_use]

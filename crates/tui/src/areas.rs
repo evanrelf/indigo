@@ -7,18 +7,26 @@ pub struct Areas {
     pub navigation_bar: Rect,
     pub line_numbers: Rect,
     pub text: Rect,
+    pub command_bar: Rect,
     pub status_bar: Rect,
 }
 
 impl Areas {
     pub fn new(editor: &Editor, area: Rect) -> Self {
+        let (command_bar_height, status_bar_height) = match editor.mode {
+            Mode::Normal(_) | Mode::Insert => (0, 1),
+            Mode::Command(_) => (1, 0),
+        };
+
         let vertical_areas = Layout::vertical([
             // navigation_bar
             Constraint::Length(1),
             // line_numbers + text
             Constraint::Fill(1),
+            // command_bar
+            Constraint::Length(command_bar_height),
             // status_bar
-            Constraint::Length(1),
+            Constraint::Length(status_bar_height),
         ])
         .split(area);
 
@@ -39,7 +47,9 @@ impl Areas {
         ])
         .split(vertical_areas[1]);
 
-        let status_bar = vertical_areas[2];
+        let command_bar = vertical_areas[2];
+
+        let status_bar = vertical_areas[3];
 
         let line_numbers = horizontal_areas[0];
 
@@ -49,6 +59,7 @@ impl Areas {
             navigation_bar,
             line_numbers,
             text,
+            command_bar,
             status_bar,
         }
     }

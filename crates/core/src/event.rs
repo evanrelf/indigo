@@ -117,6 +117,10 @@ pub fn handle_event_command(editor: &mut Editor, event: &Event) -> bool {
     match event {
         Event::Key(key) => match (key.modifiers, key.code) {
             _ if is(key, "<esc>") => actions::enter_normal_mode(editor),
+            _ if is(key, "<bs>") => actions::delete_before(editor),
+            _ if is(key, "<ret>") => actions::enter_normal_mode(editor), // TODO: Run command
+            (m, KeyCode::Char(c)) if m.is_empty() => actions::insert_char(editor, c),
+            _ if is(key, "<c-c>") => editor.exit = Some(1),
             _ => return false,
         },
     }

@@ -118,11 +118,17 @@ fn handle_event_command(
     editor: &mut Editor,
     _terminal: &mut TerminalGuard,
     _areas: Areas,
-    _event: &Event,
+    event: &Event,
 ) -> anyhow::Result<()> {
     let Mode::Command(ref mut _command_mode) = editor.mode else {
         unreachable!()
     };
+
+    #[expect(clippy::single_match)]
+    match event {
+        Event::Paste(string) => actions::insert(editor, string),
+        _ => {}
+    }
 
     Ok(())
 }

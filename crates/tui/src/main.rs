@@ -1,4 +1,5 @@
 mod areas;
+mod colors;
 mod event;
 mod key;
 mod terminal;
@@ -12,7 +13,7 @@ use ratatui::{
     style::{Color, Modifier},
     text::{Line, Span},
 };
-use std::{fs, io, process::ExitCode};
+use std::{borrow::Cow, fs, io, process::ExitCode};
 use tracing_subscriber::EnvFilter;
 
 #[derive(Debug, clap::Parser)]
@@ -102,6 +103,7 @@ fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
     render_tildes(editor, areas.line_numbers, surface);
     render_text(editor, areas.text, surface);
     render_selection(editor, areas.text, surface);
+    render_command_bar(editor, areas.command_bar, surface);
     render_status_bar(editor, areas.status_bar, surface);
 }
 
@@ -184,10 +186,6 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
-    const LIGHT_YELLOW: Color = Color::Rgb(0xff, 0xf5, 0xb1);
-    const DARK_YELLOW: Color = Color::Rgb(0xff, 0xd3, 0x3d);
-    const RED: Color = Color::Rgb(0xd7, 0x3a, 0x4a);
-
     let rope = editor.rope();
     let range = editor.range();
     let vertical_scroll = editor.vertical_scroll();
@@ -202,7 +200,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     if range.is_empty() {
         if let Some(rect) = grapheme_area(range.head()) {
-            surface.set_style(rect, Style::default().bg(RED));
+            surface.set_style(rect, Style::default().bg(colors::RED));
         }
         return;
     }
@@ -223,17 +221,17 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
                 line_rect.width -= delta;
             }
         }
-        surface.set_style(line_rect, Style::default().bg(LIGHT_YELLOW));
+        surface.set_style(line_rect, Style::default().bg(colors::LIGHT_YELLOW));
     }
 
     #[expect(clippy::collapsible_else_if)]
     if range.is_backward() {
         if let Some(rect) = grapheme_area(range.head()) {
-            surface.set_style(rect, Style::default().bg(DARK_YELLOW));
+            surface.set_style(rect, Style::default().bg(colors::DARK_YELLOW));
         }
     } else {
         if let Some(rect) = grapheme_area(range.head().saturating_sub(1)) {
-            surface.set_style(rect, Style::default().bg(DARK_YELLOW));
+            surface.set_style(rect, Style::default().bg(colors::DARK_YELLOW));
         }
     }
 }
@@ -323,6 +321,32 @@ fn char_index_to_area(
         width,
         height: 1,
     })
+}
+
+fn render_command_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
+    let Mode::Command(ref normal_mode) = editor.mode else {
+        return;
+    };
+
+    if let Some(cell) = surface.cell_mut(area.as_position()) {
+        cell.set_char(':');
+    } else {
+        unreachable!();
+    }
+
+    area.x += 1;
+    area.width -= 1;
+
+    Line::raw(Cow::<str>::from(normal_mode.rope())).render(area, surface);
+
+    if let Some(rect) = char_index_to_area(
+        normal_mode.cursor().gap_index(),
+        normal_mode.rope(),
+        0,
+        area,
+    ) {
+        surface.set_style(rect, Style::default().bg(colors::DARK_YELLOW));
+    }
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
