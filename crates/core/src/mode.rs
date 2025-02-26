@@ -1,4 +1,4 @@
-use crate::cursor::{Cursor, CursorMut, RawCursor};
+use crate::cursor_unified::Cursor;
 use ropey::Rope;
 use std::num::NonZeroUsize;
 
@@ -40,7 +40,7 @@ impl Default for NormalMode {
 #[derive(Default)]
 pub struct CommandMode {
     rope: Rope,
-    cursor: RawCursor,
+    cursor: Cursor<()>,
 }
 
 impl CommandMode {
@@ -50,20 +50,24 @@ impl CommandMode {
     }
 
     #[must_use]
-    pub fn cursor(&self) -> &RawCursor {
-        &self.cursor
+    pub fn cursor(&self) -> Cursor<()> {
+        self.cursor
     }
 
-    pub fn with_cursor<T>(&self, func: impl Fn(&Cursor) -> T) -> T {
-        let cursor = Cursor::new(&self.rope, self.cursor.gap_index).unwrap();
+    pub fn with_cursor<T>(&self, func: impl Fn(&Cursor<&Rope>) -> T) -> T {
+        let cursor = Cursor::new(self.cursor.gap_index())
+            .try_with_rope(&self.rope)
+            .unwrap();
         func(&cursor)
     }
 
-    pub fn with_cursor_mut<T>(&mut self, func: impl Fn(&mut CursorMut) -> T) -> T {
-        let mut cursor = CursorMut::new(&mut self.rope, self.cursor.gap_index).unwrap();
+    pub fn with_cursor_mut<T>(&mut self, func: impl Fn(&mut Cursor<&mut Rope>) -> T) -> T {
+        let mut cursor = Cursor::new(self.cursor.gap_index())
+            .try_with_rope(&mut self.rope)
+            .unwrap();
         let result = func(&mut cursor);
         cursor.assert_valid();
-        self.cursor = cursor.raw();
+        self.cursor = cursor.without_rope();
         result
     }
 }
