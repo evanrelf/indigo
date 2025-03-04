@@ -4,7 +4,10 @@ mod event;
 mod key;
 mod terminal;
 
-use crate::{areas::Areas, event::handle_event};
+use crate::{
+    areas::Areas,
+    event::{handle_event, should_skip_event},
+};
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use indigo_core::prelude::*;
@@ -68,7 +71,12 @@ fn main() -> anyhow::Result<ExitCode> {
         #[cfg(feature = "tracy")]
         let _ = tracy_frame.take();
 
-        let event = crossterm::event::read()?;
+        let event = loop {
+            let event = crossterm::event::read()?;
+            if !should_skip_event(&event) {
+                break event;
+            }
+        };
 
         #[cfg(feature = "tracy")]
         let _ = tracy_frame.insert(tracing_tracy::client::non_continuous_frame!("frame"));

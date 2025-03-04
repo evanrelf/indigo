@@ -10,6 +10,20 @@ use ratatui::{
     layout::Position,
 };
 
+pub fn should_skip_event(event: &Event) -> bool {
+    if let Event::Mouse(mouse_event) = event {
+        matches!(
+            mouse_event.kind,
+            MouseEventKind::Moved
+                | MouseEventKind::Drag(_)
+                | MouseEventKind::ScrollLeft
+                | MouseEventKind::ScrollRight
+        )
+    } else {
+        false
+    }
+}
+
 pub fn handle_event(
     editor: &mut Editor,
     terminal: &mut TerminalGuard,
