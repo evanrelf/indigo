@@ -2,20 +2,19 @@ mod areas;
 mod colors;
 mod event;
 mod key;
-mod render;
 mod terminal;
+mod widgets;
 
 use crate::{
     areas::Areas,
     event::{handle_event, should_skip_event},
-    render::render,
     terminal::Terminal,
 };
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use etcetera::app_strategy::{AppStrategy as _, Xdg};
 use indigo_core::prelude::*;
-use ratatui::crossterm;
+use ratatui::{crossterm, widgets::Widget};
 use std::{fs, io, process::ExitCode};
 
 #[derive(Debug, clap::Parser)]
@@ -112,10 +111,11 @@ fn run(_args: &Args, terminal: &mut Terminal, mut editor: Editor) -> anyhow::Res
     loop {
         terminal.draw(|frame| {
             let _span = tracing::trace_span!("terminal draw").entered();
-            areas = Areas::new(&editor, frame.area());
-            editor.height = usize::from(areas.text.height);
+            let area = frame.area();
             let surface = frame.buffer_mut();
-            render(&editor, areas, surface);
+            areas = Areas::new(&editor, area);
+            editor.height = usize::from(areas.text.height);
+            widgets::Editor::new(&editor).render(area, surface);
         })?;
 
         #[cfg(feature = "tracy")]
