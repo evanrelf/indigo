@@ -110,3 +110,92 @@ pub fn position_to_char_index(
 
     Some(Ok(line_char_index + x))
 }
+
+#[tracing::instrument(skip_all)]
+pub fn line_index_to_area(
+    line_index: usize,
+    rope: &Rope,
+    vertical_scroll: usize,
+    area: Rect,
+) -> Option<Rect> {
+    if vertical_scroll > line_index {
+        return None;
+    }
+
+    let y = area.y + u16::try_from(line_index - vertical_scroll).unwrap();
+
+    if !(area.top()..area.bottom()).contains(&y) {
+        return None;
+    }
+
+    let x = area.x;
+
+    let line = rope.get_line(line_index)?;
+
+    // Assumes a minimum grapheme width of 1
+    let width = if line.len_chars() >= usize::from(area.width) {
+        // Avoid expensive display width calculation if we know it would exceed the viewport width
+        area.width
+    } else {
+        u16::try_from(line.display_width()).unwrap()
+    };
+
+    Some(Rect {
+        x,
+        y,
+        width,
+        height: 1,
+    })
+}
+
+// TODO: Should this be `gap_index` instead of `char_index`?
+#[tracing::instrument(skip_all)]
+pub fn char_index_to_area(
+    char_index: usize,
+    rope: &Rope,
+    vertical_scroll: usize,
+    area: Rect,
+) -> Option<Rect> {
+    let line_index = rope.try_char_to_line(char_index).ok()?;
+
+    if vertical_scroll > line_index {
+        return None;
+    }
+
+    let y = area.y + u16::try_from(line_index - vertical_scroll).unwrap();
+
+    if !(area.top()..area.bottom()).contains(&y) {
+        return None;
+    }
+
+    let line_char_index = rope.line_to_char(line_index);
+
+    let char_index = rope.snap_to_grapheme_boundary(char_index, SnapBias::Before);
+
+    let prefix_width = rope.slice(line_char_index..char_index).display_width();
+
+    // TODO: When horizontal scroll is introduced, still return portion of rect that is visible.
+    // Even if it starts to the left of the area, it might be wide enough to peek into the viewport.
+    let x = area.x + u16::try_from(prefix_width).unwrap();
+
+    if !(area.left()..area.right()).contains(&x) {
+        return None;
+    }
+
+    let width = if rope.len_chars() == char_index {
+        // Cursor at EOF
+        1
+    } else if let Some(grapheme) = rope.get_grapheme(char_index) {
+        u16::try_from(grapheme.display_width()).unwrap()
+    } else {
+        // We're at EOF, but we already checked for that
+        unreachable!()
+    };
+
+    Some(Rect {
+        x,
+        y,
+        width,
+        height: 1,
+    })
+}
