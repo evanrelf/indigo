@@ -9,6 +9,7 @@ use crate::{
     areas::Areas,
     event::{handle_event, should_skip_event},
     render::render,
+    terminal::Terminal,
 };
 use camino::Utf8PathBuf;
 use clap::Parser as _;
@@ -40,50 +41,18 @@ fn main() -> anyhow::Result<ExitCode> {
 
     init_tracing_subscriber(&args)?;
 
-    let rope = if let Some(path) = args.file {
+    let mut terminal = terminal::enter()?;
+
+    let rope = if let Some(ref path) = args.file {
         let file = fs::File::open(path)?;
         Rope::from_reader(io::BufReader::new(file))?
     } else {
         Rope::new()
     };
 
-    let mut editor = Editor::from_rope(rope);
+    let editor = Editor::from_rope(rope);
 
-    let mut terminal = terminal::enter()?;
-
-    let mut areas = Areas::default();
-
-    #[cfg(feature = "tracy")]
-    let mut tracy_frame = Some(tracing_tracy::client::non_continuous_frame!("frame"));
-
-    loop {
-        terminal.draw(|frame| {
-            let _span = tracing::trace_span!("terminal draw").entered();
-            areas = Areas::new(&editor, frame.area());
-            editor.height = usize::from(areas.text.height);
-            let surface = frame.buffer_mut();
-            render(&editor, areas, surface);
-        })?;
-
-        #[cfg(feature = "tracy")]
-        let _ = tracy_frame.take();
-
-        let event = loop {
-            let event = crossterm::event::read()?;
-            if !should_skip_event(&event) {
-                break event;
-            }
-        };
-
-        #[cfg(feature = "tracy")]
-        let _ = tracy_frame.insert(tracing_tracy::client::non_continuous_frame!("frame"));
-
-        handle_event(&mut editor, &mut terminal, areas, &event)?;
-
-        if let Some(exit_code) = editor.exit {
-            return Ok(ExitCode::from(exit_code));
-        }
-    }
+    run(&args, &mut terminal, editor)
 }
 
 fn init_tracing_subscriber(args: &Args) -> anyhow::Result<()> {
@@ -122,4 +91,40 @@ fn init_tracing_subscriber(args: &Args) -> anyhow::Result<()> {
     subscriber.init();
 
     Ok(())
+}
+
+fn run(_args: &Args, terminal: &mut Terminal, mut editor: Editor) -> anyhow::Result<ExitCode> {
+    let mut areas = Areas::default();
+
+    #[cfg(feature = "tracy")]
+    let mut tracy_frame = Some(tracing_tracy::client::non_continuous_frame!("frame"));
+
+    loop {
+        terminal.draw(|frame| {
+            let _span = tracing::trace_span!("terminal draw").entered();
+            areas = Areas::new(&editor, frame.area());
+            editor.height = usize::from(areas.text.height);
+            let surface = frame.buffer_mut();
+            render(&editor, areas, surface);
+        })?;
+
+        #[cfg(feature = "tracy")]
+        let _ = tracy_frame.take();
+
+        let event = loop {
+            let event = crossterm::event::read()?;
+            if !should_skip_event(&event) {
+                break event;
+            }
+        };
+
+        #[cfg(feature = "tracy")]
+        let _ = tracy_frame.insert(tracing_tracy::client::non_continuous_frame!("frame"));
+
+        handle_event(&mut editor, terminal, areas, &event)?;
+
+        if let Some(exit_code) = editor.exit {
+            return Ok(ExitCode::from(exit_code));
+        }
+    }
 }
