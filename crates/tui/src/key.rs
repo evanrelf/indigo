@@ -2,7 +2,9 @@ use anyhow::anyhow;
 use flagset::FlagSet;
 
 mod c {
-    pub use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+    pub use ratatui::crossterm::event::{
+        KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers,
+    };
 }
 
 mod i {

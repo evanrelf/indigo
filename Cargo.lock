@@ -390,7 +390,6 @@ dependencies = [
  "anyhow",
  "camino",
  "clap",
- "crossterm",
  "etcetera",
  "flagset",
  "indigo-core",

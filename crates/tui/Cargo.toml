@@ -6,7 +6,6 @@ edition = "2024"
 anyhow = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
-crossterm = { workspace = true }
 etcetera = { workspace = true }
 flagset = { workspace = true }
 indigo-core = { workspace = true }

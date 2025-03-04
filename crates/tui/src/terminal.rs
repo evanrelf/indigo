@@ -1,4 +1,4 @@
-use ratatui::{Terminal, backend::CrosstermBackend};
+use ratatui::{Terminal, backend::CrosstermBackend, crossterm};
 use std::{
     io::Stdout,
     ops::{Deref, DerefMut},
@@ -43,7 +43,7 @@ impl Drop for TerminalGuard {
 }
 
 pub fn enter() -> anyhow::Result<TerminalGuard> {
-    use crossterm::event::KeyboardEnhancementFlags as KEF;
+    use ratatui::crossterm::event::KeyboardEnhancementFlags as KEF;
 
     // Ensure the panic hook isn't installed more than once, because we have no safe or guaranteed
     // way of uninstalling it.

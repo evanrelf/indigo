@@ -9,7 +9,6 @@ arbtest = "0.3.2"
 arrayvec = "0.7.6"
 camino = "1.1.9"
 clap = { version = "4.5.30", features = ["derive", "env"] }
-crossterm = "0.28.1"
 downcast-rs = "2.0.1"
 etcetera = "0.8.0"
 flagset = "0.4.6"

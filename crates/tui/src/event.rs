@@ -4,9 +4,11 @@ use crate::{
     terminal::TerminalGuard,
 };
 use anyhow::anyhow;
-use crossterm::event::{Event, KeyCode, KeyModifiers, MouseButton, MouseEventKind};
 use indigo_core::{actions, prelude::*};
-use ratatui::layout::Position;
+use ratatui::{
+    crossterm::event::{Event, KeyCode, KeyModifiers, MouseButton, MouseEventKind},
+    layout::Position,
+};
 
 pub fn handle_event(
     editor: &mut Editor,
@@ -134,7 +136,7 @@ fn handle_event_command(
 }
 
 mod c {
-    pub use crossterm::event::Event;
+    pub use ratatui::crossterm::event::Event;
 }
 
 mod i {

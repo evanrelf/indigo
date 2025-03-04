@@ -9,6 +9,7 @@ use camino::Utf8PathBuf;
 use clap::Parser as _;
 use indigo_core::prelude::*;
 use ratatui::{
+    crossterm,
     prelude::{Buffer as Surface, Rect, Style, Widget as _},
     style::{Color, Modifier},
     text::{Line, Span},
