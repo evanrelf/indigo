@@ -12,6 +12,7 @@ pub struct Areas {
 }
 
 impl Areas {
+    #[tracing::instrument(skip_all)]
     pub fn new(editor: &Editor, area: Rect) -> Self {
         let (command_bar_height, status_bar_height) = match editor.mode {
             Mode::Normal(_) | Mode::Insert => (0, 1),
@@ -74,6 +75,7 @@ impl Areas {
 ///
 /// Examples of corrections: snapping to the beginning of the grapheme, snapping to the end of the
 /// line, and snapping to the end of the buffer.
+#[tracing::instrument(skip_all)]
 pub fn position_to_char_index(
     position: Position,
     rope: &Rope,

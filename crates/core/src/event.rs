@@ -6,6 +6,7 @@ use crate::{
 };
 use std::num::NonZeroUsize;
 
+#[derive(Debug)]
 pub enum Event {
     Key(Key),
 }
@@ -34,6 +35,7 @@ fn is(x: &Key, y: &str) -> bool {
     x == y
 }
 
+#[tracing::instrument(skip_all)]
 pub fn handle_event(editor: &mut Editor, event: &Event) -> bool {
     match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, event),
@@ -42,6 +44,7 @@ pub fn handle_event(editor: &mut Editor, event: &Event) -> bool {
     }
 }
 
+#[tracing::instrument(skip_all)]
 pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
     let Mode::Normal(ref mut normal_mode) = editor.mode else {
         unreachable!()
@@ -83,6 +86,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
     true
 }
 
+#[tracing::instrument(skip_all)]
 pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
     let Mode::Insert = editor.mode else {
         unreachable!()
@@ -109,6 +113,7 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
     true
 }
 
+#[tracing::instrument(skip_all)]
 pub fn handle_event_command(editor: &mut Editor, event: &Event) -> bool {
     let Mode::Command(ref mut _command_mode) = editor.mode else {
         unreachable!()

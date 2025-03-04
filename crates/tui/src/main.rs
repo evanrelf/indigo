@@ -53,15 +53,25 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let mut areas = Areas::default();
 
+    #[cfg(feature = "tracy")]
+    let mut tracy_frame = Some(tracing_tracy::client::non_continuous_frame!("frame"));
+
     loop {
         terminal.draw(|frame| {
+            let _span = tracing::trace_span!("terminal draw").entered();
             areas = Areas::new(&editor, frame.area());
             editor.height = usize::from(areas.text.height);
             let surface = frame.buffer_mut();
             render(&editor, areas, surface);
         })?;
 
+        #[cfg(feature = "tracy")]
+        let _ = tracy_frame.take();
+
         let event = crossterm::event::read()?;
+
+        #[cfg(feature = "tracy")]
+        let _ = tracy_frame.insert(tracing_tracy::client::non_continuous_frame!("frame"));
 
         handle_event(&mut editor, &mut terminal, areas, &event)?;
 
@@ -109,6 +119,7 @@ fn init_tracing_subscriber(args: &Args) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[tracing::instrument(skip_all)]
 fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
     render_navigation_bar(editor, areas.navigation_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
@@ -119,10 +130,12 @@ fn render(editor: &Editor, areas: Areas, surface: &mut Surface) {
     render_status_bar(editor, areas.status_bar, surface);
 }
 
+#[tracing::instrument(skip_all)]
 fn render_navigation_bar(_editor: &Editor, area: Rect, surface: &mut Surface) {
     Line::styled(" ", Modifier::UNDERLINED).render(area, surface);
 }
 
+#[tracing::instrument(skip_all)]
 fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
     let total_lines = editor.rope().len_lines_indigo();
 
@@ -139,6 +152,7 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
+#[tracing::instrument(skip_all)]
 fn render_tildes(editor: &Editor, area: Rect, surface: &mut Surface) {
     let total_lines = editor.rope().len_lines_indigo();
 
@@ -161,6 +175,7 @@ fn render_tildes(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
+#[tracing::instrument(skip_all)]
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     let lines = editor.rope().lines_at(editor.vertical_scroll());
 
@@ -197,6 +212,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
+#[tracing::instrument(skip_all)]
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
     let rope = editor.rope();
     let range = editor.range();
@@ -248,6 +264,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
+#[tracing::instrument(skip_all)]
 fn line_index_to_area(
     line_index: usize,
     rope: &Rope,
@@ -285,6 +302,7 @@ fn line_index_to_area(
 }
 
 // TODO: Should this be `gap_index` instead of `char_index`?
+#[tracing::instrument(skip_all)]
 fn char_index_to_area(
     char_index: usize,
     rope: &Rope,
@@ -335,6 +353,7 @@ fn char_index_to_area(
     })
 }
 
+#[tracing::instrument(skip_all)]
 fn render_command_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
     let Mode::Command(ref normal_mode) = editor.mode else {
         return;
@@ -361,6 +380,7 @@ fn render_command_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
     }
 }
 
+#[tracing::instrument(skip_all)]
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let anchor = editor.range().anchor();
 
