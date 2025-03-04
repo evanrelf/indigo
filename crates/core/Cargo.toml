@@ -2,11 +2,16 @@
 name = "indigo-core"
 edition = "2024"
 
+[features]
+tracy = ["dep:tracing-tracy"]
+tracy-alloc = ["tracy"]
+
 [dependencies]
 flagset = { workspace = true }
 ropey = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
+tracing-tracy = { workspace = true, optional = true }
 unicode-segmentation = { workspace = true }
 unicode-width = { workspace = true }
 winnow = { workspace = true }

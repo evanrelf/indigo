@@ -21,6 +21,7 @@ ropey = "1.6.1"
 thiserror = "2.0.11"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+tracing-tracy = { version = "0.11.4", features = ["only-localhost"] }
 unicode-segmentation = "1.12.0"
 unicode-width = "0.2.0"
 winnow = "0.7.3"

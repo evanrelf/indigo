@@ -15,7 +15,6 @@ use ratatui::{
     text::{Line, Span},
 };
 use std::{borrow::Cow, fs, io, process::ExitCode};
-use tracing_subscriber::EnvFilter;
 
 #[derive(Debug, clap::Parser)]
 struct Args {
@@ -74,6 +73,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
 fn init_tracing_subscriber(args: &Args) -> anyhow::Result<()> {
     use etcetera::app_strategy::{AppStrategy as _, AppStrategyArgs, Xdg};
+    use tracing_subscriber::{EnvFilter, Registry, fmt, prelude::*};
 
     let xdg = Xdg::new(AppStrategyArgs {
         top_level_domain: String::from("com"),
@@ -90,10 +90,21 @@ fn init_tracing_subscriber(args: &Args) -> anyhow::Result<()> {
         .create(true)
         .open(log_path)?;
 
-    tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::new(args.log_filter.clone()))
-        .with_writer(log_file)
-        .init();
+    let filter_layer = EnvFilter::new(args.log_filter.clone());
+
+    let fmt_layer = fmt::Layer::default().with_writer(log_file);
+
+    #[cfg(feature = "tracy")]
+    let tracy_layer = tracing_tracy::TracyLayer::default();
+    #[cfg(not(feature = "tracy"))]
+    let tracy_layer = tracing_subscriber::layer::Identity::default();
+
+    let subscriber = Registry::default()
+        .with(fmt_layer)
+        .with(filter_layer)
+        .with(tracy_layer);
+
+    subscriber.init();
 
     Ok(())
 }
