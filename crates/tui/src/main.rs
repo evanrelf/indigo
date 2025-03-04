@@ -13,6 +13,7 @@ use crate::{
 };
 use camino::Utf8PathBuf;
 use clap::Parser as _;
+use etcetera::app_strategy::{AppStrategy as _, Xdg};
 use indigo_core::prelude::*;
 use ratatui::crossterm;
 use std::{fs, io, process::ExitCode};
@@ -39,7 +40,9 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let args = Args::parse();
 
-    init_tracing_subscriber(&args)?;
+    let xdg = init_etcetera()?;
+
+    init_tracing_subscriber(&args, &xdg)?;
 
     let mut terminal = terminal::enter()?;
 
@@ -55,15 +58,18 @@ fn main() -> anyhow::Result<ExitCode> {
     run(&args, &mut terminal, editor)
 }
 
-fn init_tracing_subscriber(args: &Args) -> anyhow::Result<()> {
-    use etcetera::app_strategy::{AppStrategy as _, AppStrategyArgs, Xdg};
-    use tracing_subscriber::{EnvFilter, Registry, fmt, prelude::*};
+fn init_etcetera() -> anyhow::Result<Xdg> {
+    use etcetera::app_strategy::AppStrategyArgs;
 
-    let xdg = Xdg::new(AppStrategyArgs {
+    Ok(Xdg::new(AppStrategyArgs {
         top_level_domain: String::from("com"),
         author: String::from("Evan Relf"),
         app_name: String::from("Indigo"),
-    })?;
+    })?)
+}
+
+fn init_tracing_subscriber(args: &Args, xdg: &Xdg) -> anyhow::Result<()> {
+    use tracing_subscriber::{EnvFilter, Registry, fmt, prelude::*};
 
     let log_path = xdg.in_state_dir("tui.log").unwrap();
 
