@@ -249,6 +249,12 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
                 let delta = start_rect.x - line_rect.x;
                 line_rect.x += delta;
                 line_rect.width -= delta;
+            } else {
+                // TODO: We continue here because we know the range start is off the screen to the
+                // right. Once horizontal scrolling is added, we'll need to handle when the range is
+                // off the screen to the left. `grapheme_area` doesn't say which direction the index
+                // is off screen.
+                continue;
             }
         }
         if line_index == end_line {
