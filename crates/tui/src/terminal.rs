@@ -1,4 +1,4 @@
-use ratatui::{Terminal, backend::CrosstermBackend, crossterm};
+use ratatui::{backend::CrosstermBackend, crossterm};
 use std::{
     io::Stdout,
     ops::{Deref, DerefMut},
@@ -8,31 +8,31 @@ use std::{
 // The steps performed by `enter` and `exit` appear to be idempotent, however using multiple
 // `ratatui::Terminal`s is ill advised.
 
-pub struct TerminalGuard(Terminal<CrosstermBackend<Stdout>>);
+pub struct Terminal(ratatui::Terminal<CrosstermBackend<Stdout>>);
 
-impl TerminalGuard {
+impl Terminal {
     fn new(stdout: Stdout) -> anyhow::Result<Self> {
         let backend = CrosstermBackend::new(stdout);
-        let terminal = Terminal::new(backend)?;
+        let terminal = ratatui::Terminal::new(backend)?;
         Ok(Self(terminal))
     }
 }
 
-impl Deref for TerminalGuard {
-    type Target = Terminal<CrosstermBackend<Stdout>>;
+impl Deref for Terminal {
+    type Target = ratatui::Terminal<CrosstermBackend<Stdout>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl DerefMut for TerminalGuard {
+impl DerefMut for Terminal {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-impl Drop for TerminalGuard {
+impl Drop for Terminal {
     fn drop(&mut self) {
         // If we're panicking, the panic hook installed by `enter` will have already called `exit`.
         if !std::thread::panicking() {
@@ -42,7 +42,7 @@ impl Drop for TerminalGuard {
     }
 }
 
-pub fn enter() -> anyhow::Result<TerminalGuard> {
+pub fn enter() -> anyhow::Result<Terminal> {
     use ratatui::crossterm::event::KeyboardEnhancementFlags as KEF;
 
     // Ensure the panic hook isn't installed more than once, because we have no safe or guaranteed
@@ -75,7 +75,7 @@ pub fn enter() -> anyhow::Result<TerminalGuard> {
         crossterm::event::PushKeyboardEnhancementFlags(KEF::DISAMBIGUATE_ESCAPE_CODES),
     )?;
 
-    let terminal_guard = TerminalGuard::new(stdout)?;
+    let terminal_guard = Terminal::new(stdout)?;
 
     Ok(terminal_guard)
 }

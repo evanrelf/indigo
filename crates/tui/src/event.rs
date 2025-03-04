@@ -1,7 +1,7 @@
 use crate::{
     areas::{Areas, position_to_char_index},
     key::{key_c2i, key_i2c},
-    terminal::TerminalGuard,
+    terminal::Terminal,
 };
 use anyhow::anyhow;
 use indigo_core::{actions, prelude::*};
@@ -26,7 +26,7 @@ pub fn should_skip_event(event: &Event) -> bool {
 
 pub fn handle_event(
     editor: &mut Editor,
-    terminal: &mut TerminalGuard,
+    terminal: &mut Terminal,
     areas: Areas,
     event: &Event,
 ) -> anyhow::Result<()> {
@@ -44,7 +44,7 @@ pub fn handle_event(
 
 fn handle_event_normal(
     editor: &mut Editor,
-    terminal: &mut TerminalGuard,
+    terminal: &mut Terminal,
     areas: Areas,
     event: &Event,
 ) -> anyhow::Result<()> {
@@ -103,7 +103,7 @@ fn handle_event_normal(
 
 fn handle_event_insert(
     editor: &mut Editor,
-    terminal: &mut TerminalGuard,
+    terminal: &mut Terminal,
     _areas: Areas,
     event: &Event,
 ) -> anyhow::Result<()> {
@@ -132,7 +132,7 @@ fn handle_event_insert(
 #[expect(clippy::unnecessary_wraps)]
 fn handle_event_command(
     editor: &mut Editor,
-    _terminal: &mut TerminalGuard,
+    _terminal: &mut Terminal,
     _areas: Areas,
     event: &Event,
 ) -> anyhow::Result<()> {
