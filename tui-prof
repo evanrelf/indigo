@@ -4,5 +4,7 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 cargo run \
+  --profile profile \
   --bin indigo-tui \
-  -- --log-filter debug "$@"
+  --features tracy \
+  -- --log-filter trace "$@"
