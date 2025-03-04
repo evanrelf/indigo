@@ -104,6 +104,8 @@ fn init_tracing_subscriber(args: &Args, xdg: &Xdg) -> anyhow::Result<()> {
 fn run(_args: &Args, terminal: &mut Terminal, mut editor: Editor) -> anyhow::Result<ExitCode> {
     let mut areas = Areas::default();
 
+    // Using a non-continuous frame to omit time spent blocking on reading the next event. It makes
+    // up the vast majority of time in the loop.
     #[cfg(feature = "tracy")]
     let mut tracy_frame = Some(tracing_tracy::client::non_continuous_frame!("frame"));
 
