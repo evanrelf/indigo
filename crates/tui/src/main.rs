@@ -74,6 +74,8 @@ fn init_tracing_subscriber(args: &Args) -> anyhow::Result<()> {
         .create(true)
         .open(log_path)?;
 
+    // NOTE: When profiling with Tracy, make sure to set `--log-filter=trace` / `INDIGO_LOG=trace`
+    // (or an equivalent) to send as much data as possible.
     let filter_layer = EnvFilter::new(args.log_filter.clone());
 
     let fmt_layer = fmt::Layer::default().with_writer(log_file);
