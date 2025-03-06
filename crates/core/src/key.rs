@@ -20,6 +20,16 @@ use arbitrary::Arbitrary;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Keys(pub Vec<Key>);
 
+impl IntoIterator for Keys {
+    type Item = Key;
+
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
 impl Display for Keys {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         for key in &self.0 {

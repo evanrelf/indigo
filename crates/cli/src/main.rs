@@ -42,7 +42,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let mut editor = Editor::from_rope(rope);
 
-    for key in args.keys.0 {
+    for key in args.keys {
         handle_event(&mut editor, &Event::Key(key));
     }
 
