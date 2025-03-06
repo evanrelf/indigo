@@ -1,4 +1,4 @@
-use crate::cursor_unified::Cursor;
+use crate::cursor::Cursor;
 use ropey::Rope;
 use std::num::NonZeroUsize;
 
