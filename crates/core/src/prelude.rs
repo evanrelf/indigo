@@ -1,6 +1,6 @@
 #[doc(inline)]
 pub use crate::{
-    cursor::{Cursor, CursorMut, RawCursor},
+    cursor_unified::Cursor,
     display_width::DisplayWidth,
     editor::Editor,
     key::{Key, KeyCode, KeyModifier, Keys},
