@@ -27,11 +27,11 @@ impl Cursor<()> {
     }
 }
 
-impl<R> Cursor<R> {
+impl<T> Cursor<T> {
     #[must_use]
-    pub fn with_rope<R2>(self, rope: R2, snap_bias: SnapBias) -> Cursor<R2>
+    pub fn with_rope<R>(self, rope: R, snap_bias: SnapBias) -> Cursor<R>
     where
-        R2: Borrow<Rope>,
+        R: Borrow<Rope>,
     {
         let cursor = Cursor {
             gap_index: rope
@@ -44,9 +44,9 @@ impl<R> Cursor<R> {
     }
 
     #[must_use]
-    pub fn try_with_rope<R2>(self, rope: R2) -> Option<Cursor<R2>>
+    pub fn try_with_rope<R>(self, rope: R) -> Option<Cursor<R>>
     where
-        R2: Borrow<Rope>,
+        R: Borrow<Rope>,
     {
         if !rope.borrow().is_grapheme_boundary(self.gap_index) {
             return None;
