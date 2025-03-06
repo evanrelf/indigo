@@ -10,7 +10,7 @@ use indigo_tui::{
     widgets,
 };
 use ratatui::{crossterm, widgets::Widget};
-use std::{fs, io, process::ExitCode};
+use std::{fs, io, process::ExitCode, time::Instant};
 
 #[derive(Debug, clap::Parser)]
 struct Args {
@@ -103,6 +103,8 @@ fn run(_args: &Args, terminal: &mut Terminal, mut editor: Editor) -> anyhow::Res
     #[cfg(feature = "tracy")]
     let mut tracy_frame = Some(tracing_tracy::client::non_continuous_frame!("frame"));
 
+    let mut instant = Instant::now();
+
     loop {
         terminal.draw(|frame| {
             let _span = tracing::trace_span!("terminal draw").entered();
@@ -116,6 +118,12 @@ fn run(_args: &Args, terminal: &mut Terminal, mut editor: Editor) -> anyhow::Res
         #[cfg(feature = "tracy")]
         let _ = tracy_frame.take();
 
+        let duration_micros = Instant::now().duration_since(instant).as_micros();
+
+        if let Some(fps) = 1_000_000u128.checked_div(duration_micros) {
+            tracing::trace!(duration_micros, fps);
+        }
+
         let event = loop {
             let event = crossterm::event::read()?;
             if !should_skip_event(&event) {
@@ -125,6 +133,8 @@ fn run(_args: &Args, terminal: &mut Terminal, mut editor: Editor) -> anyhow::Res
 
         #[cfg(feature = "tracy")]
         let _ = tracy_frame.insert(tracing_tracy::client::non_continuous_frame!("frame"));
+
+        instant = Instant::now();
 
         handle_event(&mut editor, terminal, areas, &event)?;
 
