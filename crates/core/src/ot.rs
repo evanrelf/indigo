@@ -1,5 +1,5 @@
 use ropey::Rope;
-use std::rc::Rc;
+use std::{ops::Deref, rc::Rc};
 use thiserror::Error;
 
 // TODO: Add backtraces once this issue is resolved: https://github.com/dtolnay/thiserror/issues/390
@@ -164,7 +164,7 @@ impl EditSeq {
             return Err(length_mismatch());
         }
 
-        let mut inverted = Self::with_capacity(self.edits.len());
+        let mut inverted = Self::with_capacity(self.len());
 
         for edit in &self.edits {
             match edit {
@@ -201,9 +201,13 @@ impl EditSeq {
 
         Ok(())
     }
+}
 
-    pub fn iter(&self) -> impl Iterator<Item = &Edit> {
-        self.into_iter()
+impl Deref for EditSeq {
+    type Target = [Edit];
+
+    fn deref(&self) -> &Self::Target {
+        &self.edits
     }
 }
 
@@ -290,7 +294,7 @@ mod tests {
             Edit::Delete(4),
         ]);
         assert_eq!(
-            *edits.edits,
+            *edits,
             [
                 Edit::Insert(Rc::from("Hello, world!")),
                 Edit::Retain(100),
