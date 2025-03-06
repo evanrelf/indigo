@@ -39,7 +39,7 @@ fn is(x: &Key, y: &str) -> bool {
 pub fn handle_event(editor: &mut Editor, event: &Event) -> bool {
     match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, event),
-        Mode::Insert => handle_event_insert(editor, event),
+        Mode::Insert(_) => handle_event_insert(editor, event),
         Mode::Command(_) => handle_event_command(editor, event),
     }
 }
@@ -88,7 +88,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
 
 #[tracing::instrument(skip_all)]
 pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
-    let Mode::Insert = editor.mode else {
+    let Mode::Insert(ref _insert_mode) = editor.mode else {
         unreachable!()
     };
 

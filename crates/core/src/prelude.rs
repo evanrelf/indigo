@@ -4,7 +4,7 @@ pub use crate::{
     display_width::DisplayWidth,
     editor::Editor,
     key::{Key, KeyCode, KeyModifier, Keys},
-    mode::{Mode, NormalMode},
+    mode::{CommandMode, InsertMode, Mode, NormalMode},
     ot::EditSeq,
     range::{Range, RangeMut, RawRange},
     rope::RopeExt,

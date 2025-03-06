@@ -4,7 +4,7 @@ use std::num::NonZeroUsize;
 
 pub enum Mode {
     Normal(NormalMode),
-    Insert,
+    Insert(InsertMode),
     Command(CommandMode),
 }
 
@@ -13,14 +13,14 @@ impl Mode {
     pub fn count(&self) -> NonZeroUsize {
         match self {
             Self::Normal(normal_mode) => normal_mode.count,
-            Self::Insert | Self::Command(_) => NonZeroUsize::MIN,
+            Self::Insert(_) | Self::Command(_) => NonZeroUsize::MIN,
         }
     }
 
     pub fn set_count(&mut self, count: NonZeroUsize) {
         match self {
             Self::Normal(normal_mode) => normal_mode.count = count,
-            Self::Insert | Self::Command(_) => {}
+            Self::Insert(_) | Self::Command(_) => {}
         }
     }
 }
@@ -36,6 +36,9 @@ impl Default for NormalMode {
         }
     }
 }
+
+#[derive(Default)]
+pub struct InsertMode {}
 
 #[derive(Default)]
 pub struct CommandMode {

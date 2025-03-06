@@ -15,7 +15,7 @@ impl Areas {
     #[tracing::instrument(skip_all)]
     pub fn new(editor: &Editor, area: Rect) -> Self {
         let (command_bar_height, status_bar_height) = match editor.mode {
-            Mode::Normal(_) | Mode::Insert => (0, 1),
+            Mode::Normal(_) | Mode::Insert(_) => (0, 1),
             Mode::Command(_) => (1, 0),
         };
 

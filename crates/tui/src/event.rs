@@ -42,7 +42,7 @@ pub fn handle_event(
     }
     match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, terminal, areas, event),
-        Mode::Insert => handle_event_insert(editor, terminal, areas, event),
+        Mode::Insert(_) => handle_event_insert(editor, terminal, areas, event),
         Mode::Command(_) => handle_event_command(editor, terminal, areas, event),
     }
 }
@@ -112,7 +112,7 @@ fn handle_event_insert(
     _areas: Areas,
     event: &TerminalEvent,
 ) -> anyhow::Result<()> {
-    let Mode::Insert = editor.mode else {
+    let Mode::Insert(ref _insert_mode) = editor.mode else {
         unreachable!()
     };
 

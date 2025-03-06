@@ -31,7 +31,7 @@ impl Widget for StatusBar<'_> {
 
         let mode = match editor.mode {
             Mode::Normal(_) => "normal",
-            Mode::Insert => "insert",
+            Mode::Insert(_) => "insert",
             Mode::Command(_) => "command",
         };
 
