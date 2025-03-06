@@ -44,8 +44,8 @@ impl Editor {
     pub fn with_range<T>(&self, func: impl Fn(&Range) -> T) -> T {
         let range = Range::new(
             &self.rope,
-            self.range.anchor.gap_index,
-            self.range.head.gap_index,
+            self.range.anchor.gap_index(),
+            self.range.head.gap_index(),
         )
         .unwrap();
         func(&range)
@@ -54,8 +54,8 @@ impl Editor {
     pub fn with_range_mut<T>(&mut self, func: impl Fn(&mut RangeMut) -> T) -> T {
         let mut range = RangeMut::new(
             &mut self.rope,
-            self.range.anchor.gap_index,
-            self.range.head.gap_index,
+            self.range.anchor.gap_index(),
+            self.range.head.gap_index(),
         )
         .unwrap();
         let result = func(&mut range);
