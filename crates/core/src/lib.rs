@@ -4,7 +4,6 @@ pub mod cursor_unified;
 pub mod display_width;
 pub mod editor;
 pub mod event;
-pub mod index;
 pub mod key;
 pub mod mode;
 pub mod ot;
