@@ -17,9 +17,11 @@ impl RawRange {
     #[must_use]
     pub fn new(rope: &Rope, anchor_gap_index: usize, head_gap_index: usize) -> Option<Self> {
         let anchor = Cursor::new(anchor_gap_index)
+            .clone()
             .try_with_rope(rope)?
             .without_rope();
         let head = Cursor::new(head_gap_index)
+            .clone()
             .try_with_rope(rope)?
             .without_rope();
         let range = Self { anchor, head };
@@ -50,8 +52,16 @@ impl RawRange {
 
     #[must_use]
     pub fn rope_slice<'a>(&self, rope: &'a Rope) -> RopeSlice<'a> {
-        self.anchor.try_with_rope(rope).unwrap().assert_valid();
-        self.head.try_with_rope(rope).unwrap().assert_valid();
+        self.anchor
+            .clone()
+            .try_with_rope(rope)
+            .unwrap()
+            .assert_valid();
+        self.head
+            .clone()
+            .try_with_rope(rope)
+            .unwrap()
+            .assert_valid();
         rope.slice(self.start()..self.end())
     }
 
@@ -67,12 +77,12 @@ impl RawRange {
 
     #[must_use]
     pub fn start(&self) -> usize {
-        min(self.anchor, self.head).gap_index()
+        min(&self.anchor, &self.head).gap_index()
     }
 
     #[must_use]
     pub fn end(&self) -> usize {
-        max(self.anchor, self.head).gap_index()
+        max(&self.anchor, &self.head).gap_index()
     }
 
     #[must_use]
@@ -96,7 +106,7 @@ impl RawRange {
 
     #[must_use]
     pub fn is_eof(&self, rope: &Rope) -> bool {
-        self.is_empty() && self.head.try_with_rope(rope).unwrap().is_eof()
+        self.is_empty() && self.head.clone().try_with_rope(rope).unwrap().is_eof()
     }
 
     #[must_use]
@@ -112,13 +122,13 @@ impl RawRange {
     #[tracing::instrument(skip_all)]
     pub fn extend_left(&mut self, rope: &Rope, count: NonZeroUsize) {
         {
-            let mut head = self.head.try_with_rope(rope).unwrap();
+            let mut head = self.head.clone().try_with_rope(rope).unwrap();
             head.move_left(count);
             self.head = head.without_rope();
         }
         if self.anchor() == 0 && self.head() == 0 {
             {
-                let mut head = self.head.try_with_rope(rope).unwrap();
+                let mut head = self.head.clone().try_with_rope(rope).unwrap();
                 head.move_right(NonZeroUsize::MIN);
                 self.head = head.without_rope();
             }
@@ -126,12 +136,12 @@ impl RawRange {
         }
         if self.is_empty() {
             {
-                let mut anchor = self.anchor.try_with_rope(rope).unwrap();
+                let mut anchor = self.anchor.clone().try_with_rope(rope).unwrap();
                 anchor.move_right(NonZeroUsize::MIN);
                 self.anchor = anchor.without_rope();
             }
             {
-                let mut head = self.head.try_with_rope(rope).unwrap();
+                let mut head = self.head.clone().try_with_rope(rope).unwrap();
                 head.move_left(NonZeroUsize::MIN);
                 self.head = head.without_rope();
             }
@@ -154,18 +164,18 @@ impl RawRange {
     #[tracing::instrument(skip_all)]
     pub fn extend_right(&mut self, rope: &Rope, count: NonZeroUsize) {
         {
-            let mut head = self.head.try_with_rope(rope).unwrap();
+            let mut head = self.head.clone().try_with_rope(rope).unwrap();
             head.move_right(count);
             self.head = head.without_rope();
         }
         if self.is_empty() && !self.is_eof(rope) {
             {
-                let mut anchor = self.anchor.try_with_rope(rope).unwrap();
+                let mut anchor = self.anchor.clone().try_with_rope(rope).unwrap();
                 anchor.move_left(NonZeroUsize::MIN);
                 self.anchor = anchor.without_rope();
             }
             {
-                let mut head = self.head.try_with_rope(rope).unwrap();
+                let mut head = self.head.clone().try_with_rope(rope).unwrap();
                 head.move_right(NonZeroUsize::MIN);
                 self.head = head.without_rope();
             }
@@ -209,16 +219,16 @@ impl RawRange {
             return;
         }
         if self.is_forward() {
-            self.anchor = self.head;
+            self.anchor = self.head.clone();
             {
-                let mut anchor = self.anchor.try_with_rope(rope).unwrap();
+                let mut anchor = self.anchor.clone().try_with_rope(rope).unwrap();
                 anchor.move_left(NonZeroUsize::MIN);
                 self.anchor = anchor.without_rope();
             }
         } else {
-            self.anchor = self.head;
+            self.anchor = self.head.clone();
             {
-                let mut head = self.head.try_with_rope(rope).unwrap();
+                let mut head = self.head.clone().try_with_rope(rope).unwrap();
                 head.move_right(NonZeroUsize::MIN);
                 self.head = head.without_rope();
             }
@@ -242,6 +252,7 @@ impl RawRange {
         range.reduce(rope);
         let edits = range
             .anchor
+            .clone()
             .try_with_rope(&mut *rope)
             .unwrap()
             .insert_impl(string);
@@ -257,6 +268,7 @@ impl RawRange {
         range.reduce(rope);
         let edits = range
             .anchor
+            .clone()
             .try_with_rope(rope)
             .unwrap()
             .delete_before_impl(count);
@@ -288,6 +300,7 @@ impl RawRange {
         range.reduce(rope);
         let edits = range
             .head
+            .clone()
             .try_with_rope(rope)
             .unwrap()
             .delete_after_impl(count);
@@ -298,8 +311,16 @@ impl RawRange {
     }
 
     pub(crate) fn assert_valid(&self, rope: &Rope) {
-        self.anchor.try_with_rope(rope).unwrap().assert_valid();
-        self.head.try_with_rope(rope).unwrap().assert_valid();
+        self.anchor
+            .clone()
+            .try_with_rope(rope)
+            .unwrap()
+            .assert_valid();
+        self.head
+            .clone()
+            .try_with_rope(rope)
+            .unwrap()
+            .assert_valid();
         debug_assert!(
             !self.is_empty() || self.is_eof(rope),
             "Range empty but not at EOF (anchor={}, head={})",

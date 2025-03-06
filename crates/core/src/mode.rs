@@ -53,8 +53,8 @@ impl CommandMode {
     }
 
     #[must_use]
-    pub fn cursor(&self) -> Cursor<()> {
-        self.cursor
+    pub fn cursor(&self) -> &Cursor<()> {
+        &self.cursor
     }
 
     pub fn with_cursor<T>(&self, func: impl Fn(&Cursor<&Rope>) -> T) -> T {
