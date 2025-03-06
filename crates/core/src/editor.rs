@@ -60,7 +60,7 @@ impl Editor {
         .unwrap();
         let result = func(&mut range);
         range.assert_valid();
-        self.range = range.raw();
+        self.range = range.raw().clone();
         result
     }
 

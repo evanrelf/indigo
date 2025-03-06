@@ -7,7 +7,7 @@ use std::{
 
 // TODO: Movement with counts is broken.
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct RawRange {
     pub anchor: Cursor<()>,
     pub head: Cursor<()>,
@@ -238,7 +238,7 @@ impl RawRange {
     }
 
     pub fn insert(&mut self, rope: &mut Rope, string: &str) {
-        let mut range = *self;
+        let mut range = self.clone();
         range.reduce(rope);
         let edits = range
             .anchor
@@ -253,7 +253,7 @@ impl RawRange {
     }
 
     pub fn delete_before(&mut self, rope: &mut Rope, count: NonZeroUsize) {
-        let mut range = *self;
+        let mut range = self.clone();
         range.reduce(rope);
         let edits = range
             .anchor
@@ -284,7 +284,7 @@ impl RawRange {
     }
 
     pub fn delete_after(&mut self, rope: &mut Rope, count: NonZeroUsize) {
-        let mut range = *self;
+        let mut range = self.clone();
         range.reduce(rope);
         let edits = range
             .head
@@ -345,8 +345,8 @@ impl<'a> Range<'a> {
     }
 
     #[must_use]
-    pub(crate) fn raw(&self) -> RawRange {
-        self.range
+    pub(crate) fn raw(&self) -> &RawRange {
+        &self.range
     }
 
     #[must_use]
@@ -467,8 +467,8 @@ impl<'a> RangeMut<'a> {
     }
 
     #[must_use]
-    pub(crate) fn raw(&self) -> RawRange {
-        self.range
+    pub(crate) fn raw(&self) -> &RawRange {
+        &self.range
     }
 
     #[must_use]
