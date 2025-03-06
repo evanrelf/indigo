@@ -2,10 +2,11 @@ use indigo_core::prelude::*;
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub struct NavigationBar<'a> {
-    editor: &'a Editor,
+    pub editor: &'a Editor,
 }
 
 impl<'a> NavigationBar<'a> {
+    #[must_use]
     pub fn new(editor: &'a Editor) -> Self {
         Self { editor }
     }

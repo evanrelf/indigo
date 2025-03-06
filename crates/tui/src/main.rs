@@ -1,19 +1,14 @@
-mod areas;
-mod colors;
-mod event;
-mod key;
-mod terminal;
-mod widgets;
-
-use crate::{
-    areas::Areas,
-    event::{handle_event, should_skip_event},
-    terminal::Terminal,
-};
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use etcetera::app_strategy::{AppStrategy as _, Xdg};
 use indigo_core::prelude::*;
+use indigo_tui::{
+    areas::Areas,
+    event::{handle_event, should_skip_event},
+    terminal,
+    terminal::Terminal,
+    widgets,
+};
 use ratatui::{crossterm, widgets::Widget};
 use std::{fs, io, process::ExitCode};
 

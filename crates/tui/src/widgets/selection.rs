@@ -6,10 +6,11 @@ use indigo_core::prelude::*;
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub struct Selection<'a> {
-    editor: &'a Editor,
+    pub editor: &'a Editor,
 }
 
 impl<'a> Selection<'a> {
+    #[must_use]
     pub fn new(editor: &'a Editor) -> Self {
         Self { editor }
     }

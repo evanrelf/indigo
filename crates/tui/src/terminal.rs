@@ -8,7 +8,7 @@ use std::{
 // The steps performed by `enter` and `exit` appear to be idempotent, however using multiple
 // `ratatui::Terminal`s is ill advised.
 
-pub struct Terminal(ratatui::Terminal<CrosstermBackend<Stdout>>);
+pub struct Terminal(pub ratatui::Terminal<CrosstermBackend<Stdout>>);
 
 impl Terminal {
     fn new(stdout: Stdout) -> anyhow::Result<Self> {

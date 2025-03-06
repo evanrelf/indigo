@@ -4,10 +4,11 @@ use ratatui::prelude::{Buffer as Surface, *};
 use std::borrow::Cow;
 
 pub struct CommandBar<'a> {
-    editor: &'a Editor,
+    pub editor: &'a Editor,
 }
 
 impl<'a> CommandBar<'a> {
+    #[must_use]
     pub fn new(editor: &'a Editor) -> Self {
         Self { editor }
     }

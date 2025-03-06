@@ -2,10 +2,11 @@ use indigo_core::prelude::*;
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub struct StatusBar<'a> {
-    editor: &'a Editor,
+    pub editor: &'a Editor,
 }
 
 impl<'a> StatusBar<'a> {
+    #[must_use]
     pub fn new(editor: &'a Editor) -> Self {
         Self { editor }
     }

@@ -1,33 +1,40 @@
 use anyhow::anyhow;
 use flagset::FlagSet;
 
-mod c {
-    pub use ratatui::crossterm::event::{
-        KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers,
-    };
+pub type IndigoKey = indigo_core::key::Key;
+pub type IndigoKeyCode = indigo_core::key::KeyCode;
+pub type IndigoKeyModifiers = FlagSet<indigo_core::key::KeyModifier>;
+
+pub type TerminalKey = ratatui::crossterm::event::KeyEvent;
+pub type TerminalKeyCode = ratatui::crossterm::event::KeyCode;
+pub type TerminalKeyModifiers = ratatui::crossterm::event::KeyModifiers;
+
+mod t {
+    pub use ratatui::crossterm::event::{KeyEventKind, KeyEventState};
 }
 
 mod i {
-    pub use indigo_core::key::{Key, KeyCode, KeyModifier};
+    pub use indigo_core::key::KeyModifier;
 }
 
-pub fn key_c2i(key: c::KeyEvent) -> anyhow::Result<i::Key> {
-    Ok(i::Key {
-        modifiers: key_modifiers_c2i(key.modifiers)?,
-        code: key_code_c2i(key.code)?,
+pub fn key_t2i(key: TerminalKey) -> anyhow::Result<IndigoKey> {
+    Ok(IndigoKey {
+        modifiers: key_modifiers_t2i(key.modifiers)?,
+        code: key_code_t2i(key.code)?,
     })
 }
 
-pub fn key_i2c(key: i::Key) -> c::KeyEvent {
-    c::KeyEvent {
-        modifiers: key_modifiers_i2c(key.modifiers),
-        code: key_code_i2c(key.code),
-        kind: c::KeyEventKind::Press,
-        state: c::KeyEventState::NONE,
+#[must_use]
+pub fn key_i2t(key: IndigoKey) -> TerminalKey {
+    TerminalKey {
+        modifiers: key_modifiers_i2t(key.modifiers),
+        code: key_code_i2t(key.code),
+        kind: t::KeyEventKind::Press,
+        state: t::KeyEventState::NONE,
     }
 }
 
-pub fn key_modifiers_c2i(modifiers: c::KeyModifiers) -> anyhow::Result<FlagSet<i::KeyModifier>> {
+pub fn key_modifiers_t2i(modifiers: TerminalKeyModifiers) -> anyhow::Result<IndigoKeyModifiers> {
     modifiers
         .iter_names()
         .map(|m| match m {
@@ -39,45 +46,47 @@ pub fn key_modifiers_c2i(modifiers: c::KeyModifiers) -> anyhow::Result<FlagSet<i
         .try_fold(FlagSet::default(), |x, y| y.map(|y| x | y))
 }
 
-pub fn key_modifiers_i2c(modifiers: FlagSet<i::KeyModifier>) -> c::KeyModifiers {
+#[must_use]
+pub fn key_modifiers_i2t(modifiers: IndigoKeyModifiers) -> TerminalKeyModifiers {
     modifiers
         .into_iter()
         .map(|m| match m {
-            i::KeyModifier::Shift => c::KeyModifiers::SHIFT,
-            i::KeyModifier::Control => c::KeyModifiers::CONTROL,
-            i::KeyModifier::Alt => c::KeyModifiers::ALT,
+            i::KeyModifier::Shift => TerminalKeyModifiers::SHIFT,
+            i::KeyModifier::Control => TerminalKeyModifiers::CONTROL,
+            i::KeyModifier::Alt => TerminalKeyModifiers::ALT,
         })
-        .fold(c::KeyModifiers::NONE, |x, y| x | y)
+        .fold(TerminalKeyModifiers::NONE, |x, y| x | y)
 }
 
-pub fn key_code_c2i(code: c::KeyCode) -> anyhow::Result<i::KeyCode> {
+pub fn key_code_t2i(code: TerminalKeyCode) -> anyhow::Result<IndigoKeyCode> {
     match code {
-        c::KeyCode::Backspace => Ok(i::KeyCode::Backspace),
-        c::KeyCode::Delete => Ok(i::KeyCode::Delete),
-        c::KeyCode::Enter => Ok(i::KeyCode::Return),
-        c::KeyCode::Left => Ok(i::KeyCode::Left),
-        c::KeyCode::Right => Ok(i::KeyCode::Right),
-        c::KeyCode::Up => Ok(i::KeyCode::Up),
-        c::KeyCode::Down => Ok(i::KeyCode::Down),
-        c::KeyCode::Tab => Ok(i::KeyCode::Tab),
-        c::KeyCode::Char(c) => Ok(i::KeyCode::Char(c)),
-        c::KeyCode::Esc => Ok(i::KeyCode::Escape),
+        TerminalKeyCode::Backspace => Ok(IndigoKeyCode::Backspace),
+        TerminalKeyCode::Delete => Ok(IndigoKeyCode::Delete),
+        TerminalKeyCode::Enter => Ok(IndigoKeyCode::Return),
+        TerminalKeyCode::Left => Ok(IndigoKeyCode::Left),
+        TerminalKeyCode::Right => Ok(IndigoKeyCode::Right),
+        TerminalKeyCode::Up => Ok(IndigoKeyCode::Up),
+        TerminalKeyCode::Down => Ok(IndigoKeyCode::Down),
+        TerminalKeyCode::Tab => Ok(IndigoKeyCode::Tab),
+        TerminalKeyCode::Char(c) => Ok(IndigoKeyCode::Char(c)),
+        TerminalKeyCode::Esc => Ok(IndigoKeyCode::Escape),
         _ => Err(anyhow!("Unsupported crossterm key code: {code:?}")),
     }
 }
 
-pub fn key_code_i2c(code: i::KeyCode) -> c::KeyCode {
+#[must_use]
+pub fn key_code_i2t(code: IndigoKeyCode) -> TerminalKeyCode {
     match code {
-        i::KeyCode::Backspace => c::KeyCode::Backspace,
-        i::KeyCode::Delete => c::KeyCode::Delete,
-        i::KeyCode::Return => c::KeyCode::Enter,
-        i::KeyCode::Left => c::KeyCode::Left,
-        i::KeyCode::Right => c::KeyCode::Right,
-        i::KeyCode::Up => c::KeyCode::Up,
-        i::KeyCode::Down => c::KeyCode::Down,
-        i::KeyCode::Tab => c::KeyCode::Tab,
-        i::KeyCode::Escape => c::KeyCode::Esc,
-        i::KeyCode::Char(c) => c::KeyCode::Char(c),
+        IndigoKeyCode::Backspace => TerminalKeyCode::Backspace,
+        IndigoKeyCode::Delete => TerminalKeyCode::Delete,
+        IndigoKeyCode::Return => TerminalKeyCode::Enter,
+        IndigoKeyCode::Left => TerminalKeyCode::Left,
+        IndigoKeyCode::Right => TerminalKeyCode::Right,
+        IndigoKeyCode::Up => TerminalKeyCode::Up,
+        IndigoKeyCode::Down => TerminalKeyCode::Down,
+        IndigoKeyCode::Tab => TerminalKeyCode::Tab,
+        IndigoKeyCode::Escape => TerminalKeyCode::Esc,
+        IndigoKeyCode::Char(c) => TerminalKeyCode::Char(c),
     }
 }
 
@@ -87,16 +96,16 @@ mod tests {
 
     #[test]
     fn test_roundtrip() {
-        let i = i::Key::from(([i::KeyModifier::Control, i::KeyModifier::Shift], 'a'));
-        let c = c::KeyEvent {
-            modifiers: c::KeyModifiers::CONTROL | c::KeyModifiers::SHIFT,
-            code: c::KeyCode::Char('a'),
-            kind: c::KeyEventKind::Press,
-            state: c::KeyEventState::NONE,
+        let i = IndigoKey::from(([i::KeyModifier::Control, i::KeyModifier::Shift], 'a'));
+        let c = TerminalKey {
+            modifiers: TerminalKeyModifiers::CONTROL | TerminalKeyModifiers::SHIFT,
+            code: TerminalKeyCode::Char('a'),
+            kind: t::KeyEventKind::Press,
+            state: t::KeyEventState::NONE,
         };
-        assert_eq!(key_c2i(c).unwrap(), i);
-        assert_eq!(key_c2i(key_i2c(i)).unwrap(), i);
-        assert_eq!(key_i2c(i), c);
-        assert_eq!(key_c2i(c).map(key_i2c).unwrap(), c);
+        assert_eq!(key_t2i(c).unwrap(), i);
+        assert_eq!(key_t2i(key_i2t(i)).unwrap(), i);
+        assert_eq!(key_i2t(i), c);
+        assert_eq!(key_t2i(c).map(key_i2t).unwrap(), c);
     }
 }

@@ -7,6 +7,7 @@ mod status_bar;
 mod text;
 mod tildes;
 
+#[doc(inline)]
 pub use crate::widgets::{
     command_bar::CommandBar, editor::Editor, line_numbers::LineNumbers,
     navigation_bar::NavigationBar, selection::Selection, status_bar::StatusBar, text::Text,

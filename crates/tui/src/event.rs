@@ -1,17 +1,22 @@
 use crate::{
     areas::{Areas, position_to_char_index},
-    key::{key_c2i, key_i2c},
+    key::{key_i2t, key_t2i},
     terminal::Terminal,
 };
 use anyhow::anyhow;
 use indigo_core::{actions, prelude::*};
 use ratatui::{
-    crossterm::event::{Event, KeyCode, KeyModifiers, MouseButton, MouseEventKind},
+    crossterm::event::{KeyCode, KeyModifiers, MouseButton, MouseEventKind},
     layout::Position,
 };
 
-pub fn should_skip_event(event: &Event) -> bool {
-    if let Event::Mouse(mouse_event) = event {
+pub type IndigoEvent = indigo_core::event::Event;
+
+pub type TerminalEvent = ratatui::crossterm::event::Event;
+
+#[must_use]
+pub fn should_skip_event(event: &TerminalEvent) -> bool {
+    if let TerminalEvent::Mouse(mouse_event) = event {
         matches!(
             mouse_event.kind,
             MouseEventKind::Moved
@@ -28,9 +33,9 @@ pub fn handle_event(
     editor: &mut Editor,
     terminal: &mut Terminal,
     areas: Areas,
-    event: &Event,
+    event: &TerminalEvent,
 ) -> anyhow::Result<()> {
-    if let Ok(event) = event_c2i(event) {
+    if let Ok(event) = event_t2i(event) {
         if indigo_core::event::handle_event(editor, &event) {
             return Ok(());
         }
@@ -46,7 +51,7 @@ fn handle_event_normal(
     editor: &mut Editor,
     terminal: &mut Terminal,
     areas: Areas,
-    event: &Event,
+    event: &TerminalEvent,
 ) -> anyhow::Result<()> {
     let Mode::Normal(ref mut _normal_mode) = editor.mode else {
         unreachable!()
@@ -54,11 +59,11 @@ fn handle_event_normal(
 
     #[expect(clippy::single_match)]
     match event {
-        Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+        TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
             _ => {}
         },
-        Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
+        TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
             (KeyModifiers::NONE, MouseEventKind::ScrollUp) => actions::scroll_up(editor),
             (KeyModifiers::NONE, MouseEventKind::ScrollDown) => actions::scroll_down(editor),
             // TODO: Kakoune allows creating new selection ranges by control clicking. Would be
@@ -105,7 +110,7 @@ fn handle_event_insert(
     editor: &mut Editor,
     terminal: &mut Terminal,
     _areas: Areas,
-    event: &Event,
+    event: &TerminalEvent,
 ) -> anyhow::Result<()> {
     let Mode::Insert = editor.mode else {
         unreachable!()
@@ -113,16 +118,16 @@ fn handle_event_insert(
 
     #[expect(clippy::single_match)]
     match event {
-        Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+        TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
             _ => {}
         },
-        Event::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
+        TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
             (KeyModifiers::NONE, MouseEventKind::ScrollUp) => actions::scroll_up(editor),
             (KeyModifiers::NONE, MouseEventKind::ScrollDown) => actions::scroll_down(editor),
             _ => {}
         },
-        Event::Paste(string) => actions::insert(editor, string),
+        TerminalEvent::Paste(string) => actions::insert(editor, string),
         _ => {}
     }
 
@@ -134,7 +139,7 @@ fn handle_event_command(
     editor: &mut Editor,
     _terminal: &mut Terminal,
     _areas: Areas,
-    event: &Event,
+    event: &TerminalEvent,
 ) -> anyhow::Result<()> {
     let Mode::Command(ref mut _command_mode) = editor.mode else {
         unreachable!()
@@ -142,32 +147,25 @@ fn handle_event_command(
 
     #[expect(clippy::single_match)]
     match event {
-        Event::Paste(string) => actions::insert(editor, string),
+        TerminalEvent::Paste(string) => actions::insert(editor, string),
         _ => {}
     }
 
     Ok(())
 }
 
-mod c {
-    pub use ratatui::crossterm::event::Event;
-}
-
-mod i {
-    pub use indigo_core::event::Event;
-}
-
-pub fn event_c2i(event: &c::Event) -> anyhow::Result<i::Event> {
+pub fn event_t2i(event: &TerminalEvent) -> anyhow::Result<IndigoEvent> {
     match event {
-        c::Event::Key(key_event) => Ok(i::Event::Key(key_c2i(*key_event)?)),
+        TerminalEvent::Key(key_event) => Ok(IndigoEvent::Key(key_t2i(*key_event)?)),
         _ => Err(anyhow!(
             "Unsupported crossterm->indigo event conversion: {event:?}"
         )),
     }
 }
 
-pub fn event_i2c(event: &i::Event) -> c::Event {
+#[must_use]
+pub fn event_i2t(event: &IndigoEvent) -> TerminalEvent {
     match event {
-        i::Event::Key(key_event) => c::Event::Key(key_i2c(*key_event)),
+        IndigoEvent::Key(key_event) => TerminalEvent::Key(key_i2t(*key_event)),
     }
 }

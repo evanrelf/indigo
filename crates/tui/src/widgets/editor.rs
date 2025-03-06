@@ -5,10 +5,11 @@ use crate::{
 use ratatui::prelude::{Buffer as Surface, *};
 
 pub struct Editor<'a> {
-    editor: &'a indigo_core::prelude::Editor,
+    pub editor: &'a indigo_core::prelude::Editor,
 }
 
 impl<'a> Editor<'a> {
+    #[must_use]
     pub fn new(editor: &'a indigo_core::prelude::Editor) -> Self {
         Self { editor }
     }

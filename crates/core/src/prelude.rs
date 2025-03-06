@@ -1,3 +1,4 @@
+#[doc(inline)]
 pub use crate::{
     cursor::{Cursor, CursorMut, RawCursor},
     display_width::DisplayWidth,
