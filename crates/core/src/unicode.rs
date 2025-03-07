@@ -3,9 +3,8 @@ use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
 
 // Unicode Text Segmentation: https://unicode.org/reports/tr29/
 
-// TODO: Change `prev`/`next` to `floor`/`ceil` to mirror `std`.
-// TODO: Add char boundary functions.
-// See https://github.com/rust-lang/rust/issues/93743 for the last two ^
+// TODO: Add char boundary functions
+// https://github.com/rust-lang/rust/issues/93743
 
 #[must_use]
 pub fn is_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> bool {
@@ -82,7 +81,7 @@ pub fn next_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> Option<usi
 }
 
 #[must_use]
-pub fn snap_to_prev_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> usize {
+pub fn floor_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> usize {
     let length = rope.len_chars();
     if char_index > length {
         return length;
@@ -94,7 +93,7 @@ pub fn snap_to_prev_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> us
 }
 
 #[must_use]
-pub fn snap_to_next_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> usize {
+pub fn ceil_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> usize {
     let length = rope.len_chars();
     if char_index > length {
         return length;

@@ -61,17 +61,17 @@ pub trait RopeExt {
 
     fn snap_to_grapheme_boundary(&self, char_index: usize, bias: SnapBias) -> usize {
         match bias {
-            SnapBias::Before => self.snap_to_prev_grapheme_boundary(char_index),
-            SnapBias::After => self.snap_to_next_grapheme_boundary(char_index),
+            SnapBias::Before => self.floor_grapheme_boundary(char_index),
+            SnapBias::After => self.ceil_grapheme_boundary(char_index),
         }
     }
 
-    fn snap_to_prev_grapheme_boundary(&self, char_index: usize) -> usize {
-        unicode::snap_to_prev_grapheme_boundary(&self.as_slice(), char_index)
+    fn floor_grapheme_boundary(&self, char_index: usize) -> usize {
+        unicode::floor_grapheme_boundary(&self.as_slice(), char_index)
     }
 
-    fn snap_to_next_grapheme_boundary(&self, char_index: usize) -> usize {
-        unicode::snap_to_next_grapheme_boundary(&self.as_slice(), char_index)
+    fn ceil_grapheme_boundary(&self, char_index: usize) -> usize {
+        unicode::ceil_grapheme_boundary(&self.as_slice(), char_index)
     }
 }
 
