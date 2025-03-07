@@ -1,6 +1,9 @@
 #![allow(clippy::trivially_copy_pass_by_ref)]
 
-use crate::{ot::EditSeq, rope::RopeExt as _, unicode::SnapBias};
+use crate::{
+    ot::EditSeq,
+    rope::{RopeExt as _, SnapBias},
+};
 use ropey::Rope;
 use std::{
     borrow::{Borrow, BorrowMut},

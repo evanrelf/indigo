@@ -1,4 +1,8 @@
-use crate::{cursor::Cursor, ot::EditSeq, rope::RopeExt as _, unicode::SnapBias};
+use crate::{
+    cursor::Cursor,
+    ot::EditSeq,
+    rope::{RopeExt as _, SnapBias},
+};
 use ropey::{Rope, RopeSlice};
 use std::{
     cmp::{max, min},

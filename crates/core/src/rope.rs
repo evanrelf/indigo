@@ -1,5 +1,11 @@
-use crate::unicode::{self, GraphemeBoundaries, Graphemes, SnapBias};
+use crate::unicode::{self, GraphemeBoundaries, Graphemes};
 use ropey::{Rope, RopeSlice};
+
+#[derive(Clone, Copy)]
+pub enum SnapBias {
+    Before,
+    After,
+}
 
 pub trait RopeExt {
     fn as_slice(&self) -> RopeSlice<'_>;
@@ -54,7 +60,18 @@ pub trait RopeExt {
     }
 
     fn snap_to_grapheme_boundary(&self, char_index: usize, bias: SnapBias) -> usize {
-        unicode::snap_to_grapheme_boundary(&self.as_slice(), char_index, bias)
+        match bias {
+            SnapBias::Before => self.snap_to_prev_grapheme_boundary(char_index),
+            SnapBias::After => self.snap_to_next_grapheme_boundary(char_index),
+        }
+    }
+
+    fn snap_to_prev_grapheme_boundary(&self, char_index: usize) -> usize {
+        unicode::snap_to_prev_grapheme_boundary(&self.as_slice(), char_index)
+    }
+
+    fn snap_to_next_grapheme_boundary(&self, char_index: usize) -> usize {
+        unicode::snap_to_next_grapheme_boundary(&self.as_slice(), char_index)
     }
 }
 

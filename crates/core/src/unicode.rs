@@ -3,16 +3,9 @@ use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
 
 // Unicode Text Segmentation: https://unicode.org/reports/tr29/
 
-// TODO: Move grapheme snapping functions from `rope` module.
 // TODO: Change `prev`/`next` to `floor`/`ceil` to mirror `std`.
 // TODO: Add char boundary functions.
 // See https://github.com/rust-lang/rust/issues/93743 for the last two ^
-
-#[derive(Clone, Copy)]
-pub enum SnapBias {
-    Before,
-    After,
-}
 
 #[must_use]
 pub fn is_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> bool {
@@ -85,14 +78,6 @@ pub fn next_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> Option<usi
             }
             _ => unreachable!(),
         }
-    }
-}
-
-#[must_use]
-pub fn snap_to_grapheme_boundary(rope: &RopeSlice, char_index: usize, bias: SnapBias) -> usize {
-    match bias {
-        SnapBias::Before => snap_to_prev_grapheme_boundary(rope, char_index),
-        SnapBias::After => snap_to_next_grapheme_boundary(rope, char_index),
     }
 }
 
