@@ -59,6 +59,11 @@ impl<K: Key, V: Value> BTree<K, V> {
         Arc::make_mut(&mut self.root).remove(key)
     }
 
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.root.is_empty()
+    }
+
     fn assert_invariants(&self) {
         // TODO: Check ordering of keys
         // TODO: Check children's keys are ordered correctly relative to parent
@@ -222,7 +227,7 @@ impl<K: Key, V: Value> NodeBranch<K, V> {
         let i = self.search(key);
         let tree = &mut self.trees[i];
         let value = tree.remove(key);
-        if tree.root.is_empty() {
+        if tree.is_empty() {
             self.trees.remove(i);
         }
         value
