@@ -3,13 +3,13 @@ pub mod cursor;
 pub mod display_width;
 pub mod editor;
 pub mod event;
+pub mod graphemes;
 pub mod key;
 pub mod mode;
 pub mod ot;
 pub mod prelude;
 pub mod range;
 pub mod rope;
-pub mod unicode;
 
 #[cfg(feature = "tracy-alloc")]
 #[global_allocator]

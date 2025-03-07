@@ -1,10 +1,7 @@
 use ropey::{RopeSlice, iter::Chunks};
 use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
 
-// Unicode Text Segmentation: https://unicode.org/reports/tr29/
-
-// TODO: Add char boundary functions
-// https://github.com/rust-lang/rust/issues/93743
+// https://unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries
 
 #[must_use]
 pub fn is_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> bool {

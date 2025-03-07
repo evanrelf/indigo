@@ -1,4 +1,4 @@
-use crate::unicode::{self, GraphemeBoundaries, Graphemes};
+use crate::graphemes::{self, GraphemeBoundaries, Graphemes};
 use ropey::{Rope, RopeSlice};
 
 #[derive(Clone, Copy)]
@@ -48,15 +48,15 @@ pub trait RopeExt {
     }
 
     fn prev_grapheme_boundary(&self, char_index: usize) -> Option<usize> {
-        unicode::prev_grapheme_boundary(&self.as_slice(), char_index)
+        graphemes::prev_grapheme_boundary(&self.as_slice(), char_index)
     }
 
     fn next_grapheme_boundary(&self, char_index: usize) -> Option<usize> {
-        unicode::next_grapheme_boundary(&self.as_slice(), char_index)
+        graphemes::next_grapheme_boundary(&self.as_slice(), char_index)
     }
 
     fn is_grapheme_boundary(&self, char_index: usize) -> bool {
-        unicode::is_grapheme_boundary(&self.as_slice(), char_index)
+        graphemes::is_grapheme_boundary(&self.as_slice(), char_index)
     }
 
     fn snap_to_grapheme_boundary(&self, char_index: usize, bias: SnapBias) -> usize {
@@ -67,11 +67,11 @@ pub trait RopeExt {
     }
 
     fn floor_grapheme_boundary(&self, char_index: usize) -> usize {
-        unicode::floor_grapheme_boundary(&self.as_slice(), char_index)
+        graphemes::floor_grapheme_boundary(&self.as_slice(), char_index)
     }
 
     fn ceil_grapheme_boundary(&self, char_index: usize) -> usize {
-        unicode::ceil_grapheme_boundary(&self.as_slice(), char_index)
+        graphemes::ceil_grapheme_boundary(&self.as_slice(), char_index)
     }
 }
 
