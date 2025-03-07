@@ -90,6 +90,14 @@ pub fn next_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> Option<usi
 
 #[must_use]
 pub fn snap_to_grapheme_boundary(rope: &RopeSlice, char_index: usize, bias: SnapBias) -> usize {
+    match bias {
+        SnapBias::Before => snap_to_prev_grapheme_boundary(rope, char_index),
+        SnapBias::After => snap_to_next_grapheme_boundary(rope, char_index),
+    }
+}
+
+#[must_use]
+pub fn snap_to_prev_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> usize {
     let length = rope.len_chars();
     if char_index > length {
         return length;
@@ -97,10 +105,19 @@ pub fn snap_to_grapheme_boundary(rope: &RopeSlice, char_index: usize, bias: Snap
     if is_grapheme_boundary(rope, char_index) {
         return char_index;
     }
-    match bias {
-        SnapBias::Before => prev_grapheme_boundary(rope, char_index).unwrap(),
-        SnapBias::After => next_grapheme_boundary(rope, char_index).unwrap(),
+    prev_grapheme_boundary(rope, char_index).unwrap()
+}
+
+#[must_use]
+pub fn snap_to_next_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> usize {
+    let length = rope.len_chars();
+    if char_index > length {
+        return length;
     }
+    if is_grapheme_boundary(rope, char_index) {
+        return char_index;
+    }
+    next_grapheme_boundary(rope, char_index).unwrap()
 }
 
 pub struct Graphemes<'a> {
