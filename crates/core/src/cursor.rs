@@ -153,9 +153,7 @@ where
         // Makes `insert_changes_grapheme_boundary` test pass.
         // TODO: Eliminate need for explicit snapping, or reduce repetition of snapping in cursor
         // and range code.
-        self.gap_index = self
-            .rope()
-            .snap_to_grapheme_boundary(self.gap_index, SnapBias::After);
+        self.gap_index = self.rope().ceil_grapheme_boundary(self.gap_index);
         edits
     }
 

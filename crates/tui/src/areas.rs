@@ -170,7 +170,7 @@ pub fn char_index_to_area(
 
     let line_char_index = rope.line_to_char(line_index);
 
-    let char_index = rope.snap_to_grapheme_boundary(char_index, SnapBias::Before);
+    let char_index = rope.floor_grapheme_boundary(char_index);
 
     let prefix_width = rope.slice(line_char_index..char_index).display_width();
 
