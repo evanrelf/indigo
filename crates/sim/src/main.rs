@@ -1,6 +1,6 @@
 use clap::Parser as _;
 use indigo_core::{
-    event::{Event, handle_event},
+    action::{Action, handle_action},
     prelude::*,
 };
 use std::panic;
@@ -21,9 +21,8 @@ fn main() {
         let rope = Rope::from_str(unstructured.arbitrary::<&str>().unwrap());
         let mut editor = Editor::from_rope(rope);
         loop {
-            let event = unstructured.arbitrary::<Event>().unwrap();
-            println!("{event:?}");
-            handle_event(&mut editor, &event);
+            let action = unstructured.arbitrary::<Action>().unwrap();
+            handle_action(&mut editor, action);
         }
     });
     println!("seed: {seed}");

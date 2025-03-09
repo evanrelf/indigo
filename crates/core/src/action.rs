@@ -4,9 +4,13 @@ use crate::{
 };
 use std::num::NonZeroUsize;
 
+#[cfg(any(feature = "arbitrary", test))]
+use arbitrary::Arbitrary;
+
 // TODO: Don't assume editing operations target the file's rope. Could be editing the command's
 // rope!
 
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 pub enum Action {
     UpdateCount(NonZeroUsize),
     EnterNormalMode,
