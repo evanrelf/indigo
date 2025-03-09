@@ -29,13 +29,15 @@ pub fn should_skip_event(event: &TerminalEvent) -> bool {
     }
 }
 
+// TODO: Give the TUI its own actions? Could take a shared reference to the editor, and would lend
+// itself to simulation.
 pub fn handle_event(
     editor: &mut Editor,
     terminal: &mut Terminal,
     areas: Areas,
-    event: &TerminalEvent,
+    event: TerminalEvent,
 ) -> anyhow::Result<()> {
-    if let Ok(event) = event_t2i(event) {
+    if let Ok(event) = event_t2i(&event) {
         if let Some(action) = indigo_core::event::handle_event(editor, &event) {
             indigo_core::action::handle_action(editor, action);
             return Ok(());
@@ -53,16 +55,13 @@ pub fn handle_event(
     Ok(())
 }
 
+#[expect(clippy::needless_pass_by_value)]
 fn handle_event_normal(
-    editor: &mut Editor,
+    editor: &Editor,
     terminal: &mut Terminal,
     areas: Areas,
-    event: &TerminalEvent,
+    event: TerminalEvent,
 ) -> anyhow::Result<Option<Action>> {
-    let Mode::Normal(ref mut _normal_mode) = editor.mode else {
-        unreachable!()
-    };
-
     let action = match event {
         TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => {
@@ -119,15 +118,11 @@ fn handle_event_normal(
 }
 
 fn handle_event_insert(
-    editor: &mut Editor,
+    _editor: &Editor,
     terminal: &mut Terminal,
     _areas: Areas,
-    event: &TerminalEvent,
+    event: TerminalEvent,
 ) -> anyhow::Result<Option<Action>> {
-    let Mode::Insert(ref _insert_mode) = editor.mode else {
-        unreachable!()
-    };
-
     let action = match event {
         TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => {
@@ -141,7 +136,7 @@ fn handle_event_insert(
             (KeyModifiers::NONE, MouseEventKind::ScrollDown) => Some(Action::ScrollDown),
             _ => None,
         },
-        TerminalEvent::Paste(string) => Some(Action::Insert(string.clone())),
+        TerminalEvent::Paste(string) => Some(Action::Insert(string)),
         _ => None,
     };
 
@@ -150,17 +145,13 @@ fn handle_event_insert(
 
 #[expect(clippy::unnecessary_wraps)]
 fn handle_event_command(
-    editor: &mut Editor,
+    _editor: &Editor,
     _terminal: &mut Terminal,
     _areas: Areas,
-    event: &TerminalEvent,
+    event: TerminalEvent,
 ) -> anyhow::Result<Option<Action>> {
-    let Mode::Command(ref mut _command_mode) = editor.mode else {
-        unreachable!()
-    };
-
     let action = match event {
-        TerminalEvent::Paste(string) => Some(Action::Insert(string.clone())),
+        TerminalEvent::Paste(string) => Some(Action::Insert(string)),
         _ => None,
     };
 

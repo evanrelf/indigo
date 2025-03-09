@@ -126,7 +126,7 @@ fn run(_args: &Args, terminal: &mut Terminal, mut editor: Editor) -> anyhow::Res
         #[cfg(feature = "tracy")]
         let _ = tracy_frame.insert(tracing_tracy::client::non_continuous_frame!("frame"));
 
-        handle_event(&mut editor, terminal, areas, &event)?;
+        handle_event(&mut editor, terminal, areas, event)?;
 
         if let Some(exit_code) = editor.exit {
             return Ok(ExitCode::from(exit_code));
