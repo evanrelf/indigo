@@ -11,6 +11,7 @@ camino = "1.1.9"
 clap = { version = "4.5.30", features = ["derive", "env"] }
 downcast-rs = "2.0.1"
 etcetera = "0.8.0"
+fastrand = "2.3.0"
 flagset = "0.4.6"
 indigo-btree = { path = "crates/btree/" }
 indigo-cli = { path = "crates/cli/" }

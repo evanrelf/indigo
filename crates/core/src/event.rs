@@ -6,6 +6,10 @@ use crate::{
 };
 use std::num::NonZeroUsize;
 
+#[cfg(any(feature = "arbitrary", test))]
+use arbitrary::Arbitrary;
+
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Event {
     Key(Key),

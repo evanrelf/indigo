@@ -3,7 +3,10 @@ name = "indigo-sim"
 edition = "2024"
 
 [dependencies]
-indigo-core = { workspace = true }
+arbitrary = { workspace = true }
+clap = { workspace = true }
+fastrand = { workspace = true }
+indigo-core = { workspace = true, features = ["arbitrary"] }
 
 [lints]
 workspace = true
