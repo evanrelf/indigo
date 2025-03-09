@@ -414,7 +414,6 @@ dependencies = [
 name = "indigo-sim"
 version = "0.0.0"
 dependencies = [
- "anyhow",
  "arbitrary",
  "clap",
  "fastrand",
