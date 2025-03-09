@@ -10,13 +10,13 @@ use winnow::{
     token::one_of,
 };
 
-#[cfg(test)]
+#[cfg(any(feature = "arbitrary", test))]
 use arbitrary::Arbitrary;
 
 // TODO: Strict mode? Would forbid repeated modifiers, incorrectly ordered modifiers, etc.
 
 // TODO: Implement `IntoIterator` and `Iterator` in terms of `Vec`. Maybe just `Deref`?
-#[cfg_attr(test, derive(Arbitrary))]
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Keys(pub Vec<Key>);
 
@@ -73,7 +73,7 @@ impl Key {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(feature = "arbitrary", test))]
 impl<'a> Arbitrary<'a> for Key {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
         let mut modifiers = FlagSet::default();
@@ -220,7 +220,7 @@ fn key_bare(input: &mut &str) -> ModalResult<Key> {
 }
 
 flags! {
-    #[cfg_attr(test, derive(Arbitrary))]
+    #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
     #[derive(Hash, Ord, PartialOrd)]
     pub enum KeyModifier: u8 {
         Control,
@@ -279,7 +279,7 @@ fn key_code_bare(input: &mut &str) -> ModalResult<KeyCode> {
     one_of(' '..='~').map(KeyCode::Char).parse_next(input)
 }
 
-#[cfg(test)]
+#[cfg(any(feature = "arbitrary", test))]
 impl<'a> Arbitrary<'a> for KeyCode {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
         if u.ratio(8, 10)? {
