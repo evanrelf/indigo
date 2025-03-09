@@ -407,6 +407,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "indigo-sim"
+version = "0.0.0"
+dependencies = [
+ "indigo-core",
+]
+
+[[package]]
 name = "indigo-tui"
 version = "0.0.0"
 dependencies = [

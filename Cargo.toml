@@ -15,6 +15,7 @@ flagset = "0.4.6"
 indigo-btree = { path = "crates/btree/" }
 indigo-cli = { path = "crates/cli/" }
 indigo-core = { path = "crates/core/" }
+indigo-sim = { path = "crates/sim/" }
 indigo-tui = { path = "crates/tui/" }
 ratatui = "0.29.0"
 ropey = "1.6.1"
