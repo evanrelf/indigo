@@ -4,7 +4,7 @@ use crate::{
     terminal::Terminal,
 };
 use anyhow::anyhow;
-use indigo_core::{actions, prelude::*};
+use indigo_core::{action, prelude::*};
 use ratatui::{
     crossterm::event::{KeyCode, KeyModifiers, MouseButton, MouseEventKind},
     layout::Position,
@@ -64,8 +64,8 @@ fn handle_event_normal(
             _ => {}
         },
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => actions::scroll_up(editor),
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => actions::scroll_down(editor),
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => action::scroll_up(editor),
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => action::scroll_down(editor),
             // TODO: Kakoune allows creating new selection ranges by control clicking. Would be
             // awesome if Indigo could do the same, but also support control dragging to create
             // vertical lines of selection ranges, akin to Vim's visual block mode. Could snap to
@@ -81,7 +81,7 @@ fn handle_event_normal(
                     editor.vertical_scroll(),
                     areas.text,
                 ) {
-                    actions::move_to(editor, index);
+                    action::move_to(editor, index);
                 }
             }
             (KeyModifiers::NONE, MouseEventKind::Down(MouseButton::Right)) => {
@@ -95,7 +95,7 @@ fn handle_event_normal(
                     editor.vertical_scroll(),
                     areas.text,
                 ) {
-                    actions::extend_to(editor, index);
+                    action::extend_to(editor, index);
                 }
             }
             _ => {}
@@ -123,11 +123,11 @@ fn handle_event_insert(
             _ => {}
         },
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => actions::scroll_up(editor),
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => actions::scroll_down(editor),
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => action::scroll_up(editor),
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => action::scroll_down(editor),
             _ => {}
         },
-        TerminalEvent::Paste(string) => actions::insert(editor, string),
+        TerminalEvent::Paste(string) => action::insert(editor, string),
         _ => {}
     }
 
@@ -147,7 +147,7 @@ fn handle_event_command(
 
     #[expect(clippy::single_match)]
     match event {
-        TerminalEvent::Paste(string) => actions::insert(editor, string),
+        TerminalEvent::Paste(string) => action::insert(editor, string),
         _ => {}
     }
 

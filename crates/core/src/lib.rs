@@ -1,5 +1,4 @@
 pub mod action;
-pub mod actions;
 pub mod cursor;
 pub mod display_width;
 pub mod editor;
