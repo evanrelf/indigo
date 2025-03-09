@@ -1,9 +1,0 @@
-[package]
-name = "indigo-btree"
-edition = "2024"
-
-[dependencies]
-arrayvec = { workspace = true }
-
-[lints]
-workspace = true

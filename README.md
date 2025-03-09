@@ -1,3 +1,1 @@
-# indigo
-
-A text editor.
+The `rust4` branch is now `main`.
