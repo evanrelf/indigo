@@ -3,6 +3,7 @@ name = "indigo-sim"
 edition = "2024"
 
 [dependencies]
+anyhow = { workspace = true }
 arbitrary = { workspace = true }
 clap = { workspace = true }
 fastrand = { workspace = true }
