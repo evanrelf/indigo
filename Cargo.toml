@@ -3,14 +3,14 @@ resolver = "3"
 members = ["crates/*"]
 
 [workspace.dependencies]
-anyhow = "1.0.96"
+anyhow = "1.0.97"
 arbitrary = { version = "1.4.1", features = ["derive"] }
 arbtest = "0.3.2"
 arrayvec = "0.7.6"
 camino = "1.1.9"
-clap = { version = "4.5.30", features = ["derive", "env"] }
+clap = { version = "4.5.31", features = ["derive", "env"] }
 downcast-rs = "2.0.1"
-etcetera = "0.8.0"
+etcetera = "0.10.0"
 fastrand = "2.3.0"
 flagset = "0.4.6"
 indigo-btree = { path = "crates/btree/" }
@@ -20,7 +20,7 @@ indigo-sim = { path = "crates/sim/" }
 indigo-tui = { path = "crates/tui/" }
 ratatui = "0.29.0"
 ropey = "1.6.1"
-thiserror = "2.0.11"
+thiserror = "2.0.12"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 tracing-tracy = { version = "0.11.4", features = ["only-localhost"] }
