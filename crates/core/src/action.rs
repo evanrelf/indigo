@@ -33,32 +33,31 @@ pub enum Action {
     DeleteAfter,
 }
 
-pub fn handle_action(_editor: &mut Editor, action: &Action) {
-    #[expect(clippy::match_same_arms)]
+pub fn handle_action(editor: &mut Editor, action: Action) {
     match action {
-        Action::EnterNormalMode => {}
-        Action::EnterInsertMode => {}
-        Action::EnterCommandMode => {}
-        Action::MoveLeft => {}
-        Action::MoveRight => {}
-        Action::MoveTo(_index) => {}
-        Action::ExtendLeft => {}
-        Action::ExtendRight => {}
-        Action::ExtendTo(_index) => {}
-        Action::Flip => {}
-        Action::FlipForward => {}
-        Action::Reduce => {}
-        Action::ScrollUp => {}
-        Action::ScrollDown => {}
-        Action::ScrollHalfPageUp => {}
-        Action::ScrollHalfPageDown => {}
-        Action::ScrollFullPageUp => {}
-        Action::ScrollFullPageDown => {}
-        Action::InsertChar(_char) => {}
-        Action::Insert(_string) => {}
-        Action::DeleteBefore => {}
-        Action::Delete => {}
-        Action::DeleteAfter => {}
+        Action::EnterNormalMode => enter_normal_mode(editor),
+        Action::EnterInsertMode => enter_insert_mode(editor),
+        Action::EnterCommandMode => enter_command_mode(editor),
+        Action::MoveLeft => move_left(editor),
+        Action::MoveRight => move_right(editor),
+        Action::MoveTo(index) => move_to(editor, index),
+        Action::ExtendLeft => extend_left(editor),
+        Action::ExtendRight => extend_right(editor),
+        Action::ExtendTo(index) => extend_to(editor, index),
+        Action::Flip => flip(editor),
+        Action::FlipForward => flip_forward(editor),
+        Action::Reduce => reduce(editor),
+        Action::ScrollUp => scroll_up(editor),
+        Action::ScrollDown => scroll_down(editor),
+        Action::ScrollHalfPageUp => scroll_half_page_up(editor),
+        Action::ScrollHalfPageDown => scroll_half_page_down(editor),
+        Action::ScrollFullPageUp => scroll_full_page_up(editor),
+        Action::ScrollFullPageDown => scroll_full_page_down(editor),
+        Action::InsertChar(char) => insert_char(editor, char),
+        Action::Insert(string) => insert(editor, &string),
+        Action::DeleteBefore => delete_before(editor),
+        Action::Delete => delete(editor),
+        Action::DeleteAfter => delete_after(editor),
     }
 }
 
