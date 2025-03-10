@@ -15,20 +15,6 @@ pub enum Event {
     Key(Key),
 }
 
-impl Event {
-    #[must_use]
-    pub fn kind(&self) -> EventKind {
-        match self {
-            Self::Key(_) => EventKind::Key,
-        }
-    }
-}
-
-#[derive(Eq, Hash, PartialEq)]
-pub enum EventKind {
-    Key,
-}
-
 #[expect(clippy::trivially_copy_pass_by_ref)]
 #[must_use]
 fn is(x: &Key, y: &str) -> bool {
