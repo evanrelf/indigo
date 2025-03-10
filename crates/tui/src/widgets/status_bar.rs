@@ -15,31 +15,29 @@ impl<'a> StatusBar<'a> {
 impl Widget for StatusBar<'_> {
     #[tracing::instrument(skip_all)]
     fn render(self, area: Rect, surface: &mut Surface) {
-        let editor = self.editor;
+        let buffer = &self.editor.buffer;
 
-        let anchor = editor.buffer.range().anchor();
+        let range = buffer.range();
 
-        let head = editor.buffer.range().head();
+        let anchor = range.anchor();
 
-        let char_length = editor.buffer.range().char_length();
+        let head = range.head();
 
-        let grapheme_length = editor.buffer.range().grapheme_length(editor.buffer.rope());
+        let char_length = range.char_length();
 
-        let display_width = editor
-            .buffer
-            .range()
-            .rope_slice(editor.buffer.rope())
-            .display_width();
+        let grapheme_length = range.grapheme_length(buffer.rope());
 
-        let eof = editor.buffer.range().head() == editor.buffer.rope().len_chars();
+        let display_width = range.rope_slice(buffer.rope()).display_width();
 
-        let mode = match editor.mode {
+        let eof = range.head() == buffer.rope().len_chars();
+
+        let mode = match self.editor.mode {
             Mode::Normal(_) => "normal",
             Mode::Insert(_) => "insert",
             Mode::Command(_) => "command",
         };
 
-        let count = editor.mode.count();
+        let count = self.editor.mode.count();
 
         let status_bar = [
             format!("anchor={anchor}"),

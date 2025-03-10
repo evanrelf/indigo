@@ -15,11 +15,9 @@ impl<'a> Text<'a> {
 impl Widget for Text<'_> {
     #[tracing::instrument(skip_all)]
     fn render(self, area: Rect, surface: &mut Surface) {
-        let lines = self
-            .editor
-            .buffer
-            .rope()
-            .lines_at(self.editor.buffer.vertical_scroll());
+        let buffer = &self.editor.buffer;
+
+        let lines = buffer .rope() .lines_at(buffer.vertical_scroll());
 
         let rows = area.rows();
 

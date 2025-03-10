@@ -15,10 +15,12 @@ impl<'a> LineNumbers<'a> {
 impl Widget for LineNumbers<'_> {
     #[tracing::instrument(skip_all)]
     fn render(self, area: Rect, surface: &mut Surface) {
-        let total_lines = self.editor.buffer.rope().len_lines_indigo();
+        let buffer = &self.editor.buffer;
+
+        let total_lines = buffer.rope().len_lines_indigo();
 
         for (i, row) in area.rows().enumerate() {
-            let line_number = i + self.editor.buffer.vertical_scroll() + 1;
+            let line_number = i + buffer.vertical_scroll() + 1;
 
             if line_number > total_lines {
                 break;

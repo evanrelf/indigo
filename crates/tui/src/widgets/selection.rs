@@ -19,9 +19,13 @@ impl<'a> Selection<'a> {
 impl Widget for Selection<'_> {
     #[tracing::instrument(skip_all)]
     fn render(self, area: Rect, surface: &mut Surface) {
-        let rope = self.editor.buffer.rope();
-        let range = self.editor.buffer.range();
-        let vertical_scroll = self.editor.buffer.vertical_scroll();
+        let buffer = &self.editor.buffer;
+
+        let rope = buffer.rope();
+
+        let range = buffer.range();
+
+        let vertical_scroll = buffer.vertical_scroll();
 
         let start_line = rope.char_to_line(range.start());
 
