@@ -1,5 +1,6 @@
 #[doc(inline)]
 pub use crate::{
+    buffer::Buffer,
     cursor::Cursor,
     display_width::DisplayWidth,
     editor::Editor,

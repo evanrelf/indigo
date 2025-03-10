@@ -79,7 +79,7 @@ fn enter_normal_mode(editor: &mut Editor) {
 }
 
 fn enter_insert_mode(editor: &mut Editor) {
-    editor.with_range_mut(|range| range.reduce());
+    editor.buffer.with_range_mut(|range| range.reduce());
     editor.mode = Mode::Insert(InsertMode::default());
 }
 
@@ -89,7 +89,7 @@ fn enter_command_mode(editor: &mut Editor) {
 
 fn move_left(editor: &mut Editor) {
     let count = editor.mode.count();
-    editor.with_range_mut(|range| {
+    editor.buffer.with_range_mut(|range| {
         range.extend_left(count);
         range.reduce();
     });
@@ -98,7 +98,7 @@ fn move_left(editor: &mut Editor) {
 
 fn move_right(editor: &mut Editor) {
     let count = editor.mode.count();
-    editor.with_range_mut(|range| {
+    editor.buffer.with_range_mut(|range| {
         range.extend_right(count);
         range.reduce();
     });
@@ -111,13 +111,17 @@ fn move_to(_editor: &mut Editor, _index: usize) {
 
 fn extend_left(editor: &mut Editor) {
     let count = editor.mode.count();
-    editor.with_range_mut(|range| range.extend_left(count));
+    editor
+        .buffer
+        .with_range_mut(|range| range.extend_left(count));
     editor.mode.set_count(NonZeroUsize::MIN);
 }
 
 fn extend_right(editor: &mut Editor) {
     let count = editor.mode.count();
-    editor.with_range_mut(|range| range.extend_right(count));
+    editor
+        .buffer
+        .with_range_mut(|range| range.extend_right(count));
     editor.mode.set_count(NonZeroUsize::MIN);
 }
 
@@ -126,55 +130,63 @@ fn extend_to(_editor: &mut Editor, _index: usize) {
 }
 
 fn flip(editor: &mut Editor) {
-    editor.with_range_mut(|range| range.flip());
+    editor.buffer.with_range_mut(|range| range.flip());
     editor.mode.set_count(NonZeroUsize::MIN);
 }
 
 fn flip_forward(editor: &mut Editor) {
-    editor.with_range_mut(|range| range.flip_forward());
+    editor.buffer.with_range_mut(|range| range.flip_forward());
     editor.mode.set_count(NonZeroUsize::MIN);
 }
 
 fn reduce(editor: &mut Editor) {
-    editor.with_range_mut(|range| range.reduce());
+    editor.buffer.with_range_mut(|range| range.reduce());
     editor.mode.set_count(NonZeroUsize::MIN);
 }
 
 fn scroll_up(editor: &mut Editor) {
-    let line = editor.vertical_scroll().saturating_sub(3);
-    editor.scroll_to(line);
+    let line = editor.buffer.vertical_scroll().saturating_sub(3);
+    editor.buffer.scroll_to(line);
 }
 
 fn scroll_down(editor: &mut Editor) {
-    let line = editor.vertical_scroll() + 3;
-    editor.scroll_to(line);
+    let line = editor.buffer.vertical_scroll() + 3;
+    editor.buffer.scroll_to(line);
 }
 
 fn scroll_half_page_up(editor: &mut Editor) {
-    let line = editor.vertical_scroll().saturating_sub(editor.height / 2);
-    editor.scroll_to(line);
+    let line = editor
+        .buffer
+        .vertical_scroll()
+        .saturating_sub(editor.height / 2);
+    editor.buffer.scroll_to(line);
 }
 
 fn scroll_half_page_down(editor: &mut Editor) {
-    let line = editor.vertical_scroll() + editor.height / 2;
-    editor.scroll_to(line);
+    let line = editor.buffer.vertical_scroll() + editor.height / 2;
+    editor.buffer.scroll_to(line);
 }
 
 fn scroll_full_page_up(editor: &mut Editor) {
-    let line = editor.vertical_scroll().saturating_sub(editor.height);
-    editor.scroll_to(line);
+    let line = editor
+        .buffer
+        .vertical_scroll()
+        .saturating_sub(editor.height);
+    editor.buffer.scroll_to(line);
 }
 
 fn scroll_full_page_down(editor: &mut Editor) {
-    let line = editor.vertical_scroll() + editor.height;
-    editor.scroll_to(line);
+    let line = editor.buffer.vertical_scroll() + editor.height;
+    editor.buffer.scroll_to(line);
 }
 
 fn insert_char(editor: &mut Editor, char: char) {
     if let Mode::Command(ref mut command_mode) = editor.mode {
         command_mode.with_cursor_mut(|cursor| cursor.insert_char(char));
     } else {
-        editor.with_range_mut(|range| range.insert_char(char));
+        editor
+            .buffer
+            .with_range_mut(|range| range.insert_char(char));
         editor.mode.set_count(NonZeroUsize::MIN);
     }
 }
@@ -183,7 +195,7 @@ fn insert(editor: &mut Editor, string: &str) {
     if let Mode::Command(ref mut command_mode) = editor.mode {
         command_mode.with_cursor_mut(|cursor| cursor.insert(string));
     } else {
-        editor.with_range_mut(|range| range.insert(string));
+        editor.buffer.with_range_mut(|range| range.insert(string));
         editor.mode.set_count(NonZeroUsize::MIN);
     }
 }
@@ -193,19 +205,23 @@ fn delete_before(editor: &mut Editor) {
     if let Mode::Command(ref mut command_mode) = editor.mode {
         command_mode.with_cursor_mut(|cursor| cursor.delete_before(count));
     } else {
-        editor.with_range_mut(|range| range.delete_before(count));
+        editor
+            .buffer
+            .with_range_mut(|range| range.delete_before(count));
         editor.mode.set_count(NonZeroUsize::MIN);
     }
 }
 
 fn delete(editor: &mut Editor) {
-    editor.with_range_mut(|range| range.delete());
+    editor.buffer.with_range_mut(|range| range.delete());
     editor.mode.set_count(NonZeroUsize::MIN);
 }
 
 fn delete_after(editor: &mut Editor) {
     let count = editor.mode.count();
-    editor.with_range_mut(|range| range.delete_after(count));
+    editor
+        .buffer
+        .with_range_mut(|range| range.delete_after(count));
     editor.mode.set_count(NonZeroUsize::MIN);
 }
 

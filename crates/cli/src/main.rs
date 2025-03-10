@@ -40,13 +40,16 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let rope = Rope::from_reader(io::BufReader::new(io::stdin()))?;
 
-    let mut editor = Editor::from_rope(rope);
+    let mut editor = Editor::from(Buffer::from(rope));
 
     for key in args.keys {
         handle_event(&mut editor, &Event::Key(key));
     }
 
-    editor.rope().write_to(io::LineWriter::new(io::stdout()))?;
+    editor
+        .buffer
+        .rope()
+        .write_to(io::LineWriter::new(io::stdout()))?;
 
     if let Some(exit_code) = editor.exit {
         Ok(ExitCode::from(exit_code))

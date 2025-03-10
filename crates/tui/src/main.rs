@@ -47,7 +47,7 @@ fn main() -> anyhow::Result<ExitCode> {
         Rope::new()
     };
 
-    let editor = Editor::from_rope(rope);
+    let editor = Editor::from(Buffer::from(rope));
 
     run(&args, &mut terminal, editor)
 }

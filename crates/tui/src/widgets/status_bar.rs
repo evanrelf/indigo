@@ -17,17 +17,21 @@ impl Widget for StatusBar<'_> {
     fn render(self, area: Rect, surface: &mut Surface) {
         let editor = self.editor;
 
-        let anchor = editor.range().anchor();
+        let anchor = editor.buffer.range().anchor();
 
-        let head = editor.range().head();
+        let head = editor.buffer.range().head();
 
-        let char_length = editor.range().char_length();
+        let char_length = editor.buffer.range().char_length();
 
-        let grapheme_length = editor.range().grapheme_length(editor.rope());
+        let grapheme_length = editor.buffer.range().grapheme_length(editor.buffer.rope());
 
-        let display_width = editor.range().rope_slice(editor.rope()).display_width();
+        let display_width = editor
+            .buffer
+            .range()
+            .rope_slice(editor.buffer.rope())
+            .display_width();
 
-        let eof = editor.range().head() == editor.rope().len_chars();
+        let eof = editor.buffer.range().head() == editor.buffer.rope().len_chars();
 
         let mode = match editor.mode {
             Mode::Normal(_) => "normal",

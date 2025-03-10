@@ -43,7 +43,7 @@ fn sim(seed: u64) {
     let mut unstructured = arbitrary::Unstructured::new(&raw_data);
 
     let rope = Rope::from_str(unstructured.arbitrary::<&str>().unwrap());
-    let mut editor = Editor::from_rope(rope);
+    let mut editor = Editor::from(Buffer::from(rope));
 
     loop {
         let action = unstructured.arbitrary::<Action>().unwrap();

@@ -84,8 +84,8 @@ fn handle_event_normal(
                 };
                 if let Some(Err(index) | Ok(index)) = position_to_char_index(
                     position,
-                    editor.rope(),
-                    editor.vertical_scroll(),
+                    editor.buffer.rope(),
+                    editor.buffer.vertical_scroll(),
                     areas.text,
                 ) {
                     Some(Action::MoveTo(index))
@@ -100,8 +100,8 @@ fn handle_event_normal(
                 };
                 if let Some(Err(index) | Ok(index)) = position_to_char_index(
                     position,
-                    editor.rope(),
-                    editor.vertical_scroll(),
+                    editor.buffer.rope(),
+                    editor.buffer.vertical_scroll(),
                     areas.text,
                 ) {
                     Some(Action::ExtendTo(index))
