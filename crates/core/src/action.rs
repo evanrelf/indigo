@@ -205,7 +205,11 @@ fn insert(editor: &mut Editor, string: &str) {
 fn delete_before(editor: &mut Editor) {
     let count = editor.mode.count();
     if let Mode::Command(ref mut command_mode) = editor.mode {
-        command_mode.with_cursor_mut(|cursor| cursor.delete_before(count));
+        if command_mode.with_cursor(|cursor| cursor.gap_index() == 0) {
+            enter_normal_mode(editor);
+        } else {
+            command_mode.with_cursor_mut(|cursor| cursor.delete_before(count));
+        }
     } else {
         editor
             .buffer
