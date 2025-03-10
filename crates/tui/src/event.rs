@@ -38,8 +38,11 @@ pub fn handle_event(
     event: TerminalEvent,
 ) -> anyhow::Result<()> {
     if let Ok(event) = event_t2i(&event) {
-        if let Some(action) = indigo_core::event::handle_event(editor, &event) {
-            indigo_core::action::handle_action(editor, action);
+        let actions = indigo_core::event::handle_event(editor, &event);
+        if !actions.is_empty() {
+            for action in actions {
+                indigo_core::action::handle_action(editor, action);
+            }
             return Ok(());
         }
     }
