@@ -115,7 +115,7 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> Vec<Action> {
 
 #[tracing::instrument(skip_all)]
 pub fn handle_event_command(editor: &mut Editor, event: &Event) -> Vec<Action> {
-    let Mode::Command(ref mut _command_mode) = editor.mode else {
+    let Mode::Command(ref mut command_mode) = editor.mode else {
         unreachable!()
     };
 
@@ -123,7 +123,10 @@ pub fn handle_event_command(editor: &mut Editor, event: &Event) -> Vec<Action> {
         Event::Key(key) => match (key.modifiers, key.code) {
             _ if is(key, "<esc>") => vec![Action::EnterNormalMode],
             _ if is(key, "<bs>") => vec![Action::DeleteBefore],
-            _ if is(key, "<ret>") => vec![Action::EnterNormalMode],
+            _ if is(key, "<ret>") => vec![
+                Action::EnterNormalMode,
+                Action::RunCommand(command_mode.rope().to_string()),
+            ],
             (m, KeyCode::Char(c)) if m.is_empty() => vec![Action::InsertChar(c)],
             _ if is(key, "<c-c>") => vec![Action::Exit(1)],
             _ => vec![],

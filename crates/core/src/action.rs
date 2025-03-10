@@ -37,6 +37,7 @@ pub enum Action {
     DeleteBefore,
     Delete,
     DeleteAfter,
+    RunCommand(String),
     Exit(u8),
 }
 
@@ -66,6 +67,7 @@ pub fn handle_action(editor: &mut Editor, action: Action) {
         Action::DeleteBefore => delete_before(editor),
         Action::Delete => delete(editor),
         Action::DeleteAfter => delete_after(editor),
+        Action::RunCommand(command) => run_command(editor, &command),
         Action::Exit(exit_code) => exit(editor, exit_code),
     }
 }
@@ -223,6 +225,13 @@ fn delete_after(editor: &mut Editor) {
         .buffer
         .with_range_mut(|range| range.delete_after(count));
     editor.mode.set_count(NonZeroUsize::MIN);
+}
+
+fn run_command(editor: &mut Editor, command: &str) {
+    match command {
+        "q" | "quit" => exit(editor, 0),
+        _ => {}
+    }
 }
 
 fn exit(editor: &mut Editor, exit_code: u8) {
