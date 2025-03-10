@@ -47,11 +47,13 @@ pub fn handle_event(
         }
     }
 
-    if let Some(action) = match editor.mode {
+    let actions = match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, terminal, areas, event)?,
         Mode::Insert(_) => handle_event_insert(editor, terminal, areas, event)?,
         Mode::Command(_) => handle_event_command(editor, terminal, areas, event)?,
-    } {
+    };
+
+    for action in actions {
         indigo_core::action::handle_action(editor, action);
     }
 
@@ -64,18 +66,18 @@ fn handle_event_normal(
     terminal: &mut Terminal,
     areas: Areas,
     event: TerminalEvent,
-) -> anyhow::Result<Option<Action>> {
+) -> anyhow::Result<Vec<Action>> {
     let action = match event {
         TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => {
                 terminal.clear()?;
-                None
+                vec![]
             }
-            _ => None,
+            _ => vec![],
         },
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => Some(Action::ScrollUp),
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => Some(Action::ScrollDown),
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => vec![Action::ScrollUp],
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => vec![Action::ScrollDown],
             // TODO: Kakoune allows creating new selection ranges by control clicking. Would be
             // awesome if Indigo could do the same, but also support control dragging to create
             // vertical lines of selection ranges, akin to Vim's visual block mode. Could snap to
@@ -91,9 +93,9 @@ fn handle_event_normal(
                     editor.buffer.vertical_scroll(),
                     areas.text,
                 ) {
-                    Some(Action::MoveTo(index))
+                    vec![Action::MoveTo(index)]
                 } else {
-                    None
+                    vec![]
                 }
             }
             (KeyModifiers::NONE, MouseEventKind::Down(MouseButton::Right)) => {
@@ -107,14 +109,14 @@ fn handle_event_normal(
                     editor.buffer.vertical_scroll(),
                     areas.text,
                 ) {
-                    Some(Action::ExtendTo(index))
+                    vec![Action::ExtendTo(index)]
                 } else {
-                    None
+                    vec![]
                 }
             }
-            _ => None,
+            _ => vec![],
         },
-        _ => None,
+        _ => vec![],
     };
 
     Ok(action)
@@ -125,22 +127,22 @@ fn handle_event_insert(
     terminal: &mut Terminal,
     _areas: Areas,
     event: TerminalEvent,
-) -> anyhow::Result<Option<Action>> {
+) -> anyhow::Result<Vec<Action>> {
     let action = match event {
         TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => {
                 terminal.clear()?;
-                None
+                vec![]
             }
-            _ => None,
+            _ => vec![],
         },
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => Some(Action::ScrollUp),
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => Some(Action::ScrollDown),
-            _ => None,
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => vec![Action::ScrollUp],
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => vec![Action::ScrollDown],
+            _ => vec![],
         },
-        TerminalEvent::Paste(string) => Some(Action::Insert(string)),
-        _ => None,
+        TerminalEvent::Paste(string) => vec![Action::Insert(string)],
+        _ => vec![],
     };
 
     Ok(action)
@@ -152,10 +154,10 @@ fn handle_event_command(
     _terminal: &mut Terminal,
     _areas: Areas,
     event: TerminalEvent,
-) -> anyhow::Result<Option<Action>> {
+) -> anyhow::Result<Vec<Action>> {
     let action = match event {
-        TerminalEvent::Paste(string) => Some(Action::Insert(string)),
-        _ => None,
+        TerminalEvent::Paste(string) => vec![Action::Insert(string)],
+        _ => vec![],
     };
 
     Ok(action)
