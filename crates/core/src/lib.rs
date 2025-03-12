@@ -1,5 +1,6 @@
 pub mod action;
 pub mod buffer;
+pub mod crdt;
 pub mod cursor;
 pub mod display_width;
 pub mod editor;
