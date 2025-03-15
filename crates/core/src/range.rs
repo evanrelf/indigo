@@ -22,12 +22,12 @@ impl RawRange {
     pub fn new(rope: &Rope, anchor_char_offset: usize, head_char_offset: usize) -> Option<Self> {
         let anchor = Cursor::new(anchor_char_offset)
             .clone()
-            .try_with_rope(rope)?
-            .without_rope();
+            .try_with(rope)?
+            .without();
         let head = Cursor::new(head_char_offset)
             .clone()
-            .try_with_rope(rope)?
-            .without_rope();
+            .try_with(rope)?
+            .without();
         let range = Self { anchor, head };
         range.assert_valid(rope);
         Some(range)
@@ -48,11 +48,11 @@ impl RawRange {
             (SnapBias::After, SnapBias::Before)
         };
         let anchor = Cursor::new(anchor_char_offset)
-            .with_rope(rope, anchor_snap_bias)
-            .without_rope();
+            .with(rope, anchor_snap_bias)
+            .without();
         let head = Cursor::new(head_char_offset)
-            .with_rope(rope, head_snap_bias)
-            .without_rope();
+            .with(rope, head_snap_bias)
+            .without();
         let range = Self { anchor, head };
         range.assert_valid(rope);
         range
@@ -60,16 +60,8 @@ impl RawRange {
 
     #[must_use]
     pub fn rope_slice<'a>(&self, rope: &'a Rope) -> RopeSlice<'a> {
-        self.anchor
-            .clone()
-            .try_with_rope(rope)
-            .unwrap()
-            .assert_valid();
-        self.head
-            .clone()
-            .try_with_rope(rope)
-            .unwrap()
-            .assert_valid();
+        self.anchor.clone().try_with(rope).unwrap().assert_valid();
+        self.head.clone().try_with(rope).unwrap().assert_valid();
         rope.slice(self.start()..self.end())
     }
 
@@ -114,7 +106,7 @@ impl RawRange {
 
     #[must_use]
     pub fn is_eof(&self, rope: &Rope) -> bool {
-        self.is_empty() && self.head.clone().try_with_rope(rope).unwrap().is_eof()
+        self.is_empty() && self.head.clone().try_with(rope).unwrap().is_eof()
     }
 
     #[must_use]
@@ -130,28 +122,28 @@ impl RawRange {
     #[tracing::instrument(skip_all)]
     pub fn extend_left(&mut self, rope: &Rope, count: NonZeroUsize) {
         {
-            let mut head = self.head.clone().try_with_rope(rope).unwrap();
+            let mut head = self.head.clone().try_with(rope).unwrap();
             head.move_left(count);
-            self.head = head.without_rope();
+            self.head = head.without();
         }
         if self.anchor() == 0 && self.head() == 0 {
             {
-                let mut head = self.head.clone().try_with_rope(rope).unwrap();
+                let mut head = self.head.clone().try_with(rope).unwrap();
                 head.move_right(NonZeroUsize::MIN);
-                self.head = head.without_rope();
+                self.head = head.without();
             }
             return;
         }
         if self.is_empty() {
             {
-                let mut anchor = self.anchor.clone().try_with_rope(rope).unwrap();
+                let mut anchor = self.anchor.clone().try_with(rope).unwrap();
                 anchor.move_right(NonZeroUsize::MIN);
-                self.anchor = anchor.without_rope();
+                self.anchor = anchor.without();
             }
             {
-                let mut head = self.head.clone().try_with_rope(rope).unwrap();
+                let mut head = self.head.clone().try_with(rope).unwrap();
                 head.move_left(NonZeroUsize::MIN);
-                self.head = head.without_rope();
+                self.head = head.without();
             }
             let grapheme_length = self.grapheme_length(rope);
             if grapheme_length != 2 {
@@ -172,20 +164,20 @@ impl RawRange {
     #[tracing::instrument(skip_all)]
     pub fn extend_right(&mut self, rope: &Rope, count: NonZeroUsize) {
         {
-            let mut head = self.head.clone().try_with_rope(rope).unwrap();
+            let mut head = self.head.clone().try_with(rope).unwrap();
             head.move_right(count);
-            self.head = head.without_rope();
+            self.head = head.without();
         }
         if self.is_empty() && !self.is_eof(rope) {
             {
-                let mut anchor = self.anchor.clone().try_with_rope(rope).unwrap();
+                let mut anchor = self.anchor.clone().try_with(rope).unwrap();
                 anchor.move_left(NonZeroUsize::MIN);
-                self.anchor = anchor.without_rope();
+                self.anchor = anchor.without();
             }
             {
-                let mut head = self.head.clone().try_with_rope(rope).unwrap();
+                let mut head = self.head.clone().try_with(rope).unwrap();
                 head.move_right(NonZeroUsize::MIN);
-                self.head = head.without_rope();
+                self.head = head.without();
             }
             let grapheme_length = self.grapheme_length(rope);
             if grapheme_length != 2 {
@@ -229,16 +221,16 @@ impl RawRange {
         if self.is_forward() {
             self.anchor = self.head.clone();
             {
-                let mut anchor = self.anchor.clone().try_with_rope(rope).unwrap();
+                let mut anchor = self.anchor.clone().try_with(rope).unwrap();
                 anchor.move_left(NonZeroUsize::MIN);
-                self.anchor = anchor.without_rope();
+                self.anchor = anchor.without();
             }
         } else {
             self.anchor = self.head.clone();
             {
-                let mut head = self.head.clone().try_with_rope(rope).unwrap();
+                let mut head = self.head.clone().try_with(rope).unwrap();
                 head.move_right(NonZeroUsize::MIN);
-                self.head = head.without_rope();
+                self.head = head.without();
             }
         }
         let grapheme_length = self.grapheme_length(rope);
@@ -261,7 +253,7 @@ impl RawRange {
         let edits = range
             .anchor
             .clone()
-            .try_with_rope(&mut *rope)
+            .try_with(&mut *rope)
             .unwrap()
             .insert_impl(string);
         *self = Self::new_snapped(
@@ -277,7 +269,7 @@ impl RawRange {
         let edits = range
             .anchor
             .clone()
-            .try_with_rope(rope)
+            .try_with(rope)
             .unwrap()
             .delete_before_impl(count);
         self.anchor
@@ -309,7 +301,7 @@ impl RawRange {
         let edits = range
             .head
             .clone()
-            .try_with_rope(rope)
+            .try_with(rope)
             .unwrap()
             .delete_after_impl(count);
         self.anchor
@@ -319,16 +311,8 @@ impl RawRange {
     }
 
     pub(crate) fn assert_valid(&self, rope: &Rope) {
-        self.anchor
-            .clone()
-            .try_with_rope(rope)
-            .unwrap()
-            .assert_valid();
-        self.head
-            .clone()
-            .try_with_rope(rope)
-            .unwrap()
-            .assert_valid();
+        self.anchor.clone().try_with(rope).unwrap().assert_valid();
+        self.head.clone().try_with(rope).unwrap().assert_valid();
         debug_assert!(
             !self.is_empty() || self.is_eof(rope),
             "Range empty but not at EOF (anchor={}, head={})",

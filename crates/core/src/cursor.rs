@@ -32,7 +32,7 @@ impl Cursor<()> {
 
 impl<T> Cursor<T> {
     #[must_use]
-    pub fn with_rope<U>(self, text: U, snap_bias: SnapBias) -> Cursor<U>
+    pub fn with<U>(self, text: U, snap_bias: SnapBias) -> Cursor<U>
     where
         U: Borrow<Rope>,
     {
@@ -47,7 +47,7 @@ impl<T> Cursor<T> {
     }
 
     #[must_use]
-    pub fn try_with_rope<U>(self, text: U) -> Option<Cursor<U>>
+    pub fn try_with<U>(self, text: U) -> Option<Cursor<U>>
     where
         U: Borrow<Rope>,
     {
@@ -63,7 +63,7 @@ impl<T> Cursor<T> {
     }
 
     #[must_use]
-    pub fn without_rope(self) -> Cursor<()> {
+    pub fn without(self) -> Cursor<()> {
         Cursor {
             text: (),
             char_offset: self.char_offset,
@@ -213,7 +213,7 @@ mod tests {
     #[test]
     fn insert_changes_grapheme_boundary() {
         let mut text = Rope::from_str("\u{0301}"); // combining acute accent (´)
-        let mut cursor = Cursor::new(0).try_with_rope(&mut text).unwrap();
+        let mut cursor = Cursor::new(0).try_with(&mut text).unwrap();
         cursor.insert("e");
         cursor.assert_valid();
     }
@@ -224,7 +224,7 @@ mod tests {
             let mut text = Rope::new();
             let char_offset = u.arbitrary()?;
             let snap_bias = u.choose(&[SnapBias::Before, SnapBias::After])?;
-            let mut cursor = Cursor::new(char_offset).with_rope(&mut text, *snap_bias);
+            let mut cursor = Cursor::new(char_offset).with(&mut text, *snap_bias);
             let mut actions = Vec::new();
             for _ in 0..u.choose_index(100)? {
                 match u.choose_index(4)? {

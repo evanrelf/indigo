@@ -17,7 +17,7 @@ impl Widget for Text<'_> {
     fn render(self, area: Rect, surface: &mut Surface) {
         let buffer = &self.editor.buffer;
 
-        let lines = buffer .rope() .lines_at(buffer.vertical_scroll());
+        let lines = buffer.rope().lines_at(buffer.vertical_scroll());
 
         let rows = area.rows();
 
