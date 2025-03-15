@@ -406,11 +406,18 @@ mod tests {
         assert!(Edit::Retain(1).apply(char_offset, &mut rope).is_err());
     }
 
-    // TODO: Write property test for this with `quickcheck` or `proptest`.
-    //
     // Given a string S and consecutive operations A and B, the following must hold:
     //
     // ```
     // apply(apply(S, A), B) = apply(S, compose(A, B))
     // ```
+    // #[test]
+    // fn prop() {
+    //     arbtest(|u| {
+    //         let s = u.arbitrary::<Rope>()?;
+    //         let a = u.arbitrary::<EditSeq>()?;
+    //         let b = u.arbitrary::<EditSeq>()?;
+    //         assert_eq!(); // TODO
+    //     });
+    // }
 }
