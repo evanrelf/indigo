@@ -10,6 +10,7 @@ pub mod mode;
 pub mod ot;
 pub mod prelude;
 pub mod range;
+pub mod references;
 pub mod rope;
 
 #[cfg(feature = "tracy-alloc")]
