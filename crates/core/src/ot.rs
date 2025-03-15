@@ -8,8 +8,11 @@ pub enum Error {
     #[error("length mismatch: {left} != {right}")]
     LengthMismatch { left: usize, right: usize },
 
-    #[error("char index {char_index} exceeds rope length {len_chars}")]
-    CharIndexPastEof { char_index: usize, len_chars: usize },
+    #[error("char offset {char_offset} exceeds rope length {len_chars}")]
+    CharOffsetPastEof {
+        char_offset: usize,
+        len_chars: usize,
+    },
 
     #[error(transparent)]
     RopeyError(#[from] ropey::Error),
@@ -193,10 +196,10 @@ impl EditSeq {
             });
         }
 
-        let mut char_index = 0;
+        let mut char_offset = 0;
 
         for edit in &self.edits {
-            char_index = edit.apply(char_index, rope)?;
+            char_offset = edit.apply(char_offset, rope)?;
         }
 
         Ok(())
@@ -251,27 +254,27 @@ pub enum Edit {
 }
 
 impl Edit {
-    pub fn apply(&self, char_index: usize, rope: &mut Rope) -> Result<usize, Error> {
-        let char_index = match self {
-            Self::Retain(n) => char_index + n,
+    pub fn apply(&self, char_offset: usize, rope: &mut Rope) -> Result<usize, Error> {
+        let char_offset = match self {
+            Self::Retain(n) => char_offset + n,
             Self::Delete(n) => {
-                rope.try_remove(char_index..char_index + n)?;
-                char_index
+                rope.try_remove(char_offset..char_offset + n)?;
+                char_offset
             }
             Self::Insert(s) => {
-                rope.try_insert(char_index, s)?;
-                char_index + s.chars().count()
+                rope.try_insert(char_offset, s)?;
+                char_offset + s.chars().count()
             }
         };
 
-        if char_index > rope.len_chars() {
-            return Err(Error::CharIndexPastEof {
-                char_index,
+        if char_offset > rope.len_chars() {
+            return Err(Error::CharOffsetPastEof {
+                char_offset,
                 len_chars: rope.len_chars(),
             });
         }
 
-        Ok(char_index)
+        Ok(char_offset)
     }
 }
 
@@ -304,11 +307,11 @@ mod tests {
     }
 
     #[test]
-    fn edits_transform_index() {
+    fn edits_transform_offset() {
         let mut rope = Rope::from("Hello, world!");
 
-        let mut index = 9;
-        assert_eq!(rope.char(index), 'r');
+        let mut char_offset = 9;
+        assert_eq!(rope.char(char_offset), 'r');
 
         let mut edits = EditSeq::new();
         edits.delete("Hello, ".chars().count());
@@ -319,10 +322,10 @@ mod tests {
         edits.apply(&mut rope).unwrap();
         assert_eq!(rope, Rope::from("world!!!!"));
 
-        assert_eq!(rope.get_char(index), None);
-        index = edits.transform_char_offset(index);
-        assert_eq!(index, 2);
-        assert_eq!(rope.char(index), 'r');
+        assert_eq!(rope.get_char(char_offset), None);
+        char_offset = edits.transform_char_offset(char_offset);
+        assert_eq!(char_offset, 2);
+        assert_eq!(rope.char(char_offset), 'r');
 
         let mut edits = EditSeq::new();
         edits.delete("w".chars().count());
@@ -331,10 +334,10 @@ mod tests {
         edits.apply(&mut rope).unwrap();
         assert_eq!(rope, Rope::from("the whole world!!!!"));
 
-        assert_eq!(rope.char(index), 'e');
-        index = edits.transform_char_offset(index);
-        assert_eq!(index, 12);
-        assert_eq!(rope.char(index), 'r');
+        assert_eq!(rope.char(char_offset), 'e');
+        char_offset = edits.transform_char_offset(char_offset);
+        assert_eq!(char_offset, 12);
+        assert_eq!(rope.char(char_offset), 'r');
     }
 
     #[test]
@@ -382,25 +385,25 @@ mod tests {
     #[test]
     fn edit_apply() {
         let mut rope = Rope::from("Hello, world!");
-        let char_index = 0;
-        let char_index = Edit::Retain(7).apply(char_index, &mut rope).unwrap();
-        let char_index = Edit::Delete("world".chars().count())
-            .apply(char_index, &mut rope)
+        let char_offset = 0;
+        let char_offset = Edit::Retain(7).apply(char_offset, &mut rope).unwrap();
+        let char_offset = Edit::Delete("world".chars().count())
+            .apply(char_offset, &mut rope)
             .unwrap();
-        let char_index = Edit::Insert(Rc::from("Evan"))
-            .apply(char_index, &mut rope)
+        let char_offset = Edit::Insert(Rc::from("Evan"))
+            .apply(char_offset, &mut rope)
             .unwrap();
-        let char_index = Edit::Delete("!".chars().count())
-            .apply(char_index, &mut rope)
+        let char_offset = Edit::Delete("!".chars().count())
+            .apply(char_offset, &mut rope)
             .unwrap();
-        let char_index = Edit::Insert(Rc::from("..."))
-            .apply(char_index, &mut rope)
+        let char_offset = Edit::Insert(Rc::from("..."))
+            .apply(char_offset, &mut rope)
             .unwrap();
-        let char_index = Edit::Insert(Rc::from("?"))
-            .apply(char_index, &mut rope)
+        let char_offset = Edit::Insert(Rc::from("?"))
+            .apply(char_offset, &mut rope)
             .unwrap();
         assert_eq!(rope, Rope::from("Hello, Evan...?"));
-        assert!(Edit::Retain(1).apply(char_index, &mut rope).is_err());
+        assert!(Edit::Retain(1).apply(char_offset, &mut rope).is_err());
     }
 
     // TODO: Write property test for this with `quickcheck` or `proptest`.
