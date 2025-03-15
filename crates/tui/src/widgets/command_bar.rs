@@ -33,7 +33,7 @@ impl Widget for CommandBar<'_> {
         Line::raw(Cow::<str>::from(normal_mode.rope())).render(area, surface);
 
         if let Some(rect) = char_index_to_area(
-            normal_mode.cursor().gap_index(),
+            normal_mode.cursor().char_offset(),
             normal_mode.rope(),
             0,
             area,

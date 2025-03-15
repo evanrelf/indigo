@@ -64,14 +64,14 @@ impl CommandMode {
     }
 
     pub fn with_cursor<T>(&self, func: impl Fn(&Cursor<&Rope>) -> T) -> T {
-        let cursor = Cursor::new(self.cursor.gap_index())
+        let cursor = Cursor::new(self.cursor.char_offset())
             .try_with_rope(&self.rope)
             .unwrap();
         func(&cursor)
     }
 
     pub fn with_cursor_mut<T>(&mut self, func: impl Fn(&mut Cursor<&mut Rope>) -> T) -> T {
-        let mut cursor = Cursor::new(self.cursor.gap_index())
+        let mut cursor = Cursor::new(self.cursor.char_offset())
             .try_with_rope(&mut self.rope)
             .unwrap();
         let result = func(&mut cursor);

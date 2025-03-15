@@ -13,20 +13,20 @@ use std::{
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Cursor<T> {
     text: T,
-    gap_index: usize,
+    char_offset: usize,
 }
 
 impl Cursor<()> {
     #[must_use]
-    pub fn new(gap_index: usize) -> Self {
+    pub fn new(char_offset: usize) -> Self {
         Self {
             text: (),
-            gap_index,
+            char_offset,
         }
     }
 
-    pub fn set_gap_index(&mut self, gap_index: usize) {
-        self.gap_index = gap_index;
+    pub fn set_char_offset(&mut self, char_offset: usize) {
+        self.char_offset = char_offset;
     }
 }
 
@@ -37,9 +37,9 @@ impl<T> Cursor<T> {
         U: Borrow<Rope>,
     {
         let cursor = Cursor {
-            gap_index: text
+            char_offset: text
                 .borrow()
-                .snap_to_grapheme_boundary(self.gap_index, snap_bias),
+                .snap_to_grapheme_boundary(self.char_offset, snap_bias),
             text,
         };
         cursor.assert_valid();
@@ -51,12 +51,12 @@ impl<T> Cursor<T> {
     where
         U: Borrow<Rope>,
     {
-        if !text.borrow().is_grapheme_boundary(self.gap_index) {
+        if !text.borrow().is_grapheme_boundary(self.char_offset) {
             return None;
         }
         let cursor = Cursor {
             text,
-            gap_index: self.gap_index,
+            char_offset: self.char_offset,
         };
         cursor.assert_valid();
         Some(cursor)
@@ -66,13 +66,13 @@ impl<T> Cursor<T> {
     pub fn without_rope(self) -> Cursor<()> {
         Cursor {
             text: (),
-            gap_index: self.gap_index,
+            char_offset: self.char_offset,
         }
     }
 
     #[must_use]
-    pub fn gap_index(&self) -> usize {
-        self.gap_index
+    pub fn char_offset(&self) -> usize {
+        self.char_offset
     }
 }
 
@@ -87,13 +87,13 @@ where
 
     #[must_use]
     pub fn is_eof(&self) -> bool {
-        self.gap_index == self.text().len_chars()
+        self.char_offset == self.text().len_chars()
     }
 
     pub fn move_left(&mut self, count: NonZeroUsize) {
         for _ in 1..=count.get() {
-            match self.text().prev_grapheme_boundary(self.gap_index) {
-                Some(prev) if self.gap_index != prev => self.gap_index = prev,
+            match self.text().prev_grapheme_boundary(self.char_offset) {
+                Some(prev) if self.char_offset != prev => self.char_offset = prev,
                 _ => break,
             }
         }
@@ -101,8 +101,8 @@ where
 
     pub fn move_right(&mut self, count: NonZeroUsize) {
         for _ in 1..=count.get() {
-            match self.text().next_grapheme_boundary(self.gap_index) {
-                Some(next) if self.gap_index != next => self.gap_index = next,
+            match self.text().next_grapheme_boundary(self.char_offset) {
+                Some(next) if self.char_offset != next => self.char_offset = next,
                 _ => break,
             }
         }
@@ -110,14 +110,14 @@ where
 
     pub(crate) fn assert_valid(&self) {
         assert!(
-            self.gap_index <= self.text().len_chars(),
-            "Cursor beyond end of text (gap_index={})",
-            self.gap_index
+            self.char_offset <= self.text().len_chars(),
+            "Cursor beyond end of text (char_offset={})",
+            self.char_offset
         );
         assert!(
-            self.text().is_grapheme_boundary(self.gap_index),
-            "Cursor not on a grapheme boundary (gap_index={})",
-            self.gap_index
+            self.text().is_grapheme_boundary(self.char_offset),
+            "Cursor not on a grapheme boundary (char_offset={})",
+            self.char_offset
         );
     }
 }
@@ -143,17 +143,17 @@ where
     pub(crate) fn insert_impl(&mut self, string: &str) -> EditSeq {
         self.assert_valid();
         let mut edits = EditSeq::new();
-        edits.retain(self.gap_index);
+        edits.retain(self.char_offset);
         edits.insert(string);
         edits.retain_rest(self.text());
         edits.apply(self.text_mut()).unwrap();
-        self.gap_index = edits.transform_index(self.gap_index);
+        self.char_offset = edits.transform_index(self.char_offset);
         // If the inserted string combines with existing text, the cursor would be left in the
         // middle of a new grapheme, so we must snap after inserting.
         // Makes `insert_changes_grapheme_boundary` test pass.
         // TODO: Eliminate need for explicit snapping, or reduce repetition of snapping in cursor
         // and range code.
-        self.gap_index = self.text().ceil_grapheme_boundary(self.gap_index);
+        self.char_offset = self.text().ceil_grapheme_boundary(self.char_offset);
         edits
     }
 
@@ -164,19 +164,19 @@ where
     #[must_use]
     pub(crate) fn delete_before_impl(&mut self, count: NonZeroUsize) -> EditSeq {
         self.assert_valid();
-        let mut gap_index = self.gap_index;
+        let mut char_offset = self.char_offset;
         for _ in 1..=count.get() {
-            match self.text().prev_grapheme_boundary(gap_index) {
-                Some(prev) if gap_index != prev => gap_index = prev,
+            match self.text().prev_grapheme_boundary(char_offset) {
+                Some(prev) if char_offset != prev => char_offset = prev,
                 _ => break,
             }
         }
         let mut edits = EditSeq::new();
-        edits.retain(gap_index);
-        edits.delete(self.gap_index - gap_index);
+        edits.retain(char_offset);
+        edits.delete(self.char_offset - char_offset);
         edits.retain_rest(self.text());
         edits.apply(self.text_mut()).unwrap();
-        self.gap_index = edits.transform_index(self.gap_index);
+        self.char_offset = edits.transform_index(self.char_offset);
         edits
     }
 
@@ -187,19 +187,19 @@ where
     #[must_use]
     pub(crate) fn delete_after_impl(&mut self, count: NonZeroUsize) -> EditSeq {
         self.assert_valid();
-        let mut gap_index = self.gap_index;
+        let mut char_offset = self.char_offset;
         for _ in 1..=count.get() {
-            match self.text().next_grapheme_boundary(gap_index) {
-                Some(next) if gap_index != next => gap_index = next,
+            match self.text().next_grapheme_boundary(char_offset) {
+                Some(next) if char_offset != next => char_offset = next,
                 _ => break,
             }
         }
         let mut edits = EditSeq::new();
-        edits.retain(self.gap_index);
-        edits.delete(gap_index - self.gap_index);
+        edits.retain(self.char_offset);
+        edits.delete(char_offset - self.char_offset);
         edits.retain_rest(self.text());
         edits.apply(self.text_mut()).unwrap();
-        self.gap_index = edits.transform_index(self.gap_index);
+        self.char_offset = edits.transform_index(self.char_offset);
         edits
     }
 }
@@ -222,9 +222,9 @@ mod tests {
     fn fuzz() {
         arbtest(|u| {
             let mut text = Rope::new();
-            let gap_index = u.arbitrary()?;
+            let char_offset = u.arbitrary()?;
             let snap_bias = u.choose(&[SnapBias::Before, SnapBias::After])?;
-            let mut cursor = Cursor::new(gap_index).with_rope(&mut text, *snap_bias);
+            let mut cursor = Cursor::new(char_offset).with_rope(&mut text, *snap_bias);
             let mut actions = Vec::new();
             for _ in 0..u.choose_index(100)? {
                 match u.choose_index(4)? {

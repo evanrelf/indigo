@@ -19,12 +19,12 @@ pub struct RawRange {
 
 impl RawRange {
     #[must_use]
-    pub fn new(rope: &Rope, anchor_gap_index: usize, head_gap_index: usize) -> Option<Self> {
-        let anchor = Cursor::new(anchor_gap_index)
+    pub fn new(rope: &Rope, anchor_char_offset: usize, head_char_offset: usize) -> Option<Self> {
+        let anchor = Cursor::new(anchor_char_offset)
             .clone()
             .try_with_rope(rope)?
             .without_rope();
-        let head = Cursor::new(head_gap_index)
+        let head = Cursor::new(head_char_offset)
             .clone()
             .try_with_rope(rope)?
             .without_rope();
@@ -34,19 +34,23 @@ impl RawRange {
     }
 
     #[must_use]
-    pub fn new_snapped(rope: &Rope, anchor_gap_index: usize, mut head_gap_index: usize) -> Self {
-        if anchor_gap_index == head_gap_index && rope.len_chars() > 0 {
-            head_gap_index += 1;
+    pub fn new_snapped(
+        rope: &Rope,
+        anchor_char_offset: usize,
+        mut head_char_offset: usize,
+    ) -> Self {
+        if anchor_char_offset == head_char_offset && rope.len_chars() > 0 {
+            head_char_offset += 1;
         }
-        let (anchor_snap_bias, head_snap_bias) = if anchor_gap_index < head_gap_index {
+        let (anchor_snap_bias, head_snap_bias) = if anchor_char_offset < head_char_offset {
             (SnapBias::Before, SnapBias::After)
         } else {
             (SnapBias::After, SnapBias::Before)
         };
-        let anchor = Cursor::new(anchor_gap_index)
+        let anchor = Cursor::new(anchor_char_offset)
             .with_rope(rope, anchor_snap_bias)
             .without_rope();
-        let head = Cursor::new(head_gap_index)
+        let head = Cursor::new(head_char_offset)
             .with_rope(rope, head_snap_bias)
             .without_rope();
         let range = Self { anchor, head };
@@ -71,22 +75,22 @@ impl RawRange {
 
     #[must_use]
     pub fn anchor(&self) -> usize {
-        self.anchor.gap_index()
+        self.anchor.char_offset()
     }
 
     #[must_use]
     pub fn head(&self) -> usize {
-        self.head.gap_index()
+        self.head.char_offset()
     }
 
     #[must_use]
     pub fn start(&self) -> usize {
-        min(&self.anchor, &self.head).gap_index()
+        min(&self.anchor, &self.head).char_offset()
     }
 
     #[must_use]
     pub fn end(&self) -> usize {
-        max(&self.anchor, &self.head).gap_index()
+        max(&self.anchor, &self.head).char_offset()
     }
 
     #[must_use]
@@ -262,8 +266,8 @@ impl RawRange {
             .insert_impl(string);
         *self = Self::new_snapped(
             rope,
-            edits.transform_index(self.anchor.gap_index()),
-            edits.transform_index(self.head.gap_index()),
+            edits.transform_index(self.anchor.char_offset()),
+            edits.transform_index(self.head.char_offset()),
         );
     }
 
@@ -277,9 +281,9 @@ impl RawRange {
             .unwrap()
             .delete_before_impl(count);
         self.anchor
-            .set_gap_index(edits.transform_index(self.anchor.gap_index()));
+            .set_char_offset(edits.transform_index(self.anchor.char_offset()));
         self.head
-            .set_gap_index(edits.transform_index(self.head.gap_index()));
+            .set_char_offset(edits.transform_index(self.head.char_offset()));
     }
 
     pub fn delete(&mut self, rope: &mut Rope) {
@@ -292,9 +296,9 @@ impl RawRange {
         edits.retain_rest(rope);
         edits.apply(rope).unwrap();
         self.anchor
-            .set_gap_index(edits.transform_index(self.anchor.gap_index()));
+            .set_char_offset(edits.transform_index(self.anchor.char_offset()));
         self.head
-            .set_gap_index(edits.transform_index(self.head.gap_index()));
+            .set_char_offset(edits.transform_index(self.head.char_offset()));
         debug_assert_eq!(self.anchor, self.head);
         self.extend_right(rope, NonZeroUsize::MIN);
     }
@@ -309,9 +313,9 @@ impl RawRange {
             .unwrap()
             .delete_after_impl(count);
         self.anchor
-            .set_gap_index(edits.transform_index(self.anchor.gap_index()));
+            .set_char_offset(edits.transform_index(self.anchor.char_offset()));
         self.head
-            .set_gap_index(edits.transform_index(self.head.gap_index()));
+            .set_char_offset(edits.transform_index(self.head.char_offset()));
     }
 
     pub(crate) fn assert_valid(&self, rope: &Rope) {
@@ -328,14 +332,14 @@ impl RawRange {
         debug_assert!(
             !self.is_empty() || self.is_eof(rope),
             "Range empty but not at EOF (anchor={}, head={})",
-            self.anchor.gap_index(),
-            self.head.gap_index(),
+            self.anchor.char_offset(),
+            self.head.char_offset(),
         );
         debug_assert!(
             self.is_forward() || self.grapheme_length(rope) > 1,
             "Range reduced but not facing forward (anchor={}, head={})",
-            self.anchor.gap_index(),
-            self.head.gap_index(),
+            self.anchor.char_offset(),
+            self.head.char_offset(),
         );
     }
 }
@@ -348,14 +352,14 @@ pub struct Range<'a> {
 
 impl<'a> Range<'a> {
     #[must_use]
-    pub fn new(rope: &'a Rope, anchor_gap_index: usize, head_gap_index: usize) -> Option<Self> {
-        let range = RawRange::new(rope, anchor_gap_index, head_gap_index)?;
+    pub fn new(rope: &'a Rope, anchor_char_offset: usize, head_char_offset: usize) -> Option<Self> {
+        let range = RawRange::new(rope, anchor_char_offset, head_char_offset)?;
         Some(Self { rope, range })
     }
 
     #[must_use]
-    pub fn new_snapped(rope: &'a Rope, anchor_gap_index: usize, head_gap_index: usize) -> Self {
-        let range = RawRange::new_snapped(rope, anchor_gap_index, head_gap_index);
+    pub fn new_snapped(rope: &'a Rope, anchor_char_offset: usize, head_char_offset: usize) -> Self {
+        let range = RawRange::new_snapped(rope, anchor_char_offset, head_char_offset);
         Self { rope, range }
     }
 
@@ -463,14 +467,22 @@ pub struct RangeMut<'a> {
 
 impl<'a> RangeMut<'a> {
     #[must_use]
-    pub fn new(rope: &'a mut Rope, anchor_gap_index: usize, head_gap_index: usize) -> Option<Self> {
-        let range = RawRange::new(rope, anchor_gap_index, head_gap_index)?;
+    pub fn new(
+        rope: &'a mut Rope,
+        anchor_char_offset: usize,
+        head_char_offset: usize,
+    ) -> Option<Self> {
+        let range = RawRange::new(rope, anchor_char_offset, head_char_offset)?;
         Some(Self { rope, range })
     }
 
     #[must_use]
-    pub fn new_snapped(rope: &'a mut Rope, anchor_gap_index: usize, head_gap_index: usize) -> Self {
-        let range = RawRange::new_snapped(rope, anchor_gap_index, head_gap_index);
+    pub fn new_snapped(
+        rope: &'a mut Rope,
+        anchor_char_offset: usize,
+        head_char_offset: usize,
+    ) -> Self {
+        let range = RawRange::new_snapped(rope, anchor_char_offset, head_char_offset);
         Self { rope, range }
     }
 
