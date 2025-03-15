@@ -129,7 +129,7 @@ impl EditSeq {
     }
 
     #[must_use]
-    pub fn transform_index(&self, mut char_index: usize) -> usize {
+    pub fn transform_char_offset(&self, mut char_offset: usize) -> usize {
         let mut position = 0;
 
         for edit in &self.edits {
@@ -138,20 +138,20 @@ impl EditSeq {
                     position += n;
                 }
                 Edit::Delete(n) => {
-                    if position < char_index {
-                        char_index -= n;
+                    if position < char_offset {
+                        char_offset -= n;
                     }
                 }
                 Edit::Insert(s) => {
-                    if position <= char_index {
-                        char_index += s.chars().count();
+                    if position <= char_offset {
+                        char_offset += s.chars().count();
                     }
                     position += s.chars().count();
                 }
             }
         }
 
-        char_index
+        char_offset
     }
 
     pub fn invert(&self, rope: &Rope) -> Result<Self, Error> {
@@ -320,7 +320,7 @@ mod tests {
         assert_eq!(rope, Rope::from("world!!!!"));
 
         assert_eq!(rope.get_char(index), None);
-        index = edits.transform_index(index);
+        index = edits.transform_char_offset(index);
         assert_eq!(index, 2);
         assert_eq!(rope.char(index), 'r');
 
@@ -332,7 +332,7 @@ mod tests {
         assert_eq!(rope, Rope::from("the whole world!!!!"));
 
         assert_eq!(rope.char(index), 'e');
-        index = edits.transform_index(index);
+        index = edits.transform_char_offset(index);
         assert_eq!(index, 12);
         assert_eq!(rope.char(index), 'r');
     }

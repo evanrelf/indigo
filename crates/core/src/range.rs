@@ -266,8 +266,8 @@ impl RawRange {
             .insert_impl(string);
         *self = Self::new_snapped(
             rope,
-            edits.transform_index(self.anchor.char_offset()),
-            edits.transform_index(self.head.char_offset()),
+            edits.transform_char_offset(self.anchor.char_offset()),
+            edits.transform_char_offset(self.head.char_offset()),
         );
     }
 
@@ -281,9 +281,9 @@ impl RawRange {
             .unwrap()
             .delete_before_impl(count);
         self.anchor
-            .set_char_offset(edits.transform_index(self.anchor.char_offset()));
+            .set_char_offset(edits.transform_char_offset(self.anchor.char_offset()));
         self.head
-            .set_char_offset(edits.transform_index(self.head.char_offset()));
+            .set_char_offset(edits.transform_char_offset(self.head.char_offset()));
     }
 
     pub fn delete(&mut self, rope: &mut Rope) {
@@ -296,9 +296,9 @@ impl RawRange {
         edits.retain_rest(rope);
         edits.apply(rope).unwrap();
         self.anchor
-            .set_char_offset(edits.transform_index(self.anchor.char_offset()));
+            .set_char_offset(edits.transform_char_offset(self.anchor.char_offset()));
         self.head
-            .set_char_offset(edits.transform_index(self.head.char_offset()));
+            .set_char_offset(edits.transform_char_offset(self.head.char_offset()));
         debug_assert_eq!(self.anchor, self.head);
         self.extend_right(rope, NonZeroUsize::MIN);
     }
@@ -313,9 +313,9 @@ impl RawRange {
             .unwrap()
             .delete_after_impl(count);
         self.anchor
-            .set_char_offset(edits.transform_index(self.anchor.char_offset()));
+            .set_char_offset(edits.transform_char_offset(self.anchor.char_offset()));
         self.head
-            .set_char_offset(edits.transform_index(self.head.char_offset()));
+            .set_char_offset(edits.transform_char_offset(self.head.char_offset()));
     }
 
     pub(crate) fn assert_valid(&self, rope: &Rope) {

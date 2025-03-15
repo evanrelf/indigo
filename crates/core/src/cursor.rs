@@ -147,7 +147,7 @@ where
         edits.insert(string);
         edits.retain_rest(self.text());
         edits.apply(self.text_mut()).unwrap();
-        self.char_offset = edits.transform_index(self.char_offset);
+        self.char_offset = edits.transform_char_offset(self.char_offset);
         // If the inserted string combines with existing text, the cursor would be left in the
         // middle of a new grapheme, so we must snap after inserting.
         // Makes `insert_changes_grapheme_boundary` test pass.
@@ -176,7 +176,7 @@ where
         edits.delete(self.char_offset - char_offset);
         edits.retain_rest(self.text());
         edits.apply(self.text_mut()).unwrap();
-        self.char_offset = edits.transform_index(self.char_offset);
+        self.char_offset = edits.transform_char_offset(self.char_offset);
         edits
     }
 
@@ -199,7 +199,7 @@ where
         edits.delete(char_offset - self.char_offset);
         edits.retain_rest(self.text());
         edits.apply(self.text_mut()).unwrap();
-        self.char_offset = edits.transform_index(self.char_offset);
+        self.char_offset = edits.transform_char_offset(self.char_offset);
         edits
     }
 }
