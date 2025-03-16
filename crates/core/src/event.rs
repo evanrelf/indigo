@@ -111,7 +111,7 @@ pub fn handle_event_command(editor: &mut Editor, event: &Event) -> Vec<Action> {
             _ if is(key, "<bs>") => vec![Action::DeleteBefore],
             _ if is(key, "<ret>") => vec![
                 Action::EnterNormalMode,
-                Action::RunCommand(command_mode.rope().to_string()),
+                Action::RunCommand(command_mode.text().to_string()),
             ],
             (m, KeyCode::Char(c)) if m.is_empty() => vec![Action::InsertChar(c)],
             _ if is(key, "<c-c>") => vec![Action::Exit(1)],

@@ -48,14 +48,14 @@ pub struct InsertMode {}
 
 #[derive(Default)]
 pub struct CommandMode {
-    rope: Rope,
+    text: Rope,
     cursor: Cursor<()>,
 }
 
 impl CommandMode {
     #[must_use]
-    pub fn rope(&self) -> &Rope {
-        &self.rope
+    pub fn text(&self) -> &Rope {
+        &self.text
     }
 
     #[must_use]
@@ -65,14 +65,14 @@ impl CommandMode {
 
     pub fn with_cursor<T>(&self, func: impl Fn(&Cursor<&Rope>) -> T) -> T {
         let cursor = Cursor::new(self.cursor.char_offset())
-            .try_with(&self.rope)
+            .try_with(&self.text)
             .unwrap();
         func(&cursor)
     }
 
     pub fn with_cursor_mut<T>(&mut self, func: impl Fn(&mut Cursor<&mut Rope>) -> T) -> T {
         let mut cursor = Cursor::new(self.cursor.char_offset())
-            .try_with(&mut self.rope)
+            .try_with(&mut self.text)
             .unwrap();
         let result = func(&mut cursor);
         cursor.assert_valid();
