@@ -189,6 +189,14 @@ impl WrapMut for WMut {
     type WrapMut<'a, T: ?Sized + 'a> = &'a mut T;
 }
 
+/// Turn `T` into `Box<T>`
+pub struct WBox;
+
+/// Turn `T` into `Box<T>`
+impl WrapMut for WBox {
+    type WrapMut<'a, T: ?Sized + 'a> = Box<T>;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -229,6 +237,11 @@ mod tests {
     fn test_wrap_mut() {
         let mut xs: [usize; 3] = [1, 2, 3];
         let _: <WMut as WrapMut>::WrapMut<'_, [usize]> = &mut xs;
+
+        let xs: [usize; 3] = [1, 2, 3];
+        let mut bxs: <WBox as WrapMut>::WrapMut<'_, [usize]> = Box::new(xs);
+        bxs[1] = 42;
+        assert_eq!(bxs[1], 42);
 
         let mut x: TestDeref<Vec<usize>> = TestDeref { value: vec![42] };
         let r: <WMut as WrapMut>::WrapMut<'_, TestDeref<Vec<usize>>> = &mut x;
