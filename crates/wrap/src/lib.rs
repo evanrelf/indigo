@@ -1,38 +1,109 @@
 /*!
 
+Ever wish you could make a wrapper type generic?
+
+```compile_fail
+struct Foo<W>(W<usize>);
+type SharedFoo = Foo<Arc>; // would become `Foo(Arc<usize>)`
+```
+
+Ever wish Rust had "mutability generics"?
+
+```compile_fail
+struct Bar<'a, M>(&'a M usize);
+type BarRef<'a> = Bar<'a, ref>; // would become `Bar<'a>(&'a usize)`
+type BarMut<'a> = Bar<'a, mut>; // would become `Bar<'a>(&'a mut usize)`
+```
+
+Well please keep wishing, because I want those too...
+
+But in the meantime, this crate provides a hack to emulate this behavior in userland!
+
+```no_run
+# use indigo_wrap::*;
+struct Foo<'a, W: Wrap>(W::Wrap<'a, usize>);
+type SharedFoo = Foo<'static, WArc>; // actually becomes `Foo(Arc<usize>)`
+```
+
+```no_run
+# use indigo_wrap::*;
+struct Bar<'a, W: WrapRef>(W::WrapRef<'a, usize>);
+type BarRef<'a> = Bar<'a, WRef>; // actually becomes `Bar<'a>(&'a usize)`
+type BarMut<'a> = Bar<'a, WMut>; // actually becomes `Bar<'a>(&'a mut usize)`
+```
+
+This is a limited form of higher-kinded types, like you find in languages like Haskell.
+
 ## Example
 
-```rust
-use indigo_wrap::*;
+Here's an example of a cursor type like you might find in a simple text editor. It maintains its own
+state, but whether or not it's valid is in relation to the string it's an offset in.
+
+<details>
+
+<summary>Show code</summary>
+
+```no_run
+# use indigo_wrap::*;
+type RawCursor = CursorView<'static, WPhantomData>;
+
+type Cursor<'a> = CursorView<'a, WRef>;
+
+type CursorMut<'a> = CursorView<'a, WMut>;
 
 // Use the weakest trait bound `Wrap` when defining the type to perform wrapping:
-struct Cursor<'a, W: Wrap> {
+struct CursorView<'a, W: Wrap> {
     text: W::Wrap<'a, String>,
     byte_offset: usize,
 }
 
 // ...or when you don't need to touch the wrapped type:
+impl<W: Wrap> CursorView<'_, W> {
+    fn reset(&mut self) {
+        self.byte_offset = 0;
+    }
+}
 
 // Use the stronger trait bound `WrapRef` if you need to read values:
-impl<W: WrapRef> Cursor<'_, W> {
+impl<W: WrapRef> CursorView<'_, W> {
     fn is_empty(&self) -> bool {
+        // We can call `String::is_empty` transparently because `WrapRef` implies `Deref`:
         self.text.is_empty()
     }
 }
 
 // Use the strongest trait bound `WrapMut` if you need to mutate values:
-impl<W: WrapMut> Cursor<'_, W> {
+impl<W: WrapMut> CursorView<'_, W> {
     fn insert(&mut self, text: &str) {
+        // We can call `String::insert_str` transparently because `WrapMut` implies `DerefMut`:
         self.text.insert_str(self.byte_offset, text);
     }
 }
 ```
+
+</details>
+
+There are certain operations you can perform:
+
+- ...without seeing the string (e.g. `RawCursor` could safely set `byte_offset` to 0).
+- ...while holding an immutable reference (e.g. checking whether the string is empty).
+- ...while holding a mutable reference (e.g. inserting text into the string at the byte offset).
+
+These are captured with the `Wrap`, `WrapRef`, and `WrapMut` traits respectively.
+
+If you write generic `impl` blocks with trait bounds on the wrapper type (e.g.
+`impl<W: WrapMut> CursorView<'_, W>`) rather than hardcoding it (e.g. `impl CursorView<'_, WMut>`),
+you get a kind of subtyping/inheritance thing where the most powerful versions of your type (e.g.
+`CursorMut`) have all the methods available, but your weaker versions (e.g. `Cursor`) only get the
+subset that apply to their wrapped type.
 
 */
 
 use std::{
     marker::PhantomData,
     ops::{Deref, DerefMut},
+    rc::Rc,
+    sync::Arc,
 };
 
 /// Generic type wrappers
@@ -46,11 +117,11 @@ pub trait Wrap {
     type Wrap<'a, T: ?Sized + 'a>;
 }
 
-/// Phantom type (`PhantomData<T>`)
-pub struct Phantom;
+/// Turn `T` into `PhantomData<T>`
+pub struct WPhantomData;
 
 /// Turn `T` into `PhantomData<T>`
-impl Wrap for Phantom {
+impl Wrap for WPhantomData {
     type Wrap<'a, T: ?Sized + 'a> = PhantomData<T>;
 }
 
@@ -70,12 +141,28 @@ pub trait WrapRef {
     type WrapRef<'a, T: ?Sized + 'a>: Deref<Target = T>;
 }
 
-/// Immutable/shared reference (`&'a T`)
-pub struct Immutable;
+/// Turn `T` into `PhantomData<T>`
+pub struct WRef;
 
 /// Turn `T` into `&'a T`
-impl WrapRef for Immutable {
+impl WrapRef for WRef {
     type WrapRef<'a, T: ?Sized + 'a> = &'a T;
+}
+
+/// Turn `T` into `Rc<T>`
+pub struct WRc;
+
+/// Turn `T` into `Rc<T>`
+impl WrapRef for WRc {
+    type WrapRef<'a, T: ?Sized + 'a> = Rc<T>;
+}
+
+/// Turn `T` into `Arc<T>`
+pub struct WArc;
+
+/// Turn `T` into `Arc<T>`
+impl WrapRef for WArc {
+    type WrapRef<'a, T: ?Sized + 'a> = Arc<T>;
 }
 
 /// Anything implementing [`WrapMut`] trivially implements [`WrapRef`].
@@ -94,11 +181,11 @@ pub trait WrapMut {
     type WrapMut<'a, T: ?Sized + 'a>: Deref<Target = T> + DerefMut;
 }
 
-/// Mutable/exclusive reference (`&'a mut T`)
-pub struct Mutable;
+/// Turn `T` into `&'a mut T`
+pub struct WMut;
 
 /// Turn `T` into `&'a mut T`
-impl WrapMut for Mutable {
+impl WrapMut for WMut {
     type WrapMut<'a, T: ?Sized + 'a> = &'a mut T;
 }
 
@@ -111,35 +198,35 @@ mod tests {
     // everything type checks.
 
     fn test_wrap_phantom() {
-        let _: <Phantom as Wrap>::Wrap<'_, Infallible> = PhantomData;
+        let _: <WPhantomData as Wrap>::Wrap<'_, Infallible> = PhantomData;
     }
 
     fn test_wrap_immutable() {
         let xs: [usize; 3] = [1, 2, 3];
-        let _: <Immutable as Wrap>::Wrap<'_, [usize]> = &xs;
+        let _: <WRef as Wrap>::Wrap<'_, [usize]> = &xs;
     }
 
     fn test_wrap_mutable() {
         let mut xs: [usize; 3] = [1, 2, 3];
-        let _: <Mutable as Wrap>::Wrap<'_, [usize]> = &mut xs;
+        let _: <WMut as Wrap>::Wrap<'_, [usize]> = &mut xs;
     }
 
     fn test_wrap_deref() {
         let mut x: TestDeref<Vec<usize>> = TestDeref { value: vec![42] };
-        let r: <Mutable as Wrap>::Wrap<'_, TestDeref<Vec<usize>>> = &mut x;
+        let r: <WMut as Wrap>::Wrap<'_, TestDeref<Vec<usize>>> = &mut x;
         assert_eq!(r.value[0], 42);
     }
 
     #[test]
     fn test_ref_immutable() {
         let xs: [usize; 3] = [1, 2, 3];
-        let _: <Immutable as WrapRef>::WrapRef<'_, [usize]> = &xs;
+        let _: <WRef as WrapRef>::WrapRef<'_, [usize]> = &xs;
     }
 
     #[test]
     fn test_mut_mutable() {
         let mut xs: [usize; 3] = [1, 2, 3];
-        let _: <Mutable as WrapMut>::WrapMut<'_, [usize]> = &mut xs;
+        let _: <WMut as WrapMut>::WrapMut<'_, [usize]> = &mut xs;
     }
 
     struct TestDeref<T> {
@@ -149,14 +236,14 @@ mod tests {
     #[test]
     fn test_ref_deref() {
         let mut x: TestDeref<Vec<usize>> = TestDeref { value: vec![42] };
-        let r: <Immutable as WrapRef>::WrapRef<'_, TestDeref<Vec<usize>>> = &mut x;
+        let r: <WRef as WrapRef>::WrapRef<'_, TestDeref<Vec<usize>>> = &mut x;
         assert_eq!(r.value[0], 42);
     }
 
     #[test]
     fn test_mut_deref_mut() {
         let mut x: TestDeref<Vec<usize>> = TestDeref { value: vec![42] };
-        let r: <Mutable as WrapMut>::WrapMut<'_, TestDeref<Vec<usize>>> = &mut x;
+        let r: <WMut as WrapMut>::WrapMut<'_, TestDeref<Vec<usize>>> = &mut x;
         r.value[0] = 69;
     }
 }
