@@ -5,6 +5,7 @@ use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::Rope;
 use std::num::NonZeroUsize;
 
+#[derive(Default)]
 pub struct CursorState {
     pub char_offset: usize,
 }
@@ -24,7 +25,7 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
             return None;
         }
         let cursor_view = CursorView { text, state };
-        cursor_view.assert_valid();
+        cursor_view.assert_invariants();
         Some(cursor_view)
     }
 
@@ -38,7 +39,7 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         self.state.char_offset == self.text.len_chars()
     }
 
-    pub(crate) fn assert_valid(&self) {
+    pub(crate) fn assert_invariants(&self) {
         assert!(
             self.state.char_offset <= self.text.len_chars(),
             "Cursor beyond end of text (char_offset={})",
@@ -81,7 +82,7 @@ impl<W: WrapMut> CursorView<'_, W> {
 
     #[must_use]
     pub(crate) fn insert_impl(&mut self, string: &str) -> EditSeq {
-        self.assert_valid();
+        self.assert_invariants();
         let mut edits = EditSeq::new();
         edits.retain(self.state.char_offset);
         edits.insert(string);
@@ -103,7 +104,7 @@ impl<W: WrapMut> CursorView<'_, W> {
 
     #[must_use]
     pub(crate) fn delete_before_impl(&mut self, count: NonZeroUsize) -> EditSeq {
-        self.assert_valid();
+        self.assert_invariants();
         let mut char_offset = self.state.char_offset;
         for _ in 1..=count.get() {
             match self.text.prev_grapheme_boundary(char_offset) {
@@ -126,7 +127,7 @@ impl<W: WrapMut> CursorView<'_, W> {
 
     #[must_use]
     pub(crate) fn delete_after_impl(&mut self, count: NonZeroUsize) -> EditSeq {
-        self.assert_valid();
+        self.assert_invariants();
         let mut char_offset = self.state.char_offset;
         for _ in 1..=count.get() {
             match self.text.next_grapheme_boundary(char_offset) {
@@ -157,7 +158,7 @@ mod tests {
         let mut state = CursorState { char_offset: 0 };
         let mut cursor = CursorMut::new(&mut text, &mut state).unwrap();
         cursor.insert("e");
-        cursor.assert_valid();
+        cursor.assert_invariants();
     }
 
     #[test]
@@ -199,7 +200,7 @@ mod tests {
                 }
                 let actions = actions.join("\n  ");
                 let _ = actions;
-                cursor.assert_valid();
+                cursor.assert_invariants();
             }
             Ok(())
         });

@@ -1,4 +1,4 @@
-use crate::cursor::Cursor;
+use crate::cursor_view::{Cursor, CursorMut, CursorState};
 use ropey::Rope;
 use std::num::NonZeroUsize;
 
@@ -49,7 +49,7 @@ pub struct InsertMode {}
 #[derive(Default)]
 pub struct CommandMode {
     text: Rope,
-    cursor: Cursor<()>,
+    cursor: CursorState,
 }
 
 impl CommandMode {
@@ -59,24 +59,22 @@ impl CommandMode {
     }
 
     #[must_use]
-    pub fn cursor(&self) -> &Cursor<()> {
-        &self.cursor
+    pub fn cursor(&self) -> Cursor {
+        Cursor::new(&self.text, &self.cursor).unwrap()
     }
 
-    pub fn with_cursor<T>(&self, func: impl Fn(&Cursor<&Rope>) -> T) -> T {
-        let cursor = Cursor::new(self.cursor.char_offset())
-            .try_with(&self.text)
-            .unwrap();
-        func(&cursor)
-    }
+    // TODO: Use `cursor_mut` instead of `with_cursor_mut`, run `assert_invariants` _before_ handing
+    // out view? In theory less correct, in practice any invariant violations will be caught on the
+    // next pass.
+    // #[must_use]
+    // pub fn cursor_mut(&mut self) -> CursorMut {
+    //     CursorMut::new(&mut self.text, &mut self.cursor).unwrap()
+    // }
 
-    pub fn with_cursor_mut<T>(&mut self, func: impl Fn(&mut Cursor<&mut Rope>) -> T) -> T {
-        let mut cursor = Cursor::new(self.cursor.char_offset())
-            .try_with(&mut self.text)
-            .unwrap();
+    pub fn with_cursor_mut<T>(&mut self, func: impl Fn(&mut CursorMut) -> T) -> T {
+        let mut cursor = CursorMut::new(&mut self.text, &mut self.cursor).unwrap();
         let result = func(&mut cursor);
-        cursor.assert_valid();
-        self.cursor = cursor.without();
+        cursor.assert_invariants();
         result
     }
 }
