@@ -7,7 +7,7 @@ use std::cmp::min;
 
 #[derive(Default)]
 pub struct Buffer {
-    rope: Rope,
+    text: Rope,
     range: RawRange,
     vertical_scroll: usize,
 }
@@ -19,8 +19,8 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn rope(&self) -> &Rope {
-        &self.rope
+    pub fn text(&self) -> &Rope {
+        &self.text
     }
 
     #[must_use]
@@ -30,7 +30,7 @@ impl Buffer {
 
     pub fn with_range<T>(&self, func: impl Fn(&Range) -> T) -> T {
         let range = Range::new(
-            &self.rope,
+            &self.text,
             self.range.anchor.char_offset(),
             self.range.head.char_offset(),
         )
@@ -40,7 +40,7 @@ impl Buffer {
 
     pub fn with_range_mut<T>(&mut self, func: impl Fn(&mut RangeMut) -> T) -> T {
         let mut range = RangeMut::new(
-            &mut self.rope,
+            &mut self.text,
             self.range.anchor.char_offset(),
             self.range.head.char_offset(),
         )
@@ -57,16 +57,16 @@ impl Buffer {
     }
 
     pub fn scroll_to(&mut self, line: usize) {
-        let last_line = self.rope().len_lines_indigo().saturating_sub(1);
+        let last_line = self.text().len_lines_indigo().saturating_sub(1);
         self.vertical_scroll = min(line, last_line);
     }
 }
 
 impl From<Rope> for Buffer {
-    fn from(rope: Rope) -> Self {
+    fn from(text: Rope) -> Self {
         Self {
-            range: RawRange::new_snapped(&rope, 0, 0),
-            rope,
+            range: RawRange::new_snapped(&text, 0, 0),
+            text,
             ..Self::default()
         }
     }

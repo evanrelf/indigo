@@ -89,7 +89,7 @@ fn handle_event_normal(
                 };
                 if let Some(Err(index) | Ok(index)) = position_to_char_index(
                     position,
-                    editor.buffer.rope(),
+                    editor.buffer.text(),
                     editor.buffer.vertical_scroll(),
                     areas.text,
                 ) {
@@ -105,7 +105,7 @@ fn handle_event_normal(
                 };
                 if let Some(Err(index) | Ok(index)) = position_to_char_index(
                     position,
-                    editor.buffer.rope(),
+                    editor.buffer.text(),
                     editor.buffer.vertical_scroll(),
                     areas.text,
                 ) {

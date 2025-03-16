@@ -17,7 +17,7 @@ impl Widget for Tildes<'_> {
     fn render(self, area: Rect, surface: &mut Surface) {
         let buffer = &self.editor.buffer;
 
-        let total_lines = buffer.rope().len_lines_indigo();
+        let total_lines = buffer.text().len_lines_indigo();
 
         for (i, row) in area.rows().enumerate() {
             let line_number = i + buffer.vertical_scroll() + 1;

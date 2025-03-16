@@ -21,7 +21,7 @@ impl Widget for Selection<'_> {
     fn render(self, area: Rect, surface: &mut Surface) {
         let buffer = &self.editor.buffer;
 
-        let rope = buffer.rope();
+        let rope = buffer.text();
 
         let range = buffer.range();
 

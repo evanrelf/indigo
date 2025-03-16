@@ -25,11 +25,11 @@ impl Widget for StatusBar<'_> {
 
         let char_length = range.char_length();
 
-        let grapheme_length = range.grapheme_length(buffer.rope());
+        let grapheme_length = range.grapheme_length(buffer.text());
 
-        let display_width = range.rope_slice(buffer.rope()).display_width();
+        let display_width = range.rope_slice(buffer.text()).display_width();
 
-        let eof = range.head() == buffer.rope().len_chars();
+        let eof = range.head() == buffer.text().len_chars();
 
         let mode = match self.editor.mode {
             Mode::Normal(_) => "normal",

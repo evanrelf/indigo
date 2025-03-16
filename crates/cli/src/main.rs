@@ -48,7 +48,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
     editor
         .buffer
-        .rope()
+        .text()
         .write_to(io::LineWriter::new(io::stdout()))?;
 
     if let Some(exit_code) = editor.exit {
