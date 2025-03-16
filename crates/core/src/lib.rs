@@ -11,6 +11,7 @@ pub mod mode;
 pub mod ot;
 pub mod prelude;
 pub mod range;
+pub mod range_view;
 pub mod rope;
 
 #[cfg(feature = "tracy-alloc")]

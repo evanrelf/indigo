@@ -58,7 +58,6 @@ impl CommandMode {
         &self.text
     }
 
-    #[must_use]
     pub fn cursor(&self) -> Cursor {
         Cursor::new(&self.text, &self.cursor).unwrap()
     }

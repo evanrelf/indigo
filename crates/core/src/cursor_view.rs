@@ -10,6 +10,7 @@ pub struct CursorState {
     pub char_offset: usize,
 }
 
+#[must_use]
 pub struct CursorView<'a, W: Wrap> {
     text: W::Wrap<'a, Rope>,
     state: W::Wrap<'a, CursorState>,
