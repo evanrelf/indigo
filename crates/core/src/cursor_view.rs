@@ -5,7 +5,7 @@ use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::Rope;
 use std::num::NonZeroUsize;
 
-#[derive(Default)]
+#[derive(Clone, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct CursorState {
     pub char_offset: usize,
 }
