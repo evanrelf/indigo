@@ -197,51 +197,39 @@ mod tests {
     // Functions are not marked with the `#[test]` attribute because they're just to verify
     // everything type checks.
 
-    fn test_wrap_phantom() {
-        let _: <WPhantomData as Wrap>::Wrap<'_, Infallible> = PhantomData;
+    struct TestDeref<T> {
+        value: T,
     }
 
-    fn test_wrap_immutable() {
+    fn test_wrap() {
+        let _: <WPhantomData as Wrap>::Wrap<'_, Infallible> = PhantomData;
+
         let xs: [usize; 3] = [1, 2, 3];
         let _: <WRef as Wrap>::Wrap<'_, [usize]> = &xs;
-    }
 
-    fn test_wrap_mutable() {
         let mut xs: [usize; 3] = [1, 2, 3];
         let _: <WMut as Wrap>::Wrap<'_, [usize]> = &mut xs;
-    }
 
-    fn test_wrap_deref() {
         let mut x: TestDeref<Vec<usize>> = TestDeref { value: vec![42] };
         let r: <WMut as Wrap>::Wrap<'_, TestDeref<Vec<usize>>> = &mut x;
         assert_eq!(r.value[0], 42);
     }
 
     #[test]
-    fn test_ref_immutable() {
+    fn test_wrap_ref() {
         let xs: [usize; 3] = [1, 2, 3];
         let _: <WRef as WrapRef>::WrapRef<'_, [usize]> = &xs;
-    }
 
-    #[test]
-    fn test_mut_mutable() {
-        let mut xs: [usize; 3] = [1, 2, 3];
-        let _: <WMut as WrapMut>::WrapMut<'_, [usize]> = &mut xs;
-    }
-
-    struct TestDeref<T> {
-        value: T,
-    }
-
-    #[test]
-    fn test_ref_deref() {
         let mut x: TestDeref<Vec<usize>> = TestDeref { value: vec![42] };
         let r: <WRef as WrapRef>::WrapRef<'_, TestDeref<Vec<usize>>> = &mut x;
         assert_eq!(r.value[0], 42);
     }
 
     #[test]
-    fn test_mut_deref_mut() {
+    fn test_wrap_mut() {
+        let mut xs: [usize; 3] = [1, 2, 3];
+        let _: <WMut as WrapMut>::WrapMut<'_, [usize]> = &mut xs;
+
         let mut x: TestDeref<Vec<usize>> = TestDeref { value: vec![42] };
         let r: <WMut as WrapMut>::WrapMut<'_, TestDeref<Vec<usize>>> = &mut x;
         r.value[0] = 69;
