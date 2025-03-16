@@ -401,6 +401,7 @@ dependencies = [
  "arbitrary",
  "arbtest",
  "flagset",
+ "indigo-wrap",
  "ropey",
  "thiserror",
  "tracing",
@@ -435,6 +436,10 @@ dependencies = [
  "tracing-subscriber",
  "tracing-tracy",
 ]
+
+[[package]]
+name = "indigo-wrap"
+version = "0.0.0"
 
 [[package]]
 name = "indoc"

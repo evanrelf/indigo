@@ -18,6 +18,7 @@ indigo-cli = { path = "crates/cli/" }
 indigo-core = { path = "crates/core/" }
 indigo-sim = { path = "crates/sim/" }
 indigo-tui = { path = "crates/tui/" }
+indigo-wrap = { path = "crates/wrap/" }
 ratatui = "0.29.0"
 ropey = "1.6.1"
 thiserror = "2.0.12"

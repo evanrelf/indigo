@@ -1,0 +1,8 @@
+[package]
+name = "indigo-wrap"
+edition = "2024"
+
+[dependencies]
+
+[lints]
+workspace = true
