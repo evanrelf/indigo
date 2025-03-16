@@ -3,38 +3,29 @@
 ## Example
 
 ```rust
-use indigo_core::wrappers::*;
-use ropey::Rope;
+use indigo_wrap::*;
 
-struct CursorState {
-    char_offset: usize,
+// Use the weakest trait bound `Wrap` when defining the type to perform wrapping:
+struct Cursor<'a, W: Wrap> {
+    text: W::Wrap<'a, String>,
+    byte_offset: usize,
 }
 
-// Use the weakest trait bound `Wrap` when defining the type to perform wrapping.
-struct CursorView<'a, S: Wrap, T: Wrap = S> {
-    text: T::Wrap<'a, Rope>,
-    state: S::Wrap<'a, CursorState>,
-}
+// ...or when you don't need to touch the wrapped type:
 
-// Use the stronger trait bound `WrapRef` if you need to read values.
-impl<W: WrapRef> CursorView<'_, W> {
-    fn char_offset(&self) -> usize {
-        self.state.char_offset
+// Use the stronger trait bound `WrapRef` if you need to read values:
+impl<W: WrapRef> Cursor<'_, W> {
+    fn is_empty(&self) -> bool {
+        self.text.is_empty()
     }
 }
 
-// Use the strongest trait bound `WrapMut` if you need to mutate values.
-impl<W: WrapMut> CursorView<'_, W> {
+// Use the strongest trait bound `WrapMut` if you need to mutate values:
+impl<W: WrapMut> Cursor<'_, W> {
     fn insert(&mut self, text: &str) {
-        self.text.insert(self.state.char_offset, text);
+        self.text.insert_str(self.byte_offset, text);
     }
 }
-
-// Has `char_offset` method.
-pub type Cursor<'a> = CursorView<'a, Immutable>;
-
-// Has `char_offset` and `insert` methods.
-pub type CursorMut<'a> = CursorView<'a, Mutable>;
 ```
 
 */
