@@ -35,13 +35,13 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-/// Generic type wrappers. A limited form of higher-kinded types in Rust.
+/// Generic type wrappers
 ///
-/// This is a generalized version of `WrapRef` that doesn't require `Deref`, so you can use wrappers
-/// that may not have the type they're wrapping (e.g. `PhantomData`, `Option`, etc).
+/// This is a generalized version of [`WrapRef`] that doesn't require [`Deref`], so you can use
+/// wrappers that may not have the type they're wrapping.
 ///
-/// If your wrapper type implements `Deref`, you should implement the `WrapRef` trait instead, and
-/// you'll get a `Wrap` impl for free.
+/// If your wrapper type implements [`Deref`], you should implement the [`WrapRef`] trait instead,
+/// and you'll get a [`Wrap`] impl for free.
 pub trait Wrap {
     type Wrap<'a, T: ?Sized + 'a>;
 }
@@ -54,17 +54,18 @@ impl Wrap for Phantom {
     type Wrap<'a, T: ?Sized + 'a> = PhantomData<T>;
 }
 
-/// Anything implementing `WrapRef` trivially implements `Wrap`.
+/// Anything implementing [`WrapRef`] trivially implements [`Wrap`].
 impl<R: WrapRef> Wrap for R {
     type Wrap<'a, T: ?Sized + 'a> = R::WrapRef<'a, T>;
 }
 
-/// Generic immutable/shared reference type wrappers. A limited form of higher-kinded types in Rust.
+/// Generic immutable/shared reference type wrappers
 ///
-/// Specialized version of `Wrap` that requires `Deref`, so you can read the underlying `T` even
+/// Specialized version of `Wrap` that requires [`Deref`], so you can read the underlying `T` even
 /// if the wrapper type is polymorphic.
 ///
-/// If your wrapper type doesn't implement `Deref`, you should implement the `Wrap` trait instead.
+/// If your wrapper type doesn't implement [`Deref`], you should implement the [`Wrap`] trait
+/// instead.
 pub trait WrapRef {
     type WrapRef<'a, T: ?Sized + 'a>: Deref<Target = T>;
 }
@@ -77,18 +78,17 @@ impl WrapRef for Immutable {
     type WrapRef<'a, T: ?Sized + 'a> = &'a T;
 }
 
-/// Anything implementing `WrapMut` trivially implements `WrapRef`.
+/// Anything implementing [`WrapMut`] trivially implements [`WrapRef`].
 impl<R: WrapMut> WrapRef for R {
     type WrapRef<'a, T: ?Sized + 'a> = R::WrapMut<'a, T>;
 }
 
-/// Generic exclusive/mutable reference type wrappers. A limited form of higher-kinded types in
-/// Rust.
+/// Generic exclusive/mutable reference type wrappers
 ///
-/// Specialized version of `Wrap` that requires `DerefMut`, so you can mutate the underlying `T`
+/// Specialized version of [`Wrap`] that requires [`DerefMut`], so you can mutate the underlying `T`
 /// even if the wrapper type is polymorphic.
 ///
-/// If your wrapper type doesn't implement `DerefMut`, you should implement the `WrapRef` trait
+/// If your wrapper type doesn't implement [`DerefMut`], you should implement the [`WrapRef`] trait
 /// instead.
 pub trait WrapMut {
     type WrapMut<'a, T: ?Sized + 'a>: Deref<Target = T> + DerefMut;
