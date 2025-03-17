@@ -19,17 +19,17 @@ impl Widget for StatusBar<'_> {
 
         let range = buffer.range();
 
-        let anchor = range.anchor();
+        let anchor = range.anchor().char_offset();
 
-        let head = range.head();
+        let head = range.head().char_offset();
 
         let char_length = range.char_length();
 
-        let grapheme_length = range.grapheme_length(buffer.text());
+        let grapheme_length = range.grapheme_length();
 
-        let display_width = range.rope_slice(buffer.text()).display_width();
+        let display_width = range.slice().display_width();
 
-        let eof = range.head() == buffer.text().len_chars();
+        let eof = range.is_eof();
 
         let mode = match self.editor.mode {
             Mode::Normal(_) => "normal",

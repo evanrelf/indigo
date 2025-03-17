@@ -1,5 +1,5 @@
 use crate::{
-    range::{Range, RangeMut, RawRange},
+    range_view::{Range, RangeMut, RangeState},
     rope::RopeExt as _,
 };
 use ropey::Rope;
@@ -8,7 +8,7 @@ use std::cmp::min;
 #[derive(Default)]
 pub struct Buffer {
     text: Rope,
-    range: RawRange,
+    range: RangeState,
     vertical_scroll: usize,
 }
 
@@ -23,31 +23,16 @@ impl Buffer {
         &self.text
     }
 
-    #[must_use]
-    pub fn range(&self) -> &RawRange {
-        &self.range
-    }
-
-    pub fn with_range<T>(&self, func: impl Fn(&Range) -> T) -> T {
-        let range = Range::new(
-            &self.text,
-            self.range.anchor.char_offset(),
-            self.range.head.char_offset(),
-        )
-        .unwrap();
-        func(&range)
+    pub fn range(&self) -> Range {
+        let range = Range::new(&self.text, &self.range).unwrap();
+        range.assert_invariants().unwrap();
+        range
     }
 
     pub fn with_range_mut<T>(&mut self, func: impl Fn(&mut RangeMut) -> T) -> T {
-        let mut range = RangeMut::new(
-            &mut self.text,
-            self.range.anchor.char_offset(),
-            self.range.head.char_offset(),
-        )
-        .unwrap();
+        let mut range = RangeMut::new(&mut self.text, &mut self.range).unwrap();
         let result = func(&mut range);
-        range.assert_valid();
-        self.range = range.raw().clone();
+        range.assert_invariants().unwrap();
         result
     }
 
@@ -64,9 +49,11 @@ impl Buffer {
 
 impl From<Rope> for Buffer {
     fn from(text: Rope) -> Self {
+        let mut range = RangeState::default();
+        range.snap(&text);
         Self {
-            range: RawRange::new_snapped(&text, 0, 0),
             text,
+            range,
             ..Self::default()
         }
     }

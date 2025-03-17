@@ -27,9 +27,9 @@ impl Widget for Selection<'_> {
 
         let vertical_scroll = buffer.vertical_scroll();
 
-        let start_line = rope.char_to_line(range.start());
+        let start_line = rope.char_to_line(range.start().char_offset());
 
-        let end_line = rope.char_to_line(range.end().saturating_sub(1));
+        let end_line = rope.char_to_line(range.end().char_offset().saturating_sub(1));
 
         let grapheme_area =
             |char_index| char_index_to_area(char_index, rope, vertical_scroll, area);
@@ -37,7 +37,7 @@ impl Widget for Selection<'_> {
         let line_area = |line_index| line_index_to_area(line_index, rope, vertical_scroll, area);
 
         if range.is_empty() {
-            if let Some(rect) = grapheme_area(range.head()) {
+            if let Some(rect) = grapheme_area(range.head().char_offset()) {
                 surface.set_style(rect, Style::default().bg(colors::RED));
             }
             return;
@@ -47,7 +47,7 @@ impl Widget for Selection<'_> {
             .filter_map(|line_index| line_area(line_index).map(|rect| (line_index, rect)))
         {
             if line_index == start_line {
-                if let Some(start_rect) = grapheme_area(range.start()) {
+                if let Some(start_rect) = grapheme_area(range.start().char_offset()) {
                     let delta = start_rect.x - line_rect.x;
                     line_rect.x += delta;
                     line_rect.width -= delta;
@@ -60,7 +60,7 @@ impl Widget for Selection<'_> {
                 }
             }
             if line_index == end_line {
-                if let Some(end_rect) = grapheme_area(range.end().saturating_sub(1)) {
+                if let Some(end_rect) = grapheme_area(range.end().char_offset().saturating_sub(1)) {
                     let delta = line_rect.right() - end_rect.right();
                     line_rect.width -= delta;
                 }
@@ -70,11 +70,11 @@ impl Widget for Selection<'_> {
 
         #[expect(clippy::collapsible_else_if)]
         if range.is_backward() {
-            if let Some(rect) = grapheme_area(range.head()) {
+            if let Some(rect) = grapheme_area(range.head().char_offset()) {
                 surface.set_style(rect, Style::default().bg(colors::DARK_YELLOW));
             }
         } else {
-            if let Some(rect) = grapheme_area(range.head().saturating_sub(1)) {
+            if let Some(rect) = grapheme_area(range.head().char_offset().saturating_sub(1)) {
                 surface.set_style(rect, Style::default().bg(colors::DARK_YELLOW));
             }
         }

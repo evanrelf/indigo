@@ -1,6 +1,6 @@
 pub mod action;
 pub mod buffer;
-pub mod cursor;
+// pub mod cursor;
 pub mod cursor_view;
 pub mod display_width;
 pub mod editor;
@@ -10,7 +10,7 @@ pub mod key;
 pub mod mode;
 pub mod ot;
 pub mod prelude;
-pub mod range;
+// pub mod range;
 pub mod range_view;
 pub mod rope;
 
