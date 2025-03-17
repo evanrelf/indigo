@@ -63,8 +63,6 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         text: W::WrapRef<'a, Rope>,
         state: W::WrapRef<'a, RangeState>,
     ) -> Result<Self, Error> {
-        let _ = Cursor::new(&text, &state.anchor).map_err(Error::Anchor)?;
-        let _ = Cursor::new(&text, &state.head).map_err(Error::Head)?;
         let range_view = RangeView { text, state };
         range_view.assert_invariants()?;
         Ok(range_view)

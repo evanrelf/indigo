@@ -38,11 +38,6 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         text: W::WrapRef<'a, Rope>,
         state: W::WrapRef<'a, CursorState>,
     ) -> Result<Self, Error> {
-        if !text.is_grapheme_boundary(state.char_offset) {
-            return Err(Error::NotOnGraphemeBoundary {
-                char_offset: state.char_offset,
-            });
-        }
         let cursor_view = CursorView { text, state };
         cursor_view.assert_invariants()?;
         Ok(cursor_view)
