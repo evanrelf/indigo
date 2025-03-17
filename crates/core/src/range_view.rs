@@ -2,11 +2,9 @@ use crate::{
     cursor_view::{Cursor, CursorMut, CursorState},
     rope::RopeExt as _,
 };
-use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
+use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
 use std::num::NonZeroUsize;
-
-// TODO: Re-apply attrs (`must_use`, `tracing::instrument`, etc.)
 
 #[derive(Default)]
 pub struct RangeState {
@@ -147,6 +145,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn extend_left(&mut self, count: NonZeroUsize) {
         self.head_mut().move_left(count);
         if self.anchor().char_offset() == 0 && self.head().char_offset() == 0 {
@@ -171,6 +170,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn extend_right(&mut self, count: NonZeroUsize) {
         self.head_mut().move_right(count);
         if self.is_empty() && !self.is_eof() {
@@ -210,6 +210,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn reduce(&mut self) {
         if self.is_eof() {
             return;
@@ -252,18 +253,31 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 }
 
+impl<R> TryFrom<(R, usize, usize)> for RangeView<'_, WBox>
+where
+    R: Into<Rope>,
+{
+    type Error = ();
+    fn try_from((text, anchor, head): (R, usize, usize)) -> Result<Self, Self::Error> {
+        let text = Box::new(text.into());
+        let state = Box::new(RangeState {
+            anchor: CursorState {
+                char_offset: anchor,
+            },
+            head: CursorState { char_offset: head },
+        });
+        Self::new(text, state).ok_or(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn insert_changes_grapheme_boundary() {
-        let mut text = Rope::from_str("\u{0301}"); // combining acute accent (´)
-        let mut state = RangeState {
-            anchor: CursorState { char_offset: 0 },
-            head: CursorState { char_offset: 0 },
-        };
-        let mut range = RangeMut::new(&mut text, &mut state).unwrap();
+        // combining acute accent (´)
+        let mut range = RangeView::try_from(("\u{0301}", 0, 0)).unwrap();
         range.insert("e");
         range.assert_invariants();
     }

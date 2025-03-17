@@ -1,7 +1,7 @@
 #![allow(clippy::trivially_copy_pass_by_ref)]
 
 use crate::{ot::EditSeq, rope::RopeExt as _};
-use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
+use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::Rope;
 use std::num::NonZeroUsize;
 
@@ -146,6 +146,18 @@ impl<W: WrapMut> CursorView<'_, W> {
     }
 }
 
+impl<R> TryFrom<(R, usize)> for CursorView<'_, WBox>
+where
+    R: Into<Rope>,
+{
+    type Error = ();
+    fn try_from((text, char_offset): (R, usize)) -> Result<Self, Self::Error> {
+        let text = Box::new(text.into());
+        let state = Box::new(CursorState { char_offset });
+        Self::new(text, state).ok_or(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -155,9 +167,8 @@ mod tests {
 
     #[test]
     fn insert_changes_grapheme_boundary() {
-        let mut text = Rope::from_str("\u{0301}"); // combining acute accent (´)
-        let mut state = CursorState { char_offset: 0 };
-        let mut cursor = CursorMut::new(&mut text, &mut state).unwrap();
+        // combining acute accent (´)
+        let mut cursor = CursorView::try_from(("\u{0301}", 0)).unwrap();
         cursor.insert("e");
         cursor.assert_invariants();
     }
@@ -165,14 +176,12 @@ mod tests {
     #[test]
     fn fuzz() {
         arbtest(|u| {
-            let mut text = Rope::new();
-            let mut state = CursorState {
-                char_offset: text.snap_to_grapheme_boundary(
-                    u.arbitrary::<usize>()?,
-                    *u.choose(&[SnapBias::Before, SnapBias::After])?,
-                ),
-            };
-            let mut cursor = CursorMut::new(&mut text, &mut state).unwrap();
+            let text = Rope::new();
+            let char_offset = text.snap_to_grapheme_boundary(
+                u.arbitrary::<usize>()?,
+                *u.choose(&[SnapBias::Before, SnapBias::After])?,
+            );
+            let mut cursor = CursorView::try_from((text, char_offset)).unwrap();
             let mut actions = Vec::new();
             for _ in 0..u.choose_index(100)? {
                 match u.choose_index(4)? {
