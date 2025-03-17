@@ -5,7 +5,7 @@ use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::Rope;
 use std::num::NonZeroUsize;
 
-#[derive(Clone, Default, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct CursorState {
     pub char_offset: usize,
 }
@@ -77,16 +77,16 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.insert(&char.to_string());
     }
 
-    pub fn insert(&mut self, string: &str) {
-        let _ = self.insert_impl(string);
+    pub fn insert(&mut self, text: &str) {
+        let _ = self.insert_impl(text);
     }
 
     #[must_use]
-    pub(crate) fn insert_impl(&mut self, string: &str) -> EditSeq {
+    pub(crate) fn insert_impl(&mut self, text: &str) -> EditSeq {
         self.assert_invariants();
         let mut edits = EditSeq::new();
         edits.retain(self.state.char_offset);
-        edits.insert(string);
+        edits.insert(text);
         edits.retain_rest(&self.text);
         edits.apply(&mut self.text).unwrap();
         self.state.char_offset = edits.transform_char_offset(self.state.char_offset);

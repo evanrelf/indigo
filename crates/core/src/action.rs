@@ -193,11 +193,11 @@ fn insert_char(editor: &mut Editor, char: char) {
     }
 }
 
-fn insert(editor: &mut Editor, string: &str) {
+fn insert(editor: &mut Editor, text: &str) {
     if let Mode::Command(ref mut command_mode) = editor.mode {
-        command_mode.with_cursor_mut(|cursor| cursor.insert(string));
+        command_mode.with_cursor_mut(|cursor| cursor.insert(text));
     } else {
-        editor.buffer.with_range_mut(|range| range.insert(string));
+        editor.buffer.with_range_mut(|range| range.insert(text));
         editor.mode.set_count(NonZeroUsize::MIN);
     }
 }

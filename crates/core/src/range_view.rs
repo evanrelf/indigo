@@ -1,5 +1,6 @@
 use crate::{
     cursor_view::{Cursor, CursorMut, CursorState},
+    ot::EditSeq,
     rope::RopeExt as _,
 };
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
@@ -13,6 +14,19 @@ pub struct RangeState {
 }
 
 impl RangeState {
+    pub fn snap(&mut self, text: &Rope) {
+        if self.anchor == self.head && text.len_chars() > 0 {
+            self.head.char_offset += 1;
+        }
+        if self.anchor < self.head {
+            self.anchor.char_offset = text.floor_grapheme_boundary(self.anchor.char_offset);
+            self.head.char_offset = text.ceil_grapheme_boundary(self.head.char_offset);
+        } else {
+            self.head.char_offset = text.floor_grapheme_boundary(self.head.char_offset);
+            self.anchor.char_offset = text.ceil_grapheme_boundary(self.anchor.char_offset);
+        }
+    }
+
     pub fn flip(&mut self) {
         std::mem::swap(&mut self.anchor, &mut self.head);
     }
@@ -236,20 +250,47 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.insert(&char.to_string());
     }
 
-    pub fn insert(&mut self, string: &str) {
-        todo!();
+    pub fn insert(&mut self, text: &str) {
+        let anchor = self.state.anchor.char_offset;
+        let head = self.state.head.char_offset;
+        self.reduce();
+        let edits = self.anchor_mut().insert_impl(text);
+        self.state.anchor.char_offset = edits.transform_char_offset(anchor);
+        self.state.head.char_offset = edits.transform_char_offset(head);
+        self.state.snap(&self.text);
     }
 
     pub fn delete_before(&mut self, count: NonZeroUsize) {
-        todo!();
+        let anchor = self.state.anchor.char_offset;
+        let head = self.state.head.char_offset;
+        self.reduce();
+        let edits = self.anchor_mut().delete_before_impl(count);
+        self.state.anchor.char_offset = edits.transform_char_offset(anchor);
+        self.state.head.char_offset = edits.transform_char_offset(head);
     }
 
     pub fn delete(&mut self) {
-        todo!();
+        if self.is_empty() {
+            return;
+        }
+        let mut edits = EditSeq::new();
+        edits.retain(self.start().char_offset());
+        edits.delete(self.char_length());
+        edits.retain_rest(&self.text);
+        edits.apply(&mut self.text).unwrap();
+        self.state.anchor.char_offset = edits.transform_char_offset(self.state.anchor.char_offset);
+        self.state.head.char_offset = edits.transform_char_offset(self.state.head.char_offset);
+        debug_assert_eq!(self.state.anchor, self.state.head);
+        self.extend_right(NonZeroUsize::MIN);
     }
 
     pub fn delete_after(&mut self, count: NonZeroUsize) {
-        todo!();
+        let anchor = self.state.anchor.char_offset;
+        let head = self.state.head.char_offset;
+        self.reduce();
+        let edits = self.head_mut().delete_after_impl(count);
+        self.state.anchor.char_offset = edits.transform_char_offset(anchor);
+        self.state.head.char_offset = edits.transform_char_offset(head);
     }
 }
 
@@ -277,7 +318,13 @@ mod tests {
     #[test]
     fn insert_changes_grapheme_boundary() {
         // combining acute accent (´)
-        let mut range = RangeView::try_from(("\u{0301}", 0, 0)).unwrap();
+        let mut text = Rope::from("\u{0301}");
+        let mut state = RangeState {
+            anchor: CursorState { char_offset: 0 },
+            head: CursorState { char_offset: 0 },
+        };
+        state.snap(&text);
+        let mut range = RangeMut::new(&mut text, &mut state).unwrap();
         range.insert("e");
         range.assert_invariants();
     }
