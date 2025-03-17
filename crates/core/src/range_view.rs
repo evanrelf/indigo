@@ -1,11 +1,27 @@
 use crate::{
-    cursor_view::{Cursor, CursorMut, CursorState},
+    cursor_view::{self, Cursor, CursorMut, CursorState},
     ot::EditSeq,
     rope::RopeExt as _,
 };
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
 use std::num::NonZeroUsize;
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("Empty but not at EOF (anchor={anchor}, head={head})")]
+    EmptyAndNotEof { anchor: usize, head: usize },
+
+    #[error("Reduced but not facing forward (anchor={anchor}, head={head})")]
+    ReducedAndBackward { anchor: usize, head: usize },
+
+    #[error("Error from anchor")]
+    Anchor(#[source] cursor_view::Error),
+
+    #[error("Error from head")]
+    Head(#[source] cursor_view::Error),
+}
 
 #[derive(Default)]
 pub struct RangeState {
@@ -27,8 +43,8 @@ impl RangeState {
         }
     }
 
-    pub fn flip(&mut self) {
-        std::mem::swap(&mut self.anchor, &mut self.head);
+    fn both(&mut self) -> (&mut CursorState, &mut CursorState) {
+        (&mut self.anchor, &mut self.head)
     }
 }
 
@@ -43,17 +59,15 @@ pub type Range<'a> = RangeView<'a, WRef>;
 pub type RangeMut<'a> = RangeView<'a, WMut>;
 
 impl<'a, W: WrapRef> RangeView<'a, W> {
-    pub fn new(text: W::WrapRef<'a, Rope>, state: W::WrapRef<'a, RangeState>) -> Option<Self> {
-        let _ = Cursor::new(&text, &state.anchor)?;
-        let _ = Cursor::new(&text, &state.head)?;
+    pub fn new(
+        text: W::WrapRef<'a, Rope>,
+        state: W::WrapRef<'a, RangeState>,
+    ) -> Result<Self, Error> {
+        let _ = Cursor::new(&text, &state.anchor).map_err(Error::Anchor)?;
+        let _ = Cursor::new(&text, &state.head).map_err(Error::Head)?;
         let range_view = RangeView { text, state };
-        // TODO: Validate things without panicking. `assert_invariants` will panic here instead of
-        // short circuiting with a `None`. I should rename `assert_invariants` and make it return a
-        // `Result` so it doubles as 1) validation in constructors like this, and 2) an assert when
-        // unwrapped. Can use `thiserror`! Then `CursorView::new` can delegate the grapheme boundary
-        // check to its own validator function.
-        range_view.assert_invariants();
-        Some(range_view)
+        range_view.assert_invariants()?;
+        Ok(range_view)
     }
 
     pub fn slice(&self) -> RopeSlice {
@@ -116,21 +130,22 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         !self.is_forward()
     }
 
-    pub(crate) fn assert_invariants(&self) {
-        self.anchor().assert_invariants();
-        self.head().assert_invariants();
-        debug_assert!(
-            !self.is_empty() || self.is_eof(),
-            "Range empty but not at EOF (anchor={}, head={})",
-            self.anchor().char_offset(),
-            self.head().char_offset(),
-        );
-        debug_assert!(
-            self.is_forward() || self.grapheme_length() > 1,
-            "Range reduced but not facing forward (anchor={}, head={})",
-            self.anchor().char_offset(),
-            self.head().char_offset(),
-        );
+    pub(crate) fn assert_invariants(&self) -> Result<(), Error> {
+        self.anchor().assert_invariants().map_err(Error::Anchor)?;
+        self.head().assert_invariants().map_err(Error::Head)?;
+        if self.is_empty() && !self.is_eof() {
+            return Err(Error::EmptyAndNotEof {
+                anchor: self.state.anchor.char_offset,
+                head: self.state.head.char_offset,
+            });
+        }
+        if self.is_backward() && self.grapheme_length() <= 1 {
+            return Err(Error::ReducedAndBackward {
+                anchor: self.state.anchor.char_offset,
+                head: self.state.head.char_offset,
+            });
+        }
+        Ok(())
     }
 }
 
@@ -209,7 +224,8 @@ impl<W: WrapMut> RangeView<'_, W> {
         if self.is_forward() && self.grapheme_length() == 1 {
             return;
         }
-        self.state.flip();
+        let (anchor, cursor) = self.state.both();
+        std::mem::swap(anchor, cursor);
     }
 
     pub fn flip_forward(&mut self) {
@@ -298,7 +314,7 @@ impl<R> TryFrom<(R, usize, usize)> for RangeView<'_, WBox>
 where
     R: Into<Rope>,
 {
-    type Error = ();
+    type Error = Error;
     fn try_from((text, anchor, head): (R, usize, usize)) -> Result<Self, Self::Error> {
         let text = Box::new(text.into());
         let state = Box::new(RangeState {
@@ -307,7 +323,7 @@ where
             },
             head: CursorState { char_offset: head },
         });
-        Self::new(text, state).ok_or(())
+        Self::new(text, state)
     }
 }
 
@@ -326,6 +342,6 @@ mod tests {
         state.snap(&text);
         let mut range = RangeMut::new(&mut text, &mut state).unwrap();
         range.insert("e");
-        range.assert_invariants();
+        range.assert_invariants().unwrap();
     }
 }

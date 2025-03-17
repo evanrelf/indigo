@@ -59,21 +59,14 @@ impl CommandMode {
     }
 
     pub fn cursor(&self) -> Cursor {
-        Cursor::new(&self.text, &self.cursor).unwrap()
+        let cursor = Cursor::new(&self.text, &self.cursor).unwrap();
+        cursor.assert_invariants().unwrap();
+        cursor
     }
 
-    // TODO: Use `cursor_mut` instead of `with_cursor_mut`, run `assert_invariants` _before_ handing
-    // out view? In theory less correct, in practice any invariant violations will be caught on the
-    // next pass.
-    // #[must_use]
-    // pub fn cursor_mut(&mut self) -> CursorMut {
-    //     CursorMut::new(&mut self.text, &mut self.cursor).unwrap()
-    // }
-
-    pub fn with_cursor_mut<T>(&mut self, func: impl Fn(&mut CursorMut) -> T) -> T {
-        let mut cursor = CursorMut::new(&mut self.text, &mut self.cursor).unwrap();
-        let result = func(&mut cursor);
-        cursor.assert_invariants();
-        result
+    pub fn cursor_mut(&mut self) -> CursorMut {
+        let cursor = CursorMut::new(&mut self.text, &mut self.cursor).unwrap();
+        cursor.assert_invariants().unwrap();
+        cursor
     }
 }

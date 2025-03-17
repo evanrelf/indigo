@@ -184,7 +184,7 @@ fn scroll_full_page_down(editor: &mut Editor) {
 
 fn insert_char(editor: &mut Editor, char: char) {
     if let Mode::Command(ref mut command_mode) = editor.mode {
-        command_mode.with_cursor_mut(|cursor| cursor.insert_char(char));
+        command_mode.cursor_mut().insert_char(char);
     } else {
         editor
             .buffer
@@ -195,7 +195,7 @@ fn insert_char(editor: &mut Editor, char: char) {
 
 fn insert(editor: &mut Editor, text: &str) {
     if let Mode::Command(ref mut command_mode) = editor.mode {
-        command_mode.with_cursor_mut(|cursor| cursor.insert(text));
+        command_mode.cursor_mut().insert(text);
     } else {
         editor.buffer.with_range_mut(|range| range.insert(text));
         editor.mode.set_count(NonZeroUsize::MIN);
@@ -208,7 +208,7 @@ fn delete_before(editor: &mut Editor) {
         if command_mode.cursor().char_offset() == 0 {
             enter_normal_mode(editor);
         } else {
-            command_mode.with_cursor_mut(|cursor| cursor.delete_before(count));
+            command_mode.cursor_mut().delete_before(count);
         }
     } else {
         editor

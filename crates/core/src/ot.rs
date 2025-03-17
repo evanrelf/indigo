@@ -2,23 +2,21 @@ use ropey::Rope;
 use std::{ops::Deref, rc::Rc};
 use thiserror::Error;
 
-// TODO: Add backtraces once this issue is resolved: https://github.com/dtolnay/thiserror/issues/390
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("length mismatch: {left} != {right}")]
+    #[error("Length mismatch: {left} != {right}")]
     LengthMismatch { left: usize, right: usize },
 
-    #[error("char offset {char_offset} exceeds rope length {len_chars}")]
+    #[error("Char offset {char_offset} exceeds rope length {len_chars}")]
     CharOffsetPastEof {
         char_offset: usize,
         len_chars: usize,
     },
 
-    #[error(transparent)]
-    RopeyError(#[from] ropey::Error),
+    #[error("Error from rope")]
+    Rope(#[from] ropey::Error),
 }
 
-// TODO: More efficient encoding?
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct EditSeq {
     edits: Vec<Edit>,
@@ -245,7 +243,6 @@ impl Extend<Edit> for EditSeq {
     }
 }
 
-// TODO: More efficient encoding?
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Edit {
     Retain(usize),
@@ -281,8 +278,6 @@ impl Edit {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // TODO: Write more tests for `EditSeq`
 
     #[test]
     fn edit_seq_push() {

@@ -4,6 +4,19 @@ use crate::{ot::EditSeq, rope::RopeExt as _};
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::Rope;
 use std::num::NonZeroUsize;
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("Char offset {char_offset} exceeds EOF at {eof_offset}")]
+    ExceedsEof {
+        char_offset: usize,
+        eof_offset: usize,
+    },
+
+    #[error("Char offset {char_offset} does not lie on grapheme boundary")]
+    NotOnGraphemeBoundary { char_offset: usize },
+}
 
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct CursorState {
@@ -21,13 +34,18 @@ pub type Cursor<'a> = CursorView<'a, WRef>;
 pub type CursorMut<'a> = CursorView<'a, WMut>;
 
 impl<'a, W: WrapRef> CursorView<'a, W> {
-    pub fn new(text: W::WrapRef<'a, Rope>, state: W::WrapRef<'a, CursorState>) -> Option<Self> {
+    pub fn new(
+        text: W::WrapRef<'a, Rope>,
+        state: W::WrapRef<'a, CursorState>,
+    ) -> Result<Self, Error> {
         if !text.is_grapheme_boundary(state.char_offset) {
-            return None;
+            return Err(Error::NotOnGraphemeBoundary {
+                char_offset: state.char_offset,
+            });
         }
         let cursor_view = CursorView { text, state };
-        cursor_view.assert_invariants();
-        Some(cursor_view)
+        cursor_view.assert_invariants()?;
+        Ok(cursor_view)
     }
 
     #[must_use]
@@ -40,17 +58,19 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         self.state.char_offset == self.text.len_chars()
     }
 
-    pub(crate) fn assert_invariants(&self) {
-        assert!(
-            self.state.char_offset <= self.text.len_chars(),
-            "Cursor beyond end of text (char_offset={})",
-            self.state.char_offset
-        );
-        assert!(
-            self.text.is_grapheme_boundary(self.state.char_offset),
-            "Cursor not on a grapheme boundary (char_offset={})",
-            self.state.char_offset
-        );
+    pub(crate) fn assert_invariants(&self) -> Result<(), Error> {
+        if self.state.char_offset > self.text.len_chars() {
+            return Err(Error::ExceedsEof {
+                char_offset: self.state.char_offset,
+                eof_offset: self.text.len_chars(),
+            });
+        }
+        if !self.text.is_grapheme_boundary(self.state.char_offset) {
+            return Err(Error::NotOnGraphemeBoundary {
+                char_offset: self.state.char_offset,
+            });
+        }
+        Ok(())
     }
 }
 
@@ -83,7 +103,7 @@ impl<W: WrapMut> CursorView<'_, W> {
 
     #[must_use]
     pub(crate) fn insert_impl(&mut self, text: &str) -> EditSeq {
-        self.assert_invariants();
+        self.assert_invariants().unwrap();
         let mut edits = EditSeq::new();
         edits.retain(self.state.char_offset);
         edits.insert(text);
@@ -105,7 +125,7 @@ impl<W: WrapMut> CursorView<'_, W> {
 
     #[must_use]
     pub(crate) fn delete_before_impl(&mut self, count: NonZeroUsize) -> EditSeq {
-        self.assert_invariants();
+        self.assert_invariants().unwrap();
         let mut char_offset = self.state.char_offset;
         for _ in 1..=count.get() {
             match self.text.prev_grapheme_boundary(char_offset) {
@@ -128,7 +148,7 @@ impl<W: WrapMut> CursorView<'_, W> {
 
     #[must_use]
     pub(crate) fn delete_after_impl(&mut self, count: NonZeroUsize) -> EditSeq {
-        self.assert_invariants();
+        self.assert_invariants().unwrap();
         let mut char_offset = self.state.char_offset;
         for _ in 1..=count.get() {
             match self.text.next_grapheme_boundary(char_offset) {
@@ -150,11 +170,11 @@ impl<R> TryFrom<(R, usize)> for CursorView<'_, WBox>
 where
     R: Into<Rope>,
 {
-    type Error = ();
+    type Error = Error;
     fn try_from((text, char_offset): (R, usize)) -> Result<Self, Self::Error> {
         let text = Box::new(text.into());
         let state = Box::new(CursorState { char_offset });
-        Self::new(text, state).ok_or(())
+        Self::new(text, state)
     }
 }
 
@@ -170,7 +190,7 @@ mod tests {
         // combining acute accent (´)
         let mut cursor = CursorView::try_from(("\u{0301}", 0)).unwrap();
         cursor.insert("e");
-        cursor.assert_invariants();
+        cursor.assert_invariants().unwrap();
     }
 
     #[test]
@@ -210,7 +230,7 @@ mod tests {
                 }
                 let actions = actions.join("\n  ");
                 let _ = actions;
-                cursor.assert_invariants();
+                cursor.assert_invariants().unwrap();
             }
             Ok(())
         });
