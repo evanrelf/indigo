@@ -1,5 +1,5 @@
 use crate::{
-    range_view::{Range, RangeMut, RangeState},
+    range::{Range, RangeMut, RangeState},
     rope::RopeExt as _,
 };
 use ropey::Rope;

@@ -1,4 +1,4 @@
-use crate::cursor_view::{Cursor, CursorMut, CursorState};
+use crate::cursor::{Cursor, CursorMut, CursorState};
 use ropey::Rope;
 use std::num::NonZeroUsize;
 

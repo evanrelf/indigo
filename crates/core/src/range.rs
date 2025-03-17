@@ -1,5 +1,5 @@
 use crate::{
-    cursor_view::{self, Cursor, CursorMut, CursorState},
+    cursor::{self, Cursor, CursorMut, CursorState},
     ot::EditSeq,
     rope::RopeExt as _,
 };
@@ -17,10 +17,10 @@ pub enum Error {
     ReducedAndBackward { anchor: usize, head: usize },
 
     #[error("Error from anchor")]
-    Anchor(#[source] cursor_view::Error),
+    Anchor(#[source] cursor::Error),
 
     #[error("Error from head")]
-    Head(#[source] cursor_view::Error),
+    Head(#[source] cursor::Error),
 }
 
 #[derive(Default)]
