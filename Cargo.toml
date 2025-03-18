@@ -13,7 +13,6 @@ downcast-rs = "2.0.1"
 etcetera = "0.10.0"
 fastrand = "2.3.0"
 flagset = "0.4.6"
-indigo-btree = { path = "crates/btree/" }
 indigo-cli = { path = "crates/cli/" }
 indigo-core = { path = "crates/core/" }
 indigo-tui = { path = "crates/tui/" }
