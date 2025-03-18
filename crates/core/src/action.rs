@@ -11,7 +11,7 @@ use arbitrary::Arbitrary;
 // rope!
 
 #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Action {
     UpdateCount(NonZeroUsize),
     EnterNormalMode,
