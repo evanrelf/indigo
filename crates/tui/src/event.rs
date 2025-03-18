@@ -4,7 +4,7 @@ use crate::{
     terminal::Terminal,
 };
 use anyhow::anyhow;
-use indigo_core::{action::Action, prelude::*};
+use indigo_core::prelude::*;
 use ratatui::{
     crossterm::event::{KeyCode, KeyModifiers, MouseButton, MouseEventKind},
     layout::Position,
