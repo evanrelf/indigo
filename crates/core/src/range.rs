@@ -250,10 +250,10 @@ impl<W: WrapMut> RangeView<'_, W> {
             return;
         }
         if self.is_forward() {
-            self.state.anchor = self.state.head.clone();
+            self.state.anchor.char_offset = self.state.head.char_offset;
             self.anchor_mut().move_left(NonZeroUsize::MIN);
         } else {
-            self.state.anchor = self.state.head.clone();
+            self.state.anchor.char_offset = self.state.head.char_offset;
             self.head_mut().move_right(NonZeroUsize::MIN);
         }
         let grapheme_length = self.grapheme_length();
