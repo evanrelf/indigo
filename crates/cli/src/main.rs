@@ -1,8 +1,5 @@
 use clap::Parser as _;
-use indigo_core::{
-    event::{Event, handle_event},
-    prelude::*,
-};
+use indigo_core::prelude::*;
 use std::{io, process::ExitCode};
 use tracing_subscriber::EnvFilter;
 
@@ -43,7 +40,7 @@ fn main() -> anyhow::Result<ExitCode> {
     let mut editor = Editor::from(Buffer::from(rope));
 
     for key in args.keys {
-        handle_event(&mut editor, &Event::Key(key));
+        editor.trigger(key);
     }
 
     editor

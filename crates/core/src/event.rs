@@ -15,6 +15,12 @@ pub enum Event {
     Key(Key),
 }
 
+impl From<Key> for Event {
+    fn from(key: Key) -> Self {
+        Self::Key(key)
+    }
+}
+
 #[expect(clippy::trivially_copy_pass_by_ref)]
 #[must_use]
 fn is(x: &Key, y: &str) -> bool {
@@ -26,6 +32,7 @@ fn is(x: &Key, y: &str) -> bool {
 }
 
 #[tracing::instrument(skip_all)]
+#[must_use]
 pub fn handle_event(editor: &mut Editor, event: &Event) -> Vec<Action> {
     match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, event),
