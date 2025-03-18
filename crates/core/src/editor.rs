@@ -31,10 +31,22 @@ impl Editor {
         self.event_sender.send(event.into()).unwrap();
     }
 
-    pub fn flush(&mut self) {
-        while let Ok(event) = self.event_receiver.try_recv() {
+    pub fn tick(&mut self) {
+        let event = self.event_receiver.recv().unwrap();
+        self.trigger(event);
+    }
+
+    pub fn try_tick(&mut self) -> bool {
+        if let Ok(event) = self.event_receiver.try_recv() {
             self.trigger(event);
+            true
+        } else {
+            false
         }
+    }
+
+    pub fn flush(&mut self) {
+        while self.try_tick() {}
     }
 }
 
