@@ -168,7 +168,7 @@ fn handle_event_command(
 
 pub fn event_t2i(event: &TerminalEvent) -> anyhow::Result<IndigoEvent> {
     match event {
-        TerminalEvent::Key(key_event) => Ok(IndigoEvent::Key(key_t2i(*key_event)?)),
+        TerminalEvent::Key(key_event) => Ok(IndigoEvent::KeyInput(key_t2i(*key_event)?)),
         _ => Err(anyhow!(
             "Unsupported crossterm->indigo event conversion: {event:?}"
         )),
@@ -178,6 +178,6 @@ pub fn event_t2i(event: &TerminalEvent) -> anyhow::Result<IndigoEvent> {
 #[must_use]
 pub fn event_i2t(event: &IndigoEvent) -> TerminalEvent {
     match event {
-        IndigoEvent::Key(key_event) => TerminalEvent::Key(key_i2t(*key_event)),
+        IndigoEvent::KeyInput(key_event) => TerminalEvent::Key(key_i2t(*key_event)),
     }
 }
