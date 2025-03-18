@@ -100,12 +100,78 @@ fn init_tracing_subscriber(args: &Args, xdg: &Xdg) -> anyhow::Result<()> {
     Ok(())
 }
 
+struct Times {
+    name: &'static str,
+    enabled: bool,
+    histogram: Histogram<u16>,
+    instant: Option<Instant>,
+}
+
+impl Times {
+    fn new(name: &'static str, enabled: bool) -> Self {
+        Self {
+            name,
+            enabled,
+            histogram: Histogram::<u16>::new(3).unwrap(),
+            instant: None,
+        }
+    }
+
+    fn start(&mut self) {
+        if !self.enabled {
+            return;
+        }
+        self.instant = Some(Instant::now());
+    }
+
+    fn stop(&mut self) {
+        if !self.enabled {
+            return;
+        }
+        let Some(instant) = self.instant else {
+            return;
+        };
+        if let Ok(time) = u64::try_from(instant.elapsed().as_micros()) {
+            let _ = self.histogram.record(time);
+        }
+        self.instant = None;
+    }
+
+    fn print_stats(&self) {
+        if !self.enabled {
+            return;
+        }
+
+        println!("=== {} ===", self.name);
+
+        println!("{} frames", self.histogram.len());
+
+        let p50_micros = self.histogram.value_at_quantile(0.50);
+        let p50_fps = 1_000_000 / max(1, p50_micros);
+        println!("P50:   {p50_micros:>8}μs {p50_fps:>6}fps");
+
+        let p90_micros = self.histogram.value_at_quantile(0.90);
+        let p90_fps = 1_000_000 / max(1, p90_micros);
+        println!("P90:   {p90_micros:>8}μs {p90_fps:>6}fps");
+
+        let p999_micros = self.histogram.value_at_quantile(0.999);
+        let p999_fps = 1_000_000 / max(1, p999_micros);
+        println!("P99.9: {p999_micros:>8}μs {p999_fps:>6}fps");
+
+        let max_micros = self.histogram.max();
+        let max_fps = 1_000_000 / max(1, max_micros);
+        println!("Worst: {max_micros:>8}μs {max_fps:>6}fps");
+
+        println!();
+    }
+}
+
 fn run(args: &Args, terminal: &mut Terminal, mut editor: Editor) -> anyhow::Result<ExitCode> {
     let mut areas = Areas::default();
 
-    let mut frame_times = Histogram::<u16>::new(3)?;
-
-    let mut frame = Instant::now();
+    let mut frame = Times::new("full frame", args.stats);
+    let mut render = Times::new("just render", args.stats);
+    let mut event_read = Times::new("just event read", args.stats);
 
     // Using a non-continuous frame to omit time spent blocking on reading the next event. It makes
     // up the vast majority of time in the loop.
@@ -113,6 +179,7 @@ fn run(args: &Args, terminal: &mut Terminal, mut editor: Editor) -> anyhow::Resu
     let mut tracy_frame = Some(tracing_tracy::client::non_continuous_frame!("frame"));
 
     let exit_code = loop {
+        render.start();
         terminal.draw(|frame| {
             let _span = tracing::trace_span!("terminal draw").entered();
             let area = frame.area();
@@ -121,22 +188,18 @@ fn run(args: &Args, terminal: &mut Terminal, mut editor: Editor) -> anyhow::Resu
             editor.height = usize::from(areas.text.height);
             widgets::Editor::new(&editor).render(area, surface);
         })?;
-
-        if args.stats {
-            if let Ok(frame_time) = u64::try_from(frame.elapsed().as_micros()) {
-                let _ = frame_times.record(frame_time);
-            }
-        }
+        render.stop();
+        frame.stop();
 
         #[cfg(feature = "tracy")]
         let _ = tracy_frame.take();
 
         let event = loop {
-            if args.stats {
-                frame = Instant::now();
-            }
+            frame.start();
+            event_read.start();
             let event = crossterm::event::read()?;
             if !should_skip_event(&event) {
+                event_read.stop();
                 break event;
             }
         };
@@ -153,25 +216,9 @@ fn run(args: &Args, terminal: &mut Terminal, mut editor: Editor) -> anyhow::Resu
 
     let _ = terminal::exit();
 
-    if args.stats {
-        println!("{} frames", frame_times.len());
-
-        let p50_micros = frame_times.value_at_quantile(0.50);
-        let p50_fps = 1_000_000 / max(1, p50_micros);
-        println!("P50:   {p50_micros:>6}μs {p50_fps:>4}fps");
-
-        let p90_micros = frame_times.value_at_quantile(0.90);
-        let p90_fps = 1_000_000 / max(1, p90_micros);
-        println!("P90:   {p90_micros:>6}μs {p90_fps:>4}fps");
-
-        let p999_micros = frame_times.value_at_quantile(0.999);
-        let p999_fps = 1_000_000 / max(1, p999_micros);
-        println!("P99.9: {p999_micros:>6}μs {p999_fps:>4}fps");
-
-        let max_micros = frame_times.max();
-        let max_fps = 1_000_000 / max(1, max_micros);
-        println!("Worst: {max_micros:>6}μs {max_fps:>4}fps");
-    }
+    frame.print_stats();
+    render.print_stats();
+    event_read.print_stats();
 
     Ok(exit_code)
 }
