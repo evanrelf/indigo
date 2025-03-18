@@ -1,6 +1,6 @@
 use clap::Parser as _;
 use indigo_core::prelude::*;
-use std::{io, process::ExitCode};
+use std::{io, process::ExitCode, sync::Arc};
 use tracing_subscriber::EnvFilter;
 
 #[derive(Debug, clap::Parser)]
@@ -9,7 +9,7 @@ struct Args {
     keys: Keys,
 
     #[clap(long, env = "INDIGO_LOG", default_value_t)]
-    log_filter: String,
+    log_filter: Arc<str>,
 }
 
 fn main() -> anyhow::Result<ExitCode> {

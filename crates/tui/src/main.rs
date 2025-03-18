@@ -10,14 +10,14 @@ use indigo_tui::{
     widgets,
 };
 use ratatui::{crossterm, widgets::Widget};
-use std::{fs, io, process::ExitCode};
+use std::{fs, io, process::ExitCode, sync::Arc};
 
 #[derive(Debug, clap::Parser)]
 struct Args {
     file: Option<Utf8PathBuf>,
 
     #[clap(long, env = "INDIGO_LOG", default_value_t)]
-    log_filter: String,
+    log_filter: Arc<str>,
 }
 
 fn main() -> anyhow::Result<ExitCode> {
