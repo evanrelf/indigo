@@ -4,7 +4,7 @@ use crate::{
     key::{Key, KeyCode},
     mode::Mode,
 };
-use std::num::NonZeroUsize;
+use std::{borrow::Cow, num::NonZeroUsize, rc::Rc};
 
 #[cfg(any(feature = "arbitrary", test))]
 use arbitrary::Arbitrary;
@@ -12,13 +12,13 @@ use arbitrary::Arbitrary;
 #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Event {
-    Call(Vec<Action>),
+    Call(Rc<[Action]>),
     KeyInput(Key),
 }
 
 impl From<&[Action]> for Event {
     fn from(actions: &[Action]) -> Self {
-        Self::Call(Vec::from(actions))
+        Self::Call(Rc::from(actions))
     }
 }
 
@@ -40,7 +40,7 @@ fn is(x: &Key, y: &str) -> bool {
 
 #[tracing::instrument(skip_all)]
 #[must_use]
-pub fn handle_event(editor: &mut Editor, event: &Event) -> Vec<Action> {
+pub fn handle_event(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
     match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, event),
         Mode::Insert(_) => handle_event_insert(editor, event),
@@ -49,7 +49,7 @@ pub fn handle_event(editor: &mut Editor, event: &Event) -> Vec<Action> {
 }
 
 #[tracing::instrument(skip_all)]
-pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> Vec<Action> {
+pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
     let Mode::Normal(ref mut normal_mode) = editor.mode else {
         unreachable!()
     };
@@ -63,76 +63,76 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> Vec<Action> {
     };
 
     match event {
-        Event::Call(actions) => actions.clone(),
+        Event::Call(actions) => Rc::clone(actions),
         Event::KeyInput(key) => match (key.modifiers, key.code) {
             (m, KeyCode::Char(c @ '0'..='9')) if m.is_empty() => {
-                vec![Action::UpdateCount(updated_count(c))]
+                Rc::from([Action::UpdateCount(updated_count(c))])
             }
-            _ if is(key, "<esc>") => vec![Action::EnterNormalMode],
-            _ if is(key, ":") => vec![Action::EnterCommandMode],
-            _ if is(key, "i") => vec![Action::EnterInsertMode],
+            _ if is(key, "<esc>") => Rc::from([Action::EnterNormalMode]),
+            _ if is(key, ":") => Rc::from([Action::EnterCommandMode]),
+            _ if is(key, "i") => Rc::from([Action::EnterInsertMode]),
             // TODO: Add `a` for entering insert mode with the cursor moved to the right.
-            _ if is(key, "h") => vec![Action::MoveLeft],
-            _ if is(key, "l") => vec![Action::MoveRight],
-            _ if is(key, "H") => vec![Action::ExtendLeft],
-            _ if is(key, "L") => vec![Action::ExtendRight],
-            _ if is(key, ";") => vec![Action::Reduce],
-            _ if is(key, "<a-;>") => vec![Action::Flip],
-            _ if is(key, "<a-s-;>") => vec![Action::FlipForward],
-            _ if is(key, "d") => vec![Action::Delete],
-            _ if is(key, "<c-u>") => vec![Action::ScrollHalfPageUp],
-            _ if is(key, "<c-d>") => vec![Action::ScrollHalfPageDown],
-            _ if is(key, "<c-b>") => vec![Action::ScrollFullPageUp],
-            _ if is(key, "<c-f>") => vec![Action::ScrollFullPageDown],
-            _ if is(key, "<c-c>") => vec![Action::Exit(1)],
-            _ => vec![],
+            _ if is(key, "h") => Rc::from([Action::MoveLeft]),
+            _ if is(key, "l") => Rc::from([Action::MoveRight]),
+            _ if is(key, "H") => Rc::from([Action::ExtendLeft]),
+            _ if is(key, "L") => Rc::from([Action::ExtendRight]),
+            _ if is(key, ";") => Rc::from([Action::Reduce]),
+            _ if is(key, "<a-;>") => Rc::from([Action::Flip]),
+            _ if is(key, "<a-s-;>") => Rc::from([Action::FlipForward]),
+            _ if is(key, "d") => Rc::from([Action::Delete]),
+            _ if is(key, "<c-u>") => Rc::from([Action::ScrollHalfPageUp]),
+            _ if is(key, "<c-d>") => Rc::from([Action::ScrollHalfPageDown]),
+            _ if is(key, "<c-b>") => Rc::from([Action::ScrollFullPageUp]),
+            _ if is(key, "<c-f>") => Rc::from([Action::ScrollFullPageDown]),
+            _ if is(key, "<c-c>") => Rc::from([Action::Exit(1)]),
+            _ => Rc::from([]),
         },
     }
 }
 
 #[tracing::instrument(skip_all)]
-pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> Vec<Action> {
+pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
     let Mode::Insert(ref _insert_mode) = editor.mode else {
         unreachable!()
     };
 
     match event {
-        Event::Call(actions) => actions.clone(),
+        Event::Call(actions) => Rc::clone(actions),
         Event::KeyInput(key) => match (key.modifiers, key.code) {
-            _ if is(key, "<esc>") => vec![Action::EnterNormalMode],
-            _ if is(key, "<bs>") => vec![Action::DeleteBefore],
-            _ if is(key, "<del>") => vec![Action::DeleteAfter],
-            (m, KeyCode::Char(c)) if m.is_empty() => vec![Action::InsertChar(c)],
-            _ if is(key, "<ret>") => vec![Action::InsertChar('\n')],
-            _ if is(key, "<tab>") => vec![Action::InsertChar('\t')],
-            _ if is(key, "<c-u>") => vec![Action::ScrollHalfPageUp],
-            _ if is(key, "<c-d>") => vec![Action::ScrollHalfPageDown],
-            _ if is(key, "<c-b>") => vec![Action::ScrollFullPageUp],
-            _ if is(key, "<c-f>") => vec![Action::ScrollFullPageDown],
-            _ if is(key, "<c-c>") => vec![Action::Exit(1)],
-            _ => vec![],
+            _ if is(key, "<esc>") => Rc::from([Action::EnterNormalMode]),
+            _ if is(key, "<bs>") => Rc::from([Action::DeleteBefore]),
+            _ if is(key, "<del>") => Rc::from([Action::DeleteAfter]),
+            (m, KeyCode::Char(c)) if m.is_empty() => Rc::from([Action::InsertChar(c)]),
+            _ if is(key, "<ret>") => Rc::from([Action::InsertChar('\n')]),
+            _ if is(key, "<tab>") => Rc::from([Action::InsertChar('\t')]),
+            _ if is(key, "<c-u>") => Rc::from([Action::ScrollHalfPageUp]),
+            _ if is(key, "<c-d>") => Rc::from([Action::ScrollHalfPageDown]),
+            _ if is(key, "<c-b>") => Rc::from([Action::ScrollFullPageUp]),
+            _ if is(key, "<c-f>") => Rc::from([Action::ScrollFullPageDown]),
+            _ if is(key, "<c-c>") => Rc::from([Action::Exit(1)]),
+            _ => Rc::from([]),
         },
     }
 }
 
 #[tracing::instrument(skip_all)]
-pub fn handle_event_command(editor: &mut Editor, event: &Event) -> Vec<Action> {
+pub fn handle_event_command(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
     let Mode::Command(ref mut command_mode) = editor.mode else {
         unreachable!()
     };
 
     match event {
-        Event::Call(actions) => actions.clone(),
+        Event::Call(actions) => Rc::clone(actions),
         Event::KeyInput(key) => match (key.modifiers, key.code) {
-            _ if is(key, "<esc>") => vec![Action::EnterNormalMode],
-            _ if is(key, "<bs>") => vec![Action::DeleteBefore],
-            _ if is(key, "<ret>") => vec![
+            _ if is(key, "<esc>") => Rc::from([Action::EnterNormalMode]),
+            _ if is(key, "<bs>") => Rc::from([Action::DeleteBefore]),
+            _ if is(key, "<ret>") => Rc::from([
                 Action::EnterNormalMode,
-                Action::RunCommand(command_mode.text().to_string()),
-            ],
-            (m, KeyCode::Char(c)) if m.is_empty() => vec![Action::InsertChar(c)],
-            _ if is(key, "<c-c>") => vec![Action::Exit(1)],
-            _ => vec![],
+                Action::RunCommand(Rc::from(Cow::<str>::from(command_mode.text()))),
+            ]),
+            (m, KeyCode::Char(c)) if m.is_empty() => Rc::from([Action::InsertChar(c)]),
+            _ if is(key, "<c-c>") => Rc::from([Action::Exit(1)]),
+            _ => Rc::from([]),
         },
     }
 }

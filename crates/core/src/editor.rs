@@ -22,7 +22,7 @@ impl Editor {
     }
 
     pub fn trigger(&mut self, event: impl Into<Event>) {
-        for action in handle_event(self, &event.into()) {
+        for action in handle_event(self, &event.into()).iter() {
             handle_action(self, action);
         }
     }

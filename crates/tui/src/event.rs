@@ -9,6 +9,7 @@ use ratatui::{
     crossterm::event::{KeyCode, KeyModifiers, MouseButton, MouseEventKind},
     layout::Position,
 };
+use std::rc::Rc;
 
 pub type IndigoEvent = indigo_core::event::Event;
 
@@ -43,7 +44,7 @@ pub fn handle_event(
     if let Ok(event) = event_t2i(&event) {
         let actions = indigo_core::event::handle_event(editor, &event);
         if !actions.is_empty() {
-            for action in actions {
+            for action in actions.iter() {
                 indigo_core::action::handle_action(editor, action);
             }
             return Ok(());
@@ -56,7 +57,7 @@ pub fn handle_event(
         Mode::Command(_) => handle_event_command(editor, terminal, areas, event)?,
     };
 
-    for action in actions {
+    for action in actions.iter() {
         indigo_core::action::handle_action(editor, action);
     }
 
@@ -69,18 +70,18 @@ fn handle_event_normal(
     terminal: &mut Terminal,
     areas: Areas,
     event: TerminalEvent,
-) -> anyhow::Result<Vec<Action>> {
+) -> anyhow::Result<Rc<[Action]>> {
     let action = match event {
         TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => {
                 terminal.clear()?;
-                vec![]
+                Rc::from([])
             }
-            _ => vec![],
+            _ => Rc::from([]),
         },
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => vec![Action::ScrollUp],
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => vec![Action::ScrollDown],
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => Rc::from([Action::ScrollUp]),
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => Rc::from([Action::ScrollDown]),
             // TODO: Kakoune allows creating new selection ranges by control clicking. Would be
             // awesome if Indigo could do the same, but also support control dragging to create
             // vertical lines of selection ranges, akin to Vim's visual block mode. Could snap to
@@ -96,9 +97,9 @@ fn handle_event_normal(
                     editor.buffer.vertical_scroll(),
                     areas.text,
                 ) {
-                    vec![Action::MoveTo(index)]
+                    Rc::from([Action::MoveTo(index)])
                 } else {
-                    vec![]
+                    Rc::from([])
                 }
             }
             (KeyModifiers::NONE, MouseEventKind::Down(MouseButton::Right)) => {
@@ -112,14 +113,14 @@ fn handle_event_normal(
                     editor.buffer.vertical_scroll(),
                     areas.text,
                 ) {
-                    vec![Action::ExtendTo(index)]
+                    Rc::from([Action::ExtendTo(index)])
                 } else {
-                    vec![]
+                    Rc::from([])
                 }
             }
-            _ => vec![],
+            _ => Rc::from([]),
         },
-        _ => vec![],
+        _ => Rc::from([]),
     };
 
     Ok(action)
@@ -130,22 +131,22 @@ fn handle_event_insert(
     terminal: &mut Terminal,
     _areas: Areas,
     event: TerminalEvent,
-) -> anyhow::Result<Vec<Action>> {
+) -> anyhow::Result<Rc<[Action]>> {
     let action = match event {
         TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => {
                 terminal.clear()?;
-                vec![]
+                Rc::from([])
             }
-            _ => vec![],
+            _ => Rc::from([]),
         },
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => vec![Action::ScrollUp],
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => vec![Action::ScrollDown],
-            _ => vec![],
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => Rc::from([Action::ScrollUp]),
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => Rc::from([Action::ScrollDown]),
+            _ => Rc::from([]),
         },
-        TerminalEvent::Paste(string) => vec![Action::Insert(string)],
-        _ => vec![],
+        TerminalEvent::Paste(text) => Rc::from([Action::Insert(Rc::from(text))]),
+        _ => Rc::from([]),
     };
 
     Ok(action)
@@ -157,10 +158,10 @@ fn handle_event_command(
     _terminal: &mut Terminal,
     _areas: Areas,
     event: TerminalEvent,
-) -> anyhow::Result<Vec<Action>> {
+) -> anyhow::Result<Rc<[Action]>> {
     let action = match event {
-        TerminalEvent::Paste(string) => vec![Action::Insert(string)],
-        _ => vec![],
+        TerminalEvent::Paste(text) => Rc::from([Action::Insert(Rc::from(text))]),
+        _ => Rc::from([]),
     };
 
     Ok(action)

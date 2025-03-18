@@ -2,7 +2,7 @@ use crate::{
     editor::Editor,
     mode::{CommandMode, InsertMode, Mode, NormalMode},
 };
-use std::num::NonZeroUsize;
+use std::{num::NonZeroUsize, rc::Rc};
 
 #[cfg(any(feature = "arbitrary", test))]
 use arbitrary::Arbitrary;
@@ -33,26 +33,26 @@ pub enum Action {
     ScrollFullPageUp,
     ScrollFullPageDown,
     InsertChar(char),
-    Insert(String),
+    Insert(Rc<str>),
     DeleteBefore,
     Delete,
     DeleteAfter,
-    RunCommand(String),
+    RunCommand(Rc<str>),
     Exit(u8),
 }
 
-pub fn handle_action(editor: &mut Editor, action: Action) {
+pub fn handle_action(editor: &mut Editor, action: &Action) {
     match action {
-        Action::UpdateCount(count) => update_count(editor, count),
+        Action::UpdateCount(count) => update_count(editor, *count),
         Action::EnterNormalMode => enter_normal_mode(editor),
         Action::EnterInsertMode => enter_insert_mode(editor),
         Action::EnterCommandMode => enter_command_mode(editor),
         Action::MoveLeft => move_left(editor),
         Action::MoveRight => move_right(editor),
-        Action::MoveTo(index) => move_to(editor, index),
+        Action::MoveTo(index) => move_to(editor, *index),
         Action::ExtendLeft => extend_left(editor),
         Action::ExtendRight => extend_right(editor),
-        Action::ExtendTo(index) => extend_to(editor, index),
+        Action::ExtendTo(index) => extend_to(editor, *index),
         Action::Flip => flip(editor),
         Action::FlipForward => flip_forward(editor),
         Action::Reduce => reduce(editor),
@@ -62,13 +62,13 @@ pub fn handle_action(editor: &mut Editor, action: Action) {
         Action::ScrollHalfPageDown => scroll_half_page_down(editor),
         Action::ScrollFullPageUp => scroll_full_page_up(editor),
         Action::ScrollFullPageDown => scroll_full_page_down(editor),
-        Action::InsertChar(char) => insert_char(editor, char),
-        Action::Insert(string) => insert(editor, &string),
+        Action::InsertChar(char) => insert_char(editor, *char),
+        Action::Insert(text) => insert(editor, text),
         Action::DeleteBefore => delete_before(editor),
         Action::Delete => delete(editor),
         Action::DeleteAfter => delete_after(editor),
-        Action::RunCommand(command) => run_command(editor, &command),
-        Action::Exit(exit_code) => exit(editor, exit_code),
+        Action::RunCommand(command) => run_command(editor, command),
+        Action::Exit(exit_code) => exit(editor, *exit_code),
     }
 }
 
