@@ -3,8 +3,38 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-cargo run \
-  --profile profile \
-  --bin indigo-tui \
-  --features tracy \
-  -- --log-filter trace "$@"
+run_tracy() {
+  cargo run \
+    --profile profile \
+    --package indigo-tui \
+    --features tracy \
+    -- \
+      --stats \
+      --log-filter trace \
+      "$@"
+}
+
+run_samply() {
+  cargo build \
+    --profile profile \
+    --package indigo-tui
+
+  samply record -- ./target/profile/indigo-tui \
+    --stats \
+    --log-filter debug \
+    "$@"
+}
+
+run() {
+  cargo run \
+    --profile profile \
+    --package indigo-tui \
+    -- \
+      --stats \
+      --log-filter debug \
+      "$@"
+}
+
+# run_tracy "$@"
+# run_samply "$@"
+run "$@"

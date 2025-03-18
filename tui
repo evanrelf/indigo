@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-set -Eeuo pipefail
-IFS=$'\n\t'
-
-cargo run \
-  --bin indigo-tui \
-  -- --log-filter debug "$@"
