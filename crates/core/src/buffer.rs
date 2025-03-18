@@ -49,8 +49,7 @@ impl Buffer {
 
 impl From<Rope> for Buffer {
     fn from(text: Rope) -> Self {
-        let mut range = RangeState::default();
-        range.snap(&text);
+        let range = RangeState::default().snapped(&text);
         Self {
             text,
             range,

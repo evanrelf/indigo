@@ -43,6 +43,12 @@ impl RangeState {
         }
     }
 
+    #[must_use]
+    pub fn snapped(mut self, text: &Rope) -> Self {
+        self.snap(text);
+        self
+    }
+
     fn both(&mut self) -> (&mut CursorState, &mut CursorState) {
         (&mut self.anchor, &mut self.head)
     }
@@ -336,8 +342,8 @@ mod tests {
         let mut state = RangeState {
             anchor: CursorState { char_offset: 0 },
             head: CursorState { char_offset: 0 },
-        };
-        state.snap(&text);
+        }
+        .snapped(&text);
         let mut range = RangeMut::new(&mut text, &mut state).unwrap();
         range.insert("e");
         range.assert_invariants().unwrap();
