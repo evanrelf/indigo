@@ -2,13 +2,13 @@
 pub use crate::{
     action::Action,
     buffer::Buffer,
-    cursor::{Cursor, CursorMut, CursorState},
+    cursor::{Cursor, CursorMut},
     display_width::DisplayWidth,
     editor::Editor,
     key::{Key, KeyCode, KeyModifier, Keys},
     mode::{CommandMode, InsertMode, Mode, NormalMode},
     ot::EditSeq,
-    range::{Range, RangeMut, RangeState},
+    range::{Range, RangeMut},
     rope::{RopeExt, SnapBias},
 };
 
