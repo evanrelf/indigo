@@ -81,7 +81,7 @@ fn keys(input: &mut &str) -> ModalResult<Keys> {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Key {
-    pub modifiers: FlagSet<KeyModifier>,
+    pub modifiers: KeyModifiers,
     pub code: KeyCode,
 }
 
@@ -252,6 +252,8 @@ flags! {
         Shift,
     }
 }
+
+pub type KeyModifiers = FlagSet<KeyModifier>;
 
 fn key_modifier(input: &mut &str) -> ModalResult<KeyModifier> {
     alt((

@@ -3,7 +3,7 @@ use flagset::FlagSet;
 
 pub type IndigoKey = indigo_core::key::Key;
 pub type IndigoKeyCode = indigo_core::key::KeyCode;
-pub type IndigoKeyModifiers = FlagSet<indigo_core::key::KeyModifier>;
+pub type IndigoKeyModifiers = indigo_core::key::KeyModifiers;
 
 pub type TerminalKey = ratatui::crossterm::event::KeyEvent;
 pub type TerminalKeyCode = ratatui::crossterm::event::KeyCode;
