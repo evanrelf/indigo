@@ -75,9 +75,7 @@ impl EditSeq {
         }
     }
 
-    pub fn insert(&mut self, text: impl Into<Rc<str>>) {
-        let text = text.into();
-
+    pub fn insert(&mut self, text: &str) {
         if text.is_empty() {
             return;
         }
@@ -87,10 +85,10 @@ impl EditSeq {
         if let Some(Edit::Insert(last)) = self.edits.last_mut() {
             let mut s = String::with_capacity(last.chars().count() + text.chars().count());
             s.push_str(last);
-            s.push_str(&text);
+            s.push_str(text);
             *last = Rc::from(s);
         } else {
-            self.edits.push(Edit::Insert(text));
+            self.edits.push(Edit::Insert(Rc::from(text)));
         }
     }
 
@@ -98,7 +96,7 @@ impl EditSeq {
         match edit {
             Edit::Retain(n) => self.retain(n),
             Edit::Delete(n) => self.delete(n),
-            Edit::Insert(s) => self.insert(s),
+            Edit::Insert(s) => self.insert(&s),
         }
     }
 
@@ -177,7 +175,7 @@ impl EditSeq {
                         .get_slice(start..end)
                         .ok_or_else(length_mismatch)?
                         .to_string();
-                    inverted.insert(s);
+                    inverted.insert(&s);
                 }
                 Edit::Insert(s) => inverted.delete(s.chars().count()),
             }
