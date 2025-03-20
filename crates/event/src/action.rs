@@ -19,8 +19,16 @@ pub enum Action {
     EnterCommandMode,
     MoveLeft,
     MoveRight,
+    MoveUntilPrevByte(u8),
+    MoveToPrevByte(u8),
+    MoveUntilNextByte(u8),
+    MoveToNextByte(u8),
     ExtendLeft,
     ExtendRight,
+    ExtendUntilPrevByte(u8),
+    ExtendToPrevByte(u8),
+    ExtendUntilNextByte(u8),
+    ExtendToNextByte(u8),
     Flip,
     FlipForward,
     Reduce,
@@ -47,8 +55,16 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
         Action::EnterCommandMode => enter_command_mode(editor),
         Action::MoveLeft => move_left(editor),
         Action::MoveRight => move_right(editor),
+        Action::MoveUntilPrevByte(byte) => move_until_prev_byte(editor, *byte),
+        Action::MoveToPrevByte(byte) => move_to_prev_byte(editor, *byte),
+        Action::MoveUntilNextByte(byte) => move_until_next_byte(editor, *byte),
+        Action::MoveToNextByte(byte) => move_to_next_byte(editor, *byte),
         Action::ExtendLeft => extend_left(editor),
         Action::ExtendRight => extend_right(editor),
+        Action::ExtendUntilPrevByte(byte) => extend_until_prev_byte(editor, *byte),
+        Action::ExtendToPrevByte(byte) => extend_to_prev_byte(editor, *byte),
+        Action::ExtendUntilNextByte(byte) => extend_until_next_byte(editor, *byte),
+        Action::ExtendToNextByte(byte) => extend_to_next_byte(editor, *byte),
         Action::Flip => flip(editor),
         Action::FlipForward => flip_forward(editor),
         Action::Reduce => reduce(editor),
@@ -99,6 +115,70 @@ fn move_right(editor: &mut Editor) {
     editor.buffer.with_range_mut(|range| {
         range.extend_right(count);
         range.reduce();
+    });
+    editor.mode.set_count(NonZeroUsize::MIN);
+}
+
+fn move_until_prev_byte(editor: &mut Editor, byte: u8) {
+    editor.buffer.with_range_mut(|range| {
+        range.reduce();
+        range.extend_until_prev_byte(byte);
+    });
+    editor.mode.set_count(NonZeroUsize::MIN);
+}
+
+fn move_to_prev_byte(editor: &mut Editor, byte: u8) {
+    editor.buffer.with_range_mut(|range| {
+        range.reduce();
+        range.extend_until_prev_byte(byte);
+        range.extend_left(NonZeroUsize::MIN);
+    });
+    editor.mode.set_count(NonZeroUsize::MIN);
+}
+
+fn move_until_next_byte(editor: &mut Editor, byte: u8) {
+    editor.buffer.with_range_mut(|range| {
+        range.reduce();
+        range.extend_until_next_byte(byte);
+    });
+    editor.mode.set_count(NonZeroUsize::MIN);
+}
+
+fn move_to_next_byte(editor: &mut Editor, byte: u8) {
+    editor.buffer.with_range_mut(|range| {
+        range.reduce();
+        range.extend_until_next_byte(byte);
+        range.extend_right(NonZeroUsize::MIN);
+    });
+    editor.mode.set_count(NonZeroUsize::MIN);
+}
+
+fn extend_until_prev_byte(editor: &mut Editor, byte: u8) {
+    editor.buffer.with_range_mut(|range| {
+        range.extend_until_prev_byte(byte);
+    });
+    editor.mode.set_count(NonZeroUsize::MIN);
+}
+
+fn extend_to_prev_byte(editor: &mut Editor, byte: u8) {
+    editor.buffer.with_range_mut(|range| {
+        range.extend_until_prev_byte(byte);
+        range.extend_right(NonZeroUsize::MIN);
+    });
+    editor.mode.set_count(NonZeroUsize::MIN);
+}
+
+fn extend_until_next_byte(editor: &mut Editor, byte: u8) {
+    editor.buffer.with_range_mut(|range| {
+        range.extend_until_next_byte(byte);
+    });
+    editor.mode.set_count(NonZeroUsize::MIN);
+}
+
+fn extend_to_next_byte(editor: &mut Editor, byte: u8) {
+    editor.buffer.with_range_mut(|range| {
+        range.extend_until_next_byte(byte);
+        range.extend_right(NonZeroUsize::MIN);
     });
     editor.mode.set_count(NonZeroUsize::MIN);
 }

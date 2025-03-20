@@ -209,6 +209,27 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
+    pub fn extend_until_prev_byte(&mut self, byte: u8) -> bool {
+        let head = &mut self.state.head.char_offset;
+        if let Some(char_offset) = self.text.find_last_byte(..*head, byte) {
+            *head = char_offset;
+            self.head_mut().move_right(NonZeroUsize::MIN);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn extend_until_next_byte(&mut self, byte: u8) -> bool {
+        let head = &mut self.state.head.char_offset;
+        if let Some(char_offset) = self.text.find_first_byte(*head.., byte) {
+            *head = char_offset;
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn flip(&mut self) {
         if self.is_forward() && self.grapheme_length() == 1 {
             return;

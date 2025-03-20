@@ -87,6 +87,27 @@ impl<W: WrapMut> CursorView<'_, W> {
         }
     }
 
+    // TODO: Accept count
+    pub fn move_to_prev_byte(&mut self, byte: u8) -> bool {
+        if let Some(char_offset) = self.text.find_last_byte(..self.state.char_offset, byte) {
+            self.state.char_offset = char_offset;
+            self.move_right(NonZeroUsize::MIN);
+            true
+        } else {
+            false
+        }
+    }
+
+    // TODO: Accept count
+    pub fn move_to_next_byte(&mut self, byte: u8) -> bool {
+        if let Some(char_offset) = self.text.find_first_byte(self.state.char_offset.., byte) {
+            self.state.char_offset = char_offset;
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn insert_char(&mut self, char: char) {
         self.insert(&char.to_string());
     }
