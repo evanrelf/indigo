@@ -44,6 +44,16 @@ impl IntoIterator for Keys {
     }
 }
 
+impl<'a> IntoIterator for &'a Keys {
+    type Item = &'a Key;
+
+    type IntoIter = std::slice::Iter<'a, Key>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
+
 impl Display for Keys {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         for key in &self.0 {
