@@ -38,8 +38,7 @@ pub fn handle_event(
     areas: Areas,
     event: TerminalEvent,
 ) -> anyhow::Result<()> {
-    // TODO: Check if TUI handles event before passing to editor? Would enable use of editor's
-    // higher level event `trigger` or `send` event handling methods.
+    // TODO: Check if TUI handles event before passing to editor?
 
     if let Ok(event) = event_t2i(&event) {
         let actions = indigo_core::event::handle_event(editor, &event);

@@ -1,14 +1,7 @@
-use crate::{
-    action::handle_action,
-    buffer::Buffer,
-    event::{Event, handle_event},
-    mode::Mode,
-};
-use std::sync::mpsc;
+use crate::{buffer::Buffer, mode::Mode};
 
+#[derive(Default)]
 pub struct Editor {
-    event_sender: mpsc::Sender<Event>,
-    event_receiver: mpsc::Receiver<Event>,
     pub buffer: Buffer,
     pub mode: Mode,
     pub height: usize,
@@ -20,52 +13,13 @@ impl Editor {
     pub fn new() -> Self {
         Self::default()
     }
-
-    pub fn trigger(&mut self, event: impl Into<Event>) {
-        for action in handle_event(self, &event.into()).iter() {
-            handle_action(self, action);
-        }
-    }
-
-    pub fn send(&mut self, event: impl Into<Event>) {
-        self.event_sender.send(event.into()).unwrap();
-    }
-
-    pub fn tick(&mut self) {
-        let event = self.event_receiver.recv().unwrap();
-        self.trigger(event);
-    }
-
-    pub fn try_tick(&mut self) -> bool {
-        if let Ok(event) = self.event_receiver.try_recv() {
-            self.trigger(event);
-            true
-        } else {
-            false
-        }
-    }
-
-    pub fn flush(&mut self) {
-        while self.try_tick() {}
-    }
-}
-
-impl Default for Editor {
-    fn default() -> Self {
-        Self::from(Buffer::new())
-    }
 }
 
 impl From<Buffer> for Editor {
     fn from(buffer: Buffer) -> Self {
-        let (event_sender, event_receiver) = mpsc::channel();
         Self {
-            event_sender,
-            event_receiver,
             buffer,
-            mode: Mode::default(),
-            height: 0,
-            exit: None,
+            ..Self::default()
         }
     }
 }
