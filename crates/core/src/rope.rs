@@ -18,10 +18,6 @@ pub trait RopeExt {
         rope.len_lines() - if last_char == '\n' { 1 } else { 0 }
     }
 
-    fn char_index_to_grapheme_index(&self, char_index: usize) -> usize {
-        self.as_slice().slice(..char_index).graphemes().count()
-    }
-
     fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice> {
         let rope = self.as_slice();
         let start = char_index;
@@ -41,24 +37,24 @@ pub trait RopeExt {
         GraphemeBoundaries::new(&self.as_slice())
     }
 
-    fn prev_grapheme_boundary(&self, char_index: usize) -> Option<usize> {
-        graphemes::prev_grapheme_boundary(&self.as_slice(), char_index)
+    fn is_grapheme_boundary(&self, char_offset: usize) -> bool {
+        graphemes::is_grapheme_boundary(&self.as_slice(), char_offset)
     }
 
-    fn next_grapheme_boundary(&self, char_index: usize) -> Option<usize> {
-        graphemes::next_grapheme_boundary(&self.as_slice(), char_index)
+    fn prev_grapheme_boundary(&self, char_offset: usize) -> Option<usize> {
+        graphemes::prev_grapheme_boundary(&self.as_slice(), char_offset)
     }
 
-    fn is_grapheme_boundary(&self, char_index: usize) -> bool {
-        graphemes::is_grapheme_boundary(&self.as_slice(), char_index)
+    fn next_grapheme_boundary(&self, char_offset: usize) -> Option<usize> {
+        graphemes::next_grapheme_boundary(&self.as_slice(), char_offset)
     }
 
-    fn floor_grapheme_boundary(&self, char_index: usize) -> usize {
-        graphemes::floor_grapheme_boundary(&self.as_slice(), char_index)
+    fn floor_grapheme_boundary(&self, char_offset: usize) -> usize {
+        graphemes::floor_grapheme_boundary(&self.as_slice(), char_offset)
     }
 
-    fn ceil_grapheme_boundary(&self, char_index: usize) -> usize {
-        graphemes::ceil_grapheme_boundary(&self.as_slice(), char_index)
+    fn ceil_grapheme_boundary(&self, char_offset: usize) -> usize {
+        graphemes::ceil_grapheme_boundary(&self.as_slice(), char_offset)
     }
 }
 
