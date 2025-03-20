@@ -176,7 +176,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rope::SnapBias;
     use arbtest::arbtest;
     use std::cmp::max;
 
@@ -192,10 +191,11 @@ mod tests {
     fn fuzz() {
         arbtest(|u| {
             let text = Rope::new();
-            let char_offset = text.snap_to_grapheme_boundary(
-                u.arbitrary::<usize>()?,
-                *u.choose(&[SnapBias::Before, SnapBias::After])?,
-            );
+            let char_offset = if u.arbitrary::<bool>()? {
+                text.floor_grapheme_boundary(u.arbitrary::<usize>()?)
+            } else {
+                text.ceil_grapheme_boundary(u.arbitrary::<usize>()?)
+            };
             let mut cursor = CursorView::try_from((text, char_offset)).unwrap();
             let mut actions = Vec::new();
             for _ in 0..u.choose_index(100)? {

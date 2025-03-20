@@ -9,7 +9,7 @@ pub use crate::{
     mode::{CommandMode, InsertMode, Mode, NormalMode},
     ot::EditSeq,
     range::{Range, RangeMut},
-    rope::{RopeExt, SnapBias},
+    rope::RopeExt,
 };
 
 pub use ropey::{Rope, RopeSlice};

@@ -1,12 +1,6 @@
 use crate::graphemes::{self, GraphemeBoundaries, Graphemes};
 use ropey::{Rope, RopeSlice};
 
-#[derive(Clone, Copy)]
-pub enum SnapBias {
-    Before,
-    After,
-}
-
 pub trait RopeExt {
     fn as_slice(&self) -> RopeSlice<'_>;
 
@@ -57,13 +51,6 @@ pub trait RopeExt {
 
     fn is_grapheme_boundary(&self, char_index: usize) -> bool {
         graphemes::is_grapheme_boundary(&self.as_slice(), char_index)
-    }
-
-    fn snap_to_grapheme_boundary(&self, char_index: usize, bias: SnapBias) -> usize {
-        match bias {
-            SnapBias::Before => self.floor_grapheme_boundary(char_index),
-            SnapBias::After => self.ceil_grapheme_boundary(char_index),
-        }
     }
 
     fn floor_grapheme_boundary(&self, char_index: usize) -> usize {
