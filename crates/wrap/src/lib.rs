@@ -202,9 +202,6 @@ mod tests {
     use super::*;
     use std::convert::Infallible;
 
-    // Functions are not marked with the `#[test]` attribute because they're just to verify
-    // everything type checks.
-
     struct TestDeref<T> {
         value: T,
     }
