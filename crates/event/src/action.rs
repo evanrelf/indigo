@@ -19,10 +19,8 @@ pub enum Action {
     EnterCommandMode,
     MoveLeft,
     MoveRight,
-    MoveTo(usize),
     ExtendLeft,
     ExtendRight,
-    ExtendTo(usize),
     Flip,
     FlipForward,
     Reduce,
@@ -49,10 +47,8 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
         Action::EnterCommandMode => enter_command_mode(editor),
         Action::MoveLeft => move_left(editor),
         Action::MoveRight => move_right(editor),
-        Action::MoveTo(index) => move_to(editor, *index),
         Action::ExtendLeft => extend_left(editor),
         Action::ExtendRight => extend_right(editor),
-        Action::ExtendTo(index) => extend_to(editor, *index),
         Action::Flip => flip(editor),
         Action::FlipForward => flip_forward(editor),
         Action::Reduce => reduce(editor),
@@ -107,10 +103,6 @@ fn move_right(editor: &mut Editor) {
     editor.mode.set_count(NonZeroUsize::MIN);
 }
 
-fn move_to(_editor: &mut Editor, _index: usize) {
-    // TODO: Allow changing range indices
-}
-
 fn extend_left(editor: &mut Editor) {
     let count = editor.mode.count();
     editor
@@ -125,10 +117,6 @@ fn extend_right(editor: &mut Editor) {
         .buffer
         .with_range_mut(|range| range.extend_right(count));
     editor.mode.set_count(NonZeroUsize::MIN);
-}
-
-fn extend_to(_editor: &mut Editor, _index: usize) {
-    // TODO: Allow changing range indices
 }
 
 fn flip(editor: &mut Editor) {

@@ -100,7 +100,10 @@ fn handle_event_normal(
                     editor.buffer.vertical_scroll(),
                     areas.text,
                 ) {
-                    Rc::from([IndigoAction::MoveTo(index)])
+                    // TODO
+                    // Rc::from([IndigoAction::MoveTo(index)])
+                    let _ = index;
+                    Rc::from([])
                 } else {
                     Rc::from([])
                 }
@@ -116,7 +119,10 @@ fn handle_event_normal(
                     editor.buffer.vertical_scroll(),
                     areas.text,
                 ) {
-                    Rc::from([IndigoAction::ExtendTo(index)])
+                    // TODO
+                    // Rc::from([IndigoAction::ExtendTo(index)])
+                    let _ = index;
+                    Rc::from([])
                 } else {
                     Rc::from([])
                 }
