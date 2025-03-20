@@ -1,5 +1,5 @@
-use crate::{
-    action::Action,
+use crate::action::Action;
+use indigo_core::{
     editor::Editor,
     key::{Key, KeyCode},
     mode::Mode,

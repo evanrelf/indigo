@@ -1,0 +1,18 @@
+[package]
+name = "indigo-event"
+edition = "2024"
+
+[features]
+arbitrary = ["dep:arbitrary", "indigo-core/arbitrary"]
+
+[dependencies]
+arbitrary = { workspace = true, optional = true }
+indigo-core = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+arbitrary = { workspace = true }
+indigo-core = { workspace = true, features = ["arbitrary"] }
+
+[lints]
+workspace = true

@@ -437,6 +437,7 @@ dependencies = [
  "anyhow",
  "clap",
  "indigo-core",
+ "indigo-event",
  "tracing",
  "tracing-subscriber",
 ]
@@ -459,6 +460,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "indigo-event"
+version = "0.0.0"
+dependencies = [
+ "arbitrary",
+ "indigo-core",
+ "tracing",
+]
+
+[[package]]
 name = "indigo-tui"
 version = "0.0.0"
 dependencies = [
@@ -469,6 +479,7 @@ dependencies = [
  "flagset",
  "hdrhistogram",
  "indigo-core",
+ "indigo-event",
  "ratatui",
  "tracing",
  "tracing-subscriber",

@@ -11,7 +11,9 @@ use ratatui::{
 };
 use std::rc::Rc;
 
-pub type IndigoEvent = indigo_core::event::Event;
+pub type IndigoEvent = indigo_event::event::Event;
+
+pub type IndigoAction = indigo_event::action::Action;
 
 pub type TerminalEvent = ratatui::crossterm::event::Event;
 
@@ -41,10 +43,10 @@ pub fn handle_event(
     // TODO: Check if TUI handles event before passing to editor?
 
     if let Ok(event) = event_t2i(&event) {
-        let actions = indigo_core::event::handle_event(editor, &event);
+        let actions = indigo_event::event::handle_event(editor, &event);
         if !actions.is_empty() {
             for action in actions.iter() {
-                indigo_core::action::handle_action(editor, action);
+                indigo_event::action::handle_action(editor, action);
             }
             return Ok(());
         }
@@ -57,7 +59,7 @@ pub fn handle_event(
     };
 
     for action in actions.iter() {
-        indigo_core::action::handle_action(editor, action);
+        indigo_event::action::handle_action(editor, action);
     }
 
     Ok(())
@@ -69,7 +71,7 @@ fn handle_event_normal(
     terminal: &mut Terminal,
     areas: Areas,
     event: TerminalEvent,
-) -> anyhow::Result<Rc<[Action]>> {
+) -> anyhow::Result<Rc<[IndigoAction]>> {
     let action = match event {
         TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => {
@@ -79,8 +81,10 @@ fn handle_event_normal(
             _ => Rc::from([]),
         },
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => Rc::from([Action::ScrollUp]),
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => Rc::from([Action::ScrollDown]),
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => Rc::from([IndigoAction::ScrollUp]),
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => {
+                Rc::from([IndigoAction::ScrollDown])
+            }
             // TODO: Kakoune allows creating new selection ranges by control clicking. Would be
             // awesome if Indigo could do the same, but also support control dragging to create
             // vertical lines of selection ranges, akin to Vim's visual block mode. Could snap to
@@ -96,7 +100,7 @@ fn handle_event_normal(
                     editor.buffer.vertical_scroll(),
                     areas.text,
                 ) {
-                    Rc::from([Action::MoveTo(index)])
+                    Rc::from([IndigoAction::MoveTo(index)])
                 } else {
                     Rc::from([])
                 }
@@ -112,7 +116,7 @@ fn handle_event_normal(
                     editor.buffer.vertical_scroll(),
                     areas.text,
                 ) {
-                    Rc::from([Action::ExtendTo(index)])
+                    Rc::from([IndigoAction::ExtendTo(index)])
                 } else {
                     Rc::from([])
                 }
@@ -130,7 +134,7 @@ fn handle_event_insert(
     terminal: &mut Terminal,
     _areas: Areas,
     event: TerminalEvent,
-) -> anyhow::Result<Rc<[Action]>> {
+) -> anyhow::Result<Rc<[IndigoAction]>> {
     let action = match event {
         TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => {
@@ -140,11 +144,13 @@ fn handle_event_insert(
             _ => Rc::from([]),
         },
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => Rc::from([Action::ScrollUp]),
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => Rc::from([Action::ScrollDown]),
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => Rc::from([IndigoAction::ScrollUp]),
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => {
+                Rc::from([IndigoAction::ScrollDown])
+            }
             _ => Rc::from([]),
         },
-        TerminalEvent::Paste(text) => Rc::from([Action::Insert(Rc::from(text))]),
+        TerminalEvent::Paste(text) => Rc::from([IndigoAction::Insert(Rc::from(text))]),
         _ => Rc::from([]),
     };
 
@@ -157,9 +163,9 @@ fn handle_event_command(
     _terminal: &mut Terminal,
     _areas: Areas,
     event: TerminalEvent,
-) -> anyhow::Result<Rc<[Action]>> {
+) -> anyhow::Result<Rc<[IndigoAction]>> {
     let action = match event {
-        TerminalEvent::Paste(text) => Rc::from([Action::Insert(Rc::from(text))]),
+        TerminalEvent::Paste(text) => Rc::from([IndigoAction::Insert(Rc::from(text))]),
         _ => Rc::from([]),
     };
 

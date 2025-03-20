@@ -1,9 +1,7 @@
-pub mod action;
 pub mod buffer;
 pub mod cursor;
 pub mod display_width;
 pub mod editor;
-pub mod event;
 pub mod graphemes;
 pub mod key;
 pub mod mode;

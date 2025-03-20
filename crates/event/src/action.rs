@@ -1,4 +1,4 @@
-use crate::{
+use indigo_core::{
     editor::Editor,
     mode::{CommandMode, InsertMode, Mode, NormalMode},
 };
