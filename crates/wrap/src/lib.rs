@@ -209,6 +209,7 @@ mod tests {
         value: T,
     }
 
+    #[test]
     fn test_wrap() {
         let _: <WPhantomData as Wrap>::Wrap<'_, Infallible> = PhantomData;
 

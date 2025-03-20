@@ -162,22 +162,6 @@ impl<W: WrapMut> RangeView<'_, W> {
         CursorMut::new(&mut self.text, &mut self.state.head).unwrap()
     }
 
-    fn start_mut(&mut self) -> CursorMut {
-        if self.state.anchor <= self.state.head {
-            self.anchor_mut()
-        } else {
-            self.head_mut()
-        }
-    }
-
-    fn end_mut(&mut self) -> CursorMut {
-        if self.state.anchor <= self.state.head {
-            self.head_mut()
-        } else {
-            self.anchor_mut()
-        }
-    }
-
     #[tracing::instrument(skip_all)]
     pub fn extend_left(&mut self, count: NonZeroUsize) {
         self.head_mut().move_left(count);
