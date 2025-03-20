@@ -2,6 +2,7 @@ use flagset::{FlagSet, flags};
 use std::{
     fmt::{Display, Formatter},
     hash::{Hash, Hasher},
+    ops::{Deref, DerefMut},
     str::FromStr,
 };
 use winnow::{
@@ -15,10 +16,23 @@ use arbitrary::Arbitrary;
 
 // TODO: Strict mode? Would forbid repeated modifiers, incorrectly ordered modifiers, etc.
 
-// TODO: Implement `IntoIterator` and `Iterator` in terms of `Vec`. Maybe just `Deref`?
 #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Keys(pub Vec<Key>);
+
+impl Deref for Keys {
+    type Target = Vec<Key>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Keys {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl IntoIterator for Keys {
     type Item = Key;
