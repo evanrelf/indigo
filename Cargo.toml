@@ -19,6 +19,7 @@ indigo-core = { path = "crates/core/" }
 indigo-event = { path = "crates/event/" }
 indigo-tui = { path = "crates/tui/" }
 indigo-wrap = { path = "crates/wrap/" }
+memchr = "2.7.4"
 ratatui = "0.29.0"
 ropey = "1.6.1"
 thiserror = "2.0.12"

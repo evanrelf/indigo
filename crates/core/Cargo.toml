@@ -11,6 +11,7 @@ tracy-alloc = ["tracy"]
 arbitrary = { workspace = true, optional = true }
 flagset = { workspace = true }
 indigo-wrap = { workspace = true }
+memchr = { workspace = true }
 ropey = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }

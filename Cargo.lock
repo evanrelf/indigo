@@ -450,6 +450,7 @@ dependencies = [
  "arbtest",
  "flagset",
  "indigo-wrap",
+ "memchr",
  "ropey",
  "thiserror",
  "tracing",

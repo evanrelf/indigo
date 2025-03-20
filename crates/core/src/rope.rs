@@ -1,5 +1,43 @@
 use crate::graphemes::{self, GraphemeBoundaries, Graphemes};
 use ropey::{Rope, RopeSlice};
+use std::ops::{Bound, RangeBounds};
+
+/// Variant of `memchr` for a discontiguous haystack.
+pub fn memchr<'a>(needle: u8, haystacks: impl Iterator<Item = &'a [u8]>) -> Option<usize> {
+    let mut haystacks_byte_index = 0;
+    for haystack in haystacks {
+        if let Some(needle_byte_index) =
+            memchr::memchr(needle, haystack).map(|i| haystacks_byte_index + i)
+        {
+            return Some(needle_byte_index);
+        }
+        haystacks_byte_index += haystack.len();
+    }
+    None
+}
+
+/// Variant of `memrchr` for a discontiguous haystack.
+///
+/// Assumes byte slices are provided in reverse order, and returned byte index is from the back. For
+/// example:
+///
+/// ```rust
+/// # use indigo_core::rope::memrchr;
+/// let haystacks = ["123", "456"].iter().rev().map(|s| s.as_bytes());
+/// assert_eq!(memrchr(b'4', haystacks), Some(2));
+/// ```
+pub fn memrchr<'a>(needle: u8, haystacks: impl Iterator<Item = &'a [u8]>) -> Option<usize> {
+    let mut haystacks_byte_index = 0; // Starting from the end
+    for haystack in haystacks {
+        if let Some(needle_byte_index) = memchr::memrchr(needle, haystack)
+            .map(|i| haystacks_byte_index + (haystack.len() - (i + 1)))
+        {
+            return Some(needle_byte_index);
+        }
+        haystacks_byte_index += haystack.len();
+    }
+    None
+}
 
 pub trait RopeExt {
     fn as_slice(&self) -> RopeSlice<'_>;
@@ -16,6 +54,38 @@ pub trait RopeExt {
         }
         let last_char = rope.char(rope.len_chars() - 1);
         rope.len_lines() - if last_char == '\n' { 1 } else { 0 }
+    }
+
+    fn find_first_byte<R>(&self, char_range: R, byte: u8) -> Option<usize>
+    where
+        R: RangeBounds<usize> + Clone,
+    {
+        let rope = self.as_slice().slice(char_range.clone());
+        let haystack = rope.chunks().map(|c| c.as_bytes());
+        let start = match char_range.start_bound() {
+            Bound::Included(n) => *n,
+            Bound::Excluded(_) => unreachable!("wtf"),
+            Bound::Unbounded => 0,
+        };
+        Some(start + rope.byte_to_char(memchr(byte, haystack)?))
+    }
+
+    fn find_last_byte<R>(&self, char_range: R, byte: u8) -> Option<usize>
+    where
+        R: RangeBounds<usize> + Clone,
+    {
+        let rope = self.as_slice().slice(char_range.clone());
+        let haystack = rope
+            .chunks_at_char(rope.len_chars())
+            .0
+            .reversed()
+            .map(|c| c.as_bytes());
+        let end = match char_range.end_bound() {
+            Bound::Included(n) => *n,
+            Bound::Excluded(n) => rope.byte_to_char(rope.char_to_byte(*n).saturating_sub(1)),
+            Bound::Unbounded => rope.len_chars().saturating_sub(1),
+        };
+        Some(end - rope.byte_to_char(memrchr(byte, haystack)?))
     }
 
     fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice> {
@@ -129,6 +199,67 @@ mod tests {
         assert_eq!(Rope::from_str("x\ny\nz").get_line(0), Some("x\n".into()));
         assert_eq!(Rope::from_str("x\ny\nz").get_line(1), Some("y\n".into()));
         assert_eq!(Rope::from_str("x\ny\nz").get_line(2), Some("z".into()));
+    }
+
+    #[test]
+    fn test_memchr() {
+        let haystacks = || ["foo", "bar", "baz", "qux"].iter().map(|s| s.as_bytes());
+        assert_eq!(memchr(b'0', haystacks()), None);
+        assert_eq!(memchr(b'f', haystacks()), Some(0));
+        assert_eq!(memchr(b'o', haystacks()), Some(1));
+        assert_eq!(memchr(b'a', haystacks()), Some(4));
+        assert_eq!(memchr(b'x', haystacks()), Some(11));
+    }
+
+    #[test]
+    fn test_memrchr() {
+        let haystacks = || {
+            ["foo", "bar", "baz", "qux"]
+                .iter()
+                .rev()
+                .map(|s| s.as_bytes())
+        };
+        assert_eq!(memrchr(b'0', haystacks()), None);
+        assert_eq!(memrchr(b'f', haystacks()), Some(11));
+        assert_eq!(memrchr(b'o', haystacks()), Some(9));
+        assert_eq!(memrchr(b'a', haystacks()), Some(4));
+        assert_eq!(memrchr(b'x', haystacks()), Some(0));
+    }
+
+    #[test]
+    fn test_find_first_byte() {
+        let mut rope = Rope::new();
+        while rope.chunks().count() < 10 {
+            rope.append(Rope::from("hello"));
+        }
+        let mut length = rope.len_chars();
+        let char_index = length / 2;
+        rope.insert(char_index, "!");
+        length += 1;
+        assert_eq!(rope.find_first_byte(.., b'!'), Some(char_index));
+        assert_eq!(
+            rope.find_first_byte(0..(length / 3) * 2, b'!'),
+            Some(char_index)
+        );
+        assert_eq!(rope.find_first_byte(0..length / 3, b'!'), None);
+    }
+
+    #[test]
+    fn test_find_last_byte() {
+        let mut rope = Rope::new();
+        while rope.chunks().count() < 10 {
+            rope.append(Rope::from("hello"));
+        }
+        let mut length = rope.len_chars();
+        let char_index = length / 2;
+        rope.insert(char_index, "!");
+        length += 1;
+        assert_eq!(rope.find_last_byte(.., b'!'), Some(char_index));
+        assert_eq!(
+            rope.find_last_byte(0..(length / 3) * 2, b'!'),
+            Some(char_index)
+        );
+        assert_eq!(rope.find_last_byte(0..length / 3, b'!'), None);
     }
 
     #[test]
