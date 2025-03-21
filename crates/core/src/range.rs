@@ -2,6 +2,7 @@ use crate::{
     cursor::{self, Cursor, CursorMut, CursorState},
     ot::EditSeq,
     rope::RopeExt as _,
+    text::Text,
 };
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
@@ -56,7 +57,7 @@ impl RangeState {
 
 #[must_use]
 pub struct RangeView<'a, W: Wrap> {
-    text: W::Wrap<'a, Rope>,
+    text: W::Wrap<'a, Text>,
     state: W::Wrap<'a, RangeState>,
 }
 
@@ -66,7 +67,7 @@ pub type RangeMut<'a> = RangeView<'a, WMut>;
 
 impl<'a, W: WrapRef> RangeView<'a, W> {
     pub fn new(
-        text: W::WrapRef<'a, Rope>,
+        text: W::WrapRef<'a, Text>,
         state: W::WrapRef<'a, RangeState>,
     ) -> Result<Self, Error> {
         let range_view = RangeView { text, state };
@@ -281,7 +282,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         edits.retain(self.start().char_offset());
         edits.delete(self.char_length());
         edits.retain_rest(&self.text);
-        edits.apply(&mut self.text).unwrap();
+        self.text.edit(edits.clone()).unwrap();
         self.state.anchor.char_offset = edits.transform_char_offset(self.state.anchor.char_offset);
         self.state.head.char_offset = edits.transform_char_offset(self.state.head.char_offset);
         debug_assert_eq!(self.state.anchor, self.state.head);
@@ -300,7 +301,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
 impl<R> TryFrom<(R, usize, usize)> for RangeView<'_, WBox>
 where
-    R: Into<Rope>,
+    R: Into<Text>,
 {
     type Error = Error;
     fn try_from((text, anchor, head): (R, usize, usize)) -> Result<Self, Self::Error> {
@@ -322,7 +323,7 @@ mod tests {
     #[test]
     fn insert_changes_grapheme_boundary() {
         // combining acute accent (´)
-        let mut text = Rope::from("\u{0301}");
+        let mut text = Text::from("\u{0301}");
         let mut state = RangeState {
             anchor: CursorState { char_offset: 0 },
             head: CursorState { char_offset: 0 },

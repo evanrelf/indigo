@@ -128,7 +128,7 @@ pub fn handle_event_command(editor: &mut Editor, event: &Event) -> Rc<[Action]> 
             _ if is(key, "<bs>") => Rc::from([Action::DeleteBefore]),
             _ if is(key, "<ret>") => Rc::from([
                 Action::EnterNormalMode,
-                Action::RunCommand(Rc::from(Cow::<str>::from(command_mode.text()))),
+                Action::RunCommand(Rc::from(Cow::<str>::from(command_mode.text().rope()))),
             ]),
             (m, KeyCode::Char(c)) if m.is_empty() => Rc::from([Action::InsertChar(c)]),
             _ if is(key, "<c-c>") => Rc::from([Action::Exit(1)]),

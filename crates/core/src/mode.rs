@@ -1,5 +1,7 @@
-use crate::cursor::{Cursor, CursorMut, CursorState};
-use ropey::Rope;
+use crate::{
+    cursor::{Cursor, CursorMut, CursorState},
+    text::Text,
+};
 use std::num::NonZeroUsize;
 
 pub enum Mode {
@@ -48,13 +50,13 @@ pub struct InsertMode {}
 
 #[derive(Default)]
 pub struct CommandMode {
-    text: Rope,
+    text: Text,
     cursor: CursorState,
 }
 
 impl CommandMode {
     #[must_use]
-    pub fn text(&self) -> &Rope {
+    pub fn text(&self) -> &Text {
         &self.text
     }
 

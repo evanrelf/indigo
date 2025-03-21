@@ -1,13 +1,14 @@
 use crate::{
     range::{Range, RangeMut, RangeState},
     rope::RopeExt as _,
+    text::Text,
 };
 use ropey::Rope;
 use std::cmp::min;
 
 #[derive(Default)]
 pub struct Buffer {
-    text: Rope,
+    text: Text,
     range: RangeState,
     vertical_scroll: usize,
 }
@@ -19,7 +20,7 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn text(&self) -> &Rope {
+    pub fn text(&self) -> &Text {
         &self.text
     }
 
@@ -48,7 +49,19 @@ impl Buffer {
 }
 
 impl From<Rope> for Buffer {
-    fn from(text: Rope) -> Self {
+    fn from(rope: Rope) -> Self {
+        let text = Text::from(rope);
+        let range = RangeState::default().snapped(&text);
+        Self {
+            text,
+            range,
+            ..Self::default()
+        }
+    }
+}
+
+impl From<Text> for Buffer {
+    fn from(text: Text) -> Self {
         let range = RangeState::default().snapped(&text);
         Self {
             text,

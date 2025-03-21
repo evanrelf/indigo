@@ -1,8 +1,7 @@
 #![allow(clippy::trivially_copy_pass_by_ref)]
 
-use crate::{ot::EditSeq, rope::RopeExt as _};
+use crate::{ot::EditSeq, rope::RopeExt as _, text::Text};
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
-use ropey::Rope;
 use std::num::NonZeroUsize;
 use thiserror::Error;
 
@@ -25,7 +24,7 @@ pub struct CursorState {
 
 #[must_use]
 pub struct CursorView<'a, W: Wrap> {
-    text: W::Wrap<'a, Rope>,
+    text: W::Wrap<'a, Text>,
     state: W::Wrap<'a, CursorState>,
 }
 
@@ -35,7 +34,7 @@ pub type CursorMut<'a> = CursorView<'a, WMut>;
 
 impl<'a, W: WrapRef> CursorView<'a, W> {
     pub fn new(
-        text: W::WrapRef<'a, Rope>,
+        text: W::WrapRef<'a, Text>,
         state: W::WrapRef<'a, CursorState>,
     ) -> Result<Self, Error> {
         let cursor_view = CursorView { text, state };
@@ -103,7 +102,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.retain(self.state.char_offset);
         edits.insert(text);
         edits.retain_rest(&self.text);
-        edits.apply(&mut self.text).unwrap();
+        self.text.edit(edits.clone()).unwrap();
         self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
         // If the inserted string combines with existing text, the cursor would be left in the
         // middle of a new grapheme, so we must snap after inserting.
@@ -132,7 +131,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.retain(char_offset);
         edits.delete(self.state.char_offset - char_offset);
         edits.retain_rest(&self.text);
-        edits.apply(&mut self.text).unwrap();
+        self.text.edit(edits.clone()).unwrap();
         self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
         edits
     }
@@ -155,7 +154,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.retain(self.state.char_offset);
         edits.delete(char_offset - self.state.char_offset);
         edits.retain_rest(&self.text);
-        edits.apply(&mut self.text).unwrap();
+        self.text.edit(edits.clone()).unwrap();
         self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
         edits
     }
@@ -163,7 +162,7 @@ impl<W: WrapMut> CursorView<'_, W> {
 
 impl<R> TryFrom<(R, usize)> for CursorView<'_, WBox>
 where
-    R: Into<Rope>,
+    R: Into<Text>,
 {
     type Error = Error;
     fn try_from((text, char_offset): (R, usize)) -> Result<Self, Self::Error> {
@@ -190,7 +189,7 @@ mod tests {
     #[test]
     fn fuzz() {
         arbtest(|u| {
-            let text = Rope::new();
+            let text = Text::new();
             let char_offset = if u.arbitrary::<bool>()? {
                 text.floor_grapheme_boundary(u.arbitrary::<usize>()?)
             } else {

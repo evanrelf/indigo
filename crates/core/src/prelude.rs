@@ -9,6 +9,7 @@ pub use crate::{
     ot::EditSeq,
     range::{Range, RangeMut},
     rope::RopeExt,
+    text::Text,
 };
 
 pub use ropey::{Rope, RopeSlice};
