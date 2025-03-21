@@ -8,7 +8,7 @@ use std::ops::Deref;
 #[derive(Default)]
 pub struct Text {
     rope: Rope,
-    history: History,
+    history: History<EditSeq>,
 }
 
 impl Text {
