@@ -220,7 +220,7 @@ fn delete_after(editor: &mut Editor) {
 }
 
 fn run_command(editor: &mut Editor, command: &str) {
-    match command {
+    match command.trim() {
         "q" | "quit" => exit(editor, 0),
         _ => {}
     }
