@@ -3,6 +3,7 @@ pub mod cursor;
 pub mod display_width;
 pub mod editor;
 pub mod graphemes;
+pub mod history;
 pub mod key;
 pub mod mode;
 pub mod ot;
