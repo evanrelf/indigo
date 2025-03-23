@@ -3,7 +3,7 @@ use ropey::{Rope, RopeSlice};
 use std::ops::{Bound, RangeBounds};
 
 /// Variant of `memchr` for a discontiguous haystack.
-pub fn memchr<'a>(needle: u8, haystacks: impl Iterator<Item = &'a [u8]>) -> Option<usize> {
+pub fn memchr<'a>(needle: u8, haystacks: impl IntoIterator<Item = &'a [u8]>) -> Option<usize> {
     let mut haystacks_byte_index = 0;
     for haystack in haystacks {
         if let Some(needle_byte_index) =
@@ -26,7 +26,7 @@ pub fn memchr<'a>(needle: u8, haystacks: impl Iterator<Item = &'a [u8]>) -> Opti
 /// let haystacks = ["123", "456"].iter().rev().map(|s| s.as_bytes());
 /// assert_eq!(memrchr(b'4', haystacks), Some(2));
 /// ```
-pub fn memrchr<'a>(needle: u8, haystacks: impl Iterator<Item = &'a [u8]>) -> Option<usize> {
+pub fn memrchr<'a>(needle: u8, haystacks: impl IntoIterator<Item = &'a [u8]>) -> Option<usize> {
     let mut haystacks_byte_index = 0; // Starting from the end
     for haystack in haystacks {
         if let Some(needle_byte_index) = memchr::memrchr(needle, haystack)
