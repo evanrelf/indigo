@@ -12,14 +12,7 @@ use arbitrary::Arbitrary;
 #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Event {
-    Call(Rc<[Action]>),
     KeyInput(Key),
-}
-
-impl From<&[Action]> for Event {
-    fn from(actions: &[Action]) -> Self {
-        Self::Call(Rc::from(actions))
-    }
 }
 
 impl From<Key> for Event {
@@ -63,7 +56,6 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
     };
 
     match event {
-        Event::Call(actions) => Rc::clone(actions),
         Event::KeyInput(key) => match (key.modifiers, key.code) {
             (m, KeyCode::Char(c @ '0'..='9')) if m.is_empty() => {
                 Rc::from([Action::UpdateCount(updated_count(c))])
@@ -108,7 +100,6 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
     };
 
     match event {
-        Event::Call(actions) => Rc::clone(actions),
         Event::KeyInput(key) => match (key.modifiers, key.code) {
             _ if is(key, "<esc>") => Rc::from([Action::EnterNormalMode]),
             _ if is(key, "<bs>") => Rc::from([Action::DeleteBefore]),
@@ -133,7 +124,6 @@ pub fn handle_event_command(editor: &mut Editor, event: &Event) -> Rc<[Action]> 
     };
 
     match event {
-        Event::Call(actions) => Rc::clone(actions),
         Event::KeyInput(key) => match (key.modifiers, key.code) {
             _ if is(key, "<esc>") => Rc::from([Action::EnterNormalMode]),
             _ if is(key, "<bs>") => Rc::from([Action::DeleteBefore]),

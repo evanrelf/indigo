@@ -188,11 +188,7 @@ pub fn event_t2i(event: &TerminalEvent) -> anyhow::Result<IndigoEvent> {
 }
 
 pub fn event_i2t(event: &IndigoEvent) -> anyhow::Result<TerminalEvent> {
-    #[expect(clippy::match_wildcard_for_single_variants)]
     match event {
         IndigoEvent::KeyInput(key_event) => Ok(TerminalEvent::Key(key_i2t(*key_event))),
-        _ => Err(anyhow!(
-            "Unsupported indigo->crossterm event conversion: {event:?}"
-        )),
     }
 }
