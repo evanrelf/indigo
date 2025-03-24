@@ -123,7 +123,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.retain(self.state.char_offset);
         edits.insert(text);
         edits.retain_rest(&self.text);
-        self.text.edit(edits.clone()).unwrap();
+        self.text.edit(&edits).unwrap();
         self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
         // If the inserted string combines with existing text, the cursor would be left in the
         // middle of a new grapheme, so we must snap after inserting.
@@ -152,7 +152,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.retain(char_offset);
         edits.delete(self.state.char_offset - char_offset);
         edits.retain_rest(&self.text);
-        self.text.edit(edits.clone()).unwrap();
+        self.text.edit(&edits).unwrap();
         self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
         edits
     }
@@ -175,7 +175,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.retain(self.state.char_offset);
         edits.delete(char_offset - self.state.char_offset);
         edits.retain_rest(&self.text);
-        self.text.edit(edits.clone()).unwrap();
+        self.text.edit(&edits).unwrap();
         self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
         edits
     }

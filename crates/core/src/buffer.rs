@@ -1,4 +1,6 @@
 use crate::{
+    history::History,
+    ot::{self, EditSeq},
     range::{Range, RangeMut, RangeState},
     rope::RopeExt as _,
     text::Text,
@@ -9,6 +11,8 @@ use std::cmp::min;
 #[derive(Default)]
 pub struct Buffer {
     text: Text,
+    // TODO: Push to history
+    history: History<(EditSeq, RangeState)>,
     range: RangeState,
     vertical_scroll: usize,
 }
@@ -35,6 +39,26 @@ impl Buffer {
         let result = func(&mut range);
         range.assert_invariants().unwrap();
         result
+    }
+
+    pub fn undo(&mut self) -> Result<bool, ot::Error> {
+        if let Some((edit, range)) = self.history.undo() {
+            self.text.edit(edit)?;
+            self.range = range.clone();
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    pub fn redo(&mut self) -> Result<bool, ot::Error> {
+        if let Some((edit, range)) = self.history.redo() {
+            self.text.edit(edit)?;
+            self.range = range.clone();
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 
     #[must_use]

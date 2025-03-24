@@ -89,6 +89,8 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
             _ if is(key, "<a-;>") => Rc::from([Action::Flip]),
             _ if is(key, "<a-s-;>") => Rc::from([Action::FlipForward]),
             _ if is(key, "d") => Rc::from([Action::Delete]),
+            _ if is(key, "u") => Rc::from([Action::Undo]),
+            _ if is(key, "U") => Rc::from([Action::Redo]),
             _ if is(key, "<c-u>") => Rc::from([Action::ScrollHalfPageUp]),
             _ if is(key, "<c-d>") => Rc::from([Action::ScrollHalfPageDown]),
             _ if is(key, "<c-b>") => Rc::from([Action::ScrollFullPageUp]),

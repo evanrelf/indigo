@@ -1,14 +1,10 @@
-use crate::{
-    history::History,
-    ot::{self, EditSeq},
-};
+use crate::ot::{self, EditSeq};
 use ropey::Rope;
 use std::ops::Deref;
 
 #[derive(Default)]
 pub struct Text {
     rope: Rope,
-    history: History<EditSeq>,
 }
 
 impl Text {
@@ -22,28 +18,9 @@ impl Text {
         &self.rope
     }
 
-    pub fn edit(&mut self, edit: EditSeq) -> Result<(), ot::Error> {
+    pub fn edit(&mut self, edit: &EditSeq) -> Result<(), ot::Error> {
         edit.apply(&mut self.rope)?;
-        self.history.push(edit);
         Ok(())
-    }
-
-    pub fn undo(&mut self) -> Result<bool, ot::Error> {
-        if let Some(edit) = self.history.undo() {
-            edit.apply(&mut self.rope)?;
-            Ok(true)
-        } else {
-            Ok(false)
-        }
-    }
-
-    pub fn redo(&mut self) -> Result<bool, ot::Error> {
-        if let Some(edit) = self.history.redo() {
-            edit.apply(&mut self.rope)?;
-            Ok(true)
-        } else {
-            Ok(false)
-        }
     }
 }
 
@@ -58,14 +35,12 @@ impl Deref for Text {
 impl<'a> From<&'a str> for Text {
     fn from(str: &'a str) -> Self {
         let rope = Rope::from(str);
-        let history = History::new();
-        Self { rope, history }
+        Self { rope }
     }
 }
 
 impl From<Rope> for Text {
     fn from(rope: Rope) -> Self {
-        let history = History::new();
-        Self { rope, history }
+        Self { rope }
     }
 }

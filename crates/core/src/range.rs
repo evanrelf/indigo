@@ -24,7 +24,7 @@ pub enum Error {
     Head(#[source] cursor::Error),
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct RangeState {
     pub anchor: CursorState,
     pub head: CursorState,
@@ -303,7 +303,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         edits.retain(self.start().char_offset());
         edits.delete(self.char_length());
         edits.retain_rest(&self.text);
-        self.text.edit(edits.clone()).unwrap();
+        self.text.edit(&edits).unwrap();
         self.state.anchor.char_offset = edits.transform_char_offset(self.state.anchor.char_offset);
         self.state.head.char_offset = edits.transform_char_offset(self.state.head.char_offset);
         debug_assert_eq!(self.state.anchor, self.state.head);
