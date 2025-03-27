@@ -66,7 +66,7 @@ pub mod low {
 
     pub struct InsertError;
 
-    pub struct MergeError;
+    pub struct MergeError(Vec<InsertError>);
 
     pub struct MatchError;
 
@@ -89,7 +89,17 @@ pub mod low {
         }
 
         pub fn merge(&mut self, other: Router<T>) -> Result<(), MergeError> {
-            todo!()
+            let mut errors = Vec::new();
+            for (pattern, value) in [/* TODO */] {
+                if let Err(error) = self.insert(pattern, value) {
+                    errors.push(error);
+                }
+            }
+            if errors.is_empty() {
+                Ok(())
+            } else {
+                Err(MergeError(errors))
+            }
         }
 
         pub fn at(&self, pattern: Pattern) -> Result<Match<&T>, MatchError> {
