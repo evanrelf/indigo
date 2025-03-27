@@ -7,6 +7,7 @@ pub mod history;
 pub mod key;
 pub mod mode;
 pub mod ot;
+pub mod pattern;
 pub mod prelude;
 pub mod range;
 pub mod rope;
