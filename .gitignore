@@ -1,3 +1,4 @@
 /target
 *.log
 profile.json
+profile.json.gz
