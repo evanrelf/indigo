@@ -1,49 +1,35 @@
 #![allow(clippy::needless_pass_by_value)]
 
+mod terminal;
+
+use crate::terminal::{Terminal, TerminalEvent, TerminalPlugin};
 use bevy::prelude::*;
 use clap::Parser as _;
 use ratatui::crossterm;
-use std::time::Duration;
 
 #[derive(clap::Parser, Resource)]
 struct Args {}
 
 #[derive(Deref, DerefMut, Resource)]
-struct Terminal(ratatui::DefaultTerminal);
-
-#[derive(Deref, DerefMut, Resource)]
 struct Text(String);
-
-#[derive(Deref, DerefMut, Event)]
-struct TerminalEvent(crossterm::event::Event);
 
 fn main() {
     let args = Args::parse();
 
-    let terminal = Terminal(ratatui::init());
-
     let text = Text(String::from("Hello, world!"));
 
     App::new()
-        .add_plugins(MinimalPlugins)
+        .add_plugins((MinimalPlugins, TerminalPlugin))
         .insert_resource(args)
-        .insert_resource(terminal)
         .insert_resource(text)
-        .add_event::<TerminalEvent>()
         .add_systems(
             Update,
             (
                 render_system,
-                (
-                    read_input_system,
-                    handle_input_system.run_if(on_event::<TerminalEvent>),
-                )
-                    .chain(),
+                handle_input_system.run_if(on_event::<TerminalEvent>),
             ),
         )
         .run();
-
-    ratatui::restore();
 }
 
 fn render_system(text: Res<Text>, mut terminal: ResMut<Terminal>) -> Result {
@@ -53,19 +39,6 @@ fn render_system(text: Res<Text>, mut terminal: ResMut<Terminal>) -> Result {
         let text = Text::raw(&**text);
         frame.render_widget(text, frame.area());
     })?;
-
-    Ok(())
-}
-
-fn read_input_system(mut terminal_event: EventWriter<TerminalEvent>) -> Result {
-    use crossterm::event;
-
-    // TODO: `crossterm` says `poll` and `read` have to always run on the same thread, but neither
-    // Bevy nor I am guaranteeing this here!
-    while event::poll(Duration::ZERO)? {
-        let event = event::read()?;
-        terminal_event.write(TerminalEvent(event));
-    }
 
     Ok(())
 }
