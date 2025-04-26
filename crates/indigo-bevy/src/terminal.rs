@@ -1,21 +1,44 @@
-use bevy::prelude::*;
-use std::time::Duration;
+use bevy::{
+    prelude::*,
+    tasks::{IoTaskPool, futures_lite::StreamExt as _},
+};
 
 #[derive(Deref, DerefMut, Resource)]
 pub struct Terminal(pub ratatui::DefaultTerminal);
 
+#[derive(Resource)]
+pub struct TerminalEventReader(flume::Receiver<TerminalEvent>);
+
 impl Terminal {
-    pub fn read_input_system(mut terminal_event: EventWriter<TerminalEvent>) -> Result {
-        use crossterm::event;
+    pub fn spawn_event_reader_system(mut commands: Commands) {
+        use crossterm::event::EventStream;
 
-        // TODO: `crossterm` says `poll` and `read` have to always run on the same thread, but neither
-        // Bevy nor I am guaranteeing this here!
-        while event::poll(Duration::ZERO)? {
-            let event = event::read()?;
-            terminal_event.write(TerminalEvent(event));
-        }
+        let (sender, receiver) = flume::bounded(32);
+        commands.insert_resource(TerminalEventReader(receiver));
 
-        Ok(())
+        let task_pool = IoTaskPool::get();
+        let task = task_pool.spawn(async move {
+            let mut event_stream = EventStream::new();
+            loop {
+                let Some(result) = event_stream.next().await else {
+                    // No more events
+                    break;
+                };
+                let event = result.unwrap(); // Panic on I/O error
+                if sender.send_async(TerminalEvent(event)).await.is_err() {
+                    // Channel is closed
+                    break;
+                }
+            }
+        });
+        task.detach();
+    }
+
+    pub fn write_event_system(
+        reader: Res<TerminalEventReader>,
+        mut writer: EventWriter<TerminalEvent>,
+    ) {
+        writer.write_batch(reader.0.try_iter());
     }
 }
 
@@ -35,6 +58,7 @@ impl Plugin for TerminalPlugin {
         let terminal = ratatui::init();
         app.insert_resource(Terminal(terminal))
             .add_event::<TerminalEvent>()
-            .add_systems(PreUpdate, Terminal::read_input_system);
+            .add_systems(Startup, Terminal::spawn_event_reader_system)
+            .add_systems(PreUpdate, Terminal::write_event_system);
     }
 }
