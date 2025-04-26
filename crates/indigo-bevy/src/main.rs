@@ -2,7 +2,7 @@
 
 mod terminal;
 
-use crate::terminal::{Terminal, TerminalEvent, TuiPlugin};
+use crate::terminal::{Terminal, TerminalKeyEvent, TuiPlugin};
 use bevy::prelude::*;
 use clap::Parser as _;
 
@@ -25,7 +25,7 @@ fn main() {
             Update,
             (
                 render_system,
-                handle_input_system.run_if(on_event::<TerminalEvent>),
+                handle_key_input_system.run_if(on_event::<TerminalKeyEvent>),
             ),
         )
         .run();
@@ -42,28 +42,24 @@ fn render_system(text: Res<Text>, mut terminal: ResMut<Terminal>) -> Result {
     Ok(())
 }
 
-fn handle_input_system(
+fn handle_key_input_system(
     mut text: ResMut<Text>,
-    mut terminal_event: EventReader<TerminalEvent>,
-    mut exit_event: EventWriter<AppExit>,
+    mut key_events: EventReader<TerminalKeyEvent>,
+    mut exit_events: EventWriter<AppExit>,
 ) {
-    use crossterm::event::{Event, KeyCode, KeyModifiers};
+    use crossterm::event::{KeyCode, KeyModifiers};
 
-    for TerminalEvent(event) in terminal_event.read() {
-        #[expect(clippy::single_match)]
-        match event {
-            Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-                (m, KeyCode::Char('c')) if m == KeyModifiers::CONTROL => {
-                    exit_event.write_default();
-                }
-                (_, KeyCode::Char(c)) => {
-                    text.push(c);
-                }
-                (m, KeyCode::Backspace) if m == KeyModifiers::NONE => {
-                    text.pop();
-                }
-                _ => {}
-            },
+    for TerminalKeyEvent(key_event) in key_events.read() {
+        match (key_event.modifiers, key_event.code) {
+            (m, KeyCode::Char('c')) if m == KeyModifiers::CONTROL => {
+                exit_events.write_default();
+            }
+            (_, KeyCode::Char(c)) => {
+                text.push(c);
+            }
+            (m, KeyCode::Backspace) if m == KeyModifiers::NONE => {
+                text.pop();
+            }
             _ => {}
         }
     }
