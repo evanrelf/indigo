@@ -906,6 +906,7 @@ version = "0.0.0"
 dependencies = [
  "bevy",
  "clap",
+ "ratatui",
 ]
 
 [[package]]
