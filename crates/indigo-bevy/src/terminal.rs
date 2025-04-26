@@ -10,7 +10,7 @@ pub struct Terminal(pub ratatui::DefaultTerminal);
 pub struct TerminalEventReader(flume::Receiver<TerminalEvent>);
 
 impl Terminal {
-    pub fn spawn_event_reader_system(mut commands: Commands) {
+    pub fn reader_system(mut commands: Commands) {
         use crossterm::event::EventStream;
 
         let (sender, receiver) = flume::bounded(32);
@@ -19,14 +19,8 @@ impl Terminal {
         let task_pool = IoTaskPool::get();
         let task = task_pool.spawn(async move {
             let mut event_stream = EventStream::new();
-            loop {
-                let Some(result) = event_stream.next().await else {
-                    // No more events
-                    break;
-                };
-                let event = result.unwrap(); // Panic on I/O error
+            while let Some(event) = event_stream.next().await.map(|result| result.unwrap()) {
                 if sender.send_async(TerminalEvent(event)).await.is_err() {
-                    // Channel is closed
                     break;
                 }
             }
@@ -34,10 +28,7 @@ impl Terminal {
         task.detach();
     }
 
-    pub fn write_event_system(
-        reader: Res<TerminalEventReader>,
-        mut writer: EventWriter<TerminalEvent>,
-    ) {
+    pub fn writer_system(reader: Res<TerminalEventReader>, mut writer: EventWriter<TerminalEvent>) {
         writer.write_batch(reader.0.try_iter());
     }
 }
@@ -58,7 +49,7 @@ impl Plugin for TerminalPlugin {
         let terminal = ratatui::init();
         app.insert_resource(Terminal(terminal))
             .add_event::<TerminalEvent>()
-            .add_systems(Startup, Terminal::spawn_event_reader_system)
-            .add_systems(PreUpdate, Terminal::write_event_system);
+            .add_systems(Startup, Terminal::reader_system)
+            .add_systems(PreUpdate, Terminal::writer_system);
     }
 }
