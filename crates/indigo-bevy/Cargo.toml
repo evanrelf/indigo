@@ -4,6 +4,7 @@ edition = "2024"
 
 [dependencies]
 bevy = { version = "0.16.0", default-features = false }
+clap = { workspace = true, features = ["derive"] }
 
 [lints]
 workspace = true

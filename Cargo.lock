@@ -905,6 +905,7 @@ name = "indigo-bevy"
 version = "0.0.0"
 dependencies = [
  "bevy",
+ "clap",
 ]
 
 [[package]]
