@@ -5,7 +5,6 @@ mod terminal;
 use crate::terminal::{Terminal, TerminalEvent, TerminalPlugin};
 use bevy::prelude::*;
 use clap::Parser as _;
-use ratatui::crossterm;
 
 #[derive(clap::Parser, Resource)]
 struct Args {}

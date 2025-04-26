@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use ratatui::crossterm;
 use std::time::Duration;
 
 #[derive(Deref, DerefMut, Resource)]
