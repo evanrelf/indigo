@@ -9,7 +9,18 @@ pub struct Terminal(pub ratatui::DefaultTerminal);
 #[derive(Resource)]
 pub struct TerminalEventReader(flume::Receiver<TerminalEvent>);
 
-impl Terminal {
+impl Drop for Terminal {
+    fn drop(&mut self) {
+        ratatui::restore();
+    }
+}
+
+#[derive(Deref, DerefMut, Event)]
+pub struct TerminalEvent(pub crossterm::event::Event);
+
+pub struct TuiPlugin;
+
+impl TuiPlugin {
     pub fn reader_system(mut commands: Commands) {
         use crossterm::event::EventStream;
 
@@ -33,23 +44,12 @@ impl Terminal {
     }
 }
 
-impl Drop for Terminal {
-    fn drop(&mut self) {
-        ratatui::restore();
-    }
-}
-
-#[derive(Deref, DerefMut, Event)]
-pub struct TerminalEvent(pub crossterm::event::Event);
-
-pub struct TerminalPlugin;
-
-impl Plugin for TerminalPlugin {
+impl Plugin for TuiPlugin {
     fn build(&self, app: &mut App) {
         let terminal = ratatui::init();
         app.insert_resource(Terminal(terminal))
             .add_event::<TerminalEvent>()
-            .add_systems(Startup, Terminal::reader_system)
-            .add_systems(PreUpdate, Terminal::writer_system);
+            .add_systems(Startup, Self::reader_system)
+            .add_systems(PreUpdate, Self::writer_system);
     }
 }

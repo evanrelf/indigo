@@ -2,7 +2,7 @@
 
 mod terminal;
 
-use crate::terminal::{Terminal, TerminalEvent, TerminalPlugin};
+use crate::terminal::{Terminal, TerminalEvent, TuiPlugin};
 use bevy::prelude::*;
 use clap::Parser as _;
 
@@ -18,7 +18,7 @@ fn main() {
     let text = Text(String::from("Hello, world!"));
 
     App::new()
-        .add_plugins((MinimalPlugins, TerminalPlugin))
+        .add_plugins((MinimalPlugins, TuiPlugin))
         .insert_resource(args)
         .insert_resource(text)
         .add_systems(
