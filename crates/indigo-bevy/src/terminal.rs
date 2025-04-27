@@ -19,22 +19,22 @@ impl Drop for Terminal {
 pub struct TerminalEvent(pub crossterm::event::Event);
 
 #[derive(Event)]
-pub enum TerminalFocusEvent {
+pub enum TerminalFocus {
     Gained,
     Lost,
 }
 
 #[derive(Deref, DerefMut, Event)]
-pub struct TerminalKeyEvent(pub crossterm::event::KeyEvent);
+pub struct TerminalKey(pub crossterm::event::KeyEvent);
 
 #[derive(Deref, DerefMut, Event)]
-pub struct TerminalMouseEvent(pub crossterm::event::MouseEvent);
+pub struct TerminalMouse(pub crossterm::event::MouseEvent);
 
 #[derive(Deref, DerefMut, Event)]
-pub struct TerminalPasteEvent(pub String);
+pub struct TerminalPaste(pub String);
 
 #[derive(Deref, DerefMut, Event)]
-pub struct TerminalResizeEvent(pub ratatui::layout::Size);
+pub struct TerminalResize(pub ratatui::layout::Size);
 
 pub struct TuiPlugin;
 
@@ -60,11 +60,11 @@ impl TuiPlugin {
     pub fn writer_system(
         reader: Res<TerminalEventReader>,
         mut terminal: EventWriter<TerminalEvent>,
-        mut focus: EventWriter<TerminalFocusEvent>,
-        mut key: EventWriter<TerminalKeyEvent>,
-        mut mouse: EventWriter<TerminalMouseEvent>,
-        mut paste: EventWriter<TerminalPasteEvent>,
-        mut resize: EventWriter<TerminalResizeEvent>,
+        mut focus: EventWriter<TerminalFocus>,
+        mut key: EventWriter<TerminalKey>,
+        mut mouse: EventWriter<TerminalMouse>,
+        mut paste: EventWriter<TerminalPaste>,
+        mut resize: EventWriter<TerminalResize>,
     ) {
         use crossterm::event::Event;
         use ratatui::layout::Size;
@@ -73,22 +73,22 @@ impl TuiPlugin {
             terminal.write(TerminalEvent(event.clone()));
             match event {
                 Event::FocusGained => {
-                    focus.write(TerminalFocusEvent::Gained);
+                    focus.write(TerminalFocus::Gained);
                 }
                 Event::FocusLost => {
-                    focus.write(TerminalFocusEvent::Lost);
+                    focus.write(TerminalFocus::Lost);
                 }
                 Event::Key(key_event) => {
-                    key.write(TerminalKeyEvent(key_event));
+                    key.write(TerminalKey(key_event));
                 }
                 Event::Mouse(mouse_event) => {
-                    mouse.write(TerminalMouseEvent(mouse_event));
+                    mouse.write(TerminalMouse(mouse_event));
                 }
                 Event::Paste(text) => {
-                    paste.write(TerminalPasteEvent(text));
+                    paste.write(TerminalPaste(text));
                 }
                 Event::Resize(columns, rows) => {
-                    resize.write(TerminalResizeEvent(Size::new(columns, rows)));
+                    resize.write(TerminalResize(Size::new(columns, rows)));
                 }
             }
         }
@@ -100,11 +100,11 @@ impl Plugin for TuiPlugin {
         let terminal = ratatui::init();
         app.insert_resource(Terminal(terminal))
             .add_event::<TerminalEvent>()
-            .add_event::<TerminalFocusEvent>()
-            .add_event::<TerminalKeyEvent>()
-            .add_event::<TerminalMouseEvent>()
-            .add_event::<TerminalPasteEvent>()
-            .add_event::<TerminalResizeEvent>()
+            .add_event::<TerminalFocus>()
+            .add_event::<TerminalKey>()
+            .add_event::<TerminalMouse>()
+            .add_event::<TerminalPaste>()
+            .add_event::<TerminalResize>()
             .add_systems(Startup, Self::reader_system)
             .add_systems(PreUpdate, Self::writer_system);
     }

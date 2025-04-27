@@ -2,7 +2,7 @@
 
 mod terminal;
 
-use crate::terminal::{Terminal, TerminalKeyEvent, TerminalResizeEvent, TuiPlugin};
+use crate::terminal::{Terminal, TerminalKey, TerminalResize, TuiPlugin};
 use bevy::prelude::*;
 use clap::Parser as _;
 
@@ -13,7 +13,7 @@ struct Args {}
 struct Text(String);
 
 #[derive(Default, Event)]
-struct RenderEvent;
+struct RequestRender;
 
 fn main() {
     let args = Args::parse();
@@ -24,13 +24,13 @@ fn main() {
         .add_plugins((MinimalPlugins, TuiPlugin))
         .insert_resource(args)
         .insert_resource(text)
-        .add_event::<RenderEvent>()
+        .add_event::<RequestRender>()
         .add_systems(Startup, render_system)
         .add_systems(
             Update,
             (
-                render_system.run_if(on_event::<RenderEvent>.or(on_event::<TerminalResizeEvent>)),
-                handle_key_input_system.run_if(on_event::<TerminalKeyEvent>),
+                render_system.run_if(on_event::<RequestRender>.or(on_event::<TerminalResize>)),
+                handle_key_input_system.run_if(on_event::<TerminalKey>),
             ),
         )
         .run();
@@ -49,18 +49,18 @@ fn render_system(text: Res<Text>, mut terminal: ResMut<Terminal>) -> Result {
 
 fn handle_key_input_system(
     mut text: ResMut<Text>,
-    mut key_events: EventReader<TerminalKeyEvent>,
-    mut render_events: EventWriter<RenderEvent>,
-    mut exit_events: EventWriter<AppExit>,
+    mut key: EventReader<TerminalKey>,
+    mut render: EventWriter<RequestRender>,
+    mut exit: EventWriter<AppExit>,
 ) {
     use crossterm::event::{KeyCode, KeyModifiers};
 
     let mut should_render = false;
 
-    for TerminalKeyEvent(key_event) in key_events.read() {
-        match (key_event.modifiers, key_event.code) {
+    for TerminalKey(key) in key.read() {
+        match (key.modifiers, key.code) {
             (m, KeyCode::Char('c')) if m == KeyModifiers::CONTROL => {
-                exit_events.write_default();
+                exit.write_default();
             }
             (_, KeyCode::Char(c)) => {
                 text.push(c);
@@ -75,6 +75,6 @@ fn handle_key_input_system(
     }
 
     if should_render {
-        render_events.write_default();
+        render.write_default();
     }
 }
