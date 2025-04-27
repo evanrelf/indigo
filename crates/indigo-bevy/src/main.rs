@@ -33,7 +33,17 @@ fn main() {
                 handle_key_input_system.run_if(on_event::<Key>),
             ),
         )
+        .add_systems(Last, park_system)
         .run();
+}
+
+fn park_system(_: Option<NonSend<NonSendMarker>>) {
+    use std::{thread, time::Duration};
+
+    // TODO: Block on `parking::Parker`. Store `parking::Unparker` in a resource. Make plugins like
+    // `TuiPlugin` optionally (if resource is inserted) unpark on input events. Hypothetical timer
+    // plugin could also unpark main thread.
+    thread::sleep(Duration::from_secs(1));
 }
 
 fn render_system(text: Res<Text>, mut terminal: ResMut<Terminal>) -> Result {
