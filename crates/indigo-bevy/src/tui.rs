@@ -3,13 +3,22 @@ use bevy::{
     prelude::*,
     tasks::{IoTaskPool, futures_lite::StreamExt as _},
 };
+use crossterm::{
+    event::{
+        DisableBracketedPaste, EnableBracketedPaste, EventStream, KeyboardEnhancementFlags as KEF,
+        PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+    },
+    execute,
+};
+use ratatui::layout::Size;
+use std::io::stdout;
 
 #[derive(Deref, DerefMut, Resource)]
 pub struct Terminal(pub ratatui::DefaultTerminal);
 
 impl Drop for Terminal {
     fn drop(&mut self) {
-        ratatui::restore();
+        TuiPlugin::restore();
     }
 }
 
@@ -40,9 +49,34 @@ pub struct Resize(pub ratatui::layout::Size);
 pub struct TuiPlugin;
 
 impl TuiPlugin {
-    pub fn reader_system(mut commands: Commands, unparker: Option<Res<Unparker>>) {
-        use crossterm::event::EventStream;
+    fn init() -> Terminal {
+        let terminal = ratatui::init();
 
+        execute!(
+            stdout(),
+            // TODO: Disabled to avoid event spam until I'm ready to use this
+            // EnableMouseCapture,
+            EnableBracketedPaste,
+            PushKeyboardEnhancementFlags(KEF::DISAMBIGUATE_ESCAPE_CODES),
+        )
+        .unwrap();
+
+        Terminal(terminal)
+    }
+
+    fn restore() {
+        ratatui::restore();
+
+        let _ = execute!(
+            stdout(),
+            // TODO: Disabled to avoid event spam until I'm ready to use this
+            // DisableMouseCapture,
+            DisableBracketedPaste,
+            PopKeyboardEnhancementFlags,
+        );
+    }
+
+    pub fn reader_system(mut commands: Commands, unparker: Option<Res<Unparker>>) {
         let (sender, receiver) = flume::bounded(32);
         commands.insert_resource(EventReader(receiver));
 
@@ -73,7 +107,6 @@ impl TuiPlugin {
         mut resize: EventWriter<Resize>,
     ) {
         use crossterm::event::Event as TEvent;
-        use ratatui::layout::Size;
 
         for event in reader.0.try_iter() {
             terminal.write(Event(event.clone()));
@@ -91,8 +124,8 @@ impl TuiPlugin {
 
 impl Plugin for TuiPlugin {
     fn build(&self, app: &mut App) {
-        let terminal = ratatui::init();
-        app.insert_resource(Terminal(terminal))
+        let terminal = Self::init();
+        app.insert_resource(terminal)
             .add_event::<Event>()
             .add_event::<Focus>()
             .add_event::<Key>()
