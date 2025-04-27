@@ -6,35 +6,35 @@ use bevy::{
 #[derive(Deref, DerefMut, Resource)]
 pub struct Terminal(pub ratatui::DefaultTerminal);
 
-#[derive(Resource)]
-pub struct TerminalEventReader(flume::Receiver<crossterm::event::Event>);
-
 impl Drop for Terminal {
     fn drop(&mut self) {
         ratatui::restore();
     }
 }
 
+#[derive(Resource)]
+pub struct EventReader(flume::Receiver<crossterm::event::Event>);
+
 #[derive(Deref, DerefMut, Event)]
-pub struct TerminalEvent(pub crossterm::event::Event);
+pub struct Event(pub crossterm::event::Event);
 
 #[derive(Event)]
-pub enum TerminalFocus {
+pub enum Focus {
     Gained,
     Lost,
 }
 
 #[derive(Deref, DerefMut, Event)]
-pub struct TerminalKey(pub crossterm::event::KeyEvent);
+pub struct Key(pub crossterm::event::KeyEvent);
 
 #[derive(Deref, DerefMut, Event)]
-pub struct TerminalMouse(pub crossterm::event::MouseEvent);
+pub struct Mouse(pub crossterm::event::MouseEvent);
 
 #[derive(Deref, DerefMut, Event)]
-pub struct TerminalPaste(pub String);
+pub struct Paste(pub String);
 
 #[derive(Deref, DerefMut, Event)]
-pub struct TerminalResize(pub ratatui::layout::Size);
+pub struct Resize(pub ratatui::layout::Size);
 
 pub struct TuiPlugin;
 
@@ -43,7 +43,7 @@ impl TuiPlugin {
         use crossterm::event::EventStream;
 
         let (sender, receiver) = flume::bounded(32);
-        commands.insert_resource(TerminalEventReader(receiver));
+        commands.insert_resource(EventReader(receiver));
 
         let task_pool = IoTaskPool::get();
         let task = task_pool.spawn(async move {
@@ -58,38 +58,26 @@ impl TuiPlugin {
     }
 
     pub fn writer_system(
-        reader: Res<TerminalEventReader>,
-        mut terminal: EventWriter<TerminalEvent>,
-        mut focus: EventWriter<TerminalFocus>,
-        mut key: EventWriter<TerminalKey>,
-        mut mouse: EventWriter<TerminalMouse>,
-        mut paste: EventWriter<TerminalPaste>,
-        mut resize: EventWriter<TerminalResize>,
+        reader: Res<EventReader>,
+        mut terminal: EventWriter<Event>,
+        mut focus: EventWriter<Focus>,
+        mut key: EventWriter<Key>,
+        mut mouse: EventWriter<Mouse>,
+        mut paste: EventWriter<Paste>,
+        mut resize: EventWriter<Resize>,
     ) {
-        use crossterm::event::Event;
+        use crossterm::event::Event as TEvent;
         use ratatui::layout::Size;
 
         for event in reader.0.try_iter() {
-            terminal.write(TerminalEvent(event.clone()));
+            terminal.write(Event(event.clone()));
             match event {
-                Event::FocusGained => {
-                    focus.write(TerminalFocus::Gained);
-                }
-                Event::FocusLost => {
-                    focus.write(TerminalFocus::Lost);
-                }
-                Event::Key(key_event) => {
-                    key.write(TerminalKey(key_event));
-                }
-                Event::Mouse(mouse_event) => {
-                    mouse.write(TerminalMouse(mouse_event));
-                }
-                Event::Paste(text) => {
-                    paste.write(TerminalPaste(text));
-                }
-                Event::Resize(columns, rows) => {
-                    resize.write(TerminalResize(Size::new(columns, rows)));
-                }
+                TEvent::FocusGained => _ = focus.write(Focus::Gained),
+                TEvent::FocusLost => _ = focus.write(Focus::Lost),
+                TEvent::Key(key_event) => _ = key.write(Key(key_event)),
+                TEvent::Mouse(mouse_event) => _ = mouse.write(Mouse(mouse_event)),
+                TEvent::Paste(text) => _ = paste.write(Paste(text)),
+                TEvent::Resize(columns, rows) => _ = resize.write(Resize(Size::new(columns, rows))),
             }
         }
     }
@@ -99,12 +87,12 @@ impl Plugin for TuiPlugin {
     fn build(&self, app: &mut App) {
         let terminal = ratatui::init();
         app.insert_resource(Terminal(terminal))
-            .add_event::<TerminalEvent>()
-            .add_event::<TerminalFocus>()
-            .add_event::<TerminalKey>()
-            .add_event::<TerminalMouse>()
-            .add_event::<TerminalPaste>()
-            .add_event::<TerminalResize>()
+            .add_event::<Event>()
+            .add_event::<Focus>()
+            .add_event::<Key>()
+            .add_event::<Mouse>()
+            .add_event::<Paste>()
+            .add_event::<Resize>()
             .add_systems(Startup, Self::reader_system)
             .add_systems(PreUpdate, Self::writer_system);
     }

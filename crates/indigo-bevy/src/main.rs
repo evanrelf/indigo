@@ -2,7 +2,7 @@
 
 mod terminal;
 
-use crate::terminal::{Terminal, TerminalKey, TerminalResize, TuiPlugin};
+use crate::terminal::{Key, Resize, Terminal, TuiPlugin};
 use bevy::prelude::*;
 use clap::Parser as _;
 
@@ -29,8 +29,8 @@ fn main() {
         .add_systems(
             Update,
             (
-                render_system.run_if(on_event::<RequestRender>.or(on_event::<TerminalResize>)),
-                handle_key_input_system.run_if(on_event::<TerminalKey>),
+                render_system.run_if(on_event::<RequestRender>.or(on_event::<Resize>)),
+                handle_key_input_system.run_if(on_event::<Key>),
             ),
         )
         .run();
@@ -49,7 +49,7 @@ fn render_system(text: Res<Text>, mut terminal: ResMut<Terminal>) -> Result {
 
 fn handle_key_input_system(
     mut text: ResMut<Text>,
-    mut key: EventReader<TerminalKey>,
+    mut key: EventReader<Key>,
     mut render: EventWriter<RequestRender>,
     mut exit: EventWriter<AppExit>,
 ) {
@@ -57,7 +57,7 @@ fn handle_key_input_system(
 
     let mut should_render = false;
 
-    for TerminalKey(key) in key.read() {
+    for Key(key) in key.read() {
         match (key.modifiers, key.code) {
             (m, KeyCode::Char('c')) if m == KeyModifiers::CONTROL => {
                 exit.write_default();
