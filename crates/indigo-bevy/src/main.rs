@@ -4,12 +4,11 @@ mod park;
 mod tui;
 
 use crate::{
-    park::{ParkPlugin, ParkSettings},
+    park::ParkPlugin,
     tui::{Key, Resize, Terminal, TuiPlugin},
 };
 use bevy::prelude::*;
 use clap::Parser as _;
-use std::time::Duration;
 
 #[derive(clap::Parser, Resource)]
 struct Args {}
@@ -26,11 +25,7 @@ fn main() {
     let text = Text(String::from("Hello, world!"));
 
     App::new()
-        .add_plugins((MinimalPlugins, ParkPlugin, TuiPlugin))
-        .insert_resource(ParkSettings {
-            // TODO: Remove once `ParkPlugin` unparking is fixed.
-            duration: Some(Duration::from_secs(1)),
-        })
+        .add_plugins((MinimalPlugins, TuiPlugin, ParkPlugin))
         .insert_resource(args)
         .insert_resource(text)
         .add_event::<RequestRender>()
