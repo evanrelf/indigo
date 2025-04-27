@@ -18,12 +18,7 @@ impl Default for ParkSettings {
         Self {
             enabled: true,
 
-            // Infrequent enough to be problematic if you're expecting real-time responsiveness, in
-            // which case you should configure a system off the main thread to unpark.
-            //
-            // But regular enough for time-insensitive polling tasks, and better than grinding to a
-            // complete halt in the absence of external unparking.
-            park_duration: Some(Duration::from_secs(1)),
+            park_duration: None,
 
             // 0 is almost always too few. Events are only seen by systems running later in the same
             // frame, so e.g. emitting an `AppExit` event likely won't cause the app to exit until
@@ -32,9 +27,9 @@ impl Default for ParkSettings {
             // 1 might be barely enough (addresses the aformentioned issue), but still cuts it very
             // close.
             //
-            // 30 is generous, but still far more economical than the normal behavior without this
+            // 10 is generous, but still far more economical than the normal behavior without this
             // plugin enabled.
-            unparked_frames: 30,
+            unparked_frames: 10,
         }
     }
 }
