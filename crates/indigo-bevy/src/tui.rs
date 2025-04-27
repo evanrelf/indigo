@@ -1,3 +1,4 @@
+use crate::park::Unparker;
 use bevy::{
     prelude::*,
     tasks::{IoTaskPool, futures_lite::StreamExt as _},
@@ -39,11 +40,13 @@ pub struct Resize(pub ratatui::layout::Size);
 pub struct TuiPlugin;
 
 impl TuiPlugin {
-    pub fn reader_system(mut commands: Commands) {
+    pub fn reader_system(mut commands: Commands, unparker: Option<Res<Unparker>>) {
         use crossterm::event::EventStream;
 
         let (sender, receiver) = flume::bounded(32);
         commands.insert_resource(EventReader(receiver));
+
+        let unparker = unparker.map(|u| u.clone());
 
         let task_pool = IoTaskPool::get();
         let task = task_pool.spawn(async move {
@@ -51,6 +54,9 @@ impl TuiPlugin {
             while let Some(event) = event_stream.next().await.map(|result| result.unwrap()) {
                 if sender.send_async(event).await.is_err() {
                     break;
+                }
+                if let Some(ref unparker) = unparker {
+                    unparker.unpark();
                 }
             }
         });

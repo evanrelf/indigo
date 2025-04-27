@@ -1,10 +1,15 @@
 #![allow(clippy::needless_pass_by_value)]
 
+mod park;
 mod tui;
 
-use crate::tui::{Key, Resize, Terminal, TuiPlugin};
+use crate::{
+    park::{ParkPlugin, ParkSettings},
+    tui::{Key, Resize, Terminal, TuiPlugin},
+};
 use bevy::prelude::*;
 use clap::Parser as _;
+use std::time::Duration;
 
 #[derive(clap::Parser, Resource)]
 struct Args {}
@@ -21,7 +26,11 @@ fn main() {
     let text = Text(String::from("Hello, world!"));
 
     App::new()
-        .add_plugins((MinimalPlugins, TuiPlugin))
+        .add_plugins((MinimalPlugins, ParkPlugin, TuiPlugin))
+        .insert_resource(ParkSettings {
+            // TODO: Remove once `ParkPlugin` unparking is fixed.
+            duration: Some(Duration::from_secs(1)),
+        })
         .insert_resource(args)
         .insert_resource(text)
         .add_event::<RequestRender>()
@@ -33,17 +42,7 @@ fn main() {
                 handle_key_input_system.run_if(on_event::<Key>),
             ),
         )
-        .add_systems(Last, park_system)
         .run();
-}
-
-fn park_system(_: Option<NonSend<NonSendMarker>>) {
-    use std::{thread, time::Duration};
-
-    // TODO: Block on `parking::Parker`. Store `parking::Unparker` in a resource. Make plugins like
-    // `TuiPlugin` optionally (if resource is inserted) unpark on input events. Hypothetical timer
-    // plugin could also unpark main thread.
-    thread::sleep(Duration::from_secs(1));
 }
 
 fn render_system(text: Res<Text>, mut terminal: ResMut<Terminal>) -> Result {
