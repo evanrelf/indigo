@@ -1,8 +1,8 @@
 #![allow(clippy::needless_pass_by_value)]
 
-mod terminal;
+mod tui;
 
-use crate::terminal::{Key, Resize, Terminal, TuiPlugin};
+use crate::tui::{Key, Resize, Terminal, TuiPlugin};
 use bevy::prelude::*;
 use clap::Parser as _;
 
