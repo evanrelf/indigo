@@ -1,4 +1,8 @@
-use bevy::prelude::*;
+use bevy::{
+    app::MainScheduleOrder,
+    ecs::schedule::{ExecutorKind, ScheduleLabel},
+    prelude::*,
+};
 use std::time::Duration;
 
 #[derive(Resource)]
@@ -39,6 +43,9 @@ pub struct Parker(parking::Parker);
 #[derive(Deref, Resource)]
 pub struct Unparker(pub parking::Unparker);
 
+#[derive(Clone, Debug, Eq, Hash, PartialEq, ScheduleLabel)]
+pub struct Park;
+
 /// Park the main thread to reduce CPU utilization. Explicitly unpark from background threads when
 /// there is work to do, e.g. user input, file I/O, or other external stimulus.
 pub struct ParkPlugin;
@@ -75,11 +82,18 @@ impl ParkPlugin {
 
 impl Plugin for ParkPlugin {
     fn build(&self, app: &mut App) {
+        app.insert_resource(ParkSettings::default());
+
         let (parker, unparker) = parking::pair();
-        app.insert_resource(ParkSettings::default())
-            .insert_non_send_resource(Parker(parker))
-            .insert_resource(Unparker(unparker))
-            // TODO: How to make this the last of the last?
-            .add_systems(Last, Self::park_system.run_if(Self::is_enabled));
+        app.insert_non_send_resource(Parker(parker));
+        app.insert_resource(Unparker(unparker));
+
+        let mut schedule = Schedule::new(Park);
+        schedule.set_executor_kind(ExecutorKind::SingleThreaded);
+        app.add_schedule(schedule);
+        let mut main_schedule_order = app.world_mut().resource_mut::<MainScheduleOrder>();
+        main_schedule_order.insert_after(Last, Park);
+
+        app.add_systems(Park, Self::park_system.run_if(Self::is_enabled));
     }
 }
