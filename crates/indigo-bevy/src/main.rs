@@ -33,9 +33,10 @@ fn main() {
         .add_systems(
             Update,
             (
-                render_system.run_if(on_event::<RequestRender>.or(on_event::<Resize>)),
                 handle_key_input_system.run_if(on_event::<Key>),
-            ),
+                render_system.run_if(on_event::<RequestRender>.or(on_event::<Resize>)),
+            )
+                .chain(),
         )
         .run();
 }
