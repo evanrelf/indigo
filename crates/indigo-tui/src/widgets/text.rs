@@ -47,7 +47,7 @@ impl Widget for Text<'_> {
             }
         }
 
-        if let Some(bottom_row) = area.rows().last() {
+        if let Some(bottom_row) = area.rows().next_back() {
             surface.set_style(bottom_row, Modifier::UNDERLINED);
         }
     }
