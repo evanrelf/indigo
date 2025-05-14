@@ -1,0 +1,13 @@
+[package]
+name = "indigo-ui"
+edition = "2024"
+
+[dependencies]
+anyhow = { workspace = true }
+crossterm = "0.29.0"
+ratatui = { workspace = true }
+taffy = { version = "0.8.1", default-features = false, features = ["std", "flexbox"] }
+xilem_core = "0.3.0"
+
+[lints]
+workspace = true
