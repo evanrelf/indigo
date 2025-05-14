@@ -55,6 +55,9 @@ mod tests {
         let s = "";
         assert_eq!(s.display_width(), 0);
 
+        let s = "‍"; // zwj
+        assert_eq!(s.display_width(), 1);
+
         let c = '\x00'; // null
         assert_eq!(c.display_width(), 1);
 
