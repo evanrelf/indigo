@@ -1,3 +1,5 @@
+mod two;
+
 use std::{any::Any, fmt::Debug, sync::Arc};
 
 pub trait AnyMessage: Any + Debug + Send {}
