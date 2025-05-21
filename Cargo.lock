@@ -1862,12 +1862,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "grid"
-version = "0.16.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "969d090eea77fac1be33f853ffc4b6b60cc6f312ddf4fd28b311a730e1dd8ebe"
-
-[[package]]
 name = "guillotiere"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2071,11 +2065,7 @@ dependencies = [
 name = "indigo-ui"
 version = "0.0.0"
 dependencies = [
- "anyhow",
- "crossterm 0.29.0",
  "ratatui",
- "taffy",
- "xilem_core",
 ]
 
 [[package]]
@@ -3138,18 +3128,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "taffy"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "592835b1f82a500b55aa6242e5e2d1fb90c50e701fa9c33b5962d4aeaa4e88d6"
-dependencies = [
- "arrayvec",
- "grid",
- "serde",
- "slotmap",
-]
-
-[[package]]
 name = "termcolor"
 version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3932,15 +3910,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6f42320e61fe2cfd34354ecb597f86f413484a798ba44a8ca1165c58d42da6c1"
 dependencies = [
  "bitflags 2.9.0",
-]
-
-[[package]]
-name = "xilem_core"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2c0cbbbc88ae752dd6fe271c780f41045c006b7c8c5ec673f0d7e52418d6750"
-dependencies = [
- "tracing",
 ]
 
 [[package]]
