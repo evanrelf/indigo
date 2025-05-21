@@ -4,6 +4,7 @@ edition = "2024"
 
 [dependencies]
 ratatui = { workspace = true }
+taffy = { version = "0.8.1", default-features = false, features = ["std", "flexbox"] }
 
 [lints]
 workspace = true

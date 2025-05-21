@@ -28,7 +28,7 @@ impl DynMessage {
     }
 }
 
-pub trait Component<State = (), Action = (), Message = DynMessage> {
+pub trait View<State = (), Action = (), Message = DynMessage> {
     fn handle(&self, state: &mut State, message: Message) -> Option<Action>;
 
     fn render(&self, state: &State, area: Rect, buffer: &mut Buffer);
@@ -44,7 +44,7 @@ pub fn text(contents: impl Into<Arc<str>>) -> Text {
     }
 }
 
-impl<State, Action> Component<State, Action> for Text {
+impl<State, Action> View<State, Action> for Text {
     fn handle(&self, state: &mut State, message: DynMessage) -> Option<Action> {
         None
     }
@@ -70,15 +70,26 @@ pub fn button<State, Action>(
     }
 }
 
-impl<State, Action, F> Component<State, Action> for Button<F>
+impl<State, Action, F> View<State, Action> for Button<F>
 where
     F: Fn(&mut State) -> Action,
 {
     fn handle(&self, state: &mut State, message: DynMessage) -> Option<Action> {
-        struct Click; // TODO
-        if message.downcast::<Click>().is_ok() {
-            let action = (self.on_click)(state);
-            Some(action)
+        use ratatui::crossterm::event::{Event, KeyCode, MouseEventKind};
+        if let Ok(event) = message.downcast::<Event>() {
+            match *event {
+                Event::Mouse(mouse_event)
+                    if matches!(mouse_event.kind, MouseEventKind::Down(_)) =>
+                {
+                    let action = (self.on_click)(state);
+                    Some(action)
+                }
+                Event::Key(key_event) if matches!(key_event.code, KeyCode::Enter) => {
+                    let action = (self.on_click)(state);
+                    Some(action)
+                }
+                _ => None,
+            }
         } else {
             None
         }
@@ -86,10 +97,53 @@ where
 
     fn render(&self, state: &State, area: Rect, buffer: &mut Buffer) {
         let text = text(self.label.clone());
-        Component::<_, Action>::render(&text, state, area, buffer);
+        View::<_, Action>::render(&text, state, area, buffer);
     }
 }
 
-fn example(count: &mut i32) -> impl Component<i32> {
-    button("Increment", |count| *count += 1)
+pub struct App<State, Logic> {
+    state: State,
+    logic: Logic,
+    restore_on_drop: bool,
+}
+
+impl<S, L, C> App<S, L>
+where
+    L: FnMut(&mut S) -> C,
+    C: View<S>,
+{
+    pub fn new(state: S, logic: L) -> Self {
+        Self {
+            state,
+            logic,
+            restore_on_drop: false,
+        }
+    }
+
+    pub fn run(mut self) {
+        use ratatui::crossterm;
+        let mut terminal = ratatui::init();
+        self.restore_on_drop = true;
+        let mut view = (self.logic)(&mut self.state);
+        terminal.draw(|frame| {
+            view.render(&self.state, frame.area(), frame.buffer_mut());
+        });
+        loop {
+            let event = crossterm::event::read().unwrap();
+            let message = DynMessage(Box::new(event));
+            view.handle(&mut self.state, message);
+            view = (self.logic)(&mut self.state);
+            terminal.draw(|frame| {
+                view.render(&self.state, frame.area(), frame.buffer_mut());
+            });
+        }
+    }
+}
+
+impl<State, Logic> Drop for App<State, Logic> {
+    fn drop(&mut self) {
+        if self.restore_on_drop {
+            ratatui::restore();
+        }
+    }
 }

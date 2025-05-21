@@ -1,4 +1,4 @@
-mod two;
+pub mod two;
 
 use std::{any::Any, fmt::Debug, sync::Arc};
 
