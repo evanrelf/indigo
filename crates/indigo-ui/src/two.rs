@@ -45,11 +45,11 @@ pub fn text(contents: impl Into<Arc<str>>) -> Text {
 }
 
 impl<State, Action> View<State, Action> for Text {
-    fn handle(&self, state: &mut State, message: DynMessage) -> Option<Action> {
+    fn handle(&self, _state: &mut State, _message: DynMessage) -> Option<Action> {
         None
     }
 
-    fn render(&self, state: &State, area: Rect, buffer: &mut Buffer) {
+    fn render(&self, _state: &State, area: Rect, buffer: &mut Buffer) {
         use ratatui::{text::Text, widgets::Widget as _};
         Text::raw(&*self.contents).render(area, buffer);
     }
@@ -125,17 +125,21 @@ where
         let mut terminal = ratatui::init();
         self.restore_on_drop = true;
         let mut view = (self.logic)(&mut self.state);
-        terminal.draw(|frame| {
-            view.render(&self.state, frame.area(), frame.buffer_mut());
-        });
+        terminal
+            .draw(|frame| {
+                view.render(&self.state, frame.area(), frame.buffer_mut());
+            })
+            .unwrap();
         loop {
             let event = crossterm::event::read().unwrap();
             let message = DynMessage(Box::new(event));
             view.handle(&mut self.state, message);
             view = (self.logic)(&mut self.state);
-            terminal.draw(|frame| {
-                view.render(&self.state, frame.area(), frame.buffer_mut());
-            });
+            terminal
+                .draw(|frame| {
+                    view.render(&self.state, frame.area(), frame.buffer_mut());
+                })
+                .unwrap();
         }
     }
 }

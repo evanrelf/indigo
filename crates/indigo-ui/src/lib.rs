@@ -69,15 +69,15 @@ impl<AppState, Action> View<AppState, Action> for Text {
         todo!()
     }
 
-    fn rebuild(&self, view_state: &mut Self::ViewState, element: &mut Self::Element) {
+    fn rebuild(&self, _view_state: &mut Self::ViewState, _element: &mut Self::Element) {
         todo!()
     }
 
     fn message(
         &self,
-        app_state: &mut AppState,
-        view_state: &mut Self::ViewState,
-        message: DynMessage,
+        _app_state: &mut AppState,
+        _view_state: &mut Self::ViewState,
+        _message: DynMessage,
     ) -> MessageResult<Action> {
         todo!()
     }
