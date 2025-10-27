@@ -19,7 +19,6 @@ indigo-cli = { path = "crates/indigo-cli/" }
 indigo-core = { path = "crates/indigo-core/" }
 indigo-event = { path = "crates/indigo-event/" }
 indigo-tui = { path = "crates/indigo-tui/" }
-indigo-ui = { path = "crates/indigo-ui/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }
 memchr = "2.7.4"
 ratatui = "0.29.0"
