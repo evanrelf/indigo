@@ -264,7 +264,7 @@ mod tests {
         }
         {
             fn is_even(n: u8) -> bool {
-                n % 2 == 0
+                n.is_multiple_of(2)
             }
             fn is_double_digit(n: u8) -> bool {
                 (10..=99).contains(&n)

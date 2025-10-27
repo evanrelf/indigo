@@ -59,6 +59,7 @@ impl Widget for Selection<'_> {
                     continue;
                 }
             }
+            #[expect(clippy::collapsible_if)]
             if line_index == end_line {
                 if let Some(end_rect) = grapheme_area(range.end().char_offset().saturating_sub(1)) {
                     let delta = line_rect.right() - end_rect.right();

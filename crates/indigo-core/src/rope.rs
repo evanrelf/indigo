@@ -88,14 +88,14 @@ pub trait RopeExt {
         Some(end - rope.byte_to_char(memrchr(byte, haystack)?))
     }
 
-    fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice> {
+    fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice<'_>> {
         let rope = self.as_slice();
         let start = char_index;
         rope.next_grapheme_boundary(start)
             .map(|end| rope.slice(start..end))
     }
 
-    fn grapheme(&self, char_index: usize) -> RopeSlice {
+    fn grapheme(&self, char_index: usize) -> RopeSlice<'_> {
         self.get_grapheme(char_index).unwrap()
     }
 

@@ -75,13 +75,13 @@ impl CommandMode {
         &self.text
     }
 
-    pub fn cursor(&self) -> Cursor {
+    pub fn cursor(&self) -> Cursor<'_> {
         let cursor = Cursor::new(&self.text, &self.cursor).unwrap();
         cursor.assert_invariants().unwrap();
         cursor
     }
 
-    pub fn cursor_mut(&mut self) -> CursorMut {
+    pub fn cursor_mut(&mut self) -> CursorMut<'_> {
         let cursor = CursorMut::new(&mut self.text, &mut self.cursor).unwrap();
         cursor.assert_invariants().unwrap();
         cursor

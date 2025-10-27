@@ -75,21 +75,21 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         Ok(range_view)
     }
 
-    pub fn slice(&self) -> RopeSlice {
+    pub fn slice(&self) -> RopeSlice<'_> {
         let start = self.start().char_offset();
         let end = self.end().char_offset();
         self.text.slice(start..end)
     }
 
-    pub fn anchor(&self) -> Cursor {
+    pub fn anchor(&self) -> Cursor<'_> {
         Cursor::new(&self.text, &self.state.anchor).unwrap()
     }
 
-    pub fn head(&self) -> Cursor {
+    pub fn head(&self) -> Cursor<'_> {
         Cursor::new(&self.text, &self.state.head).unwrap()
     }
 
-    pub fn start(&self) -> Cursor {
+    pub fn start(&self) -> Cursor<'_> {
         if self.state.anchor <= self.state.head {
             self.anchor()
         } else {
@@ -97,7 +97,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         }
     }
 
-    pub fn end(&self) -> Cursor {
+    pub fn end(&self) -> Cursor<'_> {
         if self.state.anchor <= self.state.head {
             self.head()
         } else {
@@ -155,11 +155,11 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
 }
 
 impl<W: WrapMut> RangeView<'_, W> {
-    fn anchor_mut(&mut self) -> CursorMut {
+    fn anchor_mut(&mut self) -> CursorMut<'_> {
         CursorMut::new(&mut self.text, &mut self.state.anchor).unwrap()
     }
 
-    fn head_mut(&mut self) -> CursorMut {
+    fn head_mut(&mut self) -> CursorMut<'_> {
         CursorMut::new(&mut self.text, &mut self.state.head).unwrap()
     }
 

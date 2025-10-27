@@ -28,7 +28,7 @@ impl Buffer {
         &self.text
     }
 
-    pub fn range(&self) -> Range {
+    pub fn range(&self) -> Range<'_> {
         let range = Range::new(&self.text, &self.range).unwrap();
         range.assert_invariants().unwrap();
         range
