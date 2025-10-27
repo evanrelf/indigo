@@ -14,7 +14,6 @@ etcetera = "0.10.0"
 fastrand = "2.3.0"
 flagset = "0.4.6"
 hdrhistogram = "7.5.4"
-indigo-bevy = { path = "crates/indigo-bevy/" }
 indigo-cli = { path = "crates/indigo-cli/" }
 indigo-core = { path = "crates/indigo-core/" }
 indigo-event = { path = "crates/indigo-event/" }
