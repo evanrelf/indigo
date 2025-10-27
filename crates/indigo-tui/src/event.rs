@@ -1,7 +1,7 @@
 use crate::{
     areas::{Areas, position_to_char_index},
     key::{key_i2t, key_t2i},
-    terminal::Terminal,
+    terminal::TerminalGuard,
 };
 use anyhow::anyhow;
 use crossterm::event::{KeyCode, KeyModifiers, MouseButton, MouseEventKind};
@@ -34,7 +34,7 @@ pub fn should_skip_event(event: &TerminalEvent) -> bool {
 // itself to simulation.
 pub fn handle_event(
     editor: &mut Editor,
-    terminal: &mut Terminal,
+    terminal: &mut TerminalGuard,
     areas: Areas,
     event: TerminalEvent,
 ) -> anyhow::Result<()> {
@@ -66,7 +66,7 @@ pub fn handle_event(
 #[expect(clippy::needless_pass_by_value)]
 fn handle_event_normal(
     editor: &Editor,
-    terminal: &mut Terminal,
+    terminal: &mut TerminalGuard,
     areas: Areas,
     event: TerminalEvent,
 ) -> anyhow::Result<Rc<[IndigoAction]>> {
@@ -135,7 +135,7 @@ fn handle_event_normal(
 
 fn handle_event_insert(
     _editor: &Editor,
-    terminal: &mut Terminal,
+    terminal: &mut TerminalGuard,
     _areas: Areas,
     event: TerminalEvent,
 ) -> anyhow::Result<Rc<[IndigoAction]>> {
@@ -164,7 +164,7 @@ fn handle_event_insert(
 #[expect(clippy::unnecessary_wraps)]
 fn handle_event_command(
     _editor: &Editor,
-    _terminal: &mut Terminal,
+    _terminal: &mut TerminalGuard,
     _areas: Areas,
     event: TerminalEvent,
 ) -> anyhow::Result<Rc<[IndigoAction]>> {

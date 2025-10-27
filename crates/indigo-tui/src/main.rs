@@ -7,7 +7,7 @@ use indigo_tui::{
     areas::Areas,
     event::{handle_event, should_skip_event},
     terminal,
-    terminal::Terminal,
+    terminal::TerminalGuard,
     widgets,
 };
 use ratatui::widgets::Widget;
@@ -43,7 +43,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
     init_tracing_subscriber(&args, &xdg)?;
 
-    let mut terminal = terminal::enter()?;
+    let terminal = terminal::init();
 
     let rope = if let Some(ref path) = args.file {
         let file = fs::File::open(path)?;
@@ -54,7 +54,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let editor = Editor::from(Buffer::from(rope));
 
-    run(&args, &mut terminal, editor)
+    run(&args, terminal, editor)
 }
 
 fn init_etcetera() -> anyhow::Result<Xdg> {
@@ -166,7 +166,7 @@ impl Times {
     }
 }
 
-fn run(args: &Args, terminal: &mut Terminal, mut editor: Editor) -> anyhow::Result<ExitCode> {
+fn run(args: &Args, mut terminal: TerminalGuard, mut editor: Editor) -> anyhow::Result<ExitCode> {
     let mut areas = Areas::default();
 
     let mut frame = Times::new("full frame", args.stats);
@@ -207,14 +207,14 @@ fn run(args: &Args, terminal: &mut Terminal, mut editor: Editor) -> anyhow::Resu
         #[cfg(feature = "tracy")]
         let _ = tracy_frame.insert(tracing_tracy::client::non_continuous_frame!("frame"));
 
-        handle_event(&mut editor, terminal, areas, event)?;
+        handle_event(&mut editor, &mut terminal, areas, event)?;
 
         if let Some(exit_code) = editor.exit {
             break ExitCode::from(exit_code);
         }
     };
 
-    let _ = terminal::exit();
+    drop(terminal);
 
     frame.print_stats();
     render.print_stats();
