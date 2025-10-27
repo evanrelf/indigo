@@ -9,7 +9,6 @@ use tracing_subscriber::EnvFilter;
 
 #[derive(Debug, clap::Parser)]
 struct Args {
-    #[clap(default_value_t)]
     keys: Keys,
 
     #[clap(long, env = "INDIGO_LOG", default_value_t)]
