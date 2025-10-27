@@ -1,4 +1,4 @@
-use crate::graphemes::{self, GraphemeBoundaries, Graphemes};
+use crate::graphemes::{self, Graphemes};
 use ropey::{Rope, RopeSlice};
 use std::ops::{Bound, RangeBounds};
 
@@ -103,10 +103,6 @@ pub trait RopeExt {
         Graphemes::new(&self.as_slice())
     }
 
-    fn grapheme_boundaries(&self) -> GraphemeBoundaries<'_> {
-        GraphemeBoundaries::new(&self.as_slice())
-    }
-
     fn is_grapheme_boundary(&self, char_offset: usize) -> bool {
         graphemes::is_grapheme_boundary(&self.as_slice(), char_offset)
     }
@@ -143,7 +139,6 @@ impl RopeExt for Rope {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use arbtest::arbtest;
 
     #[test]
     fn rope_length() {
@@ -280,40 +275,5 @@ mod tests {
         assert_eq!(a(""), e(&[]));
         assert_eq!(a("hello"), e(&["h", "e", "l", "l", "o"]));
         assert_eq!(a("x\t\n🇯🇵👨‍👨‍👧"), e(&["x", "\t", "\n", "🇯🇵", "👨‍👨‍👧"]));
-    }
-
-    #[test]
-    fn grapheme_boundaries() {
-        arbtest(|u| {
-            let rope = Rope::from_str(u.arbitrary()?);
-            let step: Vec<usize> = {
-                let mut char_index = 0;
-                let mut bs = vec![0];
-                while let Some(b) = rope.next_grapheme_boundary(char_index) {
-                    char_index = b;
-                    bs.push(b);
-                }
-                bs
-            };
-            let iter: Vec<usize> = rope.grapheme_boundaries().collect();
-            assert_eq!(
-                step, iter,
-                "mismatched grapheme boundaries\nrope = {rope:?}"
-            );
-            Ok(())
-        });
-    }
-
-    #[test]
-    fn grapheme_counts() {
-        arbtest(|u| {
-            let rope = Rope::from_str(u.arbitrary()?);
-            assert_eq!(
-                rope.grapheme_boundaries().count(),
-                rope.graphemes().count() + 1,
-                "mismatched grapheme boundary counts\nrope = {rope:?}"
-            );
-            Ok(())
-        });
     }
 }
