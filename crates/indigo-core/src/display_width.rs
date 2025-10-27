@@ -52,37 +52,16 @@ mod tests {
 
     #[test]
     fn test() {
-        let s = "";
-        assert_eq!(s.display_width(), 0);
-
-        let s = "‍"; // zwj
-        assert_eq!(s.display_width(), 1);
-
-        let c = '\x00'; // null
-        assert_eq!(c.display_width(), 1);
-
-        let s = "\x00"; // null
-        assert_eq!(s.display_width(), 1);
-
-        let s = "\u{200B}"; // zws
-        assert_eq!(s.display_width(), 1);
-
-        let s = "abc";
-        assert_eq!(s.display_width(), 3);
-
-        let s = "🇯🇵";
-        assert_eq!(s.display_width(), 2);
-
-        let s = "👩🏻‍❤️‍💋‍👩🏻";
-        assert_eq!(s.display_width(), 2);
-
-        let c = '\t';
-        assert_eq!(c.display_width(), 8);
-
-        let s = "\t";
-        assert_eq!(s.display_width(), 8);
-
-        let s = "\n";
-        assert_eq!(s.display_width(), 1);
+        assert_eq!("".display_width(), 0);
+        assert_eq!("‍".display_width(), 1); // zwj
+        assert_eq!('\x00'.display_width(), 1); // null
+        assert_eq!("\x00".display_width(), 1); // null
+        assert_eq!("\u{200B}".display_width(), 1); // zws
+        assert_eq!("abc".display_width(), 3);
+        assert_eq!("🇯🇵".display_width(), 2);
+        assert_eq!("👩🏻‍❤️‍💋‍👩🏻".display_width(), 2);
+        assert_eq!('\t'.display_width(), 8);
+        assert_eq!("\t".display_width(), 8);
+        assert_eq!("\n".display_width(), 1);
     }
 }
