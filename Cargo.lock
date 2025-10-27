@@ -488,6 +488,7 @@ dependencies = [
  "anyhow",
  "camino",
  "clap",
+ "crossterm",
  "etcetera",
  "flagset",
  "hdrhistogram",
@@ -503,6 +504,7 @@ dependencies = [
 name = "indigo-ui"
 version = "0.0.0"
 dependencies = [
+ "crossterm",
  "ratatui",
  "taffy",
 ]

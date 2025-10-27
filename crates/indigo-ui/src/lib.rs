@@ -75,7 +75,7 @@ where
     F: Fn(&mut State) -> Action,
 {
     fn handle(&self, state: &mut State, message: DynMessage) -> Option<Action> {
-        use ratatui::crossterm::event::{Event, KeyCode, MouseEventKind};
+        use crossterm::event::{Event, KeyCode, MouseEventKind};
         if let Ok(event) = message.downcast::<Event>() {
             match *event {
                 Event::Mouse(mouse_event)
@@ -121,7 +121,7 @@ where
     }
 
     pub fn run(mut self) {
-        use ratatui::crossterm;
+        use crossterm;
         let mut terminal = ratatui::init();
         self.restore_on_drop = true;
         let mut view = (self.logic)(&mut self.state);

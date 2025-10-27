@@ -5,12 +5,12 @@ pub type IndigoKey = indigo_core::key::Key;
 pub type IndigoKeyCode = indigo_core::key::KeyCode;
 pub type IndigoKeyModifiers = indigo_core::key::KeyModifiers;
 
-pub type TerminalKey = ratatui::crossterm::event::KeyEvent;
-pub type TerminalKeyCode = ratatui::crossterm::event::KeyCode;
-pub type TerminalKeyModifiers = ratatui::crossterm::event::KeyModifiers;
+pub type TerminalKey = crossterm::event::KeyEvent;
+pub type TerminalKeyCode = crossterm::event::KeyCode;
+pub type TerminalKeyModifiers = crossterm::event::KeyModifiers;
 
 mod t {
-    pub use ratatui::crossterm::event::{KeyEventKind, KeyEventState};
+    pub use crossterm::event::{KeyEventKind, KeyEventState};
 }
 
 mod i {

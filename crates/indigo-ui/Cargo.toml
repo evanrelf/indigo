@@ -3,6 +3,7 @@ name = "indigo-ui"
 edition = "2024"
 
 [dependencies]
+crossterm = { workspace = true }
 ratatui = { workspace = true }
 taffy = { version = "0.8.1", default-features = false, features = ["std", "flexbox"] }
 

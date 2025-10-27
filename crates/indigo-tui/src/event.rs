@@ -4,18 +4,16 @@ use crate::{
     terminal::Terminal,
 };
 use anyhow::anyhow;
+use crossterm::event::{KeyCode, KeyModifiers, MouseButton, MouseEventKind};
 use indigo_core::prelude::*;
-use ratatui::{
-    crossterm::event::{KeyCode, KeyModifiers, MouseButton, MouseEventKind},
-    layout::Position,
-};
+use ratatui::layout::Position;
 use std::rc::Rc;
 
 pub type IndigoEvent = indigo_event::event::Event;
 
 pub type IndigoAction = indigo_event::action::Action;
 
-pub type TerminalEvent = ratatui::crossterm::event::Event;
+pub type TerminalEvent = crossterm::event::Event;
 
 #[must_use]
 pub fn should_skip_event(event: &TerminalEvent) -> bool {

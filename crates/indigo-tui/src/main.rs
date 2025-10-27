@@ -10,7 +10,7 @@ use indigo_tui::{
     terminal::Terminal,
     widgets,
 };
-use ratatui::{crossterm, widgets::Widget};
+use ratatui::widgets::Widget;
 use std::time::Instant;
 use std::{cmp::max, fs, io, process::ExitCode, sync::Arc};
 

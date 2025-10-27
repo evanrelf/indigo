@@ -43,7 +43,7 @@ impl Drop for Terminal {
 }
 
 pub fn enter() -> anyhow::Result<Terminal> {
-    use ratatui::crossterm::event::KeyboardEnhancementFlags as KEF;
+    use crossterm::event::KeyboardEnhancementFlags as KEF;
 
     // Ensure the panic hook isn't installed more than once, because we have no safe or guaranteed
     // way of uninstalling it.

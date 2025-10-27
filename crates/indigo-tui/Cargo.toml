@@ -10,6 +10,7 @@ tracy-alloc = ["tracy", "indigo-core/tracy-alloc"]
 anyhow = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
+crossterm = { workspace = true }
 etcetera = { workspace = true }
 flagset = { workspace = true }
 hdrhistogram = { workspace = true }
