@@ -264,7 +264,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
         let grapheme_length = self.grapheme_length();
         if grapheme_length != 1 {
-            tracing::warn!(
+            tracing::error!(
                 grapheme_length,
                 text = ?self.slice(),
                 "Unexpected grapheme length != 1 after reduce",
