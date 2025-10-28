@@ -156,6 +156,8 @@ fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
 
     let mut editor = Editor::from(Buffer::from(rope));
 
+    editor.pwd = Some(Utf8PathBuf::try_from(env::current_dir()?)?);
+
     let mut areas = Areas::default();
 
     let mut frame_times = Times::new("full frame", args.stats);

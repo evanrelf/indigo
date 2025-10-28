@@ -7,6 +7,7 @@ arbitrary = ["dep:arbitrary"]
 
 [dependencies]
 arbitrary = { workspace = true, optional = true }
+camino = { workspace = true }
 flagset = { workspace = true }
 indigo-wrap = { workspace = true }
 memchr = { workspace = true }

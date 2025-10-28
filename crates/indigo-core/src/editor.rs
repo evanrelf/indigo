@@ -1,10 +1,12 @@
 use crate::{buffer::Buffer, mode::Mode};
+use camino::Utf8PathBuf;
 
 #[derive(Default)]
 pub struct Editor {
     pub buffer: Buffer,
     pub mode: Mode,
     pub terminal_height: usize,
+    pub pwd: Option<Utf8PathBuf>,
     pub exit: Option<u8>,
 }
 
