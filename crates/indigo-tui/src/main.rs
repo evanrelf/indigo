@@ -217,43 +217,24 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let buffer = &editor.buffer;
-
-    let range = buffer.range();
-
-    let anchor = range.anchor().char_offset();
-
-    let head = range.head().char_offset();
-
-    let char_length = range.char_length();
-
-    let grapheme_length = range.grapheme_length();
-
-    let display_width = range.slice().display_width();
-
-    let eof = range.is_eof();
-
     let mode = match editor.mode {
         Mode::Normal(_) => "normal",
         Mode::Insert(_) => "insert",
         Mode::Command(_) => "command",
     };
 
+    let path = match &editor.buffer.path {
+        None => "*scratch*",
+        Some(path) => path.as_str(),
+    };
+
+    let anchor = editor.buffer.range().anchor().char_offset();
+
+    let head = editor.buffer.range().head().char_offset();
+
     let count = editor.mode.count();
 
-    let status_bar = [
-        format!("anchor={anchor}"),
-        format!("head={head}"),
-        format!("char_length={char_length}"),
-        format!("grapheme_length={grapheme_length}"),
-        format!("display_width={display_width}"),
-        format!("eof={eof}"),
-        format!("mode={mode}"),
-        format!("count={count}"),
-    ]
-    .join(" ");
-
-    Line::raw(status_bar).render(area, surface);
+    Line::raw(format!("{path} · {mode} {anchor}-{head} {count}")).render(area, surface);
 }
 
 fn render_command_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
