@@ -169,7 +169,7 @@ fn run(args: &Args, mut terminal: TerminalGuard, mut editor: Editor) -> anyhow::
             let area = frame.area();
             let surface = frame.buffer_mut();
             areas = Areas::new(&editor, area);
-            editor.height = usize::from(areas.text.height);
+            editor.terminal_height = usize::from(areas.text.height);
             render(&editor, area, surface);
         })?;
         render_times.stop();

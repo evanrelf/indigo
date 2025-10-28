@@ -232,12 +232,12 @@ fn scroll_half_page_up(editor: &mut Editor) {
     let line = editor
         .buffer
         .vertical_scroll()
-        .saturating_sub(editor.height / 2);
+        .saturating_sub(editor.terminal_height / 2);
     editor.buffer.scroll_to(line);
 }
 
 fn scroll_half_page_down(editor: &mut Editor) {
-    let line = editor.buffer.vertical_scroll() + editor.height / 2;
+    let line = editor.buffer.vertical_scroll() + editor.terminal_height / 2;
     editor.buffer.scroll_to(line);
 }
 
@@ -245,12 +245,12 @@ fn scroll_full_page_up(editor: &mut Editor) {
     let line = editor
         .buffer
         .vertical_scroll()
-        .saturating_sub(editor.height);
+        .saturating_sub(editor.terminal_height);
     editor.buffer.scroll_to(line);
 }
 
 fn scroll_full_page_down(editor: &mut Editor) {
-    let line = editor.buffer.vertical_scroll() + editor.height;
+    let line = editor.buffer.vertical_scroll() + editor.terminal_height;
     editor.buffer.scroll_to(line);
 }
 

@@ -4,7 +4,7 @@ use crate::{buffer::Buffer, mode::Mode};
 pub struct Editor {
     pub buffer: Buffer,
     pub mode: Mode,
-    pub height: usize,
+    pub terminal_height: usize,
     pub exit: Option<u8>,
 }
 
