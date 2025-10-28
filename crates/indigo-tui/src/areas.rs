@@ -4,10 +4,10 @@ use std::cmp::max;
 
 #[derive(Clone, Copy, Default)]
 pub struct Areas {
+    pub status_bar: Rect,
+    pub command_bar: Rect,
     pub line_numbers: Rect,
     pub text: Rect,
-    pub command_bar: Rect,
-    pub status_bar: Rect,
 }
 
 impl Areas {
@@ -18,13 +18,13 @@ impl Areas {
             Mode::Command(_) => (1, 0),
         };
 
-        let [main, command_bar, status_bar] = Layout::vertical([
-            // line_numbers + text
-            Constraint::Fill(1),
-            // command_bar
-            Constraint::Length(command_bar_height),
+        let [status_bar, command_bar, main] = Layout::vertical([
             // status_bar
             Constraint::Length(status_bar_height),
+            // command_bar
+            Constraint::Length(command_bar_height),
+            // line_numbers + text
+            Constraint::Fill(1),
         ])
         .areas(area);
 
@@ -44,10 +44,10 @@ impl Areas {
         .areas(main);
 
         Self {
+            status_bar,
+            command_bar,
             line_numbers,
             text,
-            command_bar,
-            status_bar,
         }
     }
 }

@@ -208,12 +208,78 @@ fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let areas = Areas::new(editor, area);
+    render_status_bar(editor, areas.status_bar, surface);
+    render_command_bar(editor, areas.command_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
     render_tildes(editor, areas.line_numbers, surface);
     render_text(editor, areas.text, surface);
     render_selection(editor, areas.text, surface);
-    render_command_bar(editor, areas.command_bar, surface);
-    render_status_bar(editor, areas.status_bar, surface);
+}
+
+fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
+    let buffer = &editor.buffer;
+
+    let range = buffer.range();
+
+    let anchor = range.anchor().char_offset();
+
+    let head = range.head().char_offset();
+
+    let char_length = range.char_length();
+
+    let grapheme_length = range.grapheme_length();
+
+    let display_width = range.slice().display_width();
+
+    let eof = range.is_eof();
+
+    let mode = match editor.mode {
+        Mode::Normal(_) => "normal",
+        Mode::Insert(_) => "insert",
+        Mode::Command(_) => "command",
+    };
+
+    let count = editor.mode.count();
+
+    let status_bar = [
+        format!("anchor={anchor}"),
+        format!("head={head}"),
+        format!("char_length={char_length}"),
+        format!("grapheme_length={grapheme_length}"),
+        format!("display_width={display_width}"),
+        format!("eof={eof}"),
+        format!("mode={mode}"),
+        format!("count={count}"),
+    ]
+    .join(" ");
+
+    Line::raw(status_bar).render(area, surface);
+}
+
+fn render_command_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
+    let Mode::Command(ref normal_mode) = editor.mode else {
+        return;
+    };
+
+    if let Some(cell) = surface.cell_mut(area.as_position()) {
+        cell.set_char(':');
+    } else {
+        unreachable!();
+    }
+
+    area.x += 1;
+    area.width -= 1;
+
+    Line::raw(Cow::<str>::from(normal_mode.text().rope())).render(area, surface);
+
+    if let Some(rect) = char_index_to_area(
+        normal_mode.cursor().char_offset(),
+        normal_mode.text(),
+        0,
+        area,
+    ) {
+        surface.set_style(rect, Style::default().bg(colors::DARK_YELLOW));
+    }
 }
 
 fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
@@ -246,15 +312,7 @@ fn render_tildes(editor: &Editor, area: Rect, surface: &mut Surface) {
             continue;
         }
 
-        let bottom = row.y + 1 == area.bottom();
-
-        let style = if bottom {
-            Modifier::UNDERLINED
-        } else {
-            Modifier::empty()
-        };
-
-        Line::styled("~", style).render(row, surface);
+        Line::raw("~").render(row, surface);
     }
 }
 
@@ -289,10 +347,6 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 
             rect.x += width_u16;
         }
-    }
-
-    if let Some(bottom_row) = area.rows().next_back() {
-        surface.set_style(bottom_row, Modifier::UNDERLINED);
     }
 }
 
@@ -356,70 +410,4 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
             surface.set_style(rect, Style::default().bg(colors::DARK_YELLOW));
         }
     }
-}
-
-fn render_command_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
-    let Mode::Command(ref normal_mode) = editor.mode else {
-        return;
-    };
-
-    if let Some(cell) = surface.cell_mut(area.as_position()) {
-        cell.set_char(':');
-    } else {
-        unreachable!();
-    }
-
-    area.x += 1;
-    area.width -= 1;
-
-    Line::raw(Cow::<str>::from(normal_mode.text().rope())).render(area, surface);
-
-    if let Some(rect) = char_index_to_area(
-        normal_mode.cursor().char_offset(),
-        normal_mode.text(),
-        0,
-        area,
-    ) {
-        surface.set_style(rect, Style::default().bg(colors::DARK_YELLOW));
-    }
-}
-
-fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let buffer = &editor.buffer;
-
-    let range = buffer.range();
-
-    let anchor = range.anchor().char_offset();
-
-    let head = range.head().char_offset();
-
-    let char_length = range.char_length();
-
-    let grapheme_length = range.grapheme_length();
-
-    let display_width = range.slice().display_width();
-
-    let eof = range.is_eof();
-
-    let mode = match editor.mode {
-        Mode::Normal(_) => "normal",
-        Mode::Insert(_) => "insert",
-        Mode::Command(_) => "command",
-    };
-
-    let count = editor.mode.count();
-
-    let status_bar = [
-        format!("anchor={anchor}"),
-        format!("head={head}"),
-        format!("char_length={char_length}"),
-        format!("grapheme_length={grapheme_length}"),
-        format!("display_width={display_width}"),
-        format!("eof={eof}"),
-        format!("mode={mode}"),
-        format!("count={count}"),
-    ]
-    .join(" ");
-
-    Line::raw(status_bar).render(area, surface);
 }
