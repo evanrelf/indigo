@@ -13,7 +13,7 @@ use arbitrary::Arbitrary;
 #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 #[derive(Clone, Debug)]
 pub enum Action {
-    UpdateCount(NonZeroUsize),
+    SetCount(Option<NonZeroUsize>),
     EnterNormalMode,
     EnterInsertMode,
     EnterCommandMode,
@@ -51,7 +51,7 @@ pub enum Action {
 
 pub fn handle_action(editor: &mut Editor, action: &Action) {
     match action {
-        Action::UpdateCount(count) => update_count(editor, *count),
+        Action::SetCount(count) => set_count(editor, *count),
         Action::EnterNormalMode => enter_normal_mode(editor),
         Action::EnterInsertMode => enter_insert_mode(editor),
         Action::EnterCommandMode => enter_command_mode(editor),
@@ -88,7 +88,7 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
     }
 }
 
-fn update_count(editor: &mut Editor, count: NonZeroUsize) {
+fn set_count(editor: &mut Editor, count: Option<NonZeroUsize>) {
     editor.mode.set_count(count);
 }
 
@@ -106,21 +106,21 @@ fn enter_command_mode(editor: &mut Editor) {
 }
 
 fn move_left(editor: &mut Editor) {
-    let count = editor.mode.count();
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN);
     editor.buffer.with_range_mut(|range| {
         range.extend_left(count);
         range.reduce();
     });
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn move_right(editor: &mut Editor) {
-    let count = editor.mode.count();
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN);
     editor.buffer.with_range_mut(|range| {
         range.extend_right(count);
         range.reduce();
     });
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn move_until_prev_byte(editor: &mut Editor, byte: u8) {
@@ -128,7 +128,7 @@ fn move_until_prev_byte(editor: &mut Editor, byte: u8) {
         range.reduce();
         range.extend_until_prev_byte(byte);
     });
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn move_to_prev_byte(editor: &mut Editor, byte: u8) {
@@ -137,7 +137,7 @@ fn move_to_prev_byte(editor: &mut Editor, byte: u8) {
         range.extend_until_prev_byte(byte);
         range.extend_left(NonZeroUsize::MIN);
     });
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn move_until_next_byte(editor: &mut Editor, byte: u8) {
@@ -145,7 +145,7 @@ fn move_until_next_byte(editor: &mut Editor, byte: u8) {
         range.reduce();
         range.extend_until_next_byte(byte);
     });
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn move_to_next_byte(editor: &mut Editor, byte: u8) {
@@ -154,14 +154,14 @@ fn move_to_next_byte(editor: &mut Editor, byte: u8) {
         range.extend_until_next_byte(byte);
         range.extend_right(NonZeroUsize::MIN);
     });
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn extend_until_prev_byte(editor: &mut Editor, byte: u8) {
     editor.buffer.with_range_mut(|range| {
         range.extend_until_prev_byte(byte);
     });
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn extend_to_prev_byte(editor: &mut Editor, byte: u8) {
@@ -169,14 +169,14 @@ fn extend_to_prev_byte(editor: &mut Editor, byte: u8) {
         range.extend_until_prev_byte(byte);
         range.extend_right(NonZeroUsize::MIN);
     });
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn extend_until_next_byte(editor: &mut Editor, byte: u8) {
     editor.buffer.with_range_mut(|range| {
         range.extend_until_next_byte(byte);
     });
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn extend_to_next_byte(editor: &mut Editor, byte: u8) {
@@ -184,38 +184,38 @@ fn extend_to_next_byte(editor: &mut Editor, byte: u8) {
         range.extend_until_next_byte(byte);
         range.extend_right(NonZeroUsize::MIN);
     });
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn extend_left(editor: &mut Editor) {
-    let count = editor.mode.count();
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN);
     editor
         .buffer
         .with_range_mut(|range| range.extend_left(count));
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn extend_right(editor: &mut Editor) {
-    let count = editor.mode.count();
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN);
     editor
         .buffer
         .with_range_mut(|range| range.extend_right(count));
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn flip(editor: &mut Editor) {
     editor.buffer.with_range_mut(|range| range.flip());
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn flip_forward(editor: &mut Editor) {
     editor.buffer.with_range_mut(|range| range.flip_forward());
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn reduce(editor: &mut Editor) {
     editor.buffer.with_range_mut(|range| range.reduce());
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn scroll_up(editor: &mut Editor) {
@@ -261,7 +261,7 @@ fn insert_char(editor: &mut Editor, char: char) {
         editor
             .buffer
             .with_range_mut(|range| range.insert_char(char));
-        editor.mode.set_count(NonZeroUsize::MIN);
+        editor.mode.set_count(None);
     }
 }
 
@@ -270,12 +270,12 @@ fn insert(editor: &mut Editor, text: &str) {
         command_mode.cursor_mut().insert(text);
     } else {
         editor.buffer.with_range_mut(|range| range.insert(text));
-        editor.mode.set_count(NonZeroUsize::MIN);
+        editor.mode.set_count(None);
     }
 }
 
 fn delete_before(editor: &mut Editor) {
-    let count = editor.mode.count();
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN);
     if let Mode::Command(ref mut command_mode) = editor.mode {
         if command_mode.cursor().char_offset() == 0 {
             enter_normal_mode(editor);
@@ -286,21 +286,21 @@ fn delete_before(editor: &mut Editor) {
         editor
             .buffer
             .with_range_mut(|range| range.delete_before(count));
-        editor.mode.set_count(NonZeroUsize::MIN);
+        editor.mode.set_count(None);
     }
 }
 
 fn delete(editor: &mut Editor) {
     editor.buffer.with_range_mut(|range| range.delete());
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn delete_after(editor: &mut Editor) {
-    let count = editor.mode.count();
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN);
     editor
         .buffer
         .with_range_mut(|range| range.delete_after(count));
-    editor.mode.set_count(NonZeroUsize::MIN);
+    editor.mode.set_count(None);
 }
 
 fn undo(editor: &mut Editor) {

@@ -27,14 +27,14 @@ impl Mode {
     }
 
     #[must_use]
-    pub fn count(&self) -> NonZeroUsize {
+    pub fn count(&self) -> Option<NonZeroUsize> {
         match self {
             Self::Normal(normal_mode) => normal_mode.count,
-            Self::Insert(_) | Self::Command(_) => NonZeroUsize::MIN,
+            Self::Insert(_) | Self::Command(_) => None,
         }
     }
 
-    pub fn set_count(&mut self, count: NonZeroUsize) {
+    pub fn set_count(&mut self, count: Option<NonZeroUsize>) {
         match self {
             Self::Normal(normal_mode) => normal_mode.count = count,
             Self::Insert(_) | Self::Command(_) => {}
@@ -48,16 +48,9 @@ impl Default for Mode {
     }
 }
 
+#[derive(Default)]
 pub struct NormalMode {
-    pub count: NonZeroUsize,
-}
-
-impl Default for NormalMode {
-    fn default() -> Self {
-        Self {
-            count: NonZeroUsize::MIN,
-        }
-    }
+    pub count: Option<NonZeroUsize>,
 }
 
 #[derive(Default)]

@@ -47,16 +47,17 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
 
     let updated_count = |c: char| {
         let n = usize::from(u8::try_from(c).unwrap() - b'0');
-        normal_mode
-            .count
-            .saturating_mul(NonZeroUsize::new(10).unwrap())
-            .saturating_add(n)
+        let count = match normal_mode.count {
+            Some(count) => usize::from(count),
+            None => 0,
+        };
+        NonZeroUsize::new(count.saturating_mul(10).saturating_add(n))
     };
 
     match event {
         Event::KeyInput(key) => match (key.modifiers, key.code) {
             (m, KeyCode::Char(c @ '0'..='9')) if m.is_empty() => {
-                Rc::from([Action::UpdateCount(updated_count(c))])
+                Rc::from([Action::SetCount(updated_count(c))])
             }
             _ if is(key, "<esc>") => Rc::from([Action::EnterNormalMode]),
             _ if is(key, ":") => Rc::from([Action::EnterCommandMode]),

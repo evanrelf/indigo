@@ -232,9 +232,12 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let head = editor.buffer.range().head().char_offset();
 
-    let count = editor.mode.count();
+    let count = match editor.mode.count() {
+        Some(count) => &format!(" count={count}"),
+        None => "",
+    };
 
-    Line::raw(format!("{path} · {mode} {anchor}-{head} {count}")).render(area, surface);
+    Line::raw(format!("{path} · {mode} {anchor}-{head}{count}")).render(area, surface);
 }
 
 fn render_command_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {

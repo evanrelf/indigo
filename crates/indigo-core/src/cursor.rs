@@ -69,6 +69,8 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
 }
 
 impl<W: WrapMut> CursorView<'_, W> {
+    // TODO: Moving left with a count is broken. Doesn't keep the original cursor location selected,
+    // moves one short. Moving right works fine.
     pub fn move_left(&mut self, count: NonZeroUsize) {
         for _ in 1..=count.get() {
             match self.text.prev_grapheme_boundary(self.state.char_offset) {
