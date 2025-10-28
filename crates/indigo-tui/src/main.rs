@@ -10,7 +10,6 @@ use indigo_tui::{
     terminal::TerminalGuard,
     widgets,
 };
-use ratatui::widgets::Widget;
 use std::time::Instant;
 use std::{cmp::max, fs, io, process::ExitCode, sync::Arc};
 
@@ -171,7 +170,7 @@ fn run(args: &Args, mut terminal: TerminalGuard, mut editor: Editor) -> anyhow::
             let surface = frame.buffer_mut();
             areas = Areas::new(&editor, area);
             editor.height = usize::from(areas.text.height);
-            widgets::Editor::new(&editor).render(area, surface);
+            widgets::render(&editor, area, surface);
         })?;
         render.stop();
         frame.stop();
