@@ -208,17 +208,12 @@ fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let areas = Areas::new(editor, area);
-    render_navigation_bar(editor, areas.navigation_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
     render_tildes(editor, areas.line_numbers, surface);
     render_text(editor, areas.text, surface);
     render_selection(editor, areas.text, surface);
     render_command_bar(editor, areas.command_bar, surface);
     render_status_bar(editor, areas.status_bar, surface);
-}
-
-fn render_navigation_bar(_editor: &Editor, area: Rect, surface: &mut Surface) {
-    Line::styled(" ", Modifier::UNDERLINED).render(area, surface);
 }
 
 fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
