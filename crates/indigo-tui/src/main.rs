@@ -83,9 +83,7 @@ fn init_tracing_subscriber(args: &Args, xdg: &Xdg) -> anyhow::Result<()> {
 
     let fmt_layer = fmt::Layer::default().with_writer(log_file);
 
-    let subscriber = Registry::default()
-        .with(fmt_layer)
-        .with(filter_layer);
+    let subscriber = Registry::default().with(fmt_layer).with(filter_layer);
 
     subscriber.init();
 

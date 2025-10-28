@@ -12,6 +12,7 @@ pub struct Areas {
 }
 
 impl Areas {
+    #[must_use]
     pub fn new(editor: &Editor, area: Rect) -> Self {
         let (command_bar_height, status_bar_height) = match editor.mode {
             Mode::Normal(_) | Mode::Insert(_) => (0, 1),
@@ -74,6 +75,7 @@ impl Areas {
 ///
 /// Examples of corrections: snapping to the beginning of the grapheme, snapping to the end of the
 /// line, and snapping to the end of the buffer.
+#[must_use]
 pub fn position_to_char_index(
     position: Position,
     rope: &Rope,
@@ -109,6 +111,7 @@ pub fn position_to_char_index(
     Some(Ok(line_char_index + x))
 }
 
+#[must_use]
 pub fn line_index_to_area(
     line_index: usize,
     rope: &Rope,
@@ -146,6 +149,7 @@ pub fn line_index_to_area(
 }
 
 // TODO: Should this be `gap_index` instead of `char_index`?
+#[must_use]
 pub fn char_index_to_area(
     char_index: usize,
     rope: &Rope,
