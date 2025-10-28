@@ -13,7 +13,6 @@ impl<'a> Tildes<'a> {
 }
 
 impl Widget for Tildes<'_> {
-    #[tracing::instrument(skip_all)]
     fn render(self, area: Rect, surface: &mut Surface) {
         let buffer = &self.editor.buffer;
 

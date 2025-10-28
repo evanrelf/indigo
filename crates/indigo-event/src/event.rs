@@ -31,7 +31,6 @@ fn is(x: &Key, y: &str) -> bool {
     x == y
 }
 
-#[tracing::instrument(skip_all)]
 #[must_use]
 pub fn handle_event(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
     match editor.mode {
@@ -41,7 +40,6 @@ pub fn handle_event(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
     }
 }
 
-#[tracing::instrument(skip_all)]
 pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
     let Mode::Normal(ref mut normal_mode) = editor.mode else {
         unreachable!()
@@ -93,7 +91,6 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
     }
 }
 
-#[tracing::instrument(skip_all)]
 pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
     let Mode::Insert(ref _insert_mode) = editor.mode else {
         unreachable!()
@@ -117,7 +114,6 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
     }
 }
 
-#[tracing::instrument(skip_all)]
 pub fn handle_event_command(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
     let Mode::Command(ref mut command_mode) = editor.mode else {
         unreachable!()

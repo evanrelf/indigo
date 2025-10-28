@@ -16,7 +16,6 @@ impl<'a> Editor<'a> {
 }
 
 impl Widget for Editor<'_> {
-    #[tracing::instrument(skip_all)]
     fn render(self, area: Rect, surface: &mut Surface) {
         let areas = Areas::new(self.editor, area);
         NavigationBar::new(self.editor).render(areas.navigation_bar, surface);

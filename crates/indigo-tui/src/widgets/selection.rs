@@ -17,7 +17,6 @@ impl<'a> Selection<'a> {
 }
 
 impl Widget for Selection<'_> {
-    #[tracing::instrument(skip_all)]
     fn render(self, area: Rect, surface: &mut Surface) {
         let buffer = &self.editor.buffer;
 

@@ -15,7 +15,6 @@ impl<'a> CommandBar<'a> {
 }
 
 impl Widget for CommandBar<'_> {
-    #[tracing::instrument(skip_all)]
     fn render(self, mut area: Rect, surface: &mut Surface) {
         let Mode::Command(ref normal_mode) = self.editor.mode else {
             return;

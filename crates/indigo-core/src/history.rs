@@ -20,6 +20,7 @@ impl<T> History<T> {
             return None;
         }
         let edit = &self.items[self.index];
+        assert!(self.index > 0);
         self.index -= 1;
         Some(edit)
     }

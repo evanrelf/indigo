@@ -13,7 +13,6 @@ impl<'a> NavigationBar<'a> {
 }
 
 impl Widget for NavigationBar<'_> {
-    #[tracing::instrument(skip_all)]
     fn render(self, area: Rect, surface: &mut Surface) {
         Line::styled(" ", Modifier::UNDERLINED).render(area, surface);
     }
