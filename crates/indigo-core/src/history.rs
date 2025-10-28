@@ -19,10 +19,8 @@ impl<T> History<T> {
         if self.index == 0 {
             return None;
         }
-        let edit = &self.items[self.index];
-        assert!(self.index > 0);
         self.index -= 1;
-        Some(edit)
+        self.items.get(self.index)
     }
 
     pub fn redo(&mut self) -> Option<&T> {
@@ -38,5 +36,24 @@ impl<T> Default for History<T> {
             items: Vec::new(),
             index: 0,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test() {
+        let mut history = History::new();
+        history.push(1);
+        assert_eq!(history.undo(), Some(&1));
+        assert_eq!(history.undo(), None);
+        assert_eq!(history.redo(), Some(&1));
+        history.push(2);
+        assert_eq!(history.undo(), Some(&2));
+        history.push(3);
+        assert_eq!(history.undo(), Some(&3));
+        assert_eq!(history.undo(), Some(&1));
     }
 }
