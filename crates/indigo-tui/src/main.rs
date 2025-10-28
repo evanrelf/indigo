@@ -79,21 +79,13 @@ fn init_tracing_subscriber(args: &Args, xdg: &Xdg) -> anyhow::Result<()> {
         .create(true)
         .open(log_path)?;
 
-    // NOTE: When profiling with Tracy, make sure to set `--log-filter=trace` / `INDIGO_LOG=trace`
-    // (or an equivalent) to send as much data as possible.
     let filter_layer = EnvFilter::new(args.log_filter.clone());
 
     let fmt_layer = fmt::Layer::default().with_writer(log_file);
 
-    #[cfg(feature = "tracy")]
-    let tracy_layer = tracing_tracy::TracyLayer::default();
-    #[cfg(not(feature = "tracy"))]
-    let tracy_layer = tracing_subscriber::layer::Identity::default();
-
     let subscriber = Registry::default()
         .with(fmt_layer)
-        .with(filter_layer)
-        .with(tracy_layer);
+        .with(filter_layer);
 
     subscriber.init();
 
@@ -173,11 +165,6 @@ fn run(args: &Args, mut terminal: TerminalGuard, mut editor: Editor) -> anyhow::
     let mut render = Times::new("just render", args.stats);
     let mut event_read = Times::new("just event read", args.stats);
 
-    // Using a non-continuous frame to omit time spent blocking on reading the next event. It makes
-    // up the vast majority of time in the loop.
-    #[cfg(feature = "tracy")]
-    let mut tracy_frame = Some(tracing_tracy::client::non_continuous_frame!("frame"));
-
     let exit_code = loop {
         render.start();
         terminal.draw(|frame| {
@@ -191,9 +178,6 @@ fn run(args: &Args, mut terminal: TerminalGuard, mut editor: Editor) -> anyhow::
         render.stop();
         frame.stop();
 
-        #[cfg(feature = "tracy")]
-        let _ = tracy_frame.take();
-
         let event = loop {
             frame.start();
             event_read.start();
@@ -203,9 +187,6 @@ fn run(args: &Args, mut terminal: TerminalGuard, mut editor: Editor) -> anyhow::
                 break event;
             }
         };
-
-        #[cfg(feature = "tracy")]
-        let _ = tracy_frame.insert(tracing_tracy::client::non_continuous_frame!("frame"));
 
         handle_event(&mut editor, &mut terminal, areas, event)?;
 

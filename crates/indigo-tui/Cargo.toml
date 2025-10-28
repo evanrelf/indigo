@@ -2,10 +2,6 @@
 name = "indigo-tui"
 edition = "2024"
 
-[features]
-tracy = ["dep:tracing-tracy", "indigo-core/tracy"]
-tracy-alloc = ["tracy", "indigo-core/tracy-alloc"]
-
 [dependencies]
 anyhow = { workspace = true }
 camino = { workspace = true }
@@ -19,7 +15,6 @@ indigo-event = { workspace = true }
 ratatui = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
-tracing-tracy = { workspace = true, optional = true }
 
 [lints]
 workspace = true

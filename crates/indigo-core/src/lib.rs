@@ -11,12 +11,3 @@ pub mod prelude;
 pub mod range;
 pub mod rope;
 pub mod text;
-
-#[cfg(feature = "tracy-alloc")]
-mod alloc {
-    use std::alloc;
-    use tracing_tracy::client::ProfiledAllocator;
-
-    #[global_allocator]
-    static ALLOC: ProfiledAllocator<alloc::System> = ProfiledAllocator::new(alloc::System, 100);
-}
