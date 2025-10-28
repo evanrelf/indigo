@@ -19,7 +19,7 @@ impl Areas {
             Mode::Command(_) => (1, 0),
         };
 
-        let vertical_areas = Layout::vertical([
+        let [navigation_bar, main, command_bar, status_bar] = Layout::vertical([
             // navigation_bar
             Constraint::Length(1),
             // line_numbers + text
@@ -29,7 +29,7 @@ impl Areas {
             // status_bar
             Constraint::Length(status_bar_height),
         ])
-        .split(area);
+        .areas(area);
 
         let line_numbers_width = {
             let n = editor.buffer.text().len_lines_indigo();
@@ -38,23 +38,13 @@ impl Areas {
                 .expect("Line number width should always be very small")
         };
 
-        let navigation_bar = vertical_areas[0];
-
-        let horizontal_areas = Layout::horizontal([
+        let [line_numbers, text] = Layout::horizontal([
             // line_numbers
             Constraint::Length(line_numbers_width),
             // text
             Constraint::Fill(1),
         ])
-        .split(vertical_areas[1]);
-
-        let command_bar = vertical_areas[2];
-
-        let status_bar = vertical_areas[3];
-
-        let line_numbers = horizontal_areas[0];
-
-        let text = horizontal_areas[1];
+        .areas(main);
 
         Self {
             navigation_bar,
