@@ -11,7 +11,7 @@ use indigo_tui::{
     terminal::TerminalGuard,
 };
 use ratatui::prelude::{Buffer as Surface, *};
-use std::{borrow::Cow, cmp::max, fs, io, process::ExitCode, sync::Arc, time::Instant};
+use std::{borrow::Cow, cmp::max, env, fs, io, process::ExitCode, sync::Arc, time::Instant};
 
 #[derive(Debug, clap::Parser)]
 struct Args {
@@ -147,14 +147,17 @@ impl Times {
 }
 
 fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
-    let rope = if let Some(path) = &args.file {
+    let buffer = if let Some(path) = &args.file {
         let file = fs::File::open(path)?;
-        Rope::from_reader(io::BufReader::new(file))?
+        let rope = Rope::from_reader(io::BufReader::new(file))?;
+        let mut buffer = Buffer::from(rope);
+        buffer.path = Some(path.clone());
+        buffer
     } else {
-        Rope::new()
+        Buffer::new()
     };
 
-    let mut editor = Editor::from(Buffer::from(rope));
+    let mut editor = Editor::from(buffer);
 
     editor.pwd = Some(Utf8PathBuf::try_from(env::current_dir()?)?);
 

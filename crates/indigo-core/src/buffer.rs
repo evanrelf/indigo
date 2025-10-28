@@ -5,11 +5,13 @@ use crate::{
     rope::RopeExt as _,
     text::Text,
 };
+use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::cmp::min;
 
 #[derive(Default)]
 pub struct Buffer {
+    pub path: Option<Utf8PathBuf>,
     text: Text,
     // TODO: Push to history
     history: History<(EditSeq, RangeState)>,
