@@ -6,13 +6,10 @@ members = ["crates/*"]
 anyhow = "1.0.97"
 arbitrary = { version = "1.4.1", features = ["derive"] }
 arbtest = "0.3.2"
-arrayvec = "0.7.6"
 camino = "1.1.9"
 clap = { version = "4.5.32", features = ["derive", "env"] }
 crossterm = "0.28.1"
-downcast-rs = "2.0.1"
 etcetera = "0.10.0"
-fastrand = "2.3.0"
 flagset = "0.4.6"
 hdrhistogram = "7.5.4"
 indigo-cli = { path = "crates/indigo-cli/" }
