@@ -44,16 +44,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let terminal = terminal::init();
 
-    let rope = if let Some(ref path) = args.file {
-        let file = fs::File::open(path)?;
-        Rope::from_reader(io::BufReader::new(file))?
-    } else {
-        Rope::new()
-    };
-
-    let editor = Editor::from(Buffer::from(rope));
-
-    run(&args, terminal, editor)
+    run(&args, terminal)
 }
 
 fn init_etcetera() -> anyhow::Result<Xdg> {
@@ -155,7 +146,16 @@ impl Times {
     }
 }
 
-fn run(args: &Args, mut terminal: TerminalGuard, mut editor: Editor) -> anyhow::Result<ExitCode> {
+fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
+    let rope = if let Some(path) = &args.file {
+        let file = fs::File::open(path)?;
+        Rope::from_reader(io::BufReader::new(file))?
+    } else {
+        Rope::new()
+    };
+
+    let mut editor = Editor::from(Buffer::from(rope));
+
     let mut areas = Areas::default();
 
     let mut frame_times = Times::new("full frame", args.stats);
