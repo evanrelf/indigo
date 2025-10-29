@@ -7,6 +7,7 @@ pub struct Editor {
     pub mode: Mode,
     pub terminal_height: usize,
     pub pwd: Option<Utf8PathBuf>,
+    pub message: Option<Result<String, String>>,
     pub exit: Option<u8>,
 }
 
