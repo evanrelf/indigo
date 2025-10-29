@@ -134,7 +134,6 @@ pub fn line_index_to_area(
     })
 }
 
-// TODO: Should this be `gap_index` instead of `char_index`?
 #[must_use]
 pub fn char_index_to_area(
     char_index: usize,

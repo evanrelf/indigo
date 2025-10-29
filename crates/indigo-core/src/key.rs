@@ -14,8 +14,6 @@ use winnow::{
 #[cfg(any(feature = "arbitrary", test))]
 use arbitrary::Arbitrary;
 
-// TODO: Strict mode? Would forbid repeated modifiers, incorrectly ordered modifiers, etc.
-
 #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Keys(pub Vec<Key>);
@@ -275,7 +273,7 @@ pub enum KeyCode {
     Down,
     Tab,
     Escape,
-    // TODO: Replace `char` with `AsciiChar` once it stabilizes.
+    // NOTE: Replace `char` with `AsciiChar` once it stabilizes.
     // https://github.com/rust-lang/rust/issues/110998
     Char(char),
 }
@@ -374,7 +372,7 @@ mod tests {
         assert_eq!(key.parse("<"), Ok(Key::from('<')));
         assert_eq!(key.parse(">"), Ok(Key::from('>')));
         assert_eq!(key.parse("a"), Ok(Key::from('a')));
-        // TODO: Distinguish between shift+a and A?
+        // TODO: Distinguish between shift+a and A? Or normalize both to the same thing?
         assert_eq!(key.parse("<s-a>"), Ok(Key::from(([Shift], 'a'))));
         assert_eq!(key.parse("A"), Ok(Key::from(([], 'A'))));
         assert_eq!(key.parse("<c-a>"), Ok(Key::from((Control, 'a'))));

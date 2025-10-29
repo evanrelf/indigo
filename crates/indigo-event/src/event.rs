@@ -67,7 +67,8 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
             _ if is(key, "l") => Rc::from([Action::MoveRight]),
             _ if is(key, "H") => Rc::from([Action::ExtendLeft]),
             _ if is(key, "L") => Rc::from([Action::ExtendRight]),
-            // TODO: Capture key following these, use as the needle.
+            // TODO: Capture key following these, use as the needle. Could add a "jump" mode with
+            // settings to cover all of these cases.
             _ if is(key, "<a-t>") => Rc::from([Action::MoveUntilPrevByte(b'e')]),
             _ if is(key, "<a-T>") => Rc::from([Action::ExtendUntilPrevByte(b'e')]),
             _ if is(key, "t") => Rc::from([Action::MoveUntilNextByte(b'e')]),
