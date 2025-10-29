@@ -12,6 +12,7 @@ use std::cmp::min;
 #[derive(Default)]
 pub struct Buffer {
     pub path: Option<Utf8PathBuf>,
+    pub modified: bool,
     text: Text,
     // TODO: Push to history
     history: History<(EditSeq, RangeState)>,
