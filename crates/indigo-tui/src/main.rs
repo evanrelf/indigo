@@ -217,27 +217,36 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let mode = match editor.mode {
-        Mode::Normal(_) => "normal",
-        Mode::Insert(_) => "insert",
-        Mode::Command(_) => "command",
-    };
+    if let Some(message) = &editor.message {
+        match message {
+            Ok(message) => Line::raw(message).render(area, surface),
+            Err(message) => Line::raw(message)
+                .bg(colors::LIGHT_RED)
+                .render(area, surface),
+        }
+    } else {
+        let mode = match editor.mode {
+            Mode::Normal(_) => "normal",
+            Mode::Insert(_) => "insert",
+            Mode::Command(_) => "command",
+        };
 
-    let path = match &editor.buffer.path {
-        None => "*scratch*",
-        Some(path) => path.as_str(),
-    };
+        let path = match &editor.buffer.path {
+            None => "*scratch*",
+            Some(path) => path.as_str(),
+        };
 
-    let anchor = editor.buffer.range().anchor().char_offset();
+        let anchor = editor.buffer.range().anchor().char_offset();
 
-    let head = editor.buffer.range().head().char_offset();
+        let head = editor.buffer.range().head().char_offset();
 
-    let count = match editor.mode.count() {
-        Some(count) => &format!(" count={count}"),
-        None => "",
-    };
+        let count = match editor.mode.count() {
+            Some(count) => &format!(" count={count}"),
+            None => "",
+        };
 
-    Line::raw(format!("{path} · {mode} {anchor}-{head}{count}")).render(area, surface);
+        Line::raw(format!("{path} · {mode} {anchor}-{head}{count}")).render(area, surface);
+    }
 }
 
 fn render_command_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
