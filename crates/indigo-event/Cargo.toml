@@ -7,7 +7,9 @@ arbitrary = ["dep:arbitrary", "indigo-core/arbitrary"]
 
 [dependencies]
 arbitrary = { workspace = true, optional = true }
+clap = { workspace = true }
 indigo-core = { workspace = true }
+shellwords = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]

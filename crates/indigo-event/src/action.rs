@@ -1,8 +1,9 @@
+use clap::Parser as _;
 use indigo_core::{
     editor::Editor,
     mode::{CommandMode, InsertMode, Mode, NormalMode},
 };
-use std::{num::NonZeroUsize, process::ExitCode, rc::Rc};
+use std::{iter, num::NonZeroUsize, process::ExitCode, rc::Rc};
 
 #[cfg(any(feature = "arbitrary", test))]
 use arbitrary::Arbitrary;
@@ -326,10 +327,82 @@ fn redo(editor: &mut Editor) {
 }
 
 fn run_command(editor: &mut Editor, command: &str) {
-    match command.trim() {
-        "q" | "quit" => exit(editor, 0),
-        _ => {}
+    #[derive(clap::Parser)]
+    #[clap(
+        disable_help_flag = true,
+        disable_help_subcommand = true,
+        override_usage = ""
+    )]
+    enum Command {
+        Echo {
+            #[clap(long)]
+            error: bool,
+            message: Vec<String>,
+        },
+        #[clap(alias = "q")]
+        Quit { exit_code: Option<u8> },
+        #[clap(name = "quit!", alias = "q!")]
+        QuitForce { exit_code: Option<u8> },
     }
+
+    let Ok(args) = shellwords::split(command) else {
+        editor.message = Some(Err(String::from("Invalid command")));
+        editor.mode = Mode::Normal(NormalMode::default());
+        return;
+    };
+
+    if args.is_empty() {
+        editor.mode = Mode::Normal(NormalMode::default());
+        return;
+    }
+
+    let args = iter::once(String::from("indigo")).chain(args);
+
+    let command = match Command::try_parse_from(args) {
+        Ok(command) => command,
+        Err(error) => {
+            let error = error.to_string();
+            let error = error
+                .strip_prefix("error: ")
+                .unwrap_or(&error)
+                .lines()
+                .next()
+                .unwrap_or("");
+            editor.message = Some(Err(error.to_string()));
+            editor.mode = Mode::Normal(NormalMode::default());
+            return;
+        }
+    };
+
+    match command {
+        Command::Echo { error, message } => {
+            if error {
+                editor.message = Some(Err(message.join(" ")));
+            } else {
+                editor.message = Some(Ok(message.join(" ")));
+            }
+        }
+        Command::Quit { exit_code } => {
+            if editor.buffer.modified {
+                editor.message = Some(Err(String::from("Unsaved changes")));
+            } else {
+                editor.exit = if let Some(exit_code) = exit_code {
+                    Some(ExitCode::from(exit_code))
+                } else {
+                    Some(ExitCode::SUCCESS)
+                };
+            }
+        }
+        Command::QuitForce { exit_code } => {
+            editor.exit = if let Some(exit_code) = exit_code {
+                Some(ExitCode::from(exit_code))
+            } else {
+                Some(ExitCode::SUCCESS)
+            };
+        }
+    }
+
+    editor.mode = Mode::Normal(NormalMode::default());
 }
 
 fn exit(editor: &mut Editor, exit_code: u8) {
