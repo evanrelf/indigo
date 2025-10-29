@@ -145,7 +145,9 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.delete(self.state.char_offset - char_offset);
         edits.retain_rest(&self.text);
         self.text.edit(&edits).unwrap();
-        self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
+        self.state.char_offset = self
+            .text
+            .ceil_grapheme_boundary(edits.transform_char_offset(self.state.char_offset));
         edits
     }
 
@@ -226,8 +228,7 @@ mod tests {
                         actions.push(format!("move_right() x{count}"));
                     }
                     2 => {
-                        // let text = u.arbitrary()?; // TODO: Pass test with arbitrary Unicode
-                        let text = u.choose(&["", "x", "\t", "\n", "🇯🇵", "👨‍👨‍👧"])?;
+                        let text = u.arbitrary()?;
                         cursor.insert(text);
                         actions.push(format!("insert({text:?})"));
                     }
