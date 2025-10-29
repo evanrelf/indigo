@@ -2,7 +2,7 @@ use indigo_core::{
     editor::Editor,
     mode::{CommandMode, InsertMode, Mode, NormalMode},
 };
-use std::{num::NonZeroUsize, rc::Rc};
+use std::{num::NonZeroUsize, process::ExitCode, rc::Rc};
 
 #[cfg(any(feature = "arbitrary", test))]
 use arbitrary::Arbitrary;
@@ -333,5 +333,5 @@ fn run_command(editor: &mut Editor, command: &str) {
 }
 
 fn exit(editor: &mut Editor, exit_code: u8) {
-    editor.exit = Some(exit_code);
+    editor.exit = Some(ExitCode::from(exit_code));
 }

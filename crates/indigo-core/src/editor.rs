@@ -1,5 +1,6 @@
 use crate::{buffer::Buffer, mode::Mode};
 use camino::Utf8PathBuf;
+use std::process::ExitCode;
 
 #[derive(Default)]
 pub struct Editor {
@@ -8,7 +9,7 @@ pub struct Editor {
     pub terminal_height: usize,
     pub pwd: Option<Utf8PathBuf>,
     pub message: Option<Result<String, String>>,
-    pub exit: Option<u8>,
+    pub exit: Option<ExitCode>,
 }
 
 impl Editor {

@@ -54,7 +54,7 @@ fn main() -> anyhow::Result<ExitCode> {
         .write_to(io::LineWriter::new(io::stdout()))?;
 
     if let Some(exit_code) = editor.exit {
-        Ok(ExitCode::from(exit_code))
+        Ok(exit_code)
     } else {
         Ok(ExitCode::SUCCESS)
     }
