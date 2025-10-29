@@ -1,6 +1,5 @@
 use crate::{ot::EditSeq, rope::RopeExt as _, text::Text};
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
-use std::num::NonZeroUsize;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -67,38 +66,32 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
 }
 
 impl<W: WrapMut> CursorView<'_, W> {
-    // TODO: Moving left with a count is broken. Doesn't keep the original cursor location selected,
-    // moves one short. Moving right works fine.
-    pub fn move_left(&mut self, count: NonZeroUsize) {
-        for _ in 1..=count.get() {
-            match self.text.prev_grapheme_boundary(self.state.char_offset) {
-                Some(prev) if self.state.char_offset != prev => self.state.char_offset = prev,
-                _ => break,
-            }
+    pub fn move_left(&mut self) {
+        if let Some(prev) = self.text.prev_grapheme_boundary(self.state.char_offset)
+            && self.state.char_offset != prev
+        {
+            self.state.char_offset = prev;
         }
     }
 
-    pub fn move_right(&mut self, count: NonZeroUsize) {
-        for _ in 1..=count.get() {
-            match self.text.next_grapheme_boundary(self.state.char_offset) {
-                Some(next) if self.state.char_offset != next => self.state.char_offset = next,
-                _ => break,
-            }
+    pub fn move_right(&mut self) {
+        if let Some(next) = self.text.next_grapheme_boundary(self.state.char_offset)
+            && self.state.char_offset != next
+        {
+            self.state.char_offset = next;
         }
     }
 
-    // TODO: Accept count
     pub fn move_to_prev_byte(&mut self, byte: u8) -> bool {
         if let Some(char_offset) = self.text.find_last_byte(..self.state.char_offset, byte) {
             self.state.char_offset = char_offset;
-            self.move_right(NonZeroUsize::MIN);
+            self.move_right();
             true
         } else {
             false
         }
     }
 
-    // TODO: Accept count
     pub fn move_to_next_byte(&mut self, byte: u8) -> bool {
         if let Some(char_offset) = self.text.find_first_byte(self.state.char_offset.., byte) {
             self.state.char_offset = char_offset;
@@ -134,19 +127,18 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits
     }
 
-    pub fn delete_before(&mut self, count: NonZeroUsize) {
-        let _ = self.delete_before_impl(count);
+    pub fn delete_before(&mut self) {
+        let _ = self.delete_before_impl();
     }
 
     #[must_use]
-    pub(crate) fn delete_before_impl(&mut self, count: NonZeroUsize) -> EditSeq {
+    pub(crate) fn delete_before_impl(&mut self) -> EditSeq {
         self.assert_invariants().unwrap();
         let mut char_offset = self.state.char_offset;
-        for _ in 1..=count.get() {
-            match self.text.prev_grapheme_boundary(char_offset) {
-                Some(prev) if char_offset != prev => char_offset = prev,
-                _ => break,
-            }
+        if let Some(prev) = self.text.prev_grapheme_boundary(char_offset)
+            && char_offset != prev
+        {
+            char_offset = prev;
         }
         let mut edits = EditSeq::new();
         edits.retain(char_offset);
@@ -157,19 +149,18 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits
     }
 
-    pub fn delete_after(&mut self, count: NonZeroUsize) {
-        let _ = self.delete_after_impl(count);
+    pub fn delete_after(&mut self) {
+        let _ = self.delete_after_impl();
     }
 
     #[must_use]
-    pub(crate) fn delete_after_impl(&mut self, count: NonZeroUsize) -> EditSeq {
+    pub(crate) fn delete_after_impl(&mut self) -> EditSeq {
         self.assert_invariants().unwrap();
         let mut char_offset = self.state.char_offset;
-        for _ in 1..=count.get() {
-            match self.text.next_grapheme_boundary(char_offset) {
-                Some(next) if char_offset != next => char_offset = next,
-                _ => break,
-            }
+        if let Some(next) = self.text.next_grapheme_boundary(char_offset)
+            && char_offset != next
+        {
+            char_offset = next;
         }
         let mut edits = EditSeq::new();
         edits.retain(self.state.char_offset);
@@ -221,25 +212,31 @@ mod tests {
             for _ in 0..u.choose_index(100)? {
                 match u.choose_index(4)? {
                     0 => {
-                        let arg = NonZeroUsize::new(max(1, u.choose_index(99)?)).unwrap();
-                        cursor.move_left(arg);
-                        actions.push(format!("move_left({arg})"));
+                        let count = max(1, u.choose_index(99)?);
+                        for _ in 1..=count {
+                            cursor.move_left();
+                        }
+                        actions.push(format!("move_left() x{count}"));
                     }
                     1 => {
-                        let arg = NonZeroUsize::new(max(1, u.choose_index(99)?)).unwrap();
-                        cursor.move_right(arg);
-                        actions.push(format!("move_right({arg})"));
+                        let count = max(1, u.choose_index(99)?);
+                        for _ in 1..=count {
+                            cursor.move_right();
+                        }
+                        actions.push(format!("move_right() x{count}"));
                     }
                     2 => {
-                        // let arg = u.arbitrary()?; // TODO: Pass test with arbitrary Unicode
-                        let arg = u.choose(&["", "x", "\t", "\n", "🇯🇵", "👨‍👨‍👧"])?;
-                        cursor.insert(arg);
-                        actions.push(format!("insert({arg:?})"));
+                        // let text = u.arbitrary()?; // TODO: Pass test with arbitrary Unicode
+                        let text = u.choose(&["", "x", "\t", "\n", "🇯🇵", "👨‍👨‍👧"])?;
+                        cursor.insert(text);
+                        actions.push(format!("insert({text:?})"));
                     }
                     3 => {
-                        let arg = NonZeroUsize::new(max(1, u.choose_index(99)?)).unwrap();
-                        cursor.delete_before(arg);
-                        actions.push(format!("delete_before({arg})"));
+                        let count = max(1, u.choose_index(99)?);
+                        for _ in 1..=count {
+                            cursor.delete_before();
+                        }
+                        actions.push(format!("delete_before() x{count}"));
                     }
                     _ => break,
                 }

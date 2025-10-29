@@ -6,7 +6,6 @@ use crate::{
 };
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
-use std::num::NonZeroUsize;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -164,15 +163,15 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn extend_left(&mut self, count: NonZeroUsize) {
-        self.head_mut().move_left(count);
+    pub fn extend_left(&mut self) {
+        self.head_mut().move_left();
         if self.anchor().char_offset() == 0 && self.head().char_offset() == 0 {
-            self.head_mut().move_right(NonZeroUsize::MIN);
+            self.head_mut().move_right();
             return;
         }
         if self.is_empty() {
-            self.anchor_mut().move_right(NonZeroUsize::MIN);
-            self.head_mut().move_left(NonZeroUsize::MIN);
+            self.anchor_mut().move_right();
+            self.head_mut().move_left();
             let grapheme_length = self.grapheme_length();
             if grapheme_length != 2 {
                 tracing::warn!(
@@ -189,11 +188,11 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn extend_right(&mut self, count: NonZeroUsize) {
-        self.head_mut().move_right(count);
+    pub fn extend_right(&mut self) {
+        self.head_mut().move_right();
         if self.is_empty() && !self.is_eof() {
-            self.anchor_mut().move_left(NonZeroUsize::MIN);
-            self.head_mut().move_right(NonZeroUsize::MIN);
+            self.anchor_mut().move_left();
+            self.head_mut().move_right();
             let grapheme_length = self.grapheme_length();
             if grapheme_length != 2 {
                 tracing::warn!(
@@ -213,7 +212,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         let head = &mut self.state.head.char_offset;
         if let Some(char_offset) = self.text.find_last_byte(..*head, byte) {
             *head = char_offset;
-            self.head_mut().move_right(NonZeroUsize::MIN);
+            self.head_mut().move_right();
             true
         } else {
             false
@@ -257,10 +256,10 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
         if self.is_forward() {
             self.state.anchor.char_offset = self.state.head.char_offset;
-            self.anchor_mut().move_left(NonZeroUsize::MIN);
+            self.anchor_mut().move_left();
         } else {
             self.state.anchor.char_offset = self.state.head.char_offset;
-            self.head_mut().move_right(NonZeroUsize::MIN);
+            self.head_mut().move_right();
         }
         let grapheme_length = self.grapheme_length();
         if grapheme_length != 1 {
@@ -286,11 +285,11 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.snap(&self.text);
     }
 
-    pub fn delete_before(&mut self, count: NonZeroUsize) {
+    pub fn delete_before(&mut self) {
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
         self.reduce();
-        let edits = self.anchor_mut().delete_before_impl(count);
+        let edits = self.anchor_mut().delete_before_impl();
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
     }
@@ -307,14 +306,14 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.anchor.char_offset = edits.transform_char_offset(self.state.anchor.char_offset);
         self.state.head.char_offset = edits.transform_char_offset(self.state.head.char_offset);
         debug_assert_eq!(self.state.anchor, self.state.head);
-        self.extend_right(NonZeroUsize::MIN);
+        self.extend_right();
     }
 
-    pub fn delete_after(&mut self, count: NonZeroUsize) {
+    pub fn delete_after(&mut self) {
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
         self.reduce();
-        let edits = self.head_mut().delete_after_impl(count);
+        let edits = self.head_mut().delete_after_impl();
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
     }
