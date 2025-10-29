@@ -47,6 +47,7 @@ pub trait RopeExt {
     //
     // See the unit tests below for examples, and this GitHub issue for more info:
     // https://github.com/cessen/ropey/issues/60
+    #[expect(clippy::bool_to_int_with_if)]
     fn len_lines_indigo(&self) -> usize {
         let rope = self.as_slice();
         if rope.len_chars() == 0 {

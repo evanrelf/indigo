@@ -1,5 +1,3 @@
-#![allow(clippy::trivially_copy_pass_by_ref)]
-
 use crate::{ot::EditSeq, rope::RopeExt as _, text::Text};
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::num::NonZeroUsize;
