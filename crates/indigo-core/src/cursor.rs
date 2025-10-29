@@ -66,19 +66,25 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
 }
 
 impl<W: WrapMut> CursorView<'_, W> {
-    pub fn move_left(&mut self) {
+    pub fn move_left(&mut self) -> bool {
         if let Some(prev) = self.text.prev_grapheme_boundary(self.state.char_offset)
             && self.state.char_offset != prev
         {
             self.state.char_offset = prev;
+            true
+        } else {
+            false
         }
     }
 
-    pub fn move_right(&mut self) {
+    pub fn move_right(&mut self) -> bool {
         if let Some(next) = self.text.next_grapheme_boundary(self.state.char_offset)
             && self.state.char_offset != next
         {
             self.state.char_offset = next;
+            true
+        } else {
+            false
         }
     }
 
