@@ -183,9 +183,14 @@ impl Display for Key {
             KeyCode::Down => "down",
             KeyCode::Tab => "tab",
             KeyCode::Escape => "esc",
+            KeyCode::Char('<') => "lt",
+            KeyCode::Char('>') => "gt",
             KeyCode::Char(c) => &c.to_string(),
         };
-        if self.modifiers.is_empty() && matches!(self.code, KeyCode::Char(_)) {
+        if self.modifiers.is_empty()
+            && matches!(self.code, KeyCode::Char(_))
+            && !matches!(self.code, KeyCode::Char('<' | '>'))
+        {
             write!(f, "{code}")?;
         } else {
             write!(f, "<")?;
