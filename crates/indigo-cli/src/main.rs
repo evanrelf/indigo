@@ -1,9 +1,6 @@
 use clap::Parser as _;
-use indigo_core::prelude::*;
-use indigo_event::{
-    action::handle_action,
-    event::{Event, handle_event},
-};
+use indigo_core::{event::Event, prelude::*};
+use indigo_event::{action::handle_action, event::handle_event};
 use std::{io, process::ExitCode, sync::Arc};
 use tracing_subscriber::EnvFilter;
 

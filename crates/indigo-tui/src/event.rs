@@ -9,7 +9,7 @@ use indigo_core::prelude::*;
 use ratatui::layout::Position;
 use std::rc::Rc;
 
-pub type IndigoEvent = indigo_event::event::Event;
+pub type IndigoEvent = indigo_core::event::Event;
 
 pub type IndigoAction = indigo_event::action::Action;
 

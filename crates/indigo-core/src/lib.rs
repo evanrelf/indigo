@@ -2,6 +2,7 @@ pub mod buffer;
 pub mod cursor;
 pub mod display_width;
 pub mod editor;
+pub mod event;
 pub mod graphemes;
 pub mod history;
 pub mod key;
