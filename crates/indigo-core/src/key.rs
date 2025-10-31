@@ -337,6 +337,15 @@ impl From<char> for KeyCode {
     }
 }
 
+#[must_use]
+pub fn is(x: &Key, y: &str) -> bool {
+    let mut x = *x;
+    let mut y = y.parse::<Key>().unwrap();
+    x.normalize();
+    y.normalize();
+    x == y
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

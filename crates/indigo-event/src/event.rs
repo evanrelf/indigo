@@ -1,7 +1,7 @@
 use crate::action::Action;
 use indigo_core::{
     editor::Editor,
-    key::{Key, KeyCode},
+    key::{Key, KeyCode, is},
     mode::Mode,
 };
 use std::{borrow::Cow, num::NonZeroUsize, rc::Rc};
@@ -19,16 +19,6 @@ impl From<Key> for Event {
     fn from(key: Key) -> Self {
         Self::KeyInput(key)
     }
-}
-
-#[expect(clippy::trivially_copy_pass_by_ref)]
-#[must_use]
-fn is(x: &Key, y: &str) -> bool {
-    let mut x = *x;
-    let mut y = y.parse::<Key>().unwrap();
-    x.normalize();
-    y.normalize();
-    x == y
 }
 
 #[must_use]
