@@ -3,7 +3,7 @@ use crate::{
     mode::{CommandMode, InsertMode, Mode, NormalMode},
 };
 use clap::Parser as _;
-use std::{iter, num::NonZeroUsize, process::ExitCode};
+use std::{borrow::Cow, iter, num::NonZeroUsize, process::ExitCode};
 
 pub fn set_count(editor: &mut Editor, count: Option<NonZeroUsize>) {
     editor.mode.set_count(count);
@@ -242,7 +242,8 @@ pub fn redo(editor: &mut Editor) {
     editor.buffer.redo().unwrap();
 }
 
-pub fn run_command(editor: &mut Editor, command: &str) {
+// TODO: Move command handling into command mode code. This function should be very short.
+pub fn run_command(editor: &mut Editor) {
     #[derive(clap::Parser)]
     #[clap(
         disable_help_flag = true,
@@ -261,7 +262,13 @@ pub fn run_command(editor: &mut Editor, command: &str) {
         QuitForce { exit_code: Option<u8> },
     }
 
-    let Ok(args) = shellwords::split(command) else {
+    let Mode::Command(command_mode) = &editor.mode else {
+        return;
+    };
+
+    let command = Cow::<str>::from(command_mode.text().rope());
+
+    let Ok(args) = shellwords::split(&command) else {
         editor.message = Some(Err(String::from("Invalid command")));
         editor.mode = Mode::Normal(NormalMode::default());
         return;

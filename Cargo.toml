@@ -35,6 +35,7 @@ arbitrary = { git = "https://github.com/evanrelf/arbitrary.git" }
 [workspace.lints]
 clippy.missing_errors_doc = "allow"
 clippy.missing_panics_doc = "allow"
+clippy.redundant_closure = "allow"
 clippy.redundant_closure_for_method_calls = "allow"
 clippy.allow_attributes = "warn"
 clippy.pedantic = { level = "warn", priority = -1 }

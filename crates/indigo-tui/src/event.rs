@@ -1,3 +1,5 @@
+#![allow(clippy::wildcard_imports)]
+
 use crate::{
     areas::{Areas, position_to_char_index},
     key::{key_i2t, key_t2i},
@@ -5,13 +7,10 @@ use crate::{
 };
 use anyhow::anyhow;
 use crossterm::event::{KeyCode, KeyModifiers, MouseButton, MouseEventKind};
-use indigo_core::prelude::*;
+use indigo_core::{action::*, prelude::*};
 use ratatui::layout::Position;
-use std::rc::Rc;
 
 pub type IndigoEvent = indigo_core::event::Event;
-
-pub type IndigoAction = indigo_event::action::Action;
 
 pub type TerminalEvent = crossterm::event::Event;
 
@@ -41,48 +40,38 @@ pub fn handle_event(
     // TODO: Check if TUI handles event before passing to editor?
 
     if let Ok(event) = event_t2i(&event) {
-        let actions = indigo_event::event::handle_event(editor, &event);
-        if !actions.is_empty() {
-            for action in actions.iter() {
-                indigo_event::action::handle_action(editor, action);
-            }
+        let handled = indigo_event::event::handle_event(editor, &event);
+        if handled {
             return Ok(());
         }
     }
 
-    let actions = match editor.mode {
+    let _handled = match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, terminal, areas, event)?,
         Mode::Insert(_) => handle_event_insert(editor, terminal, areas, event)?,
         Mode::Command(_) => handle_event_command(editor, terminal, areas, event)?,
     };
-
-    for action in actions.iter() {
-        indigo_event::action::handle_action(editor, action);
-    }
 
     Ok(())
 }
 
 #[expect(clippy::needless_pass_by_value)]
 fn handle_event_normal(
-    editor: &Editor,
+    editor: &mut Editor,
     terminal: &mut TerminalGuard,
     areas: Areas,
     event: TerminalEvent,
-) -> anyhow::Result<Rc<[IndigoAction]>> {
-    let action = match event {
+) -> anyhow::Result<bool> {
+    let mut handled = true;
+
+    match event {
         TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
-            (KeyModifiers::CONTROL, KeyCode::Char('l')) => {
-                terminal.clear()?;
-                Rc::from([])
-            }
-            _ => Rc::from([]),
+            (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
+            _ => handled = false,
         },
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => Rc::from([IndigoAction::ScrollUp]),
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => {
-                Rc::from([IndigoAction::ScrollDown])
-            }
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => scroll_up(editor),
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => scroll_down(editor),
             // TODO: Kakoune allows creating new selection ranges by control clicking. Would be
             // awesome if Indigo could do the same, but also support control dragging to create
             // vertical lines of selection ranges, akin to Vim's visual block mode. Could snap to
@@ -99,11 +88,11 @@ fn handle_event_normal(
                     areas.text,
                 ) {
                     // TODO
-                    // Rc::from([IndigoAction::MoveTo(index)])
+                    // move_to(editor, index);
                     let _ = index;
-                    Rc::from([])
+                    handled = false;
                 } else {
-                    Rc::from([])
+                    handled = false;
                 }
             }
             (KeyModifiers::NONE, MouseEventKind::Down(MouseButton::Right)) => {
@@ -118,62 +107,62 @@ fn handle_event_normal(
                     areas.text,
                 ) {
                     // TODO
-                    // Rc::from([IndigoAction::ExtendTo(index)])
+                    // extend_to(editor, index);
                     let _ = index;
-                    Rc::from([])
+                    handled = false;
                 } else {
-                    Rc::from([])
+                    handled = false;
                 }
             }
-            _ => Rc::from([]),
+            _ => handled = false,
         },
-        _ => Rc::from([]),
-    };
+        _ => handled = false,
+    }
 
-    Ok(action)
+    Ok(handled)
 }
 
 fn handle_event_insert(
-    _editor: &Editor,
+    editor: &mut Editor,
     terminal: &mut TerminalGuard,
     _areas: Areas,
     event: TerminalEvent,
-) -> anyhow::Result<Rc<[IndigoAction]>> {
-    let action = match event {
-        TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
-            (KeyModifiers::CONTROL, KeyCode::Char('l')) => {
-                terminal.clear()?;
-                Rc::from([])
-            }
-            _ => Rc::from([]),
-        },
-        TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => Rc::from([IndigoAction::ScrollUp]),
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => {
-                Rc::from([IndigoAction::ScrollDown])
-            }
-            _ => Rc::from([]),
-        },
-        TerminalEvent::Paste(text) => Rc::from([IndigoAction::Insert(Rc::from(text))]),
-        _ => Rc::from([]),
-    };
+) -> anyhow::Result<bool> {
+    let mut handled = true;
 
-    Ok(action)
+    match event {
+        TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
+            (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
+            _ => handled = false,
+        },
+        // TODO: Add mouse events to core, so it can handle this internally.
+        TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => scroll_up(editor),
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => scroll_down(editor),
+            _ => handled = false,
+        },
+        TerminalEvent::Paste(text) => insert(editor, &text),
+        _ => handled = false,
+    }
+
+    Ok(handled)
 }
 
 #[expect(clippy::unnecessary_wraps)]
 fn handle_event_command(
-    _editor: &Editor,
+    editor: &mut Editor,
     _terminal: &mut TerminalGuard,
     _areas: Areas,
     event: TerminalEvent,
-) -> anyhow::Result<Rc<[IndigoAction]>> {
-    let action = match event {
-        TerminalEvent::Paste(text) => Rc::from([IndigoAction::Insert(Rc::from(text))]),
-        _ => Rc::from([]),
-    };
+) -> anyhow::Result<bool> {
+    let mut handled = true;
 
-    Ok(action)
+    match event {
+        TerminalEvent::Paste(text) => insert(editor, &text),
+        _ => handled = false,
+    }
+
+    Ok(handled)
 }
 
 pub fn event_t2i(event: &TerminalEvent) -> anyhow::Result<IndigoEvent> {

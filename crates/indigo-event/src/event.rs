@@ -1,14 +1,15 @@
-use crate::action::Action;
+#![allow(clippy::wildcard_imports)]
+
 use indigo_core::{
+    action::*,
     editor::Editor,
     event::Event,
     key::{KeyCode, is},
     mode::Mode,
 };
-use std::{borrow::Cow, num::NonZeroUsize, rc::Rc};
+use std::num::NonZeroUsize;
 
-#[must_use]
-pub fn handle_event(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
+pub fn handle_event(editor: &mut Editor, event: &Event) -> bool {
     match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, event),
         Mode::Insert(_) => handle_event_insert(editor, event),
@@ -16,98 +17,98 @@ pub fn handle_event(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
     }
 }
 
-pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
-    let Mode::Normal(ref mut normal_mode) = editor.mode else {
-        unreachable!()
-    };
+pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
+    let mut handled = true;
 
-    let updated_count = |c: char| {
-        let n = usize::from(u8::try_from(c).unwrap() - b'0');
-        let count = match normal_mode.count {
-            Some(count) => usize::from(count),
-            None => 0,
-        };
-        NonZeroUsize::new(count.saturating_mul(10).saturating_add(n))
+    let count = |c: char| {
+        let digit = usize::from(u8::try_from(c).unwrap() - b'0');
+        let current = editor.mode.count().map_or(0, |count| usize::from(count));
+        NonZeroUsize::new(current.saturating_mul(10).saturating_add(digit))
     };
 
     match event {
         Event::KeyInput(key) => match (key.modifiers, key.code) {
-            (m, KeyCode::Char(c @ '0'..='9')) if m.is_empty() => {
-                Rc::from([Action::SetCount(updated_count(c))])
-            }
-            _ if is(key, "<esc>") => Rc::from([Action::EnterNormalMode]),
-            _ if is(key, ":") => Rc::from([Action::EnterCommandMode]),
-            _ if is(key, "i") => Rc::from([Action::EnterInsertMode]),
+            (m, KeyCode::Char(c @ '0'..='9')) if m.is_empty() => set_count(editor, count(c)),
+            _ if is(key, "<esc>") => enter_normal_mode(editor),
+            _ if is(key, ":") => enter_command_mode(editor),
+            _ if is(key, "i") => enter_insert_mode(editor),
             // TODO: Add `a` for entering insert mode with the cursor moved to the right.
-            _ if is(key, "h") => Rc::from([Action::MoveLeft]),
-            _ if is(key, "l") => Rc::from([Action::MoveRight]),
-            _ if is(key, "H") => Rc::from([Action::ExtendLeft]),
-            _ if is(key, "L") => Rc::from([Action::ExtendRight]),
+            _ if is(key, "h") => move_left(editor),
+            _ if is(key, "l") => move_right(editor),
+            _ if is(key, "H") => extend_left(editor),
+            _ if is(key, "L") => extend_right(editor),
             // TODO: Capture key following these, use as the needle. Could add a "jump" mode with
             // settings to cover all of these cases.
-            _ if is(key, "<a-t>") => Rc::from([Action::MoveUntilPrevByte(b'e')]),
-            _ if is(key, "<a-T>") => Rc::from([Action::ExtendUntilPrevByte(b'e')]),
-            _ if is(key, "t") => Rc::from([Action::MoveUntilNextByte(b'e')]),
-            _ if is(key, "T") => Rc::from([Action::ExtendUntilNextByte(b'e')]),
-            _ if is(key, "<a-f>") => Rc::from([Action::MoveToPrevByte(b'e')]),
-            _ if is(key, "<a-F>") => Rc::from([Action::ExtendToPrevByte(b'e')]),
-            _ if is(key, "f") => Rc::from([Action::MoveToNextByte(b'e')]),
-            _ if is(key, "F") => Rc::from([Action::ExtendToNextByte(b'e')]),
-            _ if is(key, ";") => Rc::from([Action::Reduce]),
-            _ if is(key, "<a-;>") => Rc::from([Action::Flip]),
-            _ if is(key, "<a-s-;>") => Rc::from([Action::FlipForward]),
-            _ if is(key, "d") => Rc::from([Action::Delete]),
-            _ if is(key, "u") => Rc::from([Action::Undo]),
-            _ if is(key, "U") => Rc::from([Action::Redo]),
-            _ if is(key, "<c-u>") => Rc::from([Action::ScrollHalfPageUp]),
-            _ if is(key, "<c-d>") => Rc::from([Action::ScrollHalfPageDown]),
-            _ if is(key, "<c-b>") => Rc::from([Action::ScrollFullPageUp]),
-            _ if is(key, "<c-f>") => Rc::from([Action::ScrollFullPageDown]),
-            _ if is(key, "<c-c>") => Rc::from([Action::Exit(1)]),
-            _ => Rc::from([]),
+            _ if is(key, "<a-t>") => move_until_prev_byte(editor, b'e'),
+            _ if is(key, "<a-T>") => extend_until_prev_byte(editor, b'e'),
+            _ if is(key, "t") => move_until_next_byte(editor, b'e'),
+            _ if is(key, "T") => extend_until_next_byte(editor, b'e'),
+            _ if is(key, "<a-f>") => move_to_prev_byte(editor, b'e'),
+            _ if is(key, "<a-F>") => extend_to_prev_byte(editor, b'e'),
+            _ if is(key, "f") => move_to_next_byte(editor, b'e'),
+            _ if is(key, "F") => extend_to_next_byte(editor, b'e'),
+            _ if is(key, ";") => reduce(editor),
+            _ if is(key, "<a-;>") => flip(editor),
+            _ if is(key, "<a-s-;>") => flip_forward(editor),
+            _ if is(key, "d") => delete(editor),
+            _ if is(key, "u") => undo(editor),
+            _ if is(key, "U") => redo(editor),
+            _ if is(key, "<c-u>") => scroll_half_page_up(editor),
+            _ if is(key, "<c-d>") => scroll_half_page_down(editor),
+            _ if is(key, "<c-b>") => scroll_full_page_up(editor),
+            _ if is(key, "<c-f>") => scroll_full_page_down(editor),
+            _ if is(key, "<c-c>") => exit(editor, 1),
+            _ => handled = false,
         },
     }
+
+    handled
 }
 
-pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
-    let Mode::Insert(ref _insert_mode) = editor.mode else {
+pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
+    let Mode::Insert(_insert_mode) = &editor.mode else {
         unreachable!()
     };
 
+    let mut handled = true;
+
     match event {
         Event::KeyInput(key) => match (key.modifiers, key.code) {
-            _ if is(key, "<esc>") => Rc::from([Action::EnterNormalMode]),
-            _ if is(key, "<bs>") => Rc::from([Action::DeleteBefore]),
-            _ if is(key, "<del>") => Rc::from([Action::DeleteAfter]),
-            (m, KeyCode::Char(c)) if m.is_empty() => Rc::from([Action::InsertChar(c)]),
-            _ if is(key, "<ret>") => Rc::from([Action::InsertChar('\n')]),
-            _ if is(key, "<tab>") => Rc::from([Action::InsertChar('\t')]),
-            _ if is(key, "<c-u>") => Rc::from([Action::ScrollHalfPageUp]),
-            _ if is(key, "<c-d>") => Rc::from([Action::ScrollHalfPageDown]),
-            _ if is(key, "<c-b>") => Rc::from([Action::ScrollFullPageUp]),
-            _ if is(key, "<c-f>") => Rc::from([Action::ScrollFullPageDown]),
-            _ if is(key, "<c-c>") => Rc::from([Action::Exit(1)]),
-            _ => Rc::from([]),
+            _ if is(key, "<esc>") => enter_normal_mode(editor),
+            _ if is(key, "<bs>") => delete_before(editor),
+            _ if is(key, "<del>") => delete_after(editor),
+            (m, KeyCode::Char(c)) if m.is_empty() => insert_char(editor, c),
+            _ if is(key, "<ret>") => insert_char(editor, '\n'),
+            _ if is(key, "<tab>") => insert_char(editor, '\t'),
+            _ if is(key, "<c-u>") => scroll_half_page_up(editor),
+            _ if is(key, "<c-d>") => scroll_half_page_down(editor),
+            _ if is(key, "<c-b>") => scroll_full_page_up(editor),
+            _ if is(key, "<c-f>") => scroll_full_page_down(editor),
+            _ if is(key, "<c-c>") => exit(editor, 1),
+            _ => handled = false,
         },
     }
+
+    handled
 }
 
-pub fn handle_event_command(editor: &mut Editor, event: &Event) -> Rc<[Action]> {
-    let Mode::Command(ref mut command_mode) = editor.mode else {
+pub fn handle_event_command(editor: &mut Editor, event: &Event) -> bool {
+    let Mode::Command(_command_mode) = &editor.mode else {
         unreachable!()
     };
 
+    let mut handled = true;
+
     match event {
         Event::KeyInput(key) => match (key.modifiers, key.code) {
-            _ if is(key, "<esc>") => Rc::from([Action::EnterNormalMode]),
-            _ if is(key, "<bs>") => Rc::from([Action::DeleteBefore]),
-            _ if is(key, "<ret>") => Rc::from([
-                Action::EnterNormalMode,
-                Action::RunCommand(Rc::from(Cow::<str>::from(command_mode.text().rope()))),
-            ]),
-            (m, KeyCode::Char(c)) if m.is_empty() => Rc::from([Action::InsertChar(c)]),
-            _ if is(key, "<c-c>") => Rc::from([Action::Exit(1)]),
-            _ => Rc::from([]),
+            _ if is(key, "<esc>") => enter_normal_mode(editor),
+            _ if is(key, "<bs>") => delete_before(editor),
+            _ if is(key, "<ret>") => run_command(editor),
+            (m, KeyCode::Char(c)) if m.is_empty() => insert_char(editor, c),
+            _ if is(key, "<c-c>") => exit(editor, 1),
+            _ => handled = false,
         },
     }
+
+    handled
 }
