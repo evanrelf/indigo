@@ -8,10 +8,12 @@ arbitrary = ["dep:arbitrary"]
 [dependencies]
 arbitrary = { workspace = true, optional = true }
 camino = { workspace = true }
+clap = { workspace = true }
 flagset = { workspace = true }
 indigo-wrap = { workspace = true }
 memchr = { workspace = true }
 ropey = { workspace = true }
+shellwords = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 unicode-segmentation = { workspace = true }
