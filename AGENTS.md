@@ -38,3 +38,7 @@ Indigo is implemented in Rust, across multiple crates in a Cargo workspace.
 - Bias towards turning implicit assumptions into explicit assertions or comments
   in code.
 - Use `camino::{Utf8Path, Utf8PathBuf}` instead of `std::path::{Path, PathBuf}`.
+- When working with event handling code, try to keep each key or mouse mapping
+  on a single line for readability. If a key maps to multiple lines of code
+  rather than a single function call, that's a smell; most logic should be
+  abstracted away by the editor core.
