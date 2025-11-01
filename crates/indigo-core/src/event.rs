@@ -49,8 +49,12 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             // TODO: Add `a` for entering insert mode with the cursor moved to the right.
             _ if is(key, "h") => move_left(editor),
             _ if is(key, "l") => move_right(editor),
+            _ if is(key, "k") => move_up(editor),
+            _ if is(key, "j") => move_down(editor),
             _ if is(key, "H") => extend_left(editor),
             _ if is(key, "L") => extend_right(editor),
+            _ if is(key, "K") => extend_up(editor),
+            _ if is(key, "J") => extend_down(editor),
             // TODO: Capture key following these, use as the needle. Could add a "jump" mode with
             // settings to cover all of these cases.
             _ if is(key, "<a-t>") => move_until_prev_byte(editor, b'e'),
