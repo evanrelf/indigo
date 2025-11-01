@@ -24,9 +24,6 @@ Indigo is implemented in Rust, across multiple crates in a Cargo workspace.
   non-interactive/headless frontend. Handles I/O as an very thin imperative
   shell.
 
-- **indigo-event:** Incoming events and the actions they trigger, represented as
-  plain data, abstracted from any one frontend.
-
 - **indigo-wrap:** Limited form of higher-kinded types providing generic wrapper
   types and generic reference mutability. Many "view types" in `indigo-core`
   make use of "mutability generics."

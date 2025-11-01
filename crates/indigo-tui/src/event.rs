@@ -40,7 +40,7 @@ pub fn handle_event(
     // TODO: Check if TUI handles event before passing to editor?
 
     if let Ok(event) = event_t2i(&event) {
-        let handled = indigo_event::event::handle_event(editor, &event);
+        let handled = indigo_core::event::handle_event(editor, &event);
         if handled {
             return Ok(());
         }
