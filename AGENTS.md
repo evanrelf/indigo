@@ -28,6 +28,11 @@ Indigo is implemented in Rust, across multiple crates in a Cargo workspace.
   types and generic reference mutability. Many "view types" in `indigo-core`
   make use of "mutability generics."
 
+## Checking Your Work
+
+- Run `cargo clippy` as you work to check whether your code compiles. Focus on
+  addressing compilation errors first, then worry about warnings later.
+
 ## Code Conventions
 
 - Bias towards turning implicit assumptions into explicit assertions or comments
