@@ -6,10 +6,7 @@ use crate::{
 };
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
-use std::{
-    ops::{Deref, DerefMut},
-    thread,
-};
+use std::thread;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -59,9 +56,11 @@ impl RangeState {
 }
 
 #[must_use]
-pub struct RangeView<'a, W: Wrap> {
+pub struct RangeView<'a, W: Wrap + WrapRef> {
     text: W::Wrap<'a, Text>,
     state: W::Wrap<'a, RangeState>,
+    /// Whether to assert invariants hold on drop.
+    guard: bool,
 }
 
 pub type Range<'a> = RangeView<'a, WRef>;
@@ -73,9 +72,18 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         text: W::WrapRef<'a, Text>,
         state: W::WrapRef<'a, RangeState>,
     ) -> Result<Self, Error> {
-        let range_view = RangeView { text, state };
+        let range_view = RangeView {
+            text,
+            state,
+            guard: false,
+        };
         range_view.assert_invariants()?;
         Ok(range_view)
+    }
+
+    pub fn guard(mut self) -> Self {
+        self.guard = true;
+        self
     }
 
     pub fn slice(&self) -> RopeSlice<'_> {
@@ -342,24 +350,9 @@ where
     }
 }
 
-pub struct RangeGuard<'a>(pub RangeMut<'a>);
-
-impl<'a> Deref for RangeGuard<'a> {
-    type Target = RangeMut<'a>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for RangeGuard<'_> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl Drop for RangeGuard<'_> {
+impl<W: WrapRef> Drop for RangeView<'_, W> {
     fn drop(&mut self) {
-        if !thread::panicking() {
+        if self.guard && !thread::panicking() {
             self.assert_invariants().unwrap();
         }
     }

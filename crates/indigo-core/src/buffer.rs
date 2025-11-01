@@ -1,7 +1,7 @@
 use crate::{
     history::History,
     ot::{self, EditSeq},
-    range::{Range, RangeGuard, RangeMut, RangeState},
+    range::{Range, RangeMut, RangeState},
     rope::RopeExt as _,
     text::Text,
 };
@@ -37,8 +37,10 @@ impl Buffer {
         range
     }
 
-    pub fn range_mut(&mut self) -> RangeGuard<'_> {
-        RangeGuard(RangeMut::new(&mut self.text, &mut self.range).unwrap())
+    pub fn range_mut(&mut self) -> RangeMut<'_> {
+        RangeMut::new(&mut self.text, &mut self.range)
+            .unwrap()
+            .guard()
     }
 
     pub fn undo(&mut self) -> Result<bool, ot::Error> {
