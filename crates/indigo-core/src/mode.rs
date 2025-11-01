@@ -75,8 +75,8 @@ impl CommandMode {
     }
 
     pub fn cursor_mut(&mut self) -> CursorMut<'_> {
-        let cursor = CursorMut::new(&mut self.text, &mut self.cursor).unwrap();
-        cursor.assert_invariants().unwrap();
-        cursor
+        CursorMut::new(&mut self.text, &mut self.cursor)
+            .unwrap()
+            .guard()
     }
 }

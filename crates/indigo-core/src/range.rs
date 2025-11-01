@@ -167,11 +167,15 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
 
 impl<W: WrapMut> RangeView<'_, W> {
     fn anchor_mut(&mut self) -> CursorMut<'_> {
-        CursorMut::new(&mut self.text, &mut self.state.anchor).unwrap()
+        CursorMut::new(&mut self.text, &mut self.state.anchor)
+            .unwrap()
+            .guard()
     }
 
     fn head_mut(&mut self) -> CursorMut<'_> {
-        CursorMut::new(&mut self.text, &mut self.state.head).unwrap()
+        CursorMut::new(&mut self.text, &mut self.state.head)
+            .unwrap()
+            .guard()
     }
 
     #[tracing::instrument(skip_all)]
