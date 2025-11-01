@@ -1,5 +1,6 @@
 use crate::{ot::EditSeq, rope::RopeExt as _, text::Text};
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
+use std::thread;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -20,9 +21,11 @@ pub struct CursorState {
 }
 
 #[must_use]
-pub struct CursorView<'a, W: Wrap> {
+pub struct CursorView<'a, W: Wrap + WrapRef> {
     text: W::Wrap<'a, Text>,
     state: W::Wrap<'a, CursorState>,
+    /// Whether to assert invariants hold on drop.
+    guard: bool,
 }
 
 pub type Cursor<'a> = CursorView<'a, WRef>;
@@ -34,9 +37,18 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         text: W::WrapRef<'a, Text>,
         state: W::WrapRef<'a, CursorState>,
     ) -> Result<Self, Error> {
-        let cursor_view = CursorView { text, state };
+        let cursor_view = CursorView {
+            text,
+            state,
+            guard: false,
+        };
         cursor_view.assert_invariants()?;
         Ok(cursor_view)
+    }
+
+    pub fn guard(mut self) -> Self {
+        self.guard = true;
+        self
     }
 
     #[must_use]
@@ -191,6 +203,14 @@ where
         let text = Box::new(text.into());
         let state = Box::new(CursorState { char_offset });
         Self::new(text, state)
+    }
+}
+
+impl<W: WrapRef> Drop for CursorView<'_, W> {
+    fn drop(&mut self) {
+        if self.guard && !thread::panicking() {
+            self.assert_invariants().unwrap();
+        }
     }
 }
 

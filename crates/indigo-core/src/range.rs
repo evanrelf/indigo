@@ -301,10 +301,11 @@ impl<W: WrapMut> RangeView<'_, W> {
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
         self.reduce();
-        if let Some(edits) = self.anchor_mut().delete_before_impl() {
-            self.state.anchor.char_offset = edits.transform_char_offset(anchor);
-            self.state.head.char_offset = edits.transform_char_offset(head);
-        }
+        let Some(edits) = self.anchor_mut().delete_before_impl() else {
+            return;
+        };
+        self.state.anchor.char_offset = edits.transform_char_offset(anchor);
+        self.state.head.char_offset = edits.transform_char_offset(head);
     }
 
     pub fn delete(&mut self) {
@@ -326,10 +327,11 @@ impl<W: WrapMut> RangeView<'_, W> {
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
         self.reduce();
-        if let Some(edits) = self.head_mut().delete_after_impl() {
-            self.state.anchor.char_offset = edits.transform_char_offset(anchor);
-            self.state.head.char_offset = edits.transform_char_offset(head);
-        }
+        let Some(edits) = self.head_mut().delete_after_impl() else {
+            return;
+        };
+        self.state.anchor.char_offset = edits.transform_char_offset(anchor);
+        self.state.head.char_offset = edits.transform_char_offset(head);
     }
 }
 
