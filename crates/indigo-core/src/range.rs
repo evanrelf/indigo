@@ -6,6 +6,10 @@ use crate::{
 };
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
+use std::{
+    ops::{Deref, DerefMut},
+    thread,
+};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -335,6 +339,29 @@ where
             head: CursorState { char_offset: head },
         });
         Self::new(text, state)
+    }
+}
+
+pub struct RangeGuard<'a>(pub RangeMut<'a>);
+
+impl<'a> Deref for RangeGuard<'a> {
+    type Target = RangeMut<'a>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for RangeGuard<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl Drop for RangeGuard<'_> {
+    fn drop(&mut self) {
+        if !thread::panicking() {
+            self.assert_invariants().unwrap();
+        }
     }
 }
 
