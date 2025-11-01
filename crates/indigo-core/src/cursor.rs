@@ -1,4 +1,4 @@
-use crate::{ot::EditSeq, rope::RopeExt as _, text::Text};
+use crate::{display_width::DisplayWidth as _, ot::EditSeq, rope::RopeExt as _, text::Text};
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::thread;
 use thiserror::Error;
@@ -18,6 +18,7 @@ pub enum Error {
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct CursorState {
     pub char_offset: usize,
+    pub desired_column: usize,
 }
 
 #[must_use]
@@ -78,11 +79,21 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
 }
 
 impl<W: WrapMut> CursorView<'_, W> {
+    fn update_desired_column(&mut self) {
+        let current_line_index = self.text.char_to_line(self.state.char_offset);
+        let current_line_char_index = self.text.line_to_char(current_line_index);
+        self.state.desired_column = self
+            .text
+            .slice(current_line_char_index..self.state.char_offset)
+            .display_width();
+    }
+
     pub fn move_left(&mut self) -> bool {
         if let Some(prev) = self.text.prev_grapheme_boundary(self.state.char_offset)
             && self.state.char_offset != prev
         {
             self.state.char_offset = prev;
+            self.update_desired_column();
             true
         } else {
             false
@@ -94,16 +105,66 @@ impl<W: WrapMut> CursorView<'_, W> {
             && self.state.char_offset != next
         {
             self.state.char_offset = next;
+            self.update_desired_column();
             true
         } else {
             false
         }
     }
 
+    pub fn move_up(&mut self) -> bool {
+        let current_line_index = self.text.char_to_line(self.state.char_offset);
+        if current_line_index == 0 {
+            return false;
+        }
+        let target_line_index = current_line_index - 1;
+        let target_line_char_index = self.text.line_to_char(target_line_index);
+        let target_line_slice = self.text.line(target_line_index);
+        let mut target_line_prefix = 0;
+        let mut char_offset = target_line_char_index;
+        for grapheme in target_line_slice.graphemes() {
+            let grapheme_width = grapheme.display_width();
+            if target_line_prefix + grapheme_width > self.state.desired_column {
+                break;
+            }
+            target_line_prefix += grapheme_width;
+            char_offset += grapheme.len_chars();
+        }
+        self.state.char_offset = char_offset;
+        true
+    }
+
+    pub fn move_down(&mut self) -> bool {
+        let current_line_index = self.text.char_to_line(self.state.char_offset);
+        if self.is_eof() {
+            return false;
+        }
+        let target_line_index = current_line_index + 1;
+        if target_line_index >= self.text.len_lines_indigo() {
+            self.state.char_offset = self.text.len_chars();
+            return true;
+        }
+        let target_line_char_index = self.text.line_to_char(target_line_index);
+        let target_line_slice = self.text.line(target_line_index);
+        let mut target_line_prefix = 0;
+        let mut char_offset = target_line_char_index;
+        for grapheme in target_line_slice.graphemes() {
+            let grapheme_width = grapheme.display_width();
+            if target_line_prefix + grapheme_width > self.state.desired_column {
+                break;
+            }
+            target_line_prefix += grapheme_width;
+            char_offset += grapheme.len_chars();
+        }
+        self.state.char_offset = char_offset;
+        true
+    }
+
     pub fn move_to_prev_byte(&mut self, byte: u8) -> bool {
         if let Some(char_offset) = self.text.find_last_byte(..self.state.char_offset, byte) {
             self.state.char_offset = char_offset;
             self.move_right();
+            self.update_desired_column();
             true
         } else {
             false
@@ -113,6 +174,7 @@ impl<W: WrapMut> CursorView<'_, W> {
     pub fn move_to_next_byte(&mut self, byte: u8) -> bool {
         if let Some(char_offset) = self.text.find_first_byte(self.state.char_offset.., byte) {
             self.state.char_offset = char_offset;
+            self.update_desired_column();
             true
         } else {
             false
@@ -201,7 +263,10 @@ where
     type Error = Error;
     fn try_from((text, char_offset): (R, usize)) -> Result<Self, Self::Error> {
         let text = Box::new(text.into());
-        let state = Box::new(CursorState { char_offset });
+        let state = Box::new(CursorState {
+            char_offset,
+            desired_column: 0,
+        });
         Self::new(text, state)
     }
 }

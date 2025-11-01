@@ -224,6 +224,14 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
+    pub fn extend_up(&mut self) {
+        self.head_mut().move_up();
+    }
+
+    pub fn extend_down(&mut self) {
+        self.head_mut().move_down();
+    }
+
     pub fn extend_until_prev_byte(&mut self, byte: u8) -> bool {
         let head = &mut self.state.head.char_offset;
         if let Some(char_offset) = self.text.find_last_byte(..*head, byte) {
@@ -349,8 +357,12 @@ where
         let state = Box::new(RangeState {
             anchor: CursorState {
                 char_offset: anchor,
+                desired_column: 0,
             },
-            head: CursorState { char_offset: head },
+            head: CursorState {
+                char_offset: head,
+                desired_column: 0,
+            },
         });
         Self::new(text, state)
     }
@@ -373,8 +385,14 @@ mod tests {
         // combining acute accent (´)
         let mut text = Text::from("\u{0301}");
         let mut state = RangeState {
-            anchor: CursorState { char_offset: 0 },
-            head: CursorState { char_offset: 0 },
+            anchor: CursorState {
+                char_offset: 0,
+                desired_column: 0,
+            },
+            head: CursorState {
+                char_offset: 0,
+                desired_column: 0,
+            },
         }
         .snapped(&text);
         let mut range = RangeMut::new(&mut text, &mut state).unwrap();
