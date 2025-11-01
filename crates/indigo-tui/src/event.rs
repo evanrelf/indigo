@@ -29,16 +29,12 @@ pub fn should_skip_event(event: &TerminalEvent) -> bool {
     }
 }
 
-// TODO: Give the TUI its own actions? Could take a shared reference to the editor, and would lend
-// itself to simulation.
 pub fn handle_event(
     editor: &mut Editor,
     terminal: &mut TerminalGuard,
     areas: Areas,
     event: TerminalEvent,
 ) -> anyhow::Result<()> {
-    // TODO: Check if TUI handles event before passing to editor?
-
     if let Ok(event) = event_t2i(&event) {
         let handled = indigo_core::event::handle_event(editor, &event);
         if handled {
