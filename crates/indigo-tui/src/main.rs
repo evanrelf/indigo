@@ -5,7 +5,6 @@ use hdrhistogram::Histogram;
 use indigo_core::prelude::{Buffer, *};
 use indigo_tui::{
     areas::{Areas, char_index_to_area, line_index_to_area},
-    colors,
     event::{handle_event, should_skip_event},
     terminal,
     terminal::TerminalGuard,
@@ -207,6 +206,11 @@ fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
     Ok(exit_code)
 }
 
+pub const LIGHT_YELLOW: Color = Color::Rgb(0xff, 0xf5, 0xb1);
+pub const DARK_YELLOW: Color = Color::Rgb(0xff, 0xd3, 0x3d);
+pub const LIGHT_RED: Color = Color::Rgb(0xff, 0xdc, 0xe0);
+pub const RED: Color = Color::Rgb(0xd7, 0x3a, 0x4a);
+
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let areas = Areas::new(editor, area);
     render_status_bar(editor, areas.status_bar, surface);
@@ -221,9 +225,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     if let Some(message) = &editor.message {
         match message {
             Ok(message) => Line::raw(message).render(area, surface),
-            Err(message) => Line::raw(message)
-                .bg(colors::LIGHT_RED)
-                .render(area, surface),
+            Err(message) => Line::raw(message).bg(LIGHT_RED).render(area, surface),
         }
     } else {
         let mode = match editor.mode {
@@ -272,7 +274,7 @@ fn render_command_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         0,
         area,
     ) {
-        surface.set_style(rect, Style::default().bg(colors::DARK_YELLOW));
+        surface.set_style(rect, Style::default().bg(DARK_YELLOW));
     }
 }
 
@@ -363,7 +365,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     if range.is_empty() {
         if let Some(rect) = grapheme_area(range.head().char_offset()) {
-            surface.set_style(rect, Style::default().bg(colors::RED));
+            surface.set_style(rect, Style::default().bg(RED));
         }
         return;
     }
@@ -391,17 +393,17 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
                 line_rect.width -= delta;
             }
         }
-        surface.set_style(line_rect, Style::default().bg(colors::LIGHT_YELLOW));
+        surface.set_style(line_rect, Style::default().bg(LIGHT_YELLOW));
     }
 
     #[expect(clippy::collapsible_else_if)]
     if range.is_backward() {
         if let Some(rect) = grapheme_area(range.head().char_offset()) {
-            surface.set_style(rect, Style::default().bg(colors::DARK_YELLOW));
+            surface.set_style(rect, Style::default().bg(DARK_YELLOW));
         }
     } else {
         if let Some(rect) = grapheme_area(range.head().char_offset().saturating_sub(1)) {
-            surface.set_style(rect, Style::default().bg(colors::DARK_YELLOW));
+            surface.set_style(rect, Style::default().bg(DARK_YELLOW));
         }
     }
 }
