@@ -218,7 +218,21 @@ impl<W: WrapRef> Drop for CursorView<'_, W> {
 mod tests {
     use super::*;
     use arbtest::arbtest;
-    use std::cmp::max;
+    use std::{cmp::max, sync::mpsc, thread};
+
+    macro_rules! defer {
+        ($f:expr) => {
+            let __defer = {
+                struct Defer<F: FnMut()>(F);
+                impl<F: FnMut()> Drop for Defer<F> {
+                    fn drop(&mut self) {
+                        (self.0)();
+                    }
+                }
+                Defer($f)
+            };
+        };
+    }
 
     #[test]
     fn insert_changes_grapheme_boundary() {
@@ -238,7 +252,15 @@ mod tests {
                 text.ceil_grapheme_boundary(u.arbitrary::<usize>()?)
             };
             let mut cursor = CursorView::try_from((text, char_offset)).unwrap();
-            let mut actions = Vec::new();
+            let (tx, rx) = mpsc::channel();
+            defer!(|| {
+                if thread::panicking() {
+                    let actions: Vec<String> = rx.try_iter().collect();
+                    if !actions.is_empty() {
+                        eprintln!("Actions:\n  {}", actions.join("\n  "));
+                    }
+                }
+            });
             for _ in 0..u.choose_index(100)? {
                 match u.choose_index(5)? {
                     0 => {
@@ -246,38 +268,36 @@ mod tests {
                         for _ in 1..=count {
                             cursor.move_left();
                         }
-                        actions.push(format!("move_left() x{count}"));
+                        tx.send(format!("move_left() x{count}")).unwrap();
                     }
                     1 => {
                         let count = max(1, u.choose_index(99)?);
                         for _ in 1..=count {
                             cursor.move_right();
                         }
-                        actions.push(format!("move_right() x{count}"));
+                        tx.send(format!("move_right() x{count}")).unwrap();
                     }
                     2 => {
                         let text = u.arbitrary()?;
                         cursor.insert(text);
-                        actions.push(format!("insert({text:?})"));
+                        tx.send(format!("insert({text:?})")).unwrap();
                     }
                     3 => {
                         let count = max(1, u.choose_index(99)?);
                         for _ in 1..=count {
                             cursor.delete_before();
                         }
-                        actions.push(format!("delete_before() x{count}"));
+                        tx.send(format!("delete_before() x{count}")).unwrap();
                     }
                     4 => {
                         let count = max(1, u.choose_index(99)?);
                         for _ in 1..=count {
                             cursor.delete_after();
                         }
-                        actions.push(format!("delete_after() x{count}"));
+                        tx.send(format!("delete_after() x{count}")).unwrap();
                     }
                     _ => unreachable!(),
                 }
-                let actions = actions.join("\n  ");
-                let _ = actions;
                 cursor.assert_invariants().unwrap();
             }
             Ok(())
