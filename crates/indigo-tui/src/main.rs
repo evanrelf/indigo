@@ -31,6 +31,7 @@ fn main() -> anyhow::Result<ExitCode> {
         //
         // NOTE: Replace with `std::panic::set_backtrace_style` once it stabilizes.
         // https://github.com/rust-lang/rust/issues/93346
+        #[expect(unsafe_code)]
         unsafe {
             std::env::set_var("RUST_BACKTRACE", "1");
         }
