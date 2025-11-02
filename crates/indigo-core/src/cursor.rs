@@ -240,7 +240,7 @@ mod tests {
             let mut cursor = CursorView::try_from((text, char_offset)).unwrap();
             let mut actions = Vec::new();
             for _ in 0..u.choose_index(100)? {
-                match u.choose_index(4)? {
+                match u.choose_index(5)? {
                     0 => {
                         let count = max(1, u.choose_index(99)?);
                         for _ in 1..=count {
@@ -267,7 +267,14 @@ mod tests {
                         }
                         actions.push(format!("delete_before() x{count}"));
                     }
-                    _ => break,
+                    4 => {
+                        let count = max(1, u.choose_index(99)?);
+                        for _ in 1..=count {
+                            cursor.delete_after();
+                        }
+                        actions.push(format!("delete_after() x{count}"));
+                    }
+                    _ => unreachable!(),
                 }
                 let actions = actions.join("\n  ");
                 let _ = actions;
