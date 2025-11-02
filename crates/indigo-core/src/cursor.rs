@@ -245,6 +245,47 @@ mod tests {
     }
 
     #[test]
+    fn expected_behavior() {
+        let mut cursor = CursorView::try_from(("", 0)).unwrap();
+        cursor.assert_invariants().unwrap();
+
+        cursor.insert("hello");
+        assert_eq!(*cursor.text, Text::from("hello"));
+        assert_eq!(cursor.char_offset(), 5);
+
+        cursor.delete_before();
+        cursor.delete_before();
+        assert_eq!(*cursor.text, Text::from("hel"));
+        assert_eq!(cursor.char_offset(), 3);
+
+        cursor.move_left();
+        cursor.move_left();
+        assert_eq!(cursor.char_offset(), 1);
+
+        cursor.delete_after();
+        assert_eq!(cursor.char_offset(), 1);
+        assert_eq!(*cursor.text, Text::from("hl"));
+
+        cursor.move_right();
+        assert_eq!(cursor.char_offset(), 2);
+        cursor.move_right();
+        assert_eq!(cursor.char_offset(), 2);
+
+        cursor.delete_after();
+        assert_eq!(*cursor.text, Text::from("hl"));
+        assert_eq!(cursor.char_offset(), 2);
+
+        cursor.delete_before();
+        cursor.delete_before();
+        assert_eq!(*cursor.text, Text::from(""));
+        assert_eq!(cursor.char_offset(), 0);
+
+        cursor.delete_before();
+        assert_eq!(*cursor.text, Text::from(""));
+        assert_eq!(cursor.char_offset(), 0);
+    }
+
+    #[test]
     fn fuzz() {
         arbtest(|u| {
             let text = Text::new();
