@@ -21,7 +21,7 @@ Indigo is implemented in Rust, across multiple crates in a Cargo workspace.
   relatively thin imperative shell.
 
 - **indigo-cli:** A command-line interface (CLI) is the secondary,
-  non-interactive/headless frontend. Handles I/O as an very thin imperative
+  non-interactive/headless frontend. Handles I/O as a very thin imperative
   shell.
 
 - **indigo-wrap:** Limited form of higher-kinded types providing generic wrapper
@@ -31,13 +31,22 @@ Indigo is implemented in Rust, across multiple crates in a Cargo workspace.
 ## Checking Your Work
 
 - Run `cargo clippy` as you work to check whether your code compiles. Focus on
-  addressing compilation errors first, then worry about warnings later.
+  addressing compilation errors first, then worry about warnings later. Do not
+  run `cargo check` or `cargo build`; `cargo clippy` is faster and more
+  comprehensive.
+
+- Do not run `indigo-tui`; it is a TUI application that you will struggle to
+  control and understand. Instead, check runtime behavior by writing tests, or
+  writing new binaries (e.g. `src/bin/my_program.rs`) if you specifically need
+  to inspect output prior to determining the desired behavior.
 
 ## Code Conventions
 
 - Bias towards turning implicit assumptions into explicit assertions or comments
   in code.
+
 - Use `camino::{Utf8Path, Utf8PathBuf}` instead of `std::path::{Path, PathBuf}`.
+
 - When working with event handling code, try to keep each key or mouse mapping
   on a single line for readability. If a key maps to multiple lines of code
   rather than a single function call, that's a smell; most logic should be
