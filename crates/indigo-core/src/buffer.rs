@@ -1,13 +1,20 @@
 use crate::{
     history::History,
     ot::{self, EditSeq},
-    range::{Range, RangeMut, RangeState},
+    range::{self, Range, RangeMut, RangeState},
     rope::RopeExt as _,
     text::Text,
 };
 use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::cmp::min;
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("Error from range")]
+    Range(#[source] range::Error),
+}
 
 #[derive(Default)]
 pub struct Buffer {
@@ -71,6 +78,11 @@ impl Buffer {
     pub fn scroll_to(&mut self, line: usize) {
         let last_line = self.text().len_lines_indigo().saturating_sub(1);
         self.vertical_scroll = min(line, last_line);
+    }
+
+    pub(crate) fn assert_invariants(&self) -> Result<(), Error> {
+        self.range().assert_invariants().map_err(Error::Range)?;
+        Ok(())
     }
 }
 

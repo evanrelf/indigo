@@ -1,6 +1,16 @@
-use crate::{buffer::Buffer, mode::Mode};
+use crate::{
+    buffer::{self, Buffer},
+    mode::Mode,
+};
 use camino::Utf8PathBuf;
 use std::process::ExitCode;
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("Error from buffer")]
+    Buffer(#[source] buffer::Error),
+}
 
 #[derive(Default)]
 pub struct Editor {
@@ -16,6 +26,12 @@ impl Editor {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    #[expect(dead_code)]
+    pub(crate) fn assert_invariants(&self) -> Result<(), Error> {
+        self.buffer.assert_invariants().map_err(Error::Buffer)?;
+        Ok(())
     }
 }
 
