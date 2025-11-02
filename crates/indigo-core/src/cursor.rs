@@ -189,7 +189,9 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.delete(char_offset - self.state.char_offset);
         edits.retain_rest(&self.text);
         self.text.edit(&edits).unwrap();
-        self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
+        self.state.char_offset = self
+            .text
+            .ceil_grapheme_boundary(edits.transform_char_offset(self.state.char_offset));
         Some(edits)
     }
 }
