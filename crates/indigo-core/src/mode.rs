@@ -4,12 +4,6 @@ use crate::{
 };
 use std::num::NonZeroUsize;
 
-pub enum ModeKind {
-    Normal,
-    Insert,
-    Command,
-}
-
 pub enum Mode {
     Normal(NormalMode),
     Insert(InsertMode),
@@ -17,15 +11,6 @@ pub enum Mode {
 }
 
 impl Mode {
-    #[must_use]
-    pub fn kind(&self) -> ModeKind {
-        match self {
-            Self::Normal(_) => ModeKind::Normal,
-            Self::Insert(_) => ModeKind::Insert,
-            Self::Command(_) => ModeKind::Command,
-        }
-    }
-
     #[must_use]
     pub fn count(&self) -> Option<NonZeroUsize> {
         match self {
