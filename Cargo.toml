@@ -8,7 +8,6 @@ arbitrary = { version = "1.4.1", features = ["derive"] }
 arbtest = "0.3.2"
 camino = "1.2.1"
 clap = { version = "4.5.50", features = ["derive", "env"] }
-crossterm = "0.29.0"
 etcetera = "0.10.0"
 flagset = "0.4.7"
 hdrhistogram = "7.5.4"
@@ -17,7 +16,7 @@ indigo-core = { path = "crates/indigo-core/" }
 indigo-tui = { path = "crates/indigo-tui/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }
 memchr = "2.7.6"
-ratatui = "0.29.0"
+ratatui = "0.30.0-beta.0"
 ropey = "1.6.1"
 shellwords = "1.1.0"
 thiserror = "2.0.17"

@@ -6,7 +6,7 @@ use crate::{
     terminal::TerminalGuard,
 };
 use anyhow::anyhow;
-use crossterm::event::{KeyCode, KeyModifiers, MouseButton, MouseEventKind};
+use ratatui::crossterm::{self, event::{KeyCode, KeyModifiers, MouseButton, MouseEventKind}};
 use indigo_core::{action::*, prelude::*};
 use ratatui::layout::Position;
 

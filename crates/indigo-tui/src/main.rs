@@ -9,7 +9,7 @@ use indigo_tui::{
     terminal,
     terminal::TerminalGuard,
 };
-use ratatui::prelude::{Buffer as Surface, *};
+use ratatui::{prelude::{Buffer as Surface, *}, crossterm};
 use std::{borrow::Cow, cmp::max, env, fs, io, process::ExitCode, sync::Arc, time::Instant};
 
 #[derive(Debug, clap::Parser)]
