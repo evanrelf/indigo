@@ -46,7 +46,10 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "<esc>") => enter_normal_mode(editor),
             _ if is(key, ":") => enter_command_mode(editor),
             _ if is(key, "i") => enter_insert_mode(editor),
-            // TODO: Add `a` for entering insert mode with the cursor moved to the right.
+            _ if is(key, "a") => {
+                move_right(editor);
+                enter_insert_mode(editor);
+            }
             _ if is(key, "h") => move_left(editor),
             _ if is(key, "l") => move_right(editor),
             _ if is(key, "k") => move_up(editor),
