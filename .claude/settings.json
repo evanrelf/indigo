@@ -16,18 +16,5 @@
     ],
     "deny": [],
     "ask": []
-  },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cargo fmt"
-          }
-        ]
-      }
-    ]
   }
 }
