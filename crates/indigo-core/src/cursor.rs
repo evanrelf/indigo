@@ -1,5 +1,6 @@
 use crate::{ot::EditSeq, rope::RopeExt as _, text::Text};
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
+use ropey::Rope;
 use std::thread;
 use thiserror::Error;
 
@@ -18,6 +19,18 @@ pub enum Error {
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct CursorState {
     pub char_offset: usize,
+}
+
+impl CursorState {
+    pub fn snap(&mut self, text: &Rope) {
+        self.char_offset = text.ceil_grapheme_boundary(self.char_offset);
+    }
+
+    #[must_use]
+    pub fn snapped(mut self, text: &Rope) -> Self {
+        self.snap(text);
+        self
+    }
 }
 
 #[must_use]
@@ -78,6 +91,10 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
 }
 
 impl<W: WrapMut> CursorView<'_, W> {
+    pub fn snap(&mut self) {
+        self.state.snap(&self.text);
+    }
+
     pub fn move_left(&mut self) -> bool {
         if let Some(prev) = self.text.prev_grapheme_boundary(self.state.char_offset)
             && self.state.char_offset != prev
@@ -131,10 +148,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.retain_rest(&self.text);
         self.text.edit(&edits).unwrap();
         self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
-        // If the inserted string combines with existing text, the cursor would be left in the
-        // middle of a new grapheme, so we must snap after inserting.
-        // Makes `insert_changes_grapheme_boundary` test pass.
-        self.state.char_offset = self.text.ceil_grapheme_boundary(self.state.char_offset);
+        self.snap();
         edits
     }
 
@@ -154,9 +168,8 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.delete(self.state.char_offset - char_offset);
         edits.retain_rest(&self.text);
         self.text.edit(&edits).unwrap();
-        self.state.char_offset = self
-            .text
-            .ceil_grapheme_boundary(edits.transform_char_offset(self.state.char_offset));
+        self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
+        self.snap();
         Some(edits)
     }
 
@@ -176,9 +189,8 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.delete(char_offset - self.state.char_offset);
         edits.retain_rest(&self.text);
         self.text.edit(&edits).unwrap();
-        self.state.char_offset = self
-            .text
-            .ceil_grapheme_boundary(edits.transform_char_offset(self.state.char_offset));
+        self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
+        self.snap();
         Some(edits)
     }
 }
