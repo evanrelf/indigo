@@ -123,12 +123,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.insert(&char.to_string());
     }
 
-    pub fn insert(&mut self, text: &str) {
-        let _ = self.insert_impl(text);
-    }
-
-    #[must_use]
-    pub(crate) fn insert_impl(&mut self, text: &str) -> EditSeq {
+    pub fn insert(&mut self, text: &str) -> EditSeq {
         self.assert_invariants().unwrap();
         let mut edits = EditSeq::new();
         edits.retain(self.state.char_offset);
@@ -143,12 +138,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits
     }
 
-    pub fn delete_before(&mut self) {
-        let _ = self.delete_before_impl();
-    }
-
-    #[must_use]
-    pub(crate) fn delete_before_impl(&mut self) -> Option<EditSeq> {
+    pub fn delete_before(&mut self) -> Option<EditSeq> {
         self.assert_invariants().unwrap();
         let mut char_offset = self.state.char_offset;
         if let Some(prev) = self.text.prev_grapheme_boundary(char_offset)
@@ -169,12 +159,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         Some(edits)
     }
 
-    pub fn delete_after(&mut self) {
-        let _ = self.delete_after_impl();
-    }
-
-    #[must_use]
-    pub(crate) fn delete_after_impl(&mut self) -> Option<EditSeq> {
+    pub fn delete_after(&mut self) -> Option<EditSeq> {
         self.assert_invariants().unwrap();
         let mut char_offset = self.state.char_offset;
         if let Some(next) = self.text.next_grapheme_boundary(char_offset)
