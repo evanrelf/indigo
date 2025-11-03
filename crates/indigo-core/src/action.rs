@@ -93,7 +93,7 @@ pub fn seek(editor: &mut Editor, byte: u8) {
         SeekSelect::{Extend, Select},
     };
     let Mode::Seek(seek_mode) = &editor.mode else {
-        unreachable!()
+        panic!("Not in seek mode")
     };
     let mut range = editor.buffer.range_mut();
     match (&seek_mode.select, &seek_mode.include, &seek_mode.direction) {

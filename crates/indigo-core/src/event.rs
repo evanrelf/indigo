@@ -93,7 +93,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
 
 pub fn handle_event_seek(editor: &mut Editor, event: &Event) -> bool {
     let Mode::Seek(_seek_mode) = &editor.mode else {
-        unreachable!()
+        panic!("Not in seek mode")
     };
 
     let Event::KeyInput(key) = event;
@@ -115,7 +115,7 @@ pub fn handle_event_seek(editor: &mut Editor, event: &Event) -> bool {
 
 pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
     let Mode::Insert(_insert_mode) = &editor.mode else {
-        unreachable!()
+        panic!("Not in insert mode")
     };
 
     let mut handled = true;
@@ -142,7 +142,7 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
 
 pub fn handle_event_command(editor: &mut Editor, event: &Event) -> bool {
     let Mode::Command(_command_mode) = &editor.mode else {
-        unreachable!()
+        panic!("Not in command mode")
     };
 
     let mut handled = true;
