@@ -45,8 +45,8 @@ pub enum SeekSelect {
 }
 
 pub enum SeekInclude {
-    Onto,
     Until,
+    Onto,
 }
 
 pub enum SeekDirection {

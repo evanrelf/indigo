@@ -249,6 +249,54 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
+    pub fn select_until_prev_byte(&mut self, byte: u8) -> bool {
+        self.reduce();
+        self.extend_until_prev_byte(byte)
+    }
+
+    pub fn select_onto_prev_byte(&mut self, byte: u8) -> bool {
+        self.reduce();
+        if self.extend_until_prev_byte(byte) {
+            self.extend_left();
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn select_until_next_byte(&mut self, byte: u8) -> bool {
+        self.reduce();
+        self.extend_until_next_byte(byte)
+    }
+
+    pub fn select_onto_next_byte(&mut self, byte: u8) -> bool {
+        self.reduce();
+        if self.extend_until_next_byte(byte) {
+            self.extend_right();
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn extend_onto_prev_byte(&mut self, byte: u8) -> bool {
+        if self.extend_until_prev_byte(byte) && self.is_backward() {
+            self.extend_left();
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn extend_onto_next_byte(&mut self, byte: u8) -> bool {
+        if self.extend_until_next_byte(byte) && self.is_forward() {
+            self.extend_right();
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn flip(&mut self) {
         let (anchor, cursor) = self.state.both();
         std::mem::swap(anchor, cursor);

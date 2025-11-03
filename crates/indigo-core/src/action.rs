@@ -86,7 +86,6 @@ pub fn move_down(editor: &mut Editor) {
     editor.mode.set_count(None);
 }
 
-// TODO: Fold seek logic into range implementation. Actions shouldn't be this logic heavy.
 pub fn seek(editor: &mut Editor, byte: u8) {
     use crate::mode::{
         SeekDirection::{Next, Prev},
@@ -96,75 +95,17 @@ pub fn seek(editor: &mut Editor, byte: u8) {
     let Mode::Seek(seek_mode) = &editor.mode else {
         unreachable!()
     };
+    let mut range = editor.buffer.range_mut();
     match (&seek_mode.select, &seek_mode.include, &seek_mode.direction) {
-        (Select, Until, Prev) => select_until_prev_byte(editor, byte),
-        (Extend, Until, Prev) => extend_until_prev_byte(editor, byte),
-        (Select, Until, Next) => select_until_next_byte(editor, byte),
-        (Extend, Until, Next) => extend_until_next_byte(editor, byte),
-        (Select, Onto, Prev) => select_onto_prev_byte(editor, byte),
-        (Extend, Onto, Prev) => extend_onto_prev_byte(editor, byte),
-        (Select, Onto, Next) => select_onto_next_byte(editor, byte),
-        (Extend, Onto, Next) => extend_onto_next_byte(editor, byte),
-    }
-}
-
-pub fn select_until_prev_byte(editor: &mut Editor, byte: u8) {
-    let mut range = editor.buffer.range_mut();
-    range.reduce();
-    range.extend_until_prev_byte(byte);
-    editor.mode.set_count(None);
-}
-
-pub fn select_onto_prev_byte(editor: &mut Editor, byte: u8) {
-    let mut range = editor.buffer.range_mut();
-    range.reduce();
-    if range.extend_until_prev_byte(byte) {
-        range.extend_left();
-    }
-    editor.mode.set_count(None);
-}
-
-pub fn select_until_next_byte(editor: &mut Editor, byte: u8) {
-    let mut range = editor.buffer.range_mut();
-    range.reduce();
-    range.extend_until_next_byte(byte);
-    editor.mode.set_count(None);
-}
-
-pub fn select_onto_next_byte(editor: &mut Editor, byte: u8) {
-    let mut range = editor.buffer.range_mut();
-    range.reduce();
-    if range.extend_until_next_byte(byte) {
-        range.extend_right();
-    }
-    editor.mode.set_count(None);
-}
-
-pub fn extend_until_prev_byte(editor: &mut Editor, byte: u8) {
-    let mut range = editor.buffer.range_mut();
-    range.extend_until_prev_byte(byte);
-    editor.mode.set_count(None);
-}
-
-pub fn extend_onto_prev_byte(editor: &mut Editor, byte: u8) {
-    let mut range = editor.buffer.range_mut();
-    if range.extend_until_prev_byte(byte) && range.is_backward() {
-        range.extend_left();
-    }
-    editor.mode.set_count(None);
-}
-
-pub fn extend_until_next_byte(editor: &mut Editor, byte: u8) {
-    let mut range = editor.buffer.range_mut();
-    range.extend_until_next_byte(byte);
-    editor.mode.set_count(None);
-}
-
-pub fn extend_onto_next_byte(editor: &mut Editor, byte: u8) {
-    let mut range = editor.buffer.range_mut();
-    if range.extend_until_next_byte(byte) && range.is_forward() {
-        range.extend_right();
-    }
+        (Select, Until, Prev) => range.select_until_prev_byte(byte),
+        (Extend, Until, Prev) => range.extend_until_prev_byte(byte),
+        (Select, Until, Next) => range.select_until_next_byte(byte),
+        (Extend, Until, Next) => range.extend_until_next_byte(byte),
+        (Select, Onto, Prev) => range.select_onto_prev_byte(byte),
+        (Extend, Onto, Prev) => range.extend_onto_prev_byte(byte),
+        (Select, Onto, Next) => range.select_onto_next_byte(byte),
+        (Extend, Onto, Next) => range.extend_onto_next_byte(byte),
+    };
     editor.mode.set_count(None);
 }
 
