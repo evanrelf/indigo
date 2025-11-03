@@ -245,33 +245,33 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.anchor.char_offset = self.state.head.char_offset;
     }
 
-    pub fn insert_char(&mut self, char: char) {
-        self.insert(&char.to_string());
+    pub fn insert_char(&mut self, char: char) -> EditSeq {
+        self.insert(&char.to_string())
     }
 
-    pub fn insert(&mut self, text: &str) {
+    pub fn insert(&mut self, text: &str) -> EditSeq {
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
         let edits = self.start_mut().insert(text);
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
         self.snap();
+        edits
     }
 
-    pub fn delete_before(&mut self) {
+    pub fn delete_before(&mut self) -> Option<EditSeq> {
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
-        let Some(edits) = self.start_mut().delete_before() else {
-            return;
-        };
+        let edits = self.start_mut().delete_before()?;
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
         self.snap();
+        Some(edits)
     }
 
-    pub fn delete(&mut self) {
+    pub fn delete(&mut self) -> Option<EditSeq> {
         if self.is_empty() {
-            return;
+            return None;
         }
         let mut edits = EditSeq::new();
         edits.retain(self.start().char_offset());
@@ -282,17 +282,17 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.head.char_offset = edits.transform_char_offset(self.state.head.char_offset);
         self.snap();
         debug_assert_eq!(self.state.anchor, self.state.head);
+        Some(edits)
     }
 
-    pub fn delete_after(&mut self) {
+    pub fn delete_after(&mut self) -> Option<EditSeq> {
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
-        let Some(edits) = self.end_mut().delete_after() else {
-            return;
-        };
+        let edits = self.end_mut().delete_after()?;
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
         self.snap();
+        Some(edits)
     }
 }
 

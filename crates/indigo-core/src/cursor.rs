@@ -119,8 +119,8 @@ impl<W: WrapMut> CursorView<'_, W> {
         }
     }
 
-    pub fn insert_char(&mut self, char: char) {
-        self.insert(&char.to_string());
+    pub fn insert_char(&mut self, char: char) -> EditSeq {
+        self.insert(&char.to_string())
     }
 
     pub fn insert(&mut self, text: &str) -> EditSeq {
