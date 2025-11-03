@@ -138,6 +138,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits
     }
 
+    // Behavior traditionally associated with the Backspace key.
     pub fn delete_before(&mut self) -> Option<EditSeq> {
         self.assert_invariants().unwrap();
         let mut char_offset = self.state.char_offset;
@@ -159,6 +160,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         Some(edits)
     }
 
+    // Behavior traditionally associated with the Delete key.
     pub fn delete_after(&mut self) -> Option<EditSeq> {
         self.assert_invariants().unwrap();
         let mut char_offset = self.state.char_offset;
