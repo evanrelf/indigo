@@ -256,7 +256,9 @@ pub fn delete_after(editor: &mut Editor) {
 pub fn undo(editor: &mut Editor) {
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     for _ in 1..=count {
-        editor.buffer.undo().unwrap();
+        if !editor.buffer.undo().unwrap() {
+            break;
+        }
     }
     editor.mode.set_count(None);
 }
@@ -264,7 +266,9 @@ pub fn undo(editor: &mut Editor) {
 pub fn redo(editor: &mut Editor) {
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     for _ in 1..=count {
-        editor.buffer.redo().unwrap();
+        if !editor.buffer.redo().unwrap() {
+            break;
+        }
     }
     editor.mode.set_count(None);
 }
