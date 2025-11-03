@@ -192,9 +192,12 @@ mod tests {
         assert_eq!(Rope::from_str("x\n").get_line(0), Some("x\n".into()));
         assert_eq!(Rope::from_str("\nx").get_line(0), Some("\n".into()));
         assert_eq!(Rope::from_str("\nx").get_line(1), Some("x".into()));
-        assert_eq!(Rope::from_str("x\ny\nz").get_line(0), Some("x\n".into()));
-        assert_eq!(Rope::from_str("x\ny\nz").get_line(1), Some("y\n".into()));
-        assert_eq!(Rope::from_str("x\ny\nz").get_line(2), Some("z".into()));
+        assert_eq!(Rope::from_str("x\ny\r\nz").get_line(0), Some("x\n".into()));
+        assert_eq!(
+            Rope::from_str("x\ny\r\nz").get_line(1),
+            Some("y\r\n".into())
+        );
+        assert_eq!(Rope::from_str("x\ny\r\nz").get_line(2), Some("z".into()));
     }
 
     #[test]
