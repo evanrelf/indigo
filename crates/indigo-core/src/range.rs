@@ -179,12 +179,12 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.snap(&self.text);
     }
 
-    pub fn extend_left(&mut self) {
-        self.head_mut().move_left();
+    pub fn extend_left(&mut self) -> bool {
+        self.head_mut().move_left()
     }
 
-    pub fn extend_right(&mut self) {
-        self.head_mut().move_right();
+    pub fn extend_right(&mut self) -> bool {
+        self.head_mut().move_right()
     }
 
     pub fn extend_until_prev_byte(&mut self, byte: u8) -> bool {
