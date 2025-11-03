@@ -100,6 +100,8 @@ impl EditSeq {
         }
     }
 
+    // TODO
+    #[doc(hidden)]
     pub fn compose(&self, other: &Self) -> Result<Self, Error> {
         if self.target_chars != other.source_chars {
             return Err(Error::LengthMismatch {
@@ -114,6 +116,8 @@ impl EditSeq {
         todo!()
     }
 
+    // TODO
+    #[doc(hidden)]
     pub fn transform(&self, other: &Self) -> Result<(Self, Self), Error> {
         if self.source_chars != other.source_chars {
             return Err(Error::LengthMismatch {
