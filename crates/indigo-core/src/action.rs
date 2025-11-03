@@ -192,20 +192,15 @@ pub fn insert(editor: &mut Editor, text: &str) {
 }
 
 pub fn delete_before(editor: &mut Editor) {
-    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     if let Mode::Command(ref mut command_mode) = editor.mode {
         if command_mode.cursor().char_offset() == 0 {
             enter_normal_mode(editor);
         } else {
-            for _ in 1..=count {
-                command_mode.cursor_mut().delete_before();
-            }
+            command_mode.cursor_mut().delete_before();
         }
     } else {
         let mut range = editor.buffer.range_mut();
-        for _ in 1..=count {
-            range.delete_before();
-        }
+        range.delete_before();
         editor.mode.set_count(None);
     }
 }
@@ -217,11 +212,8 @@ pub fn delete(editor: &mut Editor) {
 }
 
 pub fn delete_after(editor: &mut Editor) {
-    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     let mut range = editor.buffer.range_mut();
-    for _ in 1..=count {
-        range.delete_after();
-    }
+    range.delete_after();
     editor.mode.set_count(None);
 }
 
