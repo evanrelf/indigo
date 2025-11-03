@@ -226,11 +226,19 @@ pub fn delete_after(editor: &mut Editor) {
 }
 
 pub fn undo(editor: &mut Editor) {
-    editor.buffer.undo().unwrap();
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    for _ in 1..=count {
+        editor.buffer.undo().unwrap();
+    }
+    editor.mode.set_count(None);
 }
 
 pub fn redo(editor: &mut Editor) {
-    editor.buffer.redo().unwrap();
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    for _ in 1..=count {
+        editor.buffer.redo().unwrap();
+    }
+    editor.mode.set_count(None);
 }
 
 // TODO: Move command handling into command mode code. This function should be very short.
