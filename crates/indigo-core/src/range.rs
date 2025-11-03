@@ -250,6 +250,8 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn insert(&mut self, text: &str) -> EditSeq {
+        // Assumes reduction before entering insert mode.
+        debug_assert!(self.grapheme_length() <= 1);
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
         let edits = self.start_mut().insert(text);
@@ -260,6 +262,8 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn delete_before(&mut self) -> Option<EditSeq> {
+        // Assumes reduction before entering insert mode.
+        debug_assert!(self.grapheme_length() <= 1);
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
         let edits = self.start_mut().delete_before()?;
@@ -286,6 +290,8 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn delete_after(&mut self) -> Option<EditSeq> {
+        // Assumes reduction before entering insert mode.
+        debug_assert!(self.grapheme_length() <= 1);
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
         let edits = self.end_mut().delete_after()?;

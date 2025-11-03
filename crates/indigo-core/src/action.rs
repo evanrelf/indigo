@@ -14,8 +14,8 @@ pub fn enter_normal_mode(editor: &mut Editor) {
 }
 
 pub fn enter_insert_mode(editor: &mut Editor) {
-    // let mut range = editor.buffer.range_mut();
-    // range.reduce();
+    let mut range = editor.buffer.range_mut();
+    range.reduce();
     editor.mode = Mode::Insert(InsertMode::default());
 }
 
