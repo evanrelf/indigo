@@ -28,6 +28,7 @@ pub enum Error {
 pub struct RangeState {
     pub anchor: CursorState,
     pub head: CursorState,
+    pub desired_column: usize,
 }
 
 impl RangeState {
@@ -113,6 +114,10 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         }
     }
 
+    pub fn desired_column(&self) -> usize {
+        self.state.desired_column
+    }
+
     pub fn char_length(&self) -> usize {
         let start = self.start().char_offset();
         let end = self.end().char_offset();
@@ -195,12 +200,30 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.snap(&self.text);
     }
 
+    pub fn update_desired_column(&mut self) {
+        self.state.desired_column = self.state.head.column(&self.text);
+    }
+
     pub fn extend_left(&mut self) -> bool {
-        self.head_mut().move_left()
+        let moved = self.head_mut().move_left();
+        self.update_desired_column();
+        moved
     }
 
     pub fn extend_right(&mut self) -> bool {
-        self.head_mut().move_right()
+        let moved = self.head_mut().move_right();
+        self.update_desired_column();
+        moved
+    }
+
+    pub fn extend_up(&mut self) -> bool {
+        let desired_column = self.state.desired_column;
+        self.head_mut().move_up(desired_column)
+    }
+
+    pub fn extend_down(&mut self) -> bool {
+        let desired_column = self.state.desired_column;
+        self.head_mut().move_down(desired_column)
     }
 
     pub fn extend_until_prev_byte(&mut self, byte: u8) -> bool {
@@ -208,6 +231,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         if let Some(char_offset) = self.text.find_last_byte(..*head, byte) {
             *head = char_offset;
             self.head_mut().move_right();
+            self.update_desired_column();
             true
         } else {
             false
@@ -218,6 +242,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         let head = &mut self.state.head.char_offset;
         if let Some(char_offset) = self.text.find_first_byte(*head.., byte) {
             *head = char_offset;
+            self.update_desired_column();
             true
         } else {
             false
@@ -258,6 +283,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
         self.snap();
+        self.update_desired_column();
         edits
     }
 
@@ -270,6 +296,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
         self.snap();
+        self.update_desired_column();
         Some(edits)
     }
 
@@ -284,8 +311,9 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.text.edit(&edits).unwrap();
         self.state.anchor.char_offset = edits.transform_char_offset(self.state.anchor.char_offset);
         self.state.head.char_offset = edits.transform_char_offset(self.state.head.char_offset);
-        self.snap();
         debug_assert_eq!(self.state.anchor, self.state.head);
+        self.snap();
+        self.update_desired_column();
         Some(edits)
     }
 
@@ -298,6 +326,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
         self.snap();
+        self.update_desired_column();
         Some(edits)
     }
 }
@@ -309,11 +338,13 @@ where
     type Error = Error;
     fn try_from((text, anchor, head): (R, usize, usize)) -> Result<Self, Self::Error> {
         let text = Box::new(text.into());
+        let head = CursorState { char_offset: head };
         let state = Box::new(RangeState {
             anchor: CursorState {
                 char_offset: anchor,
             },
-            head: CursorState { char_offset: head },
+            desired_column: head.column(&text),
+            head,
         });
         Self::new(text, state)
     }
@@ -335,10 +366,7 @@ mod tests {
     fn insert_changes_grapheme_boundary() {
         // combining acute accent (´)
         let mut text = Text::from("\u{0301}");
-        let mut state = RangeState {
-            anchor: CursorState { char_offset: 0 },
-            head: CursorState { char_offset: 0 },
-        };
+        let mut state = RangeState::default();
         let mut range = RangeMut::new(&mut text, &mut state).unwrap();
         range.insert("e");
         range.assert_invariants().unwrap();

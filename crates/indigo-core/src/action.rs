@@ -47,6 +47,30 @@ pub fn move_right(editor: &mut Editor) {
     editor.mode.set_count(None);
 }
 
+pub fn move_up(editor: &mut Editor) {
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    let mut range = editor.buffer.range_mut();
+    for _ in 1..=count {
+        if !range.extend_up() {
+            break;
+        }
+    }
+    range.reduce();
+    editor.mode.set_count(None);
+}
+
+pub fn move_down(editor: &mut Editor) {
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    let mut range = editor.buffer.range_mut();
+    for _ in 1..=count {
+        if !range.extend_down() {
+            break;
+        }
+    }
+    range.reduce();
+    editor.mode.set_count(None);
+}
+
 pub fn move_until_prev_byte(editor: &mut Editor, byte: u8) {
     let mut range = editor.buffer.range_mut();
     range.reduce();
@@ -119,6 +143,28 @@ pub fn extend_right(editor: &mut Editor) {
     let mut range = editor.buffer.range_mut();
     for _ in 1..=count {
         if !range.extend_right() {
+            break;
+        }
+    }
+    editor.mode.set_count(None);
+}
+
+pub fn extend_up(editor: &mut Editor) {
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    let mut range = editor.buffer.range_mut();
+    for _ in 1..=count {
+        if !range.extend_up() {
+            break;
+        }
+    }
+    editor.mode.set_count(None);
+}
+
+pub fn extend_down(editor: &mut Editor) {
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    let mut range = editor.buffer.range_mut();
+    for _ in 1..=count {
+        if !range.extend_down() {
             break;
         }
     }
