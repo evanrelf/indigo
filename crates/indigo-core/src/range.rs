@@ -175,6 +175,24 @@ impl<W: WrapMut> RangeView<'_, W> {
             .guard()
     }
 
+    #[expect(dead_code)]
+    fn start_mut(&mut self) -> CursorMut<'_> {
+        if self.state.anchor <= self.state.head {
+            self.anchor_mut()
+        } else {
+            self.head_mut()
+        }
+    }
+
+    #[expect(dead_code)]
+    fn end_mut(&mut self) -> CursorMut<'_> {
+        if self.state.anchor <= self.state.head {
+            self.head_mut()
+        } else {
+            self.anchor_mut()
+        }
+    }
+
     pub fn snap(&mut self) {
         self.state.snap(&self.text);
     }
