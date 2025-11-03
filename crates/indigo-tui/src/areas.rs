@@ -109,7 +109,9 @@ pub fn line_index_to_area(
         return None;
     }
 
-    let y = area.y + u16::try_from(line_index - vertical_scroll).unwrap();
+    let y = area.y
+        + u16::try_from(line_index - vertical_scroll)
+            .expect("Terminal height is less than u16::MAX");
 
     if !(area.top()..area.bottom()).contains(&y) {
         return None;
@@ -124,7 +126,7 @@ pub fn line_index_to_area(
         // Avoid expensive display width calculation if we know it would exceed the viewport width
         area.width
     } else {
-        u16::try_from(line.display_width()).unwrap()
+        u16::try_from(line.display_width()).expect("Terminal width is less than u16::MAX")
     };
 
     Some(Rect {
@@ -148,7 +150,9 @@ pub fn char_index_to_area(
         return None;
     }
 
-    let y = area.y + u16::try_from(line_index - vertical_scroll).unwrap();
+    let y = area.y
+        + u16::try_from(line_index - vertical_scroll)
+            .expect("Terminal height is less than u16::MAX");
 
     if !(area.top()..area.bottom()).contains(&y) {
         return None;
@@ -172,7 +176,8 @@ pub fn char_index_to_area(
         // Cursor at EOF
         1
     } else if let Some(grapheme) = rope.get_grapheme(char_index) {
-        u16::try_from(grapheme.display_width()).unwrap()
+        u16::try_from(grapheme.display_width())
+            .expect("No grapheme exists with a display width > u16::MAX")
     } else {
         // We're at EOF, but we already checked for that
         unreachable!()

@@ -39,14 +39,13 @@ impl Buffer {
     }
 
     pub fn range(&self) -> Range<'_> {
-        let range = Range::new(&self.text, &self.range).unwrap();
-        range.assert_invariants().unwrap();
-        range
+        Range::new(&self.text, &self.range)
+            .expect("Buffer text and range state are always kept valid")
     }
 
     pub fn range_mut(&mut self) -> RangeMut<'_> {
         RangeMut::new(&mut self.text, &mut self.range)
-            .unwrap()
+            .expect("Buffer text and range state are always kept valid")
             .guard()
     }
 

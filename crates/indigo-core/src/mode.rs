@@ -79,14 +79,15 @@ impl CommandMode {
     }
 
     pub fn cursor(&self) -> Cursor<'_> {
-        let cursor = Cursor::new(&self.text, &self.cursor).unwrap();
+        let cursor = Cursor::new(&self.text, &self.cursor)
+            .expect("Command mode text and cursor state are always kept valid");
         cursor.assert_invariants().unwrap();
         cursor
     }
 
     pub fn cursor_mut(&mut self) -> CursorMut<'_> {
         CursorMut::new(&mut self.text, &mut self.cursor)
-            .unwrap()
+            .expect("Command mode text and cursor state are always kept valid")
             .guard()
     }
 }

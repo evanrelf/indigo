@@ -61,9 +61,11 @@ fn init_etcetera() -> anyhow::Result<Xdg> {
 fn init_tracing_subscriber(args: &Args, xdg: &Xdg) -> anyhow::Result<()> {
     use tracing_subscriber::{EnvFilter, Registry, fmt, prelude::*};
 
-    let log_path = xdg.in_state_dir("tui.log").unwrap();
+    let log_path = xdg
+        .in_state_dir("tui.log")
+        .expect("Always returns a path for the XDG strategy");
 
-    fs::create_dir_all(log_path.parent().unwrap())?;
+    fs::create_dir_all(log_path.parent().expect("Log file exists in a directory"))?;
 
     let log_file = fs::OpenOptions::new()
         .append(true)
@@ -93,7 +95,7 @@ impl Times {
         Self {
             name,
             enabled,
-            histogram: Histogram::<u16>::new(3).unwrap(),
+            histogram: Histogram::<u16>::new(3).expect("Using supported number significant digits"),
             instant: None,
         }
     }
@@ -348,7 +350,8 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 
             let width_usize = grapheme.display_width();
 
-            let width_u16 = u16::try_from(width_usize).unwrap();
+            let width_u16 = u16::try_from(width_usize)
+                .expect("No grapheme exists with a display width > u16::MAX");
 
             if rect.x + width_u16 > rect.right() {
                 continue 'line;

@@ -42,7 +42,9 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
     let mut handled = true;
 
     let count = |c: char| {
-        let digit = usize::from(u8::try_from(c).unwrap() - b'0');
+        let digit = usize::from(
+            u8::try_from(c).expect("Pattern match below guarantees an ASCII digit") - b'0',
+        );
         let current = editor.mode.count().map_or(0, |count| usize::from(count));
         NonZeroUsize::new(current.saturating_mul(10).saturating_add(digit))
     };

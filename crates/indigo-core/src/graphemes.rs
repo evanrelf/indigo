@@ -65,7 +65,8 @@ pub fn floor_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> usize {
     if is_grapheme_boundary(rope, char_index) {
         return char_index;
     }
-    prev_grapheme_boundary(rope, char_index).unwrap()
+    prev_grapheme_boundary(rope, char_index)
+        .expect("Only fails at start of text, which is a grapheme boundary")
 }
 
 #[must_use]
@@ -77,7 +78,8 @@ pub fn ceil_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> usize {
     if is_grapheme_boundary(rope, char_index) {
         return char_index;
     }
-    next_grapheme_boundary(rope, char_index).unwrap()
+    next_grapheme_boundary(rope, char_index)
+        .expect("Only fails at end of text, which is a grapheme boundary")
 }
 
 pub struct Graphemes<'a> {

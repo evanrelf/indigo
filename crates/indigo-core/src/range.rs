@@ -91,11 +91,13 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 
     pub fn anchor(&self) -> Cursor<'_> {
-        Cursor::new(&self.text, &self.state.anchor).unwrap()
+        Cursor::new(&self.text, &self.state.anchor)
+            .expect("Range text and anchor cursor state are always kept valid")
     }
 
     pub fn head(&self) -> Cursor<'_> {
-        Cursor::new(&self.text, &self.state.head).unwrap()
+        Cursor::new(&self.text, &self.state.head)
+            .expect("Range text and head cursor state are always kept valid")
     }
 
     pub fn start(&self) -> Cursor<'_> {
@@ -170,13 +172,13 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
 impl<W: WrapMut> RangeView<'_, W> {
     fn anchor_mut(&mut self) -> CursorMut<'_> {
         CursorMut::new(&mut self.text, &mut self.state.anchor)
-            .unwrap()
+            .expect("Range text and anchor cursor state are always kept valid")
             .guard()
     }
 
     fn head_mut(&mut self) -> CursorMut<'_> {
         CursorMut::new(&mut self.text, &mut self.state.head)
-            .unwrap()
+            .expect("Range text and head cursor state are always kept valid")
             .guard()
     }
 
@@ -356,7 +358,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         edits.retain(self.start().char_offset());
         edits.delete(self.char_length());
         edits.retain_rest(&self.text);
-        self.text.edit(&edits).unwrap();
+        self.text.edit(&edits).expect("Edits are well formed");
         self.state.anchor.char_offset = edits.transform_char_offset(self.state.anchor.char_offset);
         self.state.head.char_offset = edits.transform_char_offset(self.state.head.char_offset);
         debug_assert_eq!(self.state.anchor, self.state.head);

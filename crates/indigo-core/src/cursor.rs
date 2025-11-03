@@ -221,7 +221,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.retain(self.state.char_offset);
         edits.insert(text);
         edits.retain_rest(&self.text);
-        self.text.edit(&edits).unwrap();
+        self.text.edit(&edits).expect("Edits are well formed");
         self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
         self.snap();
         edits
@@ -242,7 +242,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.retain(char_offset);
         edits.delete(self.state.char_offset - char_offset);
         edits.retain_rest(&self.text);
-        self.text.edit(&edits).unwrap();
+        self.text.edit(&edits).expect("Edits are well formed");
         self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
         self.snap();
         Some(edits)
@@ -263,7 +263,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.retain(self.state.char_offset);
         edits.delete(char_offset - self.state.char_offset);
         edits.retain_rest(&self.text);
-        self.text.edit(&edits).unwrap();
+        self.text.edit(&edits).expect("Edits are well formed");
         self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
         self.snap();
         Some(edits)
