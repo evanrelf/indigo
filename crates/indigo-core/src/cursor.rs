@@ -70,6 +70,14 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     }
 
     #[must_use]
+    #[must_use]
+    pub fn grapheme(&self) -> Option<RopeSlice<'_>> {
+        let start = self.state.char_offset;
+        let end = self.text.next_grapheme_boundary(start)?;
+        Some(self.text.slice(start..end))
+    }
+
+    #[must_use]
     pub fn is_eof(&self) -> bool {
         self.state.char_offset == self.text.len_chars()
     }
