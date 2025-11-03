@@ -35,6 +35,22 @@ pub fn handle_event(
     areas: Areas,
     event: TerminalEvent,
 ) -> anyhow::Result<()> {
+    let dismiss_message = match event {
+        TerminalEvent::Mouse(mouse) => !matches!(
+            mouse.kind,
+            MouseEventKind::Moved
+                | MouseEventKind::ScrollUp
+                | MouseEventKind::ScrollDown
+                | MouseEventKind::ScrollLeft
+                | MouseEventKind::ScrollRight
+        ),
+        _ => true,
+    };
+
+    if dismiss_message {
+        editor.message = None;
+    }
+
     if let Ok(event) = event_t2i(&event) {
         let handled = indigo_core::event::handle_event(editor, &event);
         if handled {
