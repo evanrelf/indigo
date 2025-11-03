@@ -175,6 +175,10 @@ impl<W: WrapMut> RangeView<'_, W> {
             .guard()
     }
 
+    pub fn snap(&mut self) {
+        self.state.snap(&self.text);
+    }
+
     pub fn extend_left(&mut self) {
         self.head_mut().move_left();
     }
@@ -235,7 +239,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         let edits = self.anchor_mut().insert_impl(text);
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
-        self.state.snap(&self.text);
+        self.snap();
     }
 
     pub fn delete_before(&mut self) {
@@ -246,7 +250,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         };
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
-        self.state.snap(&self.text);
+        self.snap();
     }
 
     pub fn delete(&mut self) {
@@ -260,7 +264,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.text.edit(&edits).unwrap();
         self.state.anchor.char_offset = edits.transform_char_offset(self.state.anchor.char_offset);
         self.state.head.char_offset = edits.transform_char_offset(self.state.head.char_offset);
-        self.state.snap(&self.text);
+        self.snap();
         debug_assert_eq!(self.state.anchor, self.state.head);
     }
 
@@ -272,7 +276,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         };
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
-        self.state.snap(&self.text);
+        self.snap();
     }
 }
 
