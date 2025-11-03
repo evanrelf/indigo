@@ -32,9 +32,6 @@ pub struct RangeState {
 
 impl RangeState {
     pub fn snap(&mut self, text: &Rope) {
-        if self.anchor == self.head && text.len_chars() > 0 {
-            self.head.char_offset += 1;
-        }
         if self.anchor < self.head {
             self.anchor.char_offset = text.floor_grapheme_boundary(self.anchor.char_offset);
             self.head.char_offset = text.ceil_grapheme_boundary(self.head.char_offset);
@@ -149,18 +146,18 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     pub(crate) fn assert_invariants(&self) -> Result<(), Error> {
         self.anchor().assert_invariants().map_err(Error::Anchor)?;
         self.head().assert_invariants().map_err(Error::Head)?;
-        if self.is_empty() && !self.is_eof() {
-            return Err(Error::EmptyAndNotEof {
-                anchor: self.state.anchor.char_offset,
-                head: self.state.head.char_offset,
-            });
-        }
-        if self.is_backward() && self.grapheme_length() <= 1 {
-            return Err(Error::ReducedAndBackward {
-                anchor: self.state.anchor.char_offset,
-                head: self.state.head.char_offset,
-            });
-        }
+        // if self.is_empty() && !self.is_eof() {
+        //     return Err(Error::EmptyAndNotEof {
+        //         anchor: self.state.anchor.char_offset,
+        //         head: self.state.head.char_offset,
+        //     });
+        // }
+        // if self.is_backward() && self.grapheme_length() <= 1 {
+        //     return Err(Error::ReducedAndBackward {
+        //         anchor: self.state.anchor.char_offset,
+        //         head: self.state.head.char_offset,
+        //     });
+        // }
         Ok(())
     }
 }
@@ -178,50 +175,12 @@ impl<W: WrapMut> RangeView<'_, W> {
             .guard()
     }
 
-    #[tracing::instrument(skip_all)]
     pub fn extend_left(&mut self) {
         self.head_mut().move_left();
-        if self.anchor().char_offset() == 0 && self.head().char_offset() == 0 {
-            self.head_mut().move_right();
-            return;
-        }
-        if self.is_empty() {
-            self.anchor_mut().move_right();
-            self.head_mut().move_left();
-            let grapheme_length = self.grapheme_length();
-            if grapheme_length != 2 {
-                tracing::warn!(
-                    grapheme_length,
-                    text = ?self.slice(),
-                    "Unexpected grapheme length != 2 after crossover",
-                );
-            }
-            return;
-        }
-        if self.grapheme_length() == 1 {
-            self.flip_forward();
-        }
     }
 
-    #[tracing::instrument(skip_all)]
     pub fn extend_right(&mut self) {
         self.head_mut().move_right();
-        if self.is_empty() && !self.is_eof() {
-            self.anchor_mut().move_left();
-            self.head_mut().move_right();
-            let grapheme_length = self.grapheme_length();
-            if grapheme_length != 2 {
-                tracing::warn!(
-                    grapheme_length,
-                    text = ?self.slice(),
-                    "Unexpected grapheme length != 2 after crossover",
-                );
-            }
-            return;
-        }
-        if self.grapheme_length() == 1 {
-            self.flip_forward();
-        }
     }
 
     pub fn extend_until_prev_byte(&mut self, byte: u8) -> bool {
@@ -246,9 +205,6 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn flip(&mut self) {
-        if self.is_forward() && self.grapheme_length() == 1 {
-            return;
-        }
         let (anchor, cursor) = self.state.both();
         std::mem::swap(anchor, cursor);
     }
@@ -265,26 +221,8 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
-    #[tracing::instrument(skip_all)]
     pub fn reduce(&mut self) {
-        if self.is_eof() {
-            return;
-        }
-        if self.is_forward() {
-            self.state.anchor.char_offset = self.state.head.char_offset;
-            self.anchor_mut().move_left();
-        } else {
-            self.state.anchor.char_offset = self.state.head.char_offset;
-            self.head_mut().move_right();
-        }
-        let grapheme_length = self.grapheme_length();
-        if grapheme_length != 1 {
-            tracing::error!(
-                grapheme_length,
-                text = ?self.slice(),
-                "Unexpected grapheme length != 1 after reduce",
-            );
-        }
+        self.state.anchor.char_offset = self.state.head.char_offset;
     }
 
     pub fn insert_char(&mut self, char: char) {
@@ -294,7 +232,6 @@ impl<W: WrapMut> RangeView<'_, W> {
     pub fn insert(&mut self, text: &str) {
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
-        self.reduce();
         let edits = self.anchor_mut().insert_impl(text);
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
@@ -304,12 +241,12 @@ impl<W: WrapMut> RangeView<'_, W> {
     pub fn delete_before(&mut self) {
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
-        self.reduce();
         let Some(edits) = self.anchor_mut().delete_before_impl() else {
             return;
         };
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
+        self.state.snap(&self.text);
     }
 
     pub fn delete(&mut self) {
@@ -323,19 +260,19 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.text.edit(&edits).unwrap();
         self.state.anchor.char_offset = edits.transform_char_offset(self.state.anchor.char_offset);
         self.state.head.char_offset = edits.transform_char_offset(self.state.head.char_offset);
+        self.state.snap(&self.text);
         debug_assert_eq!(self.state.anchor, self.state.head);
-        self.extend_right();
     }
 
     pub fn delete_after(&mut self) {
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
-        self.reduce();
         let Some(edits) = self.head_mut().delete_after_impl() else {
             return;
         };
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
+        self.state.snap(&self.text);
     }
 }
 
@@ -375,8 +312,7 @@ mod tests {
         let mut state = RangeState {
             anchor: CursorState { char_offset: 0 },
             head: CursorState { char_offset: 0 },
-        }
-        .snapped(&text);
+        };
         let mut range = RangeMut::new(&mut text, &mut state).unwrap();
         range.insert("e");
         range.assert_invariants().unwrap();
