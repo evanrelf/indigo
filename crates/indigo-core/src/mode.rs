@@ -6,6 +6,7 @@ use std::num::NonZeroUsize;
 
 pub enum Mode {
     Normal(NormalMode),
+    Seek(SeekMode),
     Insert(InsertMode),
     Command(CommandMode),
 }
@@ -15,14 +16,14 @@ impl Mode {
     pub fn count(&self) -> Option<NonZeroUsize> {
         match self {
             Self::Normal(normal_mode) => normal_mode.count,
-            Self::Insert(_) | Self::Command(_) => None,
+            Self::Seek(_) | Self::Insert(_) | Self::Command(_) => None,
         }
     }
 
     pub fn set_count(&mut self, count: Option<NonZeroUsize>) {
         match self {
             Self::Normal(normal_mode) => normal_mode.count = count,
-            Self::Insert(_) | Self::Command(_) => {}
+            Self::Seek(_) | Self::Insert(_) | Self::Command(_) => {}
         }
     }
 }
@@ -36,6 +37,30 @@ impl Default for Mode {
 #[derive(Default)]
 pub struct NormalMode {
     pub count: Option<NonZeroUsize>,
+}
+
+pub enum SeekSelect {
+    Select,
+    Extend,
+}
+
+pub enum SeekInclude {
+    Onto,
+    Until,
+}
+
+pub enum SeekDirection {
+    Prev,
+    Next,
+}
+
+pub struct SeekMode {
+    /// Start a new selection, or extend the current one?
+    pub select: SeekSelect,
+    /// Include seek target in selection, or stop just short?
+    pub include: SeekInclude,
+    /// Seek forward or backward?
+    pub direction: SeekDirection,
 }
 
 #[derive(Default)]

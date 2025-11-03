@@ -60,6 +60,7 @@ pub fn handle_event(
 
     let _handled = match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, terminal, areas, event)?,
+        Mode::Seek(_) => false,
         Mode::Insert(_) => handle_event_insert(editor, terminal, areas, event)?,
         Mode::Command(_) => handle_event_command(editor, terminal, areas, event)?,
     };

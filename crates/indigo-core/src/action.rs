@@ -1,6 +1,8 @@
 use crate::{
     editor::Editor,
-    mode::{CommandMode, InsertMode, Mode, NormalMode},
+    mode::{
+        CommandMode, InsertMode, Mode, NormalMode, SeekDirection, SeekInclude, SeekMode, SeekSelect,
+    },
 };
 use clap::Parser as _;
 use std::{borrow::Cow, iter, num::NonZeroUsize, process::ExitCode};
@@ -11,6 +13,19 @@ pub fn set_count(editor: &mut Editor, count: Option<NonZeroUsize>) {
 
 pub fn enter_normal_mode(editor: &mut Editor) {
     editor.mode = Mode::Normal(NormalMode::default());
+}
+
+pub fn enter_seek_mode(
+    editor: &mut Editor,
+    select: SeekSelect,
+    include: SeekInclude,
+    direction: SeekDirection,
+) {
+    editor.mode = Mode::Seek(SeekMode {
+        select,
+        include,
+        direction,
+    });
 }
 
 pub fn enter_insert_mode(editor: &mut Editor) {
@@ -71,33 +86,57 @@ pub fn move_down(editor: &mut Editor) {
     editor.mode.set_count(None);
 }
 
-pub fn move_until_prev_byte(editor: &mut Editor, byte: u8) {
+// TODO: Fold seek logic into range implementation. Actions shouldn't be this logic heavy.
+pub fn seek(editor: &mut Editor, byte: u8) {
+    use crate::mode::{
+        SeekDirection::{Next, Prev},
+        SeekInclude::{Onto, Until},
+        SeekSelect::{Extend, Select},
+    };
+    let Mode::Seek(seek_mode) = &editor.mode else {
+        unreachable!()
+    };
+    match (&seek_mode.select, &seek_mode.include, &seek_mode.direction) {
+        (Select, Until, Prev) => select_until_prev_byte(editor, byte),
+        (Extend, Until, Prev) => extend_until_prev_byte(editor, byte),
+        (Select, Until, Next) => select_until_next_byte(editor, byte),
+        (Extend, Until, Next) => extend_until_next_byte(editor, byte),
+        (Select, Onto, Prev) => select_onto_prev_byte(editor, byte),
+        (Extend, Onto, Prev) => extend_onto_prev_byte(editor, byte),
+        (Select, Onto, Next) => select_onto_next_byte(editor, byte),
+        (Extend, Onto, Next) => extend_onto_next_byte(editor, byte),
+    }
+}
+
+pub fn select_until_prev_byte(editor: &mut Editor, byte: u8) {
     let mut range = editor.buffer.range_mut();
     range.reduce();
     range.extend_until_prev_byte(byte);
     editor.mode.set_count(None);
 }
 
-pub fn move_to_prev_byte(editor: &mut Editor, byte: u8) {
+pub fn select_onto_prev_byte(editor: &mut Editor, byte: u8) {
     let mut range = editor.buffer.range_mut();
     range.reduce();
-    range.extend_until_prev_byte(byte);
-    range.extend_left();
+    if range.extend_until_prev_byte(byte) {
+        range.extend_left();
+    }
     editor.mode.set_count(None);
 }
 
-pub fn move_until_next_byte(editor: &mut Editor, byte: u8) {
+pub fn select_until_next_byte(editor: &mut Editor, byte: u8) {
     let mut range = editor.buffer.range_mut();
     range.reduce();
     range.extend_until_next_byte(byte);
     editor.mode.set_count(None);
 }
 
-pub fn move_to_next_byte(editor: &mut Editor, byte: u8) {
+pub fn select_onto_next_byte(editor: &mut Editor, byte: u8) {
     let mut range = editor.buffer.range_mut();
     range.reduce();
-    range.extend_until_next_byte(byte);
-    range.extend_right();
+    if range.extend_until_next_byte(byte) {
+        range.extend_right();
+    }
     editor.mode.set_count(None);
 }
 
@@ -107,10 +146,11 @@ pub fn extend_until_prev_byte(editor: &mut Editor, byte: u8) {
     editor.mode.set_count(None);
 }
 
-pub fn extend_to_prev_byte(editor: &mut Editor, byte: u8) {
+pub fn extend_onto_prev_byte(editor: &mut Editor, byte: u8) {
     let mut range = editor.buffer.range_mut();
-    range.extend_until_prev_byte(byte);
-    range.extend_right();
+    if range.extend_until_prev_byte(byte) && range.is_backward() {
+        range.extend_left();
+    }
     editor.mode.set_count(None);
 }
 
@@ -120,10 +160,11 @@ pub fn extend_until_next_byte(editor: &mut Editor, byte: u8) {
     editor.mode.set_count(None);
 }
 
-pub fn extend_to_next_byte(editor: &mut Editor, byte: u8) {
+pub fn extend_onto_next_byte(editor: &mut Editor, byte: u8) {
     let mut range = editor.buffer.range_mut();
-    range.extend_until_next_byte(byte);
-    range.extend_right();
+    if range.extend_until_next_byte(byte) && range.is_forward() {
+        range.extend_right();
+    }
     editor.mode.set_count(None);
 }
 

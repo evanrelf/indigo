@@ -229,8 +229,25 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
             Err(message) => Line::raw(message).bg(LIGHT_RED).render(area, surface),
         }
     } else {
-        let mode = match editor.mode {
+        let mode = match &editor.mode {
             Mode::Normal(_) => "normal",
+            Mode::Seek(seek_mode) => {
+                use indigo_core::mode::{
+                    SeekDirection::{Next, Prev},
+                    SeekInclude::{Onto, Until},
+                    SeekSelect::{Extend, Select},
+                };
+                match (&seek_mode.select, &seek_mode.include, &seek_mode.direction) {
+                    (Select, Until, Prev) => "select until prev",
+                    (Extend, Until, Prev) => "extend until prev",
+                    (Select, Until, Next) => "select until next",
+                    (Extend, Until, Next) => "extend until next",
+                    (Select, Onto, Prev) => "select onto prev",
+                    (Extend, Onto, Prev) => "extend onto prev",
+                    (Select, Onto, Next) => "select onto next",
+                    (Extend, Onto, Next) => "extend onto next",
+                }
+            }
             Mode::Insert(_) => "insert",
             Mode::Command(_) => "command",
         };

@@ -20,7 +20,10 @@ pub fn init() -> TerminalGuard {
     execute!(
         io::stdout(),
         Clear(ClearType::All),
-        PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES),
+        PushKeyboardEnhancementFlags(
+            KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES
+                | KeyboardEnhancementFlags::REPORT_ALTERNATE_KEYS
+        ),
         EnableMouseCapture,
     )
     .unwrap();

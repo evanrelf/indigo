@@ -13,8 +13,9 @@ pub struct Areas {
 impl Areas {
     #[must_use]
     pub fn new(editor: &Editor, area: Rect) -> Self {
+        // TODO: Merge command and status bars, handle different appearance in rendering code.
         let (command_bar_height, status_bar_height) = match editor.mode {
-            Mode::Normal(_) | Mode::Insert(_) => (0, 1),
+            Mode::Normal(_) | Mode::Seek(_) | Mode::Insert(_) => (0, 1),
             Mode::Command(_) => (1, 0),
         };
 

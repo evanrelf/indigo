@@ -26,12 +26,19 @@ impl From<Key> for Event {
 pub fn handle_event(editor: &mut Editor, event: &Event) -> bool {
     match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, event),
+        Mode::Seek(_) => handle_event_seek(editor, event),
         Mode::Insert(_) => handle_event_insert(editor, event),
         Mode::Command(_) => handle_event_command(editor, event),
     }
 }
 
 pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
+    use crate::mode::{
+        SeekDirection::{Next, Prev},
+        SeekInclude::{Onto, Until},
+        SeekSelect::{Extend, Select},
+    };
+
     let mut handled = true;
 
     let count = |c: char| {
@@ -58,16 +65,14 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "L") => extend_right(editor),
             _ if is(key, "K") => extend_up(editor),
             _ if is(key, "J") => extend_down(editor),
-            // TODO: Capture key following these, use as the needle. Could add a "jump" mode with
-            // settings to cover all of these cases.
-            _ if is(key, "<a-t>") => move_until_prev_byte(editor, b'e'),
-            _ if is(key, "<a-T>") => extend_until_prev_byte(editor, b'e'),
-            _ if is(key, "t") => move_until_next_byte(editor, b'e'),
-            _ if is(key, "T") => extend_until_next_byte(editor, b'e'),
-            _ if is(key, "<a-f>") => move_to_prev_byte(editor, b'e'),
-            _ if is(key, "<a-F>") => extend_to_prev_byte(editor, b'e'),
-            _ if is(key, "f") => move_to_next_byte(editor, b'e'),
-            _ if is(key, "F") => extend_to_next_byte(editor, b'e'),
+            _ if is(key, "<a-t>") => enter_seek_mode(editor, Select, Until, Prev),
+            _ if is(key, "<a-T>") => enter_seek_mode(editor, Extend, Until, Prev),
+            _ if is(key, "t") => enter_seek_mode(editor, Select, Until, Next),
+            _ if is(key, "T") => enter_seek_mode(editor, Extend, Until, Next),
+            _ if is(key, "<a-f>") => enter_seek_mode(editor, Select, Onto, Prev),
+            _ if is(key, "<a-F>") => enter_seek_mode(editor, Extend, Onto, Prev),
+            _ if is(key, "f") => enter_seek_mode(editor, Select, Onto, Next),
+            _ if is(key, "F") => enter_seek_mode(editor, Extend, Onto, Next),
             _ if is(key, ";") => reduce(editor),
             _ if is(key, "<a-;>") => flip(editor),
             _ if is(key, "<a-s-;>") => flip_forward(editor),
@@ -84,6 +89,28 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
     }
 
     handled
+}
+
+pub fn handle_event_seek(editor: &mut Editor, event: &Event) -> bool {
+    let Mode::Seek(_seek_mode) = &editor.mode else {
+        unreachable!()
+    };
+
+    let Event::KeyInput(key) = event;
+
+    let mut key = *key;
+    key.normalize();
+
+    if let KeyCode::Char(char) = key.code
+        && let Ok(byte) = u8::try_from(char)
+        && key.modifiers.is_empty()
+    {
+        seek(editor, byte);
+    }
+
+    enter_normal_mode(editor);
+
+    true
 }
 
 pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
