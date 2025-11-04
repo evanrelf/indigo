@@ -11,10 +11,38 @@ pub trait Io {
     fn file_exists(&mut self, path: &Utf8Path) -> anyhow::Result<bool>;
 }
 
+impl<I: Io + ?Sized> Io for Box<I> {
+    fn read_file(&mut self, path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
+        I::read_file(self, path)
+    }
+    fn write_file(&mut self, path: &Utf8Path, bytes: &[u8]) -> anyhow::Result<()> {
+        I::write_file(self, path, bytes)
+    }
+    fn file_exists(&mut self, path: &Utf8Path) -> anyhow::Result<bool> {
+        I::file_exists(self, path)
+    }
+}
+
+// Trivial I/O implementation that panics if you do anything. This is the default I/O implementation
+// for `Editor`.
+pub struct NoIo;
+
+impl Io for NoIo {
+    fn read_file(&mut self, _path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
+        panic!("No I/O implementation configured");
+    }
+    fn write_file(&mut self, _path: &Utf8Path, _bytes: &[u8]) -> anyhow::Result<()> {
+        panic!("No I/O implementation configured");
+    }
+    fn file_exists(&mut self, _path: &Utf8Path) -> anyhow::Result<bool> {
+        panic!("No I/O implementation configured");
+    }
+}
+
 #[cfg_attr(not(test), expect(dead_code))]
 #[derive(Default)]
 pub(crate) struct TestIo {
-    filesystem: HashMap<Utf8PathBuf, Vec<u8>>,
+    pub filesystem: HashMap<Utf8PathBuf, Vec<u8>>,
 }
 
 impl Io for TestIo {

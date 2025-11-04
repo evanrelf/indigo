@@ -1,5 +1,6 @@
 use crate::{
     buffer::{self, Buffer},
+    io::{Io, NoIo},
     mode::Mode,
 };
 use camino::Utf8PathBuf;
@@ -12,8 +13,8 @@ pub enum Error {
     Buffer(#[source] buffer::Error),
 }
 
-#[derive(Default)]
 pub struct Editor {
+    pub io: Box<dyn Io>,
     pub buffer: Buffer,
     pub mode: Mode,
     pub terminal_height: usize,
@@ -32,6 +33,20 @@ impl Editor {
     pub(crate) fn assert_invariants(&self) -> Result<(), Error> {
         self.buffer.assert_invariants().map_err(Error::Buffer)?;
         Ok(())
+    }
+}
+
+impl Default for Editor {
+    fn default() -> Self {
+        Self {
+            io: Box::new(NoIo),
+            buffer: Buffer::default(),
+            mode: Mode::default(),
+            terminal_height: 0,
+            pwd: None,
+            message: None,
+            exit: None,
+        }
     }
 }
 
