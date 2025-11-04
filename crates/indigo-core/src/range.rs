@@ -169,6 +169,9 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 }
 
+// TODO: Do I care about returning a `bool` indicating whether a movement or edit occurred? Or is
+// that only necessary for cursor stuff? I dunno. Might be needed for multi-range selection?
+
 impl<W: WrapMut> RangeView<'_, W> {
     fn anchor_mut(&mut self) -> CursorMut<'_> {
         CursorMut::new(&mut self.text, &mut self.state.anchor)
