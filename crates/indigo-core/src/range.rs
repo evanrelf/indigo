@@ -169,9 +169,6 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 }
 
-// TODO: Do I care about returning a `bool` indicating whether a movement or edit occurred? Or is
-// that only necessary for cursor stuff? I dunno. Might be needed for multi-range selection?
-
 impl<W: WrapMut> RangeView<'_, W> {
     fn anchor_mut(&mut self) -> CursorMut<'_> {
         CursorMut::new(&mut self.text, &mut self.state.anchor)
@@ -219,100 +216,82 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.update_desired_column();
     }
 
-    pub fn extend_left(&mut self, count: usize) -> bool {
-        let moved = self.head_mut().move_left(count);
+    pub fn extend_left(&mut self, count: usize) {
+        self.head_mut().move_left(count);
         self.update_desired_column();
-        moved
     }
 
-    pub fn extend_right(&mut self, count: usize) -> bool {
-        let moved = self.head_mut().move_right(count);
+    pub fn extend_right(&mut self, count: usize) {
+        self.head_mut().move_right(count);
         self.update_desired_column();
-        moved
     }
 
-    pub fn extend_up(&mut self, count: usize) -> bool {
+    pub fn extend_up(&mut self, count: usize) {
         let desired_column = self.state.desired_column;
-        let mut moved = false;
         for _ in 0..count {
             if !self.head_mut().move_up(desired_column) {
                 break;
             }
-            moved = true;
         }
-        moved
     }
 
-    pub fn extend_down(&mut self, count: usize) -> bool {
+    pub fn extend_down(&mut self, count: usize) {
         let desired_column = self.state.desired_column;
-        let mut moved = false;
         for _ in 0..count {
             if !self.head_mut().move_down(desired_column) {
                 break;
             }
-            moved = true;
         }
-        moved
     }
 
-    pub fn extend_until_prev_byte(&mut self, byte: u8) -> bool {
-        let moved = self.head_mut().move_to_prev_byte(byte);
+    pub fn extend_until_prev_byte(&mut self, byte: u8) {
+        self.head_mut().move_to_prev_byte(byte);
         self.update_desired_column();
-        moved
     }
 
-    pub fn extend_until_next_byte(&mut self, byte: u8) -> bool {
-        let moved = self.head_mut().move_to_next_byte(byte);
+    pub fn extend_until_next_byte(&mut self, byte: u8) {
+        self.head_mut().move_to_next_byte(byte);
         self.update_desired_column();
-        moved
     }
 
-    pub fn move_until_prev_byte(&mut self, byte: u8) -> bool {
+    pub fn move_until_prev_byte(&mut self, byte: u8) {
         self.reduce();
-        self.extend_until_prev_byte(byte)
+        self.extend_until_prev_byte(byte);
     }
 
-    pub fn move_onto_prev_byte(&mut self, byte: u8) -> bool {
+    pub fn move_onto_prev_byte(&mut self, byte: u8) {
         self.reduce();
-        if self.extend_until_prev_byte(byte) {
+        if self.head_mut().move_to_prev_byte(byte) {
             self.extend_left(1);
-            true
-        } else {
-            false
         }
+        self.update_desired_column();
     }
 
-    pub fn move_until_next_byte(&mut self, byte: u8) -> bool {
+    pub fn move_until_next_byte(&mut self, byte: u8) {
         self.reduce();
-        self.extend_until_next_byte(byte)
+        self.extend_until_next_byte(byte);
     }
 
-    pub fn move_onto_next_byte(&mut self, byte: u8) -> bool {
+    pub fn move_onto_next_byte(&mut self, byte: u8) {
         self.reduce();
-        if self.extend_until_next_byte(byte) {
+        if self.head_mut().move_to_next_byte(byte) {
             self.extend_right(1);
-            true
-        } else {
-            false
         }
+        self.update_desired_column();
     }
 
-    pub fn extend_onto_prev_byte(&mut self, byte: u8) -> bool {
-        if self.extend_until_prev_byte(byte) && self.is_backward() {
+    pub fn extend_onto_prev_byte(&mut self, byte: u8) {
+        if self.head_mut().move_to_prev_byte(byte) && self.is_backward() {
             self.extend_left(1);
-            true
-        } else {
-            false
         }
+        self.update_desired_column();
     }
 
-    pub fn extend_onto_next_byte(&mut self, byte: u8) -> bool {
-        if self.extend_until_next_byte(byte) && self.is_forward() {
+    pub fn extend_onto_next_byte(&mut self, byte: u8) {
+        if self.head_mut().move_to_next_byte(byte) && self.is_forward() {
             self.extend_right(1);
-            true
-        } else {
-            false
         }
+        self.update_desired_column();
     }
 
     pub fn move_to(&mut self, char_offset: usize) {
@@ -322,32 +301,24 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.flip_forward();
     }
 
-    pub fn move_left(&mut self, count: usize) -> bool {
-        // TODO: Does reducing count as a movement?
-        let moved = self.extend_left(count);
+    pub fn move_left(&mut self, count: usize) {
+        self.extend_left(count);
         self.reduce();
-        moved
     }
 
-    pub fn move_right(&mut self, count: usize) -> bool {
-        // TODO: Does reducing count as a movement?
-        let moved = self.extend_right(count);
+    pub fn move_right(&mut self, count: usize) {
+        self.extend_right(count);
         self.reduce();
-        moved
     }
 
-    pub fn move_up(&mut self, count: usize) -> bool {
-        // TODO: Does reducing count as a movement?
-        let moved = self.extend_up(count);
+    pub fn move_up(&mut self, count: usize) {
+        self.extend_up(count);
         self.reduce();
-        moved
     }
 
-    pub fn move_down(&mut self, count: usize) -> bool {
-        // TODO: Does reducing count as a movement?
-        let moved = self.extend_down(count);
+    pub fn move_down(&mut self, count: usize) {
+        self.extend_down(count);
         self.reduce();
-        moved
     }
 
     pub fn flip(&mut self) {

@@ -85,7 +85,7 @@ pub fn seek(editor: &mut Editor, byte: u8) {
         (Extend, Onto, Prev) => range.extend_onto_prev_byte(byte),
         (Move, Onto, Next) => range.move_onto_next_byte(byte),
         (Extend, Onto, Next) => range.extend_onto_next_byte(byte),
-    };
+    }
     editor.mode.set_count(None);
 }
 
