@@ -1,8 +1,6 @@
-# Todo
+# Task
 
-Roughly prioritized list of features I want.
-
-## 1. Mouse click and drag to manipulate selection
+## Mouse click and drag to manipulate selection
 
 - Mouse click and drag events should only be handled in normal mode.
 

@@ -12,8 +12,7 @@ terminal-native modal code editor, inspired by [Kakoune] and others.
 
 The current goal is to build a minimally viable text editor, such that I can use
 it to do real work at my job. To that end, the focus is on implementing table
-stakes features. To see a rough prioritization of what should be worked on next,
-see [TODO.md](TODO.md).
+stakes features.
 
 If the [Blue] project is ever mentioned, that is the most recent
 rewrite/offshoot of Indigo. I was experimenting with implementing things more
