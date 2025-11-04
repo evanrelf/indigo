@@ -256,7 +256,8 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn move_until_prev_byte(&mut self, byte: u8) {
         self.reduce();
-        self.extend_until_prev_byte(byte);
+        self.head_mut().move_to_prev_byte(byte);
+        self.update_desired_column();
     }
 
     pub fn move_onto_prev_byte(&mut self, byte: u8) {
@@ -269,7 +270,8 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn move_until_next_byte(&mut self, byte: u8) {
         self.reduce();
-        self.extend_until_next_byte(byte);
+        self.head_mut().move_to_next_byte(byte);
+        self.update_desired_column();
     }
 
     pub fn move_onto_next_byte(&mut self, byte: u8) {
