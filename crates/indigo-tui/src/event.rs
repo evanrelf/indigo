@@ -6,8 +6,11 @@ use crate::{
     terminal::TerminalGuard,
 };
 use anyhow::anyhow;
-use ratatui::crossterm::{self, event::{KeyCode, KeyModifiers, MouseButton, MouseEventKind}};
 use indigo_core::{action::*, prelude::*};
+use ratatui::crossterm::{
+    self,
+    event::{KeyCode, KeyModifiers, MouseButton, MouseEventKind},
+};
 use ratatui::layout::Position;
 
 pub type IndigoEvent = indigo_core::event::Event;
@@ -19,9 +22,7 @@ pub fn should_skip_event(event: &TerminalEvent) -> bool {
     if let TerminalEvent::Mouse(mouse_event) = event {
         matches!(
             mouse_event.kind,
-            MouseEventKind::Moved
-                | MouseEventKind::ScrollLeft
-                | MouseEventKind::ScrollRight
+            MouseEventKind::Moved | MouseEventKind::ScrollLeft | MouseEventKind::ScrollRight
         )
     } else {
         false
@@ -51,7 +52,7 @@ pub fn handle_event(
     }
 
     if let Ok(event) = event_t2i(&event) {
-        let handled = indigo_core::event::handle_event(editor, &event);
+        let handled = indigo_core::event::handle_event(editor, &event)?;
         if handled {
             return Ok(());
         }
@@ -107,7 +108,7 @@ fn handle_event_normal(
             (
                 KeyModifiers::NONE,
                 MouseEventKind::Down(MouseButton::Right)
-                    | MouseEventKind::Drag(MouseButton::Left | MouseButton::Right),
+                | MouseEventKind::Drag(MouseButton::Left | MouseButton::Right),
             ) => {
                 let position = Position {
                     x: mouse_event.column,

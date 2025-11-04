@@ -23,13 +23,15 @@ impl From<Key> for Event {
     }
 }
 
-pub fn handle_event(editor: &mut Editor, event: &Event) -> bool {
-    match editor.mode {
+pub fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
+    let handled = match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, event),
         Mode::Seek(_) => handle_event_seek(editor, event),
         Mode::Insert(_) => handle_event_insert(editor, event),
-        Mode::Command(_) => handle_event_command(editor, event),
-    }
+        Mode::Command(_) => handle_event_command(editor, event)?,
+    };
+
+    Ok(handled)
 }
 
 pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
@@ -142,7 +144,7 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
     handled
 }
 
-pub fn handle_event_command(editor: &mut Editor, event: &Event) -> bool {
+pub fn handle_event_command(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
     let Mode::Command(_command_mode) = &editor.mode else {
         panic!("Not in command mode")
     };
@@ -153,12 +155,12 @@ pub fn handle_event_command(editor: &mut Editor, event: &Event) -> bool {
         Event::KeyInput(key) => match (key.modifiers, key.code) {
             _ if is(key, "<esc>") => enter_normal_mode(editor),
             _ if is(key, "<bs>") => delete_before(editor),
-            _ if is(key, "<ret>") => run_command(editor),
+            _ if is(key, "<ret>") => run_command(editor)?,
             (m, KeyCode::Char(c)) if m.is_empty() => insert_char(editor, c),
             _ if is(key, "<c-c>") => exit(editor, 1),
             _ => handled = false,
         },
     }
 
-    handled
+    Ok(handled)
 }

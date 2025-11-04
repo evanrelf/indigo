@@ -238,7 +238,7 @@ pub fn redo(editor: &mut Editor) {
 }
 
 // TODO: Move command handling into command mode code. This function should be very short.
-pub fn run_command(editor: &mut Editor) {
+pub fn run_command(editor: &mut Editor) -> anyhow::Result<()> {
     #[derive(clap::Parser)]
     #[clap(
         disable_help_flag = true,
@@ -262,7 +262,7 @@ pub fn run_command(editor: &mut Editor) {
     }
 
     let Mode::Command(command_mode) = &editor.mode else {
-        return;
+        return Ok(());
     };
 
     let command = Cow::<str>::from(command_mode.text().rope());
@@ -270,12 +270,12 @@ pub fn run_command(editor: &mut Editor) {
     let Ok(args) = shellwords::split(&command) else {
         editor.message = Some(Err(String::from("Invalid command")));
         editor.mode = Mode::Normal(NormalMode::default());
-        return;
+        return Ok(());
     };
 
     if args.is_empty() {
         editor.mode = Mode::Normal(NormalMode::default());
-        return;
+        return Ok(());
     }
 
     let args = iter::once(String::from("indigo")).chain(args);
@@ -292,7 +292,7 @@ pub fn run_command(editor: &mut Editor) {
                 .unwrap_or("");
             editor.message = Some(Err(error.to_string()));
             editor.mode = Mode::Normal(NormalMode::default());
-            return;
+            return Ok(());
         }
     };
 
@@ -305,8 +305,8 @@ pub fn run_command(editor: &mut Editor) {
             }
         }
         Command::Write => {
-            // TODO: Handle failure.
-            editor.buffer.save(&mut editor.io).unwrap();
+            // TODO: Don't panic if save fails.
+            editor.buffer.save(&mut editor.io)?;
         }
         Command::Quit { exit_code } => {
             if editor.buffer.modified {
@@ -327,8 +327,8 @@ pub fn run_command(editor: &mut Editor) {
             };
         }
         Command::WriteQuit { exit_code } => {
-            // TODO: Handle failure.
-            editor.buffer.save(&mut editor.io).unwrap();
+            // TODO: Don't panic if save fails.
+            editor.buffer.save(&mut editor.io)?;
             editor.exit = if let Some(exit_code) = exit_code {
                 Some(ExitCode::from(exit_code))
             } else {
@@ -338,6 +338,8 @@ pub fn run_command(editor: &mut Editor) {
     }
 
     editor.mode = Mode::Normal(NormalMode::default());
+
+    Ok(())
 }
 
 pub fn exit(editor: &mut Editor, exit_code: u8) {
