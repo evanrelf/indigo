@@ -147,12 +147,12 @@ mod tests {
     #[test]
     fn io() -> anyhow::Result<()> {
         let mut io = TestIo::default();
-        io.write_file("main.rs", b"fn main() {}")?;
+        io.write_file("main.rs".into(), b"fn main() {}")?;
         let mut buffer = Buffer::open(&mut io, "main.rs")?;
         assert_eq!(&buffer.text.to_string(), "fn main() {}");
         buffer.path = Some(Utf8PathBuf::from("main2.rs"));
         buffer.save(&mut io)?;
-        assert_eq!(io.read_file("main2.rs")?, b"fn main() {}");
+        assert_eq!(io.read_file("main2.rs".into())?, b"fn main() {}");
         Ok(())
     }
 }
