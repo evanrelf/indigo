@@ -169,6 +169,15 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 }
 
+// TODO: Pull count repetition back from actions into range code.
+// - Nicer to write tests without writing for loops.
+// - Some range operations aren't repeatable (e.g. go to beginning of line) so if
+//   they lacked a count parameter that would be a good API.
+
+// TODO: Add "move" methods to range, even if they're fairly trivial (just calling reduce after the
+// "extend" variant). Actions are currently doing this and that's not appropriate. Actions should be
+// almost no code, just entrypoints into the core code.
+
 impl<W: WrapMut> RangeView<'_, W> {
     fn anchor_mut(&mut self) -> CursorMut<'_> {
         CursorMut::new(&mut self.text, &mut self.state.anchor)
@@ -244,6 +253,10 @@ impl<W: WrapMut> RangeView<'_, W> {
         let desired_column = self.state.desired_column;
         self.head_mut().move_down(desired_column)
     }
+
+    // TODO: Why am I not using `Cursor::move_to_{prev,next}_byte` here?? Push as much functionality
+    // as possible down to cursor. Then cursor is more powerful and range code is simpler / higher
+    // level.
 
     pub fn extend_until_prev_byte(&mut self, byte: u8) -> bool {
         let head = &mut self.state.head.char_offset;
