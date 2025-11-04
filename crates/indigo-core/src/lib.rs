@@ -6,6 +6,7 @@ pub mod editor;
 pub mod event;
 pub mod graphemes;
 pub mod history;
+pub mod io;
 pub mod key;
 pub mod mode;
 pub mod ot;
