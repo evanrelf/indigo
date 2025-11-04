@@ -6,6 +6,7 @@ edition = "2024"
 arbitrary = ["dep:arbitrary"]
 
 [dependencies]
+anyhow = { workspace = true }
 arbitrary = { workspace = true, optional = true }
 camino = { workspace = true }
 clap = { workspace = true }

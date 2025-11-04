@@ -35,7 +35,7 @@ impl Buffer {
         Self::default()
     }
 
-    pub fn open<I: Io>(io: &mut I, path: impl AsRef<Utf8Path>) -> Result<Self, I::Error> {
+    pub fn open<I: Io>(io: &mut I, path: impl AsRef<Utf8Path>) -> anyhow::Result<Self> {
         let path = path.as_ref();
         // TODO: Canonicalize path.
         let exists = io.file_exists(path)?;
@@ -52,7 +52,7 @@ impl Buffer {
         Ok(buffer)
     }
 
-    pub fn save<I: Io>(&mut self, io: &mut I) -> Result<(), I::Error> {
+    pub fn save<I: Io>(&mut self, io: &mut I) -> anyhow::Result<()> {
         if let Some(path) = &self.path {
             let mut bytes = Vec::with_capacity(self.text.len_bytes());
             self.text
@@ -142,10 +142,10 @@ impl From<Text> for Buffer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::io::{TestIo, TestIoError};
+    use crate::io::TestIo;
 
     #[test]
-    fn io() -> Result<(), TestIoError> {
+    fn io() -> anyhow::Result<()> {
         let mut io = TestIo::default();
         io.write_file("main.rs", b"fn main() {}")?;
         let mut buffer = Buffer::open(&mut io, "main.rs")?;
