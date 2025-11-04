@@ -116,26 +116,30 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.snap(&self.text);
     }
 
-    pub fn move_left(&mut self) -> bool {
-        if let Some(prev) = self.text.prev_grapheme_boundary(self.state.char_offset)
-            && self.state.char_offset != prev
-        {
-            self.state.char_offset = prev;
-            true
-        } else {
-            false
+    pub fn move_left(&mut self, count: usize) -> bool {
+        for _ in 0..count {
+            if let Some(prev) = self.text.prev_grapheme_boundary(self.state.char_offset)
+                && self.state.char_offset != prev
+            {
+                self.state.char_offset = prev;
+            } else {
+                return false;
+            }
         }
+        true
     }
 
-    pub fn move_right(&mut self) -> bool {
-        if let Some(next) = self.text.next_grapheme_boundary(self.state.char_offset)
-            && self.state.char_offset != next
-        {
-            self.state.char_offset = next;
-            true
-        } else {
-            false
+    pub fn move_right(&mut self, count: usize) -> bool {
+        for _ in 0..count {
+            if let Some(next) = self.text.next_grapheme_boundary(self.state.char_offset)
+                && self.state.char_offset != next
+            {
+                self.state.char_offset = next;
+            } else {
+                return false;
+            }
         }
+        true
     }
 
     pub fn move_up(&mut self, desired_column: usize) -> bool {
@@ -195,7 +199,7 @@ impl<W: WrapMut> CursorView<'_, W> {
     pub fn move_to_prev_byte(&mut self, byte: u8) -> bool {
         if let Some(char_offset) = self.text.find_last_byte(..self.state.char_offset, byte) {
             self.state.char_offset = char_offset;
-            self.move_right();
+            self.move_right(1);
             true
         } else {
             false
@@ -332,17 +336,16 @@ mod tests {
         assert_eq!(*cursor.text, Text::from("hel"));
         assert_eq!(cursor.char_offset(), 3);
 
-        cursor.move_left();
-        cursor.move_left();
+        cursor.move_left(2);
         assert_eq!(cursor.char_offset(), 1);
 
         cursor.delete_after();
         assert_eq!(cursor.char_offset(), 1);
         assert_eq!(*cursor.text, Text::from("hl"));
 
-        cursor.move_right();
+        cursor.move_right(1);
         assert_eq!(cursor.char_offset(), 2);
-        cursor.move_right();
+        cursor.move_right(1);
         assert_eq!(cursor.char_offset(), 2);
 
         cursor.delete_after();
@@ -372,7 +375,7 @@ mod tests {
         assert_eq!(cursor.char_offset(), text.chars().count());
         assert_eq!(cursor.column(), 0);
 
-        cursor.move_left();
+        cursor.move_left(1);
         // At final newline on line 2.
         assert_eq!(cursor.grapheme(), Some(Rope::from("\n").slice(..)));
         assert_eq!(cursor.char_offset(), 12);
@@ -385,7 +388,7 @@ mod tests {
         // Desired column should remain the same through vertical movement.
         assert_eq!(cursor.column(), 3);
 
-        cursor.move_left();
+        cursor.move_left(1);
         // At "4" on line 1.
         assert_eq!(cursor.grapheme(), Some(Rope::from("4").slice(..)));
         assert_eq!(cursor.char_offset(), 4);
@@ -416,16 +419,12 @@ mod tests {
                 match u.choose_index(7)? {
                     0 => {
                         let count = max(1, u.choose_index(99)?);
-                        for _ in 1..=count {
-                            cursor.move_left();
-                        }
+                        cursor.move_left(count);
                         tx.send(format!("move_left() x{count}")).unwrap();
                     }
                     1 => {
                         let count = max(1, u.choose_index(99)?);
-                        for _ in 1..=count {
-                            cursor.move_right();
-                        }
+                        cursor.move_right(count);
                         tx.send(format!("move_right() x{count}")).unwrap();
                     }
 

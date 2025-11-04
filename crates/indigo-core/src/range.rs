@@ -169,11 +169,6 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 }
 
-// TODO: Pull count repetition back from actions into range code.
-// - Nicer to write tests without writing for loops.
-// - Some range operations aren't repeatable (e.g. go to beginning of line) so if
-//   they lacked a count parameter that would be a good API.
-
 impl<W: WrapMut> RangeView<'_, W> {
     fn anchor_mut(&mut self) -> CursorMut<'_> {
         CursorMut::new(&mut self.text, &mut self.state.anchor)
@@ -221,26 +216,40 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.update_desired_column();
     }
 
-    pub fn extend_left(&mut self) -> bool {
-        let moved = self.head_mut().move_left();
+    pub fn extend_left(&mut self, count: usize) -> bool {
+        let moved = self.head_mut().move_left(count);
         self.update_desired_column();
         moved
     }
 
-    pub fn extend_right(&mut self) -> bool {
-        let moved = self.head_mut().move_right();
+    pub fn extend_right(&mut self, count: usize) -> bool {
+        let moved = self.head_mut().move_right(count);
         self.update_desired_column();
         moved
     }
 
-    pub fn extend_up(&mut self) -> bool {
+    pub fn extend_up(&mut self, count: usize) -> bool {
         let desired_column = self.state.desired_column;
-        self.head_mut().move_up(desired_column)
+        let mut moved = false;
+        for _ in 0..count {
+            if !self.head_mut().move_up(desired_column) {
+                break;
+            }
+            moved = true;
+        }
+        moved
     }
 
-    pub fn extend_down(&mut self) -> bool {
+    pub fn extend_down(&mut self, count: usize) -> bool {
         let desired_column = self.state.desired_column;
-        self.head_mut().move_down(desired_column)
+        let mut moved = false;
+        for _ in 0..count {
+            if !self.head_mut().move_down(desired_column) {
+                break;
+            }
+            moved = true;
+        }
+        moved
     }
 
     pub fn extend_until_prev_byte(&mut self, byte: u8) -> bool {
@@ -263,7 +272,7 @@ impl<W: WrapMut> RangeView<'_, W> {
     pub fn move_onto_prev_byte(&mut self, byte: u8) -> bool {
         self.reduce();
         if self.extend_until_prev_byte(byte) {
-            self.extend_left();
+            self.extend_left(1);
             true
         } else {
             false
@@ -278,7 +287,7 @@ impl<W: WrapMut> RangeView<'_, W> {
     pub fn move_onto_next_byte(&mut self, byte: u8) -> bool {
         self.reduce();
         if self.extend_until_next_byte(byte) {
-            self.extend_right();
+            self.extend_right(1);
             true
         } else {
             false
@@ -287,7 +296,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_onto_prev_byte(&mut self, byte: u8) -> bool {
         if self.extend_until_prev_byte(byte) && self.is_backward() {
-            self.extend_left();
+            self.extend_left(1);
             true
         } else {
             false
@@ -296,7 +305,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_onto_next_byte(&mut self, byte: u8) -> bool {
         if self.extend_until_next_byte(byte) && self.is_forward() {
-            self.extend_right();
+            self.extend_right(1);
             true
         } else {
             false
@@ -306,30 +315,34 @@ impl<W: WrapMut> RangeView<'_, W> {
     pub fn move_to(&mut self, char_offset: usize) {
         self.extend_to(char_offset);
         self.reduce();
-        self.extend_left();
+        self.extend_left(1);
         self.flip_forward();
     }
 
-    pub fn move_left(&mut self) -> bool {
-        let moved = self.extend_left();
+    pub fn move_left(&mut self, count: usize) -> bool {
+        // TODO: Does reducing count as a movement?
+        let moved = self.extend_left(count);
         self.reduce();
         moved
     }
 
-    pub fn move_right(&mut self) -> bool {
-        let moved = self.extend_right();
+    pub fn move_right(&mut self, count: usize) -> bool {
+        // TODO: Does reducing count as a movement?
+        let moved = self.extend_right(count);
         self.reduce();
         moved
     }
 
-    pub fn move_up(&mut self) -> bool {
-        let moved = self.extend_up();
+    pub fn move_up(&mut self, count: usize) -> bool {
+        // TODO: Does reducing count as a movement?
+        let moved = self.extend_up(count);
         self.reduce();
         moved
     }
 
-    pub fn move_down(&mut self) -> bool {
-        let moved = self.extend_down();
+    pub fn move_down(&mut self, count: usize) -> bool {
+        // TODO: Does reducing count as a movement?
+        let moved = self.extend_down(count);
         self.reduce();
         moved
     }
