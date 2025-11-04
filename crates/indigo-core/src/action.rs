@@ -42,11 +42,10 @@ pub fn move_left(editor: &mut Editor) {
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     let mut range = editor.buffer.range_mut();
     for _ in 1..=count {
-        if !range.extend_left() {
+        if !range.move_left() {
             break;
         }
     }
-    range.reduce();
     editor.mode.set_count(None);
 }
 
@@ -54,11 +53,10 @@ pub fn move_right(editor: &mut Editor) {
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     let mut range = editor.buffer.range_mut();
     for _ in 1..=count {
-        if !range.extend_right() {
+        if !range.move_right() {
             break;
         }
     }
-    range.reduce();
     editor.mode.set_count(None);
 }
 
@@ -66,11 +64,10 @@ pub fn move_up(editor: &mut Editor) {
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     let mut range = editor.buffer.range_mut();
     for _ in 1..=count {
-        if !range.extend_up() {
+        if !range.move_up() {
             break;
         }
     }
-    range.reduce();
     editor.mode.set_count(None);
 }
 
@@ -78,11 +75,10 @@ pub fn move_down(editor: &mut Editor) {
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     let mut range = editor.buffer.range_mut();
     for _ in 1..=count {
-        if !range.extend_down() {
+        if !range.move_down() {
             break;
         }
     }
-    range.reduce();
     editor.mode.set_count(None);
 }
 

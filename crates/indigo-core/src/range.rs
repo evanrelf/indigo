@@ -174,10 +174,6 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
 // - Some range operations aren't repeatable (e.g. go to beginning of line) so if
 //   they lacked a count parameter that would be a good API.
 
-// TODO: Add "move" methods to range, even if they're fairly trivial (just calling reduce after the
-// "extend" variant). Actions are currently doing this and that's not appropriate. Actions should be
-// almost no code, just entrypoints into the core code.
-
 impl<W: WrapMut> RangeView<'_, W> {
     fn anchor_mut(&mut self) -> CursorMut<'_> {
         CursorMut::new(&mut self.text, &mut self.state.anchor)
@@ -223,13 +219,6 @@ impl<W: WrapMut> RangeView<'_, W> {
             self.state.head.char_offset = self.text.ceil_grapheme_boundary(char_offset + 1);
         }
         self.update_desired_column();
-    }
-
-    pub fn move_to(&mut self, char_offset: usize) {
-        self.extend_to(char_offset);
-        self.reduce();
-        self.extend_left();
-        self.flip_forward();
     }
 
     pub fn extend_left(&mut self) -> bool {
@@ -312,6 +301,37 @@ impl<W: WrapMut> RangeView<'_, W> {
         } else {
             false
         }
+    }
+
+    pub fn move_to(&mut self, char_offset: usize) {
+        self.extend_to(char_offset);
+        self.reduce();
+        self.extend_left();
+        self.flip_forward();
+    }
+
+    pub fn move_left(&mut self) -> bool {
+        let moved = self.extend_left();
+        self.reduce();
+        moved
+    }
+
+    pub fn move_right(&mut self) -> bool {
+        let moved = self.extend_right();
+        self.reduce();
+        moved
+    }
+
+    pub fn move_up(&mut self) -> bool {
+        let moved = self.extend_up();
+        self.reduce();
+        moved
+    }
+
+    pub fn move_down(&mut self) -> bool {
+        let moved = self.extend_down();
+        self.reduce();
+        moved
     }
 
     pub fn flip(&mut self) {
