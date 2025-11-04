@@ -1,7 +1,7 @@
 #![allow(clippy::wildcard_imports)]
 
 use crate::{
-    areas::{Areas, position_to_char_index},
+    areas::{Areas, position_to_char_offset},
     key::{key_i2t, key_t2i},
     terminal::TerminalGuard,
 };
@@ -93,7 +93,7 @@ fn handle_event_normal(
                     x: mouse_event.column,
                     y: mouse_event.row,
                 };
-                if let Some(Err(char_offset) | Ok(char_offset)) = position_to_char_index(
+                if let Some(Err(char_offset) | Ok(char_offset)) = position_to_char_offset(
                     position,
                     editor.buffer.text(),
                     editor.buffer.vertical_scroll(),
@@ -113,7 +113,7 @@ fn handle_event_normal(
                     x: mouse_event.column,
                     y: mouse_event.row,
                 };
-                if let Some(Err(char_offset) | Ok(char_offset)) = position_to_char_index(
+                if let Some(Err(char_offset) | Ok(char_offset)) = position_to_char_offset(
                     position,
                     editor.buffer.text(),
                     editor.buffer.vertical_scroll(),

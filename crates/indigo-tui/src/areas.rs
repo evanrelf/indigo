@@ -53,7 +53,7 @@ impl Areas {
     }
 }
 
-/// Map position on the terminal to a character index in the rope indices. Example us is moving a
+/// Map position on the terminal to a character offset in the rope. Example use is moving a
 /// cursor to where a mouse was clicked.
 ///
 /// `None` means the position was not contained within the area. `Some(Ok(_))` means the position
@@ -63,7 +63,7 @@ impl Areas {
 /// Examples of corrections: snapping to the beginning of the grapheme, snapping to the end of the
 /// line, and snapping to the end of the buffer.
 #[must_use]
-pub fn position_to_char_index(
+pub fn position_to_char_offset(
     position: Position,
     rope: &Rope,
     vertical_scroll: usize,
@@ -84,7 +84,7 @@ pub fn position_to_char_index(
         return Some(Err(rope.len_chars()));
     };
 
-    let line_char_index = rope
+    let line_char_offset = rope
         .try_line_to_char(y)
         .expect("Line is known to exist at this point");
 
@@ -92,10 +92,10 @@ pub fn position_to_char_index(
 
     if x > line_length {
         // Position goes beyond last character of line, so we snap to last character of line
-        return Some(Err(line_char_index + line_length.saturating_sub(1)));
+        return Some(Err(line_char_offset + line_length.saturating_sub(1)));
     }
 
-    Some(Ok(line_char_index + x))
+    Some(Ok(line_char_offset + x))
 }
 
 #[must_use]
