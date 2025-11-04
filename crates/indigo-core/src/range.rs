@@ -254,31 +254,16 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.head_mut().move_down(desired_column)
     }
 
-    // TODO: Why am I not using `Cursor::move_to_{prev,next}_byte` here?? Push as much functionality
-    // as possible down to cursor. Then cursor is more powerful and range code is simpler / higher
-    // level.
-
     pub fn extend_until_prev_byte(&mut self, byte: u8) -> bool {
-        let head = &mut self.state.head.char_offset;
-        if let Some(char_offset) = self.text.find_last_byte(..*head, byte) {
-            *head = char_offset;
-            self.head_mut().move_right();
-            self.update_desired_column();
-            true
-        } else {
-            false
-        }
+        let moved = self.head_mut().move_to_prev_byte(byte);
+        self.update_desired_column();
+        moved
     }
 
     pub fn extend_until_next_byte(&mut self, byte: u8) -> bool {
-        let head = &mut self.state.head.char_offset;
-        if let Some(char_offset) = self.text.find_first_byte(*head.., byte) {
-            *head = char_offset;
-            self.update_desired_column();
-            true
-        } else {
-            false
-        }
+        let moved = self.head_mut().move_to_next_byte(byte);
+        self.update_desired_column();
+        moved
     }
 
     pub fn select_until_prev_byte(&mut self, byte: u8) -> bool {
