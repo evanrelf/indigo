@@ -5,7 +5,6 @@ use std::cmp::max;
 #[derive(Clone, Copy, Default)]
 pub struct Areas {
     pub status_bar: Rect,
-    pub command_bar: Rect,
     pub line_numbers: Rect,
     pub text: Rect,
 }
@@ -13,17 +12,9 @@ pub struct Areas {
 impl Areas {
     #[must_use]
     pub fn new(editor: &Editor, area: Rect) -> Self {
-        // TODO: Merge command and status bars, handle different appearance in rendering code.
-        let (command_bar_height, status_bar_height) = match editor.mode {
-            Mode::Normal(_) | Mode::Seek(_) | Mode::Insert(_) => (0, 1),
-            Mode::Command(_) => (1, 0),
-        };
-
-        let [status_bar, command_bar, main] = Layout::vertical([
+        let [status_bar, main] = Layout::vertical([
             // status_bar
-            Constraint::Length(status_bar_height),
-            // command_bar
-            Constraint::Length(command_bar_height),
+            Constraint::Length(1),
             // line_numbers + text
             Constraint::Fill(1),
         ])
@@ -46,7 +37,6 @@ impl Areas {
 
         Self {
             status_bar,
-            command_bar,
             line_numbers,
             text,
         }

@@ -222,14 +222,37 @@ pub const RED: Color = Color::Rgb(0xd7, 0x3a, 0x4a);
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let areas = Areas::new(editor, area);
     render_status_bar(editor, areas.status_bar, surface);
-    render_command_bar(editor, areas.command_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
     render_tildes(editor, areas.line_numbers, surface);
     render_text(editor, areas.text, surface);
     render_selection(editor, areas.text, surface);
 }
 
-fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
+fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
+    if let Mode::Command(ref normal_mode) = editor.mode {
+        if let Some(cell) = surface.cell_mut(area.as_position()) {
+            cell.set_char(':');
+        } else {
+            unreachable!();
+        }
+
+        area.x += 1;
+        area.width -= 1;
+
+        Line::raw(Cow::<str>::from(normal_mode.text().rope())).render(area, surface);
+
+        if let Some(rect) = char_index_to_area(
+            normal_mode.cursor().char_offset(),
+            normal_mode.text(),
+            0,
+            area,
+        ) {
+            surface.set_style(rect, Style::default().bg(DARK_YELLOW));
+        }
+
+        return;
+    }
+
     if let Some(message) = &editor.message {
         match message {
             Ok(message) => Line::raw(message).render(area, surface),
@@ -275,32 +298,6 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         };
 
         Line::raw(format!("{path} · {mode} {anchor}-{head}{count}")).render(area, surface);
-    }
-}
-
-fn render_command_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
-    let Mode::Command(ref normal_mode) = editor.mode else {
-        return;
-    };
-
-    if let Some(cell) = surface.cell_mut(area.as_position()) {
-        cell.set_char(':');
-    } else {
-        unreachable!();
-    }
-
-    area.x += 1;
-    area.width -= 1;
-
-    Line::raw(Cow::<str>::from(normal_mode.text().rope())).render(area, surface);
-
-    if let Some(rect) = char_index_to_area(
-        normal_mode.cursor().char_offset(),
-        normal_mode.text(),
-        0,
-        area,
-    ) {
-        surface.set_style(rect, Style::default().bg(DARK_YELLOW));
     }
 }
 
