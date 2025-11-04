@@ -1,10 +1,12 @@
 use crate::{
     history::History,
+    io::Io,
     ot::{self, EditSeq},
     range::{self, Range, RangeMut, RangeState},
     rope::RopeExt as _,
     text::Text,
 };
+use camino::Utf8Path;
 use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::cmp::min;
@@ -31,6 +33,35 @@ impl Buffer {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn open<I: Io>(io: &mut I, path: impl AsRef<Utf8Path>) -> Result<Self, I::Error> {
+        let path = path.as_ref();
+        // TODO: Canonicalize path.
+        let exists = io.file_exists(path)?;
+        let rope = if exists {
+            let bytes = io.read_file(path)?;
+            // TODO: Include this error in return type.
+            let string = str::from_utf8(&bytes).unwrap();
+            Rope::from(string)
+        } else {
+            Rope::new()
+        };
+        let mut buffer = Self::from(rope);
+        buffer.path = Some(path.to_path_buf());
+        Ok(buffer)
+    }
+
+    pub fn save<I: Io>(&mut self, io: &mut I) -> Result<(), I::Error> {
+        if let Some(path) = &self.path {
+            let mut bytes = Vec::with_capacity(self.text.len_bytes());
+            self.text
+                .write_to(&mut bytes)
+                .expect("Write to in-memory buffer considered infallible for now");
+            io.write_file(path, &bytes)?;
+            self.modified = false;
+        }
+        Ok(())
     }
 
     #[must_use]
@@ -105,5 +136,23 @@ impl From<Text> for Buffer {
             range,
             ..Self::default()
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::io::{TestIo, TestIoError};
+
+    #[test]
+    fn io() -> Result<(), TestIoError> {
+        let mut io = TestIo::default();
+        io.write_file("main.rs", b"fn main() {}")?;
+        let mut buffer = Buffer::open(&mut io, "main.rs")?;
+        assert_eq!(&buffer.text.to_string(), "fn main() {}");
+        buffer.path = Some(Utf8PathBuf::from("main2.rs"));
+        buffer.save(&mut io)?;
+        assert_eq!(io.read_file("main2.rs")?, b"fn main() {}");
+        Ok(())
     }
 }
