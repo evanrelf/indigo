@@ -40,7 +40,7 @@ pub struct NormalMode {
 }
 
 pub enum SeekSelect {
-    Select,
+    Move,
     Extend,
 }
 
@@ -55,7 +55,7 @@ pub enum SeekDirection {
 }
 
 pub struct SeekMode {
-    /// Start a new selection, or extend the current one?
+    /// Move and create a new selection, or extend the current one?
     pub select: SeekSelect,
     /// Include seek target in selection, or stop just short?
     pub include: SeekInclude,

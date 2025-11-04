@@ -36,7 +36,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
     use crate::mode::{
         SeekDirection::{Next, Prev},
         SeekInclude::{Onto, Until},
-        SeekSelect::{Extend, Select},
+        SeekSelect::{Extend, Move},
     };
 
     let mut handled = true;
@@ -67,13 +67,13 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "L") => extend_right(editor),
             _ if is(key, "K") => extend_up(editor),
             _ if is(key, "J") => extend_down(editor),
-            _ if is(key, "<a-t>") => enter_seek_mode(editor, Select, Until, Prev),
+            _ if is(key, "<a-t>") => enter_seek_mode(editor, Move, Until, Prev),
             _ if is(key, "<a-T>") => enter_seek_mode(editor, Extend, Until, Prev),
-            _ if is(key, "t") => enter_seek_mode(editor, Select, Until, Next),
+            _ if is(key, "t") => enter_seek_mode(editor, Move, Until, Next),
             _ if is(key, "T") => enter_seek_mode(editor, Extend, Until, Next),
-            _ if is(key, "<a-f>") => enter_seek_mode(editor, Select, Onto, Prev),
+            _ if is(key, "<a-f>") => enter_seek_mode(editor, Move, Onto, Prev),
             _ if is(key, "<a-F>") => enter_seek_mode(editor, Extend, Onto, Prev),
-            _ if is(key, "f") => enter_seek_mode(editor, Select, Onto, Next),
+            _ if is(key, "f") => enter_seek_mode(editor, Move, Onto, Next),
             _ if is(key, "F") => enter_seek_mode(editor, Extend, Onto, Next),
             _ if is(key, ";") => reduce(editor),
             _ if is(key, "<a-;>") => flip(editor),

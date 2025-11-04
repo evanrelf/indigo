@@ -249,21 +249,18 @@ impl<W: WrapMut> RangeView<'_, W> {
         moved
     }
 
-    // TODO: Change the `select_` prefix in the functions below this to `move_`. Then change the
-    // `Select` data constructor of `SeekSelect` (in the `mode` module) to be `Move` as well.
-
     pub fn extend_until_next_byte(&mut self, byte: u8) -> bool {
         let moved = self.head_mut().move_to_next_byte(byte);
         self.update_desired_column();
         moved
     }
 
-    pub fn select_until_prev_byte(&mut self, byte: u8) -> bool {
+    pub fn move_until_prev_byte(&mut self, byte: u8) -> bool {
         self.reduce();
         self.extend_until_prev_byte(byte)
     }
 
-    pub fn select_onto_prev_byte(&mut self, byte: u8) -> bool {
+    pub fn move_onto_prev_byte(&mut self, byte: u8) -> bool {
         self.reduce();
         if self.extend_until_prev_byte(byte) {
             self.extend_left();
@@ -273,12 +270,12 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
-    pub fn select_until_next_byte(&mut self, byte: u8) -> bool {
+    pub fn move_until_next_byte(&mut self, byte: u8) -> bool {
         self.reduce();
         self.extend_until_next_byte(byte)
     }
 
-    pub fn select_onto_next_byte(&mut self, byte: u8) -> bool {
+    pub fn move_onto_next_byte(&mut self, byte: u8) -> bool {
         self.reduce();
         if self.extend_until_next_byte(byte) {
             self.extend_right();

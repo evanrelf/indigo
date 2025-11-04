@@ -86,20 +86,20 @@ pub fn seek(editor: &mut Editor, byte: u8) {
     use crate::mode::{
         SeekDirection::{Next, Prev},
         SeekInclude::{Onto, Until},
-        SeekSelect::{Extend, Select},
+        SeekSelect::{Extend, Move},
     };
     let Mode::Seek(seek_mode) = &editor.mode else {
         panic!("Not in seek mode")
     };
     let mut range = editor.buffer.range_mut();
     match (&seek_mode.select, &seek_mode.include, &seek_mode.direction) {
-        (Select, Until, Prev) => range.select_until_prev_byte(byte),
+        (Move, Until, Prev) => range.move_until_prev_byte(byte),
         (Extend, Until, Prev) => range.extend_until_prev_byte(byte),
-        (Select, Until, Next) => range.select_until_next_byte(byte),
+        (Move, Until, Next) => range.move_until_next_byte(byte),
         (Extend, Until, Next) => range.extend_until_next_byte(byte),
-        (Select, Onto, Prev) => range.select_onto_prev_byte(byte),
+        (Move, Onto, Prev) => range.move_onto_prev_byte(byte),
         (Extend, Onto, Prev) => range.extend_onto_prev_byte(byte),
-        (Select, Onto, Next) => range.select_onto_next_byte(byte),
+        (Move, Onto, Next) => range.move_onto_next_byte(byte),
         (Extend, Onto, Next) => range.extend_onto_next_byte(byte),
     };
     editor.mode.set_count(None);

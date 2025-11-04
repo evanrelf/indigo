@@ -242,16 +242,16 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
                 use indigo_core::mode::{
                     SeekDirection::{Next, Prev},
                     SeekInclude::{Onto, Until},
-                    SeekSelect::{Extend, Select},
+                    SeekSelect::{Extend, Move},
                 };
                 match (&seek_mode.select, &seek_mode.include, &seek_mode.direction) {
-                    (Select, Until, Prev) => "select until prev",
+                    (Move, Until, Prev) => "move until prev",
                     (Extend, Until, Prev) => "extend until prev",
-                    (Select, Until, Next) => "select until next",
+                    (Move, Until, Next) => "move until next",
                     (Extend, Until, Next) => "extend until next",
-                    (Select, Onto, Prev) => "select onto prev",
+                    (Move, Onto, Prev) => "move onto prev",
                     (Extend, Onto, Prev) => "extend onto prev",
-                    (Select, Onto, Next) => "select onto next",
+                    (Move, Onto, Next) => "move onto next",
                     (Extend, Onto, Next) => "extend onto next",
                 }
             }
