@@ -41,8 +41,7 @@ impl Buffer {
         let exists = io.file_exists(path)?;
         let rope = if exists {
             let bytes = io.read_file(path)?;
-            // TODO: Include this error in return type.
-            let string = str::from_utf8(&bytes).unwrap();
+            let string = str::from_utf8(&bytes)?;
             Rope::from(string)
         } else {
             Rope::new()
@@ -55,9 +54,7 @@ impl Buffer {
     pub fn save<I: Io>(&mut self, io: &mut I) -> anyhow::Result<()> {
         if let Some(path) = &self.path {
             let mut bytes = Vec::with_capacity(self.text.len_bytes());
-            self.text
-                .write_to(&mut bytes)
-                .expect("Write to in-memory buffer considered infallible for now");
+            self.text.write_to(&mut bytes)?;
             io.write_file(path, &bytes)?;
             self.modified = false;
         }
