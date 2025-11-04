@@ -6,10 +6,14 @@ use indigo_core::prelude::{Buffer, *};
 use indigo_tui::{
     areas::{Areas, char_index_to_area, line_index_to_area},
     event::{handle_event, should_skip_event},
+    io::TuiIo,
     terminal,
     terminal::TerminalGuard,
 };
-use ratatui::{prelude::{Buffer as Surface, *}, crossterm};
+use ratatui::{
+    crossterm,
+    prelude::{Buffer as Surface, *},
+};
 use std::{borrow::Cow, cmp::max, env, fs, io, process::ExitCode, sync::Arc, time::Instant};
 
 #[derive(Debug, clap::Parser)]
@@ -162,6 +166,7 @@ fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
 
     let mut editor = Editor::from(buffer);
 
+    editor.io = Box::new(TuiIo);
     editor.pwd = Some(Utf8PathBuf::try_from(env::current_dir()?)?);
 
     let mut areas = Areas::default();

@@ -287,10 +287,14 @@ pub fn run_command(editor: &mut Editor) {
             error: bool,
             message: Vec<String>,
         },
+        #[clap(alias = "w")]
+        Write,
         #[clap(alias = "q")]
         Quit { exit_code: Option<u8> },
         #[clap(name = "quit!", alias = "q!")]
         QuitForce { exit_code: Option<u8> },
+        #[clap(alias = "wq")]
+        WriteQuit { exit_code: Option<u8> },
     }
 
     let Mode::Command(command_mode) = &editor.mode else {
@@ -336,6 +340,10 @@ pub fn run_command(editor: &mut Editor) {
                 editor.message = Some(Ok(message.join(" ")));
             }
         }
+        Command::Write => {
+            // TODO: Handle failure.
+            editor.buffer.save(&mut editor.io).unwrap();
+        }
         Command::Quit { exit_code } => {
             if editor.buffer.modified {
                 editor.message = Some(Err(String::from("Unsaved changes")));
@@ -348,6 +356,15 @@ pub fn run_command(editor: &mut Editor) {
             }
         }
         Command::QuitForce { exit_code } => {
+            editor.exit = if let Some(exit_code) = exit_code {
+                Some(ExitCode::from(exit_code))
+            } else {
+                Some(ExitCode::SUCCESS)
+            };
+        }
+        Command::WriteQuit { exit_code } => {
+            // TODO: Handle failure.
+            editor.buffer.save(&mut editor.io).unwrap();
             editor.exit = if let Some(exit_code) = exit_code {
                 Some(ExitCode::from(exit_code))
             } else {
