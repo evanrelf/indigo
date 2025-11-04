@@ -11,8 +11,9 @@
       "Bash(jj log:*)",
       "Bash(jj diff:*)",
       "Bash(jj show:*)",
-      "Bash(cargo test:*)",
       "Bash(cargo clippy:*)"
+      "Bash(cargo test:*)",
+      "Bash(cargo run:*)",
     ],
     "deny": [],
     "ask": []
