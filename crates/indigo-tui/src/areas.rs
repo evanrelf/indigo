@@ -92,7 +92,7 @@ pub fn position_to_char_index(
 
     if x > line_length {
         // Position goes beyond last character of line, so we snap to last character of line
-        return Some(Err(line_char_index + (line_length - 1)));
+        return Some(Err(line_char_index + line_length.saturating_sub(1)));
     }
 
     Some(Ok(line_char_index + x))

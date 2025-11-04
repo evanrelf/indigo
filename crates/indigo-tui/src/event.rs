@@ -20,7 +20,6 @@ pub fn should_skip_event(event: &TerminalEvent) -> bool {
         matches!(
             mouse_event.kind,
             MouseEventKind::Moved
-                | MouseEventKind::Drag(_)
                 | MouseEventKind::ScrollLeft
                 | MouseEventKind::ScrollRight
         )
@@ -94,35 +93,33 @@ fn handle_event_normal(
                     x: mouse_event.column,
                     y: mouse_event.row,
                 };
-                if let Some(Err(index) | Ok(index)) = position_to_char_index(
+                if let Some(Err(char_offset) | Ok(char_offset)) = position_to_char_index(
                     position,
                     editor.buffer.text(),
                     editor.buffer.vertical_scroll(),
                     areas.text,
                 ) {
-                    // TODO
-                    // move_to(editor, index);
-                    let _ = index;
-                    handled = false;
+                    editor.buffer.range_mut().move_to(char_offset);
                 } else {
                     handled = false;
                 }
             }
-            (KeyModifiers::NONE, MouseEventKind::Down(MouseButton::Right)) => {
+            (
+                KeyModifiers::NONE,
+                MouseEventKind::Down(MouseButton::Right)
+                    | MouseEventKind::Drag(MouseButton::Left | MouseButton::Right),
+            ) => {
                 let position = Position {
                     x: mouse_event.column,
                     y: mouse_event.row,
                 };
-                if let Some(Err(index) | Ok(index)) = position_to_char_index(
+                if let Some(Err(char_offset) | Ok(char_offset)) = position_to_char_index(
                     position,
                     editor.buffer.text(),
                     editor.buffer.vertical_scroll(),
                     areas.text,
                 ) {
-                    // TODO
-                    // extend_to(editor, index);
-                    let _ = index;
-                    handled = false;
+                    editor.buffer.range_mut().extend_to(char_offset);
                 } else {
                     handled = false;
                 }

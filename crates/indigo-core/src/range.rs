@@ -206,6 +206,23 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.desired_column = self.state.head.column(&self.text);
     }
 
+    pub fn extend_to(&mut self, char_offset: usize) {
+        assert!(self.text.is_grapheme_boundary(char_offset));
+        if self.is_backward() {
+            self.state.head.char_offset = char_offset;
+        } else {
+            self.state.head.char_offset = self.text.ceil_grapheme_boundary(char_offset + 1);
+        }
+        self.update_desired_column();
+    }
+
+    pub fn move_to(&mut self, char_offset: usize) {
+        self.extend_to(char_offset);
+        self.reduce();
+        self.extend_left();
+        self.flip_forward();
+    }
+
     pub fn extend_left(&mut self) -> bool {
         let moved = self.head_mut().move_left();
         self.update_desired_column();
