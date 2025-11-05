@@ -49,9 +49,15 @@ Indigo is implemented in Rust, across multiple crates in a Cargo workspace.
   comprehensive.
 
 - Do not run `indigo-tui`; it is a TUI application that you will struggle to
-  control and understand. Instead, check runtime behavior by writing tests, or
-  writing new binaries (e.g. `src/bin/my_program.rs`) if you specifically need
-  to inspect output prior to determining the desired behavior.
+  control and understand. Instead, check runtime behavior by writing tests.
+
+  If a test won't suffice, say because you need to observe some output before
+  asserting some property, you can create a new executable at
+  `crates/<crate>/src/bin/<executable>.rs` and run it with
+  `cargo run --package <crate> --bin <executable>`. Do not create an executable
+  outside of `src/bin/` or attempt to compile or run Rust code outside the
+  context of the Cargo workspace, otherwise you will not have access to Indigo's
+  dependencies.
 
 ## Code Conventions
 
