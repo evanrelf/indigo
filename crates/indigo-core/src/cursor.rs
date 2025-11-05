@@ -116,6 +116,11 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.snap(&self.text);
     }
 
+    pub fn move_to(&mut self, char_offset: usize) {
+        assert!(self.text.is_grapheme_boundary(char_offset));
+        self.state.char_offset = char_offset;
+    }
+
     pub fn move_left(&mut self, count: usize) -> bool {
         for _ in 0..count {
             if let Some(prev) = self.text.prev_grapheme_boundary(self.state.char_offset)
