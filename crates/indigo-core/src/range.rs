@@ -295,10 +295,8 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn move_to(&mut self, char_offset: usize) {
-        // TODO: Reimplement in terms of `extend_to` once `reduce` does the right thing.
-        self.anchor_mut().move_to(char_offset);
-        self.state.head.char_offset = self.state.anchor.char_offset;
-        self.head_mut().move_right(1);
+        self.extend_to(char_offset);
+        self.reduce();
         self.update_desired_column();
     }
 
