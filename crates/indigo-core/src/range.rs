@@ -322,6 +322,9 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn flip(&mut self) {
+        if self.is_forward() && self.grapheme_length() == 1 {
+            return;
+        }
         let (anchor, cursor) = self.state.both();
         std::mem::swap(anchor, cursor);
     }
