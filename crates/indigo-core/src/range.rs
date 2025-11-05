@@ -135,7 +135,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.char_length() == 0
+        self.state.anchor == self.state.head
     }
 
     pub fn is_reduced(&self) -> bool {
