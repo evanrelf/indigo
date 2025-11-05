@@ -208,6 +208,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.snap(&self.text);
     }
 
+    // Should be called after performing any horizontal movement.
     pub fn update_desired_column(&mut self) {
         self.state.desired_column = self.state.head.column(&self.text);
     }
