@@ -138,12 +138,6 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         self.state.anchor == self.state.head
     }
 
-    pub fn is_reduced(&self) -> bool {
-        // TODO: Once `grapheme_length == 1` is confirmed, debug assert `is_forward` before
-        // returning `true`.
-        self.grapheme_length() == 1
-    }
-
     pub fn is_eof(&self) -> bool {
         self.is_empty() && self.head().is_eof()
     }
@@ -165,7 +159,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         //         head: self.state.head.char_offset,
         //     });
         // }
-        // if self.is_backward() && self.is_reduced() {
+        // if self.is_backward() && self.grapheme_length() <= 1 {
         //     return Err(Error::ReducedAndBackward {
         //         anchor: self.state.anchor.char_offset,
         //         head: self.state.head.char_offset,
