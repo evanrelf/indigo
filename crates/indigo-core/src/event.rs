@@ -105,6 +105,7 @@ pub fn handle_event_seek(editor: &mut Editor, event: &Event) -> bool {
     let mut key = *key;
     key.normalize();
 
+    // TODO: Interpret `Return` as `\n` and `Tab` as `\t`.
     if let KeyCode::Char(char) = key.code
         && let Ok(byte) = u8::try_from(char)
         && key.modifiers.is_empty()
