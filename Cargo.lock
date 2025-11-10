@@ -81,8 +81,8 @@ checksum = "a23eb6b1614318a8071c9b2521f36b424b2c83db5eb3a0fead4a6c0809af6e61"
 
 [[package]]
 name = "arbitrary"
-version = "1.4.1"
-source = "git+https://github.com/evanrelf/arbitrary.git#213069e3190f1201d5510873e5e1ea9893910b8d"
+version = "1.4.2"
+source = "git+https://github.com/rust-fuzz/arbitrary.git?rev=69ac259b653cc094652a9e73eabd3f4ef9244d86#69ac259b653cc094652a9e73eabd3f4ef9244d86"
 dependencies = [
  "derive_arbitrary",
 ]
@@ -405,8 +405,8 @@ dependencies = [
 
 [[package]]
 name = "derive_arbitrary"
-version = "1.4.1"
-source = "git+https://github.com/evanrelf/arbitrary.git#213069e3190f1201d5510873e5e1ea9893910b8d"
+version = "1.4.2"
+source = "git+https://github.com/rust-fuzz/arbitrary.git?rev=69ac259b653cc094652a9e73eabd3f4ef9244d86#69ac259b653cc094652a9e73eabd3f4ef9244d86"
 dependencies = [
  "proc-macro2",
  "quote",
