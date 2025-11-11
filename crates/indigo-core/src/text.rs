@@ -2,11 +2,17 @@ use crate::{history::History, ot::EditSeq};
 use ropey::Rope;
 use std::ops::Deref;
 
+#[derive(Debug)]
+struct Edit {
+    undo: EditSeq,
+    redo: EditSeq,
+}
+
 #[derive(Debug, Default)]
 pub struct Text {
     rope: Rope,
     original: Option<Rope>,
-    history: History<EditSeq>,
+    history: History<Edit>,
 }
 
 impl Text {
@@ -35,14 +41,18 @@ impl Text {
         if self.original.is_none() {
             self.original = Some(self.rope.clone());
         }
+        let undo = edit.invert(&self.rope)?;
         edit.apply(&mut self.rope)?;
-        self.history.push(edit.clone());
+        self.history.push(Edit {
+            redo: edit.clone(),
+            undo,
+        });
         Ok(())
     }
 
     pub fn undo(&mut self) -> anyhow::Result<bool> {
-        if let Some(edit) = self.history.undo() {
-            edit.invert(&self.rope)?.apply(&mut self.rope)?;
+        if let Some(entry) = self.history.undo() {
+            entry.undo.apply(&mut self.rope)?;
             Ok(true)
         } else {
             Ok(false)
@@ -50,8 +60,8 @@ impl Text {
     }
 
     pub fn redo(&mut self) -> anyhow::Result<bool> {
-        if let Some(edit) = self.history.redo() {
-            edit.apply(&mut self.rope)?;
+        if let Some(entry) = self.history.redo() {
+            entry.redo.apply(&mut self.rope)?;
             Ok(true)
         } else {
             Ok(false)
