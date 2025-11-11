@@ -135,7 +135,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.state.anchor == self.state.head
+        self.state.anchor.char_offset == self.state.head.char_offset
     }
 
     pub fn is_eof(&self) -> bool {
@@ -395,7 +395,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.text.edit(&edits).expect("Edits are well formed");
         self.state.anchor.char_offset = edits.transform_char_offset(self.state.anchor.char_offset);
         self.state.head.char_offset = edits.transform_char_offset(self.state.head.char_offset);
-        debug_assert_eq!(self.state.anchor, self.state.head);
+        debug_assert_eq!(self.state.anchor.char_offset, self.state.head.char_offset);
         self.snap();
         self.update_goal_column();
         Some(edits)
