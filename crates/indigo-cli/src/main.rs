@@ -32,10 +32,6 @@ fn main() -> anyhow::Result<ExitCode> {
         .with_writer(io::stderr)
         .init();
 
-    if !args.keys.0.is_empty() {
-        tracing::debug!(keys = %args.keys);
-    }
-
     let rope = Rope::from_reader(io::BufReader::new(io::stdin()))?;
 
     let mut editor = Editor::from(Buffer::from(rope));
