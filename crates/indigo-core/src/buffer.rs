@@ -1,8 +1,8 @@
 use crate::{
     history::History,
     io::Io,
-    ot::{self, EditSeq},
-    range::{self, Range, RangeMut, RangeState},
+    ot::EditSeq,
+    range::{Range, RangeMut, RangeState},
     rope::RopeExt as _,
     text::Text,
 };
@@ -15,7 +15,7 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Error from range")]
-    Range(#[source] range::Error),
+    Range(#[source] anyhow::Error),
 }
 
 #[derive(Default)]
@@ -76,7 +76,7 @@ impl Buffer {
             .guard()
     }
 
-    pub fn undo(&mut self) -> Result<bool, ot::Error> {
+    pub fn undo(&mut self) -> anyhow::Result<bool> {
         if let Some((edit, range)) = self.history.undo() {
             self.text.edit(edit)?;
             self.range = range.clone();
@@ -86,7 +86,7 @@ impl Buffer {
         }
     }
 
-    pub fn redo(&mut self) -> Result<bool, ot::Error> {
+    pub fn redo(&mut self) -> anyhow::Result<bool> {
         if let Some((edit, range)) = self.history.redo() {
             self.text.edit(edit)?;
             self.range = range.clone();
@@ -106,7 +106,7 @@ impl Buffer {
         self.vertical_scroll = min(line, last_line);
     }
 
-    pub(crate) fn assert_invariants(&self) -> Result<(), Error> {
+    pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
         self.range().assert_invariants().map_err(Error::Range)?;
         Ok(())
     }

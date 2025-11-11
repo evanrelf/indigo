@@ -58,7 +58,7 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     pub fn new(
         text: W::WrapRef<'a, Text>,
         state: W::WrapRef<'a, CursorState>,
-    ) -> Result<Self, Error> {
+    ) -> anyhow::Result<Self> {
         let cursor_view = CursorView {
             text,
             state,
@@ -95,15 +95,15 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         self.state.char_offset == self.text.len_chars()
     }
 
-    pub(crate) fn assert_invariants(&self) -> Result<(), Error> {
+    pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
         if self.state.char_offset > self.text.len_chars() {
-            return Err(Error::ExceedsEof {
+            anyhow::bail!(Error::ExceedsEof {
                 char_offset: self.state.char_offset,
                 eof_offset: self.text.len_chars(),
             });
         }
         if !self.text.is_grapheme_boundary(self.state.char_offset) {
-            return Err(Error::NotOnGraphemeBoundary {
+            anyhow::bail!(Error::NotOnGraphemeBoundary {
                 char_offset: self.state.char_offset,
             });
         }
@@ -283,8 +283,8 @@ impl<R> TryFrom<(R, usize)> for CursorView<'_, WBox>
 where
     R: Into<Text>,
 {
-    type Error = Error;
-    fn try_from((text, char_offset): (R, usize)) -> Result<Self, Self::Error> {
+    type Error = anyhow::Error;
+    fn try_from((text, char_offset): (R, usize)) -> anyhow::Result<Self> {
         let text = Box::new(text.into());
         let state = Box::new(CursorState { char_offset });
         Self::new(text, state)

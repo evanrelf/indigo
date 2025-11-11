@@ -1,5 +1,5 @@
 use crate::{
-    cursor::{self, Cursor, CursorMut, CursorState},
+    cursor::{Cursor, CursorMut, CursorState},
     ot::EditSeq,
     rope::RopeExt as _,
     text::Text,
@@ -18,10 +18,10 @@ pub enum Error {
     ReducedAndBackward { anchor: usize, head: usize },
 
     #[error("Error from anchor")]
-    Anchor(#[source] cursor::Error),
+    Anchor(#[source] anyhow::Error),
 
     #[error("Error from head")]
-    Head(#[source] cursor::Error),
+    Head(#[source] anyhow::Error),
 }
 
 #[derive(Clone, Default)]
@@ -69,7 +69,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     pub fn new(
         text: W::WrapRef<'a, Text>,
         state: W::WrapRef<'a, RangeState>,
-    ) -> Result<Self, Error> {
+    ) -> anyhow::Result<Self> {
         let range_view = RangeView {
             text,
             state,
@@ -150,7 +150,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         !self.is_forward()
     }
 
-    pub(crate) fn assert_invariants(&self) -> Result<(), Error> {
+    pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
         self.anchor().assert_invariants().map_err(Error::Anchor)?;
         self.head().assert_invariants().map_err(Error::Head)?;
         // if self.is_empty() && !self.is_eof() {
@@ -422,8 +422,8 @@ impl<R> TryFrom<(R, usize, usize)> for RangeView<'_, WBox>
 where
     R: Into<Text>,
 {
-    type Error = Error;
-    fn try_from((text, anchor, head): (R, usize, usize)) -> Result<Self, Self::Error> {
+    type Error = anyhow::Error;
+    fn try_from((text, anchor, head): (R, usize, usize)) -> anyhow::Result<Self> {
         let text = Box::new(text.into());
         let head = CursorState { char_offset: head };
         let state = Box::new(RangeState {

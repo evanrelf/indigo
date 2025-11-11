@@ -102,9 +102,9 @@ impl EditSeq {
 
     // TODO
     #[doc(hidden)]
-    pub fn compose(&self, other: &Self) -> Result<Self, Error> {
+    pub fn compose(&self, other: &Self) -> anyhow::Result<Self> {
         if self.target_chars != other.source_chars {
-            return Err(Error::LengthMismatch {
+            anyhow::bail!(Error::LengthMismatch {
                 left: self.target_chars,
                 right: other.source_chars,
             });
@@ -118,9 +118,9 @@ impl EditSeq {
 
     // TODO
     #[doc(hidden)]
-    pub fn transform(&self, other: &Self) -> Result<(Self, Self), Error> {
+    pub fn transform(&self, other: &Self) -> anyhow::Result<(Self, Self)> {
         if self.source_chars != other.source_chars {
-            return Err(Error::LengthMismatch {
+            anyhow::bail!(Error::LengthMismatch {
                 left: self.source_chars,
                 right: other.source_chars,
             });
@@ -157,14 +157,14 @@ impl EditSeq {
         char_offset
     }
 
-    pub fn invert(&self, rope: &Rope) -> Result<Self, Error> {
+    pub fn invert(&self, rope: &Rope) -> anyhow::Result<Self> {
         let length_mismatch = || Error::LengthMismatch {
             left: self.source_chars,
             right: rope.len_chars(),
         };
 
         if self.source_chars != rope.len_chars() {
-            return Err(length_mismatch());
+            anyhow::bail!(length_mismatch());
         }
 
         let mut inverted = Self::with_capacity(self.len());
@@ -188,9 +188,9 @@ impl EditSeq {
         Ok(inverted)
     }
 
-    pub fn apply(&self, rope: &mut Rope) -> Result<(), Error> {
+    pub fn apply(&self, rope: &mut Rope) -> anyhow::Result<()> {
         if self.source_chars != rope.len_chars() {
-            return Err(Error::LengthMismatch {
+            anyhow::bail!(Error::LengthMismatch {
                 left: self.source_chars,
                 right: rope.len_chars(),
             });
@@ -253,7 +253,7 @@ pub enum Edit {
 }
 
 impl Edit {
-    pub fn apply(&self, char_offset: usize, rope: &mut Rope) -> Result<usize, Error> {
+    pub fn apply(&self, char_offset: usize, rope: &mut Rope) -> anyhow::Result<usize> {
         let char_offset = match self {
             Self::Retain(n) => char_offset + n,
             Self::Delete(n) => {
@@ -267,7 +267,7 @@ impl Edit {
         };
 
         if char_offset > rope.len_chars() {
-            return Err(Error::CharOffsetPastEof {
+            anyhow::bail!(Error::CharOffsetPastEof {
                 char_offset,
                 len_chars: rope.len_chars(),
             });

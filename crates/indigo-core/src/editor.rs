@@ -1,5 +1,5 @@
 use crate::{
-    buffer::{self, Buffer},
+    buffer::Buffer,
     io::{Io, NoIo},
     mode::Mode,
 };
@@ -10,7 +10,7 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Error from buffer")]
-    Buffer(#[source] buffer::Error),
+    Buffer(#[source] anyhow::Error),
 }
 
 pub struct Editor {
@@ -30,7 +30,7 @@ impl Editor {
     }
 
     #[expect(dead_code)]
-    pub(crate) fn assert_invariants(&self) -> Result<(), Error> {
+    pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
         self.buffer.assert_invariants().map_err(Error::Buffer)?;
         Ok(())
     }

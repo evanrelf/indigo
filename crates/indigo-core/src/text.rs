@@ -1,4 +1,4 @@
-use crate::ot::{self, EditSeq};
+use crate::ot::EditSeq;
 use ropey::Rope;
 use std::ops::Deref;
 
@@ -30,7 +30,7 @@ impl Text {
         self.original = None;
     }
 
-    pub fn edit(&mut self, edit: &EditSeq) -> Result<(), ot::Error> {
+    pub fn edit(&mut self, edit: &EditSeq) -> anyhow::Result<()> {
         if self.original.is_none() {
             self.original = Some(self.rope.clone());
         }
