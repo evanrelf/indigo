@@ -33,7 +33,7 @@ pub struct RangeState {
 
 impl RangeState {
     pub fn snap(&mut self, text: &Rope) {
-        if self.anchor < self.head {
+        if self.anchor.char_offset < self.head.char_offset {
             self.anchor.char_offset = text.floor_grapheme_boundary(self.anchor.char_offset);
             self.head.char_offset = text.ceil_grapheme_boundary(self.head.char_offset);
         } else {
@@ -101,7 +101,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 
     pub fn start(&self) -> Cursor<'_> {
-        if self.state.anchor <= self.state.head {
+        if self.state.anchor.char_offset <= self.state.head.char_offset {
             self.anchor()
         } else {
             self.head()
@@ -109,7 +109,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 
     pub fn end(&self) -> Cursor<'_> {
-        if self.state.anchor <= self.state.head {
+        if self.state.anchor.char_offset <= self.state.head.char_offset {
             self.head()
         } else {
             self.anchor()
@@ -143,7 +143,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 
     pub fn is_forward(&self) -> bool {
-        self.state.anchor <= self.state.head
+        self.state.anchor.char_offset <= self.state.head.char_offset
     }
 
     pub fn is_backward(&self) -> bool {
@@ -183,7 +183,7 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     fn start_mut(&mut self) -> CursorMut<'_> {
-        if self.state.anchor <= self.state.head {
+        if self.state.anchor.char_offset <= self.state.head.char_offset {
             self.anchor_mut()
         } else {
             self.head_mut()
@@ -191,7 +191,7 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     fn end_mut(&mut self) -> CursorMut<'_> {
-        if self.state.anchor <= self.state.head {
+        if self.state.anchor.char_offset <= self.state.head.char_offset {
             self.head_mut()
         } else {
             self.anchor_mut()

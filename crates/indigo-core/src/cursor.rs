@@ -16,7 +16,7 @@ pub enum Error {
     NotOnGraphemeBoundary { char_offset: usize },
 }
 
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct CursorState {
     /// Gap (offset) in text, counting by Unicode scalar values (`char`s).
     pub char_offset: usize,
