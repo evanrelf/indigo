@@ -1,7 +1,5 @@
 use crate::{
-    history::History,
     io::Io,
-    ot::EditSeq,
     range::{Range, RangeMut, RangeState},
     rope::RopeExt as _,
     text::Text,
@@ -22,8 +20,7 @@ pub enum Error {
 pub struct Buffer {
     pub path: Option<Utf8PathBuf>,
     text: Text,
-    // TODO: Push to history
-    history: History<(EditSeq, RangeState)>,
+    // TODO: Track history of range state
     range: RangeState,
     vertical_scroll: usize,
 }
@@ -77,9 +74,8 @@ impl Buffer {
     }
 
     pub fn undo(&mut self) -> anyhow::Result<bool> {
-        if let Some((edit, range)) = self.history.undo() {
-            self.text.edit(edit)?;
-            self.range = range.clone();
+        if self.text.undo()? {
+            self.range.snap(self.text.rope());
             Ok(true)
         } else {
             Ok(false)
@@ -87,9 +83,8 @@ impl Buffer {
     }
 
     pub fn redo(&mut self) -> anyhow::Result<bool> {
-        if let Some((edit, range)) = self.history.redo() {
-            self.text.edit(edit)?;
-            self.range = range.clone();
+        if self.text.redo()? {
+            self.range.snap(self.text.rope());
             Ok(true)
         } else {
             Ok(false)

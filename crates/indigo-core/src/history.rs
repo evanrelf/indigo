@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct History<T> {
     items: Vec<T>,
     index: usize,

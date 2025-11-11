@@ -1,4 +1,4 @@
-use crate::ot::EditSeq;
+use crate::{history::History, ot::EditSeq};
 use ropey::Rope;
 use std::ops::Deref;
 
@@ -6,6 +6,7 @@ use std::ops::Deref;
 pub struct Text {
     rope: Rope,
     original: Option<Rope>,
+    history: History<EditSeq>,
 }
 
 impl Text {
@@ -35,7 +36,26 @@ impl Text {
             self.original = Some(self.rope.clone());
         }
         edit.apply(&mut self.rope)?;
+        self.history.push(edit.clone());
         Ok(())
+    }
+
+    pub fn undo(&mut self) -> anyhow::Result<bool> {
+        if let Some(edit) = self.history.undo() {
+            edit.invert(&self.rope)?.apply(&mut self.rope)?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    pub fn redo(&mut self) -> anyhow::Result<bool> {
+        if let Some(edit) = self.history.redo() {
+            edit.apply(&mut self.rope)?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 }
 
