@@ -147,7 +147,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         true
     }
 
-    pub fn move_up(&mut self, desired_column: usize) -> bool {
+    pub fn move_up(&mut self, goal_column: usize) -> bool {
         let current_line_index = self.text.char_to_line(self.state.char_offset);
         if current_line_index == 0 {
             return false;
@@ -162,7 +162,7 @@ impl<W: WrapMut> CursorView<'_, W> {
                 break;
             }
             let grapheme_width = grapheme.display_width();
-            if target_line_prefix + grapheme_width > desired_column {
+            if target_line_prefix + grapheme_width > goal_column {
                 break;
             }
             target_line_prefix += grapheme_width;
@@ -172,7 +172,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         true
     }
 
-    pub fn move_down(&mut self, desired_column: usize) -> bool {
+    pub fn move_down(&mut self, goal_column: usize) -> bool {
         let current_line_index = self.text.char_to_line(self.state.char_offset);
         let target_line_index = current_line_index + 1;
         if self.state.char_offset == self.text.len_chars() {
@@ -191,7 +191,7 @@ impl<W: WrapMut> CursorView<'_, W> {
                 break;
             }
             let grapheme_width = grapheme.display_width();
-            if target_line_prefix + grapheme_width > desired_column {
+            if target_line_prefix + grapheme_width > goal_column {
                 break;
             }
             target_line_prefix += grapheme_width;
@@ -387,17 +387,17 @@ mod tests {
         assert_eq!(cursor.column(), 6);
 
         cursor.move_up(cursor.column());
-        // At second newline on line 1, which is shorter than the desired column.
+        // At second newline on line 1, which is shorter than the goal column.
         assert_eq!(cursor.grapheme(), Some(Rope::from("\n").slice(..)));
         assert_eq!(cursor.char_offset(), 5);
-        // Desired column should remain the same through vertical movement.
+        // Goal column should remain the same through vertical movement.
         assert_eq!(cursor.column(), 3);
 
         cursor.move_left(1);
         // At "4" on line 1.
         assert_eq!(cursor.grapheme(), Some(Rope::from("4").slice(..)));
         assert_eq!(cursor.char_offset(), 4);
-        // Desired column should change through horizontal movement.
+        // Goal column should change through horizontal movement.
         assert_eq!(cursor.column(), 2);
     }
 

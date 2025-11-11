@@ -28,7 +28,7 @@ pub enum Error {
 pub struct RangeState {
     pub anchor: CursorState,
     pub head: CursorState,
-    pub desired_column: usize,
+    pub goal_column: usize,
 }
 
 impl RangeState {
@@ -116,8 +116,8 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         }
     }
 
-    pub fn desired_column(&self) -> usize {
-        self.state.desired_column
+    pub fn goal_column(&self) -> usize {
+        self.state.goal_column
     }
 
     pub fn char_length(&self) -> usize {
@@ -203,8 +203,8 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     // Should be called after performing any horizontal movement.
-    pub fn update_desired_column(&mut self) {
-        self.state.desired_column = self.state.head.column(&self.text);
+    pub fn update_goal_column(&mut self) {
+        self.state.goal_column = self.state.head.column(&self.text);
     }
 
     pub fn extend_to(&mut self, char_offset: usize) {
@@ -212,32 +212,32 @@ impl<W: WrapMut> RangeView<'_, W> {
         if self.is_forward() {
             self.head_mut().move_right(1);
         }
-        self.update_desired_column();
+        self.update_goal_column();
     }
 
     pub fn extend_left(&mut self, count: usize) {
         self.head_mut().move_left(count);
-        self.update_desired_column();
+        self.update_goal_column();
     }
 
     pub fn extend_right(&mut self, count: usize) {
         self.head_mut().move_right(count);
-        self.update_desired_column();
+        self.update_goal_column();
     }
 
     pub fn extend_up(&mut self, count: usize) {
-        let desired_column = self.state.desired_column;
+        let goal_column = self.state.goal_column;
         for _ in 0..count {
-            if !self.head_mut().move_up(desired_column) {
+            if !self.head_mut().move_up(goal_column) {
                 break;
             }
         }
     }
 
     pub fn extend_down(&mut self, count: usize) {
-        let desired_column = self.state.desired_column;
+        let goal_column = self.state.goal_column;
         for _ in 0..count {
-            if !self.head_mut().move_down(desired_column) {
+            if !self.head_mut().move_down(goal_column) {
                 break;
             }
         }
@@ -245,18 +245,18 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_until_prev_byte(&mut self, byte: u8) {
         self.head_mut().move_to_prev_byte(byte);
-        self.update_desired_column();
+        self.update_goal_column();
     }
 
     pub fn extend_until_next_byte(&mut self, byte: u8) {
         self.head_mut().move_to_next_byte(byte);
-        self.update_desired_column();
+        self.update_goal_column();
     }
 
     pub fn move_until_prev_byte(&mut self, byte: u8) {
         self.reduce();
         self.head_mut().move_to_prev_byte(byte);
-        self.update_desired_column();
+        self.update_goal_column();
     }
 
     pub fn move_onto_prev_byte(&mut self, byte: u8) {
@@ -264,13 +264,13 @@ impl<W: WrapMut> RangeView<'_, W> {
         if self.head_mut().move_to_prev_byte(byte) {
             self.extend_left(1);
         }
-        self.update_desired_column();
+        self.update_goal_column();
     }
 
     pub fn move_until_next_byte(&mut self, byte: u8) {
         self.reduce();
         self.head_mut().move_to_next_byte(byte);
-        self.update_desired_column();
+        self.update_goal_column();
     }
 
     pub fn move_onto_next_byte(&mut self, byte: u8) {
@@ -278,27 +278,27 @@ impl<W: WrapMut> RangeView<'_, W> {
         if self.head_mut().move_to_next_byte(byte) {
             self.extend_right(1);
         }
-        self.update_desired_column();
+        self.update_goal_column();
     }
 
     pub fn extend_onto_prev_byte(&mut self, byte: u8) {
         if self.head_mut().move_to_prev_byte(byte) && self.is_backward() {
             self.extend_left(1);
         }
-        self.update_desired_column();
+        self.update_goal_column();
     }
 
     pub fn extend_onto_next_byte(&mut self, byte: u8) {
         if self.head_mut().move_to_next_byte(byte) && self.is_forward() {
             self.extend_right(1);
         }
-        self.update_desired_column();
+        self.update_goal_column();
     }
 
     pub fn move_to(&mut self, char_offset: usize) {
         self.extend_to(char_offset);
         self.reduce();
-        self.update_desired_column();
+        self.update_goal_column();
     }
 
     pub fn move_left(&mut self, count: usize) {
@@ -364,7 +364,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
         self.snap();
-        self.update_desired_column();
+        self.update_goal_column();
         edits
     }
 
@@ -380,7 +380,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
         self.snap();
-        self.update_desired_column();
+        self.update_goal_column();
         Some(edits)
     }
 
@@ -397,7 +397,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.head.char_offset = edits.transform_char_offset(self.state.head.char_offset);
         debug_assert_eq!(self.state.anchor, self.state.head);
         self.snap();
-        self.update_desired_column();
+        self.update_goal_column();
         Some(edits)
     }
 
@@ -413,7 +413,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
         self.snap();
-        self.update_desired_column();
+        self.update_goal_column();
         Some(edits)
     }
 }
@@ -430,7 +430,7 @@ where
             anchor: CursorState {
                 char_offset: anchor,
             },
-            desired_column: head.column(&text),
+            goal_column: head.column(&text),
             head,
         });
         Self::new(text, state)
