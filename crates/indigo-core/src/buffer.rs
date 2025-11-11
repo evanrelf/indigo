@@ -21,7 +21,6 @@ pub enum Error {
 #[derive(Default)]
 pub struct Buffer {
     pub path: Option<Utf8PathBuf>,
-    pub modified: bool,
     text: Text,
     // TODO: Push to history
     history: History<(EditSeq, RangeState)>,
@@ -56,7 +55,7 @@ impl Buffer {
             let mut bytes = Vec::with_capacity(self.text.len_bytes());
             self.text.write_to(&mut bytes)?;
             io.write_file(path, &bytes)?;
-            self.modified = false;
+            self.text.set_unmodified();
         }
         Ok(())
     }

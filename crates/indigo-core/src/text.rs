@@ -5,6 +5,7 @@ use std::ops::Deref;
 #[derive(Debug, Default)]
 pub struct Text {
     rope: Rope,
+    original: Option<Rope>,
 }
 
 impl Text {
@@ -18,7 +19,21 @@ impl Text {
         &self.rope
     }
 
+    #[must_use]
+    pub fn is_modified(&self) -> bool {
+        self.original
+            .as_ref()
+            .is_some_and(|original| self.rope != *original)
+    }
+
+    pub fn set_unmodified(&mut self) {
+        self.original = None;
+    }
+
     pub fn edit(&mut self, edit: &EditSeq) -> Result<(), ot::Error> {
+        if self.original.is_none() {
+            self.original = Some(self.rope.clone());
+        }
         edit.apply(&mut self.rope)?;
         Ok(())
     }
@@ -35,12 +50,18 @@ impl Deref for Text {
 impl<'a> From<&'a str> for Text {
     fn from(str: &'a str) -> Self {
         let rope = Rope::from(str);
-        Self { rope }
+        Self {
+            rope,
+            ..Self::default()
+        }
     }
 }
 
 impl From<Rope> for Text {
     fn from(rope: Rope) -> Self {
-        Self { rope }
+        Self {
+            rope,
+            ..Self::default()
+        }
     }
 }

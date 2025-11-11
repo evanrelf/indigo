@@ -310,7 +310,7 @@ pub fn run_command(editor: &mut Editor) -> anyhow::Result<()> {
             }
         }
         Command::Quit { exit_code } => {
-            if editor.buffer.modified {
+            if editor.buffer.text().is_modified() {
                 editor.message = Some(Err(String::from("Unsaved changes")));
             } else {
                 editor.exit = if let Some(exit_code) = exit_code {
