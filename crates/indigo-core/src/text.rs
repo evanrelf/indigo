@@ -2,7 +2,7 @@ use crate::ot::{self, EditSeq};
 use ropey::Rope;
 use std::ops::Deref;
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default)]
 pub struct Text {
     rope: Rope,
 }

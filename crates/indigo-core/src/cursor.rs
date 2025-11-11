@@ -333,12 +333,12 @@ mod tests {
         cursor.assert_invariants().unwrap();
 
         cursor.insert("hello");
-        assert_eq!(*cursor.text, Text::from("hello"));
+        assert_eq!(**cursor.text, "hello");
         assert_eq!(cursor.char_offset(), 5);
 
         cursor.delete_before();
         cursor.delete_before();
-        assert_eq!(*cursor.text, Text::from("hel"));
+        assert_eq!(**cursor.text, "hel");
         assert_eq!(cursor.char_offset(), 3);
 
         cursor.move_left(2);
@@ -346,7 +346,7 @@ mod tests {
 
         cursor.delete_after();
         assert_eq!(cursor.char_offset(), 1);
-        assert_eq!(*cursor.text, Text::from("hl"));
+        assert_eq!(**cursor.text, "hl");
 
         cursor.move_right(1);
         assert_eq!(cursor.char_offset(), 2);
@@ -354,16 +354,16 @@ mod tests {
         assert_eq!(cursor.char_offset(), 2);
 
         cursor.delete_after();
-        assert_eq!(*cursor.text, Text::from("hl"));
+        assert_eq!(**cursor.text, "hl");
         assert_eq!(cursor.char_offset(), 2);
 
         cursor.delete_before();
         cursor.delete_before();
-        assert_eq!(*cursor.text, Text::from(""));
+        assert_eq!(**cursor.text, "");
         assert_eq!(cursor.char_offset(), 0);
 
         cursor.delete_before();
-        assert_eq!(*cursor.text, Text::from(""));
+        assert_eq!(**cursor.text, "");
         assert_eq!(cursor.char_offset(), 0);
     }
 
