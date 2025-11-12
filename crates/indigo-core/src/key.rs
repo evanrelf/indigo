@@ -88,9 +88,9 @@ impl Key {
         if !self.modifiers.contains(KeyModifier::Shift) {
             return;
         }
-        if let KeyCode::Char(mut c @ ('a'..='z' | 'A'..='Z')) = self.code {
+        if let KeyCode::Char(c @ ('a'..='z' | 'A'..='Z')) = self.code {
             self.modifiers -= KeyModifier::Shift;
-            c.make_ascii_uppercase();
+            self.code = KeyCode::Char(c.to_ascii_uppercase());
         }
     }
 }
