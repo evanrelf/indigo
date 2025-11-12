@@ -39,6 +39,11 @@ impl EditSeq {
         }
     }
 
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.edits.is_empty()
+    }
+
     pub fn retain(&mut self, char_length: usize) {
         if char_length == 0 {
             return;
