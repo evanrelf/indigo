@@ -1,0 +1,103 @@
+# Keys checklist
+
+Rough list of keys I'd like to implement. Most will have the same behavior as
+Kakoune, but not all (e.g. `q` is the backward word key, not `b`).
+
+## Insert mode
+
+- [x] Characters
+- [x] `<bs>`
+- [x] `<del>`
+- [x] `<ret>`
+- [x] `<tab>`
+- [x] `<c-u>`
+- [x] `<c-d>`
+- [x] `<c-b>`
+- [x] `<c-f>`
+- [x] `<esc>`
+
+## Normal mode
+
+- [x] `h`
+- [x] `j`
+- [x] `k`
+- [x] `l`
+- [x] `H`
+- [x] `J`
+- [x] `K`
+- [x] `L`
+- [ ] `q`
+- [ ] `Q`
+- [ ] `<a-q>`
+- [ ] `<a-Q>`
+- [ ] `w`
+- [ ] `W`
+- [ ] `<a-w>`
+- [ ] `<a-W>`
+- [ ] `e`
+- [ ] `E`
+- [ ] `<a-e>`
+- [ ] `<a-E>`
+- [x] `f`
+- [x] `F`
+- [x] `<a-f>`
+- [x] `<a-F>`
+- [x] `t`
+- [x] `T`
+- [x] `<a-t>`
+- [x] `<a-T>`
+- [x] `i`
+- [ ] `I`
+- [x] `a`
+- [ ] `A`
+- [x] `d`
+- [ ] `<a-d>`
+- [ ] `c`
+- [ ] `<a-c>`
+- [ ] `y`
+- [ ] `p`
+- [ ] `P`
+- [ ] `<a-p>`
+- [ ] `<a-P>`
+- [ ] `r`
+- [ ] `R`
+- [ ] `<a-R>`
+- [ ] `o`
+- [ ] `O`
+- [ ] `<a-o>`
+- [ ] `<a-O>`
+- [ ] `<a-j>`
+- [ ] `.`
+- [ ] `m`
+- [ ] `>`
+- [ ] `<`
+- [ ] `u`
+- [ ] `U`
+- [ ] `<a-u>`
+- [ ] `<a-U>`
+- [ ] `x`
+- [ ] `X`
+- [ ] `%`
+- [x] `<c-u>`
+- [x] `<c-d>`
+- [x] `<c-b>`
+- [x] `<c-f>`
+- [ ] `g`
+- [x] `;`
+- [x] `<a-;>`
+- [ ] `<a-s-;>` / `<a-:>`
+- [x] `:`
+- [x] `<esc>`
+
+## Goto Mode
+
+- [ ] `j`
+- [ ] `J`
+- [ ] `k`
+- [ ] `K`
+- [ ] `h`
+- [ ] `H`
+- [ ] `l`
+- [ ] `L`
+- [ ] `i`
+- [ ] `I`
