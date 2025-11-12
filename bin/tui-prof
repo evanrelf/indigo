@@ -4,24 +4,12 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 run_samply() {
-  cargo build \
-    --profile profile \
-    --package indigo-tui
-
-  samply record -- ./target/profile/indigo-tui \
-    --stats \
-    --log-filter debug \
-    "$@"
+  cargo build --profile profile --bin indigo-tui
+  samply record -- ./target/profile/indigo-tui --stats --log-filter debug "$@"
 }
 
 run() {
-  cargo run \
-    --profile profile \
-    --package indigo-tui \
-    -- \
-      --stats \
-      --log-filter debug \
-      "$@"
+  cargo run --profile profile --bin indigo-tui -- --stats --log-filter debug "$@"
 }
 
 # run_samply "$@"
