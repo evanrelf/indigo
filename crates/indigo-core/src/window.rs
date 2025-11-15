@@ -1,3 +1,4 @@
+use crate::buffer::Buffer;
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 
 #[derive(Default)]
@@ -7,6 +8,7 @@ pub struct WindowState {
 
 #[must_use]
 pub struct WindowView<'a, W: Wrap> {
+    buffer: W::Wrap<'a, Buffer>,
     state: W::Wrap<'a, WindowState>,
 }
 
@@ -15,8 +17,8 @@ pub type Window<'a> = WindowView<'a, WRef>;
 pub type WindowMut<'a> = WindowView<'a, WMut>;
 
 impl<'a, W: WrapRef> WindowView<'a, W> {
-    pub fn new(state: W::WrapRef<'a, WindowState>) -> Self {
-        WindowView { state }
+    pub fn new(buffer: W::WrapRef<'a, Buffer>, state: W::WrapRef<'a, WindowState>) -> Self {
+        WindowView { buffer, state }
     }
 
     #[must_use]

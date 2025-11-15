@@ -31,11 +31,11 @@ impl Editor {
     }
 
     pub fn window(&self) -> Window<'_> {
-        Window::new(&self.window)
+        Window::new(&self.buffer, &self.window)
     }
 
     pub fn window_mut(&mut self) -> WindowMut<'_> {
-        WindowMut::new(&mut self.window)
+        WindowMut::new(&mut self.buffer, &mut self.window)
     }
 
     #[expect(dead_code)]
