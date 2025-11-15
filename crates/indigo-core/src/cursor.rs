@@ -47,7 +47,7 @@ pub struct CursorView<'a, W: Wrap + WrapRef> {
     text: W::Wrap<'a, Text>,
     state: W::Wrap<'a, CursorState>,
     #[expect(clippy::type_complexity)]
-    on_drop: Option<Box<dyn FnMut(&mut Self) + 'a>>,
+    on_drop: Option<Box<dyn FnOnce(&mut Self) + 'a>>,
 }
 
 pub type Cursor<'a> = CursorView<'a, WRef>;
@@ -68,7 +68,7 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         Ok(cursor_view)
     }
 
-    pub fn on_drop(mut self, f: impl FnMut(&mut Self) + 'a) -> Self {
+    pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
         self.on_drop = Some(Box::new(f));
         self
     }
@@ -302,7 +302,7 @@ where
 impl<W: WrapRef> Drop for CursorView<'_, W> {
     fn drop(&mut self) {
         if !thread::panicking()
-            && let Some(f) = &mut self.on_drop.take()
+            && let Some(f) = self.on_drop.take()
         {
             f(self);
         }

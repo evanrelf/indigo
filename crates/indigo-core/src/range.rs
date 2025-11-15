@@ -58,7 +58,7 @@ pub struct RangeView<'a, W: Wrap + WrapRef> {
     text: W::Wrap<'a, Text>,
     state: W::Wrap<'a, RangeState>,
     #[expect(clippy::type_complexity)]
-    on_drop: Option<Box<dyn FnMut(&mut Self) + 'a>>,
+    on_drop: Option<Box<dyn FnOnce(&mut Self) + 'a>>,
 }
 
 pub type Range<'a> = RangeView<'a, WRef>;
@@ -79,7 +79,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         Ok(range_view)
     }
 
-    pub fn on_drop(mut self, f: impl FnMut(&mut Self) + 'a) -> Self {
+    pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
         self.on_drop = Some(Box::new(f));
         self
     }
@@ -448,7 +448,7 @@ where
 impl<W: WrapRef> Drop for RangeView<'_, W> {
     fn drop(&mut self) {
         if !thread::panicking()
-            && let Some(f) = &mut self.on_drop.take()
+            && let Some(f) = self.on_drop.take()
         {
             f(self);
         }
