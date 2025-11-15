@@ -57,8 +57,8 @@ impl RangeState {
 pub struct RangeView<'a, W: Wrap + WrapRef> {
     text: W::Wrap<'a, Text>,
     state: W::Wrap<'a, RangeState>,
-    /// Whether to assert invariants hold on drop.
-    guard: bool,
+    #[expect(clippy::type_complexity)]
+    on_drop: Option<Box<dyn FnMut(&mut Self) + 'a>>,
 }
 
 pub type Range<'a> = RangeView<'a, WRef>;
@@ -73,14 +73,14 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         let range_view = RangeView {
             text,
             state,
-            guard: false,
+            on_drop: None,
         };
         range_view.assert_invariants()?;
         Ok(range_view)
     }
 
-    pub fn guard(mut self) -> Self {
-        self.guard = true;
+    pub fn on_drop(mut self, f: impl FnMut(&mut Self) + 'a) -> Self {
+        self.on_drop = Some(Box::new(f));
         self
     }
 
@@ -173,13 +173,13 @@ impl<W: WrapMut> RangeView<'_, W> {
     fn anchor_mut(&mut self) -> CursorMut<'_> {
         CursorMut::new(&mut self.text, &mut self.state.anchor)
             .expect("Range text and anchor cursor state are always kept valid")
-            .guard()
+            .on_drop(|cursor| cursor.assert_invariants().unwrap())
     }
 
     fn head_mut(&mut self) -> CursorMut<'_> {
         CursorMut::new(&mut self.text, &mut self.state.head)
             .expect("Range text and head cursor state are always kept valid")
-            .guard()
+            .on_drop(|cursor| cursor.assert_invariants().unwrap())
     }
 
     fn start_mut(&mut self) -> CursorMut<'_> {
@@ -439,8 +439,10 @@ where
 
 impl<W: WrapRef> Drop for RangeView<'_, W> {
     fn drop(&mut self) {
-        if self.guard && !thread::panicking() {
-            self.assert_invariants().unwrap();
+        if !thread::panicking()
+            && let Some(f) = &mut self.on_drop.take()
+        {
+            f(self);
         }
     }
 }

@@ -70,7 +70,7 @@ impl Buffer {
     pub fn range_mut(&mut self) -> RangeMut<'_> {
         RangeMut::new(&mut self.text, &mut self.range)
             .expect("Buffer text and range state are always kept valid")
-            .guard()
+            .on_drop(|range| range.assert_invariants().unwrap())
     }
 
     pub fn commit(&mut self) {

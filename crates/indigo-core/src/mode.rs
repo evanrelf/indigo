@@ -88,6 +88,6 @@ impl CommandMode {
     pub fn cursor_mut(&mut self) -> CursorMut<'_> {
         CursorMut::new(&mut self.text, &mut self.cursor)
             .expect("Command mode text and cursor state are always kept valid")
-            .guard()
+            .on_drop(|cursor| cursor.assert_invariants().unwrap())
     }
 }

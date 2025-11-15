@@ -46,8 +46,8 @@ impl CursorState {
 pub struct CursorView<'a, W: Wrap + WrapRef> {
     text: W::Wrap<'a, Text>,
     state: W::Wrap<'a, CursorState>,
-    /// Whether to assert invariants hold on drop.
-    guard: bool,
+    #[expect(clippy::type_complexity)]
+    on_drop: Option<Box<dyn FnMut(&mut Self) + 'a>>,
 }
 
 pub type Cursor<'a> = CursorView<'a, WRef>;
@@ -62,14 +62,14 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         let cursor_view = CursorView {
             text,
             state,
-            guard: false,
+            on_drop: None,
         };
         cursor_view.assert_invariants()?;
         Ok(cursor_view)
     }
 
-    pub fn guard(mut self) -> Self {
-        self.guard = true;
+    pub fn on_drop(mut self, f: impl FnMut(&mut Self) + 'a) -> Self {
+        self.on_drop = Some(Box::new(f));
         self
     }
 
@@ -293,8 +293,10 @@ where
 
 impl<W: WrapRef> Drop for CursorView<'_, W> {
     fn drop(&mut self) {
-        if self.guard && !thread::panicking() {
-            self.assert_invariants().unwrap();
+        if !thread::panicking()
+            && let Some(f) = &mut self.on_drop.take()
+        {
+            f(self);
         }
     }
 }
