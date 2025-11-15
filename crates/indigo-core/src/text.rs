@@ -1,4 +1,4 @@
-use crate::{history2::History, ot::EditSeq};
+use crate::{history::History, ot::EditSeq};
 use ropey::Rope;
 use std::ops::Deref;
 
