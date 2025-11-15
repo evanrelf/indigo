@@ -310,7 +310,7 @@ pub fn run_command(editor: &mut Editor) -> anyhow::Result<()> {
             }
         }
         Command::Write => {
-            if editor.buffer.save(&mut editor.io).is_err() {
+            if editor.buffer.save(&mut editor.fs).is_err() {
                 editor.message = Some(Err(String::from("Failed to save")));
             }
         }
@@ -333,7 +333,7 @@ pub fn run_command(editor: &mut Editor) -> anyhow::Result<()> {
             };
         }
         Command::WriteQuit { exit_code } => {
-            if editor.buffer.save(&mut editor.io).is_ok() {
+            if editor.buffer.save(&mut editor.fs).is_ok() {
                 editor.exit = if let Some(exit_code) = exit_code {
                     Some(ExitCode::from(exit_code))
                 } else {

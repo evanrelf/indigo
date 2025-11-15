@@ -1,10 +1,10 @@
 use camino::Utf8Path;
-use indigo_core::io::Io;
+use indigo_core::fs::Fs;
 use std::fs;
 
-pub struct TuiIo;
+pub struct TuiFs;
 
-impl Io for TuiIo {
+impl Fs for TuiFs {
     fn read_file(&mut self, path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
         Ok(fs::read(path)?)
     }

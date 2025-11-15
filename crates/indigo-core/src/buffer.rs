@@ -1,5 +1,5 @@
 use crate::{
-    io::Io,
+    fs::Fs,
     range::{Range, RangeMut, RangeState},
     text::Text,
 };
@@ -28,12 +28,12 @@ impl Buffer {
         Self::default()
     }
 
-    pub fn open<I: Io>(io: &mut I, path: impl AsRef<Utf8Path>) -> anyhow::Result<Self> {
+    pub fn open<F: Fs>(fs: &mut F, path: impl AsRef<Utf8Path>) -> anyhow::Result<Self> {
         let path = path.as_ref();
         // TODO: Canonicalize path.
-        let exists = io.file_exists(path)?;
+        let exists = fs.file_exists(path)?;
         let rope = if exists {
-            let bytes = io.read_file(path)?;
+            let bytes = fs.read_file(path)?;
             let string = str::from_utf8(&bytes)?;
             Rope::from(string)
         } else {
@@ -44,11 +44,11 @@ impl Buffer {
         Ok(buffer)
     }
 
-    pub fn save<I: Io>(&mut self, io: &mut I) -> anyhow::Result<()> {
+    pub fn save<F: Fs>(&mut self, fs: &mut F) -> anyhow::Result<()> {
         if let Some(path) = &self.path {
             let mut bytes = Vec::with_capacity(self.text.len_bytes());
             self.text.write_to(&mut bytes)?;
-            io.write_file(path, &bytes)?;
+            fs.write_file(path, &bytes)?;
             self.text.set_unmodified();
         }
         Ok(())
@@ -124,17 +124,17 @@ impl From<Text> for Buffer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::io::TestIo;
+    use crate::fs::TestFs;
 
     #[test]
-    fn io() -> anyhow::Result<()> {
-        let mut io = TestIo::default();
-        io.write_file("main.rs".into(), b"fn main() {}")?;
-        let mut buffer = Buffer::open(&mut io, "main.rs")?;
+    fn fs() -> anyhow::Result<()> {
+        let mut fs = TestFs::default();
+        fs.write_file("main.rs".into(), b"fn main() {}")?;
+        let mut buffer = Buffer::open(&mut fs, "main.rs")?;
         assert_eq!(&buffer.text.to_string(), "fn main() {}");
         buffer.path = Some(Utf8PathBuf::from("main2.rs"));
-        buffer.save(&mut io)?;
-        assert_eq!(io.read_file("main2.rs".into())?, b"fn main() {}");
+        buffer.save(&mut fs)?;
+        assert_eq!(fs.read_file("main2.rs".into())?, b"fn main() {}");
         Ok(())
     }
 }

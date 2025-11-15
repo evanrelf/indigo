@@ -1,6 +1,6 @@
 use crate::{
     buffer::Buffer,
-    io::{Io, NoIo},
+    fs::{Fs, NoFs},
     mode::Mode,
     window::{Window, WindowMut, WindowState},
 };
@@ -15,7 +15,7 @@ pub enum Error {
 }
 
 pub struct Editor {
-    pub io: Box<dyn Io>,
+    pub fs: Box<dyn Fs>,
     pub buffer: Buffer,
     window: WindowState,
     pub mode: Mode,
@@ -48,7 +48,7 @@ impl Editor {
 impl Default for Editor {
     fn default() -> Self {
         Self {
-            io: Box::new(NoIo),
+            fs: Box::new(NoFs),
             buffer: Buffer::default(),
             window: WindowState::default(),
             mode: Mode::default(),
