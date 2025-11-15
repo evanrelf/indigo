@@ -82,6 +82,32 @@ where
     }
 }
 
+#[derive(Debug, Default, PartialEq)]
+pub struct First<T>(pub Option<T>);
+
+impl<T> Extend<T> for First<T> {
+    fn extend<I>(&mut self, iter: I)
+    where
+        I: IntoIterator<Item = T>,
+    {
+        if self.0.is_none() {
+            self.0 = iter.into_iter().next();
+        }
+    }
+}
+
+#[derive(Debug, Default, PartialEq)]
+pub struct Last<T>(pub Option<T>);
+
+impl<T> Extend<T> for Last<T> {
+    fn extend<I>(&mut self, iter: I)
+    where
+        I: IntoIterator<Item = T>,
+    {
+        self.0 = iter.into_iter().last();
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -178,16 +204,19 @@ mod tests {
         assert_eq!(history.undo(), Some(&Sum(3)));
     }
 
-    #[derive(Debug, Default, PartialEq)]
-    struct Last<T>(Option<T>);
-
-    impl<T> Extend<T> for Last<T> {
-        fn extend<I>(&mut self, iter: I)
-        where
-            I: IntoIterator<Item = T>,
-        {
-            self.0 = iter.into_iter().last();
-        }
+    #[test]
+    fn custom_transaction_type_first() {
+        let mut history: History<u8, First<u8>> = History::new();
+        history.push(1);
+        history.push(2);
+        history.push(3);
+        history.commit();
+        history.push(4);
+        history.push(5);
+        history.push(6);
+        history.commit();
+        assert_eq!(history.undo(), Some(&First(Some(4))));
+        assert_eq!(history.undo(), Some(&First(Some(1))));
     }
 
     #[test]
