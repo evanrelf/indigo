@@ -85,6 +85,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ops::AddAssign;
 
     #[test]
     fn undo_returns_undone() {
@@ -143,5 +144,64 @@ mod tests {
         history.push(2);
         // Movement -> commit.
         assert_eq!(history.undo(), Some(&vec![2]));
+    }
+
+    #[derive(Debug, Default, PartialEq)]
+    struct Sum<T>(T);
+
+    impl<T> Extend<T> for Sum<T>
+    where
+        T: AddAssign,
+    {
+        fn extend<I>(&mut self, ns: I)
+        where
+            I: IntoIterator<Item = T>,
+        {
+            for n in ns {
+                self.0 += n;
+            }
+        }
+    }
+
+    #[test]
+    fn custom_transaction_type_sum() {
+        let mut history: History<u8, Sum<u8>> = History::new();
+        history.push(1);
+        history.push(1);
+        history.push(1);
+        history.commit();
+        history.push(2);
+        history.push(2);
+        history.push(2);
+        history.commit();
+        assert_eq!(history.undo(), Some(&Sum(6)));
+        assert_eq!(history.undo(), Some(&Sum(3)));
+    }
+
+    #[derive(Debug, Default, PartialEq)]
+    struct Last<T>(Option<T>);
+
+    impl<T> Extend<T> for Last<T> {
+        fn extend<I>(&mut self, iter: I)
+        where
+            I: IntoIterator<Item = T>,
+        {
+            self.0 = iter.into_iter().last();
+        }
+    }
+
+    #[test]
+    fn custom_transaction_type_last() {
+        let mut history: History<u8, Last<u8>> = History::new();
+        history.push(1);
+        history.push(2);
+        history.push(3);
+        history.commit();
+        history.push(4);
+        history.push(5);
+        history.push(6);
+        history.commit();
+        assert_eq!(history.undo(), Some(&Last(Some(6))));
+        assert_eq!(history.undo(), Some(&Last(Some(3))));
     }
 }
