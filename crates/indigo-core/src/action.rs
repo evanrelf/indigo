@@ -137,39 +137,43 @@ pub fn reduce(editor: &mut Editor) {
 }
 
 pub fn scroll_up(editor: &mut Editor) {
-    let line = editor.buffer.vertical_scroll().saturating_sub(3);
-    editor.buffer.scroll_to(line);
+    let mut window = editor.window_mut();
+    let line = window.vertical_scroll().saturating_sub(3);
+    window.scroll_to(line);
 }
 
 pub fn scroll_down(editor: &mut Editor) {
-    let line = editor.buffer.vertical_scroll() + 3;
-    editor.buffer.scroll_to(line);
+    let mut window = editor.window_mut();
+    let line = window.vertical_scroll() + 3;
+    window.scroll_to(line);
 }
 
 pub fn scroll_half_page_up(editor: &mut Editor) {
-    let line = editor
-        .buffer
+    let mut window = editor.window_mut();
+    let line = window
         .vertical_scroll()
-        .saturating_sub(usize::from(editor.window().height()) / 2);
-    editor.buffer.scroll_to(line);
+        .saturating_sub(usize::from(window.height()) / 2);
+    window.scroll_to(line);
 }
 
 pub fn scroll_half_page_down(editor: &mut Editor) {
-    let line = editor.buffer.vertical_scroll() + usize::from(editor.window().height()) / 2;
-    editor.buffer.scroll_to(line);
+    let mut window = editor.window_mut();
+    let line = window.vertical_scroll() + usize::from(window.height()) / 2;
+    window.scroll_to(line);
 }
 
 pub fn scroll_full_page_up(editor: &mut Editor) {
-    let line = editor
-        .buffer
+    let mut window = editor.window_mut();
+    let line = window
         .vertical_scroll()
-        .saturating_sub(usize::from(editor.window().height()));
-    editor.buffer.scroll_to(line);
+        .saturating_sub(usize::from(window.height()));
+    window.scroll_to(line);
 }
 
 pub fn scroll_full_page_down(editor: &mut Editor) {
-    let line = editor.buffer.vertical_scroll() + usize::from(editor.window().height());
-    editor.buffer.scroll_to(line);
+    let mut window = editor.window_mut();
+    let line = window.vertical_scroll() + usize::from(window.height());
+    window.scroll_to(line);
 }
 
 pub fn insert_char(editor: &mut Editor, char: char) {

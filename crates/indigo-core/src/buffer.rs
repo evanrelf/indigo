@@ -1,13 +1,11 @@
 use crate::{
     io::Io,
     range::{Range, RangeMut, RangeState},
-    rope::RopeExt as _,
     text::Text,
 };
 use camino::Utf8Path;
 use camino::Utf8PathBuf;
 use ropey::Rope;
-use std::cmp::min;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -22,7 +20,6 @@ pub struct Buffer {
     text: Text,
     // TODO: Track history of range state
     range: RangeState,
-    vertical_scroll: usize,
 }
 
 impl Buffer {
@@ -93,16 +90,6 @@ impl Buffer {
         } else {
             Ok(false)
         }
-    }
-
-    #[must_use]
-    pub fn vertical_scroll(&self) -> usize {
-        self.vertical_scroll
-    }
-
-    pub fn scroll_to(&mut self, line: usize) {
-        let last_line = self.text().len_lines_indigo().saturating_sub(1);
-        self.vertical_scroll = min(line, last_line);
     }
 
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {

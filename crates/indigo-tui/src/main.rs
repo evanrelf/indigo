@@ -302,12 +302,14 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
 }
 
 fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let buffer = &editor.buffer;
+    let window = editor.window();
+
+    let buffer = window.buffer();
 
     let total_lines = buffer.text().len_lines_indigo();
 
     for (i, row) in area.rows().enumerate() {
-        let line_number = i + buffer.vertical_scroll() + 1;
+        let line_number = i + window.vertical_scroll() + 1;
 
         if line_number > total_lines {
             break;
@@ -320,12 +322,14 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_tildes(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let buffer = &editor.buffer;
+    let window = editor.window();
+
+    let buffer = window.buffer();
 
     let total_lines = buffer.text().len_lines_indigo();
 
     for (i, row) in area.rows().enumerate() {
-        let line_number = i + buffer.vertical_scroll() + 1;
+        let line_number = i + window.vertical_scroll() + 1;
 
         if line_number <= total_lines {
             continue;
@@ -336,9 +340,11 @@ fn render_tildes(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let buffer = &editor.buffer;
+    let window = editor.window();
 
-    let lines = buffer.text().lines_at(buffer.vertical_scroll());
+    let buffer = window.buffer();
+
+    let lines = buffer.text().lines_at(window.vertical_scroll());
 
     let rows = area.rows();
 
@@ -371,13 +377,15 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let buffer = &editor.buffer;
+    let window = editor.window();
+
+    let buffer = window.buffer();
 
     let rope = buffer.text();
 
     let range = buffer.range();
 
-    let vertical_scroll = buffer.vertical_scroll();
+    let vertical_scroll = window.vertical_scroll();
 
     let start_line = rope.char_to_line(range.start().char_offset());
 

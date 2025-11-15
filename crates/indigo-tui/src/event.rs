@@ -97,7 +97,7 @@ fn handle_event_normal(
                 if let Some(Err(char_offset) | Ok(char_offset)) = position_to_char_offset(
                     position,
                     editor.buffer.text(),
-                    editor.buffer.vertical_scroll(),
+                    editor.window().vertical_scroll(),
                     areas.text,
                 ) {
                     editor.buffer.range_mut().move_to(char_offset);
@@ -117,7 +117,7 @@ fn handle_event_normal(
                 if let Some(Err(char_offset) | Ok(char_offset)) = position_to_char_offset(
                     position,
                     editor.buffer.text(),
-                    editor.buffer.vertical_scroll(),
+                    editor.window().vertical_scroll(),
                     areas.text,
                 ) {
                     editor.buffer.range_mut().extend_to(char_offset);
