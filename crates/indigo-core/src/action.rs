@@ -150,12 +150,12 @@ pub fn scroll_half_page_up(editor: &mut Editor) {
     let line = editor
         .buffer
         .vertical_scroll()
-        .saturating_sub(editor.terminal_height / 2);
+        .saturating_sub(usize::from(editor.window.height) / 2);
     editor.buffer.scroll_to(line);
 }
 
 pub fn scroll_half_page_down(editor: &mut Editor) {
-    let line = editor.buffer.vertical_scroll() + editor.terminal_height / 2;
+    let line = editor.buffer.vertical_scroll() + usize::from(editor.window.height) / 2;
     editor.buffer.scroll_to(line);
 }
 
@@ -163,12 +163,12 @@ pub fn scroll_full_page_up(editor: &mut Editor) {
     let line = editor
         .buffer
         .vertical_scroll()
-        .saturating_sub(editor.terminal_height);
+        .saturating_sub(usize::from(editor.window.height));
     editor.buffer.scroll_to(line);
 }
 
 pub fn scroll_full_page_down(editor: &mut Editor) {
-    let line = editor.buffer.vertical_scroll() + editor.terminal_height;
+    let line = editor.buffer.vertical_scroll() + usize::from(editor.window.height);
     editor.buffer.scroll_to(line);
 }
 

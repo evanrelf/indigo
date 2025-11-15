@@ -2,6 +2,7 @@ use crate::{
     buffer::Buffer,
     io::{Io, NoIo},
     mode::Mode,
+    window::Window,
 };
 use camino::Utf8PathBuf;
 use std::process::ExitCode;
@@ -16,8 +17,8 @@ pub enum Error {
 pub struct Editor {
     pub io: Box<dyn Io>,
     pub buffer: Buffer,
+    pub window: Window,
     pub mode: Mode,
-    pub terminal_height: usize,
     pub pwd: Option<Utf8PathBuf>,
     pub message: Option<Result<String, String>>,
     pub exit: Option<ExitCode>,
@@ -41,8 +42,8 @@ impl Default for Editor {
         Self {
             io: Box::new(NoIo),
             buffer: Buffer::default(),
+            window: Window::default(),
             mode: Mode::default(),
-            terminal_height: 0,
             pwd: None,
             message: None,
             exit: None,

@@ -182,7 +182,7 @@ fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
             let area = frame.area();
             let surface = frame.buffer_mut();
             areas = Areas::new(&editor, area);
-            editor.terminal_height = usize::from(areas.text.height);
+            editor.window.height = areas.text.height;
             render(&editor, area, surface);
         })?;
         render_times.stop();
