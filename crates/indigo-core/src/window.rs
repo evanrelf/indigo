@@ -2,6 +2,10 @@ use crate::{buffer::Buffer, rope::RopeExt as _};
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::cmp::min;
 
+// TODO: Define invariants, write `assert_invariants`, make `new` fallible, add function to correct
+// invariant violations (e.g. if one window truncates a buffer, another window needs to handle
+// that).
+
 #[derive(Default)]
 pub struct WindowState {
     pub height: u16,
