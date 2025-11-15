@@ -5,7 +5,6 @@ pub mod display_width;
 pub mod editor;
 pub mod event;
 pub mod graphemes;
-pub mod history;
 pub mod history2;
 pub mod io;
 pub mod key;
