@@ -31,9 +31,9 @@ impl Buffer {
     pub fn open<F: Fs>(fs: &mut F, path: impl AsRef<Utf8Path>) -> anyhow::Result<Self> {
         let path = path.as_ref();
         // TODO: Canonicalize path.
-        let exists = fs.file_exists(path)?;
+        let exists = fs.exists(path)?;
         let rope = if exists {
-            let bytes = fs.read_file(path)?;
+            let bytes = fs.read(path)?;
             let string = str::from_utf8(&bytes)?;
             Rope::from(string)
         } else {
@@ -48,7 +48,7 @@ impl Buffer {
         if let Some(path) = &self.path {
             let mut bytes = Vec::with_capacity(self.text.len_bytes());
             self.text.write_to(&mut bytes)?;
-            fs.write_file(path, &bytes)?;
+            fs.write(path, &bytes)?;
             self.text.set_unmodified();
         }
         Ok(())
@@ -129,12 +129,12 @@ mod tests {
     #[test]
     fn fs() -> anyhow::Result<()> {
         let mut fs = TestFs::default();
-        fs.write_file("main.rs".into(), b"fn main() {}")?;
+        fs.write("main.rs".into(), b"fn main() {}")?;
         let mut buffer = Buffer::open(&mut fs, "main.rs")?;
         assert_eq!(&buffer.text.to_string(), "fn main() {}");
         buffer.path = Some(Utf8PathBuf::from("main2.rs"));
         buffer.save(&mut fs)?;
-        assert_eq!(fs.read_file("main2.rs".into())?, b"fn main() {}");
+        assert_eq!(fs.read("main2.rs".into())?, b"fn main() {}");
         Ok(())
     }
 }
