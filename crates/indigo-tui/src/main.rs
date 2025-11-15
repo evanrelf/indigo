@@ -2,11 +2,13 @@ use camino::Utf8PathBuf;
 use clap::Parser as _;
 use etcetera::app_strategy::{AppStrategy as _, Xdg};
 use hdrhistogram::Histogram;
-use indigo_core::prelude::{Buffer, *};
+use indigo_core::{
+    fs::RealFs,
+    prelude::{Buffer, *},
+};
 use indigo_tui::{
     areas::{Areas, char_index_to_area, line_index_to_area},
     event::{handle_event, should_skip_event},
-    fs::TuiFs,
     terminal,
     terminal::TerminalGuard,
 };
@@ -166,7 +168,7 @@ fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
 
     let mut editor = Editor::from(buffer);
 
-    editor.fs = Box::new(TuiFs);
+    editor.fs = Box::new(RealFs);
     editor.pwd = Some(Utf8PathBuf::try_from(env::current_dir()?)?);
 
     let mut areas = Areas::default();

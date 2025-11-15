@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use camino::{Utf8Path, Utf8PathBuf};
-use std::collections::HashMap;
+use std::{collections::HashMap, fs};
 
 // Needs to remain dyn compatible.
 pub trait Fs {
@@ -36,6 +36,22 @@ impl Fs for NoFs {
     }
     fn file_exists(&mut self, _path: &Utf8Path) -> anyhow::Result<bool> {
         panic!("No filesystem implementation configured");
+    }
+}
+
+pub struct RealFs;
+
+impl Fs for RealFs {
+    fn read_file(&mut self, path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
+        Ok(fs::read(path)?)
+    }
+
+    fn write_file(&mut self, path: &Utf8Path, bytes: &[u8]) -> anyhow::Result<()> {
+        Ok(fs::write(path, bytes)?)
+    }
+
+    fn file_exists(&mut self, path: &Utf8Path) -> anyhow::Result<bool> {
+        Ok(fs::exists(path)?)
     }
 }
 
