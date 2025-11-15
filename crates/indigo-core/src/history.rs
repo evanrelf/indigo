@@ -53,8 +53,9 @@ mod tests {
         assert_eq!(history.redo(), Some(&1));
         history.push(2);
         assert_eq!(history.undo(), Some(&2));
+        assert_eq!(history.redo(), Some(&2));
         history.push(3);
         assert_eq!(history.undo(), Some(&3));
-        assert_eq!(history.undo(), Some(&1));
+        assert_eq!(history.undo(), Some(&2));
     }
 }
