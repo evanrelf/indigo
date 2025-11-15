@@ -2,7 +2,7 @@ use crate::{
     buffer::Buffer,
     io::{Io, NoIo},
     mode::Mode,
-    window::Window,
+    window::{Window, WindowMut, WindowState},
 };
 use camino::Utf8PathBuf;
 use std::process::ExitCode;
@@ -17,7 +17,7 @@ pub enum Error {
 pub struct Editor {
     pub io: Box<dyn Io>,
     pub buffer: Buffer,
-    pub window: Window,
+    window: WindowState,
     pub mode: Mode,
     pub pwd: Option<Utf8PathBuf>,
     pub message: Option<Result<String, String>>,
@@ -28,6 +28,14 @@ impl Editor {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn window(&self) -> Window<'_> {
+        Window::new(&self.window)
+    }
+
+    pub fn window_mut(&mut self) -> WindowMut<'_> {
+        WindowMut::new(&mut self.window)
     }
 
     #[expect(dead_code)]
@@ -42,7 +50,7 @@ impl Default for Editor {
         Self {
             io: Box::new(NoIo),
             buffer: Buffer::default(),
-            window: Window::default(),
+            window: WindowState::default(),
             mode: Mode::default(),
             pwd: None,
             message: None,
