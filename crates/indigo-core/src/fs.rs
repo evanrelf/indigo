@@ -23,22 +23,25 @@ impl<T: Fs + ?Sized> Fs for Box<T> {
     }
 }
 
-// Trivial filesystem implementation that panics if you do anything. This is the default filesystem
-// implementation for `Editor`.
+/// Trivial filesystem implementation that panics if you do anything. This is the default filesystem
+/// implementation for `Editor`.
 pub struct NoFs;
 
 impl Fs for NoFs {
     fn read(&mut self, _path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
         panic!("No filesystem implementation configured");
     }
+
     fn write(&mut self, _path: &Utf8Path, _bytes: &[u8]) -> anyhow::Result<()> {
         panic!("No filesystem implementation configured");
     }
+
     fn exists(&mut self, _path: &Utf8Path) -> anyhow::Result<bool> {
         panic!("No filesystem implementation configured");
     }
 }
 
+/// Real filesystem implementation that uses functions from `std::fs`.
 pub struct RealFs;
 
 impl Fs for RealFs {
