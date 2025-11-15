@@ -12,6 +12,7 @@ pub fn set_count(editor: &mut Editor, count: Option<NonZeroUsize>) {
 }
 
 pub fn enter_normal_mode(editor: &mut Editor) {
+    editor.buffer.commit();
     editor.mode = Mode::Normal(NormalMode::default());
 }
 

@@ -1,12 +1,26 @@
-use crate::{history::History, ot::EditSeq};
+use crate::{history2::History, ot::EditSeq};
 use ropey::Rope;
 use std::ops::Deref;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Edit {
     undo: EditSeq,
     redo: EditSeq,
 }
+
+// TODO: Implement `EditSeq::compose`, replace `History<Edit>` with `History<Edit, Edit>`. Or maybe
+// not, since that means using `unwrap` in this impl?
+// impl Extend<Self> for Edit {
+//     fn extend<T>(&mut self, edits: T)
+//     where
+//         T: IntoIterator<Item = Self>,
+//     {
+//         for edit in edits {
+//             self.undo = self.undo.compose(&edit.undo).unwrap();
+//             self.redo = self.redo.compose(&edit.redo).unwrap();
+//         }
+//     }
+// }
 
 #[derive(Debug, Default)]
 pub struct Text {
@@ -50,9 +64,15 @@ impl Text {
         Ok(())
     }
 
+    pub fn commit(&mut self) {
+        self.history.commit();
+    }
+
     pub fn undo(&mut self) -> anyhow::Result<bool> {
-        if let Some(entry) = self.history.undo() {
-            entry.undo.apply(&mut self.rope)?;
+        if let Some(edits) = self.history.undo() {
+            for edit in edits.iter().rev() {
+                edit.undo.apply(&mut self.rope)?;
+            }
             Ok(true)
         } else {
             Ok(false)
@@ -60,8 +80,10 @@ impl Text {
     }
 
     pub fn redo(&mut self) -> anyhow::Result<bool> {
-        if let Some(entry) = self.history.redo() {
-            entry.redo.apply(&mut self.rope)?;
+        if let Some(edits) = self.history.redo() {
+            for edit in edits {
+                edit.redo.apply(&mut self.rope)?;
+            }
             Ok(true)
         } else {
             Ok(false)

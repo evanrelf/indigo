@@ -73,6 +73,10 @@ impl Buffer {
             .guard()
     }
 
+    pub fn commit(&mut self) {
+        self.text.commit();
+    }
+
     pub fn undo(&mut self) -> anyhow::Result<bool> {
         if self.text.undo()? {
             self.range.snap(self.text.rope());
