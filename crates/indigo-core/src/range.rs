@@ -84,6 +84,14 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         self
     }
 
+    pub fn text(&self) -> &Text {
+        &self.text
+    }
+
+    pub fn state(&self) -> &RangeState {
+        &self.state
+    }
+
     pub fn slice(&self) -> RopeSlice<'_> {
         let start = self.start().char_offset();
         let end = self.end().char_offset();

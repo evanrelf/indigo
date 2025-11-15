@@ -73,6 +73,14 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         self
     }
 
+    pub fn text(&self) -> &Text {
+        &self.text
+    }
+
+    pub fn state(&self) -> &CursorState {
+        &self.state
+    }
+
     #[must_use]
     pub fn char_offset(&self) -> usize {
         self.state.char_offset
