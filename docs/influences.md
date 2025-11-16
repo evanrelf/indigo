@@ -31,6 +31,9 @@ down everything I think about them.
 
   https://matklad.github.io/2023/10/23/unified-vs-split-diff.html
 
+  Why "diff reviews" suck and quality code review requires contextualizing
+  changes in the full codebase that you can edit and explore.
+
   > For a large change, I don’t want to do a “diff review”, I want to
   > do a proper code review of a codebase at a particular instant in time,
   > paying specific attention to the recently changed areas, but mostly just
@@ -52,6 +55,8 @@ down everything I think about them.
 
   https://marijnhaverbeke.nl/blog/addressing-editor-content.html
 
+  Talks about why offsets are the right answer for most projects.
+
   > Every text editor system, whether it works with plain or rich text,
   > needs some way to refer to specific positions in the document. The very
   > first reason one runs into this, when implementing such a system, is for
@@ -59,8 +64,6 @@ down everything I think about them.
   > doing a lot more things that refer to document positions—representing
   > changes, displaying user interface elements in the text, or tracking
   > metadata about a piece of content.
-
-  Talks about why offsets are the right answer for most projects.
 
   I personally think byte offsets are best. Not char offsets (less efficient
   than bytes), not grapheme offsets (they're variable width, and the count
