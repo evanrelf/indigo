@@ -50,7 +50,8 @@ fn not_key(input: &mut &str) -> ModalResult<()> {
 }
 
 fn keys(input: &mut &str) -> ModalResult<Keys> {
-    repeat(0.., delimited(not_key, key, not_key))
+    not_key.parse_next(input)?;
+    repeat(0.., terminated(key, not_key))
         .map(Keys)
         .parse_next(input)
 }
