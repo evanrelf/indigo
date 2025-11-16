@@ -298,7 +298,18 @@ pub enum KeyCode {
 }
 
 fn key_code(input: &mut &str) -> ModalResult<KeyCode> {
-    alt((key_code_wrapped, key_code_bare)).parse_next(input)
+    alt((key_code_escaped, key_code_wrapped, key_code_bare)).parse_next(input)
+}
+
+fn key_code_escaped(input: &mut &str) -> ModalResult<KeyCode> {
+    alt((
+        "\\\\".value(KeyCode::Char('\\')),
+        "\\ ".value(KeyCode::Char(' ')),
+        "\\t".value(KeyCode::Char('\t')),
+        "\\n".value(KeyCode::Char('\n')),
+        "\\r".value(KeyCode::Char('\r')),
+    ))
+    .parse_next(input)
 }
 
 fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
@@ -466,6 +477,11 @@ mod tests {
         assert_eq!(key_code.parse("bs"), Ok(Backspace));
         assert_eq!(key_code.parse("del"), Ok(Delete));
         assert_eq!(key_code.parse("esc"), Ok(Escape));
+        assert_eq!(key_code.parse("\\\\"), Ok(Char('\\')));
+        assert_eq!(key_code.parse("\\ "), Ok(Char(' ')));
+        assert_eq!(key_code.parse("\\t"), Ok(Char('\t')));
+        assert_eq!(key_code.parse("\\n"), Ok(Char('\n')));
+        assert_eq!(key_code.parse("\\r"), Ok(Char('\r')));
         assert!(key_code.parse("∆").is_err());
     }
 
