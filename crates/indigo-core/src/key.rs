@@ -71,9 +71,7 @@ impl FromStr for Keys {
 }
 
 fn comment(input: &mut &str) -> ModalResult<()> {
-    '#'.parse_next(input)?;
-    till_line_ending.parse_next(input)?;
-    Ok(())
+    ('#', till_line_ending).void().parse_next(input)
 }
 
 fn ws_and_comments(input: &mut &str) -> ModalResult<()> {
@@ -248,8 +246,9 @@ fn key(input: &mut &str) -> ModalResult<Key> {
 
 fn key_wrapped(input: &mut &str) -> ModalResult<Key> {
     let _ = "<".parse_next(input)?;
-    let modifiers: Vec<_> = repeat(0.., terminated(key_modifier, "-")).parse_next(input)?;
-    let modifiers = modifiers.into_iter().fold(FlagSet::default(), |x, y| x | y);
+    let modifiers = repeat(0.., terminated(key_modifier, "-"))
+        .fold(FlagSet::default, |x, y| x | y)
+        .parse_next(input)?;
     let code = key_code.parse_next(input)?;
     let _ = ">".parse_next(input)?;
     Ok(Key { modifiers, code })
