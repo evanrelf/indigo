@@ -14,7 +14,18 @@ use winnow::{
     token::one_of,
 };
 
+#[cfg(any(feature = "arbitrary", test))]
+use arbitrary::Arbitrary;
+
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 pub struct Keys(pub Vec<Key>);
+
+impl FromStr for Keys {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        keys.parse(s).map_err(|e| e.to_string())
+    }
+}
 
 fn comment(input: &mut &str) -> ModalResult<()> {
     ('#', till_line_ending).void().parse_next(input)
@@ -34,9 +45,74 @@ fn keys(input: &mut &str) -> ModalResult<Keys> {
         .parse_next(input)
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Key {
     pub modifiers: KeyModifiers,
     pub code: KeyCode,
+}
+
+#[cfg(any(feature = "arbitrary", test))]
+impl<'a> Arbitrary<'a> for Key {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let mut modifiers = FlagSet::default();
+        for modifier in FlagSet::<KeyModifier>::full() {
+            if u.arbitrary()? {
+                modifiers |= modifier;
+            }
+        }
+        let code = u.arbitrary()?;
+        Ok(Self { modifiers, code })
+    }
+}
+
+impl FromStr for Key {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        key.parse(s).map_err(|e| e.to_string())
+    }
+}
+
+impl Display for Key {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        let code = match self.code {
+            KeyCode::Backspace => "bs",
+            KeyCode::Delete => "del",
+            KeyCode::Return => "ret",
+            KeyCode::Left => "left",
+            KeyCode::Right => "right",
+            KeyCode::Up => "up",
+            KeyCode::Down => "down",
+            KeyCode::Tab => "tab",
+            KeyCode::Escape => "esc",
+            KeyCode::Char(' ') => "\\ ",
+            KeyCode::Char('#') => "\\#",
+            KeyCode::Char('<') => "\\<",
+            KeyCode::Char('>') => "\\>",
+            KeyCode::Char('\\') => "\\\\",
+            KeyCode::Char('\t') => "\\t",
+            KeyCode::Char('\n') => "\\n",
+            KeyCode::Char('\r') => "\\r",
+            KeyCode::Char(c) => &c.to_string(),
+        };
+        if self.modifiers.is_empty()
+            && let KeyCode::Char(_) = self.code
+        {
+            write!(f, "{code}")?;
+        } else {
+            write!(f, "<")?;
+            if self.modifiers.contains(KeyModifier::Control) {
+                write!(f, "c-")?;
+            }
+            if self.modifiers.contains(KeyModifier::Alt) {
+                write!(f, "a-")?;
+            }
+            if self.modifiers.contains(KeyModifier::Shift) {
+                write!(f, "s-")?;
+            }
+            write!(f, "{code}>")?;
+        }
+        Ok(())
+    }
 }
 
 fn key(input: &mut &str) -> ModalResult<Key> {
@@ -93,6 +169,7 @@ fn key_bare_unmodified(input: &mut &str) -> ModalResult<Key> {
 pub type KeyModifiers = FlagSet<KeyModifier>;
 
 flags! {
+    #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
     pub enum KeyModifier: u8 {
         Control,
         Alt,
@@ -100,7 +177,7 @@ flags! {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum KeyCode {
     Backspace,
     Delete,
@@ -114,6 +191,33 @@ pub enum KeyCode {
     // NOTE: Replace `char` with `AsciiChar` once it stabilizes.
     // https://github.com/rust-lang/rust/issues/110998
     Char(char),
+}
+
+#[cfg(any(feature = "arbitrary", test))]
+impl<'a> Arbitrary<'a> for KeyCode {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        if u.ratio(8, 10)? {
+            loop {
+                let i = u.int_in_range(b' '..=b'~')?;
+                let c = char::from(i);
+                if !" #<>\\".contains(c) {
+                    return Ok(Self::Char(c));
+                }
+            }
+        } else {
+            Ok(*u.choose(&[
+                Self::Backspace,
+                Self::Delete,
+                Self::Return,
+                Self::Left,
+                Self::Right,
+                Self::Up,
+                Self::Down,
+                Self::Tab,
+                Self::Escape,
+            ])?)
+        }
+    }
 }
 
 fn key_code(input: &mut &str) -> ModalResult<KeyCode> {
@@ -164,15 +268,15 @@ mod tests {
     use super::*;
     use arbtest::arbtest;
 
-    // #[test]
-    // fn test_parse_key_roundtrip() {
-    //     arbtest(|u| {
-    //         let key = u.arbitrary::<Key>()?;
-    //         match key.to_string().parse() {
-    //             Ok(parsed_key) => assert_eq!(key, parsed_key),
-    //             Err(e) => panic!("Failed to parse `{key:?}` printed as `{key}`:\n{e}"),
-    //         }
-    //         Ok(())
-    //     });
-    // }
+    #[test]
+    fn parse_key_roundtrip() {
+        arbtest(|u| {
+            let key = u.arbitrary::<Key>()?;
+            match key.to_string().parse() {
+                Ok(parsed_key) => assert_eq!(key, parsed_key),
+                Err(e) => panic!("Failed to parse `{key:?}` printed as `{key}`:\n{e}"),
+            }
+            Ok(())
+        });
+    }
 }
