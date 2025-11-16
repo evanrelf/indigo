@@ -58,13 +58,15 @@ impl Fs for RealFs {
     }
 }
 
-#[cfg_attr(not(test), expect(dead_code))]
+/// In-memory filesystem implementation for testing.
 #[derive(Default)]
-pub(crate) struct TestFs(pub HashMap<Utf8PathBuf, Vec<u8>>);
+pub struct TestFs {
+    pub files: HashMap<Utf8PathBuf, Vec<u8>>,
+}
 
 impl Fs for TestFs {
     fn read(&mut self, path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
-        if let Some(bytes) = self.0.get(path) {
+        if let Some(bytes) = self.files.get(path) {
             Ok(bytes.clone())
         } else {
             Err(anyhow!("File not found: `{path}`"))
@@ -72,12 +74,12 @@ impl Fs for TestFs {
     }
 
     fn write(&mut self, path: &Utf8Path, bytes: &[u8]) -> anyhow::Result<()> {
-        self.0.insert(path.to_path_buf(), bytes.to_vec());
+        self.files.insert(path.to_path_buf(), bytes.to_vec());
         Ok(())
     }
 
     fn exists(&mut self, path: &Utf8Path) -> anyhow::Result<bool> {
-        let exists = self.0.contains_key(path);
+        let exists = self.files.contains_key(path);
         Ok(exists)
     }
 }
