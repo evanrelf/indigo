@@ -12,9 +12,17 @@ pub struct Areas {
 impl Areas {
     #[must_use]
     pub fn new(editor: &Editor, area: Rect) -> Self {
+        let status_bar_height = if let Mode::Command(command_mode) = &editor.mode {
+            u16::try_from(command_mode.rope().len_lines_indigo())
+                .expect("Command has fewer than u16::MAX lines")
+                .max(1)
+        } else {
+            1
+        };
+
         let [status_bar, main] = Layout::vertical([
             // status_bar
-            Constraint::Length(1),
+            Constraint::Length(status_bar_height),
             // line_numbers + text
             Constraint::Fill(1),
         ])
