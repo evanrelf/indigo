@@ -89,7 +89,7 @@
 
 - **[Zed]**
   - I like
-    - `SumTree` is so cool
+    - [`SumTree`] is so cool
     - CRDTs are cool (overkill for my project though)
     - Outline view
   - I don't like
@@ -100,6 +100,7 @@
       finger on it but it feels wrong
 
 [Zed]: https://zed.dev/
+[`SumTree`]: https://github.com/zed-industries/zed/tree/main/crates/sum_tree
 
 - **[ed]**
   - I like
