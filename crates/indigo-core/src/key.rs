@@ -7,7 +7,7 @@ use std::{
 };
 use winnow::{
     ascii::{multispace0, till_line_ending},
-    combinator::{alt, delimited, repeat, terminated},
+    combinator::{alt, cut_err, delimited, preceded, repeat, terminated},
     prelude::*,
     token::one_of,
 };
@@ -194,6 +194,10 @@ impl Display for Key {
             KeyCode::Down => "down",
             KeyCode::Tab => "tab",
             KeyCode::Escape => "esc",
+            KeyCode::Char('\\') => "\\\\",
+            KeyCode::Char('\t') => "\\t",
+            KeyCode::Char('\n') => "\\n",
+            KeyCode::Char('\r') => "\\r",
             KeyCode::Char(' ') => "space",
             KeyCode::Char('#') => "hash",
             KeyCode::Char('<') => "lt",
@@ -256,7 +260,7 @@ fn key_wrapped(input: &mut &str) -> ModalResult<Key> {
 
 fn key_bare(input: &mut &str) -> ModalResult<Key> {
     let modifiers = FlagSet::default();
-    let code = key_code_bare.parse_next(input)?;
+    let code = alt((key_code_escaped, key_code_bare)).parse_next(input)?;
     Ok(Key { modifiers, code })
 }
 
@@ -302,13 +306,19 @@ fn key_code(input: &mut &str) -> ModalResult<KeyCode> {
 }
 
 fn key_code_escaped(input: &mut &str) -> ModalResult<KeyCode> {
-    alt((
-        "\\\\".value(KeyCode::Char('\\')),
-        "\\ ".value(KeyCode::Char(' ')),
-        "\\t".value(KeyCode::Char('\t')),
-        "\\n".value(KeyCode::Char('\n')),
-        "\\r".value(KeyCode::Char('\r')),
-    ))
+    preceded(
+        '\\',
+        cut_err(alt((
+            '\\'.value(KeyCode::Char('\\')),
+            ' '.value(KeyCode::Char(' ')),
+            't'.value(KeyCode::Char('\t')),
+            'n'.value(KeyCode::Char('\n')),
+            'r'.value(KeyCode::Char('\r')),
+            '<'.value(KeyCode::Char('<')),
+            '>'.value(KeyCode::Char('>')),
+            '#'.value(KeyCode::Char('#')),
+        ))),
+    )
     .parse_next(input)
 }
 
@@ -333,7 +343,7 @@ fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
 
 fn key_code_bare(input: &mut &str) -> ModalResult<KeyCode> {
     one_of(' '..='~')
-        .verify(|c| *c != ' ' && *c != '#')
+        .verify(|c| !matches!(c, ' ' | '#' | '<' | '>' | '\\'))
         .map(KeyCode::Char)
         .parse_next(input)
 }
@@ -344,7 +354,7 @@ impl<'a> Arbitrary<'a> for KeyCode {
         if u.ratio(8, 10)? {
             loop {
                 let i = u.int_in_range(b' '..=b'~')?;
-                if i != b' ' && i != b'#' {
+                if !matches!(i, b' ' | b'#' | b'<' | b'>' | b'\\') {
                     let c = char::from(i);
                     return Ok(Self::Char(c));
                 }
@@ -390,7 +400,7 @@ mod tests {
         use KeyCode::*;
         use KeyModifier::*;
         assert_eq!(
-            keys.parse("%s\\bfn\\b<ret>E<a-k>test<ret><"),
+            keys.parse("%s\\\\bfn\\\\b<ret>E<a-k>test<ret>\\<"),
             Ok(Keys(vec![
                 Key::from('%'),
                 Key::from('s'),
@@ -417,8 +427,8 @@ mod tests {
     fn test_parse_key() {
         use KeyCode::*;
         use KeyModifier::*;
-        assert_eq!(key.parse("<"), Ok(Key::from('<')));
-        assert_eq!(key.parse(">"), Ok(Key::from('>')));
+        assert_eq!(key.parse("\\<"), Ok(Key::from('<')));
+        assert_eq!(key.parse("\\>"), Ok(Key::from('>')));
         assert_eq!(key.parse("a"), Ok(Key::from('a')));
         // TODO: Distinguish between shift+a and A? Or normalize both to the same thing?
         assert_eq!(key.parse("<s-a>"), Ok(Key::from(([Shift], 'a'))));
@@ -679,5 +689,136 @@ mod tests {
                 Key::from(Char('c')),
             ]))
         );
+    }
+
+    #[test]
+    fn test_new_escape_sequences() {
+        use KeyCode::*;
+        // Test new escape sequences for angle brackets and hash
+        assert_eq!(key_code.parse("\\<"), Ok(Char('<')));
+        assert_eq!(key_code.parse("\\>"), Ok(Char('>')));
+        assert_eq!(key_code.parse("\\#"), Ok(Char('#')));
+
+        // Test in full key context
+        assert_eq!(key.parse("\\<"), Ok(Key::from('<')));
+        assert_eq!(key.parse("\\>"), Ok(Key::from('>')));
+        assert_eq!(key.parse("\\#"), Ok(Key::from('#')));
+
+        // Test in wrapped form with modifiers
+        assert_eq!(
+            key.parse("<c-\\<>"),
+            Ok(Key::from((KeyModifier::Control, '<')))
+        );
+        assert_eq!(
+            key.parse("<c-\\>>"),
+            Ok(Key::from((KeyModifier::Control, '>')))
+        );
+        assert_eq!(
+            key.parse("<c-\\#>"),
+            Ok(Key::from((KeyModifier::Control, '#')))
+        );
+    }
+
+    #[test]
+    fn test_invalid_escape_sequences() {
+        // Invalid escape sequences should error
+        assert!(key_code.parse("\\x").is_err());
+        assert!(key_code.parse("\\z").is_err());
+        assert!(key_code.parse("\\1").is_err());
+        assert!(key_code.parse("\\a").is_err());
+        assert!(key_code.parse("\\b").is_err());
+        assert!(key_code.parse("\\f").is_err());
+
+        // Bare backslash at end should error
+        assert!(key_code.parse("\\").is_err());
+
+        // In key sequences too
+        assert!(key.parse("\\x").is_err());
+        assert!(keys.parse("a\\xb").is_err());
+    }
+
+    #[test]
+    fn test_escaped_chars_display_roundtrip() {
+        // Backslash
+        let key = Key::from('\\');
+        assert_eq!(key.to_string(), "\\\\");
+        assert_eq!(key.to_string().parse::<Key>().unwrap(), key);
+
+        // Tab character
+        let key = Key::from('\t');
+        assert_eq!(key.to_string(), "\\t");
+        assert_eq!(key.to_string().parse::<Key>().unwrap(), key);
+
+        // Newline
+        let key = Key::from('\n');
+        assert_eq!(key.to_string(), "\\n");
+        assert_eq!(key.to_string().parse::<Key>().unwrap(), key);
+
+        // Carriage return
+        let key = Key::from('\r');
+        assert_eq!(key.to_string(), "\\r");
+        assert_eq!(key.to_string().parse::<Key>().unwrap(), key);
+    }
+
+    #[test]
+    fn test_escaped_chars_with_modifiers() {
+        use KeyModifier::*;
+
+        // Backslash with control
+        let key = Key::from((Control, '\\'));
+        assert_eq!(key.to_string(), "<c-\\\\>");
+        assert_eq!(key.to_string().parse::<Key>().unwrap(), key);
+
+        // Tab character with control
+        let key = Key::from((Control, '\t'));
+        assert_eq!(key.to_string(), "<c-\\t>");
+        assert_eq!(key.to_string().parse::<Key>().unwrap(), key);
+
+        // Newline with alt
+        let key = Key::from((Alt, '\n'));
+        assert_eq!(key.to_string(), "<a-\\n>");
+        assert_eq!(key.to_string().parse::<Key>().unwrap(), key);
+
+        // Carriage return with shift
+        let key = Key::from((Shift, '\r'));
+        assert_eq!(key.to_string(), "<s-\\r>");
+        assert_eq!(key.to_string().parse::<Key>().unwrap(), key);
+
+        // Multiple modifiers
+        let key = Key::from(([Control, Alt], '\\'));
+        assert_eq!(key.to_string(), "<c-a-\\\\>");
+        assert_eq!(key.to_string().parse::<Key>().unwrap(), key);
+    }
+
+    #[test]
+    fn test_escape_vs_wrapped_forms() {
+        use KeyCode::*;
+
+        // These should all parse to the same value but may display differently
+        // Space: escaped form and wrapped form both parse
+        assert_eq!(key_code.parse("\\ "), Ok(Char(' ')));
+        assert_eq!(key_code.parse("space"), Ok(Char(' ')));
+
+        // Hash: escaped form and wrapped form both parse
+        assert_eq!(key_code.parse("\\#"), Ok(Char('#')));
+        assert_eq!(key_code.parse("hash"), Ok(Char('#')));
+
+        // Angle brackets: escaped form and wrapped form both parse
+        assert_eq!(key_code.parse("\\<"), Ok(Char('<')));
+        assert_eq!(key_code.parse("lt"), Ok(Char('<')));
+        assert_eq!(key_code.parse("\\>"), Ok(Char('>')));
+        assert_eq!(key_code.parse("gt"), Ok(Char('>')));
+
+        // Display prefers wrapped names for readability
+        assert_eq!(Key::from(' ').to_string(), "<space>");
+        assert_eq!(Key::from('#').to_string(), "<hash>");
+        assert_eq!(Key::from('<').to_string(), "<lt>");
+        assert_eq!(Key::from('>').to_string(), "<gt>");
+
+        // But escaped forms still roundtrip correctly via wrapped names
+        assert_eq!(key.parse("\\ ").unwrap().to_string(), "<space>");
+        assert_eq!(key.parse("\\#").unwrap().to_string(), "<hash>");
+        assert_eq!(key.parse("\\<").unwrap().to_string(), "<lt>");
+        assert_eq!(key.parse("\\>").unwrap().to_string(), "<gt>");
     }
 }
