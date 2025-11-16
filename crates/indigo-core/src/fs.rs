@@ -58,7 +58,8 @@ impl Fs for RealFs {
     }
 }
 
-/// In-memory filesystem implementation for testing.
+/// In-memory filesystem implementation for testing. Currently only supports canonicalized paths
+/// (i.e. absolute, normalized, and no symlinks).
 #[derive(Default)]
 pub struct TestFs {
     pub files: HashMap<Utf8PathBuf, Vec<u8>>,
