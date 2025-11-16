@@ -3,7 +3,7 @@
 ## Text editors
 
 - **[Kakoune]**
-  - Good
+  - I like
     - Elegant, well designed
     - Few orthogonal features that are powerful when composed
     - Noun before verb editing language
@@ -15,7 +15,7 @@
       environment, one piece of the Unix IDE
     - Self documenting
     - No dependencies except for modern C++ compiler and standard library
-  - Bad
+  - I don't like
     - C++ codebase I don't want to touch
     - Too much functionality of variable quality implemented in userspace (`rc`)
     - Imperfect grapheme rendering
@@ -25,10 +25,10 @@
 [Kakoune design doc]: https://github.com/mawww/kakoune/blob/master/doc/design.asciidoc
 
 - **[Vim] and [Neovim]**
-  - Good
+  - I like
     - Modal editing
     - Terminal-based user interface
-  - Bad
+  - I don't like
     - Has accreted so much functionality over the decades
     - No multiple cursors
     - Verb before noun, and heavy reliance on command mode (e.g. `s` and `g`)
@@ -44,12 +44,12 @@
 [Neovim]: https://neovim.io/
 
 - **[Acme]**
-  - Good
+  - I like
     - Composition over extension, integrating vs integrated development
       environment, one piece of the Plan 9 IDE
     - File system interface ([9P] server)
     - Challenges the need for syntax highlighting
-  - Bad
+  - I don't like
     - Heavy mouse use
     - No modal editing
 
@@ -57,13 +57,13 @@
 [9P]: https://en.wikipedia.org/wiki/9P_(protocol)
 
 - **[ad]**
-  - Good
+  - I like
     - Like Acme but more modern keyboard-based modal editing
 
 [ad]: https://github.com/sminez/ad
 
 - **[CodeMirror]**
-  - Good
+  - I like
     - Strong architecture / system design, clean separation of components
     - Persistent/immutable data structures
     - Transactional updates
@@ -76,11 +76,11 @@
 [Emacs]: https://www.gnu.org/software/emacs/
 
 - **[VS Code]**
-  - Good
+  - I like
     - Command palette
     - [Breadcrumbs](https://code.visualstudio.com/docs/editing/editingevolved#_breadcrumbs)
     - [Hot exit](https://code.visualstudio.com/docs/editing/codebasics#_hot-exit)
-  - Bad
+  - I don't like
     - GUI
     - IDE
     - Electron
@@ -88,11 +88,11 @@
 [VS Code]: https://code.visualstudio.com/
 
 - **[Zed]**
-  - Good
+  - I like
     - `SumTree` is so cool
     - CRDTs are cool (overkill for my project though)
     - Outline view
-  - Bad
+  - I don't like
     - GUI
     - IDE
     - Installs language tooling automatically without asking
@@ -102,11 +102,11 @@
 [Zed]: https://zed.dev/
 
 - **[ed]**
-  - Good
+  - I like
     - "Ed is the standard text editor."
     - True path to nirvana
     - Will not corrupt bodily fluids
-  - Bad
+  - I don't like
     - Literally nothing
 
 [ed]: https://www.gnu.org/fun/jokes/ed-msg.en.html
