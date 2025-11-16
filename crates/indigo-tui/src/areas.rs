@@ -21,7 +21,7 @@ impl Areas {
         .areas(area);
 
         let line_numbers_width = {
-            let n = editor.buffer.text().len_lines_indigo();
+            let n = editor.buffer.rope().len_lines_indigo();
             let digits = 1 + max(1, n).ilog10();
             u16::try_from(max(2, digits) + 1)
                 .expect("Line number width should always be very small")

@@ -2,6 +2,7 @@ use crate::{
     cursor::{Cursor, CursorMut, CursorState},
     text::Text,
 };
+use ropey::Rope;
 use std::num::NonZeroUsize;
 
 pub enum Mode {
@@ -74,8 +75,8 @@ pub struct CommandMode {
 
 impl CommandMode {
     #[must_use]
-    pub fn text(&self) -> &Text {
-        &self.text
+    pub fn rope(&self) -> &Rope {
+        self.text.rope()
     }
 
     pub fn cursor(&self) -> Cursor<'_> {

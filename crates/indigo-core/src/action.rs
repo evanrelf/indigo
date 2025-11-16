@@ -278,7 +278,7 @@ pub fn run_command(editor: &mut Editor) -> anyhow::Result<()> {
         return Ok(());
     };
 
-    let command = Cow::<str>::from(command_mode.text().rope());
+    let command = Cow::<str>::from(command_mode.rope());
 
     let Ok(args) = shellwords::split(&command) else {
         editor.message = Some(Err(String::from("Invalid command")));

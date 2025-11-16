@@ -49,7 +49,7 @@ impl<W: WrapMut> WindowView<'_, W> {
     }
 
     pub fn scroll_to(&mut self, line: usize) {
-        let last_line = self.buffer.text().len_lines_indigo().saturating_sub(1);
+        let last_line = self.buffer.rope().len_lines_indigo().saturating_sub(1);
         self.state.vertical_scroll = min(line, last_line);
     }
 }

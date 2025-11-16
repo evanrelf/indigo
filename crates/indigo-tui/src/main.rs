@@ -237,11 +237,11 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         area.x += 1;
         area.width -= 1;
 
-        Line::raw(Cow::<str>::from(normal_mode.text().rope())).render(area, surface);
+        Line::raw(Cow::<str>::from(normal_mode.rope())).render(area, surface);
 
         if let Some(rect) = char_index_to_area(
             normal_mode.cursor().char_offset(),
-            normal_mode.text(),
+            normal_mode.rope(),
             0,
             area,
         ) {
@@ -304,7 +304,7 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let buffer = window.buffer();
 
-    let total_lines = buffer.text().len_lines_indigo();
+    let total_lines = buffer.rope().len_lines_indigo();
 
     for (i, row) in area.rows().enumerate() {
         let line_number = i + window.vertical_scroll() + 1;
@@ -324,7 +324,7 @@ fn render_tildes(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let buffer = window.buffer();
 
-    let total_lines = buffer.text().len_lines_indigo();
+    let total_lines = buffer.rope().len_lines_indigo();
 
     for (i, row) in area.rows().enumerate() {
         let line_number = i + window.vertical_scroll() + 1;
@@ -342,7 +342,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let buffer = window.buffer();
 
-    let lines = buffer.text().lines_at(window.vertical_scroll());
+    let lines = buffer.rope().lines_at(window.vertical_scroll());
 
     let rows = area.rows();
 
@@ -379,7 +379,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let buffer = window.buffer();
 
-    let rope = buffer.text();
+    let rope = buffer.rope();
 
     let range = buffer.range();
 

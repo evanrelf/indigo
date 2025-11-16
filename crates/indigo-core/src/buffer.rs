@@ -83,8 +83,8 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn text(&self) -> &Text {
-        &self.text
+    pub fn rope(&self) -> &Rope {
+        self.text.rope()
     }
 
     #[must_use]
