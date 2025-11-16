@@ -438,19 +438,11 @@ mod tests {
     }
 
     #[test]
-    fn test_print_key() {
-        assert_eq!(
-            key.parse("<c-a-s-tab>").map(|k| k.to_string()).ok(),
-            Some(String::from("<c-a-s-tab>"))
-        );
-        assert_eq!(
-            key.parse("<s-c-a-tab>").map(|k| k.to_string()).ok(),
-            Some(String::from("<c-a-s-tab>"))
-        );
-        assert_eq!(
-            key.parse("<a-s-c-tab>").map(|k| k.to_string()).ok(),
-            Some(String::from("<c-a-s-tab>"))
-        );
+    fn test_modifier_normalization() {
+        let variations = ["<c-a-s-tab>", "<s-c-a-tab>", "<a-s-c-tab>"];
+        for input in variations {
+            assert_eq!(key.parse(input).unwrap().to_string(), "<c-a-s-tab>");
+        }
     }
 
     #[test]
@@ -478,17 +470,58 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_space_key() {
+    fn test_special_chars_roundtrip() {
         use KeyCode::*;
         use KeyModifier::*;
-        assert_eq!(key.parse("<space>"), Ok(Key::from(Char(' '))));
-        assert_eq!(key.parse("<c-space>"), Ok(Key::from((Control, Char(' ')))));
-        assert_eq!(key.parse("<a-space>"), Ok(Key::from((Alt, Char(' ')))));
-        assert_eq!(key.parse("<s-space>"), Ok(Key::from((Shift, Char(' ')))));
-        assert_eq!(
-            key.parse("<c-a-space>"),
-            Ok(Key::from(([Control, Alt], Char(' '))))
-        );
+
+        let cases = [(' ', "space"), ('#', "hash"), ('<', "lt"), ('>', "gt")];
+
+        for (ch, name) in cases {
+            // Bare key
+            assert_eq!(
+                key.parse(&format!("<{name}>")).unwrap(),
+                Key::from(Char(ch))
+            );
+            assert_eq!(Key::from(Char(ch)).to_string(), format!("<{name}>"));
+
+            // With Control
+            assert_eq!(
+                key.parse(&format!("<c-{name}>")).unwrap(),
+                Key::from((Control, Char(ch)))
+            );
+            assert_eq!(
+                Key::from((Control, Char(ch))).to_string(),
+                format!("<c-{name}>")
+            );
+
+            // With Alt
+            assert_eq!(
+                key.parse(&format!("<a-{name}>")).unwrap(),
+                Key::from((Alt, Char(ch)))
+            );
+            assert_eq!(
+                Key::from((Alt, Char(ch))).to_string(),
+                format!("<a-{name}>")
+            );
+
+            // With Shift
+            if ch == ' ' || ch == '#' {
+                assert_eq!(
+                    key.parse(&format!("<s-{name}>")).unwrap(),
+                    Key::from((Shift, Char(ch)))
+                );
+            }
+
+            // With multiple modifiers
+            assert_eq!(
+                key.parse(&format!("<c-a-{name}>")).unwrap(),
+                Key::from(([Control, Alt], Char(ch)))
+            );
+            assert_eq!(
+                Key::from(([Control, Alt], Char(ch))).to_string(),
+                format!("<c-a-{name}>")
+            );
+        }
     }
 
     #[test]
@@ -512,9 +545,23 @@ mod tests {
                 Key::from(Char('c')),
             ]))
         );
+        // Windows-style line endings should be stripped
+        assert_eq!(
+            keys.parse("a\r\nb\r\nc"),
+            Ok(Keys(vec![
+                Key::from(Char('a')),
+                Key::from(Char('b')),
+                Key::from(Char('c')),
+            ]))
+        );
         // Multiple whitespace characters should be stripped
         assert_eq!(
             keys.parse("a  \n\t  b"),
+            Ok(Keys(vec![Key::from(Char('a')), Key::from(Char('b')),]))
+        );
+        // Multiple whitespace with Windows line endings
+        assert_eq!(
+            keys.parse("a  \r\n\t  b"),
             Ok(Keys(vec![Key::from(Char('a')), Key::from(Char('b')),]))
         );
         // Whitespace at the beginning and end should be stripped
@@ -534,89 +581,43 @@ mod tests {
     }
 
     #[test]
-    fn test_print_space_key() {
-        use KeyCode::*;
-        use KeyModifier::*;
-        assert_eq!(Key::from(Char(' ')).to_string(), "<space>");
-        assert_eq!(Key::from((Control, Char(' '))).to_string(), "<c-space>");
-        assert_eq!(Key::from((Alt, Char(' '))).to_string(), "<a-space>");
-        assert_eq!(
-            Key::from(([Control, Alt], Char(' '))).to_string(),
-            "<c-a-space>"
-        );
-    }
-
-    #[test]
-    fn test_parse_hash_key() {
-        use KeyCode::*;
-        use KeyModifier::*;
-        assert_eq!(key.parse("<hash>"), Ok(Key::from(Char('#'))));
-        assert_eq!(key.parse("<c-hash>"), Ok(Key::from((Control, Char('#')))));
-        assert_eq!(key.parse("<a-hash>"), Ok(Key::from((Alt, Char('#')))));
-        assert_eq!(key.parse("<s-hash>"), Ok(Key::from((Shift, Char('#')))));
-        assert_eq!(
-            key.parse("<c-a-hash>"),
-            Ok(Key::from(([Control, Alt], Char('#'))))
-        );
-    }
-
-    #[test]
-    fn test_print_hash_key() {
-        use KeyCode::*;
-        use KeyModifier::*;
-        assert_eq!(Key::from(Char('#')).to_string(), "<hash>");
-        assert_eq!(Key::from((Control, Char('#'))).to_string(), "<c-hash>");
-        assert_eq!(Key::from((Alt, Char('#'))).to_string(), "<a-hash>");
-        assert_eq!(
-            Key::from(([Control, Alt], Char('#'))).to_string(),
-            "<c-a-hash>"
-        );
-    }
-
-    #[test]
     fn test_comment_parsing() {
         use KeyCode::*;
         use KeyModifier::*;
-        // Comment at start of line
-        assert_eq!(
-            keys.parse("# comment\na"),
-            Ok(Keys(vec![Key::from(Char('a')),]))
-        );
-        // Indented comment
-        assert_eq!(
-            keys.parse("  # indented comment\na"),
-            Ok(Keys(vec![Key::from(Char('a')),]))
-        );
-        // Comment after keys
-        assert_eq!(
-            keys.parse("a b # comment\nc"),
-            Ok(Keys(vec![
-                Key::from(Char('a')),
-                Key::from(Char('b')),
-                Key::from(Char('c')),
-            ]))
-        );
-        // Multiple comments
-        assert_eq!(
-            keys.parse("# comment 1\n# comment 2\na"),
-            Ok(Keys(vec![Key::from(Char('a')),]))
-        );
-        // Comment with keys before and after
-        assert_eq!(
-            keys.parse("a\n# comment\nb"),
-            Ok(Keys(vec![Key::from(Char('a')), Key::from(Char('b')),]))
-        );
-        // Comment without trailing newline
-        assert_eq!(
-            keys.parse("a # comment"),
-            Ok(Keys(vec![Key::from(Char('a')),]))
-        );
-        // Empty lines with comments
-        assert_eq!(
-            keys.parse("a\n\n# comment\n\nb"),
-            Ok(Keys(vec![Key::from(Char('a')), Key::from(Char('b')),]))
-        );
-        // Complex example from requirements
+
+        let cases = [
+            // Comment at start
+            ("# comment\na", vec!['a']),
+            // Indented comment
+            ("  # indented comment\na", vec!['a']),
+            // Comment after keys
+            ("a b # comment\nc", vec!['a', 'b', 'c']),
+            // Multiple consecutive comments
+            ("# comment 1\n# comment 2\na", vec!['a']),
+            // Multiple consecutive comments with no keys between
+            ("\n\n# comment 1\n# comment 2\n# comment 3\n\na", vec!['a']),
+            // Comment with keys before and after
+            ("a\n# comment\nb", vec!['a', 'b']),
+            // Comment without trailing newline
+            ("a # comment", vec!['a']),
+            // Empty lines with comments
+            ("a\n\n# comment\n\nb", vec!['a', 'b']),
+            // Windows line endings - comment at start
+            ("# comment\r\na", vec!['a']),
+            // Windows line endings - multiple consecutive comments
+            ("# comment 1\r\n# comment 2\r\na", vec!['a']),
+            // Windows line endings - comment after keys
+            ("a b # comment\r\nc", vec!['a', 'b', 'c']),
+            // Windows line endings - empty lines with comments
+            ("a\r\n\r\n# comment\r\n\r\nb", vec!['a', 'b']),
+        ];
+
+        for (input, expected) in cases {
+            let expected_keys: Vec<_> = expected.into_iter().map(|c| Key::from(Char(c))).collect();
+            assert_eq!(keys.parse(input), Ok(Keys(expected_keys)));
+        }
+
+        // Complex example with modifiers
         assert_eq!(
             keys.parse(
                 "# comment at start\n  # indented comment\n  <a-a> b c d # comment following keys"
