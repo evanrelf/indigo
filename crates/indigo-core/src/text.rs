@@ -22,10 +22,10 @@ struct Edit {
 //     }
 // }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Text {
     rope: Rope,
-    original: Option<Rope>,
+    original: Rope,
     history: History<Edit>,
 }
 
@@ -42,19 +42,14 @@ impl Text {
 
     #[must_use]
     pub fn is_modified(&self) -> bool {
-        self.original
-            .as_ref()
-            .is_some_and(|original| self.rope != *original)
+        self.rope != self.original
     }
 
     pub fn set_unmodified(&mut self) {
-        self.original = None;
+        self.original = self.rope.clone();
     }
 
     pub fn edit(&mut self, edit: &EditSeq) -> anyhow::Result<()> {
-        if self.original.is_none() {
-            self.original = Some(self.rope.clone());
-        }
         let undo = edit.invert(&self.rope)?;
         edit.apply(&mut self.rope)?;
         self.history.push(Edit {
@@ -87,6 +82,17 @@ impl Text {
             Ok(true)
         } else {
             Ok(false)
+        }
+    }
+}
+
+impl Default for Text {
+    fn default() -> Self {
+        let rope = Rope::default();
+        Self {
+            original: rope.clone(),
+            rope,
+            history: History::default(),
         }
     }
 }
