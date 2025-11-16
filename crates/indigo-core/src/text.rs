@@ -109,6 +109,7 @@ impl<'a> From<&'a str> for Text {
     fn from(str: &'a str) -> Self {
         let rope = Rope::from(str);
         Self {
+            original: rope.clone(),
             rope,
             ..Self::default()
         }
@@ -118,6 +119,7 @@ impl<'a> From<&'a str> for Text {
 impl From<Rope> for Text {
     fn from(rope: Rope) -> Self {
         Self {
+            original: rope.clone(),
             rope,
             ..Self::default()
         }
