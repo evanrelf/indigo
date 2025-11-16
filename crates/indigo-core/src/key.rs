@@ -6,7 +6,7 @@ use std::{
     str::FromStr,
 };
 use winnow::{
-    ascii::multispace0,
+    ascii::{multispace0, till_line_ending},
     combinator::{alt, delimited, repeat, terminated},
     prelude::*,
     token::one_of,
@@ -70,13 +70,22 @@ impl FromStr for Keys {
     }
 }
 
-// TODO: Ignore whitespace and strip comments (syntax TBD) for nicer multi-line key sequences? Like
-// if you wanted to call the CLI from a script with a complex sequence of inputs, it'd be nice to
-// spread it across multiple lines and leave comments documenting the behavior. Similar to the
-// `regex` crate's "verbose mode": https://docs.rs/regex/latest/regex/#example-verbose-mode.
+fn comment(input: &mut &str) -> ModalResult<()> {
+    '#'.parse_next(input)?;
+    till_line_ending.parse_next(input)?;
+    Ok(())
+}
+
+fn ws_and_comments(input: &mut &str) -> ModalResult<()> {
+    multispace0.parse_next(input)?;
+    while comment.parse_next(input).is_ok() {
+        multispace0.parse_next(input)?;
+    }
+    Ok(())
+}
 
 fn keys(input: &mut &str) -> ModalResult<Keys> {
-    repeat(0.., delimited(multispace0, key, multispace0))
+    repeat(0.., delimited(ws_and_comments, key, ws_and_comments))
         .map(Keys)
         .parse_next(input)
 }
@@ -188,13 +197,14 @@ impl Display for Key {
             KeyCode::Tab => "tab",
             KeyCode::Escape => "esc",
             KeyCode::Char(' ') => "space",
+            KeyCode::Char('#') => "hash",
             KeyCode::Char('<') => "lt",
             KeyCode::Char('>') => "gt",
             KeyCode::Char(c) => &c.to_string(),
         };
         if self.modifiers.is_empty()
             && matches!(self.code, KeyCode::Char(_))
-            && !matches!(self.code, KeyCode::Char(' ' | '<' | '>'))
+            && !matches!(self.code, KeyCode::Char(' ' | '#' | '<' | '>'))
         {
             write!(f, "{code}")?;
         } else {
@@ -304,6 +314,7 @@ fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
         "tab".value(KeyCode::Tab),
         "esc".value(KeyCode::Escape),
         "space".value(KeyCode::Char(' ')),
+        "hash".value(KeyCode::Char('#')),
         "lt".value(KeyCode::Char('<')),
         "gt".value(KeyCode::Char('>')),
     ))
@@ -311,16 +322,23 @@ fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
 }
 
 fn key_code_bare(input: &mut &str) -> ModalResult<KeyCode> {
-    one_of('!'..='~').map(KeyCode::Char).parse_next(input)
+    one_of(' '..='~')
+        .verify(|c| *c != ' ' && *c != '#')
+        .map(KeyCode::Char)
+        .parse_next(input)
 }
 
 #[cfg(any(feature = "arbitrary", test))]
 impl<'a> Arbitrary<'a> for KeyCode {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
         if u.ratio(8, 10)? {
-            let i = u.int_in_range(b'!'..=b'~')?;
-            let c = char::from(i);
-            Ok(Self::Char(c))
+            loop {
+                let i = u.int_in_range(b' '..=b'~')?;
+                if i != b' ' && i != b'#' {
+                    let c = char::from(i);
+                    return Ok(Self::Char(c));
+                }
+            }
         } else {
             Ok(*u.choose(&[
                 Self::Backspace,
@@ -526,6 +544,90 @@ mod tests {
         assert_eq!(
             Key::from(([Control, Alt], Char(' '))).to_string(),
             "<c-a-space>"
+        );
+    }
+
+    #[test]
+    fn test_parse_hash_key() {
+        use KeyCode::*;
+        use KeyModifier::*;
+        assert_eq!(key.parse("<hash>"), Ok(Key::from(Char('#'))));
+        assert_eq!(key.parse("<c-hash>"), Ok(Key::from((Control, Char('#')))));
+        assert_eq!(key.parse("<a-hash>"), Ok(Key::from((Alt, Char('#')))));
+        assert_eq!(key.parse("<s-hash>"), Ok(Key::from((Shift, Char('#')))));
+        assert_eq!(
+            key.parse("<c-a-hash>"),
+            Ok(Key::from(([Control, Alt], Char('#'))))
+        );
+    }
+
+    #[test]
+    fn test_print_hash_key() {
+        use KeyCode::*;
+        use KeyModifier::*;
+        assert_eq!(Key::from(Char('#')).to_string(), "<hash>");
+        assert_eq!(Key::from((Control, Char('#'))).to_string(), "<c-hash>");
+        assert_eq!(Key::from((Alt, Char('#'))).to_string(), "<a-hash>");
+        assert_eq!(
+            Key::from(([Control, Alt], Char('#'))).to_string(),
+            "<c-a-hash>"
+        );
+    }
+
+    #[test]
+    fn test_comment_parsing() {
+        use KeyCode::*;
+        use KeyModifier::*;
+        // Comment at start of line
+        assert_eq!(
+            keys.parse("# comment\na"),
+            Ok(Keys(vec![Key::from(Char('a')),]))
+        );
+        // Indented comment
+        assert_eq!(
+            keys.parse("  # indented comment\na"),
+            Ok(Keys(vec![Key::from(Char('a')),]))
+        );
+        // Comment after keys
+        assert_eq!(
+            keys.parse("a b # comment\nc"),
+            Ok(Keys(vec![
+                Key::from(Char('a')),
+                Key::from(Char('b')),
+                Key::from(Char('c')),
+            ]))
+        );
+        // Multiple comments
+        assert_eq!(
+            keys.parse("# comment 1\n# comment 2\na"),
+            Ok(Keys(vec![Key::from(Char('a')),]))
+        );
+        // Comment with keys before and after
+        assert_eq!(
+            keys.parse("a\n# comment\nb"),
+            Ok(Keys(vec![Key::from(Char('a')), Key::from(Char('b')),]))
+        );
+        // Comment without trailing newline
+        assert_eq!(
+            keys.parse("a # comment"),
+            Ok(Keys(vec![Key::from(Char('a')),]))
+        );
+        // Empty lines with comments
+        assert_eq!(
+            keys.parse("a\n\n# comment\n\nb"),
+            Ok(Keys(vec![Key::from(Char('a')), Key::from(Char('b')),]))
+        );
+        // Complex example from requirements
+        assert_eq!(
+            keys.parse(
+                "# comment at start\n  # indented comment\n  <a-a> b c d # comment following keys"
+            ),
+            Ok(Keys(vec![
+                Key::from(([Alt], 'a')),
+                Key::from(Char('b')),
+                Key::from(Char('c')),
+                Key::from(Char('d')),
+            ]))
         );
     }
 }
