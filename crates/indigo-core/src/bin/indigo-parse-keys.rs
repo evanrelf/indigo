@@ -7,8 +7,6 @@ use std::{
     str::FromStr,
 };
 
-// $ watchexec --quiet --clear -- cat keys \| cargo run --quiet --bin indigo-parse-keys
-
 #[derive(clap::ValueEnum, Clone, Default)]
 enum Type {
     #[default]
@@ -22,11 +20,11 @@ enum Type {
 impl Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match self {
-            Type::Keys => write!(f, "keys")?,
-            Type::Key => write!(f, "key")?,
-            Type::KeyModifiers => write!(f, "key-modifiers")?,
-            Type::KeyModifier => write!(f, "key-modifier")?,
-            Type::KeyCode => write!(f, "key-code")?,
+            Self::Keys => write!(f, "keys")?,
+            Self::Key => write!(f, "key")?,
+            Self::KeyModifiers => write!(f, "key-modifiers")?,
+            Self::KeyModifier => write!(f, "key-modifier")?,
+            Self::KeyCode => write!(f, "key-code")?,
         }
         Ok(())
     }
@@ -34,33 +32,50 @@ impl Display for Type {
 
 #[derive(clap::Parser)]
 struct Args {
+    /// Type to parse
     #[arg(long, default_value_t)]
     r#type: Type,
 
+    /// Print parsed result with `Debug` instead of `Display`
     #[arg(long)]
     debug: bool,
+
+    /// Parse each line separately
+    #[arg(long)]
+    lines: bool,
 }
 
 fn main() -> anyhow::Result<ExitCode> {
     let args = Args::parse();
 
-    match args.r#type {
-        Type::Keys => run::<Keys>(args.debug),
-        Type::Key => run::<Key>(args.debug),
-        Type::KeyModifiers => run::<KeyModifiers>(args.debug),
-        Type::KeyModifier => run::<KeyModifier>(args.debug),
-        Type::KeyCode => run::<KeyCode>(args.debug),
+    let runner = |input: &str| match args.r#type {
+        Type::Keys => run::<Keys>(input, args.debug),
+        Type::Key => run::<Key>(input, args.debug),
+        Type::KeyModifiers => run::<KeyModifiers>(input, args.debug),
+        Type::KeyModifier => run::<KeyModifier>(input, args.debug),
+        Type::KeyCode => run::<KeyCode>(input, args.debug),
+    };
+
+    if args.lines {
+        for line in io::stdin().lines() {
+            if runner(&line?) != ExitCode::SUCCESS {
+                return Ok(ExitCode::FAILURE);
+            }
+        }
+        Ok(ExitCode::SUCCESS)
+    } else {
+        let stdin = io::read_to_string(io::stdin())?;
+        let exit_code = runner(&stdin);
+        Ok(exit_code)
     }
 }
 
-fn run<T>(debug: bool) -> anyhow::Result<ExitCode>
+fn run<T>(input: &str, debug: bool) -> ExitCode
 where
     // TODO: Use `Display`.
     T: FromStr + Debug,
     <T as FromStr>::Err: Display,
 {
-    let input = io::read_to_string(io::stdin())?;
-
     let result = input.parse::<T>();
 
     match &result {
@@ -71,7 +86,7 @@ where
     }
 
     match &result {
-        Ok(_) => Ok(ExitCode::SUCCESS),
-        Err(_) => Ok(ExitCode::FAILURE),
+        Ok(_) => ExitCode::SUCCESS,
+        Err(_) => ExitCode::FAILURE,
     }
 }
