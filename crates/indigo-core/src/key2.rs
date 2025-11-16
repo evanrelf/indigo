@@ -18,6 +18,7 @@ use winnow::{
 use arbitrary::Arbitrary;
 
 #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[derive(Clone, Debug)]
 pub struct Keys(pub Vec<Key>);
 
 impl FromStr for Keys {
@@ -54,7 +55,7 @@ fn keys(input: &mut &str) -> ModalResult<Keys> {
         .parse_next(input)
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Key {
     pub modifiers: KeyModifiers,
     pub code: KeyCode,
