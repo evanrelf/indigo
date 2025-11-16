@@ -1,9 +1,11 @@
 use crate::{
+    buffer::Buffer,
     editor::Editor,
     mode::{
         CommandMode, InsertMode, Mode, NormalMode, SeekDirection, SeekInclude, SeekMode, SeekSelect,
     },
 };
+use camino::Utf8PathBuf;
 use clap::Parser as _;
 use std::{borrow::Cow, iter, num::NonZeroUsize, process::ExitCode};
 
@@ -243,6 +245,7 @@ pub fn redo(editor: &mut Editor) {
 }
 
 // TODO: Move command handling into command mode code. This function should be very short.
+#[expect(clippy::too_many_lines)]
 pub fn run_command(editor: &mut Editor) -> anyhow::Result<()> {
     #[derive(clap::Parser)]
     #[clap(
@@ -256,6 +259,11 @@ pub fn run_command(editor: &mut Editor) -> anyhow::Result<()> {
             error: bool,
             message: Vec<String>,
         },
+        #[clap(alias = "e")]
+        Edit { path: Utf8PathBuf },
+        // TODO: Delete `edit!` once multiple buffers are supported.
+        #[clap(name = "edit!", alias = "e!")]
+        EditForce { path: Utf8PathBuf },
         #[clap(alias = "w")]
         Write,
         #[clap(alias = "q")]
@@ -307,6 +315,22 @@ pub fn run_command(editor: &mut Editor) -> anyhow::Result<()> {
                 editor.message = Some(Err(message.join(" ")));
             } else {
                 editor.message = Some(Ok(message.join(" ")));
+            }
+        }
+        Command::Edit { path } => {
+            if editor.buffer.text().is_modified() {
+                editor.message = Some(Err(String::from("Unsaved changes")));
+            } else if let Ok(buffer) = Buffer::open(&mut editor.fs, &path) {
+                editor.buffer = buffer;
+            } else {
+                editor.message = Some(Err(format!("Failed to open {path}")));
+            }
+        }
+        Command::EditForce { path } => {
+            if let Ok(buffer) = Buffer::open(&mut editor.fs, &path) {
+                editor.buffer = buffer;
+            } else {
+                editor.message = Some(Err(format!("Failed to open {path}")));
             }
         }
         Command::Write => {
