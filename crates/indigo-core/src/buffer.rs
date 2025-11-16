@@ -15,8 +15,17 @@ pub enum Error {
 }
 
 #[derive(Default)]
+pub enum BufferKind {
+    #[default]
+    Scratch,
+    File {
+        path: Utf8PathBuf,
+    },
+}
+
+#[derive(Default)]
 pub struct Buffer {
-    pub path: Option<Utf8PathBuf>,
+    kind: BufferKind,
     text: Text,
     // TODO: Track history of range state
     range: RangeState,
@@ -40,18 +49,30 @@ impl Buffer {
             Rope::new()
         };
         let mut buffer = Self::from(rope);
-        buffer.path = Some(path.to_path_buf());
+        buffer.kind = BufferKind::File {
+            path: path.to_path_buf(),
+        };
         Ok(buffer)
     }
 
     pub fn save(&mut self, fs: &mut impl Fs) -> anyhow::Result<()> {
-        if let Some(path) = &self.path {
+        if let Some(path) = self.path() {
             let mut bytes = Vec::with_capacity(self.text.len_bytes());
             self.text.write_to(&mut bytes)?;
             fs.write(path, &bytes)?;
             self.text.set_unmodified();
         }
         Ok(())
+    }
+
+    #[must_use]
+    pub fn kind(&self) -> &BufferKind {
+        &self.kind
+    }
+
+    #[must_use]
+    pub fn path(&self) -> Option<&Utf8Path> {
+        todo!()
     }
 
     #[must_use]
@@ -132,7 +153,9 @@ mod tests {
         fs.write("main.rs".into(), b"fn main() {}")?;
         let mut buffer = Buffer::open(&mut fs, "main.rs")?;
         assert_eq!(&buffer.text.to_string(), "fn main() {}");
-        buffer.path = Some(Utf8PathBuf::from("main2.rs"));
+        buffer.kind = BufferKind::File {
+            path: Utf8PathBuf::from("main2.rs"),
+        };
         buffer.save(&mut fs)?;
         assert_eq!(fs.read("main2.rs".into())?, b"fn main() {}");
         Ok(())

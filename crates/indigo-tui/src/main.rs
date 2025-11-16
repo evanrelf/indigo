@@ -280,7 +280,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
             Mode::Command(_) => "command",
         };
 
-        let path = match &editor.buffer.path {
+        let path = match &editor.buffer.path() {
             None => "*scratch*",
             Some(path) => path.as_str(),
         };
