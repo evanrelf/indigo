@@ -20,7 +20,8 @@ pub enum BufferKind {
     Scratch,
     File {
         path: Utf8PathBuf,
-        original: Rope,
+        /// Last known state of file on disk. Used for modification tracking.
+        on_disk: Rope,
     },
 }
 
@@ -52,17 +53,17 @@ impl Buffer {
         let mut buffer = Self::from(rope.clone());
         buffer.kind = BufferKind::File {
             path: path.to_path_buf(),
-            original: rope,
+            on_disk: rope,
         };
         Ok(buffer)
     }
 
     pub fn save(&mut self, fs: &mut impl Fs) -> anyhow::Result<()> {
-        if let BufferKind::File { path, original } = &mut self.kind {
+        if let BufferKind::File { path, on_disk } = &mut self.kind {
             let mut bytes = Vec::with_capacity(self.text.len_bytes());
             self.text.write_to(&mut bytes)?;
             fs.write(path, &bytes)?;
-            *original = self.text.clone();
+            *on_disk = self.text.clone();
         }
         Ok(())
     }
@@ -88,8 +89,8 @@ impl Buffer {
 
     #[must_use]
     pub fn is_modified(&self) -> Option<bool> {
-        if let BufferKind::File { original, .. } = &self.kind {
-            Some(self.text.rope() != original)
+        if let BufferKind::File { on_disk, .. } = &self.kind {
+            Some(self.text.rope() != on_disk)
         } else {
             None
         }
