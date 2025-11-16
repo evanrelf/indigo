@@ -9,7 +9,7 @@ use std::{
 };
 use winnow::{
     ascii::{multispace0, till_line_ending},
-    combinator::{alt, cut_err, delimited, fail, opt, permutation, preceded, repeat, terminated},
+    combinator::{alt, cut_err, delimited, fail, opt, preceded, repeat, terminated},
     prelude::*,
     token::one_of,
 };
@@ -121,16 +121,7 @@ fn key(input: &mut &str) -> ModalResult<Key> {
 
 fn key_wrapped(input: &mut &str) -> ModalResult<Key> {
     let _ = "<".parse_next(input)?;
-    let (control, alt, shift) = permutation((
-        opt("c-".value(KeyModifier::Control)),
-        opt("a-".value(KeyModifier::Alt)),
-        opt("s-".value(KeyModifier::Shift)),
-    ))
-    .parse_next(input)?;
-    let modifiers = [control, alt, shift]
-        .into_iter()
-        .flatten()
-        .fold(KeyModifiers::default(), |x, y| x | y);
+    let modifiers = key_modifiers.parse_next(input)?;
     let code = key_code_wrapped.parse_next(input)?;
     let _ = ">".parse_next(input)?;
     Ok(Key { modifiers, code })
@@ -142,16 +133,7 @@ fn key_bare(input: &mut &str) -> ModalResult<Key> {
 
 fn key_bare_modified(input: &mut &str) -> ModalResult<Key> {
     let _ = "<".parse_next(input)?;
-    let (control, alt, shift) = permutation((
-        opt("c-".value(KeyModifier::Control)),
-        opt("a-".value(KeyModifier::Alt)),
-        opt("s-".value(KeyModifier::Shift)),
-    ))
-    .parse_next(input)?;
-    let modifiers = [control, alt, shift]
-        .into_iter()
-        .flatten()
-        .fold(KeyModifiers::default(), |x, y| x | y);
+    let modifiers = key_modifiers.parse_next(input)?;
     if modifiers.is_empty() {
         fail.parse_next(input)?;
     }
@@ -166,6 +148,20 @@ fn key_bare_unmodified(input: &mut &str) -> ModalResult<Key> {
     Ok(Key { modifiers, code })
 }
 
+fn key_modifiers(input: &mut &str) -> ModalResult<KeyModifiers> {
+    let mut modifiers = KeyModifiers::default();
+    while !modifiers.is_full() {
+        let Some(modifier) = opt(terminated(key_modifier, "-")).parse_next(input)? else {
+            break;
+        };
+        if modifiers.contains(modifier) {
+            return fail.parse_next(input);
+        }
+        modifiers |= modifier;
+    }
+    Ok(modifiers)
+}
+
 pub type KeyModifiers = FlagSet<KeyModifier>;
 
 flags! {
@@ -175,6 +171,15 @@ flags! {
         Alt,
         Shift,
     }
+}
+
+fn key_modifier(input: &mut &str) -> ModalResult<KeyModifier> {
+    alt((
+        "c".value(KeyModifier::Control),
+        "a".value(KeyModifier::Alt),
+        "s".value(KeyModifier::Shift),
+    ))
+    .parse_next(input)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -269,7 +274,19 @@ mod tests {
     use arbtest::arbtest;
 
     #[test]
-    fn parse_key_roundtrip() {
+    fn key_modifiers() {
+        // Parse any modifier ordering, but print the canonical ordering.
+        assert_eq!(key.parse("<c-a-s-a>").unwrap().to_string(), "<c-a-s-a>");
+        assert_eq!(key.parse("<s-c-a>").unwrap().to_string(), "<c-s-a>");
+        assert_eq!(key.parse("<s-c-a-a>").unwrap().to_string(), "<c-a-s-a>");
+        assert_eq!(key.parse("<a-s-c-a>").unwrap().to_string(), "<c-a-s-a>");
+        // Duplicate modifiers / too many modifiers don't parse.
+        assert!(key.parse("<c-c-a>").is_err());
+        assert!(key.parse("<s-c-a-c-a>").is_err());
+    }
+
+    #[test]
+    fn key_roundtrip() {
         arbtest(|u| {
             let key = u.arbitrary::<Key>()?;
             match key.to_string().parse() {
