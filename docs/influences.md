@@ -3,6 +3,48 @@
 Disclaimer: this is not a thorough review of every influence, nor have I written
 down everything I think about them.
 
+## Writing
+
+- "An Engine for an Editor" by matklad
+  https://matklad.github.io/2023/03/08/an-engine-for-an-editor.html
+
+  > The foundation is a text with attributes — a pair of a string and a map
+  > from string’s subranges to key-value dictionaries. Attributes express
+  > presentation (color, font, text decoration), but also semantics. A range
+  > of text can be designated as clickable. Or it can specify a custom keymap,
+  > which is only active when the cursor is on this range.
+
+  I'm not going to build the general purpose text-based computing substrate
+  imagined in this post. But I think this "text with attributes" idea is a
+  really good one for my editor. Syntax highlighting, goto definition, red
+  squiggles, etc could all be implemented with this.
+
+- "Readonly Characters Are a Big Deal" by matklad
+  https://matklad.github.io/2025/11/10/readonly-characters.html
+
+  "Read only" is a concrete example of the "text with attributes" idea from
+  their earlier "An Engine for an Editor" post.
+
+- "Unified Versus Split Diff" by matklad
+  https://matklad.github.io/2023/10/23/unified-vs-split-diff.html
+
+  > For a large change, I don’t want to do a “diff review”, I want to
+  > do a proper code review of a codebase at a particular instant in time,
+  > paying specific attention to the recently changed areas, but mostly just
+  > doing general review, as if I am writing the code. I need to run tests,
+  > use goto definition and other editor navigation features, apply local
+  > changes to check if some things could have been written differently, look
+  > at the wider context to notice things that should have been changed, and
+  > in general notice anything that might be not quite right with the codebase,
+  > irrespective of the historical path to the current state of the code.
+
+  I'd love to support this kind of code review workflow in my text editor.
+  Showing the green added text _and_ red deleted text, like reviewing a PR on
+  GitHub, but with real files locally. Then I can edit them to make the
+  formatting easier to read, try out an idea before suggesting it, jump around
+  with goto definition, see the full context in which the change is being made,
+  etc.
+
 ## Text editors
 
 - **[Kakoune]**
@@ -118,45 +160,3 @@ down everything I think about them.
     - Literally nothing
 
 [ed]: https://www.gnu.org/fun/jokes/ed-msg.en.html
-
-## Blog posts
-
-- "An Engine for an Editor" by matklad
-  https://matklad.github.io/2023/03/08/an-engine-for-an-editor.html
-
-  > The foundation is a text with attributes — a pair of a string and a map
-  > from string’s subranges to key-value dictionaries. Attributes express
-  > presentation (color, font, text decoration), but also semantics. A range
-  > of text can be designated as clickable. Or it can specify a custom keymap,
-  > which is only active when the cursor is on this range.
-
-  I'm not going to build the general purpose text-based computing substrate
-  imagined in this post. But I think this "text with attributes" idea is a
-  really good one for my editor. Syntax highlighting, goto definition, red
-  squiggles, etc could all be implemented with this.
-
-- "Readonly Characters Are a Big Deal" by matklad
-  https://matklad.github.io/2025/11/10/readonly-characters.html
-
-  "Read only" is a concrete example of the "text with attributes" idea from
-  their earlier "An Engine for an Editor" post.
-
-- "Unified Versus Split Diff" by matklad
-  https://matklad.github.io/2023/10/23/unified-vs-split-diff.html
-
-  > For a large change, I don’t want to do a “diff review”, I want to
-  > do a proper code review of a codebase at a particular instant in time,
-  > paying specific attention to the recently changed areas, but mostly just
-  > doing general review, as if I am writing the code. I need to run tests,
-  > use goto definition and other editor navigation features, apply local
-  > changes to check if some things could have been written differently, look
-  > at the wider context to notice things that should have been changed, and
-  > in general notice anything that might be not quite right with the codebase,
-  > irrespective of the historical path to the current state of the code.
-
-  I'd love to support this kind of code review workflow in my text editor.
-  Showing the green added text _and_ red deleted text, like reviewing a PR on
-  GitHub, but with real files locally. Then I can edit them to make the
-  formatting easier to read, try out an idea before suggesting it, jump around
-  with goto definition, see the full context in which the change is being made,
-  etc.
