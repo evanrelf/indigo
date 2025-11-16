@@ -1,4 +1,4 @@
-use crate::graphemes::{self, Graphemes};
+use crate::grapheme::{self, Graphemes};
 use ropey::{Rope, RopeSlice};
 use std::ops::{Bound, RangeBounds};
 
@@ -105,23 +105,23 @@ pub trait RopeExt {
     }
 
     fn is_grapheme_boundary(&self, char_offset: usize) -> bool {
-        graphemes::is_grapheme_boundary(&self.as_slice(), char_offset)
+        grapheme::is_grapheme_boundary(&self.as_slice(), char_offset)
     }
 
     fn prev_grapheme_boundary(&self, char_offset: usize) -> Option<usize> {
-        graphemes::prev_grapheme_boundary(&self.as_slice(), char_offset)
+        grapheme::prev_grapheme_boundary(&self.as_slice(), char_offset)
     }
 
     fn next_grapheme_boundary(&self, char_offset: usize) -> Option<usize> {
-        graphemes::next_grapheme_boundary(&self.as_slice(), char_offset)
+        grapheme::next_grapheme_boundary(&self.as_slice(), char_offset)
     }
 
     fn floor_grapheme_boundary(&self, char_offset: usize) -> usize {
-        graphemes::floor_grapheme_boundary(&self.as_slice(), char_offset)
+        grapheme::floor_grapheme_boundary(&self.as_slice(), char_offset)
     }
 
     fn ceil_grapheme_boundary(&self, char_offset: usize) -> usize {
-        graphemes::ceil_grapheme_boundary(&self.as_slice(), char_offset)
+        grapheme::ceil_grapheme_boundary(&self.as_slice(), char_offset)
     }
 }
 
