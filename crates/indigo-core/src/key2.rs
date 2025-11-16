@@ -162,6 +162,15 @@ fn key_bare_unmodified(input: &mut &str) -> ModalResult<Key> {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct KeyModifiers(pub FlagSet<KeyModifier>);
 
+impl FromStr for KeyModifiers {
+    type Err = anyhow::Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        key_modifiers
+            .parse(s)
+            .map_err(|e| anyhow::format_err!("{e}"))
+    }
+}
+
 fn key_modifiers(input: &mut &str) -> ModalResult<KeyModifiers> {
     let mut modifiers = KeyModifiers::default();
     while !modifiers.is_full() {
@@ -195,6 +204,15 @@ flags! {
         Control,
         Alt,
         Shift,
+    }
+}
+
+impl FromStr for KeyModifier {
+    type Err = anyhow::Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        key_modifier
+            .parse(s)
+            .map_err(|e| anyhow::format_err!("{e}"))
     }
 }
 
@@ -247,6 +265,13 @@ impl<'a> Arbitrary<'a> for KeyCode {
                 Self::Escape,
             ])?)
         }
+    }
+}
+
+impl FromStr for KeyCode {
+    type Err = anyhow::Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        key_code.parse(s).map_err(|e| anyhow::format_err!("{e}"))
     }
 }
 
