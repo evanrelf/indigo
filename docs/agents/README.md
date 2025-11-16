@@ -1,4 +1,4 @@
-# Guidance for Agents
+# Guidance for agents
 
 ## About
 
@@ -12,7 +12,7 @@ next to Indigo (i.e. `cd ../blue`); read that code if I mention it.
 [Kakoune]: https://github.com/mawww/kakoune
 [Blue]: https://github.com/evanrelf/blue
 
-## Project Structure
+## Project structure
 
 Indigo is written in Rust, across multiple crates in a Cargo workspace:
 
@@ -26,7 +26,7 @@ Indigo is written in Rust, across multiple crates in a Cargo workspace:
 - **indigo-wrap:** Limited form of higher-kinded types, provides generic wrapper
   types and "mutability generics". Powers `indigo-core`'s "view types."
 
-## Checking Your Work
+## Checking your work
 
 - Always run `cargo clippy` to check if code compiles. Never run `cargo check`
   or `cargo build`.

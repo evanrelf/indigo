@@ -1,4 +1,4 @@
-# The Zen of Indigo
+# Zen
 
 - Simple is better than easy.
 - Composable is better than extensible.
