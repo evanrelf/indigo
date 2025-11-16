@@ -4,6 +4,8 @@
 
 - **[Kakoune]**
   - Good
+    - Elegant, well designed
+    - Few orthogonal features that are powerful when composed
     - Noun before verb editing language
     - Interactive visual feedback
     - Multiple cursors
@@ -16,6 +18,7 @@
   - Bad
     - C++ codebase I don't want to touch
     - Too much functionality of variable quality implemented in userspace (`rc`)
+    - Imperfect grapheme rendering
   - More info in [Kakoune design doc]
 
 [Kakoune]: https://github.com/mawww/kakoune
@@ -31,9 +34,11 @@
     - Verb before noun, and heavy reliance on command mode (e.g. `s` and `g`)
       and macros for editing tasks, leads to less interactive editing with poor
       feedback that allows for more mistakes that are less forgiving to fix
+    - Bad non-standard regex dialect, nobody should have to think about "magic"
     - Design is not clean and orthogonal like Kakoune
     - Neovim customization scene is as fast paced and immature (experience level
       of vocal users, quality of popular software) as frontend dev
+    - Imperfect grapheme rendering
 
 [Vim]: https://www.vim.org/
 [Neovim]: https://neovim.io/
@@ -62,8 +67,39 @@
     - Strong architecture / system design, clean separation of components
     - Persistent/immutable data structures
     - Transactional updates
+    - Text editor as a library
 
 [CodeMirror]: https://codemirror.net/
+
+- **[Emacs]**
+
+[Emacs]: https://www.gnu.org/software/emacs/
+
+- **[VS Code]**
+  - Good
+    - Command palette
+    - [Breadcrumbs](https://code.visualstudio.com/docs/editing/editingevolved#_breadcrumbs)
+    - [Hot exit](https://code.visualstudio.com/docs/editing/codebasics#_hot-exit)
+  - Bad
+    - GUI
+    - IDE
+    - Electron
+
+[VS Code]: https://code.visualstudio.com/
+
+- **[Zed]**
+  - Good
+    - `SumTree` is so cool
+    - CRDTs are cool (overkill for my project though)
+    - Outline view
+  - Bad
+    - GUI
+    - IDE
+    - Installs language tooling automatically without asking
+    - Inconsistent keymap especially regarding window focus, hard to put my
+      finger on it but it feels wrong
+
+[Zed]: https://zed.dev/
 
 - **[ed]**
   - Good
