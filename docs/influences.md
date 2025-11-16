@@ -5,7 +5,8 @@ down everything I think about them.
 
 ## Writing
 
-- "An Engine for an Editor" by matklad
+- **"An Engine for an Editor" by matklad**
+
   https://matklad.github.io/2023/03/08/an-engine-for-an-editor.html
 
   > The foundation is a text with attributes — a pair of a string and a map
@@ -19,13 +20,15 @@ down everything I think about them.
   really good one for my editor. Syntax highlighting, goto definition, red
   squiggles, etc could all be implemented with this.
 
-- "Readonly Characters Are a Big Deal" by matklad
+- **"Readonly Characters Are a Big Deal" by matklad**
+
   https://matklad.github.io/2025/11/10/readonly-characters.html
 
   "Read only" is a concrete example of the "text with attributes" idea from
   their earlier "An Engine for an Editor" post.
 
-- "Unified Versus Split Diff" by matklad
+- **"Unified Versus Split Diff" by matklad**
+
   https://matklad.github.io/2023/10/23/unified-vs-split-diff.html
 
   > For a large change, I don’t want to do a “diff review”, I want to
@@ -44,6 +47,46 @@ down everything I think about them.
   formatting easier to read, try out an idea before suggesting it, jump around
   with goto definition, see the full context in which the change is being made,
   etc.
+
+- **Addressing Editor Content by Marijn Haverbeke**
+
+  https://marijnhaverbeke.nl/blog/addressing-editor-content.html
+
+  > Every text editor system, whether it works with plain or rich text,
+  > needs some way to refer to specific positions in the document. The very
+  > first reason one runs into this, when implementing such a system, is for
+  > representing the cursor and selection. But in a mature editor, you'll be
+  > doing a lot more things that refer to document positions—representing
+  > changes, displaying user interface elements in the text, or tracking
+  > metadata about a piece of content.
+
+  Talks about why offsets are the right answer for most projects.
+
+  I personally think byte offsets are best. Not char offsets (less efficient
+  than bytes), not grapheme offsets (they're variable width, and the count
+  changes as you append text, so it's not a monoidal metric you can track in a
+  rope), not any kind of index either (offsets are better for bar cursors which
+  can be represented as zero-width selections, inclusive ranges of bytes, having
+  some representation of a cursor at/past EOF like in an empty file, etc).
+
+- **Facets as Composable Extension Points by Marijn Haverbeke**
+
+  https://marijnhaverbeke.nl/blog/facets.html
+
+  The extension system designed for CodeMirror 6.
+
+  > A facet, in this system, defines an extension point. It takes any number
+  > of input values and produces an output value. Examples of facets are...
+  >
+  > - Event handlers, where individual extension can define function that handle
+  >   a given event.
+  >
+  > - Editor configuration, like the tab size and whether content is read-only.
+  >
+  > - The set of markers to style the content with (for example syntax
+  >   highlighting).
+  >
+  > - The set of gutters to show next to the content.
 
 ## Text editors
 
