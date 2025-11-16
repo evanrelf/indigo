@@ -646,4 +646,38 @@ mod tests {
             ]))
         );
     }
+
+    #[test]
+    fn test_wrapped_bare_chars() {
+        use KeyCode::*;
+
+        let chars = ['a', 'b', 'Z', '!', '@', '~', '0', '9'];
+
+        for ch in chars {
+            // Both bare and wrapped forms should parse to the same Key
+            assert_eq!(key.parse(&ch.to_string()), key.parse(&format!("<{ch}>")));
+            // Verify they parse to the expected Key
+            assert_eq!(key.parse(&format!("<{ch}>")), Ok(Key::from(Char(ch))));
+        }
+
+        // Wrapped form should also work in key sequences
+        assert_eq!(
+            keys.parse("<a><b><c>"),
+            Ok(Keys(vec![
+                Key::from(Char('a')),
+                Key::from(Char('b')),
+                Key::from(Char('c')),
+            ]))
+        );
+
+        // Mixed bare and wrapped should work
+        assert_eq!(
+            keys.parse("a<b>c"),
+            Ok(Keys(vec![
+                Key::from(Char('a')),
+                Key::from(Char('b')),
+                Key::from(Char('c')),
+            ]))
+        );
+    }
 }
