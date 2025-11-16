@@ -22,10 +22,9 @@ struct Edit {
 //     }
 // }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Text {
     rope: Rope,
-    original: Rope,
     history: History<Edit>,
 }
 
@@ -38,15 +37,6 @@ impl Text {
     #[must_use]
     pub fn rope(&self) -> &Rope {
         &self.rope
-    }
-
-    #[must_use]
-    pub fn is_modified(&self) -> bool {
-        self.rope != self.original
-    }
-
-    pub fn set_unmodified(&mut self) {
-        self.original = self.rope.clone();
     }
 
     pub fn edit(&mut self, edit: &EditSeq) -> anyhow::Result<()> {
@@ -86,17 +76,6 @@ impl Text {
     }
 }
 
-impl Default for Text {
-    fn default() -> Self {
-        let rope = Rope::default();
-        Self {
-            original: rope.clone(),
-            rope,
-            history: History::default(),
-        }
-    }
-}
-
 impl Deref for Text {
     type Target = Rope;
 
@@ -109,7 +88,6 @@ impl<'a> From<&'a str> for Text {
     fn from(str: &'a str) -> Self {
         let rope = Rope::from(str);
         Self {
-            original: rope.clone(),
             rope,
             ..Self::default()
         }
@@ -119,7 +97,6 @@ impl<'a> From<&'a str> for Text {
 impl From<Rope> for Text {
     fn from(rope: Rope) -> Self {
         Self {
-            original: rope.clone(),
             rope,
             ..Self::default()
         }

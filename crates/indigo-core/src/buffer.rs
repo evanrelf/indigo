@@ -20,6 +20,7 @@ pub enum BufferKind {
     Scratch,
     File {
         path: Utf8PathBuf,
+        original: Rope,
     },
 }
 
@@ -48,19 +49,20 @@ impl Buffer {
         } else {
             Rope::new()
         };
-        let mut buffer = Self::from(rope);
+        let mut buffer = Self::from(rope.clone());
         buffer.kind = BufferKind::File {
             path: path.to_path_buf(),
+            original: rope,
         };
         Ok(buffer)
     }
 
     pub fn save(&mut self, fs: &mut impl Fs) -> anyhow::Result<()> {
-        if let Some(path) = self.path() {
+        if let BufferKind::File { path, original } = &mut self.kind {
             let mut bytes = Vec::with_capacity(self.text.len_bytes());
             self.text.write_to(&mut bytes)?;
             fs.write(path, &bytes)?;
-            self.text.set_unmodified();
+            *original = self.text.clone();
         }
         Ok(())
     }
@@ -72,12 +74,25 @@ impl Buffer {
 
     #[must_use]
     pub fn path(&self) -> Option<&Utf8Path> {
-        todo!()
+        if let BufferKind::File { path, .. } = &self.kind {
+            Some(path)
+        } else {
+            None
+        }
     }
 
     #[must_use]
     pub fn text(&self) -> &Text {
         &self.text
+    }
+
+    #[must_use]
+    pub fn is_modified(&self) -> Option<bool> {
+        if let BufferKind::File { original, .. } = &self.kind {
+            Some(self.text.rope() != original)
+        } else {
+            None
+        }
     }
 
     pub fn range(&self) -> Range<'_> {
@@ -153,9 +168,10 @@ mod tests {
         fs.write("main.rs".into(), b"fn main() {}")?;
         let mut buffer = Buffer::open(&mut fs, "main.rs")?;
         assert_eq!(&buffer.text.to_string(), "fn main() {}");
-        buffer.kind = BufferKind::File {
-            path: Utf8PathBuf::from("main2.rs"),
+        let BufferKind::File { path, .. } = &mut buffer.kind else {
+            unreachable!();
         };
+        *path = Utf8PathBuf::from("main2.rs");
         buffer.save(&mut fs)?;
         assert_eq!(fs.read("main2.rs".into())?, b"fn main() {}");
         Ok(())

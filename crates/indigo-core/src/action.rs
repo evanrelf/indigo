@@ -318,7 +318,7 @@ pub fn run_command(editor: &mut Editor) -> anyhow::Result<()> {
             }
         }
         Command::Edit { path } => {
-            if editor.buffer.text().is_modified() {
+            if editor.buffer.is_modified().unwrap_or(false) {
                 editor.message = Some(Err(String::from("Unsaved changes")));
             } else if let Ok(buffer) = Buffer::open(&mut editor.fs, &path) {
                 editor.buffer = buffer;
@@ -339,7 +339,7 @@ pub fn run_command(editor: &mut Editor) -> anyhow::Result<()> {
             }
         }
         Command::Quit { exit_code } => {
-            if editor.buffer.text().is_modified() {
+            if editor.buffer.is_modified().unwrap_or(false) {
                 editor.message = Some(Err(String::from("Unsaved changes")));
             } else {
                 editor.exit = if let Some(exit_code) = exit_code {
