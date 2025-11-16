@@ -52,7 +52,7 @@ pub fn handle_event(
     }
 
     if let Ok(event) = event_t2i(&event) {
-        let handled = indigo_core::event::handle_event(editor, &event)?;
+        let handled = indigo_core::event::handle_event(editor, event)?;
         if handled {
             return Ok(());
         }

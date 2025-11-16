@@ -23,12 +23,17 @@ impl From<Key> for Event {
     }
 }
 
-pub fn handle_event(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
+pub fn handle_event(editor: &mut Editor, mut event: Event) -> anyhow::Result<bool> {
+    #[expect(irrefutable_let_patterns)]
+    if let Event::KeyInput(key) = &mut event {
+        key.normalize();
+    }
+
     let handled = match editor.mode {
-        Mode::Normal(_) => handle_event_normal(editor, event),
-        Mode::Seek(_) => handle_event_seek(editor, event),
-        Mode::Insert(_) => handle_event_insert(editor, event),
-        Mode::Command(_) => handle_event_command(editor, event)?,
+        Mode::Normal(_) => handle_event_normal(editor, &event),
+        Mode::Seek(_) => handle_event_seek(editor, &event),
+        Mode::Insert(_) => handle_event_insert(editor, &event),
+        Mode::Command(_) => handle_event_command(editor, &event)?,
     };
 
     Ok(handled)
