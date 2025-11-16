@@ -6,7 +6,8 @@ use std::{
     str::FromStr,
 };
 use winnow::{
-    combinator::{alt, repeat, terminated},
+    ascii::multispace0,
+    combinator::{alt, delimited, repeat, terminated},
     prelude::*,
     token::one_of,
 };
@@ -73,8 +74,11 @@ impl FromStr for Keys {
 // if you wanted to call the CLI from a script with a complex sequence of inputs, it'd be nice to
 // spread it across multiple lines and leave comments documenting the behavior. Similar to the
 // `regex` crate's "verbose mode": https://docs.rs/regex/latest/regex/#example-verbose-mode.
+
 fn keys(input: &mut &str) -> ModalResult<Keys> {
-    repeat(0.., key).map(Keys).parse_next(input)
+    repeat(0.., delimited(multispace0, key, multispace0))
+        .map(Keys)
+        .parse_next(input)
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -183,13 +187,14 @@ impl Display for Key {
             KeyCode::Down => "down",
             KeyCode::Tab => "tab",
             KeyCode::Escape => "esc",
+            KeyCode::Char(' ') => "space",
             KeyCode::Char('<') => "lt",
             KeyCode::Char('>') => "gt",
             KeyCode::Char(c) => &c.to_string(),
         };
         if self.modifiers.is_empty()
             && matches!(self.code, KeyCode::Char(_))
-            && !matches!(self.code, KeyCode::Char('<' | '>'))
+            && !matches!(self.code, KeyCode::Char(' ' | '<' | '>'))
         {
             write!(f, "{code}")?;
         } else {
@@ -291,13 +296,14 @@ fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
     alt((
         "bs".value(KeyCode::Backspace),
         "del".value(KeyCode::Delete),
-        "ret".value(KeyCode::Return), // TODO: Also parse '\n' and "\\n"?
+        "ret".value(KeyCode::Return),
         "left".value(KeyCode::Left),
         "right".value(KeyCode::Right),
         "up".value(KeyCode::Up),
         "down".value(KeyCode::Down),
-        "tab".value(KeyCode::Tab), // TODO: Also parse '\t' and "\\t"?
+        "tab".value(KeyCode::Tab),
         "esc".value(KeyCode::Escape),
+        "space".value(KeyCode::Char(' ')),
         "lt".value(KeyCode::Char('<')),
         "gt".value(KeyCode::Char('>')),
     ))
@@ -305,14 +311,14 @@ fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
 }
 
 fn key_code_bare(input: &mut &str) -> ModalResult<KeyCode> {
-    one_of(' '..='~').map(KeyCode::Char).parse_next(input)
+    one_of('!'..='~').map(KeyCode::Char).parse_next(input)
 }
 
 #[cfg(any(feature = "arbitrary", test))]
 impl<'a> Arbitrary<'a> for KeyCode {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
         if u.ratio(8, 10)? {
-            let i = u.int_in_range(b' '..=b'~')?;
+            let i = u.int_in_range(b'!'..=b'~')?;
             let c = char::from(i);
             Ok(Self::Char(c))
         } else {
@@ -442,7 +448,7 @@ mod tests {
     #[test]
     fn test_parse_key_code() {
         use KeyCode::*;
-        assert_eq!(key_code.parse(" "), Ok(Char(' ')));
+        assert_eq!(key_code.parse("space"), Ok(Char(' ')));
         assert_eq!(key_code.parse("!"), Ok(Char('!')));
         assert_eq!(key_code.parse("+"), Ok(Char('+')));
         assert_eq!(key_code.parse("~"), Ok(Char('~')));
@@ -452,5 +458,74 @@ mod tests {
         assert_eq!(key_code.parse("del"), Ok(Delete));
         assert_eq!(key_code.parse("esc"), Ok(Escape));
         assert!(key_code.parse("∆").is_err());
+    }
+
+    #[test]
+    fn test_parse_space_key() {
+        use KeyCode::*;
+        use KeyModifier::*;
+        assert_eq!(key.parse("<space>"), Ok(Key::from(Char(' '))));
+        assert_eq!(key.parse("<c-space>"), Ok(Key::from((Control, Char(' ')))));
+        assert_eq!(key.parse("<a-space>"), Ok(Key::from((Alt, Char(' ')))));
+        assert_eq!(key.parse("<s-space>"), Ok(Key::from((Shift, Char(' ')))));
+        assert_eq!(
+            key.parse("<c-a-space>"),
+            Ok(Key::from(([Control, Alt], Char(' '))))
+        );
+    }
+
+    #[test]
+    fn test_whitespace_stripping() {
+        use KeyCode::*;
+        // Whitespace should be stripped between keys
+        assert_eq!(
+            keys.parse("a b c"),
+            Ok(Keys(vec![
+                Key::from(Char('a')),
+                Key::from(Char('b')),
+                Key::from(Char('c')),
+            ]))
+        );
+        // Newlines and tabs should also be stripped
+        assert_eq!(
+            keys.parse("a\nb\tc"),
+            Ok(Keys(vec![
+                Key::from(Char('a')),
+                Key::from(Char('b')),
+                Key::from(Char('c')),
+            ]))
+        );
+        // Multiple whitespace characters should be stripped
+        assert_eq!(
+            keys.parse("a  \n\t  b"),
+            Ok(Keys(vec![Key::from(Char('a')), Key::from(Char('b')),]))
+        );
+        // Whitespace at the beginning and end should be stripped
+        assert_eq!(
+            keys.parse("  \n\t  a  \n\t  "),
+            Ok(Keys(vec![Key::from(Char('a')),]))
+        );
+        // Space key must use <space> notation
+        assert_eq!(
+            keys.parse("a<space>b"),
+            Ok(Keys(vec![
+                Key::from(Char('a')),
+                Key::from(Char(' ')),
+                Key::from(Char('b')),
+            ]))
+        );
+    }
+
+    #[test]
+    fn test_print_space_key() {
+        use KeyCode::*;
+        use KeyModifier::*;
+        assert_eq!(Key::from(Char(' ')).to_string(), "<space>");
+        assert_eq!(Key::from((Control, Char(' '))).to_string(), "<c-space>");
+        assert_eq!(Key::from((Alt, Char(' '))).to_string(), "<a-space>");
+        assert_eq!(
+            Key::from(([Control, Alt], Char(' '))).to_string(),
+            "<c-a-space>"
+        );
     }
 }
