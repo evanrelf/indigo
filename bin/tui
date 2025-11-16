@@ -3,4 +3,16 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
+log="$HOME/.local/state/indigo/tui.log"
+
+print_log() {
+  if [ -e "$log" ]; then
+    cat "$log"
+  fi
+}
+
+rm -f "$log"
+
+trap print_log EXIT
+
 cargo run --bin indigo-tui -- --log-filter debug "$@"

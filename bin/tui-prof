@@ -3,6 +3,8 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
+log="$HOME/.local/state/indigo/tui.log"
+
 run_samply() {
   cargo build --profile profile --bin indigo-tui
   samply record -- ./target/profile/indigo-tui --stats --log-filter debug "$@"
@@ -11,6 +13,16 @@ run_samply() {
 run() {
   cargo run --profile profile --bin indigo-tui -- --stats --log-filter debug "$@"
 }
+
+print_log() {
+  if [ -e "$log" ]; then
+    cat "$log"
+  fi
+}
+
+rm -f "$log"
+
+trap print_log EXIT
 
 # run_samply "$@"
 run "$@"
