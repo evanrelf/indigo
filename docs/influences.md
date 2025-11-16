@@ -1,5 +1,8 @@
 # Influences
 
+Disclaimer: this is not a thorough review of every influence, nor have I written
+down everything I think about them.
+
 ## Text editors
 
 - **[Kakoune]**
@@ -72,6 +75,10 @@
 [CodeMirror]: https://codemirror.net/
 
 - **[Emacs]**
+  - I like
+    - Text with attributes
+  - I don't like
+    - Slow, more or less single threaded
 
 [Emacs]: https://www.gnu.org/software/emacs/
 
