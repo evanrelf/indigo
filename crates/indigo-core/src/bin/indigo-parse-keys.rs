@@ -39,36 +39,22 @@ struct Args {
     /// Print parsed result with `Debug` instead of `Display`
     #[arg(long)]
     debug: bool,
-
-    /// Parse each line separately
-    #[arg(long)]
-    lines: bool,
 }
 
 fn main() -> anyhow::Result<ExitCode> {
     let args = Args::parse();
 
-    let runner = |input: &str| match args.r#type {
-        Type::Keys => run::<Keys>(input, args.debug),
-        Type::Key => run::<Key>(input, args.debug),
-        Type::KeyModifiers => run::<KeyModifiers>(input, args.debug),
-        Type::KeyModifier => run::<KeyModifier>(input, args.debug),
-        Type::KeyCode => run::<KeyCode>(input, args.debug),
+    let input = io::read_to_string(io::stdin())?;
+
+    let exit_code = match args.r#type {
+        Type::Keys => run::<Keys>(&input, args.debug),
+        Type::Key => run::<Key>(&input, args.debug),
+        Type::KeyModifiers => run::<KeyModifiers>(&input, args.debug),
+        Type::KeyModifier => run::<KeyModifier>(&input, args.debug),
+        Type::KeyCode => run::<KeyCode>(&input, args.debug),
     };
 
-    if args.lines {
-        let mut exit_code = None;
-        for line in io::stdin().lines() {
-            if runner(&line?) != ExitCode::SUCCESS {
-                exit_code = Some(ExitCode::FAILURE);
-            }
-        }
-        Ok(exit_code.unwrap_or(ExitCode::SUCCESS))
-    } else {
-        let stdin = io::read_to_string(io::stdin())?;
-        let exit_code = runner(&stdin);
-        Ok(exit_code)
-    }
+    Ok(exit_code)
 }
 
 fn run<T>(input: &str, debug: bool) -> ExitCode
