@@ -295,48 +295,48 @@ mod tests {
             <c-a-del> <a-a> <tab> <s-tab> <a-esc>
         ";
         let expected = "abcabc\t\n<s-\n><c--><c-a-del><a-a><tab><s-tab><a-esc>";
-        let actual = keys.parse(input).unwrap().to_string();
+        let actual = input.parse::<Keys>().unwrap().to_string();
         assert_eq!(expected, actual);
     }
 
     #[test]
     fn weird() {
-        assert_eq!(key.parse("<c-->").unwrap().to_string(), "<c-->");
-        assert_eq!(key.parse("<c-\\>>").unwrap().to_string(), "<c-\\>>>");
+        assert_eq!("<c-->".parse::<Key>().unwrap().to_string(), "<c-->");
+        assert_eq!("<c-\\>>".parse::<Key>().unwrap().to_string(), "<c-\\>>>");
     }
 
     #[test]
     fn escaped() {
-        assert_eq!(key.parse("\\n").unwrap().to_string(), "\\n");
-        assert_eq!(key.parse("\\t").unwrap().to_string(), "\\t");
-        assert_eq!(key.parse("\\\\").unwrap().to_string(), "\\\\");
+        assert_eq!("\\n".parse::<Key>().unwrap().to_string(), "\\n");
+        assert_eq!("\\t".parse::<Key>().unwrap().to_string(), "\\t");
+        assert_eq!("\\\\".parse::<Key>().unwrap().to_string(), "\\\\");
     }
 
     #[test]
     fn no_wrapped_bare() {
-        assert_eq!(key.parse("a").unwrap().to_string(), "a");
-        assert!(key.parse("<a>").is_err());
+        assert_eq!("a".parse::<Key>().unwrap().to_string(), "a");
+        assert!("<a>".parse::<Key>().is_err());
     }
 
     #[test]
     fn modifier_ordering() {
-        assert_eq!(key.parse("<c-a-s-a>").unwrap().to_string(), "<c-a-s-a>");
-        assert_eq!(key.parse("<s-c-a>").unwrap().to_string(), "<c-s-a>");
-        assert_eq!(key.parse("<s-c-a-a>").unwrap().to_string(), "<c-a-s-a>");
-        assert_eq!(key.parse("<a-s-c-a>").unwrap().to_string(), "<c-a-s-a>");
+        assert_eq!("<c-a-s-a>".parse::<Key>().unwrap().to_string(), "<c-a-s-a>");
+        assert_eq!("<s-c-a>".parse::<Key>().unwrap().to_string(), "<c-s-a>");
+        assert_eq!("<s-c-a-a>".parse::<Key>().unwrap().to_string(), "<c-a-s-a>");
+        assert_eq!("<a-s-c-a>".parse::<Key>().unwrap().to_string(), "<c-a-s-a>");
     }
 
     #[test]
     fn no_duplicate_modifiers() {
-        assert!(key.parse("<c-c-a>").is_err());
-        assert!(key.parse("<s-c-a-c-a>").is_err());
+        assert!("<c-c-a>".parse::<Key>().is_err());
+        assert!("<s-c-a-c-a>".parse::<Key>().is_err());
     }
 
     #[test]
     fn key_roundtrip() {
         arbtest(|u| {
             let key = u.arbitrary::<Key>()?;
-            match key.to_string().parse() {
+            match key.to_string().parse::<Key>() {
                 Ok(parsed_key) => assert_eq!(key, parsed_key),
                 Err(e) => panic!("Failed to parse `{key:?}` printed as `{key}`:\n{e}"),
             }
