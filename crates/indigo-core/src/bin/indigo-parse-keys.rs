@@ -57,12 +57,13 @@ fn main() -> anyhow::Result<ExitCode> {
     };
 
     if args.lines {
+        let mut exit_code = None;
         for line in io::stdin().lines() {
             if runner(&line?) != ExitCode::SUCCESS {
-                return Ok(ExitCode::FAILURE);
+                exit_code = Some(ExitCode::FAILURE);
             }
         }
-        Ok(ExitCode::SUCCESS)
+        Ok(exit_code.unwrap_or(ExitCode::SUCCESS))
     } else {
         let stdin = io::read_to_string(io::stdin())?;
         let exit_code = runner(&stdin);
