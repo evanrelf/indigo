@@ -28,7 +28,7 @@ impl Buffer {
         Self::default()
     }
 
-    pub fn open<F: Fs>(fs: &mut F, path: impl AsRef<Utf8Path>) -> anyhow::Result<Self> {
+    pub fn open(fs: &mut impl Fs, path: impl AsRef<Utf8Path>) -> anyhow::Result<Self> {
         let path = path.as_ref();
         // TODO: Canonicalize path.
         let exists = fs.exists(path)?;
@@ -44,7 +44,7 @@ impl Buffer {
         Ok(buffer)
     }
 
-    pub fn save<F: Fs>(&mut self, fs: &mut F) -> anyhow::Result<()> {
+    pub fn save(&mut self, fs: &mut impl Fs) -> anyhow::Result<()> {
         if let Some(path) = &self.path {
             let mut bytes = Vec::with_capacity(self.text.len_bytes());
             self.text.write_to(&mut bytes)?;
