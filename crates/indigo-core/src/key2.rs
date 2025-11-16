@@ -21,9 +21,9 @@ use arbitrary::Arbitrary;
 pub struct Keys(pub Vec<Key>);
 
 impl FromStr for Keys {
-    type Err = String;
+    type Err = anyhow::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        keys.parse(s).map_err(|e| e.to_string())
+        keys.parse(s).map_err(|e| anyhow::format_err!("{e}"))
     }
 }
 
@@ -75,9 +75,9 @@ impl<'a> Arbitrary<'a> for Key {
 }
 
 impl FromStr for Key {
-    type Err = String;
+    type Err = anyhow::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        key.parse(s).map_err(|e| e.to_string())
+        key.parse(s).map_err(|e| anyhow::format_err!("{e}"))
     }
 }
 
