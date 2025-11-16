@@ -65,10 +65,10 @@ pub struct Key {
 #[cfg(any(feature = "arbitrary", test))]
 impl<'a> Arbitrary<'a> for Key {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        let mut modifiers = FlagSet::default();
+        let mut modifiers = KeyModifiers::default();
         for modifier in FlagSet::<KeyModifier>::full() {
             if u.arbitrary()? {
-                modifiers |= modifier;
+                *modifiers |= modifier;
             }
         }
         let code = u.arbitrary()?;
@@ -154,10 +154,13 @@ fn key_bare_modified(input: &mut &str) -> ModalResult<Key> {
 }
 
 fn key_bare_unmodified(input: &mut &str) -> ModalResult<Key> {
-    let modifiers = FlagSet::default();
+    let modifiers = KeyModifiers::default();
     let code = key_code_bare.parse_next(input)?;
     Ok(Key { modifiers, code })
 }
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct KeyModifiers(pub FlagSet<KeyModifier>);
 
 fn key_modifiers(input: &mut &str) -> ModalResult<KeyModifiers> {
     let mut modifiers = KeyModifiers::default();
@@ -168,12 +171,23 @@ fn key_modifiers(input: &mut &str) -> ModalResult<KeyModifiers> {
         if modifiers.contains(modifier) {
             return fail.parse_next(input);
         }
-        modifiers |= modifier;
+        *modifiers |= modifier;
     }
     Ok(modifiers)
 }
 
-pub type KeyModifiers = FlagSet<KeyModifier>;
+impl Deref for KeyModifiers {
+    type Target = FlagSet<KeyModifier>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for KeyModifiers {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 flags! {
     #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
