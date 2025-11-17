@@ -8,6 +8,7 @@ use std::num::NonZeroUsize;
 pub enum Mode {
     Normal(NormalMode),
     Seek(SeekMode),
+    Goto(GotoMode),
     Insert(InsertMode),
     Command(CommandMode),
 }
@@ -17,14 +18,15 @@ impl Mode {
     pub fn count(&self) -> Option<NonZeroUsize> {
         match self {
             Self::Normal(normal_mode) => normal_mode.count,
-            Self::Seek(_) | Self::Insert(_) | Self::Command(_) => None,
+            _ => None,
         }
     }
 
     pub fn set_count(&mut self, count: Option<NonZeroUsize>) {
+        #[expect(clippy::single_match)]
         match self {
             Self::Normal(normal_mode) => normal_mode.count = count,
-            Self::Seek(_) | Self::Insert(_) | Self::Command(_) => {}
+            _ => {}
         }
     }
 }
@@ -63,6 +65,9 @@ pub struct SeekMode {
     /// Seek forward or backward?
     pub direction: SeekDirection,
 }
+
+#[derive(Default)]
+pub struct GotoMode {}
 
 #[derive(Default)]
 pub struct InsertMode {}

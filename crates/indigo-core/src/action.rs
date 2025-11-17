@@ -2,7 +2,8 @@ use crate::{
     buffer::Buffer,
     editor::Editor,
     mode::{
-        CommandMode, InsertMode, Mode, NormalMode, SeekDirection, SeekInclude, SeekMode, SeekSelect,
+        CommandMode, GotoMode, InsertMode, Mode, NormalMode, SeekDirection, SeekInclude, SeekMode,
+        SeekSelect,
     },
 };
 use camino::Utf8PathBuf;
@@ -29,6 +30,10 @@ pub fn enter_seek_mode(
         include,
         direction,
     });
+}
+
+pub fn enter_goto_mode(editor: &mut Editor) {
+    editor.mode = Mode::Goto(GotoMode::default());
 }
 
 pub fn enter_insert_mode(editor: &mut Editor) {

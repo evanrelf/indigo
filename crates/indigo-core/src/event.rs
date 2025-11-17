@@ -32,6 +32,7 @@ pub fn handle_event(editor: &mut Editor, mut event: Event) -> anyhow::Result<boo
     let handled = match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, &event),
         Mode::Seek(_) => handle_event_seek(editor, &event),
+        Mode::Goto(_) => handle_event_goto(editor, &event),
         Mode::Insert(_) => handle_event_insert(editor, &event),
         Mode::Command(_) => handle_event_command(editor, &event)?,
     };
@@ -82,6 +83,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "<a-F>") => enter_seek_mode(editor, Extend, Onto, Prev),
             _ if is(key, "f") => enter_seek_mode(editor, Move, Onto, Next),
             _ if is(key, "F") => enter_seek_mode(editor, Extend, Onto, Next),
+            _ if is(key, "g") => enter_goto_mode(editor),
             _ if is(key, ";") => reduce(editor),
             _ if is(key, "<a-;>") => flip(editor),
             _ if is(key, "<a-s-;>") => flip_forward(editor),
@@ -116,6 +118,22 @@ pub fn handle_event_seek(editor: &mut Editor, event: &Event) -> bool {
         && key.modifiers.is_empty()
     {
         seek(editor, byte);
+    }
+
+    enter_normal_mode(editor);
+
+    true
+}
+
+pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {
+    let Mode::Goto(_goto_mode) = &editor.mode else {
+        panic!("Not in goto mode")
+    };
+
+    match event {
+        Event::KeyInput(key) => match (key.modifiers, key.code) {
+            _ => {}
+        },
     }
 
     enter_normal_mode(editor);

@@ -58,9 +58,12 @@ pub fn handle_event(
         }
     }
 
+    #[expect(clippy::match_same_arms)]
     let _handled = match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, terminal, areas, event)?,
+        // TODO: Exit seek and goto modes on mouse events.
         Mode::Seek(_) => false,
+        Mode::Goto(_) => false,
         Mode::Insert(_) => handle_event_insert(editor, terminal, areas, event)?,
         Mode::Command(_) => handle_event_command(editor, terminal, areas, event)?,
     };
