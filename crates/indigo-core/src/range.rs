@@ -223,14 +223,30 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.update_goal_column();
     }
 
+    pub fn move_to(&mut self, char_offset: usize) {
+        self.extend_to(char_offset);
+        self.reduce();
+        self.update_goal_column();
+    }
+
     pub fn extend_left(&mut self, count: usize) {
         self.head_mut().move_left(count);
         self.update_goal_column();
     }
 
+    pub fn move_left(&mut self, count: usize) {
+        self.extend_left(count);
+        self.reduce();
+    }
+
     pub fn extend_right(&mut self, count: usize) {
         self.head_mut().move_right(count);
         self.update_goal_column();
+    }
+
+    pub fn move_right(&mut self, count: usize) {
+        self.extend_right(count);
+        self.reduce();
     }
 
     pub fn extend_up(&mut self, count: usize) {
@@ -242,6 +258,11 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
+    pub fn move_up(&mut self, count: usize) {
+        self.extend_up(count);
+        self.reduce();
+    }
+
     pub fn extend_down(&mut self, count: usize) {
         let goal_column = self.state.goal_column;
         for _ in 0..count {
@@ -251,7 +272,18 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
+    pub fn move_down(&mut self, count: usize) {
+        self.extend_down(count);
+        self.reduce();
+    }
+
     pub fn extend_until_prev_byte(&mut self, byte: u8) {
+        self.head_mut().move_to_prev_byte(byte);
+        self.update_goal_column();
+    }
+
+    pub fn move_until_prev_byte(&mut self, byte: u8) {
+        self.reduce();
         self.head_mut().move_to_prev_byte(byte);
         self.update_goal_column();
     }
@@ -263,7 +295,21 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.update_goal_column();
     }
 
+    pub fn move_onto_prev_byte(&mut self, byte: u8) {
+        self.reduce();
+        if self.head_mut().move_to_prev_byte(byte) {
+            self.extend_left(1);
+        }
+        self.update_goal_column();
+    }
+
     pub fn extend_until_next_byte(&mut self, byte: u8) {
+        self.head_mut().move_to_next_byte(byte);
+        self.update_goal_column();
+    }
+
+    pub fn move_until_next_byte(&mut self, byte: u8) {
+        self.reduce();
         self.head_mut().move_to_next_byte(byte);
         self.update_goal_column();
     }
@@ -275,60 +321,6 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.update_goal_column();
     }
 
-    pub fn extend_to_top(&mut self) {
-        self.head_mut().move_to_top();
-    }
-
-    pub fn extend_to_bottom(&mut self) {
-        self.head_mut().move_to_bottom();
-    }
-
-    pub fn move_to(&mut self, char_offset: usize) {
-        self.extend_to(char_offset);
-        self.reduce();
-        self.update_goal_column();
-    }
-
-    pub fn move_left(&mut self, count: usize) {
-        self.extend_left(count);
-        self.reduce();
-    }
-
-    pub fn move_right(&mut self, count: usize) {
-        self.extend_right(count);
-        self.reduce();
-    }
-
-    pub fn move_up(&mut self, count: usize) {
-        self.extend_up(count);
-        self.reduce();
-    }
-
-    pub fn move_down(&mut self, count: usize) {
-        self.extend_down(count);
-        self.reduce();
-    }
-
-    pub fn move_until_prev_byte(&mut self, byte: u8) {
-        self.reduce();
-        self.head_mut().move_to_prev_byte(byte);
-        self.update_goal_column();
-    }
-
-    pub fn move_onto_prev_byte(&mut self, byte: u8) {
-        self.reduce();
-        if self.head_mut().move_to_prev_byte(byte) {
-            self.extend_left(1);
-        }
-        self.update_goal_column();
-    }
-
-    pub fn move_until_next_byte(&mut self, byte: u8) {
-        self.reduce();
-        self.head_mut().move_to_next_byte(byte);
-        self.update_goal_column();
-    }
-
     pub fn move_onto_next_byte(&mut self, byte: u8) {
         self.reduce();
         if self.head_mut().move_to_next_byte(byte) {
@@ -337,10 +329,18 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.update_goal_column();
     }
 
+    pub fn extend_to_top(&mut self) {
+        self.head_mut().move_to_top();
+    }
+
     pub fn move_to_top(&mut self) {
         self.extend_to_top();
         self.reduce();
         self.update_goal_column();
+    }
+
+    pub fn extend_to_bottom(&mut self) {
+        self.head_mut().move_to_bottom();
     }
 
     pub fn move_to_bottom(&mut self) {
