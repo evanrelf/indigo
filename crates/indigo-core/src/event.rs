@@ -132,6 +132,8 @@ pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {
 
     match event {
         Event::KeyInput(key) => match (key.modifiers, key.code) {
+            _ if is(key, "k") => move_to_top(editor),
+            _ if is(key, "K") => extend_to_top(editor),
             _ => {}
         },
     }

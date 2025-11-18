@@ -228,6 +228,10 @@ impl<W: WrapMut> CursorView<'_, W> {
         }
     }
 
+    pub fn move_to_top(&mut self) {
+        self.state.char_offset = 0;
+    }
+
     pub fn insert_char(&mut self, char: char) -> EditSeq {
         self.insert(&char.to_string())
     }

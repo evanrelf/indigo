@@ -275,6 +275,10 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.update_goal_column();
     }
 
+    pub fn extend_to_top(&mut self) {
+        self.head_mut().move_to_top();
+    }
+
     pub fn move_to(&mut self, char_offset: usize) {
         self.extend_to(char_offset);
         self.reduce();
@@ -326,6 +330,12 @@ impl<W: WrapMut> RangeView<'_, W> {
         if self.head_mut().move_to_next_byte(byte) {
             self.extend_right(1);
         }
+        self.update_goal_column();
+    }
+
+    pub fn move_to_top(&mut self) {
+        self.extend_to_top();
+        self.reduce();
         self.update_goal_column();
     }
 
