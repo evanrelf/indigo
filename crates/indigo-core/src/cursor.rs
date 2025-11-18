@@ -232,6 +232,11 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.char_offset = 0;
     }
 
+    pub fn move_to_bottom(&mut self) {
+        // TODO: Move to start of last line
+        self.state.char_offset = self.text.len_chars();
+    }
+
     pub fn insert_char(&mut self, char: char) -> EditSeq {
         self.insert(&char.to_string())
     }

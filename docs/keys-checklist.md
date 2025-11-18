@@ -91,8 +91,8 @@ Kakoune, but not all (e.g. `q` is the backward word key, not `b`).
 
 ## Goto Mode
 
-- [ ] `j`
-- [ ] `J`
+- [x] `j`
+- [x] `J`
 - [x] `k`
 - [x] `K`
 - [ ] `h`
