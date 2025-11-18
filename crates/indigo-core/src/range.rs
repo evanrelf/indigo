@@ -11,8 +11,8 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Empty but not at EOF (anchor={anchor}, head={head})")]
-    EmptyAndNotEof { anchor: usize, head: usize },
+    #[error("Empty but not at end of text (anchor={anchor}, head={head})")]
+    EmptyAndNotEnd { anchor: usize, head: usize },
 
     #[error("Reduced but not facing forward (anchor={anchor}, head={head})")]
     ReducedAndBackward { anchor: usize, head: usize },
@@ -146,10 +146,6 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         self.state.anchor.char_offset == self.state.head.char_offset
     }
 
-    pub fn is_eof(&self) -> bool {
-        self.is_empty() && self.head().is_eof()
-    }
-
     pub fn is_forward(&self) -> bool {
         self.state.anchor.char_offset <= self.state.head.char_offset
     }
@@ -161,8 +157,8 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
         self.anchor().assert_invariants().map_err(Error::Anchor)?;
         self.head().assert_invariants().map_err(Error::Head)?;
-        // if self.is_empty() && !self.is_eof() {
-        //     return Err(Error::EmptyAndNotEof {
+        // if self.is_empty() && !self.head().is_at_end() {
+        //     return Err(Error::EmptyAndNotEnd {
         //         anchor: self.state.anchor.char_offset,
         //         head: self.state.head.char_offset,
         //     });
@@ -461,7 +457,7 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn delete_after(&mut self) -> Option<EditSeq> {
-        if self.end().is_eof() {
+        if self.end().is_at_end() {
             return None;
         }
         // Assumes reduction before entering insert mode.

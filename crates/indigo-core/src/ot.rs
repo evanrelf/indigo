@@ -8,7 +8,7 @@ pub enum Error {
     LengthMismatch { left: usize, right: usize },
 
     #[error("Char offset {char_offset} exceeds rope length {len_chars}")]
-    CharOffsetPastEof {
+    CharOffsetPastEnd {
         char_offset: usize,
         len_chars: usize,
     },
@@ -272,7 +272,7 @@ impl Edit {
         };
 
         if char_offset > rope.len_chars() {
-            anyhow::bail!(Error::CharOffsetPastEof {
+            anyhow::bail!(Error::CharOffsetPastEnd {
                 char_offset,
                 len_chars: rope.len_chars(),
             });

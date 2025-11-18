@@ -6,10 +6,10 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Char offset {char_offset} exceeds EOF at {eof_offset}")]
-    ExceedsEof {
+    #[error("Char offset {char_offset} exceeds end of text at {end_offset}")]
+    ExceedsEnd {
         char_offset: usize,
-        eof_offset: usize,
+        end_offset: usize,
     },
 
     #[error("Char offset {char_offset} does not lie on grapheme boundary")]
@@ -99,15 +99,15 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     }
 
     #[must_use]
-    pub fn is_eof(&self) -> bool {
+    pub fn is_at_end(&self) -> bool {
         self.state.char_offset == self.text.len_chars()
     }
 
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
         if self.state.char_offset > self.text.len_chars() {
-            anyhow::bail!(Error::ExceedsEof {
+            anyhow::bail!(Error::ExceedsEnd {
                 char_offset: self.state.char_offset,
-                eof_offset: self.text.len_chars(),
+                end_offset: self.text.len_chars(),
             });
         }
         if !self.text.is_grapheme_boundary(self.state.char_offset) {
@@ -431,7 +431,7 @@ mod tests {
 
         let text = "0\n234\n6789AB\n";
         cursor.insert(text);
-        // At EOF.
+        // At end of text.
         assert_eq!(cursor.grapheme(), None);
         assert_eq!(cursor.char_offset(), 13);
         assert_eq!(cursor.char_offset(), text.chars().count());

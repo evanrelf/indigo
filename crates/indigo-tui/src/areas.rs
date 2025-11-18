@@ -163,13 +163,13 @@ pub fn char_index_to_area(
     }
 
     let width = if rope.len_chars() == char_index {
-        // Cursor at EOF
+        // Cursor at end of text
         1
     } else if let Some(grapheme) = rope.get_grapheme(char_index) {
         u16::try_from(grapheme.display_width())
             .expect("No grapheme exists with a display width > u16::MAX")
     } else {
-        // We're at EOF, but we already checked for that
+        // We're at end of text, but we already checked for that
         unreachable!()
     };
 
