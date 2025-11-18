@@ -1,9 +1,22 @@
-# Keys checklist
+# Todo
 
-Rough list of keys I'd like to implement. Most will have the same behavior as
-Kakoune, but not all (e.g. `q` is the backward word key, not `b`).
+- key: Fix parser issues
+- key: Add context to parsers
+- range: Correct cursor positioning
+- selection: Finish integrating
+- selection: Hold multiple ranges
+- window: Define invariants
+- window: Add correction logic
+- fs: Add support for path canonicalization
+- buffer: Canonicalize path in `open`
+- editor: Hold multiple buffers
 
-## Insert mode
+## Keys
+
+Most will have the same behavior as Kakoune, but not all (e.g. `q` is the
+backward word key, not `b`).
+
+### Insert mode
 
 - [x] Characters
 - [x] `<bs>`
@@ -16,7 +29,7 @@ Kakoune, but not all (e.g. `q` is the backward word key, not `b`).
 - [x] `<c-f>`
 - [x] `<esc>`
 
-## Normal mode
+### Normal mode
 
 - [x] `h`
 - [x] `j`
@@ -89,7 +102,7 @@ Kakoune, but not all (e.g. `q` is the backward word key, not `b`).
 - [x] `:`
 - [x] `<esc>`
 
-## Goto Mode
+### Goto Mode
 
 - [x] `j`
 - [x] `J`
