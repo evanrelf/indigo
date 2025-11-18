@@ -82,10 +82,10 @@ Kakoune, but not all (e.g. `q` is the backward word key, not `b`).
 - [x] `<c-d>`
 - [x] `<c-b>`
 - [x] `<c-f>`
-- [ ] `g`
+- [x] `g`
 - [x] `;`
 - [x] `<a-;>`
-- [ ] `<a-s-;>` / `<a-:>`
+- [x] `<a-:>`
 - [x] `:`
 - [x] `<esc>`
 
