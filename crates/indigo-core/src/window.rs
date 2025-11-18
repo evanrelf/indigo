@@ -52,4 +52,16 @@ impl<W: WrapMut> WindowView<'_, W> {
         let last_line = self.buffer.rope().len_lines_indigo().saturating_sub(1);
         self.state.vertical_scroll = min(line, last_line);
     }
+
+    pub fn scroll_to_selection(&mut self) {
+        let head_char_offset = self.buffer.range().head().char_offset();
+        let line = self.buffer.rope().char_to_line(head_char_offset);
+        let top = self.state.vertical_scroll;
+        let bottom = (top + usize::from(self.state.height)) - 1;
+        if line < top {
+            self.state.vertical_scroll = line;
+        } else if line > bottom {
+            self.state.vertical_scroll = top + (line - bottom);
+        }
+    }
 }
