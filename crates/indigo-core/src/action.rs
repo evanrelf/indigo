@@ -265,7 +265,7 @@ pub fn insert(editor: &mut Editor, text: &str) {
 
 pub fn delete_before(editor: &mut Editor) {
     if let Mode::Command(ref mut command_mode) = editor.mode {
-        if command_mode.cursor().char_offset() == 0 {
+        if command_mode.cursor().is_at_start() {
             enter_normal_mode(editor);
         } else {
             command_mode.cursor_mut().delete_before();

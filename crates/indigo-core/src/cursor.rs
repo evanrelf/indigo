@@ -99,6 +99,11 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     }
 
     #[must_use]
+    pub fn is_at_start(&self) -> bool {
+        self.state.char_offset == 0
+    }
+
+    #[must_use]
     pub fn is_at_end(&self) -> bool {
         self.state.char_offset == self.text.len_chars()
     }

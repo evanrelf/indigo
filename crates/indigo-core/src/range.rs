@@ -424,7 +424,7 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn delete_before(&mut self) -> Option<EditSeq> {
-        if self.start().char_offset() == 0 {
+        if self.start().is_at_start() {
             return None;
         }
         // Assumes reduction before entering insert mode.
