@@ -206,13 +206,13 @@ pub fn reduce(editor: &mut Editor) {
 pub fn scroll_up(editor: &mut Editor) {
     let mut window = editor.window_mut();
     let line = window.vertical_scroll().saturating_sub(3);
-    window.scroll_to(line);
+    window.scroll_to_line(line);
 }
 
 pub fn scroll_down(editor: &mut Editor) {
     let mut window = editor.window_mut();
     let line = window.vertical_scroll() + 3;
-    window.scroll_to(line);
+    window.scroll_to_line(line);
 }
 
 pub fn scroll_half_page_up(editor: &mut Editor) {
@@ -220,13 +220,13 @@ pub fn scroll_half_page_up(editor: &mut Editor) {
     let line = window
         .vertical_scroll()
         .saturating_sub(usize::from(window.height()) / 2);
-    window.scroll_to(line);
+    window.scroll_to_line(line);
 }
 
 pub fn scroll_half_page_down(editor: &mut Editor) {
     let mut window = editor.window_mut();
     let line = window.vertical_scroll() + usize::from(window.height()) / 2;
-    window.scroll_to(line);
+    window.scroll_to_line(line);
 }
 
 pub fn scroll_full_page_up(editor: &mut Editor) {
@@ -234,13 +234,13 @@ pub fn scroll_full_page_up(editor: &mut Editor) {
     let line = window
         .vertical_scroll()
         .saturating_sub(usize::from(window.height()));
-    window.scroll_to(line);
+    window.scroll_to_line(line);
 }
 
 pub fn scroll_full_page_down(editor: &mut Editor) {
     let mut window = editor.window_mut();
     let line = window.vertical_scroll() + usize::from(window.height());
-    window.scroll_to(line);
+    window.scroll_to_line(line);
 }
 
 pub fn insert_char(editor: &mut Editor, char: char) {
