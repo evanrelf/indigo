@@ -5,12 +5,8 @@
 [Indigo] is a work-in-progress, terminal-native modal code editor, inspired by
 [Kakoune].
 
-[Blue] is an experimental, simplified rewrite/offshoot of Indigo. It's cloned
-next to Indigo (i.e. `cd ../blue`); read that code if I mention it.
-
 [Indigo]: https://github.com/evanrelf/indigo
 [Kakoune]: https://github.com/mawww/kakoune
-[Blue]: https://github.com/evanrelf/blue
 
 ## Project structure
 
