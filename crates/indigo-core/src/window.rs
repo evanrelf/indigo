@@ -9,7 +9,7 @@ use std::cmp::min;
 #[derive(Default)]
 pub struct WindowState {
     pub height: u16,
-    pub vertical_scroll: usize,
+    pub prev_vertical_scroll: usize,
 }
 
 #[must_use]
@@ -34,7 +34,8 @@ impl<'a, W: WrapRef> WindowView<'a, W> {
 
     #[must_use]
     pub fn vertical_scroll(&self) -> usize {
-        self.state.vertical_scroll
+        let last_line = self.buffer.rope().len_lines_indigo().saturating_sub(1);
+        min(self.state.prev_vertical_scroll, last_line)
     }
 
     #[must_use]
@@ -50,18 +51,18 @@ impl<W: WrapMut> WindowView<'_, W> {
 
     pub fn scroll_to_line(&mut self, line: usize) {
         let last_line = self.buffer.rope().len_lines_indigo().saturating_sub(1);
-        self.state.vertical_scroll = min(line, last_line);
+        self.state.prev_vertical_scroll = min(line, last_line);
     }
 
     pub fn scroll_to_selection(&mut self) {
         let head_char_offset = self.buffer.range().head().char_offset();
         let line = self.buffer.rope().char_to_line(head_char_offset);
-        let top = self.state.vertical_scroll;
+        let top = self.vertical_scroll();
         let bottom = (top + usize::from(self.state.height)) - 1;
         if line < top {
-            self.state.vertical_scroll = line;
+            self.state.prev_vertical_scroll = line;
         } else if line > bottom {
-            self.state.vertical_scroll = top + (line - bottom);
+            self.state.prev_vertical_scroll = top + (line - bottom);
         }
     }
 }
