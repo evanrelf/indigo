@@ -345,7 +345,7 @@ pub fn run_command(editor: &mut Editor) -> anyhow::Result<()> {
 
     let command = Cow::<str>::from(command_mode.rope());
 
-    let Ok(args) = shellwords::split(&command) else {
+    let Ok(args) = shell_words::split(&command) else {
         editor.message = Some(Err(String::from("Invalid command")));
         editor.mode = Mode::Normal(NormalMode::default());
         return Ok(());

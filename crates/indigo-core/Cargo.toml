@@ -14,7 +14,7 @@ flagset = { workspace = true }
 indigo-wrap = { workspace = true }
 memchr = { workspace = true }
 ropey = { workspace = true }
-shellwords = { workspace = true }
+shell-words = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 unicode-segmentation = { workspace = true }
