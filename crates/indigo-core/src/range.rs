@@ -349,6 +349,36 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.update_goal_column();
     }
 
+    pub fn extend_to_line_start(&mut self) {
+        self.head_mut().move_to_line_start();
+    }
+
+    pub fn move_to_line_start(&mut self) {
+        self.extend_to_line_start();
+        self.reduce();
+        self.update_goal_column();
+    }
+
+    pub fn extend_to_line_non_blank_start(&mut self) {
+        self.head_mut().move_to_line_non_blank_start();
+    }
+
+    pub fn move_to_line_non_blank_start(&mut self) {
+        self.extend_to_line_non_blank_start();
+        self.reduce();
+        self.update_goal_column();
+    }
+
+    pub fn extend_to_line_end(&mut self) {
+        self.head_mut().move_to_line_end();
+    }
+
+    pub fn move_to_line_end(&mut self) {
+        self.extend_to_line_end();
+        self.reduce();
+        self.update_goal_column();
+    }
+
     pub fn flip(&mut self) {
         if self.is_forward() && self.grapheme_length() == 1 {
             return;
@@ -369,6 +399,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
+    // TODO: Fix reduce behavior
     pub fn reduce(&mut self) {
         if self.is_forward() {
             self.state.anchor.char_offset = self.state.head.char_offset;

@@ -95,9 +95,9 @@ Kakoune, but not all (e.g. `q` is the backward word key, not `b`).
 - [x] `J`
 - [x] `k`
 - [x] `K`
-- [ ] `h`
-- [ ] `H`
-- [ ] `l`
-- [ ] `L`
-- [ ] `i`
-- [ ] `I`
+- [x] `h`
+- [x] `H`
+- [x] `l`
+- [x] `L`
+- [x] `i`
+- [x] `I`

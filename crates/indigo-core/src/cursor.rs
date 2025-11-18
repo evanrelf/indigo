@@ -233,8 +233,46 @@ impl<W: WrapMut> CursorView<'_, W> {
     }
 
     pub fn move_to_bottom(&mut self) {
-        // TODO: Move to start of last line
         self.state.char_offset = self.text.len_chars();
+        self.move_to_line_start();
+    }
+
+    pub fn move_to_line_start(&mut self) {
+        let current_line_index = self.text.char_to_line(self.state.char_offset);
+        let line_start_char_offset = self.text.line_to_char(current_line_index);
+        self.state.char_offset = line_start_char_offset;
+    }
+
+    pub fn move_to_line_non_blank_start(&mut self) {
+        let current_line_index = self.text.char_to_line(self.state.char_offset);
+        let line_start_char_offset = self.text.line_to_char(current_line_index);
+        let line_slice = self.text.line(current_line_index);
+        let mut char_offset = line_start_char_offset;
+        for grapheme in line_slice.graphemes() {
+            if grapheme.chars().any(|c| c == '\n' || c == '\r') {
+                break;
+            }
+            if !grapheme.chars().all(|c| c.is_whitespace()) {
+                self.state.char_offset = char_offset;
+                return;
+            }
+            char_offset += grapheme.len_chars();
+        }
+        self.state.char_offset = char_offset;
+    }
+
+    pub fn move_to_line_end(&mut self) {
+        let current_line_index = self.text.char_to_line(self.state.char_offset);
+        let line_start_char_offset = self.text.line_to_char(current_line_index);
+        let line_slice = self.text.line(current_line_index);
+        let mut char_offset = line_start_char_offset;
+        for grapheme in line_slice.graphemes() {
+            if grapheme.chars().any(|c| c == '\n' || c == '\r') {
+                break;
+            }
+            char_offset += grapheme.len_chars();
+        }
+        self.state.char_offset = char_offset;
     }
 
     pub fn insert_char(&mut self, char: char) -> EditSeq {

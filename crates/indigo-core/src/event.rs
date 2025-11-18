@@ -136,6 +136,12 @@ pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "K") => extend_to_top(editor),
             _ if is(key, "j") => move_to_bottom(editor),
             _ if is(key, "J") => extend_to_bottom(editor),
+            _ if is(key, "h") => move_to_line_start(editor),
+            _ if is(key, "H") => extend_to_line_start(editor),
+            _ if is(key, "i") => move_to_line_non_blank_start(editor),
+            _ if is(key, "I") => extend_to_line_non_blank_start(editor),
+            _ if is(key, "l") => move_to_line_end(editor),
+            _ if is(key, "L") => extend_to_line_end(editor),
             _ => {}
         },
     }

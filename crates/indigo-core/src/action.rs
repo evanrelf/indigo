@@ -126,6 +126,42 @@ pub fn move_to_bottom(editor: &mut Editor) {
     editor.mode.set_count(None);
 }
 
+pub fn extend_to_line_start(editor: &mut Editor) {
+    let mut range = editor.buffer.range_mut();
+    range.extend_to_line_start();
+    editor.mode.set_count(None);
+}
+
+pub fn move_to_line_start(editor: &mut Editor) {
+    let mut range = editor.buffer.range_mut();
+    range.move_to_line_start();
+    editor.mode.set_count(None);
+}
+
+pub fn extend_to_line_non_blank_start(editor: &mut Editor) {
+    let mut range = editor.buffer.range_mut();
+    range.extend_to_line_non_blank_start();
+    editor.mode.set_count(None);
+}
+
+pub fn move_to_line_non_blank_start(editor: &mut Editor) {
+    let mut range = editor.buffer.range_mut();
+    range.move_to_line_non_blank_start();
+    editor.mode.set_count(None);
+}
+
+pub fn extend_to_line_end(editor: &mut Editor) {
+    let mut range = editor.buffer.range_mut();
+    range.extend_to_line_end();
+    editor.mode.set_count(None);
+}
+
+pub fn move_to_line_end(editor: &mut Editor) {
+    let mut range = editor.buffer.range_mut();
+    range.move_to_line_end();
+    editor.mode.set_count(None);
+}
+
 pub fn seek(editor: &mut Editor, byte: u8) {
     use crate::mode::{
         SeekDirection::{Next, Prev},
