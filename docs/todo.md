@@ -7,9 +7,12 @@
 - selection: Hold multiple ranges
 - window: Define invariants
 - window: Add correction logic
+- window: Scroll to selection
 - fs: Add support for path canonicalization
 - buffer: Canonicalize path in `open`
+- buffer: Store history of ranges
 - editor: Hold multiple buffers
+- ot: Implement `EditSeq::compose`
 
 ## Keys
 
