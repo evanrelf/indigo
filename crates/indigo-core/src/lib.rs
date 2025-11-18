@@ -14,5 +14,6 @@ pub mod ot;
 pub mod prelude;
 pub mod range;
 pub mod rope;
+pub mod selection;
 pub mod text;
 pub mod window;

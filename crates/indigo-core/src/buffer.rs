@@ -1,6 +1,7 @@
 use crate::{
     fs::Fs,
     range::{Range, RangeMut, RangeState},
+    selection::{Selection, SelectionMut, SelectionState},
     text::Text,
 };
 use camino::Utf8Path;
@@ -31,6 +32,7 @@ pub struct Buffer {
     text: Text,
     // TODO: Track history of range state
     range: RangeState,
+    selection: SelectionState,
 }
 
 impl Buffer {
@@ -105,6 +107,17 @@ impl Buffer {
         RangeMut::new(&mut self.text, &mut self.range)
             .expect("Buffer text and range state are always kept valid")
             .on_drop(|range| range.assert_invariants().unwrap())
+    }
+
+    pub fn selection(&self) -> Selection<'_> {
+        Selection::new(&self.text, &self.selection)
+            .expect("Buffer text and selection state are always kept valid")
+    }
+
+    pub fn selection_mut(&mut self) -> SelectionMut<'_> {
+        SelectionMut::new(&mut self.text, &mut self.selection)
+            .expect("Buffer text and selection state are always kept valid")
+            .on_drop(|selection| selection.assert_invariants().unwrap())
     }
 
     pub fn commit(&mut self) {
