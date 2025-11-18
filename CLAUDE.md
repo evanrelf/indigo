@@ -1,1 +1,1 @@
-docs/agents/README.md
+docs/agents.md
