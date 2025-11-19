@@ -267,53 +267,53 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.reduce();
     }
 
-    pub fn extend_until_prev_byte(&mut self, byte: u8) {
-        self.head_mut().move_to_prev_byte(byte);
+    pub fn extend_until_prev_byte(&mut self, byte: u8, count: usize) {
+        self.head_mut().move_to_prev_byte(byte, count);
         self.update_goal_column();
     }
 
-    pub fn move_until_prev_byte(&mut self, byte: u8) {
+    pub fn move_until_prev_byte(&mut self, byte: u8, count: usize) {
         self.reduce();
-        self.head_mut().move_to_prev_byte(byte);
+        self.head_mut().move_to_prev_byte(byte, count);
         self.update_goal_column();
     }
 
-    pub fn extend_onto_prev_byte(&mut self, byte: u8) {
-        if self.head_mut().move_to_prev_byte(byte) && self.is_backward() {
+    pub fn extend_onto_prev_byte(&mut self, byte: u8, count: usize) {
+        if self.head_mut().move_to_prev_byte(byte, count) && self.is_backward() {
             self.extend_left(1);
         }
         self.update_goal_column();
     }
 
-    pub fn move_onto_prev_byte(&mut self, byte: u8) {
+    pub fn move_onto_prev_byte(&mut self, byte: u8, count: usize) {
         self.reduce();
-        if self.head_mut().move_to_prev_byte(byte) {
+        if self.head_mut().move_to_prev_byte(byte, count) {
             self.extend_left(1);
         }
         self.update_goal_column();
     }
 
-    pub fn extend_until_next_byte(&mut self, byte: u8) {
-        self.head_mut().move_to_next_byte(byte);
+    pub fn extend_until_next_byte(&mut self, byte: u8, count: usize) {
+        self.head_mut().move_to_next_byte(byte, count);
         self.update_goal_column();
     }
 
-    pub fn move_until_next_byte(&mut self, byte: u8) {
+    pub fn move_until_next_byte(&mut self, byte: u8, count: usize) {
         self.reduce();
-        self.head_mut().move_to_next_byte(byte);
+        self.head_mut().move_to_next_byte(byte, count);
         self.update_goal_column();
     }
 
-    pub fn extend_onto_next_byte(&mut self, byte: u8) {
-        if self.head_mut().move_to_next_byte(byte) && self.is_forward() {
+    pub fn extend_onto_next_byte(&mut self, byte: u8, count: usize) {
+        if self.head_mut().move_to_next_byte(byte, count) && self.is_forward() {
             self.extend_right(1);
         }
         self.update_goal_column();
     }
 
-    pub fn move_onto_next_byte(&mut self, byte: u8) {
+    pub fn move_onto_next_byte(&mut self, byte: u8, count: usize) {
         self.reduce();
-        if self.head_mut().move_to_next_byte(byte) {
+        if self.head_mut().move_to_next_byte(byte, count) {
             self.extend_right(1);
         }
         self.update_goal_column();

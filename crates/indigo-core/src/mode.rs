@@ -5,6 +5,8 @@ use crate::{
 use ropey::Rope;
 use std::num::NonZeroUsize;
 
+// TODO: Mode stack so that seek mode can look at normal mode's count instead of keeping a copy?
+
 pub enum Mode {
     Normal(NormalMode),
     Seek(SeekMode),
@@ -18,14 +20,15 @@ impl Mode {
     pub fn count(&self) -> Option<NonZeroUsize> {
         match self {
             Self::Normal(normal_mode) => normal_mode.count,
+            Self::Seek(seek_mode) => seek_mode.count,
             _ => None,
         }
     }
 
     pub fn set_count(&mut self, count: Option<NonZeroUsize>) {
-        #[expect(clippy::single_match)]
         match self {
             Self::Normal(normal_mode) => normal_mode.count = count,
+            Self::Seek(seek_mode) => seek_mode.count = count,
             _ => {}
         }
     }
@@ -58,6 +61,7 @@ pub enum SeekDirection {
 }
 
 pub struct SeekMode {
+    pub count: Option<NonZeroUsize>,
     /// Move and create a new selection, or extend the current one?
     pub select: SeekSelect,
     /// Include seek target in selection, or stop just short?
