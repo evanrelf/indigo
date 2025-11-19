@@ -162,57 +162,61 @@ impl<W: WrapMut> CursorView<'_, W> {
         true
     }
 
-    pub fn move_up(&mut self, goal_column: usize) -> bool {
-        let current_line_index = self.text.char_to_line(self.state.char_offset);
-        if current_line_index == 0 {
-            return false;
-        }
-        let target_line_index = current_line_index - 1;
-        let target_line_char_index = self.text.line_to_char(target_line_index);
-        let target_line_slice = self.text.line(target_line_index);
-        let mut target_line_prefix = 0;
-        let mut char_offset = target_line_char_index;
-        for grapheme in target_line_slice.graphemes() {
-            if grapheme.chars().any(|c| c == '\n' || c == '\r') {
-                break;
+    pub fn move_up(&mut self, goal_column: usize, count: usize) -> bool {
+        for _ in 0..count {
+            let current_line_index = self.text.char_to_line(self.state.char_offset);
+            if current_line_index == 0 {
+                return false;
             }
-            let grapheme_width = grapheme.display_width();
-            if target_line_prefix + grapheme_width > goal_column {
-                break;
+            let target_line_index = current_line_index - 1;
+            let target_line_char_index = self.text.line_to_char(target_line_index);
+            let target_line_slice = self.text.line(target_line_index);
+            let mut target_line_prefix = 0;
+            let mut char_offset = target_line_char_index;
+            for grapheme in target_line_slice.graphemes() {
+                if grapheme.chars().any(|c| c == '\n' || c == '\r') {
+                    break;
+                }
+                let grapheme_width = grapheme.display_width();
+                if target_line_prefix + grapheme_width > goal_column {
+                    break;
+                }
+                target_line_prefix += grapheme_width;
+                char_offset += grapheme.len_chars();
             }
-            target_line_prefix += grapheme_width;
-            char_offset += grapheme.len_chars();
+            self.state.char_offset = char_offset;
         }
-        self.state.char_offset = char_offset;
         true
     }
 
-    pub fn move_down(&mut self, goal_column: usize) -> bool {
-        let current_line_index = self.text.char_to_line(self.state.char_offset);
-        let target_line_index = current_line_index + 1;
-        if self.state.char_offset == self.text.len_chars() {
-            return false;
-        }
-        if target_line_index >= self.text.len_lines_indigo() {
-            self.state.char_offset = self.text.len_chars();
-            return true;
-        }
-        let target_line_char_index = self.text.line_to_char(target_line_index);
-        let target_line_slice = self.text.line(target_line_index);
-        let mut target_line_prefix = 0;
-        let mut char_offset = target_line_char_index;
-        for grapheme in target_line_slice.graphemes() {
-            if grapheme.chars().any(|c| c == '\n' || c == '\r') {
-                break;
+    pub fn move_down(&mut self, goal_column: usize, count: usize) -> bool {
+        for _ in 0..count {
+            let current_line_index = self.text.char_to_line(self.state.char_offset);
+            let target_line_index = current_line_index + 1;
+            if self.state.char_offset == self.text.len_chars() {
+                return false;
             }
-            let grapheme_width = grapheme.display_width();
-            if target_line_prefix + grapheme_width > goal_column {
-                break;
+            if target_line_index >= self.text.len_lines_indigo() {
+                self.state.char_offset = self.text.len_chars();
+                return true;
             }
-            target_line_prefix += grapheme_width;
-            char_offset += grapheme.len_chars();
+            let target_line_char_index = self.text.line_to_char(target_line_index);
+            let target_line_slice = self.text.line(target_line_index);
+            let mut target_line_prefix = 0;
+            let mut char_offset = target_line_char_index;
+            for grapheme in target_line_slice.graphemes() {
+                if grapheme.chars().any(|c| c == '\n' || c == '\r') {
+                    break;
+                }
+                let grapheme_width = grapheme.display_width();
+                if target_line_prefix + grapheme_width > goal_column {
+                    break;
+                }
+                target_line_prefix += grapheme_width;
+                char_offset += grapheme.len_chars();
+            }
+            self.state.char_offset = char_offset;
         }
-        self.state.char_offset = char_offset;
         true
     }
 
@@ -450,7 +454,7 @@ mod tests {
         assert_eq!(cursor.char_offset(), 12);
         assert_eq!(cursor.column(), 6);
 
-        cursor.move_up(cursor.column());
+        cursor.move_up(cursor.column(), 1);
         // At second newline on line 1, which is shorter than the goal column.
         assert_eq!(cursor.grapheme(), Some(Rope::from("\n").slice(..)));
         assert_eq!(cursor.char_offset(), 5);
@@ -499,16 +503,12 @@ mod tests {
 
                     2 => {
                         let count = max(1, u.choose_index(99)?);
-                        for _ in 1..=count {
-                            cursor.move_up(cursor.column());
-                        }
+                        cursor.move_up(cursor.column(), count);
                         tx.send(format!("move_left() x{count}")).unwrap();
                     }
                     3 => {
                         let count = max(1, u.choose_index(99)?);
-                        for _ in 1..=count {
-                            cursor.move_down(cursor.column());
-                        }
+                        cursor.move_down(cursor.column(), count);
                         tx.send(format!("move_right() x{count}")).unwrap();
                     }
                     4 => {

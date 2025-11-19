@@ -249,11 +249,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_up(&mut self, count: usize) {
         let goal_column = self.state.goal_column;
-        for _ in 0..count {
-            if !self.head_mut().move_up(goal_column) {
-                break;
-            }
-        }
+        self.head_mut().move_up(goal_column, count);
     }
 
     pub fn move_up(&mut self, count: usize) {
@@ -263,11 +259,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_down(&mut self, count: usize) {
         let goal_column = self.state.goal_column;
-        for _ in 0..count {
-            if !self.head_mut().move_down(goal_column) {
-                break;
-            }
-        }
+        self.head_mut().move_down(goal_column, count);
     }
 
     pub fn move_down(&mut self, count: usize) {
