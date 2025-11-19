@@ -23,6 +23,7 @@ pub struct CursorState {
 }
 
 impl CursorState {
+    /// Snap to nearest grapheme boundary. This is a no-op if the cursor is already valid.
     pub fn snap(&mut self, text: &Rope) {
         self.char_offset = text.ceil_grapheme_boundary(self.char_offset);
     }

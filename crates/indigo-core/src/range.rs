@@ -28,10 +28,14 @@ pub enum Error {
 pub struct RangeState {
     pub anchor: CursorState,
     pub head: CursorState,
+    /// The column the head _wants_ to be on. Saved to restore horizontal positioning through
+    /// vertical movements. Reset on any non-vertical movement.
     pub goal_column: usize,
 }
 
 impl RangeState {
+    /// Snap anchor and head outward to nearest grapheme boundaries. This is a no-op if the range is
+    /// already valid.
     pub fn snap(&mut self, text: &Rope) {
         if self.anchor.char_offset < self.head.char_offset {
             self.anchor.char_offset = text.floor_grapheme_boundary(self.anchor.char_offset);
@@ -46,10 +50,6 @@ impl RangeState {
     pub fn snapped(mut self, text: &Rope) -> Self {
         self.snap(text);
         self
-    }
-
-    fn both(&mut self) -> (&mut CursorState, &mut CursorState) {
-        (&mut self.anchor, &mut self.head)
     }
 }
 
@@ -148,6 +148,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         self.state.anchor.char_offset == self.state.head.char_offset
     }
 
+    /// An empty range is considered forward.
     pub fn is_forward(&self) -> bool {
         self.state.anchor.char_offset <= self.state.head.char_offset
     }
@@ -159,6 +160,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
         self.anchor().assert_invariants().map_err(Error::Anchor)?;
         self.head().assert_invariants().map_err(Error::Head)?;
+        // TODO: Restore invariants once positioning is rock solid.
         // if self.is_empty() && !self.head().is_at_end() {
         //     return Err(Error::EmptyAndNotEnd {
         //         anchor: self.state.anchor.char_offset,
@@ -208,7 +210,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.snap(&self.text);
     }
 
-    // Should be called after performing any horizontal movement.
+    /// Should be called after performing any non-vertical movement.
     pub fn update_goal_column(&mut self) {
         self.state.goal_column = self.state.head.column(&self.text);
     }
@@ -370,10 +372,13 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn flip(&mut self) {
+        fn both(state: &mut RangeState) -> (&mut CursorState, &mut CursorState) {
+            (&mut state.anchor, &mut state.head)
+        }
         if self.is_forward() && self.grapheme_length() == 1 {
             return;
         }
-        let (anchor, cursor) = self.state.both();
+        let (anchor, cursor) = both(&mut self.state);
         std::mem::swap(anchor, cursor);
     }
 
@@ -421,8 +426,10 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn insert(&mut self, text: &str) -> EditSeq {
-        // Assumes reduction before entering insert mode.
-        debug_assert!(self.grapheme_length() <= 1);
+        debug_assert!(
+            self.grapheme_length() <= 1,
+            "Range reduced before entering insert mode"
+        );
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
         let edits = self.start_mut().insert(text);
@@ -437,8 +444,10 @@ impl<W: WrapMut> RangeView<'_, W> {
         if self.start().is_at_start() {
             return None;
         }
-        // Assumes reduction before entering insert mode.
-        debug_assert!(self.grapheme_length() <= 1);
+        debug_assert!(
+            self.grapheme_length() <= 1,
+            "Range reduced before entering insert mode"
+        );
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
         let edits = self.start_mut().delete_before()?;
@@ -470,8 +479,10 @@ impl<W: WrapMut> RangeView<'_, W> {
         if self.end().is_at_end() {
             return None;
         }
-        // Assumes reduction before entering insert mode.
-        debug_assert!(self.grapheme_length() <= 1);
+        debug_assert!(
+            self.grapheme_length() <= 1,
+            "Range reduced before entering insert mode"
+        );
         let anchor = self.state.anchor.char_offset;
         let head = self.state.head.char_offset;
         let edits = self.end_mut().delete_after()?;

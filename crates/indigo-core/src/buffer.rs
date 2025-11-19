@@ -17,11 +17,13 @@ pub enum Error {
 
 #[derive(Default)]
 pub enum BufferKind {
+    /// In-memory scratch buffer.
     #[default]
     Scratch,
+    /// Buffer mapping to a file on disk.
     File {
         path: Utf8PathBuf,
-        /// Last known state of file on disk. Used for modification tracking.
+        /// Last known state of file on disk, used for modification tracking.
         on_disk: Rope,
     },
 }
@@ -32,6 +34,7 @@ pub struct Buffer {
     text: Text,
     // TODO: Track history of range state
     range: RangeState,
+    // TODO: Switch over from `range` to `selection`
     selection: SelectionState,
 }
 

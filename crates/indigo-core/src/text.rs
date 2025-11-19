@@ -4,7 +4,9 @@ use std::ops::Deref;
 
 #[derive(Debug, Default)]
 struct Edit {
+    /// Inverted edit. Apply to undo the edit.
     undo: EditSeq,
+    /// Original edit. Apply to perform the edit.
     redo: EditSeq,
 }
 
