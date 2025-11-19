@@ -54,7 +54,7 @@ impl RangeState {
 }
 
 #[must_use]
-pub struct RangeView<'a, W: Wrap + WrapRef> {
+pub struct RangeView<'a, W: Wrap> {
     text: W::Wrap<'a, Text>,
     state: W::Wrap<'a, RangeState>,
     #[expect(clippy::type_complexity)]
@@ -508,7 +508,7 @@ where
     }
 }
 
-impl<W: WrapRef> Drop for RangeView<'_, W> {
+impl<W: Wrap> Drop for RangeView<'_, W> {
     fn drop(&mut self) {
         if !thread::panicking()
             && let Some(f) = self.on_drop.take()

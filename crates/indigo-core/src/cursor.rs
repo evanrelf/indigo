@@ -43,7 +43,7 @@ impl CursorState {
 }
 
 #[must_use]
-pub struct CursorView<'a, W: Wrap + WrapRef> {
+pub struct CursorView<'a, W: Wrap> {
     text: W::Wrap<'a, Text>,
     state: W::Wrap<'a, CursorState>,
     #[expect(clippy::type_complexity)]
@@ -351,7 +351,7 @@ where
     }
 }
 
-impl<W: WrapRef> Drop for CursorView<'_, W> {
+impl<W: Wrap> Drop for CursorView<'_, W> {
     fn drop(&mut self) {
         if !thread::panicking()
             && let Some(f) = self.on_drop.take()
