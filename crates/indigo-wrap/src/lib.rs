@@ -1,6 +1,6 @@
 /*!
 
-Ever wish you could make a wrapper type generic?
+Ever wish you could make a reference type wrapper generic?
 
 ```compile_fail
 struct Foo<W>(W<usize>);
@@ -91,7 +91,7 @@ There are certain operations you can perform:
 
 These are captured with the `Wrap`, `WrapRef`, and `WrapMut` traits respectively.
 
-If you write generic `impl` blocks with trait bounds on the wrapper type (e.g.
+If you write generic `impl` blocks with trait bounds on the reference type wrapper (e.g.
 `impl<W: WrapMut> CursorView<'_, W>`) rather than hardcoding it (e.g. `impl CursorView<'_, WMut>`),
 you get a kind of subtyping/inheritance thing where the most powerful versions of your type (e.g.
 `CursorMut`) have all the methods available, but your weaker versions (e.g. `Cursor`) only get the
@@ -106,7 +106,7 @@ use std::{
     sync::Arc,
 };
 
-/// Generic type wrappers
+/// Generic reference type wrappers
 ///
 /// This is a generalized version of [`WrapRef`] that doesn't require [`Deref`], so you can use
 /// wrappers that may not have the type they're wrapping.
