@@ -412,12 +412,12 @@ impl<W: WrapMut> RangeView<'_, W> {
             return;
         }
 
-        if self.is_forward() {
-            self.state.anchor.char_offset = self.state.head.char_offset;
-            self.anchor_mut().move_left(1);
-        } else {
+        if self.is_backward() {
             self.state.anchor.char_offset = self.state.head.char_offset;
             self.head_mut().move_right(1);
+        } else {
+            self.state.anchor.char_offset = self.state.head.char_offset;
+            self.anchor_mut().move_left(1);
         }
     }
 
