@@ -1,3 +1,5 @@
+//! Abstract filesystem interface.
+
 use anyhow::anyhow;
 use camino::{Utf8Path, Utf8PathBuf};
 use std::{collections::HashMap, fs};

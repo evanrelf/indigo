@@ -1,3 +1,7 @@
+//! Operational transformations.
+//!
+//! <https://en.wikipedia.org/wiki/Operational_transformation>
+
 use ropey::Rope;
 use std::{ops::Deref, rc::Rc};
 use thiserror::Error;

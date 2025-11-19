@@ -1,7 +1,9 @@
+//! Unicode extended grapheme clusters.
+//!
+//! <https://unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries>
+
 use ropey::{RopeSlice, iter::Chunks};
 use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
-
-// https://unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries
 
 #[must_use]
 pub fn is_grapheme_boundary(rope: &RopeSlice, char_index: usize) -> bool {
