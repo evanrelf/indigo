@@ -65,6 +65,13 @@ pub type Range<'a> = RangeView<'a, WRef>;
 
 pub type RangeMut<'a> = RangeView<'a, WMut>;
 
+impl<'a, W: Wrap> RangeView<'a, W> {
+    pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
+        self.on_drop = Some(Box::new(f));
+        self
+    }
+}
+
 impl<'a, W: WrapRef> RangeView<'a, W> {
     pub fn new(
         text: W::WrapRef<'a, Text>,
@@ -77,11 +84,6 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         };
         range_view.assert_invariants()?;
         Ok(range_view)
-    }
-
-    pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
-        self.on_drop = Some(Box::new(f));
-        self
     }
 
     pub fn text(&self) -> &Text {

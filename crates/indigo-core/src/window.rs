@@ -18,6 +18,11 @@ pub type Window<'a> = WindowView<'a, WRef>;
 
 pub type WindowMut<'a> = WindowView<'a, WMut>;
 
+#[expect(clippy::elidable_lifetime_names)]
+impl<'a, W: Wrap> WindowView<'a, W> {
+    //
+}
+
 impl<'a, W: WrapRef> WindowView<'a, W> {
     pub fn new(buffer: W::WrapRef<'a, Buffer>, state: W::WrapRef<'a, WindowState>) -> Self {
         WindowView { buffer, state }

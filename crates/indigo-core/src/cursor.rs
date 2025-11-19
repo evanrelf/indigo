@@ -54,6 +54,13 @@ pub type Cursor<'a> = CursorView<'a, WRef>;
 
 pub type CursorMut<'a> = CursorView<'a, WMut>;
 
+impl<'a, W: Wrap> CursorView<'a, W> {
+    pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
+        self.on_drop = Some(Box::new(f));
+        self
+    }
+}
+
 impl<'a, W: WrapRef> CursorView<'a, W> {
     pub fn new(
         text: W::WrapRef<'a, Text>,
@@ -66,11 +73,6 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         };
         cursor_view.assert_invariants()?;
         Ok(cursor_view)
-    }
-
-    pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
-        self.on_drop = Some(Box::new(f));
-        self
     }
 
     pub fn text(&self) -> &Text {
