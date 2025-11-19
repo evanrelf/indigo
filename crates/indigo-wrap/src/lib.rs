@@ -178,7 +178,7 @@ impl<R: WrapMut> WrapRef for R {
 /// If your wrapper type doesn't implement [`DerefMut`], you should implement the [`WrapRef`] trait
 /// instead.
 pub trait WrapMut {
-    type WrapMut<'a, T: ?Sized + 'a>: Deref<Target = T> + DerefMut;
+    type WrapMut<'a, T: ?Sized + 'a>: DerefMut<Target = T>;
 }
 
 /// Turn `T` into `&'a mut T`
