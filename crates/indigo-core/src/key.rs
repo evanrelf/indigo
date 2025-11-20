@@ -280,24 +280,7 @@ impl FromStr for KeyCode {
 }
 
 fn key_code(input: &mut &str) -> ModalResult<KeyCode> {
-    alt((key_code_escaped, key_code_wrapped, key_code_bare)).parse_next(input)
-}
-
-fn key_code_escaped(input: &mut &str) -> ModalResult<KeyCode> {
-    preceded(
-        '\\',
-        cut_err(alt((
-            ' '.value(KeyCode::Char(' ')),
-            '#'.value(KeyCode::Char('#')),
-            '<'.value(KeyCode::Char('<')),
-            '>'.value(KeyCode::Char('>')),
-            '\\'.value(KeyCode::Char('\\')),
-            't'.value(KeyCode::Char('\t')),
-            'n'.value(KeyCode::Char('\n')),
-            'r'.value(KeyCode::Char('\r')),
-        ))),
-    )
-    .parse_next(input)
+    alt((key_code_wrapped, key_code_bare)).parse_next(input)
 }
 
 fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
@@ -316,10 +299,30 @@ fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
 }
 
 fn key_code_bare(input: &mut &str) -> ModalResult<KeyCode> {
-    one_of(' '..='~')
-        .verify(|c| !" #<>\\".contains(*c))
-        .map(KeyCode::Char)
-        .parse_next(input)
+    alt((
+        one_of(' '..='~')
+            .verify(|c| !" #<>\\".contains(*c))
+            .map(KeyCode::Char),
+        key_code_escaped,
+    ))
+    .parse_next(input)
+}
+
+fn key_code_escaped(input: &mut &str) -> ModalResult<KeyCode> {
+    preceded(
+        '\\',
+        cut_err(alt((
+            ' '.value(KeyCode::Char(' ')),
+            '#'.value(KeyCode::Char('#')),
+            '<'.value(KeyCode::Char('<')),
+            '>'.value(KeyCode::Char('>')),
+            '\\'.value(KeyCode::Char('\\')),
+            't'.value(KeyCode::Char('\t')),
+            'n'.value(KeyCode::Char('\n')),
+            'r'.value(KeyCode::Char('\r')),
+        ))),
+    )
+    .parse_next(input)
 }
 
 #[must_use]
