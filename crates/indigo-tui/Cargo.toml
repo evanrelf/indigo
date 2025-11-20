@@ -7,7 +7,6 @@ anyhow = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
 etcetera = { workspace = true }
-flagset = { workspace = true }
 hdrhistogram = { workspace = true }
 indigo-core = { workspace = true }
 ratatui = { workspace = true }

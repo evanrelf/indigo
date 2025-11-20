@@ -5,7 +5,7 @@ pub use crate::{
     display_width::DisplayWidth,
     editor::Editor,
     event::{Event, KeyEvent, KeyEventKind},
-    key::{Key, KeyCode, KeyModifier, KeyModifiers, Keys},
+    key::{Key, KeyCode, KeyModifiers, Keys},
     mode::{
         Mode, command::CommandMode, goto::GotoMode, insert::InsertMode, normal::NormalMode,
         seek::SeekMode,

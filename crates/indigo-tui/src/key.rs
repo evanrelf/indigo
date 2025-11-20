@@ -1,5 +1,4 @@
 use anyhow::anyhow;
-use flagset::FlagSet;
 
 mod t {
     pub use ratatui::crossterm::event::{
@@ -9,7 +8,7 @@ mod t {
 
 mod i {
     pub use indigo_core::event::{KeyEvent, KeyEventKind};
-    pub use indigo_core::key::{Key, KeyCode, KeyModifier, KeyModifiers};
+    pub use indigo_core::key::{Key, KeyCode, KeyModifiers};
 }
 
 pub fn key_event_t2i(key_event: &t::KeyEvent) -> anyhow::Result<i::KeyEvent> {
@@ -36,25 +35,26 @@ pub fn key_modifiers_t2i(modifiers: &t::KeyModifiers) -> anyhow::Result<i::KeyMo
     modifiers
         .iter_names()
         .map(|m| match m {
-            ("SHIFT", _) => Ok(i::KeyModifier::Shift),
-            ("CONTROL", _) => Ok(i::KeyModifier::Control),
-            ("ALT", _) => Ok(i::KeyModifier::Alt),
+            ("SHIFT", _) => Ok(i::KeyModifiers::SHIFT),
+            ("CONTROL", _) => Ok(i::KeyModifiers::CONTROL),
+            ("ALT", _) => Ok(i::KeyModifiers::ALT),
             (_, m) => Err(anyhow!("Unsupported crossterm key modifier: {m:?}")),
         })
-        .try_fold(FlagSet::default(), |x, y| y.map(|y| x | y))
-        .map(i::KeyModifiers)
+        .try_fold(i::KeyModifiers::empty(), |ms, m| m.map(|m| ms | m))
 }
 
 #[must_use]
 pub fn key_modifiers_i2t(modifiers: &i::KeyModifiers) -> t::KeyModifiers {
     modifiers
-        .into_iter()
+        .iter_names()
         .map(|m| match m {
-            i::KeyModifier::Shift => t::KeyModifiers::SHIFT,
-            i::KeyModifier::Control => t::KeyModifiers::CONTROL,
-            i::KeyModifier::Alt => t::KeyModifiers::ALT,
+            ("SHIFT", _) => Ok(t::KeyModifiers::SHIFT),
+            ("CONTROL", _) => Ok(t::KeyModifiers::CONTROL),
+            ("ALT", _) => Ok(t::KeyModifiers::ALT),
+            (_, m) => Err(anyhow!("Unsupported indigo key modifier: {m:?}")),
         })
-        .fold(t::KeyModifiers::NONE, |x, y| x | y)
+        .try_fold(t::KeyModifiers::empty(), |ms, m| m.map(|m| ms | m))
+        .expect("Indigo modifiers are a subset of terminal modifiers")
 }
 
 pub fn key_code_t2i(code: &t::KeyCode) -> anyhow::Result<i::KeyCode> {
@@ -115,7 +115,7 @@ mod tests {
     fn test_roundtrip() {
         let i = i::KeyEvent {
             key: i::Key {
-                modifiers: i::KeyModifiers(i::KeyModifier::Control | i::KeyModifier::Shift),
+                modifiers: i::KeyModifiers::CONTROL | i::KeyModifiers::SHIFT,
                 code: i::KeyCode::Char('a'),
             },
             kind: i::KeyEventKind::Press,

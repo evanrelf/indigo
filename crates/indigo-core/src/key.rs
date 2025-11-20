@@ -1,8 +1,7 @@
-use flagset::{FlagSet, flags};
+use bitflags::bitflags;
 use std::{
     fmt::{Display, Formatter},
     hash::Hash,
-    ops::{Deref, DerefMut},
     str::FromStr,
 };
 use winnow::{
@@ -55,6 +54,7 @@ fn keys(input: &mut &str) -> ModalResult<Keys> {
         .parse_next(input)
 }
 
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Key {
     pub modifiers: KeyModifiers,
@@ -63,27 +63,13 @@ pub struct Key {
 
 impl Key {
     pub fn normalize(&mut self) {
-        if !self.modifiers.contains(KeyModifier::Shift) {
+        if !self.modifiers.contains(KeyModifiers::SHIFT) {
             return;
         }
         if let KeyCode::Char(c @ ('a'..='z' | 'A'..='Z')) = self.code {
-            *self.modifiers -= KeyModifier::Shift;
+            self.modifiers.remove(KeyModifiers::SHIFT);
             self.code = KeyCode::Char(c.to_ascii_uppercase());
         }
-    }
-}
-
-#[cfg(any(feature = "arbitrary", test))]
-impl<'a> Arbitrary<'a> for Key {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        let mut modifiers = KeyModifiers::default();
-        for modifier in FlagSet::<KeyModifier>::full() {
-            if u.arbitrary()? {
-                *modifiers |= modifier;
-            }
-        }
-        let code = u.arbitrary()?;
-        Ok(Self { modifiers, code })
     }
 }
 
@@ -122,13 +108,13 @@ impl Display for Key {
             write!(f, "{code}")?;
         } else {
             write!(f, "<")?;
-            if self.modifiers.contains(KeyModifier::Control) {
+            if self.modifiers.contains(KeyModifiers::CONTROL) {
                 write!(f, "c-")?;
             }
-            if self.modifiers.contains(KeyModifier::Alt) {
+            if self.modifiers.contains(KeyModifiers::ALT) {
                 write!(f, "a-")?;
             }
-            if self.modifiers.contains(KeyModifier::Shift) {
+            if self.modifiers.contains(KeyModifiers::SHIFT) {
                 write!(f, "s-")?;
             }
             write!(f, "{code}>")?;
@@ -156,13 +142,20 @@ fn key_wrapped(input: &mut &str) -> ModalResult<Key> {
 }
 
 fn key_bare_unmodified(input: &mut &str) -> ModalResult<Key> {
-    let modifiers = KeyModifiers::default();
+    let modifiers = KeyModifiers::empty();
     let code = key_code_bare.parse_next(input)?;
     Ok(Key { modifiers, code })
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct KeyModifiers(pub FlagSet<KeyModifier>);
+bitflags! {
+    #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    pub struct KeyModifiers: u8 {
+        const CONTROL = 1 << 0;
+        const ALT = 1 << 1;
+        const SHIFT = 1 << 2;
+    }
+}
 
 impl FromStr for KeyModifiers {
     type Err = anyhow::Error;
@@ -174,57 +167,23 @@ impl FromStr for KeyModifiers {
 }
 
 fn key_modifiers(input: &mut &str) -> ModalResult<KeyModifiers> {
-    let mut modifiers = KeyModifiers::default();
-    while !modifiers.is_full() {
-        let Some(modifier) = opt(terminated(key_modifier, "-")).parse_next(input)? else {
+    let mut modifiers = KeyModifiers::empty();
+    while !modifiers.is_all() {
+        let Some(modifier) = opt(alt((
+            "c-".value(KeyModifiers::CONTROL),
+            "a-".value(KeyModifiers::ALT),
+            "s-".value(KeyModifiers::SHIFT),
+        )))
+        .parse_next(input)?
+        else {
             break;
         };
         if modifiers.contains(modifier) {
             return fail.parse_next(input);
         }
-        *modifiers |= modifier;
+        modifiers.insert(modifier);
     }
     Ok(modifiers)
-}
-
-impl Deref for KeyModifiers {
-    type Target = FlagSet<KeyModifier>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for KeyModifiers {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-flags! {
-    #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
-    pub enum KeyModifier: u8 {
-        Control,
-        Alt,
-        Shift,
-    }
-}
-
-impl FromStr for KeyModifier {
-    type Err = anyhow::Error;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        key_modifier
-            .parse(s)
-            .map_err(|e| anyhow::format_err!("{e}"))
-    }
-}
-
-fn key_modifier(input: &mut &str) -> ModalResult<KeyModifier> {
-    alt((
-        "c".value(KeyModifier::Control),
-        "a".value(KeyModifier::Alt),
-        "s".value(KeyModifier::Shift),
-    ))
-    .parse_next(input)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

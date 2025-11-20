@@ -1,5 +1,5 @@
 use clap::Parser as _;
-use indigo_core::key::{Key, KeyCode, KeyModifier, KeyModifiers, Keys};
+use indigo_core::key::{Key, KeyCode, KeyModifiers, Keys};
 use std::{
     fmt::{self, Debug, Display},
     io,
@@ -13,7 +13,6 @@ enum Type {
     Keys,
     Key,
     KeyModifiers,
-    KeyModifier,
     KeyCode,
 }
 
@@ -23,7 +22,6 @@ impl Display for Type {
             Self::Keys => write!(f, "keys")?,
             Self::Key => write!(f, "key")?,
             Self::KeyModifiers => write!(f, "key-modifiers")?,
-            Self::KeyModifier => write!(f, "key-modifier")?,
             Self::KeyCode => write!(f, "key-code")?,
         }
         Ok(())
@@ -58,7 +56,6 @@ fn main() -> anyhow::Result<ExitCode> {
         Type::Keys => run::<Keys>(input, args.debug),
         Type::Key => run::<Key>(input, args.debug),
         Type::KeyModifiers => run::<KeyModifiers>(input, args.debug),
-        Type::KeyModifier => run::<KeyModifier>(input, args.debug),
         Type::KeyCode => run::<KeyCode>(input, args.debug),
     };
 
