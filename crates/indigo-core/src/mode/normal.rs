@@ -26,17 +26,15 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
 
     let mut handled = true;
 
-    let count = |c: char| {
-        let digit = usize::from(
-            u8::try_from(c).expect("Pattern match below guarantees an ASCII digit") - b'0',
-        );
+    let count = |c: u8| {
+        let digit = usize::from(c - b'0');
         let current = editor.mode.count().map_or(0, |count| usize::from(count));
         NonZeroUsize::new(current.saturating_mul(10).saturating_add(digit))
     };
 
     match event {
         Event::Key(KeyEvent { key, .. }) => match (key.modifiers, key.code) {
-            (m, KeyCode::Char(c @ '0'..='9')) if m.is_empty() => set_count(editor, count(c)),
+            (m, KeyCode::Char(c @ b'0'..=b'9')) if m.is_empty() => set_count(editor, count(c)),
             _ if is(key, "<esc>") => enter_normal_mode(editor),
             _ if is(key, ":") => enter_command_mode(editor),
             _ if is(key, "i") => enter_insert_mode(editor),

@@ -41,11 +41,10 @@ pub fn handle_event_seek(editor: &mut Editor, event: &Event) -> bool {
     let mut key = *key;
     key.normalize();
 
-    if let KeyCode::Char(char) = key.code
-        && let Ok(byte) = u8::try_from(char)
+    if let KeyCode::Char(c) = key.code
         && key.modifiers.is_empty()
     {
-        seek(editor, byte);
+        seek(editor, c);
     } else if let KeyCode::Return = key.code
         && key.modifiers.is_empty()
     {

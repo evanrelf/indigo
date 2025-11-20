@@ -66,7 +66,7 @@ impl Key {
         if !self.modifiers.contains(KeyModifiers::SHIFT) {
             return;
         }
-        if let KeyCode::Char(c @ ('a'..='z' | 'A'..='Z')) = self.code {
+        if let KeyCode::Char(c @ (b'a'..=b'z' | b'A'..=b'Z')) = self.code {
             self.modifiers.remove(KeyModifiers::SHIFT);
             self.code = KeyCode::Char(c.to_ascii_uppercase());
         }
@@ -92,15 +92,15 @@ impl Display for Key {
             KeyCode::Down => "down",
             KeyCode::Tab => "tab",
             KeyCode::Escape => "esc",
-            KeyCode::Char(' ') => "\\ ",
-            KeyCode::Char('#') => "\\#",
-            KeyCode::Char('<') => "\\<",
-            KeyCode::Char('>') => "\\>",
-            KeyCode::Char('\\') => "\\\\",
-            KeyCode::Char('\t') => "\\t",
-            KeyCode::Char('\n') => "\\n",
-            KeyCode::Char('\r') => "\\r",
-            KeyCode::Char(c) => &c.to_string(),
+            KeyCode::Char(b' ') => "\\ ",
+            KeyCode::Char(b'#') => "\\#",
+            KeyCode::Char(b'<') => "\\<",
+            KeyCode::Char(b'>') => "\\>",
+            KeyCode::Char(b'\\') => "\\\\",
+            KeyCode::Char(b'\t') => "\\t",
+            KeyCode::Char(b'\n') => "\\n",
+            KeyCode::Char(b'\r') => "\\r",
+            KeyCode::Char(c) => &char::from(c).to_string(),
         };
         if self.modifiers.is_empty()
             && let KeyCode::Char(_) = self.code
@@ -197,9 +197,9 @@ pub enum KeyCode {
     Down,
     Tab,
     Escape,
-    // NOTE: Replace `char` with `AsciiChar` once it stabilizes.
+    // NOTE: Replace `u8` with `AsciiChar` once it stabilizes.
     // https://github.com/rust-lang/rust/issues/110998
-    Char(char),
+    Char(u8),
 }
 
 #[cfg(any(feature = "arbitrary", test))]
@@ -207,9 +207,8 @@ impl<'a> Arbitrary<'a> for KeyCode {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
         if u.ratio(8, 10)? {
             loop {
-                let i = u.int_in_range(b' '..=b'~')?;
-                let c = char::from(i);
-                if !" #<>\\".contains(c) {
+                let c = u.int_in_range(b' '..=b'~')?;
+                if !b" #<>\\".contains(&c) {
                     return Ok(Self::Char(c));
                 }
             }
@@ -257,9 +256,9 @@ fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
 
 fn key_code_bare(input: &mut &str) -> ModalResult<KeyCode> {
     alt((
-        one_of(' '..='~')
+        one_of(b' '..=b'~')
             .verify(|c| !" #<>\\".contains(*c))
-            .map(KeyCode::Char),
+            .map(|c| KeyCode::Char(u8::try_from(c).expect("Only parsing ASCII"))),
         key_code_escaped,
     ))
     .parse_next(input)
@@ -269,14 +268,14 @@ fn key_code_escaped(input: &mut &str) -> ModalResult<KeyCode> {
     preceded(
         '\\',
         cut_err(alt((
-            ' '.value(KeyCode::Char(' ')),
-            '#'.value(KeyCode::Char('#')),
-            '<'.value(KeyCode::Char('<')),
-            '>'.value(KeyCode::Char('>')),
-            '\\'.value(KeyCode::Char('\\')),
-            't'.value(KeyCode::Char('\t')),
-            'n'.value(KeyCode::Char('\n')),
-            'r'.value(KeyCode::Char('\r')),
+            ' '.value(KeyCode::Char(b' ')),
+            '#'.value(KeyCode::Char(b'#')),
+            '<'.value(KeyCode::Char(b'<')),
+            '>'.value(KeyCode::Char(b'>')),
+            '\\'.value(KeyCode::Char(b'\\')),
+            't'.value(KeyCode::Char(b'\t')),
+            'n'.value(KeyCode::Char(b'\n')),
+            'r'.value(KeyCode::Char(b'\r')),
         ))),
     )
     .parse_next(input)

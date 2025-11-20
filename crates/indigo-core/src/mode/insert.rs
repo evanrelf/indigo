@@ -23,7 +23,7 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "<esc>") => enter_normal_mode(editor),
             _ if is(key, "<bs>") => delete_before(editor),
             _ if is(key, "<del>") => delete_after(editor),
-            (m, KeyCode::Char(c)) if m.is_empty() => insert_char(editor, c),
+            (m, KeyCode::Char(c)) if m.is_empty() => insert_char(editor, char::from(c)),
             _ if is(key, "<ret>") => insert_char(editor, '\n'),
             _ if is(key, "<tab>") => insert_char(editor, '\t'),
             _ if is(key, "<c-u>") => scroll_half_page_up(editor),

@@ -67,7 +67,7 @@ pub fn key_code_t2i(code: &t::KeyCode) -> anyhow::Result<i::KeyCode> {
         t::KeyCode::Up => Ok(i::KeyCode::Up),
         t::KeyCode::Down => Ok(i::KeyCode::Down),
         t::KeyCode::Tab => Ok(i::KeyCode::Tab),
-        t::KeyCode::Char(c) => Ok(i::KeyCode::Char(*c)),
+        t::KeyCode::Char(c) if c.is_ascii() => Ok(i::KeyCode::Char(u8::try_from(*c).unwrap())),
         t::KeyCode::Esc => Ok(i::KeyCode::Escape),
         _ => Err(anyhow!("Unsupported crossterm key code: {code:?}")),
     }
@@ -85,7 +85,7 @@ pub fn key_code_i2t(code: &i::KeyCode) -> t::KeyCode {
         i::KeyCode::Down => t::KeyCode::Down,
         i::KeyCode::Tab => t::KeyCode::Tab,
         i::KeyCode::Escape => t::KeyCode::Esc,
-        i::KeyCode::Char(c) => t::KeyCode::Char(*c),
+        i::KeyCode::Char(c) => t::KeyCode::Char(char::from(*c)),
     }
 }
 
@@ -116,7 +116,7 @@ mod tests {
         let i = i::KeyEvent {
             key: i::Key {
                 modifiers: i::KeyModifiers::CONTROL | i::KeyModifiers::SHIFT,
-                code: i::KeyCode::Char('a'),
+                code: i::KeyCode::Char(b'a'),
             },
             kind: i::KeyEventKind::Press,
         };
