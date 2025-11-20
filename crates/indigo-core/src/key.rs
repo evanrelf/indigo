@@ -346,12 +346,12 @@ mod tests {
             # comment
             abc a b c # comment
 
-            \t \n <s-\n> <c-->
+            \\t \\n <s-\\n> <c-->
 
             # comment
             <c-a-del> <a-a> <tab> <s-tab> <a-esc>
         ";
-        let expected = "abcabc\t\n<s-\n><c--><c-a-del><a-a><tab><s-tab><a-esc>";
+        let expected = "abcabc\\t\\n<s-\\n><c--><c-a-del><a-a><tab><s-tab><a-esc>";
         let actual = input.parse::<Keys>().unwrap().to_string();
         assert_eq!(expected, actual);
     }
@@ -359,7 +359,7 @@ mod tests {
     #[test]
     fn weird() {
         assert_eq!("<c-->".parse::<Key>().unwrap().to_string(), "<c-->");
-        assert_eq!("<c-\\>>".parse::<Key>().unwrap().to_string(), "<c-\\>>>");
+        assert_eq!("<c-\\>>".parse::<Key>().unwrap().to_string(), "<c-\\>>");
     }
 
     #[test]
