@@ -260,7 +260,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         let mode = match &editor.mode {
             Mode::Normal(_) => "normal",
             Mode::Seek(seek_mode) => {
-                use indigo_core::mode::{
+                use indigo_core::mode::seek::{
                     SeekDirection::{Next, Prev},
                     SeekInclude::{Onto, Until},
                     SeekSelect::{Extend, Move},

@@ -4,7 +4,10 @@ use crate::{
     action::*,
     editor::Editor,
     key::{Key, KeyCode, is},
-    mode::Mode,
+    mode::{
+        Mode,
+        seek::{enter_seek_mode, handle_event_seek},
+    },
 };
 use std::num::NonZeroUsize;
 
@@ -50,7 +53,7 @@ pub fn handle_event(editor: &mut Editor, mut event: Event) -> anyhow::Result<boo
 }
 
 pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
-    use crate::mode::{
+    use crate::mode::seek::{
         SeekDirection::{Next, Prev},
         SeekInclude::{Onto, Until},
         SeekSelect::{Extend, Move},
@@ -109,37 +112,6 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
     }
 
     handled
-}
-
-pub fn handle_event_seek(editor: &mut Editor, event: &Event) -> bool {
-    let Mode::Seek(_seek_mode) = &editor.mode else {
-        panic!("Not in seek mode")
-    };
-
-    let Event::Key(KeyEvent { key, .. }) = event;
-
-    let mut key = *key;
-    key.normalize();
-
-    if let KeyCode::Char(char) = key.code
-        && let Ok(byte) = u8::try_from(char)
-        && key.modifiers.is_empty()
-    {
-        seek(editor, byte);
-    } else if let KeyCode::Return = key.code
-        && key.modifiers.is_empty()
-    {
-        // TODO: Handle Windows line endings?
-        seek(editor, b'\n');
-    } else if let KeyCode::Tab = key.code
-        && key.modifiers.is_empty()
-    {
-        seek(editor, b'\t');
-    }
-
-    enter_normal_mode(editor);
-
-    true
 }
 
 pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {

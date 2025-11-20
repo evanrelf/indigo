@@ -1,10 +1,7 @@
 use crate::{
     buffer::Buffer,
     editor::Editor,
-    mode::{
-        CommandMode, GotoMode, InsertMode, Mode, NormalMode, SeekDirection, SeekInclude, SeekMode,
-        SeekSelect,
-    },
+    mode::{CommandMode, GotoMode, InsertMode, Mode, NormalMode},
 };
 use camino::Utf8PathBuf;
 use clap::Parser as _;
@@ -17,20 +14,6 @@ pub fn set_count(editor: &mut Editor, count: Option<NonZeroUsize>) {
 pub fn enter_normal_mode(editor: &mut Editor) {
     editor.buffer.commit();
     editor.mode = Mode::Normal(NormalMode::default());
-}
-
-pub fn enter_seek_mode(
-    editor: &mut Editor,
-    select: SeekSelect,
-    include: SeekInclude,
-    direction: SeekDirection,
-) {
-    editor.mode = Mode::Seek(SeekMode {
-        count: editor.mode.count(),
-        select,
-        include,
-        direction,
-    });
 }
 
 pub fn enter_goto_mode(editor: &mut Editor) {
@@ -160,30 +143,6 @@ pub fn extend_to_line_end(editor: &mut Editor) {
 pub fn move_to_line_end(editor: &mut Editor) {
     let mut range = editor.buffer.range_mut();
     range.move_to_line_end();
-    editor.mode.set_count(None);
-}
-
-pub fn seek(editor: &mut Editor, byte: u8) {
-    use crate::mode::{
-        SeekDirection::{Next, Prev},
-        SeekInclude::{Onto, Until},
-        SeekSelect::{Extend, Move},
-    };
-    let Mode::Seek(seek_mode) = &editor.mode else {
-        panic!("Not in seek mode")
-    };
-    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
-    let mut range = editor.buffer.range_mut();
-    match (&seek_mode.select, &seek_mode.include, &seek_mode.direction) {
-        (Move, Until, Prev) => range.move_until_prev_byte(byte, count),
-        (Extend, Until, Prev) => range.extend_until_prev_byte(byte, count),
-        (Move, Until, Next) => range.move_until_next_byte(byte, count),
-        (Extend, Until, Next) => range.extend_until_next_byte(byte, count),
-        (Move, Onto, Prev) => range.move_onto_prev_byte(byte, count),
-        (Extend, Onto, Prev) => range.extend_onto_prev_byte(byte, count),
-        (Move, Onto, Next) => range.move_onto_next_byte(byte, count),
-        (Extend, Onto, Next) => range.extend_onto_next_byte(byte, count),
-    }
     editor.mode.set_count(None);
 }
 

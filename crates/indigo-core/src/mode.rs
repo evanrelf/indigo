@@ -6,6 +6,7 @@ pub mod seek;
 
 use crate::{
     cursor::{Cursor, CursorMut, CursorState},
+    mode::seek::SeekMode,
     text::Text,
 };
 use ropey::Rope;
@@ -49,31 +50,6 @@ impl Default for Mode {
 #[derive(Default)]
 pub struct NormalMode {
     pub count: Option<NonZeroUsize>,
-}
-
-pub enum SeekSelect {
-    Move,
-    Extend,
-}
-
-pub enum SeekInclude {
-    Until,
-    Onto,
-}
-
-pub enum SeekDirection {
-    Prev,
-    Next,
-}
-
-pub struct SeekMode {
-    pub count: Option<NonZeroUsize>,
-    /// Move and create a new selection, or extend the current one?
-    pub select: SeekSelect,
-    /// Include seek target in selection, or stop just short?
-    pub include: SeekInclude,
-    /// Seek forward or backward?
-    pub direction: SeekDirection,
 }
 
 #[derive(Default)]
