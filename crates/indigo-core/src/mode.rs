@@ -4,7 +4,7 @@ pub mod insert;
 pub mod normal;
 pub mod seek;
 
-use crate::mode::{command::CommandMode, goto::GotoMode, seek::SeekMode};
+use crate::mode::{command::CommandMode, goto::GotoMode, insert::InsertMode, seek::SeekMode};
 use std::num::NonZeroUsize;
 
 // TODO: Mode stack so that seek mode can look at normal mode's count instead of keeping a copy?
@@ -46,6 +46,3 @@ impl Default for Mode {
 pub struct NormalMode {
     pub count: Option<NonZeroUsize>,
 }
-
-#[derive(Default)]
-pub struct InsertMode {}

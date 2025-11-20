@@ -8,6 +8,7 @@ use crate::{
         Mode,
         command::{enter_command_mode, handle_event_command},
         goto::{enter_goto_mode, handle_event_goto},
+        insert::{enter_insert_mode, handle_event_insert},
         seek::{enter_seek_mode, handle_event_seek},
     },
 };
@@ -104,33 +105,6 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "d") => delete(editor),
             _ if is(key, "u") => undo(editor),
             _ if is(key, "U") => redo(editor),
-            _ if is(key, "<c-u>") => scroll_half_page_up(editor),
-            _ if is(key, "<c-d>") => scroll_half_page_down(editor),
-            _ if is(key, "<c-b>") => scroll_full_page_up(editor),
-            _ if is(key, "<c-f>") => scroll_full_page_down(editor),
-            _ if is(key, "<c-c>") => exit(editor, 1),
-            _ => handled = false,
-        },
-    }
-
-    handled
-}
-
-pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
-    let Mode::Insert(_insert_mode) = &editor.mode else {
-        panic!("Not in insert mode")
-    };
-
-    let mut handled = true;
-
-    match event {
-        Event::Key(KeyEvent { key, .. }) => match (key.modifiers, key.code) {
-            _ if is(key, "<esc>") => enter_normal_mode(editor),
-            _ if is(key, "<bs>") => delete_before(editor),
-            _ if is(key, "<del>") => delete_after(editor),
-            (m, KeyCode::Char(c)) if m.is_empty() => insert_char(editor, c),
-            _ if is(key, "<ret>") => insert_char(editor, '\n'),
-            _ if is(key, "<tab>") => insert_char(editor, '\t'),
             _ if is(key, "<c-u>") => scroll_half_page_up(editor),
             _ if is(key, "<c-d>") => scroll_half_page_down(editor),
             _ if is(key, "<c-b>") => scroll_full_page_up(editor),

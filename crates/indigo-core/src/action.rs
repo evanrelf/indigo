@@ -1,6 +1,6 @@
 use crate::{
     editor::Editor,
-    mode::{InsertMode, Mode, NormalMode},
+    mode::{Mode, NormalMode},
 };
 use std::{num::NonZeroUsize, process::ExitCode};
 
@@ -11,12 +11,6 @@ pub fn set_count(editor: &mut Editor, count: Option<NonZeroUsize>) {
 pub fn enter_normal_mode(editor: &mut Editor) {
     editor.buffer.commit();
     editor.mode = Mode::Normal(NormalMode::default());
-}
-
-pub fn enter_insert_mode(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.reduce();
-    editor.mode = Mode::Insert(InsertMode::default());
 }
 
 pub fn extend_left(editor: &mut Editor) {
@@ -133,33 +127,15 @@ pub fn scroll_full_page_down(editor: &mut Editor) {
     window.scroll_to_line(line);
 }
 
-pub fn insert_char(editor: &mut Editor, char: char) {
-    let mut range = editor.buffer.range_mut();
-    range.insert_char(char);
-    editor.mode.set_count(None);
-}
-
 pub fn insert(editor: &mut Editor, text: &str) {
     let mut range = editor.buffer.range_mut();
     range.insert(text);
     editor.mode.set_count(None);
 }
 
-pub fn delete_before(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.delete_before();
-    editor.mode.set_count(None);
-}
-
 pub fn delete(editor: &mut Editor) {
     let mut range = editor.buffer.range_mut();
     range.delete();
-    editor.mode.set_count(None);
-}
-
-pub fn delete_after(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.delete_after();
     editor.mode.set_count(None);
 }
 
