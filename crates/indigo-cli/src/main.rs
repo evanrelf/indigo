@@ -37,7 +37,7 @@ fn main() -> anyhow::Result<ExitCode> {
     let mut editor = Editor::from(Buffer::from(rope));
 
     for key in args.keys {
-        let event = Event::KeyInput(key);
+        let event = Event::Key(key);
         handle_event(&mut editor, event)?;
     }
 
