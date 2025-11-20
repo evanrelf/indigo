@@ -7,7 +7,6 @@ pub mod event;
 pub mod fs;
 pub mod grapheme;
 pub mod history;
-pub mod key;
 pub mod key2;
 pub mod mode;
 pub mod ot;
