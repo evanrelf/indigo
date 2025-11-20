@@ -1,3 +1,9 @@
+pub mod command;
+pub mod goto;
+pub mod insert;
+pub mod normal;
+pub mod seek;
+
 use crate::{
     cursor::{Cursor, CursorMut, CursorState},
     text::Text,
