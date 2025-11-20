@@ -8,6 +8,8 @@
 - buffer: Store history of ranges
 - editor: Hold multiple buffers
 - ot: Implement `EditSeq::compose`
+- range: Select word (for mouse double click)
+- range: Select line (for mouse triple click)
 
 ## Keys
 
