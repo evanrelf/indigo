@@ -4,12 +4,7 @@ pub mod insert;
 pub mod normal;
 pub mod seek;
 
-use crate::{
-    cursor::{Cursor, CursorMut, CursorState},
-    mode::{goto::GotoMode, seek::SeekMode},
-    text::Text,
-};
-use ropey::Rope;
+use crate::mode::{command::CommandMode, goto::GotoMode, seek::SeekMode};
 use std::num::NonZeroUsize;
 
 // TODO: Mode stack so that seek mode can look at normal mode's count instead of keeping a copy?
@@ -54,29 +49,3 @@ pub struct NormalMode {
 
 #[derive(Default)]
 pub struct InsertMode {}
-
-#[derive(Default)]
-pub struct CommandMode {
-    text: Text,
-    cursor: CursorState,
-}
-
-impl CommandMode {
-    #[must_use]
-    pub fn rope(&self) -> &Rope {
-        self.text.rope()
-    }
-
-    pub fn cursor(&self) -> Cursor<'_> {
-        let cursor = Cursor::new(&self.text, &self.cursor)
-            .expect("Command mode text and cursor state are always kept valid");
-        cursor.assert_invariants().unwrap();
-        cursor
-    }
-
-    pub fn cursor_mut(&mut self) -> CursorMut<'_> {
-        CursorMut::new(&mut self.text, &mut self.cursor)
-            .expect("Command mode text and cursor state are always kept valid")
-            .on_drop(|cursor| cursor.assert_invariants().unwrap())
-    }
-}

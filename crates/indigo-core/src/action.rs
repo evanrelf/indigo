@@ -1,11 +1,8 @@
 use crate::{
-    buffer::Buffer,
     editor::Editor,
-    mode::{CommandMode, InsertMode, Mode, NormalMode},
+    mode::{InsertMode, Mode, NormalMode},
 };
-use camino::Utf8PathBuf;
-use clap::Parser as _;
-use std::{borrow::Cow, iter, num::NonZeroUsize, process::ExitCode};
+use std::{num::NonZeroUsize, process::ExitCode};
 
 pub fn set_count(editor: &mut Editor, count: Option<NonZeroUsize>) {
     editor.mode.set_count(count);
@@ -20,10 +17,6 @@ pub fn enter_insert_mode(editor: &mut Editor) {
     let mut range = editor.buffer.range_mut();
     range.reduce();
     editor.mode = Mode::Insert(InsertMode::default());
-}
-
-pub fn enter_command_mode(editor: &mut Editor) {
-    editor.mode = Mode::Command(CommandMode::default());
 }
 
 pub fn extend_left(editor: &mut Editor) {
@@ -141,37 +134,21 @@ pub fn scroll_full_page_down(editor: &mut Editor) {
 }
 
 pub fn insert_char(editor: &mut Editor, char: char) {
-    if let Mode::Command(ref mut command_mode) = editor.mode {
-        command_mode.cursor_mut().insert_char(char);
-    } else {
-        let mut range = editor.buffer.range_mut();
-        range.insert_char(char);
-        editor.mode.set_count(None);
-    }
+    let mut range = editor.buffer.range_mut();
+    range.insert_char(char);
+    editor.mode.set_count(None);
 }
 
 pub fn insert(editor: &mut Editor, text: &str) {
-    if let Mode::Command(ref mut command_mode) = editor.mode {
-        command_mode.cursor_mut().insert(text);
-    } else {
-        let mut range = editor.buffer.range_mut();
-        range.insert(text);
-        editor.mode.set_count(None);
-    }
+    let mut range = editor.buffer.range_mut();
+    range.insert(text);
+    editor.mode.set_count(None);
 }
 
 pub fn delete_before(editor: &mut Editor) {
-    if let Mode::Command(ref mut command_mode) = editor.mode {
-        if command_mode.cursor().is_at_start() {
-            enter_normal_mode(editor);
-        } else {
-            command_mode.cursor_mut().delete_before();
-        }
-    } else {
-        let mut range = editor.buffer.range_mut();
-        range.delete_before();
-        editor.mode.set_count(None);
-    }
+    let mut range = editor.buffer.range_mut();
+    range.delete_before();
+    editor.mode.set_count(None);
 }
 
 pub fn delete(editor: &mut Editor) {
@@ -204,136 +181,6 @@ pub fn redo(editor: &mut Editor) {
         }
     }
     editor.mode.set_count(None);
-}
-
-// TODO: Move command handling into command mode code. This function should be very short.
-#[expect(clippy::too_many_lines)]
-pub fn exec_command(editor: &mut Editor) -> anyhow::Result<()> {
-    #[derive(clap::Parser)]
-    #[clap(
-        disable_help_flag = true,
-        disable_help_subcommand = true,
-        override_usage = ""
-    )]
-    enum Command {
-        Echo {
-            #[clap(long)]
-            error: bool,
-            message: Vec<String>,
-        },
-        #[clap(alias = "e")]
-        Edit { path: Utf8PathBuf },
-        // TODO: Delete `edit!` once multiple buffers are supported.
-        #[clap(name = "edit!", alias = "e!")]
-        EditForce { path: Utf8PathBuf },
-        #[clap(alias = "w")]
-        Write,
-        #[clap(alias = "q")]
-        Quit { exit_code: Option<u8> },
-        #[clap(name = "quit!", alias = "q!")]
-        QuitForce { exit_code: Option<u8> },
-        #[clap(alias = "wq")]
-        WriteQuit { exit_code: Option<u8> },
-    }
-
-    let Mode::Command(command_mode) = &editor.mode else {
-        return Ok(());
-    };
-
-    let command = Cow::<str>::from(command_mode.rope());
-
-    let Ok(args) = shell_words::split(&command) else {
-        editor.message = Some(Err(String::from("Invalid command")));
-        editor.mode = Mode::Normal(NormalMode::default());
-        return Ok(());
-    };
-
-    if args.is_empty() {
-        editor.mode = Mode::Normal(NormalMode::default());
-        return Ok(());
-    }
-
-    let args = iter::once(String::from("indigo")).chain(args);
-
-    let command = match Command::try_parse_from(args) {
-        Ok(command) => command,
-        Err(error) => {
-            let error = error.to_string();
-            let error = error
-                .strip_prefix("error: ")
-                .unwrap_or(&error)
-                .lines()
-                .next()
-                .unwrap_or("");
-            editor.message = Some(Err(error.to_string()));
-            editor.mode = Mode::Normal(NormalMode::default());
-            return Ok(());
-        }
-    };
-
-    match command {
-        Command::Echo { error, message } => {
-            if error {
-                editor.message = Some(Err(message.join(" ")));
-            } else {
-                editor.message = Some(Ok(message.join(" ")));
-            }
-        }
-        Command::Edit { path } => {
-            if editor.buffer.is_modified().unwrap_or(false) {
-                editor.message = Some(Err(String::from("Unsaved changes")));
-            } else if let Ok(buffer) = Buffer::open(&mut editor.fs, &path) {
-                editor.buffer = buffer;
-            } else {
-                editor.message = Some(Err(format!("Failed to open {path}")));
-            }
-        }
-        Command::EditForce { path } => {
-            if let Ok(buffer) = Buffer::open(&mut editor.fs, &path) {
-                editor.buffer = buffer;
-            } else {
-                editor.message = Some(Err(format!("Failed to open {path}")));
-            }
-        }
-        Command::Write => {
-            if editor.buffer.save(&mut editor.fs).is_err() {
-                editor.message = Some(Err(String::from("Failed to save")));
-            }
-        }
-        Command::Quit { exit_code } => {
-            if editor.buffer.is_modified().unwrap_or(false) {
-                editor.message = Some(Err(String::from("Unsaved changes")));
-            } else {
-                editor.exit = if let Some(exit_code) = exit_code {
-                    Some(ExitCode::from(exit_code))
-                } else {
-                    Some(ExitCode::SUCCESS)
-                };
-            }
-        }
-        Command::QuitForce { exit_code } => {
-            editor.exit = if let Some(exit_code) = exit_code {
-                Some(ExitCode::from(exit_code))
-            } else {
-                Some(ExitCode::SUCCESS)
-            };
-        }
-        Command::WriteQuit { exit_code } => {
-            if editor.buffer.save(&mut editor.fs).is_ok() {
-                editor.exit = if let Some(exit_code) = exit_code {
-                    Some(ExitCode::from(exit_code))
-                } else {
-                    Some(ExitCode::SUCCESS)
-                };
-            } else {
-                editor.message = Some(Err(String::from("Failed to save")));
-            }
-        }
-    }
-
-    editor.mode = Mode::Normal(NormalMode::default());
-
-    Ok(())
 }
 
 pub fn exit(editor: &mut Editor, exit_code: u8) {

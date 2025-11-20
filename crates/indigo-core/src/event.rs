@@ -6,6 +6,7 @@ use crate::{
     key::{Key, KeyCode, is},
     mode::{
         Mode,
+        command::{enter_command_mode, handle_event_command},
         goto::{enter_goto_mode, handle_event_goto},
         seek::{enter_seek_mode, handle_event_seek},
     },
@@ -140,25 +141,4 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
     }
 
     handled
-}
-
-pub fn handle_event_command(editor: &mut Editor, event: &Event) -> anyhow::Result<bool> {
-    let Mode::Command(_command_mode) = &editor.mode else {
-        panic!("Not in command mode")
-    };
-
-    let mut handled = true;
-
-    match event {
-        Event::Key(KeyEvent { key, .. }) => match (key.modifiers, key.code) {
-            _ if is(key, "<esc>") => enter_normal_mode(editor),
-            _ if is(key, "<bs>") => delete_before(editor),
-            _ if is(key, "<ret>") => exec_command(editor)?,
-            (m, KeyCode::Char(c)) if m.is_empty() => insert_char(editor, c),
-            _ if is(key, "<c-c>") => exit(editor, 1),
-            _ => handled = false,
-        },
-    }
-
-    Ok(handled)
 }

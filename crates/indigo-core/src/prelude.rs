@@ -6,7 +6,7 @@ pub use crate::{
     editor::Editor,
     event::{Event, KeyEvent, KeyEventKind},
     key::{Key, KeyCode, KeyModifier, KeyModifiers, Keys},
-    mode::{CommandMode, InsertMode, Mode, NormalMode, goto::GotoMode, seek::SeekMode},
+    mode::{InsertMode, Mode, NormalMode, command::CommandMode, goto::GotoMode, seek::SeekMode},
     ot::EditSeq,
     range::{Range, RangeMut},
     rope::RopeExt,
