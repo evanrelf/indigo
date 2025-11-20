@@ -1,5 +1,4 @@
 use crate::{
-    action::exit,
     editor::Editor,
     event::{Event, KeyEvent},
     key::{KeyCode, is},
@@ -31,7 +30,7 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "<c-d>") => scroll_half_page_down(editor),
             _ if is(key, "<c-b>") => scroll_full_page_up(editor),
             _ if is(key, "<c-f>") => scroll_full_page_down(editor),
-            _ if is(key, "<c-c>") => exit(editor, 1),
+            _ if is(key, "<c-c>") => editor.exit(1),
             _ => handled = false,
         },
     }

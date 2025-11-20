@@ -1,5 +1,4 @@
 use crate::{
-    action::exit,
     buffer::Buffer,
     cursor::{Cursor, CursorMut, CursorState},
     editor::Editor,
@@ -55,7 +54,7 @@ pub fn handle_event_command(editor: &mut Editor, event: &Event) -> anyhow::Resul
             _ if is(key, "<bs>") => delete_before(editor),
             _ if is(key, "<ret>") => exec_command(editor),
             (m, KeyCode::Char(c)) if m.is_empty() => insert_char(editor, c),
-            _ if is(key, "<c-c>") => exit(editor, 1),
+            _ if is(key, "<c-c>") => editor.exit(1),
             _ => handled = false,
         },
     }

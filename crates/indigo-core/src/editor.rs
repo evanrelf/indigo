@@ -38,6 +38,11 @@ impl Editor {
         WindowMut::new(&mut self.buffer, &mut self.window)
     }
 
+    /// Doesn't actually terminate the process, just records the desired exit code.
+    pub fn exit(&mut self, exit_code: u8) {
+        self.exit = Some(ExitCode::from(exit_code));
+    }
+
     #[expect(dead_code)]
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
         self.buffer.assert_invariants().map_err(Error::Buffer)?;
