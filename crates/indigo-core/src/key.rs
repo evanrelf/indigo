@@ -1,16 +1,14 @@
-#![expect(unused)] // TODO
-
 use flagset::{FlagSet, flags};
 use std::{
     fmt::{Display, Formatter},
-    hash::{Hash, Hasher},
+    hash::Hash,
     ops::{Deref, DerefMut},
     str::FromStr,
 };
 use winnow::{
     ascii::{multispace0, till_line_ending},
     combinator::{alt, cut_err, delimited, fail, opt, preceded, repeat, terminated},
-    error::{StrContext, StrContextValue},
+    error::StrContext,
     prelude::*,
     token::one_of,
 };
