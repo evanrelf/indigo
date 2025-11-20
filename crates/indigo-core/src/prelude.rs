@@ -4,7 +4,7 @@ pub use crate::{
     cursor::{Cursor, CursorMut},
     display_width::DisplayWidth,
     editor::Editor,
-    event::Event,
+    event::{Event, KeyEvent, KeyEventKind},
     key::{Key, KeyCode, KeyModifier, KeyModifiers, Keys},
     mode::{CommandMode, InsertMode, Mode, NormalMode, SeekMode},
     ot::EditSeq,

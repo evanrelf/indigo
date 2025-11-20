@@ -14,12 +14,27 @@ use arbitrary::Arbitrary;
 #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Event {
-    Key(Key),
+    Key(KeyEvent),
+}
+
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[derive(Debug, PartialEq)]
+pub struct KeyEvent {
+    pub key: Key,
+    pub kind: KeyEventKind,
+}
+
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[derive(Debug, PartialEq)]
+pub enum KeyEventKind {
+    Press,
+    Repeat,
+    Release,
 }
 
 pub fn handle_event(editor: &mut Editor, mut event: Event) -> anyhow::Result<bool> {
     #[expect(irrefutable_let_patterns)]
-    if let Event::Key(key) = &mut event {
+    if let Event::Key(KeyEvent { key, .. }) = &mut event {
         key.normalize();
     }
 
@@ -52,7 +67,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
     };
 
     match event {
-        Event::Key(key) => match (key.modifiers, key.code) {
+        Event::Key(KeyEvent { key, .. }) => match (key.modifiers, key.code) {
             (m, KeyCode::Char(c @ '0'..='9')) if m.is_empty() => set_count(editor, count(c)),
             _ if is(key, "<esc>") => enter_normal_mode(editor),
             _ if is(key, ":") => enter_command_mode(editor),
@@ -101,7 +116,7 @@ pub fn handle_event_seek(editor: &mut Editor, event: &Event) -> bool {
         panic!("Not in seek mode")
     };
 
-    let Event::Key(key) = event;
+    let Event::Key(KeyEvent { key, .. }) = event;
 
     let mut key = *key;
     key.normalize();
@@ -125,7 +140,7 @@ pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {
     };
 
     match event {
-        Event::Key(key) => match (key.modifiers, key.code) {
+        Event::Key(KeyEvent { key, .. }) => match (key.modifiers, key.code) {
             _ if is(key, "k") => move_to_top(editor),
             _ if is(key, "K") => extend_to_top(editor),
             _ if is(key, "j") => move_to_bottom(editor),
@@ -153,7 +168,7 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
     let mut handled = true;
 
     match event {
-        Event::Key(key) => match (key.modifiers, key.code) {
+        Event::Key(KeyEvent { key, .. }) => match (key.modifiers, key.code) {
             _ if is(key, "<esc>") => enter_normal_mode(editor),
             _ if is(key, "<bs>") => delete_before(editor),
             _ if is(key, "<del>") => delete_after(editor),
@@ -180,7 +195,7 @@ pub fn handle_event_command(editor: &mut Editor, event: &Event) -> anyhow::Resul
     let mut handled = true;
 
     match event {
-        Event::Key(key) => match (key.modifiers, key.code) {
+        Event::Key(KeyEvent { key, .. }) => match (key.modifiers, key.code) {
             _ if is(key, "<esc>") => enter_normal_mode(editor),
             _ if is(key, "<bs>") => delete_before(editor),
             _ if is(key, "<ret>") => run_command(editor)?,
