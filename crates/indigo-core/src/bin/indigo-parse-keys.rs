@@ -46,12 +46,20 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let input = io::read_to_string(io::stdin())?;
 
+    let input = if let Type::Keys = args.r#type {
+        &input
+    } else {
+        // Trim whitespace for parsers that can't handle it. Otherwise input on `stdin` that ends in
+        // a newline (e.g. what `echo` outputs by default) will fail with a cryptic error.
+        input.trim()
+    };
+
     let exit_code = match args.r#type {
-        Type::Keys => run::<Keys>(&input, args.debug),
-        Type::Key => run::<Key>(&input, args.debug),
-        Type::KeyModifiers => run::<KeyModifiers>(&input, args.debug),
-        Type::KeyModifier => run::<KeyModifier>(&input, args.debug),
-        Type::KeyCode => run::<KeyCode>(&input, args.debug),
+        Type::Keys => run::<Keys>(input, args.debug),
+        Type::Key => run::<Key>(input, args.debug),
+        Type::KeyModifiers => run::<KeyModifiers>(input, args.debug),
+        Type::KeyModifier => run::<KeyModifier>(input, args.debug),
+        Type::KeyCode => run::<KeyCode>(input, args.debug),
     };
 
     Ok(exit_code)
