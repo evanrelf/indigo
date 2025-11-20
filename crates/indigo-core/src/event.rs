@@ -6,6 +6,7 @@ use crate::{
     key::{Key, KeyCode, is},
     mode::{
         Mode,
+        goto::{enter_goto_mode, handle_event_goto},
         seek::{enter_seek_mode, handle_event_seek},
     },
 };
@@ -112,32 +113,6 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
     }
 
     handled
-}
-
-pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {
-    let Mode::Goto(_goto_mode) = &editor.mode else {
-        panic!("Not in goto mode")
-    };
-
-    match event {
-        Event::Key(KeyEvent { key, .. }) => match (key.modifiers, key.code) {
-            _ if is(key, "k") => move_to_top(editor),
-            _ if is(key, "K") => extend_to_top(editor),
-            _ if is(key, "j") => move_to_bottom(editor),
-            _ if is(key, "J") => extend_to_bottom(editor),
-            _ if is(key, "h") => move_to_line_start(editor),
-            _ if is(key, "H") => extend_to_line_start(editor),
-            _ if is(key, "i") => move_to_line_non_blank_start(editor),
-            _ if is(key, "I") => extend_to_line_non_blank_start(editor),
-            _ if is(key, "l") => move_to_line_end(editor),
-            _ if is(key, "L") => extend_to_line_end(editor),
-            _ => {}
-        },
-    }
-
-    enter_normal_mode(editor);
-
-    true
 }
 
 pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {

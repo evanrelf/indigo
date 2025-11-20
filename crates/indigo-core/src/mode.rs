@@ -6,7 +6,7 @@ pub mod seek;
 
 use crate::{
     cursor::{Cursor, CursorMut, CursorState},
-    mode::seek::SeekMode,
+    mode::{goto::GotoMode, seek::SeekMode},
     text::Text,
 };
 use ropey::Rope;
@@ -51,9 +51,6 @@ impl Default for Mode {
 pub struct NormalMode {
     pub count: Option<NonZeroUsize>,
 }
-
-#[derive(Default)]
-pub struct GotoMode {}
 
 #[derive(Default)]
 pub struct InsertMode {}

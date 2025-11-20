@@ -1,7 +1,7 @@
 use crate::{
     buffer::Buffer,
     editor::Editor,
-    mode::{CommandMode, GotoMode, InsertMode, Mode, NormalMode},
+    mode::{CommandMode, InsertMode, Mode, NormalMode},
 };
 use camino::Utf8PathBuf;
 use clap::Parser as _;
@@ -14,10 +14,6 @@ pub fn set_count(editor: &mut Editor, count: Option<NonZeroUsize>) {
 pub fn enter_normal_mode(editor: &mut Editor) {
     editor.buffer.commit();
     editor.mode = Mode::Normal(NormalMode::default());
-}
-
-pub fn enter_goto_mode(editor: &mut Editor) {
-    editor.mode = Mode::Goto(GotoMode::default());
 }
 
 pub fn enter_insert_mode(editor: &mut Editor) {
@@ -83,66 +79,6 @@ pub fn move_down(editor: &mut Editor) {
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     let mut range = editor.buffer.range_mut();
     range.move_down(count);
-    editor.mode.set_count(None);
-}
-
-pub fn extend_to_top(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.extend_to_top();
-    editor.mode.set_count(None);
-}
-
-pub fn move_to_top(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.move_to_top();
-    editor.mode.set_count(None);
-}
-
-pub fn extend_to_bottom(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.extend_to_bottom();
-    editor.mode.set_count(None);
-}
-
-pub fn move_to_bottom(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.move_to_bottom();
-    editor.mode.set_count(None);
-}
-
-pub fn extend_to_line_start(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.extend_to_line_start();
-    editor.mode.set_count(None);
-}
-
-pub fn move_to_line_start(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.move_to_line_start();
-    editor.mode.set_count(None);
-}
-
-pub fn extend_to_line_non_blank_start(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.extend_to_line_non_blank_start();
-    editor.mode.set_count(None);
-}
-
-pub fn move_to_line_non_blank_start(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.move_to_line_non_blank_start();
-    editor.mode.set_count(None);
-}
-
-pub fn extend_to_line_end(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.extend_to_line_end();
-    editor.mode.set_count(None);
-}
-
-pub fn move_to_line_end(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.move_to_line_end();
     editor.mode.set_count(None);
 }
 
