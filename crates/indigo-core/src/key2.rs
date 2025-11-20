@@ -57,10 +57,22 @@ fn keys(input: &mut &str) -> ModalResult<Keys> {
         .parse_next(input)
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Key {
     pub modifiers: KeyModifiers,
     pub code: KeyCode,
+}
+
+impl Key {
+    pub fn normalize(&mut self) {
+        if !self.modifiers.contains(KeyModifier::Shift) {
+            return;
+        }
+        if let KeyCode::Char(c @ ('a'..='z' | 'A'..='Z')) = self.code {
+            *self.modifiers -= KeyModifier::Shift;
+            self.code = KeyCode::Char(c.to_ascii_uppercase());
+        }
+    }
 }
 
 #[cfg(any(feature = "arbitrary", test))]
@@ -151,7 +163,7 @@ fn key_bare_unmodified(input: &mut &str) -> ModalResult<Key> {
     Ok(Key { modifiers, code })
 }
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct KeyModifiers(pub FlagSet<KeyModifier>);
 
 impl FromStr for KeyModifiers {
@@ -308,6 +320,15 @@ fn key_code_bare(input: &mut &str) -> ModalResult<KeyCode> {
         .verify(|c| !" #<>\\".contains(*c))
         .map(KeyCode::Char)
         .parse_next(input)
+}
+
+#[must_use]
+pub fn is(x: &Key, y: &str) -> bool {
+    let mut x = *x;
+    let mut y = y.parse::<Key>().unwrap();
+    x.normalize();
+    y.normalize();
+    x == y
 }
 
 #[cfg(test)]

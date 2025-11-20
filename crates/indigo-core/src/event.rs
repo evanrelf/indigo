@@ -3,7 +3,7 @@
 use crate::{
     action::*,
     editor::Editor,
-    key::{Key, KeyCode, is},
+    key2::{Key, KeyCode, is},
     mode::Mode,
 };
 use std::num::NonZeroUsize;

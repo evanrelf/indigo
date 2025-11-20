@@ -9,7 +9,7 @@ mod t {
 
 mod i {
     pub use indigo_core::event::{KeyEvent, KeyEventKind};
-    pub use indigo_core::key::{Key, KeyCode, KeyModifier, KeyModifiers};
+    pub use indigo_core::key2::{Key, KeyCode, KeyModifier, KeyModifiers};
 }
 
 pub fn key_event_t2i(key_event: &t::KeyEvent) -> anyhow::Result<i::KeyEvent> {
@@ -42,6 +42,7 @@ pub fn key_modifiers_t2i(modifiers: &t::KeyModifiers) -> anyhow::Result<i::KeyMo
             (_, m) => Err(anyhow!("Unsupported crossterm key modifier: {m:?}")),
         })
         .try_fold(FlagSet::default(), |x, y| y.map(|y| x | y))
+        .map(i::KeyModifiers)
 }
 
 #[must_use]
@@ -113,7 +114,10 @@ mod tests {
     #[test]
     fn test_roundtrip() {
         let i = i::KeyEvent {
-            key: i::Key::from(([i::KeyModifier::Control, i::KeyModifier::Shift], 'a')),
+            key: i::Key {
+                modifiers: i::KeyModifiers(i::KeyModifier::Control | i::KeyModifier::Shift),
+                code: i::KeyCode::Char('a'),
+            },
             kind: i::KeyEventKind::Press,
         };
         let c = t::KeyEvent {
