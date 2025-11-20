@@ -1,4 +1,4 @@
-use crate::{buffer::Buffer, rope::RopeExt as _};
+use crate::{buffer::Buffer, editor::Editor, rope::RopeExt as _};
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::cmp::min;
 
@@ -66,4 +66,44 @@ impl<W: WrapMut> WindowView<'_, W> {
             self.state.prev_vertical_scroll = top + (line - bottom);
         }
     }
+}
+
+pub fn scroll_up(editor: &mut Editor) {
+    let mut window = editor.window_mut();
+    let line = window.vertical_scroll().saturating_sub(3);
+    window.scroll_to_line(line);
+}
+
+pub fn scroll_down(editor: &mut Editor) {
+    let mut window = editor.window_mut();
+    let line = window.vertical_scroll() + 3;
+    window.scroll_to_line(line);
+}
+
+pub fn scroll_half_page_up(editor: &mut Editor) {
+    let mut window = editor.window_mut();
+    let line = window
+        .vertical_scroll()
+        .saturating_sub(usize::from(window.height()) / 2);
+    window.scroll_to_line(line);
+}
+
+pub fn scroll_half_page_down(editor: &mut Editor) {
+    let mut window = editor.window_mut();
+    let line = window.vertical_scroll() + usize::from(window.height()) / 2;
+    window.scroll_to_line(line);
+}
+
+pub fn scroll_full_page_up(editor: &mut Editor) {
+    let mut window = editor.window_mut();
+    let line = window
+        .vertical_scroll()
+        .saturating_sub(usize::from(window.height()));
+    window.scroll_to_line(line);
+}
+
+pub fn scroll_full_page_down(editor: &mut Editor) {
+    let mut window = editor.window_mut();
+    let line = window.vertical_scroll() + usize::from(window.height());
+    window.scroll_to_line(line);
 }

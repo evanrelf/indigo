@@ -1,14 +1,14 @@
 use crate::{
-    action::{
-        exit, scroll_full_page_down, scroll_full_page_up, scroll_half_page_down,
-        scroll_half_page_up,
-    },
+    action::exit,
     editor::Editor,
     event::{Event, KeyEvent},
     key::{KeyCode, is},
     mode::{
         Mode, command::enter_command_mode, goto::enter_goto_mode, insert::enter_insert_mode,
         seek::enter_seek_mode,
+    },
+    window::{
+        scroll_full_page_down, scroll_full_page_up, scroll_half_page_down, scroll_half_page_up,
     },
 };
 use std::num::NonZeroUsize;

@@ -7,9 +7,9 @@ use crate::{
 };
 use anyhow::anyhow;
 use indigo_core::{
-    action::*,
     mode::{command, insert},
     prelude::*,
+    window::{scroll_down, scroll_up},
 };
 use ratatui::crossterm::{
     self,
