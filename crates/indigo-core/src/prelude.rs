@@ -5,7 +5,7 @@ pub use crate::{
     display_width::DisplayWidth,
     editor::Editor,
     event::{Event, KeyEvent, KeyEventKind},
-    key2::{Key, KeyCode, KeyModifier, KeyModifiers, Keys},
+    key::{Key, KeyCode, KeyModifier, KeyModifiers, Keys},
     mode::{CommandMode, InsertMode, Mode, NormalMode, SeekMode},
     ot::EditSeq,
     range::{Range, RangeMut},

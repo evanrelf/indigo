@@ -1,5 +1,5 @@
 use clap::Parser as _;
-use indigo_core::key2::{Key, KeyCode, KeyModifier, KeyModifiers, Keys};
+use indigo_core::key::{Key, KeyCode, KeyModifier, KeyModifiers, Keys};
 use std::{
     fmt::{self, Debug, Display},
     io,

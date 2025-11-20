@@ -9,7 +9,7 @@ mod t {
 
 mod i {
     pub use indigo_core::event::{KeyEvent, KeyEventKind};
-    pub use indigo_core::key2::{Key, KeyCode, KeyModifier, KeyModifiers};
+    pub use indigo_core::key::{Key, KeyCode, KeyModifier, KeyModifiers};
 }
 
 pub fn key_event_t2i(key_event: &t::KeyEvent) -> anyhow::Result<i::KeyEvent> {
