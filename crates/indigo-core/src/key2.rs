@@ -10,6 +10,7 @@ use std::{
 use winnow::{
     ascii::{multispace0, till_line_ending},
     combinator::{alt, cut_err, delimited, fail, opt, preceded, repeat, terminated},
+    error::{StrContext, StrContextValue},
     prelude::*,
     token::one_of,
 };
@@ -127,30 +128,21 @@ impl Display for Key {
 }
 
 fn key(input: &mut &str) -> ModalResult<Key> {
-    alt((key_wrapped, key_bare)).parse_next(input)
+    alt((key_wrapped, key_bare_unmodified)).parse_next(input)
 }
 
 fn key_wrapped(input: &mut &str) -> ModalResult<Key> {
-    let _ = "<".parse_next(input)?;
-    let modifiers = key_modifiers.parse_next(input)?;
-    let code = key_code_wrapped.parse_next(input)?;
-    let _ = ">".parse_next(input)?;
-    Ok(Key { modifiers, code })
-}
-
-fn key_bare(input: &mut &str) -> ModalResult<Key> {
-    alt((key_bare_modified, key_bare_unmodified)).parse_next(input)
-}
-
-fn key_bare_modified(input: &mut &str) -> ModalResult<Key> {
-    let _ = "<".parse_next(input)?;
-    let modifiers = key_modifiers.parse_next(input)?;
-    if modifiers.is_empty() {
-        fail.parse_next(input)?;
-    }
-    let code = key_code_bare.parse_next(input)?;
-    let _ = ">".parse_next(input)?;
-    Ok(Key { modifiers, code })
+    let k = |input: &mut &str| {
+        let modifiers = key_modifiers
+            .context(StrContext::Label("key modifiers"))
+            .parse_next(input)?;
+        let allow_bare = !modifiers.is_empty();
+        let code = alt((key_code_wrapped, key_code_bare.verify(|_| allow_bare)))
+            .context(StrContext::Label("key code"))
+            .parse_next(input)?;
+        Ok(Key { modifiers, code })
+    };
+    delimited("<", cut_err(k), ">").parse_next(input)
 }
 
 fn key_bare_unmodified(input: &mut &str) -> ModalResult<Key> {
