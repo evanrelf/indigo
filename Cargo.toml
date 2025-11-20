@@ -37,6 +37,7 @@ clippy.redundant_closure_for_method_calls = "allow"
 clippy.allow_attributes = "warn"
 clippy.pedantic = { level = "warn", priority = -1 }
 clippy.use_self = "warn"
+clippy.as_conversions = "deny"
 rust.unsafe_code = "deny"
 
 [profile.profile]
