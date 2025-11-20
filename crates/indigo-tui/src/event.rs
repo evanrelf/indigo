@@ -6,7 +6,11 @@ use crate::{
     terminal::TerminalGuard,
 };
 use anyhow::anyhow;
-use indigo_core::{action::*, prelude::*};
+use indigo_core::{
+    action::*,
+    mode::{command, insert},
+    prelude::*,
+};
 use ratatui::crossterm::{
     self,
     event::{KeyCode, KeyModifiers, MouseButton, MouseEventKind},
@@ -155,7 +159,7 @@ fn handle_event_insert(
             (KeyModifiers::NONE, MouseEventKind::ScrollDown) => scroll_down(editor),
             _ => handled = false,
         },
-        TerminalEvent::Paste(text) => insert(editor, &text),
+        TerminalEvent::Paste(text) => insert::paste(editor, &text),
         _ => handled = false,
     }
 
@@ -172,7 +176,7 @@ fn handle_event_command(
     let mut handled = true;
 
     match event {
-        TerminalEvent::Paste(text) => insert(editor, &text),
+        TerminalEvent::Paste(text) => command::paste(editor, &text),
         _ => handled = false,
     }
 

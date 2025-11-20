@@ -1,12 +1,12 @@
 use crate::{
     action::{
-        enter_normal_mode, exit, scroll_full_page_down, scroll_full_page_up, scroll_half_page_down,
+        exit, scroll_full_page_down, scroll_full_page_up, scroll_half_page_down,
         scroll_half_page_up,
     },
     editor::Editor,
     event::{Event, KeyEvent},
     key::{KeyCode, is},
-    mode::Mode,
+    mode::{Mode, normal::enter_normal_mode},
 };
 
 #[derive(Default)]
@@ -60,5 +60,11 @@ fn delete_after(editor: &mut Editor) {
 fn insert_char(editor: &mut Editor, char: char) {
     let mut range = editor.buffer.range_mut();
     range.insert_char(char);
+    editor.mode.set_count(None);
+}
+
+pub fn paste(editor: &mut Editor, text: &str) {
+    let mut range = editor.buffer.range_mut();
+    range.insert(text);
     editor.mode.set_count(None);
 }

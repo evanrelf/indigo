@@ -1,9 +1,8 @@
 use crate::{
-    action::enter_normal_mode,
     editor::Editor,
     event::{Event, KeyEvent},
     key::is,
-    mode::Mode,
+    mode::{Mode, normal::enter_normal_mode},
 };
 
 #[derive(Default)]

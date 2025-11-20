@@ -7,7 +7,8 @@ pub use crate::{
     event::{Event, KeyEvent, KeyEventKind},
     key::{Key, KeyCode, KeyModifier, KeyModifiers, Keys},
     mode::{
-        Mode, NormalMode, command::CommandMode, goto::GotoMode, insert::InsertMode, seek::SeekMode,
+        Mode, command::CommandMode, goto::GotoMode, insert::InsertMode, normal::NormalMode,
+        seek::SeekMode,
     },
     ot::EditSeq,
     range::{Range, RangeMut},

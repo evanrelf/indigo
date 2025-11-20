@@ -1,11 +1,14 @@
 use crate::{
-    action::{enter_normal_mode, exit},
+    action::exit,
     buffer::Buffer,
     cursor::{Cursor, CursorMut, CursorState},
     editor::Editor,
     event::{Event, KeyEvent},
     key::{KeyCode, is},
-    mode::{Mode, NormalMode},
+    mode::{
+        Mode,
+        normal::{NormalMode, enter_normal_mode},
+    },
     text::Text,
 };
 use camino::Utf8PathBuf;
@@ -69,6 +72,13 @@ fn insert_char(editor: &mut Editor, char: char) {
         panic!("Not in command mode")
     };
     command_mode.cursor_mut().insert_char(char);
+}
+
+pub fn paste(editor: &mut Editor, text: &str) {
+    let Mode::Command(command_mode) = &mut editor.mode else {
+        panic!("Not in command mode")
+    };
+    command_mode.cursor_mut().insert(text);
 }
 
 fn delete_before(editor: &mut Editor) {
