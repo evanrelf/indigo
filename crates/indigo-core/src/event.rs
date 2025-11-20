@@ -121,12 +121,20 @@ pub fn handle_event_seek(editor: &mut Editor, event: &Event) -> bool {
     let mut key = *key;
     key.normalize();
 
-    // TODO: Interpret `Return` as `\n` and `Tab` as `\t`.
     if let KeyCode::Char(char) = key.code
         && let Ok(byte) = u8::try_from(char)
         && key.modifiers.is_empty()
     {
         seek(editor, byte);
+    } else if let KeyCode::Return = key.code
+        && key.modifiers.is_empty()
+    {
+        // TODO: Handle Windows line endings?
+        seek(editor, b'\n');
+    } else if let KeyCode::Tab = key.code
+        && key.modifiers.is_empty()
+    {
+        seek(editor, b'\t');
     }
 
     enter_normal_mode(editor);
