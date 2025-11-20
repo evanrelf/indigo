@@ -17,12 +17,6 @@ pub enum Event {
     Key(Key),
 }
 
-impl From<Key> for Event {
-    fn from(key: Key) -> Self {
-        Self::Key(key)
-    }
-}
-
 pub fn handle_event(editor: &mut Editor, mut event: Event) -> anyhow::Result<bool> {
     #[expect(irrefutable_let_patterns)]
     if let Event::Key(key) = &mut event {
