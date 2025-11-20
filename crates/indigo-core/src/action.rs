@@ -313,7 +313,7 @@ pub fn redo(editor: &mut Editor) {
 
 // TODO: Move command handling into command mode code. This function should be very short.
 #[expect(clippy::too_many_lines)]
-pub fn run_command(editor: &mut Editor) -> anyhow::Result<()> {
+pub fn exec_command(editor: &mut Editor) -> anyhow::Result<()> {
     #[derive(clap::Parser)]
     #[clap(
         disable_help_flag = true,
