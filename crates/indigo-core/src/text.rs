@@ -10,19 +10,17 @@ struct Edit {
     redo: EditSeq,
 }
 
-// TODO: Implement `EditSeq::compose`, replace `History<Edit>` with `History<Edit, Edit>`. Or maybe
-// not, since that means using `unwrap` in this impl?
-// impl Extend<Self> for Edit {
-//     fn extend<T>(&mut self, edits: T)
-//     where
-//         T: IntoIterator<Item = Self>,
-//     {
-//         for edit in edits {
-//             self.undo = self.undo.compose(&edit.undo).unwrap();
-//             self.redo = self.redo.compose(&edit.redo).unwrap();
-//         }
-//     }
-// }
+impl Extend<Self> for Edit {
+    fn extend<T>(&mut self, edits: T)
+    where
+        T: IntoIterator<Item = Self>,
+    {
+        for edit in edits {
+            self.undo = edit.undo.compose(&self.undo).unwrap();
+            self.redo = self.redo.compose(&edit.redo).unwrap();
+        }
+    }
+}
 
 #[derive(Debug, Default)]
 pub struct Text {

@@ -3,7 +3,7 @@
 //! <https://en.wikipedia.org/wiki/Operational_transformation>
 
 use ropey::Rope;
-use std::{ops::Deref, rc::Rc};
+use std::{cmp::min, ops::Deref, rc::Rc};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -16,6 +16,12 @@ pub enum Error {
         char_offset: usize,
         len_chars: usize,
     },
+
+    #[error("Failed to compose: first sequence produces more chars than second expects")]
+    ComposeFirstProducesMore,
+
+    #[error("Failed to compose: second sequence expects more chars than first produces")]
+    ComposeSecondExpectsMore,
 
     #[error("Error from rope")]
     Rope(#[from] ropey::Error),
@@ -109,8 +115,6 @@ impl EditSeq {
         }
     }
 
-    // TODO
-    #[doc(hidden)]
     pub fn compose(&self, other: &Self) -> anyhow::Result<Self> {
         if self.target_chars != other.source_chars {
             anyhow::bail!(Error::LengthMismatch {
@@ -119,10 +123,114 @@ impl EditSeq {
             });
         }
 
-        // https://github.com/spebern/operational-transform-rs/blob/9faa17f0a2b282ac2e09dbb2d29fdaf2ae0bbb4a/operational-transform/src/lib.rs#L172
-        // https://github.com/helix-editor/helix/blob/ba4793fca0f8198ce57bf6bc1d46ed7649665b33/helix-core/src/transaction.rs#L153
+        let mut result = Self::with_capacity(self.len() + other.len());
 
-        todo!()
+        let mut iter1 = self.edits.iter().cloned();
+        let mut iter2 = other.edits.iter().cloned();
+
+        let mut op1 = iter1.next();
+        let mut op2 = iter2.next();
+
+        while op1.is_some() || op2.is_some() {
+            match (&mut op1, &mut op2) {
+                // Delete from first: pass through, doesn't consume from second
+                (Some(Edit::Delete(n)), _) => {
+                    result.delete(*n);
+                    op1 = iter1.next();
+                }
+
+                // Insert from second: pass through, doesn't consume from first
+                (_, Some(Edit::Insert(s))) => {
+                    result.insert(s);
+                    op2 = iter2.next();
+                }
+
+                // Retain + Retain: both consume, output retain
+                (Some(Edit::Retain(n1)), Some(Edit::Retain(n2))) => {
+                    let n = min(*n1, *n2);
+                    result.retain(n);
+                    *n1 -= n;
+                    *n2 -= n;
+                    if *n1 == 0 {
+                        op1 = iter1.next();
+                    }
+                    if *n2 == 0 {
+                        op2 = iter2.next();
+                    }
+                }
+
+                // Retain + Delete: both consume, output delete
+                (Some(Edit::Retain(n1)), Some(Edit::Delete(n2))) => {
+                    let n = min(*n1, *n2);
+                    result.delete(n);
+                    *n1 -= n;
+                    *n2 -= n;
+                    if *n1 == 0 {
+                        op1 = iter1.next();
+                    }
+                    if *n2 == 0 {
+                        op2 = iter2.next();
+                    }
+                }
+
+                // Insert + Retain: second retains inserted text
+                (Some(Edit::Insert(s1)), Some(Edit::Retain(n2))) => {
+                    let len1 = s1.chars().count();
+                    let n = len1.min(*n2);
+
+                    if n == len1 {
+                        // Second retains all of first's insert
+                        result.insert(s1);
+                        op1 = iter1.next();
+                    } else {
+                        // Second retains only part: split the insert
+                        let byte_offset = s1.chars().take(n).map(char::len_utf8).sum();
+                        let before = Rc::from(&s1[..byte_offset]);
+                        let after = Rc::from(&s1[byte_offset..]);
+                        result.insert(&before);
+                        *s1 = after;
+                    }
+
+                    *n2 -= n;
+                    if *n2 == 0 {
+                        op2 = iter2.next();
+                    }
+                }
+
+                // Insert + Delete: operations cancel out
+                (Some(Edit::Insert(s1)), Some(Edit::Delete(n2))) => {
+                    let len1 = s1.chars().count();
+                    let n = len1.min(*n2);
+
+                    if n == len1 {
+                        // All of insert is deleted
+                        op1 = iter1.next();
+                    } else {
+                        // Only part deleted: keep the rest
+                        let byte_offset = s1.chars().take(n).map(char::len_utf8).sum();
+                        let after = Rc::from(&s1[byte_offset..]);
+                        *s1 = after;
+                    }
+
+                    *n2 -= n;
+                    if *n2 == 0 {
+                        op2 = iter2.next();
+                    }
+                }
+
+                (None, Some(Edit::Retain(_) | Edit::Delete(_))) => {
+                    anyhow::bail!(Error::ComposeSecondExpectsMore);
+                }
+
+                (Some(Edit::Retain(_) | Edit::Insert(_)), None) => {
+                    anyhow::bail!(Error::ComposeFirstProducesMore);
+                }
+
+                (None, None) => break,
+            }
+        }
+
+        Ok(result)
     }
 
     // TODO
@@ -412,18 +520,240 @@ mod tests {
         assert!(Edit::Retain(1).apply(char_offset, &mut rope).is_err());
     }
 
-    // Given a string S and consecutive operations A and B, the following must hold:
-    //
-    // ```
-    // apply(apply(S, A), B) = apply(S, compose(A, B))
-    // ```
-    // #[test]
-    // fn prop() {
-    //     arbtest(|u| {
-    //         let s = u.arbitrary::<Rope>()?;
-    //         let a = u.arbitrary::<EditSeq>()?;
-    //         let b = u.arbitrary::<EditSeq>()?;
-    //         assert_eq!(); // TODO
-    //     });
-    // }
+    #[test]
+    fn edits_compose_basic() {
+        // S0 = "abcdef"
+        // A: Delete "ab", retain "cdef" -> S1 = "cdef"
+        // B: Retain "cd", delete "ef" -> S2 = "cd"
+        // A ∘ B should transform "abcdef" -> "cd"
+
+        let mut edit_a = EditSeq::new();
+        edit_a.delete(2); // Delete "ab"
+        edit_a.retain(4); // Retain "cdef"
+
+        let mut edit_b = EditSeq::new();
+        edit_b.retain(2); // Retain "cd"
+        edit_b.delete(2); // Delete "ef"
+
+        let composed = edit_a.compose(&edit_b).unwrap();
+
+        // Test the composition directly
+        let mut rope = Rope::from("abcdef");
+        composed.apply(&mut rope).unwrap();
+        assert_eq!(rope, Rope::from("cd"));
+
+        // Verify it equals sequential application
+        let mut rope2 = Rope::from("abcdef");
+        edit_a.apply(&mut rope2).unwrap();
+        edit_b.apply(&mut rope2).unwrap();
+        assert_eq!(rope, rope2);
+    }
+
+    #[test]
+    fn edits_compose_insert() {
+        // S0 = "hello"
+        // A: Insert "X", retain "hello" -> S1 = "Xhello"
+        // B: Retain "X", insert "Y", retain "hello" -> S2 = "XYhello"
+
+        let mut edit_a = EditSeq::new();
+        edit_a.insert("X");
+        edit_a.retain(5);
+
+        let mut edit_b = EditSeq::new();
+        edit_b.retain(1);
+        edit_b.insert("Y");
+        edit_b.retain(5);
+
+        let composed = edit_a.compose(&edit_b).unwrap();
+
+        let mut rope = Rope::from("hello");
+        composed.apply(&mut rope).unwrap();
+        assert_eq!(rope, Rope::from("XYhello"));
+    }
+
+    #[test]
+    fn edits_compose_insert_delete() {
+        // S0 = "abc"
+        // A: Retain "a", insert "XYZ", retain "bc" -> S1 = "aXYZbc"
+        // B: Retain "a", delete "XY", retain "Zbc" -> S2 = "aZbc"
+
+        let mut edit_a = EditSeq::new();
+        edit_a.retain(1);
+        edit_a.insert("XYZ");
+        edit_a.retain(2);
+
+        let mut edit_b = EditSeq::new();
+        edit_b.retain(1);
+        edit_b.delete(2);
+        edit_b.retain(3);
+
+        let composed = edit_a.compose(&edit_b).unwrap();
+
+        let mut rope = Rope::from("abc");
+        composed.apply(&mut rope).unwrap();
+        assert_eq!(rope, Rope::from("aZbc"));
+
+        // Verify property: apply(apply(S, A), B) = apply(S, compose(A, B))
+        let mut rope2 = Rope::from("abc");
+        edit_a.apply(&mut rope2).unwrap();
+        edit_b.apply(&mut rope2).unwrap();
+        assert_eq!(rope, rope2);
+    }
+
+    #[test]
+    fn edits_compose_complex() {
+        // S0 = "Hello, world!"
+        // A: Delete "H", insert "Y", retain "ello", insert "w", delete ", world!", insert " and pink"
+        //    -> S1 = "Yellow and pink"
+        // B: Retain "Yellow", delete " and", retain " pink"
+        //    -> S2 = "Yellow pink"
+
+        let mut edit_a = EditSeq::new();
+        edit_a.delete(1);
+        edit_a.insert("Y");
+        edit_a.retain(4);
+        edit_a.insert("w");
+        edit_a.delete(8);
+        edit_a.insert(" and pink");
+
+        let mut edit_b = EditSeq::new();
+        edit_b.retain(6);
+        edit_b.delete(4);
+        edit_b.retain(5);
+
+        let composed = edit_a.compose(&edit_b).unwrap();
+
+        let mut rope = Rope::from("Hello, world!");
+        composed.apply(&mut rope).unwrap();
+        assert_eq!(rope, Rope::from("Yellow pink"));
+
+        // Verify property
+        let mut rope2 = Rope::from("Hello, world!");
+        edit_a.apply(&mut rope2).unwrap();
+        edit_b.apply(&mut rope2).unwrap();
+        assert_eq!(rope, rope2);
+    }
+
+    #[test]
+    fn edits_compose_length_mismatch() {
+        let mut edit_a = EditSeq::new();
+        edit_a.retain(5);
+
+        let mut edit_b = EditSeq::new();
+        edit_b.retain(3);
+
+        assert!(edit_a.compose(&edit_b).is_err());
+    }
+
+    fn gen_edit_seq(
+        u: &mut arbitrary::Unstructured<'_>,
+        source_chars: usize,
+    ) -> arbitrary::Result<EditSeq> {
+        let mut edits = EditSeq::new();
+        let mut remaining = source_chars;
+
+        while remaining > 0 || u.arbitrary::<bool>()? {
+            let op_type = u.int_in_range(0..=2)?;
+
+            match op_type {
+                // Retain
+                0 if remaining > 0 => {
+                    let n = u.int_in_range(1..=remaining)?;
+                    edits.retain(n);
+                    remaining -= n;
+                }
+                // Delete
+                1 if remaining > 0 => {
+                    let n = u.int_in_range(1..=remaining)?;
+                    edits.delete(n);
+                    remaining -= n;
+                }
+                // Insert
+                2 => {
+                    let len = u.int_in_range(1..=10)?;
+                    let s: String = (0..len)
+                        .map(|_| u.int_in_range(b'a'..=b'z').map(|b| char::from(b)))
+                        .collect::<arbitrary::Result<_>>()?;
+                    edits.insert(&s);
+
+                    // If we've consumed all source chars, we can stop
+                    if remaining == 0 {
+                        break;
+                    }
+                }
+                _ => {
+                    // If remaining > 0, we must consume it
+                    if remaining > 0 {
+                        continue;
+                    }
+                    break;
+                }
+            }
+
+            // Sometimes stop early to avoid making sequences too long
+            if remaining == 0 && u.int_in_range(0..=2)? == 0 {
+                break;
+            }
+        }
+
+        // Ensure we consumed all source chars
+        if remaining > 0 {
+            edits.retain(remaining);
+        }
+
+        Ok(edits)
+    }
+
+    #[test]
+    fn prop_compose() {
+        arbtest::arbtest(|u| {
+            // Generate a random initial rope
+            let s_len = u.int_in_range(0..=50)?;
+            let s: String = (0..s_len)
+                .map(|_| u.int_in_range(b'a'..=b'z').map(|b| char::from(b)))
+                .collect::<arbitrary::Result<_>>()?;
+            let rope = Rope::from(s.as_str());
+
+            // Generate edit sequence A that's valid for the rope
+            let edit_a = gen_edit_seq(u, rope.len_chars())?;
+
+            // Apply A to get intermediate rope
+            let mut rope1 = rope.clone();
+            edit_a.apply(&mut rope1).expect("edit_a.apply failed");
+
+            // Generate edit sequence B that's valid for the intermediate rope
+            let edit_b = gen_edit_seq(u, rope1.len_chars())?;
+
+            // Test property: apply(apply(S, A), B) = apply(S, compose(A, B))
+            let mut rope_sequential = rope.clone();
+            edit_a
+                .apply(&mut rope_sequential)
+                .expect("sequential: edit_a.apply failed");
+            edit_b
+                .apply(&mut rope_sequential)
+                .expect("sequential: edit_b.apply failed");
+
+            let composed = edit_a.compose(&edit_b).expect("compose failed");
+            let mut rope_composed = rope.clone();
+            composed
+                .apply(&mut rope_composed)
+                .expect("composed: apply failed");
+
+            assert_eq!(
+                rope_sequential,
+                rope_composed,
+                "Property violation: apply(apply(S, A), B) != apply(S, compose(A, B))\n\
+                 S = {:?}\n\
+                 A = source:{} target:{}\n\
+                 B = source:{} target:{}",
+                rope.to_string(),
+                edit_a.source_chars,
+                edit_a.target_chars,
+                edit_b.source_chars,
+                edit_b.target_chars,
+            );
+
+            Ok(())
+        });
+    }
 }
