@@ -1,5 +1,3 @@
-#![allow(clippy::wildcard_imports)]
-
 use crate::{
     areas::{Areas, position_to_char_offset},
     key::{key_event_i2t, key_event_t2i},

@@ -1,5 +1,3 @@
-#![allow(clippy::wildcard_imports)]
-
 use crate::{
     editor::Editor,
     key::Key,
