@@ -5,7 +5,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use indigo_core::{
-    mode::{command, insert},
+    mode::{command, insert, normal::enter_normal_mode},
     prelude::*,
     window::{scroll_down, scroll_up},
 };
@@ -60,12 +60,10 @@ pub fn handle_event(
         }
     }
 
-    #[expect(clippy::match_same_arms)]
     let _handled = match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, terminal, areas, event)?,
-        // TODO: Exit seek and goto modes on mouse events.
-        Mode::Seek(_) => false,
-        Mode::Goto(_) => false,
+        Mode::Seek(_) => handle_event_seek(editor, terminal, areas, event)?,
+        Mode::Goto(_) => handle_event_goto(editor, terminal, areas, event)?,
         Mode::Insert(_) => handle_event_insert(editor, terminal, areas, event)?,
         Mode::Command(_) => handle_event_command(editor, terminal, areas, event)?,
     };
@@ -136,6 +134,54 @@ fn handle_event_normal(
                 } else {
                     handled = false;
                 }
+            }
+            _ => handled = false,
+        },
+        _ => handled = false,
+    }
+
+    Ok(handled)
+}
+
+#[expect(clippy::needless_pass_by_value)]
+#[expect(clippy::unnecessary_wraps)]
+fn handle_event_seek(
+    editor: &mut Editor,
+    _terminal: &mut TerminalGuard,
+    _areas: Areas,
+    event: TerminalEvent,
+) -> anyhow::Result<bool> {
+    let mut handled = true;
+
+    match event {
+        // TODO: Add mouse events to core, so it can handle this internally.
+        TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
+            (KeyModifiers::NONE, _) => {
+                enter_normal_mode(editor);
+            }
+            _ => handled = false,
+        },
+        _ => handled = false,
+    }
+
+    Ok(handled)
+}
+
+#[expect(clippy::needless_pass_by_value)]
+#[expect(clippy::unnecessary_wraps)]
+fn handle_event_goto(
+    editor: &mut Editor,
+    _terminal: &mut TerminalGuard,
+    _areas: Areas,
+    event: TerminalEvent,
+) -> anyhow::Result<bool> {
+    let mut handled = true;
+
+    match event {
+        // TODO: Add mouse events to core, so it can handle this internally.
+        TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
+            (KeyModifiers::NONE, _) => {
+                enter_normal_mode(editor);
             }
             _ => handled = false,
         },
