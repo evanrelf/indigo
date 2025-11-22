@@ -2,51 +2,6 @@ use crate::grapheme::{self, Graphemes};
 use ropey::{Rope, RopeSlice};
 use std::ops::{Bound, RangeBounds};
 
-// TODO: Consider using `aho_corasick::packed` to search for >3 needles at once (e.g. searching for
-// the next whitespace character, considering ` `, `\t`, `\n`, and `\r`). Under the hood, the
-// `aho-corasick` crate uses `memchr` automatically when possible.
-//
-// Be careful allowing multi-byte needles, as the pattern may be split between haystacks.
-//
-// https://docs.rs/aho-corasick/latest/aho_corasick/packed/index.html
-
-/// Variant of `memchr` for a discontiguous haystack.
-pub fn memchr<'a>(needle: u8, haystacks: impl IntoIterator<Item = &'a [u8]>) -> Option<usize> {
-    let mut haystacks_byte_index = 0;
-    for haystack in haystacks {
-        if let Some(needle_byte_index) =
-            memchr::memchr(needle, haystack).map(|i| haystacks_byte_index + i)
-        {
-            return Some(needle_byte_index);
-        }
-        haystacks_byte_index += haystack.len();
-    }
-    None
-}
-
-/// Variant of `memrchr` for a discontiguous haystack.
-///
-/// Assumes byte slices are provided in reverse order, and returned byte index is from the back. For
-/// example:
-///
-/// ```rust
-/// # use indigo_core::rope::memrchr;
-/// let haystacks = ["123", "456"].iter().rev().map(|s| s.as_bytes());
-/// assert_eq!(memrchr(b'4', haystacks), Some(2));
-/// ```
-pub fn memrchr<'a>(needle: u8, haystacks: impl IntoIterator<Item = &'a [u8]>) -> Option<usize> {
-    let mut haystacks_byte_index = 0; // Starting from the end
-    for haystack in haystacks {
-        if let Some(needle_byte_index) = memchr::memrchr(needle, haystack)
-            .map(|i| haystacks_byte_index + (haystack.len() - (i + 1)))
-        {
-            return Some(needle_byte_index);
-        }
-        haystacks_byte_index += haystack.len();
-    }
-    None
-}
-
 pub trait RopeExt {
     fn as_slice(&self) -> RopeSlice<'_>;
 
@@ -143,6 +98,51 @@ impl RopeExt for Rope {
     fn as_slice(&self) -> RopeSlice<'_> {
         self.slice(0..)
     }
+}
+
+// TODO: Consider using `aho_corasick::packed` to search for >3 needles at once (e.g. searching for
+// the next whitespace character, considering ` `, `\t`, `\n`, and `\r`). Under the hood, the
+// `aho-corasick` crate uses `memchr` automatically when possible.
+//
+// Be careful allowing multi-byte needles, as the pattern may be split between haystacks.
+//
+// https://docs.rs/aho-corasick/latest/aho_corasick/packed/index.html
+
+/// Variant of `memchr` for a discontiguous haystack.
+pub fn memchr<'a>(needle: u8, haystacks: impl IntoIterator<Item = &'a [u8]>) -> Option<usize> {
+    let mut haystacks_byte_index = 0;
+    for haystack in haystacks {
+        if let Some(needle_byte_index) =
+            memchr::memchr(needle, haystack).map(|i| haystacks_byte_index + i)
+        {
+            return Some(needle_byte_index);
+        }
+        haystacks_byte_index += haystack.len();
+    }
+    None
+}
+
+/// Variant of `memrchr` for a discontiguous haystack.
+///
+/// Assumes byte slices are provided in reverse order, and returned byte index is from the back. For
+/// example:
+///
+/// ```rust
+/// # use indigo_core::rope::memrchr;
+/// let haystacks = ["123", "456"].iter().rev().map(|s| s.as_bytes());
+/// assert_eq!(memrchr(b'4', haystacks), Some(2));
+/// ```
+pub fn memrchr<'a>(needle: u8, haystacks: impl IntoIterator<Item = &'a [u8]>) -> Option<usize> {
+    let mut haystacks_byte_index = 0; // Starting from the end
+    for haystack in haystacks {
+        if let Some(needle_byte_index) = memchr::memrchr(needle, haystack)
+            .map(|i| haystacks_byte_index + (haystack.len() - (i + 1)))
+        {
+            return Some(needle_byte_index);
+        }
+        haystacks_byte_index += haystack.len();
+    }
+    None
 }
 
 #[cfg(test)]
