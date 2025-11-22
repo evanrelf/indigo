@@ -52,6 +52,38 @@ pub trait RopeExt {
         Some(end - rope.byte_to_char(memrchr(byte, haystack)?))
     }
 
+    fn find_next_byte3<R>(&self, char_range: R, byte1: u8, byte2: u8, byte3: u8) -> Option<usize>
+    where
+        R: RangeBounds<usize> + Clone,
+    {
+        let rope = self.as_slice().slice(char_range.clone());
+        let haystack = rope.chunks().map(|c| c.as_bytes());
+        let start = match char_range.start_bound() {
+            Bound::Included(n) => *n,
+            Bound::Excluded(_) => unreachable!("wtf"),
+            Bound::Unbounded => 0,
+        };
+        Some(start + rope.byte_to_char(memchr3(byte1, byte2, byte3, haystack)?))
+    }
+
+    fn find_prev_byte3<R>(&self, char_range: R, byte1: u8, byte2: u8, byte3: u8) -> Option<usize>
+    where
+        R: RangeBounds<usize> + Clone,
+    {
+        let rope = self.as_slice().slice(char_range.clone());
+        let haystack = rope
+            .chunks_at_char(rope.len_chars())
+            .0
+            .reversed()
+            .map(|c| c.as_bytes());
+        let end = match char_range.end_bound() {
+            Bound::Included(n) => *n,
+            Bound::Excluded(n) => rope.byte_to_char(rope.char_to_byte(*n).saturating_sub(1)),
+            Bound::Unbounded => rope.len_chars().saturating_sub(1),
+        };
+        Some(end - rope.byte_to_char(memrchr3(byte1, byte2, byte3, haystack)?))
+    }
+
     fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice<'_>> {
         let rope = self.as_slice();
         let start = char_index;
