@@ -1,6 +1,6 @@
 use bitflags::bitflags;
 use std::{
-    fmt::{Display, Formatter},
+    fmt::{self, Display, Formatter},
     hash::Hash,
     str::FromStr,
 };
@@ -27,7 +27,7 @@ impl FromStr for Keys {
 }
 
 impl Display for Keys {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         for key in &self.0 {
             write!(f, "{key}")?;
         }
@@ -81,43 +81,13 @@ impl FromStr for Key {
 }
 
 impl Display for Key {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
-        let code = match self.code {
-            KeyCode::Backspace => "bs",
-            KeyCode::Delete => "del",
-            KeyCode::Return => "ret",
-            KeyCode::Left => "left",
-            KeyCode::Right => "right",
-            KeyCode::Up => "up",
-            KeyCode::Down => "down",
-            KeyCode::Tab => "tab",
-            KeyCode::Escape => "esc",
-            KeyCode::Char(b' ') => "\\ ",
-            KeyCode::Char(b'#') => "\\#",
-            KeyCode::Char(b'<') => "\\<",
-            KeyCode::Char(b'>') => "\\>",
-            KeyCode::Char(b'\\') => "\\\\",
-            KeyCode::Char(b'\t') => "\\t",
-            KeyCode::Char(b'\n') => "\\n",
-            KeyCode::Char(b'\r') => "\\r",
-            KeyCode::Char(c) => &char::from(c).to_string(),
-        };
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         if self.modifiers.is_empty()
             && let KeyCode::Char(_) = self.code
         {
-            write!(f, "{code}")?;
+            write!(f, "{}", self.code)?;
         } else {
-            write!(f, "<")?;
-            if self.modifiers.contains(KeyModifiers::CONTROL) {
-                write!(f, "c-")?;
-            }
-            if self.modifiers.contains(KeyModifiers::ALT) {
-                write!(f, "a-")?;
-            }
-            if self.modifiers.contains(KeyModifiers::SHIFT) {
-                write!(f, "s-")?;
-            }
-            write!(f, "{code}>")?;
+            write!(f, "<{}{}>", self.modifiers, self.code)?;
         }
         Ok(())
     }
@@ -163,6 +133,21 @@ impl FromStr for KeyModifiers {
         key_modifiers
             .parse(s)
             .map_err(|e| anyhow::format_err!("{e}"))
+    }
+}
+
+impl Display for KeyModifiers {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        if self.contains(Self::CONTROL) {
+            write!(f, "c-")?;
+        }
+        if self.contains(Self::ALT) {
+            write!(f, "a-")?;
+        }
+        if self.contains(Self::SHIFT) {
+            write!(f, "s-")?;
+        }
+        Ok(())
     }
 }
 
@@ -232,6 +217,32 @@ impl FromStr for KeyCode {
     type Err = anyhow::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         key_code.parse(s).map_err(|e| anyhow::format_err!("{e}"))
+    }
+}
+
+impl Display for KeyCode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        match self {
+            Self::Backspace => write!(f, "bs")?,
+            Self::Delete => write!(f, "del")?,
+            Self::Return => write!(f, "ret")?,
+            Self::Left => write!(f, "left")?,
+            Self::Right => write!(f, "right")?,
+            Self::Up => write!(f, "up")?,
+            Self::Down => write!(f, "down")?,
+            Self::Tab => write!(f, "tab")?,
+            Self::Escape => write!(f, "esc")?,
+            Self::Char(b' ') => write!(f, "\\ ")?,
+            Self::Char(b'#') => write!(f, "\\#")?,
+            Self::Char(b'<') => write!(f, "\\<")?,
+            Self::Char(b'>') => write!(f, "\\>")?,
+            Self::Char(b'\\') => write!(f, "\\\\")?,
+            Self::Char(b'\t') => write!(f, "\\t")?,
+            Self::Char(b'\n') => write!(f, "\\n")?,
+            Self::Char(b'\r') => write!(f, "\\r")?,
+            Self::Char(c) => write!(f, "{}", char::from(*c))?,
+        }
+        Ok(())
     }
 }
 

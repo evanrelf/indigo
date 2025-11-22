@@ -64,16 +64,14 @@ fn main() -> anyhow::Result<ExitCode> {
 
 fn run<T>(input: &str, debug: bool) -> ExitCode
 where
-    // TODO: Use `Display`.
-    T: FromStr + Debug,
+    T: FromStr + Debug + Display,
     <T as FromStr>::Err: Display,
 {
     let result = input.parse::<T>();
 
     match &result {
         Ok(keys) if debug => println!("{keys:?}"),
-        // TODO: Use `Display`.
-        Ok(keys) => println!("{keys:?}"),
+        Ok(keys) => println!("{keys}"),
         Err(error) => println!("{error}"),
     }
 
