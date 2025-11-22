@@ -13,7 +13,7 @@ use crate::{
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use ropey::Rope;
-use std::{borrow::Cow, iter, process::ExitCode, rc::Rc};
+use std::{borrow::Cow, iter, rc::Rc};
 
 #[derive(Default)]
 pub struct CommandMode {
@@ -190,28 +190,16 @@ fn exec_command(editor: &mut Editor) {
             if editor.window().buffer().is_modified().unwrap_or(false) {
                 editor.message = Some(Err(String::from("Unsaved changes")));
             } else {
-                editor.exit = if let Some(exit_code) = exit_code {
-                    Some(ExitCode::from(exit_code))
-                } else {
-                    Some(ExitCode::SUCCESS)
-                };
+                editor.exit(exit_code.unwrap_or(0));
             }
         }
         Command::QuitForce { exit_code } => {
-            editor.exit = if let Some(exit_code) = exit_code {
-                Some(ExitCode::from(exit_code))
-            } else {
-                Some(ExitCode::SUCCESS)
-            };
+            editor.exit(exit_code.unwrap_or(0));
         }
         Command::WriteQuit { exit_code } => {
             let fs = Rc::clone(&editor.fs);
             if editor.window_mut().buffer_mut().save(&fs).is_ok() {
-                editor.exit = if let Some(exit_code) = exit_code {
-                    Some(ExitCode::from(exit_code))
-                } else {
-                    Some(ExitCode::SUCCESS)
-                };
+                editor.exit(exit_code.unwrap_or(0));
             } else {
                 editor.message = Some(Err(String::from("Failed to save")));
             }

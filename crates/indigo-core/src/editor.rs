@@ -21,7 +21,7 @@ pub struct Editor {
     pub mode: Mode,
     pub pwd: Option<Utf8PathBuf>,
     pub message: Option<Result<String, String>>,
-    pub exit: Option<ExitCode>,
+    exit_code: Option<ExitCode>,
 }
 
 impl Editor {
@@ -38,9 +38,14 @@ impl Editor {
         WindowMut::new(&mut self.buffer, &mut self.window)
     }
 
+    #[must_use]
+    pub fn exit_code(&self) -> Option<ExitCode> {
+        self.exit_code
+    }
+
     /// Doesn't actually terminate the process, just records the desired exit code.
     pub fn exit(&mut self, exit_code: u8) {
-        self.exit = Some(ExitCode::from(exit_code));
+        self.exit_code = Some(ExitCode::from(exit_code));
     }
 
     #[expect(dead_code)]
@@ -59,7 +64,7 @@ impl Default for Editor {
             mode: Mode::default(),
             pwd: None,
             message: None,
-            exit: None,
+            exit_code: None,
         }
     }
 }

@@ -50,9 +50,7 @@ fn main() -> anyhow::Result<ExitCode> {
         .rope()
         .write_to(io::LineWriter::new(io::stdout()))?;
 
-    if let Some(exit_code) = editor.exit {
-        Ok(exit_code)
-    } else {
-        Ok(ExitCode::SUCCESS)
-    }
+    let exit_code = editor.exit_code().unwrap_or(ExitCode::SUCCESS);
+
+    Ok(exit_code)
 }
