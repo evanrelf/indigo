@@ -20,80 +20,92 @@ pub trait RopeExt {
         rope.len_lines() - if last_char == '\n' { 1 } else { 0 }
     }
 
-    fn find_next_byte<R>(&self, char_range: R, needle: u8) -> Option<usize>
+    fn find_next_byte<R>(&self, char_range: R, needles: &[u8]) -> Option<usize>
     where
         R: RangeBounds<usize> + Clone,
     {
+        if needles.is_empty() {
+            return None;
+        }
+
         let rope = self.as_slice().slice(char_range.clone());
-        let haystack = rope.chunks().map(|c| c.as_bytes());
         let start = match char_range.start_bound() {
             Bound::Included(n) => *n,
             Bound::Excluded(_) => unreachable!("wtf"),
             Bound::Unbounded => 0,
         };
-        Some(start + rope.byte_to_char(memchr(needle, haystack)?))
+
+        let mut needle_offset: Option<usize> = None;
+
+        for chunk in needles.chunks(3) {
+            match chunk.len() {
+                3 => {
+                    let haystack = rope.chunks().map(|c| c.as_bytes());
+                    if let Some(pos) = memchr3(chunk[0], chunk[1], chunk[2], haystack) {
+                        needle_offset = Some(needle_offset.map_or(pos, |current| current.min(pos)));
+                    }
+                }
+                _ => {
+                    for &needle in chunk {
+                        let haystack = rope.chunks().map(|c| c.as_bytes());
+                        if let Some(pos) = memchr(needle, haystack) {
+                            needle_offset =
+                                Some(needle_offset.map_or(pos, |current| current.min(pos)));
+                        }
+                    }
+                }
+            }
+        }
+
+        needle_offset.map(|byte_offset| start + rope.byte_to_char(byte_offset))
     }
 
-    fn find_prev_byte<R>(&self, char_range: R, needle: u8) -> Option<usize>
+    fn find_prev_byte<R>(&self, char_range: R, needles: &[u8]) -> Option<usize>
     where
         R: RangeBounds<usize> + Clone,
     {
+        if needles.is_empty() {
+            return None;
+        }
+
         let rope = self.as_slice().slice(char_range.clone());
-        let haystack = rope
-            .chunks_at_char(rope.len_chars())
-            .0
-            .reversed()
-            .map(|c| c.as_bytes());
         let end = match char_range.end_bound() {
             Bound::Included(n) => *n,
             Bound::Excluded(n) => rope.byte_to_char(rope.char_to_byte(*n).saturating_sub(1)),
             Bound::Unbounded => rope.len_chars().saturating_sub(1),
         };
-        Some(end - rope.byte_to_char(memrchr(needle, haystack)?))
-    }
 
-    fn find_next_byte3<R>(
-        &self,
-        char_range: R,
-        needle1: u8,
-        needle2: u8,
-        needle3: u8,
-    ) -> Option<usize>
-    where
-        R: RangeBounds<usize> + Clone,
-    {
-        let rope = self.as_slice().slice(char_range.clone());
-        let haystack = rope.chunks().map(|c| c.as_bytes());
-        let start = match char_range.start_bound() {
-            Bound::Included(n) => *n,
-            Bound::Excluded(_) => unreachable!("wtf"),
-            Bound::Unbounded => 0,
-        };
-        Some(start + rope.byte_to_char(memchr3(needle1, needle2, needle3, haystack)?))
-    }
+        let mut needle_offset: Option<usize> = None;
 
-    fn find_prev_byte3<R>(
-        &self,
-        char_range: R,
-        needle1: u8,
-        needle2: u8,
-        needle3: u8,
-    ) -> Option<usize>
-    where
-        R: RangeBounds<usize> + Clone,
-    {
-        let rope = self.as_slice().slice(char_range.clone());
-        let haystack = rope
-            .chunks_at_char(rope.len_chars())
-            .0
-            .reversed()
-            .map(|c| c.as_bytes());
-        let end = match char_range.end_bound() {
-            Bound::Included(n) => *n,
-            Bound::Excluded(n) => rope.byte_to_char(rope.char_to_byte(*n).saturating_sub(1)),
-            Bound::Unbounded => rope.len_chars().saturating_sub(1),
-        };
-        Some(end - rope.byte_to_char(memrchr3(needle1, needle2, needle3, haystack)?))
+        for chunk in needles.chunks(3) {
+            match chunk.len() {
+                3 => {
+                    let haystack = rope
+                        .chunks_at_char(rope.len_chars())
+                        .0
+                        .reversed()
+                        .map(|c| c.as_bytes());
+                    if let Some(pos) = memrchr3(chunk[0], chunk[1], chunk[2], haystack) {
+                        needle_offset = Some(needle_offset.map_or(pos, |current| current.min(pos)));
+                    }
+                }
+                _ => {
+                    for &needle in chunk {
+                        let haystack = rope
+                            .chunks_at_char(rope.len_chars())
+                            .0
+                            .reversed()
+                            .map(|c| c.as_bytes());
+                        if let Some(pos) = memrchr(needle, haystack) {
+                            needle_offset =
+                                Some(needle_offset.map_or(pos, |current| current.min(pos)));
+                        }
+                    }
+                }
+            }
+        }
+
+        needle_offset.map(|byte_offset| end - rope.byte_to_char(byte_offset))
     }
 
     fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice<'_>> {
@@ -315,16 +327,18 @@ mod tests {
         }
         let mut length = rope.len_chars();
         let char_index = length / 2;
-        rope.insert(char_index, "!");
+        rope.insert(char_index, "!?");
         length += 1;
-        assert_eq!(rope.find_next_byte(.., b'!'), Some(char_index));
+        assert_eq!(rope.find_next_byte(.., b"!?"), Some(char_index));
         assert_eq!(
-            rope.find_next_byte(0..(length / 3) * 2, b'!'),
+            rope.find_next_byte(0..(length / 3) * 2, b"!?"),
             Some(char_index)
         );
-        assert_eq!(rope.find_next_byte(0..length / 3, b'!'), None);
+        assert_eq!(rope.find_next_byte(0..length / 3, b"!?"), None);
+        assert_eq!(rope.find_next_byte(0..length, b"!o"), Some(4));
     }
 
+    // TODO: Test finding multiple needles backward.
     #[test]
     fn test_find_prev_byte() {
         let mut rope = Rope::new();
@@ -335,12 +349,12 @@ mod tests {
         let char_index = length / 2;
         rope.insert(char_index, "!");
         length += 1;
-        assert_eq!(rope.find_prev_byte(.., b'!'), Some(char_index));
+        assert_eq!(rope.find_prev_byte(.., b"!"), Some(char_index));
         assert_eq!(
-            rope.find_prev_byte(0..(length / 3) * 2, b'!'),
+            rope.find_prev_byte(0..(length / 3) * 2, b"!"),
             Some(char_index)
         );
-        assert_eq!(rope.find_prev_byte(0..length / 3, b'!'), None);
+        assert_eq!(rope.find_prev_byte(0..length / 3, b"!"), None);
     }
 
     #[test]
