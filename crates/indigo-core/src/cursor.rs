@@ -223,7 +223,7 @@ impl<W: WrapMut> CursorView<'_, W> {
 
     pub fn move_to_prev_byte(&mut self, byte: u8, count: usize) -> bool {
         for _ in 0..count {
-            if let Some(char_offset) = self.text.find_last_byte(..self.state.char_offset, byte) {
+            if let Some(char_offset) = self.text.find_prev_byte(..self.state.char_offset, byte) {
                 self.state.char_offset = char_offset;
                 self.move_right(1);
             } else {
@@ -235,7 +235,7 @@ impl<W: WrapMut> CursorView<'_, W> {
 
     pub fn move_to_next_byte(&mut self, byte: u8, count: usize) -> bool {
         for _ in 0..count {
-            if let Some(char_offset) = self.text.find_first_byte(self.state.char_offset.., byte) {
+            if let Some(char_offset) = self.text.find_next_byte(self.state.char_offset.., byte) {
                 self.state.char_offset = char_offset;
             } else {
                 return false;

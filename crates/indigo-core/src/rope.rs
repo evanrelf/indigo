@@ -20,7 +20,7 @@ pub trait RopeExt {
         rope.len_lines() - if last_char == '\n' { 1 } else { 0 }
     }
 
-    fn find_first_byte<R>(&self, char_range: R, byte: u8) -> Option<usize>
+    fn find_next_byte<R>(&self, char_range: R, byte: u8) -> Option<usize>
     where
         R: RangeBounds<usize> + Clone,
     {
@@ -34,7 +34,7 @@ pub trait RopeExt {
         Some(start + rope.byte_to_char(memchr(byte, haystack)?))
     }
 
-    fn find_last_byte<R>(&self, char_range: R, byte: u8) -> Option<usize>
+    fn find_prev_byte<R>(&self, char_range: R, byte: u8) -> Option<usize>
     where
         R: RangeBounds<usize> + Clone,
     {
@@ -108,7 +108,7 @@ impl RopeExt for Rope {
 //
 // https://docs.rs/aho-corasick/latest/aho_corasick/packed/index.html
 
-/// Variant of `memchr` for a discontiguous haystack.
+/// Variant of [`memchr::memchr()`] for a discontiguous haystack.
 pub fn memchr<'a>(needle: u8, haystacks: impl IntoIterator<Item = &'a [u8]>) -> Option<usize> {
     let mut haystacks_byte_index = 0;
     for haystack in haystacks {
@@ -122,7 +122,7 @@ pub fn memchr<'a>(needle: u8, haystacks: impl IntoIterator<Item = &'a [u8]>) -> 
     None
 }
 
-/// Variant of `memrchr` for a discontiguous haystack.
+/// Variant of [`memchr::memrchr()`] for a discontiguous haystack.
 ///
 /// Assumes byte slices are provided in reverse order, and returned byte index is from the back. For
 /// example:
@@ -136,6 +136,44 @@ pub fn memrchr<'a>(needle: u8, haystacks: impl IntoIterator<Item = &'a [u8]>) ->
     let mut haystacks_byte_index = 0; // Starting from the end
     for haystack in haystacks {
         if let Some(needle_byte_index) = memchr::memrchr(needle, haystack)
+            .map(|i| haystacks_byte_index + (haystack.len() - (i + 1)))
+        {
+            return Some(needle_byte_index);
+        }
+        haystacks_byte_index += haystack.len();
+    }
+    None
+}
+
+/// Variant of [`memchr::memchr3()`] for a discontiguous haystack. See [`memchr()`] for more info.
+pub fn memchr3<'a>(
+    needle1: u8,
+    needle2: u8,
+    needle3: u8,
+    haystacks: impl IntoIterator<Item = &'a [u8]>,
+) -> Option<usize> {
+    let mut haystacks_byte_index = 0;
+    for haystack in haystacks {
+        if let Some(needle_byte_index) =
+            memchr::memchr3(needle1, needle2, needle3, haystack).map(|i| haystacks_byte_index + i)
+        {
+            return Some(needle_byte_index);
+        }
+        haystacks_byte_index += haystack.len();
+    }
+    None
+}
+
+/// Variant of [`memchr::memrchr3()`] for a discontiguous haystack. See [`memrchr()`] for more info.
+pub fn memrchr3<'a>(
+    needle1: u8,
+    needle2: u8,
+    needle3: u8,
+    haystacks: impl IntoIterator<Item = &'a [u8]>,
+) -> Option<usize> {
+    let mut haystacks_byte_index = 0; // Starting from the end
+    for haystack in haystacks {
+        if let Some(needle_byte_index) = memchr::memrchr3(needle1, needle2, needle3, haystack)
             .map(|i| haystacks_byte_index + (haystack.len() - (i + 1)))
         {
             return Some(needle_byte_index);
@@ -234,7 +272,7 @@ mod tests {
     }
 
     #[test]
-    fn test_find_first_byte() {
+    fn test_find_next_byte() {
         let mut rope = Rope::new();
         while rope.chunks().count() < 10 {
             rope.append(Rope::from("hello"));
@@ -243,16 +281,16 @@ mod tests {
         let char_index = length / 2;
         rope.insert(char_index, "!");
         length += 1;
-        assert_eq!(rope.find_first_byte(.., b'!'), Some(char_index));
+        assert_eq!(rope.find_next_byte(.., b'!'), Some(char_index));
         assert_eq!(
-            rope.find_first_byte(0..(length / 3) * 2, b'!'),
+            rope.find_next_byte(0..(length / 3) * 2, b'!'),
             Some(char_index)
         );
-        assert_eq!(rope.find_first_byte(0..length / 3, b'!'), None);
+        assert_eq!(rope.find_next_byte(0..length / 3, b'!'), None);
     }
 
     #[test]
-    fn test_find_last_byte() {
+    fn test_find_prev_byte() {
         let mut rope = Rope::new();
         while rope.chunks().count() < 10 {
             rope.append(Rope::from("hello"));
@@ -261,12 +299,12 @@ mod tests {
         let char_index = length / 2;
         rope.insert(char_index, "!");
         length += 1;
-        assert_eq!(rope.find_last_byte(.., b'!'), Some(char_index));
+        assert_eq!(rope.find_prev_byte(.., b'!'), Some(char_index));
         assert_eq!(
-            rope.find_last_byte(0..(length / 3) * 2, b'!'),
+            rope.find_prev_byte(0..(length / 3) * 2, b'!'),
             Some(char_index)
         );
-        assert_eq!(rope.find_last_byte(0..length / 3, b'!'), None);
+        assert_eq!(rope.find_prev_byte(0..length / 3, b'!'), None);
     }
 
     #[test]
