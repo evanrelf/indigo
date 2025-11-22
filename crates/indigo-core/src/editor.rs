@@ -16,6 +16,7 @@ pub enum Error {
 
 pub struct Editor {
     pub fs: Box<dyn Fs>,
+    // TODO: Make buffer private, access current buffer through window.
     pub buffer: Buffer,
     window: WindowState,
     pub mode: Mode,
