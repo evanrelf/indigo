@@ -1,13 +1,10 @@
 # Todo
 
 - range: Correct cursor positioning
-- selection: Finish integrating
-- selection: Hold multiple ranges
 - fs: Add support for path canonicalization
 - buffer: Canonicalize path in `open`
 - buffer: Store history of ranges
 - editor: Hold multiple buffers
-- ot: Implement `EditSeq::compose`
 - range: Select word (for mouse double click)
 - range: Select line (for mouse triple click)
 
