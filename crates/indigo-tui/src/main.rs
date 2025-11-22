@@ -282,7 +282,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
             Mode::Command(_) => "command",
         };
 
-        let path = match (&editor.pwd, &editor.buffer.kind()) {
+        let path = match (&editor.pwd, &editor.window().buffer().kind()) {
             (_, BufferKind::Scratch) => String::from("*scratch*"),
             (None, BufferKind::File { path, .. }) => path.to_string(),
             (Some(pwd), BufferKind::File { path, .. }) => match diff_utf8_paths(path, pwd) {
@@ -291,7 +291,8 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
             },
         };
 
-        let selection = editor.buffer.selection();
+        let window = editor.window();
+        let selection = window.buffer().selection();
         let state = selection.state();
         let primary = &state.ranges[state.primary_range];
         let anchor = primary.anchor.char_offset;

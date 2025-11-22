@@ -165,28 +165,28 @@ fn exec_command(editor: &mut Editor) {
             }
         }
         Command::Edit { path } => {
-            if editor.buffer.is_modified().unwrap_or(false) {
+            if editor.window().buffer().is_modified().unwrap_or(false) {
                 editor.message = Some(Err(String::from("Unsaved changes")));
             } else if let Ok(buffer) = Buffer::open(&mut editor.fs, &path) {
-                editor.buffer = buffer;
+                *editor.window_mut().buffer_mut() = buffer;
             } else {
                 editor.message = Some(Err(format!("Failed to open {path}")));
             }
         }
         Command::EditForce { path } => {
             if let Ok(buffer) = Buffer::open(&mut editor.fs, &path) {
-                editor.buffer = buffer;
+                *editor.window_mut().buffer_mut() = buffer;
             } else {
                 editor.message = Some(Err(format!("Failed to open {path}")));
             }
         }
         Command::Write => {
-            if editor.buffer.save(&mut editor.fs).is_err() {
+            if editor.save_buffer().is_err() {
                 editor.message = Some(Err(String::from("Failed to save")));
             }
         }
         Command::Quit { exit_code } => {
-            if editor.buffer.is_modified().unwrap_or(false) {
+            if editor.window().buffer().is_modified().unwrap_or(false) {
                 editor.message = Some(Err(String::from("Unsaved changes")));
             } else {
                 editor.exit = if let Some(exit_code) = exit_code {
@@ -204,7 +204,7 @@ fn exec_command(editor: &mut Editor) {
             };
         }
         Command::WriteQuit { exit_code } => {
-            if editor.buffer.save(&mut editor.fs).is_ok() {
+            if editor.save_buffer().is_ok() {
                 editor.exit = if let Some(exit_code) = exit_code {
                     Some(ExitCode::from(exit_code))
                 } else {

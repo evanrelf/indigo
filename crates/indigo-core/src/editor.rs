@@ -16,8 +16,7 @@ pub enum Error {
 
 pub struct Editor {
     pub fs: Box<dyn Fs>,
-    // TODO: Make buffer private, access current buffer through window.
-    pub buffer: Buffer,
+    buffer: Buffer,
     window: WindowState,
     pub mode: Mode,
     pub pwd: Option<Utf8PathBuf>,
@@ -42,6 +41,11 @@ impl Editor {
     /// Doesn't actually terminate the process, just records the desired exit code.
     pub fn exit(&mut self, exit_code: u8) {
         self.exit = Some(ExitCode::from(exit_code));
+    }
+
+    // TODO: Get rid of this, give buffer the `Fs` somehow
+    pub fn save_buffer(&mut self) -> anyhow::Result<()> {
+        self.buffer.save(&mut self.fs)
     }
 
     #[expect(dead_code)]

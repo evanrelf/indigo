@@ -101,12 +101,13 @@ fn handle_event_normal(
                 };
                 if let Some(Err(char_offset) | Ok(char_offset)) = position_to_char_offset(
                     position,
-                    editor.buffer.rope(),
+                    editor.window().buffer().rope(),
                     editor.window().vertical_scroll(),
                     areas.text,
                 ) {
                     editor
-                        .buffer
+                        .window_mut()
+                        .buffer_mut()
                         .selection_mut()
                         .for_each_mut(|mut range| range.move_to(char_offset));
                 } else {
@@ -124,12 +125,13 @@ fn handle_event_normal(
                 };
                 if let Some(Err(char_offset) | Ok(char_offset)) = position_to_char_offset(
                     position,
-                    editor.buffer.rope(),
+                    editor.window().buffer().rope(),
                     editor.window().vertical_scroll(),
                     areas.text,
                 ) {
                     editor
-                        .buffer
+                        .window_mut()
+                        .buffer_mut()
                         .selection_mut()
                         .for_each_mut(|mut range| range.extend_to(char_offset));
                 } else {

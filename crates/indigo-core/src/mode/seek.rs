@@ -6,16 +6,19 @@ use crate::{
 };
 use std::num::NonZeroUsize;
 
+#[derive(Clone, Copy)]
 pub enum SeekSelect {
     Move,
     Extend,
 }
 
+#[derive(Clone, Copy)]
 pub enum SeekInclude {
     Until,
     Onto,
 }
 
+#[derive(Clone, Copy)]
 pub enum SeekDirection {
     Prev,
     Next,
@@ -80,14 +83,24 @@ fn seek(editor: &mut Editor, byte: u8) {
     use SeekInclude::{Onto, Until};
     use SeekSelect::{Extend, Move};
 
-    let Mode::Seek(seek_mode) = &editor.mode else {
-        panic!("Not in seek mode")
+    let (select, include, direction, count) = {
+        let Mode::Seek(seek_mode) = &editor.mode else {
+            panic!("Not in seek mode")
+        };
+        let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+        (
+            seek_mode.select,
+            seek_mode.include,
+            seek_mode.direction,
+            count,
+        )
     };
 
-    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
-
-    editor.buffer.selection_mut().for_each_mut(|mut range| {
-        match (&seek_mode.select, &seek_mode.include, &seek_mode.direction) {
+    editor
+        .window_mut()
+        .buffer_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| match (select, include, direction) {
             (Move, Until, Prev) => range.move_until_prev_byte(byte, count),
             (Extend, Until, Prev) => range.extend_until_prev_byte(byte, count),
             (Move, Until, Next) => range.move_until_next_byte(byte, count),
@@ -96,8 +109,7 @@ fn seek(editor: &mut Editor, byte: u8) {
             (Extend, Onto, Prev) => range.extend_onto_prev_byte(byte, count),
             (Move, Onto, Next) => range.move_onto_next_byte(byte, count),
             (Extend, Onto, Next) => range.extend_onto_next_byte(byte, count),
-        }
-    });
+        });
 
     editor.mode.set_count(None);
 }

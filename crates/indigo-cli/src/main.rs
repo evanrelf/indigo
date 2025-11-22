@@ -45,7 +45,8 @@ fn main() -> anyhow::Result<ExitCode> {
     }
 
     editor
-        .buffer
+        .window()
+        .buffer()
         .rope()
         .write_to(io::LineWriter::new(io::stdout()))?;
 

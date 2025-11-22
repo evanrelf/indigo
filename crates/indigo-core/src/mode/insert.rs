@@ -40,36 +40,53 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
 
 pub fn enter_insert_mode(editor: &mut Editor) {
     editor
-        .buffer
+        .window_mut()
+        .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.reduce());
     editor.mode = Mode::Insert(InsertMode::default());
 }
 
 fn delete_before(editor: &mut Editor) {
-    editor.buffer.selection_mut().for_each_mut(|mut range| {
-        range.delete_before();
-    });
+    editor
+        .window_mut()
+        .buffer_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| {
+            range.delete_before();
+        });
     editor.mode.set_count(None);
 }
 
 fn delete_after(editor: &mut Editor) {
-    editor.buffer.selection_mut().for_each_mut(|mut range| {
-        range.delete_after();
-    });
+    editor
+        .window_mut()
+        .buffer_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| {
+            range.delete_after();
+        });
     editor.mode.set_count(None);
 }
 
 fn insert_char(editor: &mut Editor, char: char) {
-    editor.buffer.selection_mut().for_each_mut(|mut range| {
-        range.insert_char(char);
-    });
+    editor
+        .window_mut()
+        .buffer_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| {
+            range.insert_char(char);
+        });
     editor.mode.set_count(None);
 }
 
 pub fn paste(editor: &mut Editor, text: &str) {
-    editor.buffer.selection_mut().for_each_mut(|mut range| {
-        range.insert(text);
-    });
+    editor
+        .window_mut()
+        .buffer_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| {
+            range.insert(text);
+        });
     editor.mode.set_count(None);
 }
