@@ -20,7 +20,7 @@ pub trait RopeExt {
         rope.len_lines() - if last_char == '\n' { 1 } else { 0 }
     }
 
-    fn find_next_byte<R>(&self, char_range: R, byte: u8) -> Option<usize>
+    fn find_next_byte<R>(&self, char_range: R, needle: u8) -> Option<usize>
     where
         R: RangeBounds<usize> + Clone,
     {
@@ -31,10 +31,10 @@ pub trait RopeExt {
             Bound::Excluded(_) => unreachable!("wtf"),
             Bound::Unbounded => 0,
         };
-        Some(start + rope.byte_to_char(memchr(byte, haystack)?))
+        Some(start + rope.byte_to_char(memchr(needle, haystack)?))
     }
 
-    fn find_prev_byte<R>(&self, char_range: R, byte: u8) -> Option<usize>
+    fn find_prev_byte<R>(&self, char_range: R, needle: u8) -> Option<usize>
     where
         R: RangeBounds<usize> + Clone,
     {
@@ -49,10 +49,16 @@ pub trait RopeExt {
             Bound::Excluded(n) => rope.byte_to_char(rope.char_to_byte(*n).saturating_sub(1)),
             Bound::Unbounded => rope.len_chars().saturating_sub(1),
         };
-        Some(end - rope.byte_to_char(memrchr(byte, haystack)?))
+        Some(end - rope.byte_to_char(memrchr(needle, haystack)?))
     }
 
-    fn find_next_byte3<R>(&self, char_range: R, byte1: u8, byte2: u8, byte3: u8) -> Option<usize>
+    fn find_next_byte3<R>(
+        &self,
+        char_range: R,
+        needle1: u8,
+        needle2: u8,
+        needle3: u8,
+    ) -> Option<usize>
     where
         R: RangeBounds<usize> + Clone,
     {
@@ -63,10 +69,16 @@ pub trait RopeExt {
             Bound::Excluded(_) => unreachable!("wtf"),
             Bound::Unbounded => 0,
         };
-        Some(start + rope.byte_to_char(memchr3(byte1, byte2, byte3, haystack)?))
+        Some(start + rope.byte_to_char(memchr3(needle1, needle2, needle3, haystack)?))
     }
 
-    fn find_prev_byte3<R>(&self, char_range: R, byte1: u8, byte2: u8, byte3: u8) -> Option<usize>
+    fn find_prev_byte3<R>(
+        &self,
+        char_range: R,
+        needle1: u8,
+        needle2: u8,
+        needle3: u8,
+    ) -> Option<usize>
     where
         R: RangeBounds<usize> + Clone,
     {
@@ -81,7 +93,7 @@ pub trait RopeExt {
             Bound::Excluded(n) => rope.byte_to_char(rope.char_to_byte(*n).saturating_sub(1)),
             Bound::Unbounded => rope.len_chars().saturating_sub(1),
         };
-        Some(end - rope.byte_to_char(memrchr3(byte1, byte2, byte3, haystack)?))
+        Some(end - rope.byte_to_char(memrchr3(needle1, needle2, needle3, haystack)?))
     }
 
     fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice<'_>> {
