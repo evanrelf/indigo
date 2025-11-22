@@ -3,7 +3,7 @@ use crate::{
     text::Text,
 };
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
-use std::{iter, thread};
+use std::thread;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -12,9 +12,18 @@ pub enum Error {
     Range(#[source] anyhow::Error),
 }
 
-#[derive(Default)]
 pub struct SelectionState {
-    pub range: RangeState,
+    pub ranges: Vec<RangeState>,
+    pub primary_range: usize,
+}
+
+impl Default for SelectionState {
+    fn default() -> Self {
+        Self {
+            ranges: vec![RangeState::default()],
+            primary_range: 0,
+        }
+    }
 }
 
 #[must_use]
@@ -59,7 +68,7 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
     }
 
     pub fn for_each(&self, mut f: impl FnMut(Range<'_>)) {
-        for range_state in iter::once(&self.state.range) {
+        for range_state in &self.state.ranges {
             let range = Range::new(&self.text, range_state)
                 .expect("Selection text and range state are always kept valid");
             f(range);
@@ -75,7 +84,7 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
 
 impl<W: WrapMut> SelectionView<'_, W> {
     pub fn for_each_mut(&mut self, mut f: impl FnMut(RangeMut<'_>)) {
-        for range_state in iter::once(&mut self.state.range) {
+        for range_state in &mut self.state.ranges {
             let range = RangeMut::new(&mut self.text, range_state)
                 .expect("Selection text and range state are always kept valid");
             f(range);
@@ -83,8 +92,10 @@ impl<W: WrapMut> SelectionView<'_, W> {
     }
 
     pub fn select_all(&mut self) {
-        self.state.range = RangeState::default();
-        self.state.range.head.char_offset = self.text.len_chars();
+        let mut range = RangeState::default();
+        range.head.char_offset = self.text.len_chars();
+        self.state.ranges = vec![range];
+        self.state.primary_range = 0;
     }
 }
 

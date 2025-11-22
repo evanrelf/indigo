@@ -146,7 +146,8 @@ impl From<Rope> for Buffer {
     fn from(rope: Rope) -> Self {
         let text = Text::from(rope);
         let selection = SelectionState {
-            range: RangeState::default().snapped(text.rope()),
+            ranges: vec![RangeState::default().snapped(text.rope())],
+            primary_range: 0,
         };
         Self {
             text,
@@ -159,7 +160,8 @@ impl From<Rope> for Buffer {
 impl From<Text> for Buffer {
     fn from(text: Text) -> Self {
         let selection = SelectionState {
-            range: RangeState::default().snapped(text.rope()),
+            ranges: vec![RangeState::default().snapped(text.rope())],
+            primary_range: 0,
         };
         Self {
             text,

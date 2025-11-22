@@ -286,9 +286,11 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
             BufferKind::File { path, .. } => path.as_str(),
         };
 
-        // TODO: Expose notion of primary range from selection
-        let anchor = editor.buffer.selection().state().range.anchor.char_offset;
-        let head = editor.buffer.selection().state().range.head.char_offset;
+        let selection = editor.buffer.selection();
+        let state = selection.state();
+        let primary = &state.ranges[state.primary_range];
+        let anchor = primary.anchor.char_offset;
+        let head = primary.head.char_offset;
 
         let count = match editor.mode.count() {
             Some(count) if count.get() == usize::MAX => &String::from(" count=∞"),
