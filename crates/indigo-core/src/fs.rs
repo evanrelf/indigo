@@ -2,25 +2,25 @@
 
 use anyhow::anyhow;
 use camino::{Utf8Path, Utf8PathBuf};
-use std::{collections::HashMap, fs};
+use std::{cell::RefCell, collections::HashMap, fs, rc::Rc};
 
 // Needs to remain dyn compatible.
 pub trait Fs {
-    fn read(&mut self, path: &Utf8Path) -> anyhow::Result<Vec<u8>>;
+    fn read(&self, path: &Utf8Path) -> anyhow::Result<Vec<u8>>;
 
-    fn write(&mut self, path: &Utf8Path, bytes: &[u8]) -> anyhow::Result<()>;
+    fn write(&self, path: &Utf8Path, bytes: &[u8]) -> anyhow::Result<()>;
 
-    fn exists(&mut self, path: &Utf8Path) -> anyhow::Result<bool>;
+    fn exists(&self, path: &Utf8Path) -> anyhow::Result<bool>;
 }
 
-impl<T: Fs + ?Sized> Fs for Box<T> {
-    fn read(&mut self, path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
+impl<T: Fs + ?Sized> Fs for Rc<T> {
+    fn read(&self, path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
         T::read(self, path)
     }
-    fn write(&mut self, path: &Utf8Path, bytes: &[u8]) -> anyhow::Result<()> {
+    fn write(&self, path: &Utf8Path, bytes: &[u8]) -> anyhow::Result<()> {
         T::write(self, path, bytes)
     }
-    fn exists(&mut self, path: &Utf8Path) -> anyhow::Result<bool> {
+    fn exists(&self, path: &Utf8Path) -> anyhow::Result<bool> {
         T::exists(self, path)
     }
 }
@@ -30,15 +30,15 @@ impl<T: Fs + ?Sized> Fs for Box<T> {
 pub struct NoFs;
 
 impl Fs for NoFs {
-    fn read(&mut self, _path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
+    fn read(&self, _path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
         panic!("No filesystem implementation configured");
     }
 
-    fn write(&mut self, _path: &Utf8Path, _bytes: &[u8]) -> anyhow::Result<()> {
+    fn write(&self, _path: &Utf8Path, _bytes: &[u8]) -> anyhow::Result<()> {
         panic!("No filesystem implementation configured");
     }
 
-    fn exists(&mut self, _path: &Utf8Path) -> anyhow::Result<bool> {
+    fn exists(&self, _path: &Utf8Path) -> anyhow::Result<bool> {
         panic!("No filesystem implementation configured");
     }
 }
@@ -47,15 +47,15 @@ impl Fs for NoFs {
 pub struct RealFs;
 
 impl Fs for RealFs {
-    fn read(&mut self, path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
+    fn read(&self, path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
         Ok(fs::read(path)?)
     }
 
-    fn write(&mut self, path: &Utf8Path, bytes: &[u8]) -> anyhow::Result<()> {
+    fn write(&self, path: &Utf8Path, bytes: &[u8]) -> anyhow::Result<()> {
         Ok(fs::write(path, bytes)?)
     }
 
-    fn exists(&mut self, path: &Utf8Path) -> anyhow::Result<bool> {
+    fn exists(&self, path: &Utf8Path) -> anyhow::Result<bool> {
         Ok(fs::exists(path)?)
     }
 }
@@ -64,25 +64,27 @@ impl Fs for RealFs {
 /// (i.e. absolute, normalized, and no symlinks).
 #[derive(Default)]
 pub struct TestFs {
-    pub files: HashMap<Utf8PathBuf, Vec<u8>>,
+    pub files: Rc<RefCell<HashMap<Utf8PathBuf, Vec<u8>>>>,
 }
 
 impl Fs for TestFs {
-    fn read(&mut self, path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
-        if let Some(bytes) = self.files.get(path) {
+    fn read(&self, path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
+        if let Some(bytes) = self.files.borrow().get(path) {
             Ok(bytes.clone())
         } else {
             Err(anyhow!("File not found: `{path}`"))
         }
     }
 
-    fn write(&mut self, path: &Utf8Path, bytes: &[u8]) -> anyhow::Result<()> {
-        self.files.insert(path.to_path_buf(), bytes.to_vec());
+    fn write(&self, path: &Utf8Path, bytes: &[u8]) -> anyhow::Result<()> {
+        self.files
+            .borrow_mut()
+            .insert(path.to_path_buf(), bytes.to_vec());
         Ok(())
     }
 
-    fn exists(&mut self, path: &Utf8Path) -> anyhow::Result<bool> {
-        let exists = self.files.contains_key(path);
+    fn exists(&self, path: &Utf8Path) -> anyhow::Result<bool> {
+        let exists = self.files.borrow().contains_key(path);
         Ok(exists)
     }
 }
@@ -93,7 +95,7 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let mut fs = TestFs::default();
+        let fs = TestFs::default();
         fs.write("foo.rs".into(), b"fn foo() {}")?;
         fs.write("bar.rs".into(), b"fn bar() {}")?;
         assert!(fs.exists("foo.rs".into())?);

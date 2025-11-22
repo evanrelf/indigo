@@ -13,7 +13,7 @@ use crate::{
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use ropey::Rope;
-use std::{borrow::Cow, iter, process::ExitCode};
+use std::{borrow::Cow, iter, process::ExitCode, rc::Rc};
 
 #[derive(Default)]
 pub struct CommandMode {
@@ -167,21 +167,22 @@ fn exec_command(editor: &mut Editor) {
         Command::Edit { path } => {
             if editor.window().buffer().is_modified().unwrap_or(false) {
                 editor.message = Some(Err(String::from("Unsaved changes")));
-            } else if let Ok(buffer) = Buffer::open(&mut editor.fs, &path) {
+            } else if let Ok(buffer) = Buffer::open(&editor.fs, &path) {
                 *editor.window_mut().buffer_mut() = buffer;
             } else {
                 editor.message = Some(Err(format!("Failed to open {path}")));
             }
         }
         Command::EditForce { path } => {
-            if let Ok(buffer) = Buffer::open(&mut editor.fs, &path) {
+            if let Ok(buffer) = Buffer::open(&editor.fs, &path) {
                 *editor.window_mut().buffer_mut() = buffer;
             } else {
                 editor.message = Some(Err(format!("Failed to open {path}")));
             }
         }
         Command::Write => {
-            if editor.save_buffer().is_err() {
+            let fs = Rc::clone(&editor.fs);
+            if editor.window_mut().buffer_mut().save(&fs).is_err() {
                 editor.message = Some(Err(String::from("Failed to save")));
             }
         }
@@ -204,7 +205,8 @@ fn exec_command(editor: &mut Editor) {
             };
         }
         Command::WriteQuit { exit_code } => {
-            if editor.save_buffer().is_ok() {
+            let fs = Rc::clone(&editor.fs);
+            if editor.window_mut().buffer_mut().save(&fs).is_ok() {
                 editor.exit = if let Some(exit_code) = exit_code {
                     Some(ExitCode::from(exit_code))
                 } else {

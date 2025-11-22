@@ -17,7 +17,7 @@ use ratatui::{
     crossterm,
     prelude::{Buffer as Surface, *},
 };
-use std::{borrow::Cow, cmp::max, env, fs, process::ExitCode, sync::Arc, time::Instant};
+use std::{borrow::Cow, cmp::max, env, fs, process::ExitCode, rc::Rc, sync::Arc, time::Instant};
 
 #[derive(Debug, clap::Parser)]
 struct Args {
@@ -158,14 +158,14 @@ impl Times {
 
 fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
     let buffer = if let Some(path) = &args.file {
-        Buffer::open(&mut RealFs, path)?
+        Buffer::open(&RealFs, path)?
     } else {
         Buffer::new()
     };
 
     let mut editor = Editor::from(buffer);
 
-    editor.fs = Box::new(RealFs);
+    editor.fs = Rc::new(RealFs);
     editor.pwd = Some(Utf8PathBuf::try_from(env::current_dir()?)?);
 
     let mut areas = Areas::default();

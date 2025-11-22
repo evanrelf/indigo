@@ -5,7 +5,7 @@ use crate::{
     window::{Window, WindowMut, WindowState},
 };
 use camino::Utf8PathBuf;
-use std::process::ExitCode;
+use std::{process::ExitCode, rc::Rc};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -15,7 +15,7 @@ pub enum Error {
 }
 
 pub struct Editor {
-    pub fs: Box<dyn Fs>,
+    pub fs: Rc<dyn Fs>,
     buffer: Buffer,
     window: WindowState,
     pub mode: Mode,
@@ -43,11 +43,6 @@ impl Editor {
         self.exit = Some(ExitCode::from(exit_code));
     }
 
-    // TODO: Get rid of this, give buffer the `Fs` somehow
-    pub fn save_buffer(&mut self) -> anyhow::Result<()> {
-        self.buffer.save(&mut self.fs)
-    }
-
     #[expect(dead_code)]
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
         self.buffer.assert_invariants().map_err(Error::Buffer)?;
@@ -58,7 +53,7 @@ impl Editor {
 impl Default for Editor {
     fn default() -> Self {
         Self {
-            fs: Box::new(NoFs),
+            fs: Rc::new(NoFs),
             buffer: Buffer::default(),
             window: WindowState::default(),
             mode: Mode::default(),
