@@ -244,6 +244,31 @@ impl<W: WrapMut> CursorView<'_, W> {
         count > 0
     }
 
+    pub fn move_to_prev_blank(&mut self, count: usize) -> bool {
+        const BYTES: &[u8] = b" \t\n\r";
+        for _ in 0..count {
+            if let Some(char_offset) = self.text.find_prev_byte(..self.state.char_offset, BYTES) {
+                self.state.char_offset = char_offset;
+                self.move_right(1);
+            } else {
+                return false;
+            }
+        }
+        count > 0
+    }
+
+    pub fn move_to_next_blank(&mut self, count: usize) -> bool {
+        const BYTES: &[u8] = b" \t\n\r";
+        for _ in 0..count {
+            if let Some(char_offset) = self.text.find_next_byte(self.state.char_offset.., BYTES) {
+                self.state.char_offset = char_offset;
+            } else {
+                return false;
+            }
+        }
+        count > 0
+    }
+
     pub fn move_to_top(&mut self) {
         self.state.char_offset = 0;
     }
