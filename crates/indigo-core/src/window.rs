@@ -6,6 +6,7 @@ use std::cmp::min;
 pub struct WindowState {
     pub height: u16,
     pub prev_vertical_scroll: usize,
+    // TODO(horizontal_scroll)
 }
 
 #[must_use]
@@ -38,6 +39,8 @@ impl<'a, W: WrapRef> WindowView<'a, W> {
         let last_line = self.buffer.rope().len_lines_indigo().saturating_sub(1);
         min(self.state.prev_vertical_scroll, last_line)
     }
+
+    // TODO(horizontal_scroll)
 
     #[must_use]
     pub fn buffer(&self) -> &Buffer {
@@ -81,6 +84,8 @@ pub fn scroll_down(editor: &mut Editor) {
     let line = window.vertical_scroll() + 3;
     window.scroll_to_line(line);
 }
+
+// TODO(horizontal_scroll)
 
 pub fn scroll_half_page_up(editor: &mut Editor) {
     let mut window = editor.window_mut();

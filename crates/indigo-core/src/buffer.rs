@@ -116,8 +116,7 @@ impl Buffer {
 
     pub fn undo(&mut self) -> anyhow::Result<bool> {
         if self.text.undo()? {
-            self.selection_mut()
-                .for_each_mut(|mut range| range.snap());
+            self.selection_mut().for_each_mut(|mut range| range.snap());
             Ok(true)
         } else {
             Ok(false)
@@ -126,8 +125,7 @@ impl Buffer {
 
     pub fn redo(&mut self) -> anyhow::Result<bool> {
         if self.text.redo()? {
-            self.selection_mut()
-                .for_each_mut(|mut range| range.snap());
+            self.selection_mut().for_each_mut(|mut range| range.snap());
             Ok(true)
         } else {
             Ok(false)

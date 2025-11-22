@@ -349,6 +349,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let rows = area.rows();
 
+    // TODO(horizontal_scroll): Once horizontal scroll is added, this needs to truncate lines.
     'line: for (line, mut rect) in lines.zip(rows) {
         'grapheme: for grapheme in line.graphemes() {
             let span = match grapheme.get_char(0) {
@@ -391,7 +392,8 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
 
         let end_line = rope.char_to_line(range.end().char_offset().saturating_sub(1));
 
-        let grapheme_area = |char_index| char_index_to_area(char_index, rope, vertical_scroll, area);
+        let grapheme_area =
+            |char_index| char_index_to_area(char_index, rope, vertical_scroll, area);
 
         let line_area = |line_index| line_index_to_area(line_index, rope, vertical_scroll, area);
 
@@ -411,10 +413,10 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
                     line_rect.x += delta;
                     line_rect.width -= delta;
                 } else {
-                    // TODO: We continue here because we know the range start is off the screen to the
-                    // right. Once horizontal scrolling is added, we'll need to handle when the range is
-                    // off the screen to the left. `grapheme_area` doesn't say which direction the index
-                    // is off screen.
+                    // TODO(horizontal_scroll): We continue here because we know the range start is
+                    // off the screen to the right. Once horizontal scrolling is added, we'll need
+                    // to handle when the range is off the screen to the left. `grapheme_area`
+                    // doesn't say which direction the index is off screen.
                     continue;
                 }
             }

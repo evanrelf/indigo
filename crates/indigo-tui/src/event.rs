@@ -87,6 +87,7 @@ fn handle_event_normal(
             (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
             _ => handled = false,
         },
+        // TODO(horizontal_scroll)
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
             (KeyModifiers::NONE, MouseEventKind::ScrollUp) => scroll_up(editor),
             (KeyModifiers::NONE, MouseEventKind::ScrollDown) => scroll_down(editor),

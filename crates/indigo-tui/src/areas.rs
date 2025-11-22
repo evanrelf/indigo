@@ -57,6 +57,7 @@ pub fn position_to_char_offset(
     position: Position,
     rope: &Rope,
     vertical_scroll: usize,
+    // TODO(horizontal_scroll)
     area: Rect,
 ) -> Option<Result<usize, usize>> {
     // TODO: Move this general purpose (x, y) <-> index logic somewhere else.
@@ -65,6 +66,7 @@ pub fn position_to_char_offset(
         return None;
     }
 
+    // TODO(horizontal_scroll)
     let x = usize::from(position.x - area.x);
 
     let y = usize::from(position.y - area.y) + vertical_scroll;
@@ -93,6 +95,7 @@ pub fn line_index_to_area(
     line_index: usize,
     rope: &Rope,
     vertical_scroll: usize,
+    // TODO(horizontal_scroll)
     area: Rect,
 ) -> Option<Rect> {
     if vertical_scroll > line_index {
@@ -107,6 +110,7 @@ pub fn line_index_to_area(
         return None;
     }
 
+    // TODO(horizontal_scroll)
     let x = area.x;
 
     let line = rope.get_line(line_index)?;
@@ -132,6 +136,7 @@ pub fn char_index_to_area(
     char_index: usize,
     rope: &Rope,
     vertical_scroll: usize,
+    // TODO(horizontal_scroll)
     area: Rect,
 ) -> Option<Rect> {
     let line_index = rope.try_char_to_line(char_index).ok()?;
@@ -154,8 +159,9 @@ pub fn char_index_to_area(
 
     let prefix_width = rope.slice(line_char_index..char_index).display_width();
 
-    // TODO: When horizontal scroll is introduced, still return portion of rect that is visible.
-    // Even if it starts to the left of the area, it might be wide enough to peek into the viewport.
+    // TODO(horizontal_scroll): When horizontal scroll is introduced, still return portion of rect
+    // that is visible. Even if it starts to the left of the area, it might be wide enough to peek
+    // into the viewport.
     let x = area.x + u16::try_from(prefix_width).unwrap();
 
     if !(area.left()..area.right()).contains(&x) {
