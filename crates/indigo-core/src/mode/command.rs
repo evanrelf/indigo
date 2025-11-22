@@ -48,6 +48,7 @@ pub fn handle_event_command(editor: &mut Editor, event: &Event) -> anyhow::Resul
 
     let mut handled = true;
 
+    // TODO: Add mappings for cursor movement.
     match event {
         Event::Key(KeyEvent { key, .. }) => match (key.modifiers, key.code) {
             _ if is(key, "<esc>") => enter_normal_mode(editor),
