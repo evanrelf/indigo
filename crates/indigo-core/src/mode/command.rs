@@ -91,7 +91,6 @@ fn delete_before(editor: &mut Editor) {
     }
 }
 
-// TODO: Move command handling into command mode code. This function should be very short.
 #[expect(clippy::too_many_lines)]
 fn exec_command(editor: &mut Editor) {
     #[derive(clap::Parser)]

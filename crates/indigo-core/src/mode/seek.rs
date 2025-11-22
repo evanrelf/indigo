@@ -61,7 +61,6 @@ pub fn handle_event_seek(editor: &mut Editor, event: &Event) -> bool {
     true
 }
 
-// TODO: Take count as argument rather than reading from editor.
 pub fn enter_seek_mode(
     editor: &mut Editor,
     select: SeekSelect,
