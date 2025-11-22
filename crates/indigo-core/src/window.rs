@@ -71,6 +71,11 @@ impl<W: WrapMut> WindowView<'_, W> {
             self.state.prev_vertical_scroll = top + (line - bottom);
         }
     }
+
+    #[must_use]
+    pub fn buffer_mut(&mut self) -> &mut Buffer {
+        &mut self.buffer
+    }
 }
 
 pub fn scroll_up(editor: &mut Editor) {
