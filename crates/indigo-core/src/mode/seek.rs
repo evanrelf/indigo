@@ -86,18 +86,19 @@ fn seek(editor: &mut Editor, byte: u8) {
     };
 
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
-    let mut range = editor.buffer.range_mut();
 
-    match (&seek_mode.select, &seek_mode.include, &seek_mode.direction) {
-        (Move, Until, Prev) => range.move_until_prev_byte(byte, count),
-        (Extend, Until, Prev) => range.extend_until_prev_byte(byte, count),
-        (Move, Until, Next) => range.move_until_next_byte(byte, count),
-        (Extend, Until, Next) => range.extend_until_next_byte(byte, count),
-        (Move, Onto, Prev) => range.move_onto_prev_byte(byte, count),
-        (Extend, Onto, Prev) => range.extend_onto_prev_byte(byte, count),
-        (Move, Onto, Next) => range.move_onto_next_byte(byte, count),
-        (Extend, Onto, Next) => range.extend_onto_next_byte(byte, count),
-    }
+    editor.buffer.selection_mut().for_each_mut(|mut range| {
+        match (&seek_mode.select, &seek_mode.include, &seek_mode.direction) {
+            (Move, Until, Prev) => range.move_until_prev_byte(byte, count),
+            (Extend, Until, Prev) => range.extend_until_prev_byte(byte, count),
+            (Move, Until, Next) => range.move_until_next_byte(byte, count),
+            (Extend, Until, Next) => range.extend_until_next_byte(byte, count),
+            (Move, Onto, Prev) => range.move_onto_prev_byte(byte, count),
+            (Extend, Onto, Prev) => range.extend_onto_prev_byte(byte, count),
+            (Move, Onto, Next) => range.move_onto_next_byte(byte, count),
+            (Extend, Onto, Next) => range.extend_onto_next_byte(byte, count),
+        }
+    });
 
     editor.mode.set_count(None);
 }

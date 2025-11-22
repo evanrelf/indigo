@@ -1,6 +1,6 @@
 use crate::{
     fs::Fs,
-    range::{Range, RangeMut, RangeState},
+    range::RangeState,
     selection::{Selection, SelectionMut, SelectionState},
     text::Text,
 };
@@ -11,8 +11,8 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Error from range")]
-    Range(#[source] anyhow::Error),
+    #[error("Error from selection")]
+    Selection(#[source] anyhow::Error),
 }
 
 #[derive(Default)]
@@ -32,9 +32,7 @@ pub enum BufferKind {
 pub struct Buffer {
     kind: BufferKind,
     text: Text,
-    // TODO: Track history of range state
-    range: RangeState,
-    // TODO: Switch over from `range` to `selection`
+    // TODO: Track history of selection state
     selection: SelectionState,
 }
 
@@ -101,17 +99,6 @@ impl Buffer {
         }
     }
 
-    pub fn range(&self) -> Range<'_> {
-        Range::new(&self.text, &self.range)
-            .expect("Buffer text and range state are always kept valid")
-    }
-
-    pub fn range_mut(&mut self) -> RangeMut<'_> {
-        RangeMut::new(&mut self.text, &mut self.range)
-            .expect("Buffer text and range state are always kept valid")
-            .on_drop(|range| range.assert_invariants().unwrap())
-    }
-
     pub fn selection(&self) -> Selection<'_> {
         Selection::new(&self.text, &self.selection)
             .expect("Buffer text and selection state are always kept valid")
@@ -129,7 +116,8 @@ impl Buffer {
 
     pub fn undo(&mut self) -> anyhow::Result<bool> {
         if self.text.undo()? {
-            self.range.snap(self.text.rope());
+            self.selection_mut()
+                .for_each_mut(|mut range| range.snap());
             Ok(true)
         } else {
             Ok(false)
@@ -138,7 +126,8 @@ impl Buffer {
 
     pub fn redo(&mut self) -> anyhow::Result<bool> {
         if self.text.redo()? {
-            self.range.snap(self.text.rope());
+            self.selection_mut()
+                .for_each_mut(|mut range| range.snap());
             Ok(true)
         } else {
             Ok(false)
@@ -146,7 +135,9 @@ impl Buffer {
     }
 
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
-        self.range().assert_invariants().map_err(Error::Range)?;
+        self.selection()
+            .assert_invariants()
+            .map_err(Error::Selection)?;
         Ok(())
     }
 }
@@ -154,10 +145,12 @@ impl Buffer {
 impl From<Rope> for Buffer {
     fn from(rope: Rope) -> Self {
         let text = Text::from(rope);
-        let range = RangeState::default().snapped(&text);
+        let selection = SelectionState {
+            range: RangeState::default().snapped(text.rope()),
+        };
         Self {
             text,
-            range,
+            selection,
             ..Self::default()
         }
     }
@@ -165,10 +158,12 @@ impl From<Rope> for Buffer {
 
 impl From<Text> for Buffer {
     fn from(text: Text) -> Self {
-        let range = RangeState::default().snapped(&text);
+        let selection = SelectionState {
+            range: RangeState::default().snapped(text.rope()),
+        };
         Self {
             text,
-            range,
+            selection,
             ..Self::default()
         }
     }

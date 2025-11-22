@@ -39,61 +39,81 @@ pub fn enter_goto_mode(editor: &mut Editor) {
 }
 
 fn extend_to_top(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.extend_to_top();
+    editor
+        .buffer
+        .selection_mut()
+        .for_each_mut(|mut range| range.extend_to_top());
     editor.mode.set_count(None);
 }
 
 fn move_to_top(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.move_to_top();
+    editor
+        .buffer
+        .selection_mut()
+        .for_each_mut(|mut range| range.move_to_top());
     editor.mode.set_count(None);
 }
 
 fn extend_to_bottom(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.extend_to_bottom();
+    editor
+        .buffer
+        .selection_mut()
+        .for_each_mut(|mut range| range.extend_to_bottom());
     editor.mode.set_count(None);
 }
 
 fn move_to_bottom(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.move_to_bottom();
+    editor
+        .buffer
+        .selection_mut()
+        .for_each_mut(|mut range| range.move_to_bottom());
     editor.mode.set_count(None);
 }
 
 fn extend_to_line_start(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.extend_to_line_start();
+    editor
+        .buffer
+        .selection_mut()
+        .for_each_mut(|mut range| range.extend_to_line_start());
     editor.mode.set_count(None);
 }
 
 fn move_to_line_start(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.move_to_line_start();
+    editor
+        .buffer
+        .selection_mut()
+        .for_each_mut(|mut range| range.move_to_line_start());
     editor.mode.set_count(None);
 }
 
 fn extend_to_line_non_blank_start(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.extend_to_line_non_blank_start();
+    editor
+        .buffer
+        .selection_mut()
+        .for_each_mut(|mut range| range.extend_to_line_non_blank_start());
     editor.mode.set_count(None);
 }
 
 fn move_to_line_non_blank_start(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.move_to_line_non_blank_start();
+    editor
+        .buffer
+        .selection_mut()
+        .for_each_mut(|mut range| range.move_to_line_non_blank_start());
     editor.mode.set_count(None);
 }
 
 fn extend_to_line_end(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.extend_to_line_end();
+    editor
+        .buffer
+        .selection_mut()
+        .for_each_mut(|mut range| range.extend_to_line_end());
     editor.mode.set_count(None);
 }
 
 fn move_to_line_end(editor: &mut Editor) {
-    let mut range = editor.buffer.range_mut();
-    range.move_to_line_end();
+    editor
+        .buffer
+        .selection_mut()
+        .for_each_mut(|mut range| range.move_to_line_end());
     editor.mode.set_count(None);
 }

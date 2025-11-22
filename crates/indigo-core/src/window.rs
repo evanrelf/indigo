@@ -56,7 +56,8 @@ impl<W: WrapMut> WindowView<'_, W> {
     }
 
     pub fn scroll_to_selection(&mut self) {
-        let head_char_offset = self.buffer.range().head().char_offset();
+        // TODO: Expose notion of primary range from selection
+        let head_char_offset = self.buffer.selection().state().range.head.char_offset;
         let line = self.buffer.rope().char_to_line(head_char_offset);
         let top = self.vertical_scroll();
         let bottom = (top + usize::from(self.state.height)) - 1;

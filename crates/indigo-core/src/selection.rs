@@ -58,7 +58,7 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
         &self.state
     }
 
-    pub fn for_each(&self, f: impl Fn(Range<'_>)) {
+    pub fn for_each(&self, mut f: impl FnMut(Range<'_>)) {
         for range_state in iter::once(&self.state.range) {
             let range = Range::new(&self.text, range_state)
                 .expect("Selection text and range state are always kept valid");
@@ -74,7 +74,7 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
 }
 
 impl<W: WrapMut> SelectionView<'_, W> {
-    pub fn for_each_mut(&mut self, f: impl Fn(RangeMut<'_>)) {
+    pub fn for_each_mut(&mut self, mut f: impl FnMut(RangeMut<'_>)) {
         for range_state in iter::once(&mut self.state.range) {
             let range = RangeMut::new(&mut self.text, range_state)
                 .expect("Selection text and range state are always kept valid");

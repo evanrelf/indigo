@@ -105,7 +105,10 @@ fn handle_event_normal(
                     editor.window().vertical_scroll(),
                     areas.text,
                 ) {
-                    editor.buffer.range_mut().move_to(char_offset);
+                    editor
+                        .buffer
+                        .selection_mut()
+                        .for_each_mut(|mut range| range.move_to(char_offset));
                 } else {
                     handled = false;
                 }
@@ -125,7 +128,10 @@ fn handle_event_normal(
                     editor.window().vertical_scroll(),
                     areas.text,
                 ) {
-                    editor.buffer.range_mut().extend_to(char_offset);
+                    editor
+                        .buffer
+                        .selection_mut()
+                        .for_each_mut(|mut range| range.extend_to(char_offset));
                 } else {
                     handled = false;
                 }
