@@ -9,6 +9,7 @@ clap = { workspace = true }
 etcetera = { workspace = true }
 hdrhistogram = { workspace = true }
 indigo-core = { workspace = true }
+pathdiff = { workspace = true }
 ratatui = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }

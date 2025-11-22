@@ -16,6 +16,7 @@ indigo-core = { path = "crates/indigo-core/" }
 indigo-tui = { path = "crates/indigo-tui/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }
 memchr = "2.7.6"
+pathdiff = { version = "0.2.3", features = ["camino"] }
 ratatui = "0.30.0-beta.0"
 ropey = "1.6.1"
 shell-words = "1.1.0"
