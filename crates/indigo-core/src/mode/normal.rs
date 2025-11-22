@@ -3,8 +3,8 @@ use crate::{
     event::{Event, KeyEvent},
     key::{KeyCode, is},
     mode::{
-        Mode, command::enter_command_mode, goto::enter_goto_mode, insert::enter_insert_mode,
-        seek::enter_seek_mode,
+        Mode, command::enter_command_mode, goto::enter_goto_mode, insert::InsertMode,
+        insert::enter_insert_mode, seek::enter_seek_mode,
     },
     window::{
         scroll_full_page_down, scroll_full_page_up, scroll_half_page_down, scroll_half_page_up,
@@ -38,6 +38,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "<esc>") => enter_normal_mode(editor),
             _ if is(key, ":") => enter_command_mode(editor),
             _ if is(key, "i") => enter_insert_mode(editor),
+            _ if is(key, "I") => insert_at_line_non_blank_start(editor),
             _ if is(key, "a") => {
                 move_right(editor);
                 enter_insert_mode(editor);
@@ -214,3 +215,13 @@ fn select_all(editor: &mut Editor) {
     editor.buffer.selection_mut().select_all();
     editor.mode.set_count(None);
 }
+
+fn insert_at_line_non_blank_start(editor: &mut Editor) {
+    editor.buffer.selection_mut().for_each_mut(|mut range| {
+        range.flip_backward();
+        range.move_to_line_non_blank_start();
+        range.reduce();
+    });
+    editor.mode = Mode::Insert(InsertMode::default());
+}
+
