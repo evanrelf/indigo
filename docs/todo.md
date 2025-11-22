@@ -87,7 +87,7 @@ backward word key, not `b`).
 - [ ] `<a-U>`
 - [ ] `x`
 - [ ] `X`
-- [ ] `%`
+- [x] `%`
 - [x] `<c-u>`
 - [x] `<c-d>`
 - [x] `<c-b>`

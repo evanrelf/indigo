@@ -62,6 +62,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, ";") => reduce(editor),
             _ if is(key, "<a-;>") => flip(editor),
             _ if is(key, "<a-:>") => flip_forward(editor),
+            _ if is(key, "%") => select_all(editor),
             _ if is(key, "d") => delete(editor),
             _ if is(key, "u") => undo(editor),
             _ if is(key, "U") => redo(editor),
@@ -206,5 +207,10 @@ fn redo(editor: &mut Editor) {
             break;
         }
     }
+    editor.mode.set_count(None);
+}
+
+fn select_all(editor: &mut Editor) {
+    editor.buffer.selection_mut().select_all();
     editor.mode.set_count(None);
 }
