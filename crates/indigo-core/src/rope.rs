@@ -35,29 +35,29 @@ pub trait RopeExt {
             Bound::Unbounded => 0,
         };
 
-        let mut needle_offset: Option<usize> = None;
+        let mut needle_index: Option<usize> = None;
 
         for chunk in needles.chunks(3) {
             match chunk.len() {
                 3 => {
                     let haystack = rope.chunks().map(|c| c.as_bytes());
                     if let Some(pos) = memchr3(chunk[0], chunk[1], chunk[2], haystack) {
-                        needle_offset = Some(needle_offset.map_or(pos, |current| current.min(pos)));
+                        needle_index = Some(needle_index.map_or(pos, |current| current.min(pos)));
                     }
                 }
                 _ => {
                     for &needle in chunk {
                         let haystack = rope.chunks().map(|c| c.as_bytes());
                         if let Some(pos) = memchr(needle, haystack) {
-                            needle_offset =
-                                Some(needle_offset.map_or(pos, |current| current.min(pos)));
+                            needle_index =
+                                Some(needle_index.map_or(pos, |current| current.min(pos)));
                         }
                     }
                 }
             }
         }
 
-        needle_offset.map(|byte_offset| start + rope.byte_to_char(byte_offset))
+        needle_index.map(|byte_index| start + rope.byte_to_char(byte_index))
     }
 
     fn find_prev_byte<R>(&self, char_range: R, needles: &[u8]) -> Option<usize>
@@ -75,7 +75,7 @@ pub trait RopeExt {
             Bound::Unbounded => rope.len_chars().saturating_sub(1),
         };
 
-        let mut needle_offset: Option<usize> = None;
+        let mut needle_index: Option<usize> = None;
 
         for chunk in needles.chunks(3) {
             match chunk.len() {
@@ -86,7 +86,7 @@ pub trait RopeExt {
                         .reversed()
                         .map(|c| c.as_bytes());
                     if let Some(pos) = memrchr3(chunk[0], chunk[1], chunk[2], haystack) {
-                        needle_offset = Some(needle_offset.map_or(pos, |current| current.min(pos)));
+                        needle_index = Some(needle_index.map_or(pos, |current| current.min(pos)));
                     }
                 }
                 _ => {
@@ -97,15 +97,15 @@ pub trait RopeExt {
                             .reversed()
                             .map(|c| c.as_bytes());
                         if let Some(pos) = memrchr(needle, haystack) {
-                            needle_offset =
-                                Some(needle_offset.map_or(pos, |current| current.min(pos)));
+                            needle_index =
+                                Some(needle_index.map_or(pos, |current| current.min(pos)));
                         }
                     }
                 }
             }
         }
 
-        needle_offset.map(|byte_offset| end - rope.byte_to_char(byte_offset))
+        needle_index.map(|byte_index| end - rope.byte_to_char(byte_index))
     }
 
     fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice<'_>> {
