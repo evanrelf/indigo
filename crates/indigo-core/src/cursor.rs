@@ -16,6 +16,7 @@ pub enum Error {
     NotOnGraphemeBoundary { char_offset: usize },
 }
 
+/// <https://lord.io/text-editing-hates-you-too/#affinity>
 #[derive(Clone, Copy)]
 pub enum Affinity {
     Before,
