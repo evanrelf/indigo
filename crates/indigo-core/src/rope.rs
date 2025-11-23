@@ -1,4 +1,7 @@
-use crate::grapheme::{self, Graphemes};
+use crate::{
+    display_width::DisplayWidth as _,
+    grapheme::{self, Graphemes},
+};
 use ropey::{Rope, RopeSlice};
 use std::ops::{Bound, RangeBounds};
 
@@ -141,6 +144,13 @@ pub trait RopeExt {
 
     fn ceil_grapheme_boundary(&self, char_offset: usize) -> usize {
         grapheme::ceil_grapheme_boundary(&self.as_slice(), char_offset)
+    }
+
+    fn display_column(&self, char_index: usize) -> usize {
+        let rope = self.as_slice();
+        let line_index = rope.char_to_line(char_index);
+        let line_char_index = rope.line_to_char(line_index);
+        rope.slice(line_char_index..char_index).display_width()
     }
 }
 

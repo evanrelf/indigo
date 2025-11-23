@@ -43,14 +43,6 @@ impl CursorState {
 }
 
 #[must_use]
-pub fn column(text: &Rope, char_index: usize) -> usize {
-    let current_line_index = text.char_to_line(char_index);
-    let current_line_char_index = text.line_to_char(current_line_index);
-    text.slice(current_line_char_index..char_index)
-        .display_width()
-}
-
-#[must_use]
 pub struct CursorView<'a, W: Wrap> {
     text: W::Wrap<'a, Text>,
     state: W::Wrap<'a, CursorState>,
@@ -117,7 +109,7 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
             Ok(n) | Err(Some(n)) => n,
             Err(None) => 0,
         };
-        column(&self.text, char_index)
+        self.text.display_column(char_index)
     }
 
     #[must_use]
