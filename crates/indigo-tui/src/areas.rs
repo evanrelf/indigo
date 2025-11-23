@@ -80,14 +80,25 @@ pub fn position_to_char_offset(
         .try_line_to_char(y)
         .expect("Line is known to exist at this point");
 
-    let line_length = line.len_chars();
+    let mut line_prefix = 0;
+    let mut char_offset = line_char_offset;
 
-    if x > line_length {
-        // Position goes beyond last character of line, so we snap to last character of line
-        return Some(Err(line_char_offset + line_length.saturating_sub(1)));
+    for grapheme in line.graphemes() {
+        if grapheme.chars().any(|c| c == '\n' || c == '\r') {
+            break;
+        }
+
+        let grapheme_width = grapheme.display_width();
+
+        if line_prefix + grapheme_width > x {
+            return Some(Ok(char_offset));
+        }
+
+        line_prefix += grapheme_width;
+        char_offset += grapheme.len_chars();
     }
 
-    Some(Ok(line_char_offset + x))
+    Some(Err(char_offset))
 }
 
 #[must_use]
