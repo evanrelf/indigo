@@ -104,12 +104,11 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     }
 
     #[must_use]
-    pub fn display_column(&self, affinity: Affinity) -> usize {
-        let char_index = match self.char_index(affinity) {
-            Ok(n) | Err(Some(n)) => n,
-            Err(None) => 0,
+    pub fn display_column(&self, affinity: Affinity) -> Option<usize> {
+        let Ok(char_index) = self.char_index(affinity) else {
+            return None;
         };
-        self.text.display_column(char_index)
+        Some(self.text.display_column(char_index))
     }
 
     #[must_use]
@@ -558,27 +557,27 @@ mod tests {
         assert_eq!(cursor.grapheme(affinity), None);
         assert_eq!(cursor.char_offset(), 13);
         assert_eq!(cursor.char_offset(), text.chars().count());
-        assert_eq!(cursor.display_column(Affinity::After), 0);
+        assert_eq!(cursor.display_column(Affinity::Before), Some(6));
 
         cursor.move_left(1);
         // At final newline on line 2.
         assert_eq!(cursor.grapheme(affinity), Some(Rope::from("\n").slice(..)));
         assert_eq!(cursor.char_offset(), 12);
-        assert_eq!(cursor.display_column(Affinity::After), 6);
+        assert_eq!(cursor.display_column(Affinity::After), Some(6));
 
-        cursor.move_up(cursor.display_column(affinity), affinity, 1);
+        cursor.move_up(cursor.display_column(affinity).unwrap_or(0), affinity, 1);
         // At second newline on line 1, which is shorter than the goal column.
         assert_eq!(cursor.grapheme(affinity), Some(Rope::from("\n").slice(..)));
         assert_eq!(cursor.char_offset(), 5);
         // Goal column should remain the same through vertical movement.
-        assert_eq!(cursor.display_column(Affinity::After), 3);
+        assert_eq!(cursor.display_column(Affinity::After), Some(3));
 
         cursor.move_left(1);
         // At "4" on line 1.
         assert_eq!(cursor.grapheme(affinity), Some(Rope::from("4").slice(..)));
         assert_eq!(cursor.char_offset(), 4);
         // Goal column should change through horizontal movement.
-        assert_eq!(cursor.display_column(Affinity::After), 2);
+        assert_eq!(cursor.display_column(Affinity::After), Some(2));
     }
 
     #[test]
@@ -660,12 +659,20 @@ mod tests {
 
                     2 => {
                         let count = max(1, u.choose_index(99)?);
-                        cursor.move_up(cursor.display_column(affinity), affinity, count);
+                        cursor.move_up(
+                            cursor.display_column(affinity).unwrap_or(0),
+                            affinity,
+                            count,
+                        );
                         tx.send(format!("move_left() x{count}")).unwrap();
                     }
                     3 => {
                         let count = max(1, u.choose_index(99)?);
-                        cursor.move_down(cursor.display_column(affinity), affinity, count);
+                        cursor.move_down(
+                            cursor.display_column(affinity).unwrap_or(0),
+                            affinity,
+                            count,
+                        );
                         tx.send(format!("move_right() x{count}")).unwrap();
                     }
                     4 => {

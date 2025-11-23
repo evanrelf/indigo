@@ -248,7 +248,10 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     /// Should be called after performing any non-vertical movement.
     pub fn update_goal_column(&mut self) {
-        let head_column = self.head().display_column(self.head_affinity());
+        let head_column = self
+            .head()
+            .display_column(self.head_affinity())
+            .unwrap_or(0);
         self.state.goal_column = head_column;
     }
 
