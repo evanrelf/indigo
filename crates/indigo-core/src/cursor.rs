@@ -533,6 +533,25 @@ mod tests {
     }
 
     #[test]
+    fn char_index() {
+        let cursor = CursorView::try_from(("xy", 1)).unwrap();
+        assert_eq!(cursor.char_index(Affinity::Before), Ok(0));
+        assert_eq!(cursor.char_index(Affinity::After), Ok(1));
+        assert_eq!(cursor.text().char(0), 'x');
+        assert_eq!(cursor.text().char(1), 'y');
+
+        let cursor = CursorView::try_from(("x", 0)).unwrap();
+        assert_eq!(cursor.char_index(Affinity::Before), Err(Some(0)));
+
+        let cursor = CursorView::try_from(("x", 1)).unwrap();
+        assert_eq!(cursor.char_index(Affinity::After), Err(Some(0)));
+
+        let cursor = CursorView::try_from(("", 0)).unwrap();
+        assert_eq!(cursor.char_index(Affinity::Before), Err(None));
+        assert_eq!(cursor.char_index(Affinity::After), Err(None));
+    }
+
+    #[test]
     fn fuzz() {
         arbtest(|u| {
             let text = Text::new();
