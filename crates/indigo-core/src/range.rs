@@ -395,23 +395,25 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn reduce(&mut self) {
-        if self.is_forward() && self.grapheme_length() == 1 {
-            // Already reduced.
+        if self.is_empty() {
+            // Too small -> expand
+            if self.head().is_at_end() {
+                // Expand from end
+                self.anchor_mut().move_left(1);
+            } else {
+                // Expand from start or middle
+                self.head_mut().move_right(1);
+            }
             return;
         }
 
-        if self.is_empty() && self.head().is_at_start() {
-            // Expand from start.
-            self.head_mut().move_right(1);
+        if self.grapheme_length() == 1 {
+            // Just right
+            self.flip_forward();
             return;
         }
 
-        if self.is_empty() && self.head().is_at_end() {
-            // Expand from end.
-            self.head_mut().move_left(1);
-            return;
-        }
-
+        // Too big -> contract
         if self.is_backward() {
             self.state.anchor.char_offset = self.state.head.char_offset;
             self.head_mut().move_right(1);
