@@ -97,6 +97,20 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         self.state.char_offset
     }
 
+    pub fn char_index(&self, affinity: Affinity) -> Result<usize, usize> {
+        let prev = || {
+            self.text
+                .prev_grapheme_boundary(self.state.char_offset)
+                .expect("Not at start so previous grapheme boundary exists")
+        };
+        match affinity {
+            Affinity::Before if self.is_at_start() => Err(self.state.char_offset),
+            Affinity::After if self.is_at_end() => Err(prev()),
+            Affinity::Before => Ok(prev()),
+            Affinity::After => Ok(self.state.char_offset),
+        }
+    }
+
     #[must_use]
     pub fn column(&self) -> usize {
         self.state.column(&self.text)
