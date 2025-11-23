@@ -270,12 +270,13 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_left(&mut self, count: usize) {
+        if self.grapheme_length() == 1 {
+            self.unchecked_flip_backward();
+        }
         self.head_mut().move_left(count);
         self.update_goal_column();
     }
 
-    // TODO: This is broken because of updates to reduce. Probably need to compensate here. Less
-    // likely (but still possible) reduce needs updating.
     pub fn move_left(&mut self, count: usize) {
         self.extend_left(count);
         self.reduce();
@@ -430,11 +431,15 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn flip(&mut self) {
-        fn both(state: &mut RangeState) -> (&mut CursorState, &mut CursorState) {
-            (&mut state.anchor, &mut state.head)
-        }
         if self.is_forward() && self.grapheme_length() == 1 {
             return;
+        }
+        self.unchecked_flip();
+    }
+
+    fn unchecked_flip(&mut self) {
+        fn both(state: &mut RangeState) -> (&mut CursorState, &mut CursorState) {
+            (&mut state.anchor, &mut state.head)
         }
         let (anchor, cursor) = both(&mut self.state);
         mem::swap(&mut anchor.char_offset, &mut cursor.char_offset);
@@ -449,6 +454,12 @@ impl<W: WrapMut> RangeView<'_, W> {
     pub fn flip_backward(&mut self) {
         if self.is_forward() {
             self.flip();
+        }
+    }
+
+    fn unchecked_flip_backward(&mut self) {
+        if self.is_forward() {
+            self.unchecked_flip();
         }
     }
 
