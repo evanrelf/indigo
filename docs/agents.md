@@ -33,7 +33,7 @@ Indigo is written in Rust, across multiple crates in a Cargo workspace:
   (no dependencies outside of Cargo workspace).
 
 - Run `indigo-cli` to test editor behavior. With the `--debug` flag, the `<c-l>`
-  key prints keys processed and a diff. Try running this command as an example:
+  key prints information and a diff. Try running this command as an example:
 
   ```
   $ echo -ne "hello\nworld\n" | ./bin/cli --debug 'fod<c-l>iHELLO<c-l><esc>jgla!<c-l>'

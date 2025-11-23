@@ -9,7 +9,7 @@ struct Args {
 
     /// Enable debugging functionality
     ///
-    /// - Enter `<c-l>` to print handled keys and a diff since the last `<c-l>` key was encountered.
+    /// - Enter `<c-l>` to print information and a diff since the last `<c-l>` key was encountered.
     #[arg(long)]
     debug: bool,
 
@@ -66,7 +66,15 @@ fn main() -> anyhow::Result<ExitCode> {
                     eprint!("{key}");
                 }
             }
-            eprintln!("\ntext:\n```diff");
+            let window = editor.window();
+            let selection = window.buffer().selection();
+            let range = selection.get_primary();
+            eprintln!(
+                "\nprimary range: anchor={} head={}",
+                range.anchor().char_offset(),
+                range.head().char_offset()
+            );
+            eprintln!("text:\n```diff");
             for diff in diff::lines(&left, &right) {
                 match diff {
                     diff::Result::Left(l) => eprintln!("-{l}"),
