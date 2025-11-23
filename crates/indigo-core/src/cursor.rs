@@ -40,6 +40,7 @@ impl CursorState {
         self
     }
 
+    // TODO: Use affinity.
     #[must_use]
     pub fn column(&self, text: &Rope) -> usize {
         let current_line_index = text.char_to_line(self.char_offset);
@@ -169,6 +170,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         count > 0
     }
 
+    // TODO: Use affinity.
     pub fn move_up(&mut self, goal_column: usize, count: usize) -> bool {
         for _ in 0..count {
             let current_line_index = self.text.char_to_line(self.state.char_offset);
@@ -196,6 +198,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         count > 0
     }
 
+    // TODO: Use affinity.
     pub fn move_down(&mut self, goal_column: usize, count: usize) -> bool {
         for _ in 0..count {
             let current_line_index = self.text.char_to_line(self.state.char_offset);
@@ -283,17 +286,20 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.char_offset = self.text.len_chars();
     }
 
+    // TODO: Use affinity.
     pub fn move_to_bottom(&mut self) {
         self.move_to_end();
         self.move_to_line_start();
     }
 
+    // TODO: Use affinity.
     pub fn move_to_line_start(&mut self) {
         let current_line_index = self.text.char_to_line(self.state.char_offset);
         let line_start_char_offset = self.text.line_to_char(current_line_index);
         self.state.char_offset = line_start_char_offset;
     }
 
+    // TODO: Use affinity.
     pub fn move_to_line_non_blank_start(&mut self) {
         let current_line_index = self.text.char_to_line(self.state.char_offset);
         let line_start_char_offset = self.text.line_to_char(current_line_index);
@@ -312,6 +318,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.char_offset = char_offset;
     }
 
+    // TODO: Use affinity.
     pub fn move_to_line_end(&mut self) {
         let current_line_index = self.text.char_to_line(self.state.char_offset);
         let line_start_char_offset = self.text.line_to_char(current_line_index);
