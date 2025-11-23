@@ -1,5 +1,5 @@
 use crate::{
-    cursor::{Cursor, CursorMut, CursorState},
+    cursor::{Affinity, Cursor, CursorMut, CursorState},
     ot::EditSeq,
     rope::RopeExt as _,
     text::Text,
@@ -123,6 +123,42 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
             self.head()
         } else {
             self.anchor()
+        }
+    }
+
+    #[must_use]
+    pub fn anchor_affinity(&self) -> Affinity {
+        if self.is_forward() {
+            Affinity::After
+        } else {
+            Affinity::Before
+        }
+    }
+
+    #[must_use]
+    pub fn head_affinity(&self) -> Affinity {
+        if self.is_forward() {
+            Affinity::Before
+        } else {
+            Affinity::After
+        }
+    }
+
+    #[must_use]
+    pub fn start_affinity(&self) -> Affinity {
+        if self.state.anchor.char_offset <= self.state.head.char_offset {
+            self.anchor_affinity()
+        } else {
+            self.head_affinity()
+        }
+    }
+
+    #[must_use]
+    pub fn end_affinity(&self) -> Affinity {
+        if self.state.anchor.char_offset <= self.state.head.char_offset {
+            self.head_affinity()
+        } else {
+            self.anchor_affinity()
         }
     }
 
