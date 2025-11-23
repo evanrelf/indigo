@@ -273,8 +273,12 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.char_offset = 0;
     }
 
-    pub fn move_to_bottom(&mut self) {
+    pub fn move_to_end(&mut self) {
         self.state.char_offset = self.text.len_chars();
+    }
+
+    pub fn move_to_bottom(&mut self) {
+        self.move_to_end();
         self.move_to_line_start();
     }
 

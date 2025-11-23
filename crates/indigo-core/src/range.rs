@@ -331,6 +331,16 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.update_goal_column();
     }
 
+    pub fn extend_to_end(&mut self) {
+        self.head_mut().move_to_end();
+    }
+
+    pub fn move_to_end(&mut self) {
+        self.extend_to_end();
+        self.reduce();
+        self.update_goal_column();
+    }
+
     pub fn extend_to_bottom(&mut self) {
         self.head_mut().move_to_bottom();
     }
