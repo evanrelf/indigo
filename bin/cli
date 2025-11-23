@@ -3,4 +3,4 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-cargo run --bin indigo-cli -- --log-filter debug "$@"
+cargo run --quiet --bin indigo-cli -- --log-filter debug "$@"

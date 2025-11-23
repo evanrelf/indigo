@@ -17,7 +17,9 @@ Indigo is written in Rust, across multiple crates in a Cargo workspace:
 
 - **indigo-tui:** Interactive TUI, primary frontend. Thin imperative shell.
 
-- **indigo-cli:** Headless CLI, secondary frontend. Thin imperative shell.
+- **indigo-cli:** Headless CLI, secondary frontend. Thin imperative shell. Use
+  the `indigo-cli` skill (`.claude/skills/indigo-cli/SKILL.md`) for testing with
+  the CLI.
 
 - **indigo-wrap:** Limited form of higher-kinded types, provides generic wrapper
   types and "mutability generics". Powers `indigo-core`'s "view types."
