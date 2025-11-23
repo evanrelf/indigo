@@ -408,7 +408,8 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_to_line_end(&mut self) {
-        self.head_mut().move_to_line_end();
+        let affinity = self.head_affinity();
+        self.head_mut().move_to_line_end(affinity);
     }
 
     pub fn move_to_line_end(&mut self) {

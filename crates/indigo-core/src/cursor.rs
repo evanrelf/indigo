@@ -17,7 +17,7 @@ pub enum Error {
 }
 
 /// <https://lord.io/text-editing-hates-you-too/#affinity>
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Affinity {
     Before,
     After,
@@ -334,11 +334,29 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.char_offset = char_offset;
     }
 
-    // TODO: Use affinity.
-    pub fn move_to_line_end(&mut self) {
-        let current_line_index = self.text.char_to_line(self.state.char_offset);
-        let line_start_char_offset = self.text.line_to_char(current_line_index);
-        let line_slice = self.text.line(current_line_index);
+    pub fn move_to_line_end(&mut self, affinity: Affinity) {
+        if self.text.len_chars() == 0 || self.is_at_end() {
+            return;
+        }
+
+        #[expect(clippy::manual_let_else)]
+        let char_index = match self.char_index(affinity) {
+            Ok(n) | Err(Some(n)) => n,
+            Err(None) => unreachable!("Already checked rope length"),
+        };
+
+        let line_index = self.text.char_to_line(char_index);
+
+        if affinity == Affinity::Before
+            && self.text.char_to_line(self.state.char_offset) != line_index
+        {
+            // Already past the newline of the line we have affinity for
+            return;
+        }
+
+        // Find last character before line ending
+        let line_start_char_offset = self.text.line_to_char(line_index);
+        let line_slice = self.text.line(line_index);
         let mut char_offset = line_start_char_offset;
         for grapheme in line_slice.graphemes() {
             if grapheme.chars().any(|c| c == '\n' || c == '\r') {
@@ -530,6 +548,31 @@ mod tests {
         assert_eq!(cursor.char_offset(), 4);
         // Goal column should change through horizontal movement.
         assert_eq!(cursor.column(), 2);
+    }
+
+    #[test]
+    fn move_to_line_end() {
+        let cases = [
+            // When affinity is for `\n` before cursor offset, should remain in place because it's
+            // considered already at the end of line 1.
+            (Affinity::Before, 2),
+            // When affinity is for `y` after cursor offset, should move right to before following
+            // newline, because it's considered at the start of line 2.
+            (Affinity::After, 3),
+        ];
+        for (affinity, char_offset) in cases {
+            let mut cursor = CursorView::try_from(("x\ny\n", 0)).unwrap();
+            assert_eq!(cursor.char_offset(), 0);
+            cursor.move_to_next_byte(b'\n', 1);
+            cursor.move_right(1);
+            assert_eq!(cursor.char_offset(), 2);
+            cursor.move_to_line_end(affinity);
+            assert_eq!(
+                cursor.char_offset(),
+                char_offset,
+                "with affinity={affinity:?}"
+            );
+        }
     }
 
     #[test]
