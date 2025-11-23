@@ -555,10 +555,13 @@ where
             anchor: CursorState {
                 char_offset: anchor,
             },
-            goal_column: head.column(&text),
+            goal_column: 0,
             head,
         });
-        Self::new(text, state)
+        Self::new(text, state).map(|mut range| {
+            range.update_goal_column();
+            range
+        })
     }
 }
 
