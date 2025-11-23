@@ -269,7 +269,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         count > 0
     }
 
-    pub fn move_to_top(&mut self) {
+    pub fn move_to_start(&mut self) {
         self.state.char_offset = 0;
     }
 

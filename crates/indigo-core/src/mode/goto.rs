@@ -15,8 +15,8 @@ pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {
 
     match event {
         Event::Key(KeyEvent { key, .. }) => match (key.modifiers, key.code) {
-            _ if is(key, "k") => move_to_top(editor),
-            _ if is(key, "K") => extend_to_top(editor),
+            _ if is(key, "k") => move_to_start(editor),
+            _ if is(key, "K") => extend_to_start(editor),
             _ if is(key, "j") => move_to_bottom(editor),
             _ if is(key, "J") => extend_to_bottom(editor),
             _ if is(key, "h") => move_to_line_start(editor),
@@ -38,21 +38,21 @@ pub fn enter_goto_mode(editor: &mut Editor) {
     editor.mode = Mode::Goto(GotoMode::default());
 }
 
-fn extend_to_top(editor: &mut Editor) {
+fn extend_to_start(editor: &mut Editor) {
     editor
         .window_mut()
         .buffer_mut()
         .selection_mut()
-        .for_each_mut(|mut range| range.extend_to_top());
+        .for_each_mut(|mut range| range.extend_to_start());
     editor.mode.set_count(None);
 }
 
-fn move_to_top(editor: &mut Editor) {
+fn move_to_start(editor: &mut Editor) {
     editor
         .window_mut()
         .buffer_mut()
         .selection_mut()
-        .for_each_mut(|mut range| range.move_to_top());
+        .for_each_mut(|mut range| range.move_to_start());
     editor.mode.set_count(None);
 }
 
