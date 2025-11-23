@@ -67,6 +67,18 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
         &self.state
     }
 
+    pub fn get(&self, index: usize) -> Option<Range<'_>> {
+        let range_state = self.state.ranges.get(index)?;
+        let range = Range::new(&self.text, range_state)
+            .expect("Selection text and range state are always kept valid");
+        Some(range)
+    }
+
+    pub fn get_primary(&self) -> Range<'_> {
+        self.get(self.state.primary_range)
+            .expect("Primary range index is always kept valid")
+    }
+
     pub fn for_each(&self, mut f: impl FnMut(Range<'_>)) {
         for range_state in &self.state.ranges {
             let range = Range::new(&self.text, range_state)
