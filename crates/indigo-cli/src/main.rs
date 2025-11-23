@@ -1,5 +1,5 @@
 use clap::Parser as _;
-use indigo_core::{event::handle_event, prelude::*};
+use indigo_core::{event::handle_event, key::is, prelude::*};
 use std::{io, process::ExitCode, sync::Arc};
 use tracing_subscriber::EnvFilter;
 
@@ -7,7 +7,13 @@ use tracing_subscriber::EnvFilter;
 struct Args {
     keys: Keys,
 
-    #[clap(long, env = "INDIGO_LOG", default_value_t)]
+    /// Enable debugging functionality
+    ///
+    /// - Enter `<c-l>` to print handled keys and a diff since the last `<c-l>` key was encountered.
+    #[arg(long)]
+    debug: bool,
+
+    #[arg(long, env = "INDIGO_LOG", default_value_t)]
     log_filter: Arc<str>,
 }
 
@@ -36,19 +42,49 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let mut editor = Editor::from(Buffer::from(rope));
 
+    let mut debug_keys = vec![];
+    let mut debug_rope = editor.window().buffer().rope().clone();
+
     for key in args.keys.0 {
         let event = Event::Key(KeyEvent {
             key,
             kind: KeyEventKind::Press,
         });
+
         handle_event(&mut editor, event)?;
+
+        if args.debug {
+            debug_keys.push(key);
+        }
+
+        if args.debug && is(&key, "<c-l>") {
+            let left = debug_rope.to_string();
+            let right = editor.window().buffer().rope().to_string();
+            eprint!("keys: ");
+            for key in &debug_keys {
+                if !is(key, "<c-l>") {
+                    eprint!("{key}");
+                }
+            }
+            eprintln!("\ntext:\n```diff");
+            for diff in diff::lines(&left, &right) {
+                match diff {
+                    diff::Result::Left(l) => eprintln!("-{l}"),
+                    diff::Result::Both(l, _) => eprintln!(" {l}"),
+                    diff::Result::Right(r) => eprintln!("+{r}"),
+                }
+            }
+            eprintln!("```");
+            debug_keys.clear();
+            debug_rope = editor.window().buffer().rope().clone();
+        }
     }
 
-    editor
+    let _result = editor
         .window()
         .buffer()
         .rope()
-        .write_to(io::LineWriter::new(io::stdout()))?;
+        .write_to(io::LineWriter::new(io::stdout()));
 
     let exit_code = editor.exit_code().unwrap_or(ExitCode::SUCCESS);
 

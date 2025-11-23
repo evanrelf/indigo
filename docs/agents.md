@@ -31,3 +31,10 @@ Indigo is written in Rust, across multiple crates in a Cargo workspace:
   by writing tests or executables at `crates/<crate>/src/bin/<name>.rs`. Always
   run these ad-hoc executables with `cargo run --bin <name>`, never with `rustc`
   (no dependencies outside of Cargo workspace).
+
+- Run `indigo-cli` to test editor behavior. With the `--debug` flag, the `<c-l>`
+  key prints keys processed and a diff. Try running this command as an example:
+
+  ```
+  $ echo -ne "hello\nworld\n" | ./bin/cli --debug 'fod<c-l>iHELLO<c-l><esc>jgla!<c-l>'
+  ```
