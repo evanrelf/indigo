@@ -536,4 +536,56 @@ mod tests {
         range.insert("e");
         range.assert_invariants().unwrap();
     }
+
+    #[test]
+    fn move_to_line_start_from_newline() {
+        let mut text = Text::from("hello world\n");
+        let mut state = RangeState::default();
+        let mut range = RangeMut::new(&mut text, &mut state).unwrap();
+        range.move_to_line_end();
+        range.move_right(1);
+        assert_eq!(&range.slice().to_string(), "\n");
+        range.move_to_line_start();
+        assert_eq!(&range.slice().to_string(), "h");
+    }
+
+    #[test]
+    fn move_to_line_start_idempotent() {
+        let mut text = Text::from("");
+        let mut state = RangeState::default();
+        let mut range = RangeMut::new(&mut text, &mut state).unwrap();
+        range.insert("x\ny");
+
+        range.move_to_line_start();
+        let first_anchor_offset = range.anchor().char_offset();
+        let first_head_offset = range.head().char_offset();
+        assert_eq!(&range.slice().to_string(), "y");
+
+        range.move_to_line_start();
+        let second_anchor_offset = range.anchor().char_offset();
+        let second_head_offset = range.head().char_offset();
+        assert_eq!(first_anchor_offset, second_anchor_offset);
+        assert_eq!(first_head_offset, second_head_offset);
+        assert_eq!(&range.slice().to_string(), "y");
+    }
+
+    #[test]
+    fn move_to_line_non_blank_start_idempotent() {
+        let mut text = Text::from("");
+        let mut state = RangeState::default();
+        let mut range = RangeMut::new(&mut text, &mut state).unwrap();
+        range.insert(" x");
+
+        range.move_to_line_non_blank_start();
+        let first_anchor_offset = range.anchor().char_offset();
+        let first_head_offset = range.head().char_offset();
+        assert_eq!(&range.slice().to_string(), "x");
+
+        range.move_to_line_non_blank_start();
+        let second_anchor_offset = range.anchor().char_offset();
+        let second_head_offset = range.head().char_offset();
+        assert_eq!(first_anchor_offset, second_anchor_offset);
+        assert_eq!(first_head_offset, second_head_offset);
+        assert_eq!(&range.slice().to_string(), "x");
+    }
 }
