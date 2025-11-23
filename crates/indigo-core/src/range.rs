@@ -28,8 +28,8 @@ pub enum Error {
 pub struct RangeState {
     pub anchor: CursorState,
     pub head: CursorState,
-    /// The column the head _wants_ to be on. Saved to restore horizontal positioning through
-    /// vertical movements. Reset on any non-vertical movement.
+    /// The display column the head _wants_ to be on. Saved to restore horizontal positioning
+    /// through vertical movements. Reset on any non-vertical movement.
     pub goal_column: usize,
 }
 
@@ -248,7 +248,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     /// Should be called after performing any non-vertical movement.
     pub fn update_goal_column(&mut self) {
-        let head_column = self.head().column(self.head_affinity());
+        let head_column = self.head().display_column(self.head_affinity());
         self.state.goal_column = head_column;
     }
 
