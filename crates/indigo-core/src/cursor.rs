@@ -122,6 +122,13 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     }
 
     #[must_use]
+    pub fn line(&self, affinity: Affinity) -> Option<RopeSlice<'_>> {
+        let char_index = self.char_index(affinity).ok()?;
+        let line_index = self.text.char_to_line(char_index);
+        self.text.get_line(line_index)
+    }
+
+    #[must_use]
     pub fn is_at_start(&self) -> bool {
         self.state.char_offset == 0
     }
@@ -555,6 +562,11 @@ mod tests {
         cursor.insert(text);
         // At end of text.
         assert_eq!(cursor.grapheme(affinity), None);
+        assert_eq!(cursor.line(Affinity::After), None);
+        assert_eq!(
+            cursor.line(Affinity::Before).map(|rope| rope.to_string()),
+            Some(String::from("6789AB\n"))
+        );
         assert_eq!(cursor.char_offset(), 13);
         assert_eq!(cursor.char_offset(), text.chars().count());
         assert_eq!(cursor.display_column(Affinity::Before), Some(6));
@@ -575,6 +587,14 @@ mod tests {
         cursor.move_left(1);
         // At "4" on line 1.
         assert_eq!(cursor.grapheme(affinity), Some(Rope::from("4").slice(..)));
+        assert_eq!(
+            cursor.line(Affinity::After).map(|rope| rope.to_string()),
+            Some(String::from("234\n"))
+        );
+        assert_eq!(
+            cursor.line(Affinity::Before).map(|rope| rope.to_string()),
+            Some(String::from("234\n"))
+        );
         assert_eq!(cursor.char_offset(), 4);
         // Goal column should change through horizontal movement.
         assert_eq!(cursor.display_column(Affinity::After), Some(2));
