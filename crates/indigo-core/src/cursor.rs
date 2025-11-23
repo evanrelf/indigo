@@ -40,15 +40,14 @@ impl CursorState {
         self.snap(text);
         self
     }
+}
 
-    // TODO: Use affinity.
-    #[must_use]
-    pub fn column(&self, text: &Rope) -> usize {
-        let current_line_index = text.char_to_line(self.char_offset);
-        let current_line_char_index = text.line_to_char(current_line_index);
-        text.slice(current_line_char_index..self.char_offset)
-            .display_width()
-    }
+#[must_use]
+pub fn column(text: &Rope, char_index: usize) -> usize {
+    let current_line_index = text.char_to_line(char_index);
+    let current_line_char_index = text.line_to_char(current_line_index);
+    text.slice(current_line_char_index..char_index)
+        .display_width()
 }
 
 #[must_use]
@@ -113,8 +112,12 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     }
 
     #[must_use]
-    pub fn column(&self) -> usize {
-        self.state.column(&self.text)
+    pub fn column(&self, affinity: Affinity) -> usize {
+        let char_index = match self.char_index(affinity) {
+            Ok(n) | Err(Some(n)) => n,
+            Err(None) => 0,
+        };
+        column(&self.text, char_index)
     }
 
     #[must_use]
@@ -527,27 +530,27 @@ mod tests {
         assert_eq!(cursor.grapheme(), None);
         assert_eq!(cursor.char_offset(), 13);
         assert_eq!(cursor.char_offset(), text.chars().count());
-        assert_eq!(cursor.column(), 0);
+        assert_eq!(cursor.column(Affinity::After), 0);
 
         cursor.move_left(1);
         // At final newline on line 2.
         assert_eq!(cursor.grapheme(), Some(Rope::from("\n").slice(..)));
         assert_eq!(cursor.char_offset(), 12);
-        assert_eq!(cursor.column(), 6);
+        assert_eq!(cursor.column(Affinity::After), 6);
 
-        cursor.move_up(cursor.column(), 1);
+        cursor.move_up(cursor.column(Affinity::After), 1);
         // At second newline on line 1, which is shorter than the goal column.
         assert_eq!(cursor.grapheme(), Some(Rope::from("\n").slice(..)));
         assert_eq!(cursor.char_offset(), 5);
         // Goal column should remain the same through vertical movement.
-        assert_eq!(cursor.column(), 3);
+        assert_eq!(cursor.column(Affinity::After), 3);
 
         cursor.move_left(1);
         // At "4" on line 1.
         assert_eq!(cursor.grapheme(), Some(Rope::from("4").slice(..)));
         assert_eq!(cursor.char_offset(), 4);
         // Goal column should change through horizontal movement.
-        assert_eq!(cursor.column(), 2);
+        assert_eq!(cursor.column(Affinity::After), 2);
     }
 
     #[test]
@@ -628,12 +631,12 @@ mod tests {
 
                     2 => {
                         let count = max(1, u.choose_index(99)?);
-                        cursor.move_up(cursor.column(), count);
+                        cursor.move_up(cursor.column(Affinity::After), count);
                         tx.send(format!("move_left() x{count}")).unwrap();
                     }
                     3 => {
                         let count = max(1, u.choose_index(99)?);
-                        cursor.move_down(cursor.column(), count);
+                        cursor.move_down(cursor.column(Affinity::After), count);
                         tx.send(format!("move_right() x{count}")).unwrap();
                     }
                     4 => {
