@@ -65,6 +65,10 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "<a-:>") => flip_forward(editor),
             _ if is(key, "%") => select_all(editor),
             _ if is(key, "d") => delete(editor),
+            _ if is(key, "c") => {
+                delete(editor);
+                enter_insert_mode(editor);
+            }
             _ if is(key, "u") => undo(editor),
             _ if is(key, "U") => redo(editor),
             _ if is(key, "<c-u>") => scroll_half_page_up(editor),

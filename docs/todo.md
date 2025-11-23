@@ -62,7 +62,7 @@ backward word key, not `b`).
 - [ ] `A`
 - [x] `d`
 - [ ] `<a-d>`
-- [ ] `c`
+- [x] `c`
 - [ ] `<a-c>`
 - [ ] `y`
 - [ ] `p`

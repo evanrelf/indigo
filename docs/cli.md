@@ -14,7 +14,7 @@ the initial input text from `stdin`, keys to execute as the first argument, and
 prints the final edited text to `stdout`.
 
 ```
-$ echo "hello, world!" | ./bin/cli 'fodigoodbye'
+$ echo "hello, world!" | ./bin/cli 'focgoodbye'
 goodbye, world!
 ```
 
@@ -68,7 +68,7 @@ world
 Editing the text:
 
 ```
-$ echo -ne "hello\nworld\n" | ./bin/cli 'fodiHELLO<esc>jgla!'
+$ echo -ne "hello\nworld\n" | ./bin/cli 'focHELLO<esc>jgla!'
 HELLO
 world!
 ```
@@ -76,9 +76,9 @@ world!
 Using debug mode:
 
 <pre>
-$ echo -ne "hello\nworld\n" | ./bin/cli --debug 'fod<c-l>iHELLO<c-l><esc>jgla!<c-l>'
-keys: fod
-primary range: anchor=0 head=0
+$ echo -ne "hello\nworld\n" | ./bin/cli --debug 'foc<c-l>HELLO<c-l><esc>jgla!<c-l>'
+keys: foc
+primary range: anchor=0 head=1
 text:
 ```diff
 -hello
@@ -86,7 +86,7 @@ text:
  world
 
 ```
-keys: iHELLO
+keys: HELLO
 primary range: anchor=5 head=6
 text:
 ```diff
@@ -111,7 +111,7 @@ world!
 Performing the same edit in Kakoune:
 
 ```
-$ echo -ne "hello\nworld\n" | kak -n -f 'gkfodiHELLO<esc>jgla!'
+$ echo -ne "hello\nworld\n" | kak -n -f 'gkfocHELLO<esc>jgla!'
 HELLO
 world!
 ```
