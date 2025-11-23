@@ -81,9 +81,9 @@ fn main() -> anyhow::Result<ExitCode> {
             eprintln!("text:\n```diff");
             for diff in diff::lines(&left, &right) {
                 match diff {
-                    diff::Result::Left(l) => eprintln!("-{l}"),
+                    diff::Result::Left(l) => eprintln!("{RED}-{l}{RESET}"),
                     diff::Result::Both(l, _) => eprintln!(" {l}"),
-                    diff::Result::Right(r) => eprintln!("+{r}"),
+                    diff::Result::Right(r) => eprintln!("{GREEN}+{r}{RESET}"),
                 }
             }
             eprintln!("```");
@@ -102,3 +102,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
     Ok(exit_code)
 }
+
+const RED: &str = "\x1b[0;31m";
+const GREEN: &str = "\x1b[0;32m";
+const RESET: &str = "\x1b[0m";
