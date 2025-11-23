@@ -6,7 +6,7 @@ use crate::{
 };
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
-use std::thread;
+use std::{mem, thread};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -427,7 +427,7 @@ impl<W: WrapMut> RangeView<'_, W> {
             return;
         }
         let (anchor, cursor) = both(&mut self.state);
-        std::mem::swap(anchor, cursor);
+        mem::swap(&mut anchor.char_offset, &mut cursor.char_offset);
     }
 
     pub fn flip_forward(&mut self) {
