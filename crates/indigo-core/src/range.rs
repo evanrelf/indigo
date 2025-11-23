@@ -271,6 +271,8 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.update_goal_column();
     }
 
+    // TODO: This is broken because of updates to reduce. Probably need to compensate here. Less
+    // likely (but still possible) reduce needs updating.
     pub fn move_left(&mut self, count: usize) {
         self.extend_left(count);
         self.reduce();
@@ -288,7 +290,8 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_up(&mut self, count: usize) {
         let goal_column = self.state.goal_column;
-        self.head_mut().move_up(goal_column, count);
+        let affinity = self.head_affinity();
+        self.head_mut().move_up(goal_column, affinity, count);
     }
 
     pub fn move_up(&mut self, count: usize) {
@@ -298,7 +301,8 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_down(&mut self, count: usize) {
         let goal_column = self.state.goal_column;
-        self.head_mut().move_down(goal_column, count);
+        let affinity = self.head_affinity();
+        self.head_mut().move_down(goal_column, affinity, count);
     }
 
     pub fn move_down(&mut self, count: usize) {
@@ -379,7 +383,8 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_to_bottom(&mut self) {
-        self.head_mut().move_to_bottom();
+        let affinity = self.head_affinity();
+        self.head_mut().move_to_bottom(affinity);
     }
 
     pub fn move_to_bottom(&mut self) {
@@ -389,7 +394,8 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_to_line_start(&mut self) {
-        self.head_mut().move_to_line_start();
+        let affinity = self.head_affinity();
+        self.head_mut().move_to_line_start(affinity);
     }
 
     pub fn move_to_line_start(&mut self) {
@@ -399,7 +405,8 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_to_line_non_blank_start(&mut self) {
-        self.head_mut().move_to_line_non_blank_start();
+        let affinity = self.head_affinity();
+        self.head_mut().move_to_line_non_blank_start(affinity);
     }
 
     pub fn move_to_line_non_blank_start(&mut self) {

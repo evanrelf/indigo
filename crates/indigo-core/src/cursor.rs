@@ -181,10 +181,17 @@ impl<W: WrapMut> CursorView<'_, W> {
         count > 0
     }
 
-    // TODO: Use affinity.
-    pub fn move_up(&mut self, goal_column: usize, count: usize) -> bool {
+    pub fn move_up(&mut self, goal_column: usize, affinity: Affinity, count: usize) -> bool {
+        if self.text.len_chars() == 0 {
+            return false;
+        }
         for _ in 0..count {
-            let current_line_index = self.text.char_to_line(self.state.char_offset);
+            #[expect(clippy::manual_let_else)]
+            let char_index = match self.char_index(affinity) {
+                Ok(n) | Err(Some(n)) => n,
+                Err(None) => unreachable!("Already checked rope length"),
+            };
+            let current_line_index = self.text.char_to_line(char_index);
             if current_line_index == 0 {
                 return false;
             }
@@ -209,10 +216,17 @@ impl<W: WrapMut> CursorView<'_, W> {
         count > 0
     }
 
-    // TODO: Use affinity.
-    pub fn move_down(&mut self, goal_column: usize, count: usize) -> bool {
+    pub fn move_down(&mut self, goal_column: usize, affinity: Affinity, count: usize) -> bool {
+        if self.text.len_chars() == 0 {
+            return false;
+        }
         for _ in 0..count {
-            let current_line_index = self.text.char_to_line(self.state.char_offset);
+            #[expect(clippy::manual_let_else)]
+            let char_index = match self.char_index(affinity) {
+                Ok(n) | Err(Some(n)) => n,
+                Err(None) => unreachable!("Already checked rope length"),
+            };
+            let current_line_index = self.text.char_to_line(char_index);
             let target_line_index = current_line_index + 1;
             if self.state.char_offset == self.text.len_chars() {
                 return false;
@@ -297,24 +311,41 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.char_offset = self.text.len_chars();
     }
 
-    // TODO: Use affinity.
-    pub fn move_to_bottom(&mut self) {
+    pub fn move_to_bottom(&mut self, affinity: Affinity) {
         self.move_to_end();
-        self.move_to_line_start();
+        self.move_to_line_start(affinity);
     }
 
-    // TODO: Use affinity.
-    pub fn move_to_line_start(&mut self) {
-        let current_line_index = self.text.char_to_line(self.state.char_offset);
-        let line_start_char_offset = self.text.line_to_char(current_line_index);
+    pub fn move_to_line_start(&mut self, affinity: Affinity) {
+        if self.text.len_chars() == 0 {
+            return;
+        }
+
+        #[expect(clippy::manual_let_else)]
+        let char_index = match self.char_index(affinity) {
+            Ok(n) | Err(Some(n)) => n,
+            Err(None) => unreachable!("Already checked rope length"),
+        };
+
+        let line_index = self.text.char_to_line(char_index);
+        let line_start_char_offset = self.text.line_to_char(line_index);
         self.state.char_offset = line_start_char_offset;
     }
 
-    // TODO: Use affinity.
-    pub fn move_to_line_non_blank_start(&mut self) {
-        let current_line_index = self.text.char_to_line(self.state.char_offset);
-        let line_start_char_offset = self.text.line_to_char(current_line_index);
-        let line_slice = self.text.line(current_line_index);
+    pub fn move_to_line_non_blank_start(&mut self, affinity: Affinity) {
+        if self.text.len_chars() == 0 {
+            return;
+        }
+
+        #[expect(clippy::manual_let_else)]
+        let char_index = match self.char_index(affinity) {
+            Ok(n) | Err(Some(n)) => n,
+            Err(None) => unreachable!("Already checked rope length"),
+        };
+
+        let line_index = self.text.char_to_line(char_index);
+        let line_start_char_offset = self.text.line_to_char(line_index);
+        let line_slice = self.text.line(line_index);
         let mut char_offset = line_start_char_offset;
         for grapheme in line_slice.graphemes() {
             if grapheme.chars().any(|c| c == '\n' || c == '\r') {
@@ -513,6 +544,8 @@ mod tests {
 
     #[test]
     fn expected_behavior_up_down() {
+        let affinity = Affinity::After;
+
         let mut cursor = CursorView::try_from(("", 0)).unwrap();
         cursor.assert_invariants().unwrap();
 
@@ -530,7 +563,7 @@ mod tests {
         assert_eq!(cursor.char_offset(), 12);
         assert_eq!(cursor.display_column(Affinity::After), 6);
 
-        cursor.move_up(cursor.display_column(Affinity::After), 1);
+        cursor.move_up(cursor.display_column(affinity), affinity, 1);
         // At second newline on line 1, which is shorter than the goal column.
         assert_eq!(cursor.grapheme(), Some(Rope::from("\n").slice(..)));
         assert_eq!(cursor.char_offset(), 5);
@@ -598,6 +631,7 @@ mod tests {
             } else {
                 text.ceil_grapheme_boundary(u.arbitrary::<usize>()?)
             };
+            let affinity = Affinity::After;
             let mut cursor = CursorView::try_from((text, char_offset)).unwrap();
             let (tx, rx) = mpsc::channel();
             defer!(|| {
@@ -623,12 +657,12 @@ mod tests {
 
                     2 => {
                         let count = max(1, u.choose_index(99)?);
-                        cursor.move_up(cursor.display_column(Affinity::After), count);
+                        cursor.move_up(cursor.display_column(affinity), affinity, count);
                         tx.send(format!("move_left() x{count}")).unwrap();
                     }
                     3 => {
                         let count = max(1, u.choose_index(99)?);
-                        cursor.move_down(cursor.display_column(Affinity::After), count);
+                        cursor.move_down(cursor.display_column(affinity), affinity, count);
                         tx.send(format!("move_right() x{count}")).unwrap();
                     }
                     4 => {
