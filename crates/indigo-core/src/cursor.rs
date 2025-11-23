@@ -113,8 +113,11 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     }
 
     #[must_use]
-    pub fn grapheme(&self) -> Option<RopeSlice<'_>> {
-        let start = self.state.char_offset;
+    pub fn grapheme(&self, affinity: Affinity) -> Option<RopeSlice<'_>> {
+        let Ok(char_index) = self.char_index(affinity) else {
+            return None;
+        };
+        let start = char_index;
         let end = self.text.next_grapheme_boundary(start)?;
         Some(self.text.slice(start..end))
     }
@@ -552,27 +555,27 @@ mod tests {
         let text = "0\n234\n6789AB\n";
         cursor.insert(text);
         // At end of text.
-        assert_eq!(cursor.grapheme(), None);
+        assert_eq!(cursor.grapheme(affinity), None);
         assert_eq!(cursor.char_offset(), 13);
         assert_eq!(cursor.char_offset(), text.chars().count());
         assert_eq!(cursor.display_column(Affinity::After), 0);
 
         cursor.move_left(1);
         // At final newline on line 2.
-        assert_eq!(cursor.grapheme(), Some(Rope::from("\n").slice(..)));
+        assert_eq!(cursor.grapheme(affinity), Some(Rope::from("\n").slice(..)));
         assert_eq!(cursor.char_offset(), 12);
         assert_eq!(cursor.display_column(Affinity::After), 6);
 
         cursor.move_up(cursor.display_column(affinity), affinity, 1);
         // At second newline on line 1, which is shorter than the goal column.
-        assert_eq!(cursor.grapheme(), Some(Rope::from("\n").slice(..)));
+        assert_eq!(cursor.grapheme(affinity), Some(Rope::from("\n").slice(..)));
         assert_eq!(cursor.char_offset(), 5);
         // Goal column should remain the same through vertical movement.
         assert_eq!(cursor.display_column(Affinity::After), 3);
 
         cursor.move_left(1);
         // At "4" on line 1.
-        assert_eq!(cursor.grapheme(), Some(Rope::from("4").slice(..)));
+        assert_eq!(cursor.grapheme(affinity), Some(Rope::from("4").slice(..)));
         assert_eq!(cursor.char_offset(), 4);
         // Goal column should change through horizontal movement.
         assert_eq!(cursor.display_column(Affinity::After), 2);
