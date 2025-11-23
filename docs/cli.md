@@ -23,9 +23,13 @@ the cursors are located.
 
 ## Debug mode
 
-`indigo-cli` has a `--debug` mode where executing `<c-l>` prints keys processed,
-char offsets of the primary range, and text changes as a diff, since the last
-`<c-l>`. All debug info is printed to `stderr`.
+`indigo-cli` has a `--debug` mode with more verbose output on `stderr`.
+
+- Prints when keys are unhandled
+- When executing `<c-l>`, prints:
+  - Keys processed
+  - Char offsets of the primary range
+  - Text changes as a diff
 
 When testing cursor and range behavior, print this debug state often to see the
 char offsets.

@@ -46,15 +46,19 @@ fn main() -> anyhow::Result<ExitCode> {
     let mut debug_rope = editor.window().buffer().rope().clone();
 
     for key in args.keys.0 {
+        if args.debug {
+            debug_keys.push(key);
+        }
+
         let event = Event::Key(KeyEvent {
             key,
             kind: KeyEventKind::Press,
         });
 
-        handle_event(&mut editor, event)?;
+        let handled = handle_event(&mut editor, event)?;
 
-        if args.debug {
-            debug_keys.push(key);
+        if args.debug && !handled && !is(&key, "<c-l>") {
+            eprintln!("unhandled key: {key}");
         }
 
         if args.debug && is(&key, "<c-l>") {
