@@ -73,6 +73,38 @@ HELLO
 world!
 ```
 
+Whitespace and comments are ignored, so you can write "literate" keys:
+
+```
+$ echo -ne "hello\nworld\n" | ./bin/cli '
+      # Extend the selection to the first `o` character
+      fo
+
+      # Delete the selection and enter insert mode
+      c
+
+      # We are in insert mode, so `HELLO` enters the text literally
+      HELLO
+
+      # Back to normal mode
+      <esc>
+
+      # Move down to second line
+      j
+
+      # Move to end of line
+      gl
+
+      # Enter insert mode after currently selected character (`d`)
+      a
+
+      # Add an exclamation point to the end of the word `world`
+      !
+  '
+HELLO
+world!
+```
+
 Using debug mode:
 
 <pre>
