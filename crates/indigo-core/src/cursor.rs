@@ -31,13 +31,13 @@ pub struct CursorState {
 
 impl CursorState {
     /// Snap to nearest grapheme boundary. This is a no-op if the cursor is already valid.
-    pub fn snap(&mut self, text: &Rope) {
+    pub fn snap_to_grapheme_boundary(&mut self, text: &Rope) {
         self.char_offset = text.ceil_grapheme_boundary(self.char_offset);
     }
 
     #[must_use]
-    pub fn snapped(mut self, text: &Rope) -> Self {
-        self.snap(text);
+    pub fn snapped_to_grapheme_boundary(mut self, text: &Rope) -> Self {
+        self.snap_to_grapheme_boundary(text);
         self
     }
 }
@@ -155,8 +155,8 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
 }
 
 impl<W: WrapMut> CursorView<'_, W> {
-    pub fn snap(&mut self) {
-        self.state.snap(&self.text);
+    pub fn snap_to_grapheme_boundary(&mut self) {
+        self.state.snap_to_grapheme_boundary(&self.text);
     }
 
     pub fn move_to(&mut self, char_offset: usize) {
@@ -414,7 +414,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.retain_rest(&self.text);
         self.text.edit(&edits).expect("Edits are well formed");
         self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
-        self.snap();
+        self.snap_to_grapheme_boundary();
         edits
     }
 
@@ -435,7 +435,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.retain_rest(&self.text);
         self.text.edit(&edits).expect("Edits are well formed");
         self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
-        self.snap();
+        self.snap_to_grapheme_boundary();
         Some(edits)
     }
 
@@ -456,7 +456,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         edits.retain_rest(&self.text);
         self.text.edit(&edits).expect("Edits are well formed");
         self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
-        self.snap();
+        self.snap_to_grapheme_boundary();
         Some(edits)
     }
 }

@@ -36,7 +36,7 @@ pub struct RangeState {
 impl RangeState {
     /// Snap anchor and head outward to nearest grapheme boundaries. This is a no-op if the range is
     /// already valid.
-    pub fn snap(&mut self, text: &Rope) {
+    pub fn snap_to_grapheme_boundaries(&mut self, text: &Rope) {
         if self.anchor.char_offset < self.head.char_offset {
             self.anchor.char_offset = text.floor_grapheme_boundary(self.anchor.char_offset);
             self.head.char_offset = text.ceil_grapheme_boundary(self.head.char_offset);
@@ -47,8 +47,8 @@ impl RangeState {
     }
 
     #[must_use]
-    pub fn snapped(mut self, text: &Rope) -> Self {
-        self.snap(text);
+    pub fn snapped_to_grapheme_boundaries(mut self, text: &Rope) -> Self {
+        self.snap_to_grapheme_boundaries(text);
         self
     }
 }
@@ -242,8 +242,8 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
-    pub fn snap(&mut self) {
-        self.state.snap(&self.text);
+    pub fn snap_to_grapheme_boundaries(&mut self) {
+        self.state.snap_to_grapheme_boundaries(&self.text);
     }
 
     /// Should be called after performing any non-vertical movement.
@@ -509,7 +509,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         let edits = self.start_mut().insert(text);
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
-        self.snap();
+        self.snap_to_grapheme_boundaries();
         self.update_goal_column();
         edits
     }
@@ -527,7 +527,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         let edits = self.start_mut().delete_before()?;
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
-        self.snap();
+        self.snap_to_grapheme_boundaries();
         self.update_goal_column();
         Some(edits)
     }
@@ -544,7 +544,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.anchor.char_offset = edits.transform_char_offset(self.state.anchor.char_offset);
         self.state.head.char_offset = edits.transform_char_offset(self.state.head.char_offset);
         debug_assert_eq!(self.state.anchor.char_offset, self.state.head.char_offset);
-        self.snap();
+        self.snap_to_grapheme_boundaries();
         self.update_goal_column();
         Some(edits)
     }
@@ -562,7 +562,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         let edits = self.end_mut().delete_after()?;
         self.state.anchor.char_offset = edits.transform_char_offset(anchor);
         self.state.head.char_offset = edits.transform_char_offset(head);
-        self.snap();
+        self.snap_to_grapheme_boundaries();
         self.update_goal_column();
         Some(edits)
     }

@@ -116,7 +116,8 @@ impl Buffer {
 
     pub fn undo(&mut self) -> anyhow::Result<bool> {
         if self.text.undo()? {
-            self.selection_mut().for_each_mut(|mut range| range.snap());
+            self.selection_mut()
+                .for_each_mut(|mut range| range.snap_to_grapheme_boundaries());
             Ok(true)
         } else {
             Ok(false)
@@ -125,7 +126,8 @@ impl Buffer {
 
     pub fn redo(&mut self) -> anyhow::Result<bool> {
         if self.text.redo()? {
-            self.selection_mut().for_each_mut(|mut range| range.snap());
+            self.selection_mut()
+                .for_each_mut(|mut range| range.snap_to_grapheme_boundaries());
             Ok(true)
         } else {
             Ok(false)
@@ -144,7 +146,7 @@ impl From<Rope> for Buffer {
     fn from(rope: Rope) -> Self {
         let text = Text::from(rope);
         let selection = SelectionState {
-            ranges: vec![RangeState::default().snapped(text.rope())],
+            ranges: vec![RangeState::default().snapped_to_grapheme_boundaries(text.rope())],
             primary_range: 0,
         };
         Self {
@@ -158,7 +160,7 @@ impl From<Rope> for Buffer {
 impl From<Text> for Buffer {
     fn from(text: Text) -> Self {
         let selection = SelectionState {
-            ranges: vec![RangeState::default().snapped(text.rope())],
+            ranges: vec![RangeState::default().snapped_to_grapheme_boundaries(text.rope())],
             primary_range: 0,
         };
         Self {
