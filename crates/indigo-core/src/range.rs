@@ -283,6 +283,9 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_right(&mut self, count: usize) {
+        if self.grapheme_length() == 1 {
+            self.flip_forward();
+        }
         self.head_mut().move_right(count);
         self.update_goal_column();
     }
