@@ -216,10 +216,10 @@ fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
     Ok(exit_code)
 }
 
-pub const LIGHT_YELLOW: Color = Color::Rgb(0xff, 0xf5, 0xb1);
-pub const DARK_YELLOW: Color = Color::Rgb(0xff, 0xd3, 0x3d);
-pub const LIGHT_RED: Color = Color::Rgb(0xff, 0xdc, 0xe0);
-pub const RED: Color = Color::Rgb(0xd7, 0x3a, 0x4a);
+pub const LIGHT_YELLOW: Color = Color::from_u32(0x00_fff5b1);
+pub const DARK_YELLOW: Color = Color::from_u32(0x00_ffd33d);
+pub const LIGHT_RED: Color = Color::from_u32(0x00_ffdce0);
+pub const RED: Color = Color::from_u32(0x00_d73a4a);
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let areas = Areas::new(editor, area);
@@ -362,8 +362,8 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     'line: for (line, mut rect) in lines.zip(rows) {
         'grapheme: for grapheme in line.graphemes() {
             let span = match grapheme.get_char(0) {
-                Some('\t') => Span::styled("→       ", Color::Rgb(0xee, 0xee, 0xee)),
-                Some('\n') => Span::styled("¬", Color::Rgb(0xee, 0xee, 0xee)),
+                Some('\t') => Span::styled("→       ", Color::from_u32(0x00_eeeeee)),
+                Some('\n') => Span::styled("¬", Color::from_u32(0x0_eeeeee)),
                 _ => Span::raw(grapheme),
             };
 
