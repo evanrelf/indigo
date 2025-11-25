@@ -1,36 +1,34 @@
 use ratatui::crossterm::{
+    QueueableCommand as _,
     event::{
         DisableMouseCapture, EnableMouseCapture, KeyboardEnhancementFlags,
         PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
     },
-    execute,
     terminal::{Clear, ClearType, supports_keyboard_enhancement},
 };
 use std::{
-    io,
+    io::{self, Write as _},
     ops::{Deref, DerefMut},
     thread,
 };
 
 pub struct TerminalGuard(pub ratatui::DefaultTerminal);
 
-#[must_use]
-pub fn init() -> TerminalGuard {
+pub fn init() -> anyhow::Result<TerminalGuard> {
     let terminal = ratatui::init();
-    execute!(io::stdout(), Clear(ClearType::All), EnableMouseCapture).unwrap();
+    let mut stdout = io::stdout();
+    stdout.queue(Clear(ClearType::All))?;
+    stdout.queue(EnableMouseCapture)?;
     if let Ok(true) = supports_keyboard_enhancement() {
-        execute!(
-            io::stdout(),
-            PushKeyboardEnhancementFlags(
-                KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES
-                    | KeyboardEnhancementFlags::REPORT_ALL_KEYS_AS_ESCAPE_CODES
-                    | KeyboardEnhancementFlags::REPORT_ALTERNATE_KEYS
-                    | KeyboardEnhancementFlags::REPORT_EVENT_TYPES
-            )
-        )
-        .unwrap();
+        stdout.queue(PushKeyboardEnhancementFlags(
+            KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES
+                | KeyboardEnhancementFlags::REPORT_ALL_KEYS_AS_ESCAPE_CODES
+                | KeyboardEnhancementFlags::REPORT_ALTERNATE_KEYS
+                | KeyboardEnhancementFlags::REPORT_EVENT_TYPES,
+        ))?;
     }
-    TerminalGuard(terminal)
+    stdout.flush()?;
+    Ok(TerminalGuard(terminal))
 }
 
 impl Deref for TerminalGuard {
@@ -51,10 +49,9 @@ impl Drop for TerminalGuard {
         if !thread::panicking() {
             ratatui::restore();
         }
-        let _ = execute!(
-            io::stdout(),
-            PopKeyboardEnhancementFlags,
-            DisableMouseCapture,
-        );
+        let mut stdout = io::stdout();
+        let _ = stdout.queue(PopKeyboardEnhancementFlags);
+        let _ = stdout.queue(DisableMouseCapture);
+        let _ = stdout.flush();
     }
 }

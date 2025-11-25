@@ -50,7 +50,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
     init_tracing_subscriber(&args, &xdg)?;
 
-    let terminal = terminal::init();
+    let terminal = terminal::init()?;
 
     run(&args, terminal)
 }
