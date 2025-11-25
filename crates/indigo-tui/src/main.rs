@@ -174,7 +174,7 @@ fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
     let mut render_times = Times::new("just render", args.stats);
     let mut event_read_times = Times::new("just event read", args.stats);
 
-    let exit_code = loop {
+    let exit_code = 'frame: loop {
         render_times.start();
         terminal.draw(|frame| {
             let _span = tracing::trace_span!("terminal draw").entered();
@@ -187,13 +187,16 @@ fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
         render_times.stop();
         frame_times.stop();
 
-        let event = loop {
+        let event = 'event_read: loop {
             frame_times.start();
             event_read_times.start();
             let event = crossterm::event::read()?;
+            if event.is_resize() {
+                continue 'frame;
+            }
             if !should_skip_event(&event) {
                 event_read_times.stop();
-                break event;
+                break 'event_read event;
             }
         };
 
