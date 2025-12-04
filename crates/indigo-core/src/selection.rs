@@ -80,14 +80,6 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
             .expect("Primary range index is always kept valid")
     }
 
-    #[expect(clippy::should_implement_trait)]
-    pub fn into_iter(self) -> IntoIter<'a, W> {
-        IntoIter {
-            selection: self,
-            index: 0,
-        }
-    }
-
     pub fn for_each(&self, mut f: impl FnMut(Range<'_>)) {
         for range_state in &self.state.ranges {
             let range = Range::new(&self.text, range_state)
@@ -103,7 +95,18 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
     }
 }
 
-impl<'a, W: WrapMut> SelectionView<'a, W> {
+impl<'a> Selection<'a> {
+    #[expect(clippy::should_implement_trait)]
+    #[must_use]
+    pub fn into_iter(self) -> IntoIter<'a> {
+        IntoIter {
+            selection: self,
+            index: 0,
+        }
+    }
+}
+
+impl<W: WrapMut> SelectionView<'_, W> {
     pub fn get_mut(&mut self, index: usize) -> Option<RangeMut<'_>> {
         let range_state = self.state.ranges.get_mut(index)?;
         let range = RangeMut::new(&mut self.text, range_state)
@@ -119,18 +122,22 @@ impl<'a, W: WrapMut> SelectionView<'a, W> {
         }
     }
 
-    pub fn into_iter_mut(self) -> IntoIterMut<'a, W> {
-        IntoIterMut {
-            selection: self,
-            index: 0,
-        }
-    }
-
     pub fn select_all(&mut self) {
         let mut range = RangeState::default();
         range.head.char_offset = self.text.len_chars();
         self.state.ranges = vec![range];
         self.state.primary_range = 0;
+    }
+}
+
+impl<'a> SelectionMut<'a> {
+    #[expect(clippy::should_implement_trait)]
+    #[must_use]
+    pub fn into_iter(self) -> IntoIterMut<'a> {
+        IntoIterMut {
+            selection: self,
+            index: 0,
+        }
     }
 }
 
@@ -144,12 +151,12 @@ impl<W: Wrap> Drop for SelectionView<'_, W> {
     }
 }
 
-pub struct IntoIter<'a, W: Wrap> {
-    selection: SelectionView<'a, W>,
+pub struct IntoIter<'a> {
+    selection: Selection<'a>,
     index: usize,
 }
 
-impl<W: WrapRef> LendingIterator for IntoIter<'_, W> {
+impl LendingIterator for IntoIter<'_> {
     type Item<'a>
         = Range<'a>
     where
@@ -161,12 +168,12 @@ impl<W: WrapRef> LendingIterator for IntoIter<'_, W> {
     }
 }
 
-pub struct IntoIterMut<'a, W: Wrap> {
-    selection: SelectionView<'a, W>,
+pub struct IntoIterMut<'a> {
+    selection: SelectionMut<'a>,
     index: usize,
 }
 
-impl<W: WrapMut> LendingIterator for IntoIterMut<'_, W> {
+impl LendingIterator for IntoIterMut<'_> {
     type Item<'a>
         = RangeMut<'a>
     where
