@@ -9,7 +9,6 @@ use ratatui::crossterm::{
 use std::{
     io::{self, Write as _},
     ops::{Deref, DerefMut},
-    thread,
 };
 
 // TODO: Fix bug where keyboard enhancements[1] linger after Indigo exists.
@@ -58,9 +57,7 @@ impl DerefMut for TerminalGuard {
 
 impl Drop for TerminalGuard {
     fn drop(&mut self) {
-        if !thread::panicking() {
-            ratatui::restore();
-        }
+        let _ = ratatui::try_restore();
         let mut stdout = io::stdout();
         let _ = stdout.queue(PopKeyboardEnhancementFlags);
         let _ = stdout.queue(DisableMouseCapture);
