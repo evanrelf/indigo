@@ -12,6 +12,18 @@ use std::{
     thread,
 };
 
+// TODO: Fix bug where keyboard enhancements[1] linger after Indigo exists.
+//
+// Repro:
+//   1. Open a file in your pager. Keys work as usual.
+//   2. Launch and quit `indigo-tui`.
+//   3. Open a file in your pager. Keys don't work correctly. `less` is frozen with a bell, `least`
+//      interprets key up and down as separate events.
+//
+// May have something to do with `PopKeyboardEnhancementFlags` only popping one level? Not sure.
+//
+// [1]: https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement
+
 pub struct TerminalGuard(pub ratatui::DefaultTerminal);
 
 pub fn init() -> anyhow::Result<TerminalGuard> {
