@@ -11,6 +11,7 @@ camino = "1.2.1"
 clap = { version = "4.5.51", features = ["derive", "env"] }
 diff = "0.1.13"
 etcetera = "0.11.0"
+gat-lending-iterator = "0.1.8"
 hdrhistogram = "7.5.4"
 indigo-cli = { path = "crates/indigo-cli/" }
 indigo-core = { path = "crates/indigo-core/" }

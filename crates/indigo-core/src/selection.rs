@@ -2,6 +2,7 @@ use crate::{
     range::{Range, RangeMut, RangeState},
     text::Text,
 };
+use gat_lending_iterator::LendingIterator;
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::thread;
 use thiserror::Error;
@@ -79,6 +80,22 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
             .expect("Primary range index is always kept valid")
     }
 
+    #[expect(clippy::iter_not_returning_iterator)]
+    pub fn iter(&'a self) -> Iter<'a, W> {
+        Iter {
+            selection: self,
+            index: 0,
+        }
+    }
+
+    #[expect(clippy::should_implement_trait)]
+    pub fn into_iter(self) -> IntoIter<'a, W> {
+        IntoIter {
+            selection: self,
+            index: 0,
+        }
+    }
+
     pub fn for_each(&self, mut f: impl FnMut(Range<'_>)) {
         for range_state in &self.state.ranges {
             let range = Range::new(&self.text, range_state)
@@ -118,5 +135,39 @@ impl<W: Wrap> Drop for SelectionView<'_, W> {
         {
             f(self);
         }
+    }
+}
+
+pub struct Iter<'a, W: Wrap> {
+    selection: &'a SelectionView<'a, W>,
+    index: usize,
+}
+
+impl<W: WrapRef> LendingIterator for Iter<'_, W> {
+    type Item<'a>
+        = Range<'a>
+    where
+        Self: 'a;
+
+    fn next(&mut self) -> Option<Self::Item<'_>> {
+        self.index += 1;
+        self.selection.get(self.index - 1)
+    }
+}
+
+pub struct IntoIter<'a, W: Wrap> {
+    selection: SelectionView<'a, W>,
+    index: usize,
+}
+
+impl<W: WrapRef> LendingIterator for IntoIter<'_, W> {
+    type Item<'a>
+        = Range<'a>
+    where
+        Self: 'a;
+
+    fn next(&mut self) -> Option<Self::Item<'_>> {
+        self.index += 1;
+        self.selection.get(self.index - 1)
     }
 }
