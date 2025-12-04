@@ -19,6 +19,7 @@ indigo-wrap = { path = "crates/indigo-wrap/" }
 memchr = "2.7.6"
 pathdiff = { version = "0.2.3", features = ["camino"] }
 ratatui = "0.30.0-beta.0"
+regex-cursor = "0.1.5"
 ropey = { version = "1.6.1", default-features = false, features = ["simd"] }
 shell-words = "1.1.0"
 thiserror = "2.0.17"

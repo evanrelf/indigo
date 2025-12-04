@@ -10,6 +10,7 @@ use crate::{
         scroll_full_page_down, scroll_full_page_up, scroll_half_page_down, scroll_half_page_up,
     },
 };
+use regex_cursor::engines::meta::Regex;
 use std::num::NonZeroUsize;
 
 #[derive(Default)]
@@ -64,6 +65,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "<a-;>") => flip(editor),
             _ if is(key, "<a-:>") => flip_forward(editor),
             _ if is(key, "%") => select_all(editor),
+            _ if is(key, "s") => select_regex(editor),
             _ if is(key, "d") => delete(editor),
             _ if is(key, "c") => {
                 delete(editor);
@@ -236,6 +238,17 @@ fn select_all(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .select_all();
+    editor.mode.set_count(None);
+}
+
+fn select_regex(editor: &mut Editor) {
+    // TODO: Add a way for the user to type in a regex.
+    let regex = Regex::new(r"\blet\b").unwrap();
+    editor
+        .window_mut()
+        .buffer_mut()
+        .selection_mut()
+        .select_regex(&regex);
     editor.mode.set_count(None);
 }
 

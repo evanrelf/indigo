@@ -15,4 +15,4 @@ rm -f "$log"
 
 trap print_log EXIT
 
-cargo run --bin indigo-tui -- --log-filter debug "$@"
+cargo run --bin indigo-tui -- --log-filter info,indigo_core=debug,indigo_tui=debug "$@"

@@ -1,9 +1,14 @@
 use crate::{
+    cursor::CursorState,
     range::{Range, RangeMut, RangeState},
     text::Text,
 };
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
-use std::thread;
+use regex_cursor::engines::meta::Regex;
+use std::{
+    cmp::{max, min},
+    thread,
+};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -112,6 +117,30 @@ impl<W: WrapMut> SelectionView<'_, W> {
             let range = RangeMut::new(&mut self.text, range_state)
                 .expect("Selection text and range state are always kept valid");
             f(range);
+        }
+    }
+
+    pub fn select_regex(&mut self, regex: &Regex) {
+        let mut ranges = Vec::new();
+        for range in &self.state.ranges {
+            let start = min(range.anchor.char_offset, range.head.char_offset);
+            let end = max(range.anchor.char_offset, range.head.char_offset);
+            let input = regex_cursor::Input::new(self.text.rope().slice(start..end));
+            for needle in regex.find_iter(input) {
+                ranges.push(RangeState {
+                    anchor: CursorState {
+                        char_offset: start + self.text.rope().byte_to_char(needle.start()),
+                    },
+                    head: CursorState {
+                        char_offset: start + self.text.rope().byte_to_char(needle.end()),
+                    },
+                    goal_column: 0,
+                });
+            }
+        }
+        if !ranges.is_empty() {
+            self.state.primary_range = ranges.len() - 1;
+            self.state.ranges = ranges;
         }
     }
 

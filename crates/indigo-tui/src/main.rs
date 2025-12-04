@@ -17,14 +17,14 @@ use ratatui::{
     crossterm,
     prelude::{Buffer as Surface, *},
 };
-use std::{borrow::Cow, cmp::max, env, fs, process::ExitCode, rc::Rc, sync::Arc, time::Instant};
+use std::{borrow::Cow, cmp::max, env, fs, process::ExitCode, rc::Rc, time::Instant};
 
 #[derive(Debug, clap::Parser)]
 struct Args {
     file: Option<Utf8PathBuf>,
 
     #[clap(long, env = "INDIGO_LOG", default_value_t)]
-    log_filter: Arc<str>,
+    log_filter: String,
 
     #[clap(long)]
     stats: bool,
