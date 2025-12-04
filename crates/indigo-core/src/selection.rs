@@ -79,10 +79,6 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
             .expect("Primary range index is always kept valid")
     }
 
-    pub fn iter(&'a self) -> Iter<'a, W> {
-        <&Self as IntoIterator>::into_iter(self)
-    }
-
     pub fn for_each(&self, mut f: impl FnMut(Range<'_>)) {
         for range_state in &self.state.ranges {
             let range = Range::new(&self.text, range_state)
@@ -122,35 +118,5 @@ impl<W: Wrap> Drop for SelectionView<'_, W> {
         {
             f(self);
         }
-    }
-}
-
-impl<'a, W: WrapRef> IntoIterator for &'a SelectionView<'a, W> {
-    type Item = Range<'a>;
-
-    type IntoIter = Iter<'a, W>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        Iter {
-            selection: self,
-            index: 0,
-        }
-    }
-}
-
-pub struct Iter<'a, W: WrapRef> {
-    selection: &'a SelectionView<'a, W>,
-    index: usize,
-}
-
-impl<'a, W: WrapRef> Iterator for Iter<'a, W> {
-    type Item = Range<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.index += 1;
-        let range_state = self.selection.state.ranges.get(self.index - 1)?;
-        let range = Range::new(&self.selection.text, range_state)
-            .expect("Selection text and range state are always kept valid");
-        Some(range)
     }
 }
