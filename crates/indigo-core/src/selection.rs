@@ -103,12 +103,26 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
     }
 }
 
-impl<W: WrapMut> SelectionView<'_, W> {
+impl<'a, W: WrapMut> SelectionView<'a, W> {
+    pub fn get_mut(&mut self, index: usize) -> Option<RangeMut<'_>> {
+        let range_state = self.state.ranges.get_mut(index)?;
+        let range = RangeMut::new(&mut self.text, range_state)
+            .expect("Selection text and range state are always kept valid");
+        Some(range)
+    }
+
     pub fn for_each_mut(&mut self, mut f: impl FnMut(RangeMut<'_>)) {
         for range_state in &mut self.state.ranges {
             let range = RangeMut::new(&mut self.text, range_state)
                 .expect("Selection text and range state are always kept valid");
             f(range);
+        }
+    }
+
+    pub fn into_iter_mut(self) -> IntoIterMut<'a, W> {
+        IntoIterMut {
+            selection: self,
+            index: 0,
         }
     }
 
@@ -144,5 +158,22 @@ impl<W: WrapRef> LendingIterator for IntoIter<'_, W> {
     fn next(&mut self) -> Option<Self::Item<'_>> {
         self.index += 1;
         self.selection.get(self.index - 1)
+    }
+}
+
+pub struct IntoIterMut<'a, W: Wrap> {
+    selection: SelectionView<'a, W>,
+    index: usize,
+}
+
+impl<W: WrapMut> LendingIterator for IntoIterMut<'_, W> {
+    type Item<'a>
+        = RangeMut<'a>
+    where
+        Self: 'a;
+
+    fn next(&mut self) -> Option<Self::Item<'_>> {
+        self.index += 1;
+        self.selection.get_mut(self.index - 1)
     }
 }
