@@ -102,6 +102,11 @@ impl<W: WrapMut> SelectionView<'_, W> {
         Some(range)
     }
 
+    pub fn get_primary_mut(&mut self) -> RangeMut<'_> {
+        self.get_mut(self.state.primary_range)
+            .expect("Primary range index is always kept valid")
+    }
+
     pub fn for_each_mut(&mut self, mut f: impl FnMut(RangeMut<'_>)) {
         for range_state in &mut self.state.ranges {
             let range = RangeMut::new(&mut self.text, range_state)
