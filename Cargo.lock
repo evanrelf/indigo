@@ -559,12 +559,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 
 [[package]]
-name = "gat-lending-iterator"
-version = "0.1.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "750117b6c895c40a8feee97fc95da9b5eb4b531ad772af2640a810ea1e4d2102"
-
-[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -651,7 +645,6 @@ dependencies = [
  "bitflags 2.10.0",
  "camino",
  "clap",
- "gat-lending-iterator",
  "indigo-wrap",
  "memchr",
  "ropey",

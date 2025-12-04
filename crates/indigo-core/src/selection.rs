@@ -2,7 +2,6 @@ use crate::{
     range::{Range, RangeMut, RangeState},
     text::Text,
 };
-use gat_lending_iterator::LendingIterator;
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::thread;
 use thiserror::Error;
@@ -95,17 +94,6 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
     }
 }
 
-impl<'a> Selection<'a> {
-    #[expect(clippy::should_implement_trait)]
-    #[must_use]
-    pub fn into_iter(self) -> IntoIter<'a> {
-        IntoIter {
-            selection: self,
-            index: 0,
-        }
-    }
-}
-
 impl<W: WrapMut> SelectionView<'_, W> {
     pub fn get_mut(&mut self, index: usize) -> Option<RangeMut<'_>> {
         let range_state = self.state.ranges.get_mut(index)?;
@@ -130,17 +118,6 @@ impl<W: WrapMut> SelectionView<'_, W> {
     }
 }
 
-impl<'a> SelectionMut<'a> {
-    #[expect(clippy::should_implement_trait)]
-    #[must_use]
-    pub fn into_iter(self) -> IntoIterMut<'a> {
-        IntoIterMut {
-            selection: self,
-            index: 0,
-        }
-    }
-}
-
 impl<W: Wrap> Drop for SelectionView<'_, W> {
     fn drop(&mut self) {
         if !thread::panicking()
@@ -148,39 +125,5 @@ impl<W: Wrap> Drop for SelectionView<'_, W> {
         {
             f(self);
         }
-    }
-}
-
-pub struct IntoIter<'a> {
-    selection: Selection<'a>,
-    index: usize,
-}
-
-impl LendingIterator for IntoIter<'_> {
-    type Item<'a>
-        = Range<'a>
-    where
-        Self: 'a;
-
-    fn next(&mut self) -> Option<Self::Item<'_>> {
-        self.index += 1;
-        self.selection.get(self.index - 1)
-    }
-}
-
-pub struct IntoIterMut<'a> {
-    selection: SelectionMut<'a>,
-    index: usize,
-}
-
-impl LendingIterator for IntoIterMut<'_> {
-    type Item<'a>
-        = RangeMut<'a>
-    where
-        Self: 'a;
-
-    fn next(&mut self) -> Option<Self::Item<'_>> {
-        self.index += 1;
-        self.selection.get_mut(self.index - 1)
     }
 }
