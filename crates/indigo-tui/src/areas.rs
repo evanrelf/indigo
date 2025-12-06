@@ -5,9 +5,10 @@ use std::cmp::max;
 #[derive(Clone, Copy, Default)]
 pub struct Areas {
     pub status_bar: Rect,
-    pub main: Rect,
     pub line_numbers: Rect,
+    pub dots: Rect,
     pub text: Rect,
+    pub scroll_bar: Rect,
 }
 
 impl Areas {
@@ -28,19 +29,22 @@ impl Areas {
                 .expect("Line number width should always be very small")
         };
 
-        let [line_numbers, text] = Layout::horizontal([
+        let [line_numbers, text, scroll_bar] = Layout::horizontal([
             // line_numbers
             Constraint::Length(line_numbers_width),
             // text
             Constraint::Fill(1),
+            // scroll_bar
+            Constraint::Length(1),
         ])
         .areas(main);
 
         Self {
             status_bar,
-            main,
             line_numbers,
+            dots: main,
             text,
+            scroll_bar,
         }
     }
 }

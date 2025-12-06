@@ -226,9 +226,10 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let areas = Areas::new(editor, area);
     render_status_bar(editor, areas.status_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
-    render_dots(editor, areas.main, surface);
+    render_dots(editor, areas.dots, surface);
     render_text(editor, areas.text, surface);
     render_selection(editor, areas.text, surface);
+    render_scroll_bar(editor, areas.scroll_bar, surface);
 }
 
 fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
@@ -330,6 +331,43 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
             .fg(Color::from_u32(0x00_cccccc))
             .right_aligned()
             .render(row, surface);
+    }
+}
+
+fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
+    if area.height == 0 {
+        return;
+    }
+
+    let window = editor.window();
+    let buffer = window.buffer();
+
+    let text_lines = buffer.rope().len_lines_indigo();
+    let window_lines = usize::from(window.height());
+    let scroll_lines = text_lines + (window_lines - 1);
+
+    let gutter_height = usize::from(area.height);
+    let bar_height = if scroll_lines == 0 {
+        0
+    } else {
+        (gutter_height * window_lines) / scroll_lines
+    };
+    let bar_height = max(1, bar_height);
+
+    let current_scroll = window.vertical_scroll();
+    let max_scroll = text_lines.saturating_sub(1);
+
+    let bar_start = if max_scroll == 0 {
+        0
+    } else {
+        ((gutter_height - bar_height) * current_scroll) / max_scroll
+    };
+    let bar_end = bar_start + bar_height;
+
+    for (i, row) in area.rows().enumerate() {
+        if (bar_start..bar_end).contains(&i) {
+            "▐".fg(Color::from_u32(0x00_cccccc)).render(row, surface);
+        }
     }
 }
 
