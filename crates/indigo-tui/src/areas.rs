@@ -4,6 +4,7 @@ use ratatui::layout::{Constraint, Layout, Position, Rect};
 #[derive(Clone, Copy, Default)]
 pub struct Areas {
     pub status_bar: Rect,
+    pub main: Rect,
     pub line_numbers: Rect,
     pub text: Rect,
 }
@@ -38,6 +39,7 @@ impl Areas {
 
         Self {
             status_bar,
+            main,
             line_numbers,
             text,
         }

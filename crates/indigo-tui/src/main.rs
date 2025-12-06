@@ -226,8 +226,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     let areas = Areas::new(editor, area);
     render_status_bar(editor, areas.status_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
-    render_tildes(editor, areas.line_numbers, surface);
-    render_dots(editor, areas.text, surface);
+    render_dots(editor, areas.main, surface);
     render_text(editor, areas.text, surface);
     render_selection(editor, areas.text, surface);
 }
@@ -330,24 +329,6 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
         Line::raw(format!("{line_number}│"))
             .right_aligned()
             .render(row, surface);
-    }
-}
-
-fn render_tildes(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let window = editor.window();
-
-    let buffer = window.buffer();
-
-    let total_lines = buffer.rope().len_lines_indigo();
-
-    for (i, row) in area.rows().enumerate() {
-        let line_number = i + window.vertical_scroll() + 1;
-
-        if line_number <= total_lines {
-            continue;
-        }
-
-        Line::raw("~").render(row, surface);
     }
 }
 
