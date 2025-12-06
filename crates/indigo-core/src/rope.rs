@@ -1,6 +1,6 @@
 use crate::{
     display_width::DisplayWidth as _,
-    grapheme::{self, Graphemes},
+    unicode::{self, Graphemes},
 };
 use regex_cursor::{Cursor, IntoCursor};
 use ropey::{LineType, Rope, RopeSlice};
@@ -131,23 +131,23 @@ pub trait RopeExt {
     }
 
     fn is_grapheme_boundary(&self, byte_offset: usize) -> bool {
-        grapheme::is_grapheme_boundary(&self.as_slice(), byte_offset)
+        unicode::is_grapheme_boundary(&self.as_slice(), byte_offset)
     }
 
     fn prev_grapheme_boundary(&self, byte_offset: usize) -> Option<usize> {
-        grapheme::prev_grapheme_boundary(&self.as_slice(), byte_offset)
+        unicode::prev_grapheme_boundary(&self.as_slice(), byte_offset)
     }
 
     fn next_grapheme_boundary(&self, byte_offset: usize) -> Option<usize> {
-        grapheme::next_grapheme_boundary(&self.as_slice(), byte_offset)
+        unicode::next_grapheme_boundary(&self.as_slice(), byte_offset)
     }
 
     fn floor_grapheme_boundary(&self, byte_offset: usize) -> usize {
-        grapheme::floor_grapheme_boundary(&self.as_slice(), byte_offset)
+        unicode::floor_grapheme_boundary(&self.as_slice(), byte_offset)
     }
 
     fn ceil_grapheme_boundary(&self, byte_offset: usize) -> usize {
-        grapheme::ceil_grapheme_boundary(&self.as_slice(), byte_offset)
+        unicode::ceil_grapheme_boundary(&self.as_slice(), byte_offset)
     }
 
     fn display_column(&self, byte_index: usize) -> usize {

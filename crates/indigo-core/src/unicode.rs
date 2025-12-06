@@ -1,28 +1,9 @@
-//! Unicode extended grapheme clusters.
+//! Unicode scalar values and extended grapheme clusters.
 //!
 //! <https://unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries>
 
 use ropey::{RopeSlice, iter::Chunks};
 use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
-
-#[must_use]
-pub fn is_grapheme_boundary(rope: &RopeSlice, byte_index: usize) -> bool {
-    if byte_index > rope.len() {
-        return false;
-    }
-    let (chunk, chunk_byte_index) = rope.chunk(byte_index);
-    let mut cursor = GraphemeCursor::new(byte_index, rope.len(), true);
-    loop {
-        match cursor.is_boundary(chunk, chunk_byte_index) {
-            Ok(is_boundary) => return is_boundary,
-            Err(GraphemeIncomplete::PreContext(byte_index)) => {
-                let (prev_chunk, prev_chunk_byte_index) = rope.chunk(byte_index - 1);
-                cursor.provide_context(prev_chunk, prev_chunk_byte_index);
-            }
-            _ => unreachable!(),
-        }
-    }
-}
 
 #[must_use]
 fn is_char_boundary(rope: &RopeSlice, byte_index: usize) -> bool {
@@ -58,6 +39,25 @@ fn ceil_char_boundary(rope: &RopeSlice, mut byte_index: usize) -> usize {
         }
     }
     byte_index
+}
+
+#[must_use]
+pub fn is_grapheme_boundary(rope: &RopeSlice, byte_index: usize) -> bool {
+    if byte_index > rope.len() {
+        return false;
+    }
+    let (chunk, chunk_byte_index) = rope.chunk(byte_index);
+    let mut cursor = GraphemeCursor::new(byte_index, rope.len(), true);
+    loop {
+        match cursor.is_boundary(chunk, chunk_byte_index) {
+            Ok(is_boundary) => return is_boundary,
+            Err(GraphemeIncomplete::PreContext(byte_index)) => {
+                let (prev_chunk, prev_chunk_byte_index) = rope.chunk(byte_index - 1);
+                cursor.provide_context(prev_chunk, prev_chunk_byte_index);
+            }
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[must_use]
