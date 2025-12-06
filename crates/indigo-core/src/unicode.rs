@@ -15,30 +15,23 @@ fn is_char_boundary(rope: &RopeSlice, byte_index: usize) -> bool {
 }
 
 #[must_use]
-fn floor_char_boundary(rope: &RopeSlice, mut byte_index: usize) -> usize {
+fn floor_char_boundary(rope: &RopeSlice, byte_index: usize) -> usize {
     let length = rope.len();
     if byte_index >= length {
         return length;
     }
-    while !is_char_boundary(rope, byte_index) {
-        byte_index -= 1;
-    }
-    byte_index
+    let (chunk, chunk_byte_index) = rope.chunk(byte_index);
+    chunk_byte_index + chunk.floor_char_boundary(byte_index - chunk_byte_index)
 }
 
 #[must_use]
-fn ceil_char_boundary(rope: &RopeSlice, mut byte_index: usize) -> usize {
+fn ceil_char_boundary(rope: &RopeSlice, byte_index: usize) -> usize {
     let length = rope.len();
     if byte_index >= length {
         return length;
     }
-    while !is_char_boundary(rope, byte_index) {
-        byte_index += 1;
-        if byte_index >= length {
-            return length;
-        }
-    }
-    byte_index
+    let (chunk, chunk_byte_index) = rope.chunk(byte_index);
+    chunk_byte_index + chunk.ceil_char_boundary(byte_index - chunk_byte_index)
 }
 
 #[must_use]
