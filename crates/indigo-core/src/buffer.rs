@@ -63,7 +63,7 @@ impl Buffer {
 
     pub fn save(&mut self, fs: &impl Fs) -> anyhow::Result<()> {
         if let BufferKind::File { path, on_disk } = &mut self.kind {
-            let mut bytes = Vec::with_capacity(self.text.len_bytes());
+            let mut bytes = Vec::with_capacity(self.text.len());
             self.text.write_to(&mut bytes)?;
             fs.write(path, &bytes)?;
             *on_disk = self.text.clone();

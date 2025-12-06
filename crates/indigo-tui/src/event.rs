@@ -1,5 +1,5 @@
 use crate::{
-    areas::{Areas, position_to_char_offset},
+    areas::{Areas, position_to_byte_offset},
     key::{key_event_i2t, key_event_t2i},
     terminal::TerminalGuard,
 };
@@ -98,7 +98,7 @@ fn handle_event_normal(
                     x: mouse_event.column,
                     y: mouse_event.row,
                 };
-                if let Some(Err(char_offset) | Ok(char_offset)) = position_to_char_offset(
+                if let Some(Err(byte_offset) | Ok(byte_offset)) = position_to_byte_offset(
                     position,
                     editor.window().buffer().rope(),
                     editor.window().vertical_scroll(),
@@ -108,7 +108,7 @@ fn handle_event_normal(
                         .window_mut()
                         .buffer_mut()
                         .selection_mut()
-                        .for_each_mut(|mut range| range.move_to(char_offset));
+                        .for_each_mut(|mut range| range.move_to(byte_offset));
                 } else {
                     handled = false;
                 }
@@ -122,7 +122,7 @@ fn handle_event_normal(
                     x: mouse_event.column,
                     y: mouse_event.row,
                 };
-                if let Some(Err(char_offset) | Ok(char_offset)) = position_to_char_offset(
+                if let Some(Err(byte_offset) | Ok(byte_offset)) = position_to_byte_offset(
                     position,
                     editor.window().buffer().rope(),
                     editor.window().vertical_scroll(),
@@ -132,7 +132,7 @@ fn handle_event_normal(
                         .window_mut()
                         .buffer_mut()
                         .selection_mut()
-                        .for_each_mut(|mut range| range.extend_to(char_offset));
+                        .for_each_mut(|mut range| range.extend_to(byte_offset));
                 } else {
                     handled = false;
                 }

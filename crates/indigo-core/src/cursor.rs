@@ -1,4 +1,9 @@
-use crate::{display_width::DisplayWidth, ot::EditSeq, rope::RopeExt as _, text::Text};
+use crate::{
+    display_width::DisplayWidth,
+    ot::EditSeq,
+    rope::{LINE_TYPE, RopeExt as _},
+    text::Text,
+};
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
 use std::thread;
@@ -6,14 +11,14 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Char offset {char_offset} exceeds end of text at {end_offset}")]
+    #[error("Byte offset {byte_offset} exceeds end of text at {end_offset}")]
     ExceedsEnd {
-        char_offset: usize,
+        byte_offset: usize,
         end_offset: usize,
     },
 
-    #[error("Char offset {char_offset} does not lie on grapheme boundary")]
-    NotOnGraphemeBoundary { char_offset: usize },
+    #[error("Byte offset {byte_offset} does not lie on grapheme boundary")]
+    NotOnGraphemeBoundary { byte_offset: usize },
 }
 
 /// <https://lord.io/text-editing-hates-you-too/#affinity>
@@ -25,14 +30,13 @@ pub enum Affinity {
 
 #[derive(Clone, Debug, Default)]
 pub struct CursorState {
-    /// Gap (offset) in text, counting by Unicode scalar values (`char`s).
-    pub char_offset: usize,
+    pub byte_offset: usize,
 }
 
 impl CursorState {
     /// Snap to nearest grapheme boundary. This is a no-op if the cursor is already valid.
     pub fn snap_to_grapheme_boundary(&mut self, text: &Rope) {
-        self.char_offset = text.ceil_grapheme_boundary(self.char_offset);
+        self.byte_offset = text.ceil_grapheme_boundary(self.byte_offset);
     }
 
     #[must_use]
@@ -84,70 +88,70 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     }
 
     #[must_use]
-    pub fn char_offset(&self) -> usize {
-        self.state.char_offset
+    pub fn byte_offset(&self) -> usize {
+        self.state.byte_offset
     }
 
-    pub fn char_index(&self, affinity: Affinity) -> Result<usize, Option<usize>> {
+    pub fn byte_index(&self, affinity: Affinity) -> Result<usize, Option<usize>> {
         let prev = || {
             self.text
-                .prev_grapheme_boundary(self.state.char_offset)
+                .prev_grapheme_boundary(self.state.byte_offset)
                 .expect("Not at start so previous grapheme boundary exists")
         };
         match affinity {
-            _ if self.text.len_chars() == 0 => Err(None),
-            Affinity::Before if self.is_at_start() => Err(Some(self.state.char_offset)),
+            _ if self.text.len() == 0 => Err(None),
+            Affinity::Before if self.is_at_start() => Err(Some(self.state.byte_offset)),
             Affinity::After if self.is_at_end() => Err(Some(prev())),
             Affinity::Before => Ok(prev()),
-            Affinity::After => Ok(self.state.char_offset),
+            Affinity::After => Ok(self.state.byte_offset),
         }
     }
 
     #[must_use]
     pub fn display_column(&self, affinity: Affinity) -> Option<usize> {
-        let Ok(char_index) = self.char_index(affinity) else {
+        let Ok(byte_index) = self.byte_index(affinity) else {
             return None;
         };
-        Some(self.text.display_column(char_index))
+        Some(self.text.display_column(byte_index))
     }
 
     #[must_use]
     pub fn grapheme(&self, affinity: Affinity) -> Option<RopeSlice<'_>> {
-        let Ok(char_index) = self.char_index(affinity) else {
+        let Ok(byte_index) = self.byte_index(affinity) else {
             return None;
         };
-        let start = char_index;
+        let start = byte_index;
         let end = self.text.next_grapheme_boundary(start)?;
         Some(self.text.slice(start..end))
     }
 
     #[must_use]
     pub fn line(&self, affinity: Affinity) -> Option<RopeSlice<'_>> {
-        let char_index = self.char_index(affinity).ok()?;
-        let line_index = self.text.char_to_line(char_index);
-        self.text.get_line(line_index)
+        let byte_index = self.byte_index(affinity).ok()?;
+        let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
+        self.text.get_line(line_index, LINE_TYPE)
     }
 
     #[must_use]
     pub fn is_at_start(&self) -> bool {
-        self.state.char_offset == 0
+        self.state.byte_offset == 0
     }
 
     #[must_use]
     pub fn is_at_end(&self) -> bool {
-        self.state.char_offset == self.text.len_chars()
+        self.state.byte_offset == self.text.len()
     }
 
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
-        if self.state.char_offset > self.text.len_chars() {
+        if self.state.byte_offset > self.text.len() {
             anyhow::bail!(Error::ExceedsEnd {
-                char_offset: self.state.char_offset,
-                end_offset: self.text.len_chars(),
+                byte_offset: self.state.byte_offset,
+                end_offset: self.text.len(),
             });
         }
-        if !self.text.is_grapheme_boundary(self.state.char_offset) {
+        if !self.text.is_grapheme_boundary(self.state.byte_offset) {
             anyhow::bail!(Error::NotOnGraphemeBoundary {
-                char_offset: self.state.char_offset,
+                byte_offset: self.state.byte_offset,
             });
         }
         Ok(())
@@ -159,17 +163,17 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.snap_to_grapheme_boundary(&self.text);
     }
 
-    pub fn move_to(&mut self, char_offset: usize) {
-        assert!(self.text.is_grapheme_boundary(char_offset));
-        self.state.char_offset = char_offset;
+    pub fn move_to(&mut self, byte_offset: usize) {
+        assert!(self.text.is_grapheme_boundary(byte_offset));
+        self.state.byte_offset = byte_offset;
     }
 
     pub fn move_left(&mut self, count: usize) -> bool {
         for _ in 0..count {
-            if let Some(prev) = self.text.prev_grapheme_boundary(self.state.char_offset)
-                && self.state.char_offset != prev
+            if let Some(prev) = self.text.prev_grapheme_boundary(self.state.byte_offset)
+                && self.state.byte_offset != prev
             {
-                self.state.char_offset = prev;
+                self.state.byte_offset = prev;
             } else {
                 return false;
             }
@@ -179,10 +183,10 @@ impl<W: WrapMut> CursorView<'_, W> {
 
     pub fn move_right(&mut self, count: usize) -> bool {
         for _ in 0..count {
-            if let Some(next) = self.text.next_grapheme_boundary(self.state.char_offset)
-                && self.state.char_offset != next
+            if let Some(next) = self.text.next_grapheme_boundary(self.state.byte_offset)
+                && self.state.byte_offset != next
             {
-                self.state.char_offset = next;
+                self.state.byte_offset = next;
             } else {
                 return false;
             }
@@ -191,24 +195,24 @@ impl<W: WrapMut> CursorView<'_, W> {
     }
 
     pub fn move_up(&mut self, goal_column: usize, affinity: Affinity, count: usize) -> bool {
-        if self.text.len_chars() == 0 {
+        if self.text.len() == 0 {
             return false;
         }
         for _ in 0..count {
             #[expect(clippy::manual_let_else)]
-            let char_index = match self.char_index(affinity) {
+            let byte_index = match self.byte_index(affinity) {
                 Ok(n) | Err(Some(n)) => n,
                 Err(None) => unreachable!("Already checked rope length"),
             };
-            let current_line_index = self.text.char_to_line(char_index);
+            let current_line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
             if current_line_index == 0 {
                 return false;
             }
             let target_line_index = current_line_index - 1;
-            let target_line_char_index = self.text.line_to_char(target_line_index);
-            let target_line_slice = self.text.line(target_line_index);
+            let target_line_byte_index = self.text.line_to_byte_idx(target_line_index, LINE_TYPE);
+            let target_line_slice = self.text.line(target_line_index, LINE_TYPE);
             let mut target_line_prefix = 0;
-            let mut char_offset = target_line_char_index;
+            let mut byte_offset = target_line_byte_index;
             for grapheme in target_line_slice.graphemes() {
                 if grapheme.chars().any(|c| c == '\n' || c == '\r') {
                     break;
@@ -218,36 +222,36 @@ impl<W: WrapMut> CursorView<'_, W> {
                     break;
                 }
                 target_line_prefix += grapheme_width;
-                char_offset += grapheme.len_chars();
+                byte_offset += grapheme.len();
             }
-            self.state.char_offset = char_offset;
+            self.state.byte_offset = byte_offset;
         }
         count > 0
     }
 
     pub fn move_down(&mut self, goal_column: usize, affinity: Affinity, count: usize) -> bool {
-        if self.text.len_chars() == 0 {
+        if self.text.len() == 0 {
             return false;
         }
         for _ in 0..count {
             #[expect(clippy::manual_let_else)]
-            let char_index = match self.char_index(affinity) {
+            let byte_index = match self.byte_index(affinity) {
                 Ok(n) | Err(Some(n)) => n,
                 Err(None) => unreachable!("Already checked rope length"),
             };
-            let current_line_index = self.text.char_to_line(char_index);
+            let current_line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
             let target_line_index = current_line_index + 1;
-            if self.state.char_offset == self.text.len_chars() {
+            if self.state.byte_offset == self.text.len() {
                 return false;
             }
             if target_line_index >= self.text.len_lines_indigo() {
-                self.state.char_offset = self.text.len_chars();
+                self.state.byte_offset = self.text.len();
                 return true;
             }
-            let target_line_char_index = self.text.line_to_char(target_line_index);
-            let target_line_slice = self.text.line(target_line_index);
+            let target_line_byte_index = self.text.line_to_byte_idx(target_line_index, LINE_TYPE);
+            let target_line_slice = self.text.line(target_line_index, LINE_TYPE);
             let mut target_line_prefix = 0;
-            let mut char_offset = target_line_char_index;
+            let mut byte_offset = target_line_byte_index;
             for grapheme in target_line_slice.graphemes() {
                 if grapheme.chars().any(|c| c == '\n' || c == '\r') {
                     break;
@@ -257,17 +261,17 @@ impl<W: WrapMut> CursorView<'_, W> {
                     break;
                 }
                 target_line_prefix += grapheme_width;
-                char_offset += grapheme.len_chars();
+                byte_offset += grapheme.len();
             }
-            self.state.char_offset = char_offset;
+            self.state.byte_offset = byte_offset;
         }
         count > 0
     }
 
     pub fn move_to_prev_byte(&mut self, byte: u8, count: usize) -> bool {
         for _ in 0..count {
-            if let Some(char_offset) = self.text.find_prev_byte(..self.state.char_offset, &[byte]) {
-                self.state.char_offset = char_offset;
+            if let Some(byte_offset) = self.text.find_prev_byte(..self.state.byte_offset, &[byte]) {
+                self.state.byte_offset = byte_offset;
                 self.move_right(1);
             } else {
                 return false;
@@ -278,8 +282,8 @@ impl<W: WrapMut> CursorView<'_, W> {
 
     pub fn move_to_next_byte(&mut self, byte: u8, count: usize) -> bool {
         for _ in 0..count {
-            if let Some(char_offset) = self.text.find_next_byte(self.state.char_offset.., &[byte]) {
-                self.state.char_offset = char_offset;
+            if let Some(byte_offset) = self.text.find_next_byte(self.state.byte_offset.., &[byte]) {
+                self.state.byte_offset = byte_offset;
             } else {
                 return false;
             }
@@ -290,8 +294,8 @@ impl<W: WrapMut> CursorView<'_, W> {
     pub fn move_to_prev_blank(&mut self, count: usize) -> bool {
         const BYTES: &[u8] = b" \t\n\r";
         for _ in 0..count {
-            if let Some(char_offset) = self.text.find_prev_byte(..self.state.char_offset, BYTES) {
-                self.state.char_offset = char_offset;
+            if let Some(byte_offset) = self.text.find_prev_byte(..self.state.byte_offset, BYTES) {
+                self.state.byte_offset = byte_offset;
                 self.move_right(1);
             } else {
                 return false;
@@ -303,8 +307,8 @@ impl<W: WrapMut> CursorView<'_, W> {
     pub fn move_to_next_blank(&mut self, count: usize) -> bool {
         const BYTES: &[u8] = b" \t\n\r";
         for _ in 0..count {
-            if let Some(char_offset) = self.text.find_next_byte(self.state.char_offset.., BYTES) {
-                self.state.char_offset = char_offset;
+            if let Some(byte_offset) = self.text.find_next_byte(self.state.byte_offset.., BYTES) {
+                self.state.byte_offset = byte_offset;
             } else {
                 return false;
             }
@@ -313,11 +317,11 @@ impl<W: WrapMut> CursorView<'_, W> {
     }
 
     pub fn move_to_start(&mut self) {
-        self.state.char_offset = 0;
+        self.state.byte_offset = 0;
     }
 
     pub fn move_to_end(&mut self) {
-        self.state.char_offset = self.text.len_chars();
+        self.state.byte_offset = self.text.len();
     }
 
     pub fn move_to_bottom(&mut self, affinity: Affinity) {
@@ -326,80 +330,83 @@ impl<W: WrapMut> CursorView<'_, W> {
     }
 
     pub fn move_to_line_start(&mut self, affinity: Affinity) {
-        if self.text.len_chars() == 0 {
+        if self.text.len() == 0 {
             return;
         }
 
         #[expect(clippy::manual_let_else)]
-        let char_index = match self.char_index(affinity) {
+        let byte_index = match self.byte_index(affinity) {
             Ok(n) | Err(Some(n)) => n,
             Err(None) => unreachable!("Already checked rope length"),
         };
 
-        let line_index = self.text.char_to_line(char_index);
-        let line_start_char_offset = self.text.line_to_char(line_index);
-        self.state.char_offset = line_start_char_offset;
+        let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
+        let line_start_byte_offset = self.text.line_to_byte_idx(line_index, LINE_TYPE);
+        self.state.byte_offset = line_start_byte_offset;
     }
 
     pub fn move_to_line_non_blank_start(&mut self, affinity: Affinity) {
-        if self.text.len_chars() == 0 {
+        if self.text.len() == 0 {
             return;
         }
 
         #[expect(clippy::manual_let_else)]
-        let char_index = match self.char_index(affinity) {
+        let byte_index = match self.byte_index(affinity) {
             Ok(n) | Err(Some(n)) => n,
             Err(None) => unreachable!("Already checked rope length"),
         };
 
-        let line_index = self.text.char_to_line(char_index);
-        let line_start_char_offset = self.text.line_to_char(line_index);
-        let line_slice = self.text.line(line_index);
-        let mut char_offset = line_start_char_offset;
+        let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
+        let line_start_byte_offset = self.text.line_to_byte_idx(line_index, LINE_TYPE);
+        let line_slice = self.text.line(line_index, LINE_TYPE);
+        let mut byte_offset = line_start_byte_offset;
         for grapheme in line_slice.graphemes() {
             if grapheme.chars().any(|c| c == '\n' || c == '\r') {
                 break;
             }
             if !grapheme.chars().all(|c| c.is_whitespace()) {
-                self.state.char_offset = char_offset;
+                self.state.byte_offset = byte_offset;
                 return;
             }
-            char_offset += grapheme.len_chars();
+            byte_offset += grapheme.len();
         }
-        self.state.char_offset = char_offset;
+        self.state.byte_offset = byte_offset;
     }
 
     pub fn move_to_line_end(&mut self, affinity: Affinity) {
-        if self.text.len_chars() == 0 || self.is_at_end() {
+        if self.text.len() == 0 || self.is_at_end() {
             return;
         }
 
         #[expect(clippy::manual_let_else)]
-        let char_index = match self.char_index(affinity) {
+        let byte_index = match self.byte_index(affinity) {
             Ok(n) | Err(Some(n)) => n,
             Err(None) => unreachable!("Already checked rope length"),
         };
 
-        let line_index = self.text.char_to_line(char_index);
+        let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
 
         if affinity == Affinity::Before
-            && self.text.char_to_line(self.state.char_offset) != line_index
+            && self
+                .text
+                .byte_to_line_idx(self.state.byte_offset, LINE_TYPE)
+                != line_index
         {
             // Already past the newline of the line we have affinity for
             return;
         }
 
         // Find last character before line ending
-        let line_start_char_offset = self.text.line_to_char(line_index);
-        let line_slice = self.text.line(line_index);
-        let mut char_offset = line_start_char_offset;
+        let line_start_byte_offset = self.text.line_to_byte_idx(line_index, LINE_TYPE);
+        let line_slice = self.text.line(line_index, LINE_TYPE);
+        let mut byte_offset = line_start_byte_offset;
         for grapheme in line_slice.graphemes() {
             if grapheme.chars().any(|c| c == '\n' || c == '\r') {
                 break;
             }
-            char_offset += grapheme.len_chars();
+            byte_offset += grapheme.len();
         }
-        self.state.char_offset = char_offset;
+        self.state.byte_offset = byte_offset;
     }
 
     pub fn insert_char(&mut self, char: char) -> EditSeq {
@@ -409,11 +416,11 @@ impl<W: WrapMut> CursorView<'_, W> {
     pub fn insert(&mut self, text: &str) -> EditSeq {
         self.assert_invariants().unwrap();
         let mut edits = EditSeq::new();
-        edits.retain(self.state.char_offset);
+        edits.retain(self.state.byte_offset);
         edits.insert(text);
         edits.retain_rest(&self.text);
         self.text.edit(&edits).expect("Edits are well formed");
-        self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
+        self.state.byte_offset = edits.transform_byte_offset(self.state.byte_offset);
         self.snap_to_grapheme_boundary();
         edits
     }
@@ -421,20 +428,20 @@ impl<W: WrapMut> CursorView<'_, W> {
     // Behavior traditionally associated with the Backspace key.
     pub fn delete_before(&mut self) -> Option<EditSeq> {
         self.assert_invariants().unwrap();
-        let mut char_offset = self.state.char_offset;
-        if let Some(prev) = self.text.prev_grapheme_boundary(char_offset)
-            && char_offset != prev
+        let mut byte_offset = self.state.byte_offset;
+        if let Some(prev) = self.text.prev_grapheme_boundary(byte_offset)
+            && byte_offset != prev
         {
-            char_offset = prev;
+            byte_offset = prev;
         } else {
             return None;
         }
         let mut edits = EditSeq::new();
-        edits.retain(char_offset);
-        edits.delete(self.state.char_offset - char_offset);
+        edits.retain(byte_offset);
+        edits.delete(self.state.byte_offset - byte_offset);
         edits.retain_rest(&self.text);
         self.text.edit(&edits).expect("Edits are well formed");
-        self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
+        self.state.byte_offset = edits.transform_byte_offset(self.state.byte_offset);
         self.snap_to_grapheme_boundary();
         Some(edits)
     }
@@ -442,20 +449,20 @@ impl<W: WrapMut> CursorView<'_, W> {
     // Behavior traditionally associated with the Delete key.
     pub fn delete_after(&mut self) -> Option<EditSeq> {
         self.assert_invariants().unwrap();
-        let mut char_offset = self.state.char_offset;
-        if let Some(next) = self.text.next_grapheme_boundary(char_offset)
-            && char_offset != next
+        let mut byte_offset = self.state.byte_offset;
+        if let Some(next) = self.text.next_grapheme_boundary(byte_offset)
+            && byte_offset != next
         {
-            char_offset = next;
+            byte_offset = next;
         } else {
             return None;
         }
         let mut edits = EditSeq::new();
-        edits.retain(self.state.char_offset);
-        edits.delete(char_offset - self.state.char_offset);
+        edits.retain(self.state.byte_offset);
+        edits.delete(byte_offset - self.state.byte_offset);
         edits.retain_rest(&self.text);
         self.text.edit(&edits).expect("Edits are well formed");
-        self.state.char_offset = edits.transform_char_offset(self.state.char_offset);
+        self.state.byte_offset = edits.transform_byte_offset(self.state.byte_offset);
         self.snap_to_grapheme_boundary();
         Some(edits)
     }
@@ -466,9 +473,9 @@ where
     R: Into<Text>,
 {
     type Error = anyhow::Error;
-    fn try_from((text, char_offset): (R, usize)) -> anyhow::Result<Self> {
+    fn try_from((text, byte_offset): (R, usize)) -> anyhow::Result<Self> {
         let text = Box::new(text.into());
-        let state = Box::new(CursorState { char_offset });
+        let state = Box::new(CursorState { byte_offset });
         Self::new(text, state)
     }
 }
@@ -518,37 +525,37 @@ mod tests {
 
         cursor.insert("hello");
         assert_eq!(**cursor.text, "hello");
-        assert_eq!(cursor.char_offset(), 5);
+        assert_eq!(cursor.byte_offset(), 5);
 
         cursor.delete_before();
         cursor.delete_before();
         assert_eq!(**cursor.text, "hel");
-        assert_eq!(cursor.char_offset(), 3);
+        assert_eq!(cursor.byte_offset(), 3);
 
         cursor.move_left(2);
-        assert_eq!(cursor.char_offset(), 1);
+        assert_eq!(cursor.byte_offset(), 1);
 
         cursor.delete_after();
-        assert_eq!(cursor.char_offset(), 1);
+        assert_eq!(cursor.byte_offset(), 1);
         assert_eq!(**cursor.text, "hl");
 
         cursor.move_right(1);
-        assert_eq!(cursor.char_offset(), 2);
+        assert_eq!(cursor.byte_offset(), 2);
         cursor.move_right(1);
-        assert_eq!(cursor.char_offset(), 2);
+        assert_eq!(cursor.byte_offset(), 2);
 
         cursor.delete_after();
         assert_eq!(**cursor.text, "hl");
-        assert_eq!(cursor.char_offset(), 2);
+        assert_eq!(cursor.byte_offset(), 2);
 
         cursor.delete_before();
         cursor.delete_before();
         assert_eq!(**cursor.text, "");
-        assert_eq!(cursor.char_offset(), 0);
+        assert_eq!(cursor.byte_offset(), 0);
 
         cursor.delete_before();
         assert_eq!(**cursor.text, "");
-        assert_eq!(cursor.char_offset(), 0);
+        assert_eq!(cursor.byte_offset(), 0);
     }
 
     #[test]
@@ -567,20 +574,20 @@ mod tests {
             cursor.line(Affinity::Before).map(|rope| rope.to_string()),
             Some(String::from("6789AB\n"))
         );
-        assert_eq!(cursor.char_offset(), 13);
-        assert_eq!(cursor.char_offset(), text.chars().count());
+        assert_eq!(cursor.byte_offset(), 13);
+        assert_eq!(cursor.byte_offset(), text.len());
         assert_eq!(cursor.display_column(Affinity::Before), Some(6));
 
         cursor.move_left(1);
         // At final newline on line 2.
         assert_eq!(cursor.grapheme(affinity), Some(Rope::from("\n").slice(..)));
-        assert_eq!(cursor.char_offset(), 12);
+        assert_eq!(cursor.byte_offset(), 12);
         assert_eq!(cursor.display_column(Affinity::After), Some(6));
 
         cursor.move_up(cursor.display_column(affinity).unwrap_or(0), affinity, 1);
         // At second newline on line 1, which is shorter than the goal column.
         assert_eq!(cursor.grapheme(affinity), Some(Rope::from("\n").slice(..)));
-        assert_eq!(cursor.char_offset(), 5);
+        assert_eq!(cursor.byte_offset(), 5);
         // Goal column should remain the same through vertical movement.
         assert_eq!(cursor.display_column(Affinity::After), Some(3));
 
@@ -595,7 +602,7 @@ mod tests {
             cursor.line(Affinity::Before).map(|rope| rope.to_string()),
             Some(String::from("234\n"))
         );
-        assert_eq!(cursor.char_offset(), 4);
+        assert_eq!(cursor.byte_offset(), 4);
         // Goal column should change through horizontal movement.
         assert_eq!(cursor.display_column(Affinity::After), Some(2));
     }
@@ -610,51 +617,51 @@ mod tests {
             // newline, because it's considered at the start of line 2.
             (Affinity::After, 3),
         ];
-        for (affinity, char_offset) in cases {
+        for (affinity, byte_offset) in cases {
             let mut cursor = CursorView::try_from(("x\ny\n", 0)).unwrap();
-            assert_eq!(cursor.char_offset(), 0);
+            assert_eq!(cursor.byte_offset(), 0);
             cursor.move_to_next_byte(b'\n', 1);
             cursor.move_right(1);
-            assert_eq!(cursor.char_offset(), 2);
+            assert_eq!(cursor.byte_offset(), 2);
             cursor.move_to_line_end(affinity);
             assert_eq!(
-                cursor.char_offset(),
-                char_offset,
+                cursor.byte_offset(),
+                byte_offset,
                 "with affinity={affinity:?}"
             );
         }
     }
 
     #[test]
-    fn char_index() {
+    fn byte_index() {
         let cursor = CursorView::try_from(("xy", 1)).unwrap();
-        assert_eq!(cursor.char_index(Affinity::Before), Ok(0));
-        assert_eq!(cursor.char_index(Affinity::After), Ok(1));
+        assert_eq!(cursor.byte_index(Affinity::Before), Ok(0));
+        assert_eq!(cursor.byte_index(Affinity::After), Ok(1));
         assert_eq!(cursor.text().char(0), 'x');
         assert_eq!(cursor.text().char(1), 'y');
 
         let cursor = CursorView::try_from(("x", 0)).unwrap();
-        assert_eq!(cursor.char_index(Affinity::Before), Err(Some(0)));
+        assert_eq!(cursor.byte_index(Affinity::Before), Err(Some(0)));
 
         let cursor = CursorView::try_from(("x", 1)).unwrap();
-        assert_eq!(cursor.char_index(Affinity::After), Err(Some(0)));
+        assert_eq!(cursor.byte_index(Affinity::After), Err(Some(0)));
 
         let cursor = CursorView::try_from(("", 0)).unwrap();
-        assert_eq!(cursor.char_index(Affinity::Before), Err(None));
-        assert_eq!(cursor.char_index(Affinity::After), Err(None));
+        assert_eq!(cursor.byte_index(Affinity::Before), Err(None));
+        assert_eq!(cursor.byte_index(Affinity::After), Err(None));
     }
 
     #[test]
     fn fuzz() {
         arbtest(|u| {
             let text = Text::new();
-            let char_offset = if u.arbitrary::<bool>()? {
+            let byte_offset = if u.arbitrary::<bool>()? {
                 text.floor_grapheme_boundary(u.arbitrary::<usize>()?)
             } else {
                 text.ceil_grapheme_boundary(u.arbitrary::<usize>()?)
             };
             let affinity = Affinity::After;
-            let mut cursor = CursorView::try_from((text, char_offset)).unwrap();
+            let mut cursor = CursorView::try_from((text, byte_offset)).unwrap();
             let (tx, rx) = mpsc::channel();
             defer!(|| {
                 if thread::panicking() {

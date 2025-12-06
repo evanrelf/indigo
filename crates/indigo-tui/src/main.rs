@@ -5,9 +5,10 @@ use hdrhistogram::Histogram;
 use indigo_core::{
     fs::RealFs,
     prelude::{Buffer, *},
+    rope::LINE_TYPE,
 };
 use indigo_tui::{
-    areas::{Areas, char_index_to_area, line_index_to_area},
+    areas::{Areas, byte_index_to_area, line_index_to_area},
     event::{handle_event, should_skip_event},
     terminal,
     terminal::TerminalGuard,
@@ -243,8 +244,8 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
 
         Line::raw(Cow::<str>::from(normal_mode.rope())).render(area, surface);
 
-        if let Some(rect) = char_index_to_area(
-            normal_mode.cursor().char_offset(),
+        if let Some(rect) = byte_index_to_area(
+            normal_mode.cursor().byte_offset(),
             normal_mode.rope(),
             0,
             area,
@@ -298,8 +299,8 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         let selection = window.buffer().selection();
         let state = selection.state();
         let primary = &state.ranges[state.primary_range];
-        let anchor = primary.anchor.char_offset;
-        let head = primary.head.char_offset;
+        let anchor = primary.anchor.byte_offset;
+        let head = primary.head.byte_offset;
 
         let count = match editor.mode.count() {
             Some(count) if count.get() == usize::MAX => &String::from(" count=∞"),
@@ -354,7 +355,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let buffer = window.buffer();
 
-    let lines = buffer.rope().lines_at(window.vertical_scroll());
+    let lines = buffer.rope().lines_at(window.vertical_scroll(), LINE_TYPE);
 
     let rows = area.rows();
 
@@ -362,8 +363,8 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     'line: for (line, mut rect) in lines.zip(rows) {
         'grapheme: for grapheme in line.graphemes() {
             let span = match grapheme.get_char(0) {
-                Some('\t') => Span::styled("→       ", Color::from_u32(0x00_eeeeee)),
-                Some('\n') => Span::styled("¬", Color::from_u32(0x0_eeeeee)),
+                Ok('\t') => Span::styled("→       ", Color::from_u32(0x00_eeeeee)),
+                Ok('\n') => Span::styled("¬", Color::from_u32(0x0_eeeeee)),
                 _ => Span::raw(grapheme),
             };
 
@@ -397,17 +398,18 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
     let vertical_scroll = window.vertical_scroll();
 
     buffer.selection().for_each(|range| {
-        let start_line = rope.char_to_line(range.start().char_offset());
+        let start_line = rope.byte_to_line_idx(range.start().byte_offset(), LINE_TYPE);
 
-        let end_line = rope.char_to_line(range.end().char_offset().saturating_sub(1));
+        let end_byte = range.end().byte_offset().saturating_sub(1);
+        let end_line = rope.byte_to_line_idx(end_byte, LINE_TYPE);
 
         let grapheme_area =
-            |char_index| char_index_to_area(char_index, rope, vertical_scroll, area);
+            |byte_index| byte_index_to_area(byte_index, rope, vertical_scroll, area);
 
         let line_area = |line_index| line_index_to_area(line_index, rope, vertical_scroll, area);
 
         if range.is_empty() {
-            if let Some(rect) = grapheme_area(range.head().char_offset()) {
+            if let Some(rect) = grapheme_area(range.head().byte_offset()) {
                 surface.set_style(rect, Style::default().bg(RED));
             }
             return;
@@ -417,7 +419,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
             .filter_map(|line_index| line_area(line_index).map(|rect| (line_index, rect)))
         {
             if line_index == start_line {
-                if let Some(start_rect) = grapheme_area(range.start().char_offset()) {
+                if let Some(start_rect) = grapheme_area(range.start().byte_offset()) {
                     let delta = start_rect.x - line_rect.x;
                     line_rect.x += delta;
                     line_rect.width -= delta;
@@ -431,7 +433,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
             }
             #[expect(clippy::collapsible_if)]
             if line_index == end_line {
-                if let Some(end_rect) = grapheme_area(range.end().char_offset().saturating_sub(1)) {
+                if let Some(end_rect) = grapheme_area(range.end().byte_offset().saturating_sub(1)) {
                     let delta = line_rect.right() - end_rect.right();
                     line_rect.width -= delta;
                 }
@@ -441,11 +443,11 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
 
         #[expect(clippy::collapsible_else_if)]
         if range.is_backward() {
-            if let Some(rect) = grapheme_area(range.head().char_offset()) {
+            if let Some(rect) = grapheme_area(range.head().byte_offset()) {
                 surface.set_style(rect, Style::default().bg(DARK_YELLOW));
             }
         } else {
-            if let Some(rect) = grapheme_area(range.head().char_offset().saturating_sub(1)) {
+            if let Some(rect) = grapheme_area(range.head().byte_offset().saturating_sub(1)) {
                 surface.set_style(rect, Style::default().bg(DARK_YELLOW));
             }
         }

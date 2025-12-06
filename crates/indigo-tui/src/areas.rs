@@ -1,4 +1,4 @@
-use indigo_core::prelude::*;
+use indigo_core::{prelude::*, rope::LINE_TYPE};
 use ratatui::layout::{Constraint, Layout, Position, Rect};
 
 #[derive(Clone, Copy, Default)]
@@ -54,7 +54,7 @@ impl Areas {
 /// Examples of corrections: snapping to the beginning of the grapheme, snapping to the end of the
 /// line, and snapping to the end of the buffer.
 #[must_use]
-pub fn position_to_char_offset(
+pub fn position_to_byte_offset(
     position: Position,
     rope: &Rope,
     vertical_scroll: usize,
@@ -72,17 +72,15 @@ pub fn position_to_char_offset(
 
     let y = usize::from(position.y - area.y) + vertical_scroll;
 
-    let Some(line) = rope.get_line(y) else {
+    let Some(line) = rope.get_line(y, LINE_TYPE) else {
         // Position goes beyond last line of rope, so we snap to last character of rope
-        return Some(Err(rope.len_chars()));
+        return Some(Err(rope.len()));
     };
 
-    let line_char_offset = rope
-        .try_line_to_char(y)
-        .expect("Line is known to exist at this point");
+    let line_byte_offset = rope.line_to_byte_idx(y, LINE_TYPE);
 
     let mut line_prefix = 0;
-    let mut char_offset = line_char_offset;
+    let mut byte_offset = line_byte_offset;
 
     for grapheme in line.graphemes() {
         if grapheme.chars().any(|c| c == '\n' || c == '\r') {
@@ -92,14 +90,14 @@ pub fn position_to_char_offset(
         let grapheme_width = grapheme.display_width();
 
         if line_prefix + grapheme_width > x {
-            return Some(Ok(char_offset));
+            return Some(Ok(byte_offset));
         }
 
         line_prefix += grapheme_width;
-        char_offset += grapheme.len_chars();
+        byte_offset += grapheme.len();
     }
 
-    Some(Err(char_offset))
+    Some(Err(byte_offset))
 }
 
 #[must_use]
@@ -125,10 +123,10 @@ pub fn line_index_to_area(
     // TODO(horizontal_scroll)
     let x = area.x;
 
-    let line = rope.get_line(line_index)?;
+    let line = rope.get_line(line_index, LINE_TYPE)?;
 
     // Assumes a minimum grapheme width of 1
-    let width = if line.len_chars() >= usize::from(area.width) {
+    let width = if line.len() >= usize::from(area.width) {
         // Avoid expensive display width calculation if we know it would exceed the viewport width
         area.width
     } else {
@@ -144,14 +142,18 @@ pub fn line_index_to_area(
 }
 
 #[must_use]
-pub fn char_index_to_area(
-    char_index: usize,
+pub fn byte_index_to_area(
+    byte_index: usize,
     rope: &Rope,
     vertical_scroll: usize,
     // TODO(horizontal_scroll)
     area: Rect,
 ) -> Option<Rect> {
-    let line_index = rope.try_char_to_line(char_index).ok()?;
+    if byte_index > rope.len() {
+        return None;
+    }
+
+    let line_index = rope.byte_to_line_idx(byte_index, LINE_TYPE);
 
     if vertical_scroll > line_index {
         return None;
@@ -165,11 +167,11 @@ pub fn char_index_to_area(
         return None;
     }
 
-    let line_char_index = rope.line_to_char(line_index);
+    let line_byte_index = rope.line_to_byte_idx(line_index, LINE_TYPE);
 
-    let char_index = rope.floor_grapheme_boundary(char_index);
+    let byte_index = rope.floor_grapheme_boundary(byte_index);
 
-    let prefix_width = rope.slice(line_char_index..char_index).display_width();
+    let prefix_width = rope.slice(line_byte_index..byte_index).display_width();
 
     // TODO(horizontal_scroll): When horizontal scroll is introduced, still return portion of rect
     // that is visible. Even if it starts to the left of the area, it might be wide enough to peek
@@ -180,10 +182,10 @@ pub fn char_index_to_area(
         return None;
     }
 
-    let width = if rope.len_chars() == char_index {
+    let width = if rope.len() == byte_index {
         // Cursor at end of text
         1
-    } else if let Some(grapheme) = rope.get_grapheme(char_index) {
+    } else if let Some(grapheme) = rope.get_grapheme(byte_index) {
         u16::try_from(grapheme.display_width())
             .expect("No grapheme exists with a display width > u16::MAX")
     } else {

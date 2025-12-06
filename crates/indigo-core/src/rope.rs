@@ -2,8 +2,11 @@ use crate::{
     display_width::DisplayWidth as _,
     grapheme::{self, Graphemes},
 };
-use ropey::{Rope, RopeSlice};
+use regex_cursor::{Cursor, IntoCursor};
+use ropey::{LineType, Rope, RopeSlice};
 use std::ops::{Bound, RangeBounds};
+
+pub const LINE_TYPE: LineType = LineType::LF_CR;
 
 pub trait RopeExt {
     fn as_slice(&self) -> RopeSlice<'_>;
@@ -16,14 +19,14 @@ pub trait RopeExt {
     #[expect(clippy::bool_to_int_with_if)]
     fn len_lines_indigo(&self) -> usize {
         let rope = self.as_slice();
-        if rope.len_chars() == 0 {
+        if rope.len() == 0 {
             return 0;
         }
-        let last_char = rope.char(rope.len_chars() - 1);
-        rope.len_lines() - if last_char == '\n' { 1 } else { 0 }
+        let last_byte = rope.byte(rope.len() - 1);
+        rope.len_lines(LINE_TYPE) - if last_byte == b'\n' { 1 } else { 0 }
     }
 
-    fn find_next_byte<R>(&self, char_range: R, needles: &[u8]) -> Option<usize>
+    fn find_next_byte<R>(&self, byte_range: R, needles: &[u8]) -> Option<usize>
     where
         R: RangeBounds<usize> + Clone,
     {
@@ -31,8 +34,9 @@ pub trait RopeExt {
             return None;
         }
 
-        let rope = self.as_slice().slice(char_range.clone());
-        let start = match char_range.start_bound() {
+        let rope = self.as_slice().slice(byte_range.clone());
+
+        let start = match byte_range.start_bound() {
             Bound::Included(n) => *n,
             Bound::Excluded(_) => unreachable!("wtf"),
             Bound::Unbounded => 0,
@@ -60,10 +64,10 @@ pub trait RopeExt {
             }
         }
 
-        needle_index.map(|byte_index| start + rope.byte_to_char(byte_index))
+        needle_index.map(|byte_index| start + byte_index)
     }
 
-    fn find_prev_byte<R>(&self, char_range: R, needles: &[u8]) -> Option<usize>
+    fn find_prev_byte<R>(&self, byte_range: R, needles: &[u8]) -> Option<usize>
     where
         R: RangeBounds<usize> + Clone,
     {
@@ -71,11 +75,12 @@ pub trait RopeExt {
             return None;
         }
 
-        let rope = self.as_slice().slice(char_range.clone());
-        let end = match char_range.end_bound() {
+        let rope = self.as_slice().slice(byte_range.clone());
+
+        let end = match byte_range.end_bound() {
             Bound::Included(n) => *n,
-            Bound::Excluded(n) => rope.byte_to_char(rope.char_to_byte(*n).saturating_sub(1)),
-            Bound::Unbounded => rope.len_chars().saturating_sub(1),
+            Bound::Excluded(n) => n.saturating_sub(1),
+            Bound::Unbounded => rope.len().saturating_sub(1),
         };
 
         let mut needle_index: Option<usize> = None;
@@ -84,7 +89,7 @@ pub trait RopeExt {
             match chunk.len() {
                 3 => {
                     let haystack = rope
-                        .chunks_at_char(rope.len_chars())
+                        .chunks_at(rope.len())
                         .0
                         .reversed()
                         .map(|c| c.as_bytes());
@@ -95,7 +100,7 @@ pub trait RopeExt {
                 _ => {
                     for &needle in chunk {
                         let haystack = rope
-                            .chunks_at_char(rope.len_chars())
+                            .chunks_at(rope.len())
                             .0
                             .reversed()
                             .map(|c| c.as_bytes());
@@ -108,49 +113,48 @@ pub trait RopeExt {
             }
         }
 
-        needle_index.map(|byte_index| end - rope.byte_to_char(byte_index))
+        needle_index.map(|byte_index| end - byte_index)
     }
 
-    fn get_grapheme(&self, char_index: usize) -> Option<RopeSlice<'_>> {
+    fn get_grapheme(&self, byte_index: usize) -> Option<RopeSlice<'_>> {
         let rope = self.as_slice();
-        let start = char_index;
-        rope.next_grapheme_boundary(start)
-            .map(|end| rope.slice(start..end))
+        rope.next_grapheme_boundary(byte_index)
+            .map(|end| rope.slice(byte_index..end))
     }
 
-    fn grapheme(&self, char_index: usize) -> RopeSlice<'_> {
-        self.get_grapheme(char_index).unwrap()
+    fn grapheme(&self, byte_index: usize) -> RopeSlice<'_> {
+        self.get_grapheme(byte_index).unwrap()
     }
 
     fn graphemes(&self) -> Graphemes<'_> {
         Graphemes::new(&self.as_slice())
     }
 
-    fn is_grapheme_boundary(&self, char_offset: usize) -> bool {
-        grapheme::is_grapheme_boundary(&self.as_slice(), char_offset)
+    fn is_grapheme_boundary(&self, byte_offset: usize) -> bool {
+        grapheme::is_grapheme_boundary(&self.as_slice(), byte_offset)
     }
 
-    fn prev_grapheme_boundary(&self, char_offset: usize) -> Option<usize> {
-        grapheme::prev_grapheme_boundary(&self.as_slice(), char_offset)
+    fn prev_grapheme_boundary(&self, byte_offset: usize) -> Option<usize> {
+        grapheme::prev_grapheme_boundary(&self.as_slice(), byte_offset)
     }
 
-    fn next_grapheme_boundary(&self, char_offset: usize) -> Option<usize> {
-        grapheme::next_grapheme_boundary(&self.as_slice(), char_offset)
+    fn next_grapheme_boundary(&self, byte_offset: usize) -> Option<usize> {
+        grapheme::next_grapheme_boundary(&self.as_slice(), byte_offset)
     }
 
-    fn floor_grapheme_boundary(&self, char_offset: usize) -> usize {
-        grapheme::floor_grapheme_boundary(&self.as_slice(), char_offset)
+    fn floor_grapheme_boundary(&self, byte_offset: usize) -> usize {
+        grapheme::floor_grapheme_boundary(&self.as_slice(), byte_offset)
     }
 
-    fn ceil_grapheme_boundary(&self, char_offset: usize) -> usize {
-        grapheme::ceil_grapheme_boundary(&self.as_slice(), char_offset)
+    fn ceil_grapheme_boundary(&self, byte_offset: usize) -> usize {
+        grapheme::ceil_grapheme_boundary(&self.as_slice(), byte_offset)
     }
 
-    fn display_column(&self, char_index: usize) -> usize {
+    fn display_column(&self, byte_index: usize) -> usize {
         let rope = self.as_slice();
-        let line_index = rope.char_to_line(char_index);
-        let line_char_index = rope.line_to_char(line_index);
-        rope.slice(line_char_index..char_index).display_width()
+        let line_index = rope.byte_to_line_idx(byte_index, LINE_TYPE);
+        let line_byte_index = rope.line_to_byte_idx(line_index, LINE_TYPE);
+        rope.slice(line_byte_index..byte_index).display_width()
     }
 }
 
@@ -163,6 +167,141 @@ impl RopeExt for RopeSlice<'_> {
 impl RopeExt for Rope {
     fn as_slice(&self) -> RopeSlice<'_> {
         self.slice(0..)
+    }
+}
+
+#[derive(Clone, Copy)]
+enum Pos {
+    ChunkStart,
+    ChunkEnd,
+}
+
+pub struct RegexCursorInput<'a>(RopeSlice<'a>);
+
+impl<'a> From<RopeSlice<'a>> for RegexCursorInput<'a> {
+    fn from(slice: RopeSlice<'a>) -> Self {
+        Self(slice)
+    }
+}
+
+impl<'a> From<&'a Rope> for RegexCursorInput<'a> {
+    fn from(rope: &'a Rope) -> Self {
+        Self(rope.slice(..))
+    }
+}
+
+impl<'a> IntoCursor for RegexCursorInput<'a> {
+    type Cursor = RopeyCursor<'a>;
+
+    fn into_cursor(self) -> Self::Cursor {
+        RopeyCursor::new(self.0)
+    }
+}
+
+#[derive(Clone)]
+pub struct RopeyCursor<'a> {
+    iter: ropey::iter::Chunks<'a>,
+    current: &'a [u8],
+    pos: Pos,
+    len: usize,
+    offset: usize,
+}
+
+impl<'a> RopeyCursor<'a> {
+    #[must_use]
+    pub fn new(slice: RopeSlice<'a>) -> Self {
+        let iter = slice.chunks();
+        let mut res = Self {
+            current: &[],
+            iter,
+            pos: Pos::ChunkEnd,
+            len: slice.len(),
+            offset: 0,
+        };
+        res.advance();
+        res
+    }
+
+    #[must_use]
+    pub fn at(slice: RopeSlice<'a>, at: usize) -> Self {
+        let (iter, offset) = slice.chunks_at(at);
+        if offset == slice.len() {
+            let mut res = Self {
+                current: &[],
+                iter,
+                pos: Pos::ChunkStart,
+                len: slice.len(),
+                offset,
+            };
+            res.backtrack();
+            res
+        } else {
+            let mut res = Self {
+                current: &[],
+                iter,
+                pos: Pos::ChunkEnd,
+                len: slice.len(),
+                offset,
+            };
+            res.advance();
+            res
+        }
+    }
+}
+
+impl Cursor for RopeyCursor<'_> {
+    fn chunk(&self) -> &[u8] {
+        self.current
+    }
+
+    fn advance(&mut self) -> bool {
+        match self.pos {
+            Pos::ChunkStart => {
+                self.iter.next();
+                self.pos = Pos::ChunkEnd;
+            }
+            Pos::ChunkEnd => (),
+        }
+        for next in self.iter.by_ref() {
+            if next.is_empty() {
+                continue;
+            }
+            self.offset += self.current.len();
+            self.current = next.as_bytes();
+            return true;
+        }
+        false
+    }
+
+    fn backtrack(&mut self) -> bool {
+        match self.pos {
+            Pos::ChunkStart => {}
+            Pos::ChunkEnd => {
+                self.iter.prev();
+                self.pos = Pos::ChunkStart;
+            }
+        }
+        while let Some(prev) = self.iter.prev() {
+            if prev.is_empty() {
+                continue;
+            }
+            self.offset -= prev.len();
+            self.current = prev.as_bytes();
+            return true;
+        }
+        false
+    }
+
+    fn utf8_aware(&self) -> bool {
+        true
+    }
+
+    fn total_bytes(&self) -> Option<usize> {
+        Some(self.len)
+    }
+
+    fn offset(&self) -> usize {
+        self.offset
     }
 }
 
@@ -244,64 +383,78 @@ pub fn memrchr3<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn rope_length() {
         let rope = Rope::default();
-        assert_eq!(rope.len_chars(), 0);
-        assert_eq!(rope.len_lines(), 1);
+        assert_eq!(rope.chars().count(), 0);
+        assert_eq!(rope.len_lines(LINE_TYPE), 1);
         assert_eq!(rope.len_lines_indigo(), 0);
 
         let rope = Rope::from_str("x");
-        assert_eq!(rope.len_chars(), 1);
-        assert_eq!(rope.len_lines(), 1);
+        assert_eq!(rope.chars().count(), 1);
+        assert_eq!(rope.len_lines(LINE_TYPE), 1);
         assert_eq!(rope.len_lines_indigo(), 1);
 
         let rope = Rope::from_str("\n");
-        assert_eq!(rope.len_chars(), 1);
-        assert_eq!(rope.len_lines(), 2);
+        assert_eq!(rope.chars().count(), 1);
+        assert_eq!(rope.len_lines(LINE_TYPE), 2);
         assert_eq!(rope.len_lines_indigo(), 1);
 
         let rope = Rope::from_str("x\n");
-        assert_eq!(rope.len_chars(), 2);
-        assert_eq!(rope.len_lines(), 2);
+        assert_eq!(rope.chars().count(), 2);
+        assert_eq!(rope.len_lines(LINE_TYPE), 2);
         assert_eq!(rope.len_lines_indigo(), 1);
 
         let rope = Rope::from_str("x\ny\nz");
-        assert_eq!(rope.len_chars(), 5);
-        assert_eq!(rope.len_lines(), 3);
+        assert_eq!(rope.chars().count(), 5);
+        assert_eq!(rope.len_lines(LINE_TYPE), 3);
         assert_eq!(rope.len_lines_indigo(), 3);
 
         let rope = Rope::from_str("x\ny\nz\n");
-        assert_eq!(rope.len_chars(), 6);
-        assert_eq!(rope.len_lines(), 4);
+        assert_eq!(rope.chars().count(), 6);
+        assert_eq!(rope.len_lines(LINE_TYPE), 4);
         assert_eq!(rope.len_lines_indigo(), 3);
     }
 
     #[test]
     fn rope_char() {
-        assert_eq!(Rope::default().get_char(0), None);
-        assert_eq!(Rope::default().get_char(1), None);
-        assert_eq!(Rope::from_str("xyz").get_char(0), Some('x'));
-        assert_eq!(Rope::from_str("xyz").get_char(1), Some('y'));
-        assert_eq!(Rope::from_str("xyz").get_char(2), Some('z'));
-        assert_eq!(Rope::from_str("xyz").get_char(3), None);
+        assert_eq!(Rope::default().get_char(0).ok(), None);
+        assert_eq!(Rope::default().get_char(1).ok(), None);
+        assert_eq!(Rope::from_str("xyz").get_char(0).ok(), Some('x'));
+        assert_eq!(Rope::from_str("xyz").get_char(1).ok(), Some('y'));
+        assert_eq!(Rope::from_str("xyz").get_char(2).ok(), Some('z'));
+        assert_eq!(Rope::from_str("xyz").get_char(3).ok(), None);
     }
 
     #[test]
     fn rope_line() {
-        assert_eq!(Rope::default().get_line(0), Some("".into()));
-        assert_eq!(Rope::from_str("x\ny\nz").get_line(9), None);
-        assert_eq!(Rope::from_str("x").get_line(0), Some("x".into()));
-        assert_eq!(Rope::from_str("x\n").get_line(0), Some("x\n".into()));
-        assert_eq!(Rope::from_str("\nx").get_line(0), Some("\n".into()));
-        assert_eq!(Rope::from_str("\nx").get_line(1), Some("x".into()));
-        assert_eq!(Rope::from_str("x\ny\r\nz").get_line(0), Some("x\n".into()));
+        assert_eq!(Rope::default().get_line(0, LINE_TYPE), Some("".into()));
+        assert_eq!(Rope::from_str("x\ny\nz").get_line(9, LINE_TYPE), None);
+        assert_eq!(Rope::from_str("x").get_line(0, LINE_TYPE), Some("x".into()));
         assert_eq!(
-            Rope::from_str("x\ny\r\nz").get_line(1),
+            Rope::from_str("x\n").get_line(0, LINE_TYPE),
+            Some("x\n".into())
+        );
+        assert_eq!(
+            Rope::from_str("\nx").get_line(0, LINE_TYPE),
+            Some("\n".into())
+        );
+        assert_eq!(
+            Rope::from_str("\nx").get_line(1, LINE_TYPE),
+            Some("x".into())
+        );
+        assert_eq!(
+            Rope::from_str("x\ny\r\nz").get_line(0, LINE_TYPE),
+            Some("x\n".into())
+        );
+        assert_eq!(
+            Rope::from_str("x\ny\r\nz").get_line(1, LINE_TYPE),
             Some("y\r\n".into())
         );
-        assert_eq!(Rope::from_str("x\ny\r\nz").get_line(2), Some("z".into()));
+        assert_eq!(
+            Rope::from_str("x\ny\r\nz").get_line(2, LINE_TYPE),
+            Some("z".into())
+        );
     }
 
     #[test]
@@ -333,16 +486,16 @@ mod tests {
     fn test_find_next_byte() {
         let mut rope = Rope::new();
         while rope.chunks().count() < 10 {
-            rope.append(Rope::from("hello"));
+            rope.insert(rope.len(), "hello");
         }
-        let mut length = rope.len_chars();
-        let char_index = length / 2;
-        rope.insert(char_index, "!?");
-        length += 1;
-        assert_eq!(rope.find_next_byte(.., b"!?"), Some(char_index));
+        let mut length = rope.len();
+        let byte_index = length / 2;
+        rope.insert(byte_index, "!?");
+        length += "!?".len();
+        assert_eq!(rope.find_next_byte(.., b"!?"), Some(byte_index));
         assert_eq!(
             rope.find_next_byte(0..(length / 3) * 2, b"!?"),
-            Some(char_index)
+            Some(byte_index)
         );
         assert_eq!(rope.find_next_byte(0..length / 3, b"!?"), None);
         assert_eq!(rope.find_next_byte(0..length, b"!o"), Some(4));
@@ -353,16 +506,16 @@ mod tests {
     fn test_find_prev_byte() {
         let mut rope = Rope::new();
         while rope.chunks().count() < 10 {
-            rope.append(Rope::from("hello"));
+            rope.insert(rope.len(), "hello");
         }
-        let mut length = rope.len_chars();
-        let char_index = length / 2;
-        rope.insert(char_index, "!");
-        length += 1;
-        assert_eq!(rope.find_prev_byte(.., b"!"), Some(char_index));
+        let mut length = rope.len();
+        let byte_index = length / 2;
+        rope.insert(byte_index, "!");
+        length += "!".len();
+        assert_eq!(rope.find_prev_byte(.., b"!"), Some(byte_index));
         assert_eq!(
             rope.find_prev_byte(0..(length / 3) * 2, b"!"),
-            Some(char_index)
+            Some(byte_index)
         );
         assert_eq!(rope.find_prev_byte(0..length / 3, b"!"), None);
     }

@@ -1,6 +1,7 @@
 use crate::{
     cursor::CursorState,
     range::{Range, RangeMut, RangeState},
+    rope::RegexCursorInput,
     text::Text,
 };
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
@@ -123,16 +124,18 @@ impl<W: WrapMut> SelectionView<'_, W> {
     pub fn select_regex(&mut self, regex: &Regex) {
         let mut ranges = Vec::new();
         for range in &self.state.ranges {
-            let start = min(range.anchor.char_offset, range.head.char_offset);
-            let end = max(range.anchor.char_offset, range.head.char_offset);
-            let input = regex_cursor::Input::new(self.text.rope().slice(start..end));
+            let start = min(range.anchor.byte_offset, range.head.byte_offset);
+            let end = max(range.anchor.byte_offset, range.head.byte_offset);
+            let input = regex_cursor::Input::new(RegexCursorInput::from(
+                self.text.rope().slice(start..end),
+            ));
             for needle in regex.find_iter(input) {
                 ranges.push(RangeState {
                     anchor: CursorState {
-                        char_offset: start + self.text.rope().byte_to_char(needle.start()),
+                        byte_offset: start + needle.start(),
                     },
                     head: CursorState {
-                        char_offset: start + self.text.rope().byte_to_char(needle.end()),
+                        byte_offset: start + needle.end(),
                     },
                     goal_column: 0,
                 });
@@ -146,7 +149,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
 
     pub fn select_all(&mut self) {
         let mut range = RangeState::default();
-        range.head.char_offset = self.text.len_chars();
+        range.head.byte_offset = self.text.len();
         self.state.ranges = vec![range];
         self.state.primary_range = 0;
     }

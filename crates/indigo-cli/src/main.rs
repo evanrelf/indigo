@@ -75,8 +75,8 @@ fn main() -> anyhow::Result<ExitCode> {
             let range = selection.get_primary();
             eprintln!(
                 "\nprimary range: anchor={} head={}",
-                range.anchor().char_offset(),
-                range.head().char_offset()
+                range.anchor().byte_offset(),
+                range.head().byte_offset()
             );
             eprintln!("text:\n```diff");
             for diff in diff::lines(&left, &right) {

@@ -11,16 +11,16 @@ pub enum Error {
     #[error("Length mismatch: {left} != {right}")]
     LengthMismatch { left: usize, right: usize },
 
-    #[error("Char offset {char_offset} exceeds rope length {len_chars}")]
-    CharOffsetPastEnd {
-        char_offset: usize,
-        len_chars: usize,
+    #[error("Byte offset {byte_offset} exceeds rope length {len_bytes}")]
+    ByteOffsetPastEnd {
+        byte_offset: usize,
+        len_bytes: usize,
     },
 
-    #[error("Failed to compose: first sequence produces more chars than second expects")]
+    #[error("Failed to compose: first sequence produces more bytes than second expects")]
     ComposeFirstProducesMore,
 
-    #[error("Failed to compose: second sequence expects more chars than first produces")]
+    #[error("Failed to compose: second sequence expects more bytes than first produces")]
     ComposeSecondExpectsMore,
 
     #[error("Error from rope")]
@@ -30,8 +30,8 @@ pub enum Error {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct EditSeq {
     edits: Vec<Edit>,
-    source_chars: usize,
-    target_chars: usize,
+    source_bytes: usize,
+    target_bytes: usize,
 }
 
 impl EditSeq {
@@ -44,8 +44,8 @@ impl EditSeq {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             edits: Vec::with_capacity(capacity),
-            source_chars: 0,
-            target_chars: 0,
+            source_bytes: 0,
+            target_bytes: 0,
         }
     }
 
@@ -54,39 +54,39 @@ impl EditSeq {
         self.edits.is_empty()
     }
 
-    pub fn retain(&mut self, char_length: usize) {
-        if char_length == 0 {
+    pub fn retain(&mut self, byte_length: usize) {
+        if byte_length == 0 {
             return;
         }
 
-        self.source_chars += char_length;
-        self.target_chars += char_length;
+        self.source_bytes += byte_length;
+        self.target_bytes += byte_length;
 
         if let Some(Edit::Retain(n)) = self.edits.last_mut() {
-            *n += char_length;
+            *n += byte_length;
         } else {
-            self.edits.push(Edit::Retain(char_length));
+            self.edits.push(Edit::Retain(byte_length));
         }
     }
 
     pub fn retain_rest(&mut self, rope: &Rope) {
-        // TODO: Return custom error if `source_chars` exceeds rope length.
-        let char_length = rope.len_chars() - self.source_chars;
+        // TODO: Return custom error if `source_bytes` exceeds rope length.
+        let byte_length = rope.len() - self.source_bytes;
 
-        self.retain(char_length);
+        self.retain(byte_length);
     }
 
-    pub fn delete(&mut self, char_length: usize) {
-        if char_length == 0 {
+    pub fn delete(&mut self, byte_length: usize) {
+        if byte_length == 0 {
             return;
         }
 
-        self.source_chars += char_length;
+        self.source_bytes += byte_length;
 
         if let Some(Edit::Delete(n)) = self.edits.last_mut() {
-            *n += char_length;
+            *n += byte_length;
         } else {
-            self.edits.push(Edit::Delete(char_length));
+            self.edits.push(Edit::Delete(byte_length));
         }
     }
 
@@ -95,10 +95,10 @@ impl EditSeq {
             return;
         }
 
-        self.target_chars += text.chars().count();
+        self.target_bytes += text.len();
 
         if let Some(Edit::Insert(last)) = self.edits.last_mut() {
-            let mut s = String::with_capacity(last.chars().count() + text.chars().count());
+            let mut s = String::with_capacity(last.len() + text.len());
             s.push_str(last);
             s.push_str(text);
             *last = Rc::from(s);
@@ -116,10 +116,10 @@ impl EditSeq {
     }
 
     pub fn compose(&self, other: &Self) -> anyhow::Result<Self> {
-        if self.target_chars != other.source_chars {
+        if self.target_bytes != other.source_bytes {
             anyhow::bail!(Error::LengthMismatch {
-                left: self.target_chars,
-                right: other.source_chars,
+                left: self.target_bytes,
+                right: other.source_bytes,
             });
         }
 
@@ -175,7 +175,7 @@ impl EditSeq {
 
                 // Insert + Retain: second retains inserted text
                 (Some(Edit::Insert(s1)), Some(Edit::Retain(n2))) => {
-                    let len1 = s1.chars().count();
+                    let len1 = s1.len();
                     let n = len1.min(*n2);
 
                     if n == len1 {
@@ -184,9 +184,8 @@ impl EditSeq {
                         op1 = iter1.next();
                     } else {
                         // Second retains only part: split the insert
-                        let byte_offset = s1.chars().take(n).map(char::len_utf8).sum();
-                        let before = Rc::from(&s1[..byte_offset]);
-                        let after = Rc::from(&s1[byte_offset..]);
+                        let before = Rc::from(&s1[..n]);
+                        let after = Rc::from(&s1[n..]);
                         result.insert(&before);
                         *s1 = after;
                     }
@@ -199,7 +198,7 @@ impl EditSeq {
 
                 // Insert + Delete: operations cancel out
                 (Some(Edit::Insert(s1)), Some(Edit::Delete(n2))) => {
-                    let len1 = s1.chars().count();
+                    let len1 = s1.len();
                     let n = len1.min(*n2);
 
                     if n == len1 {
@@ -207,8 +206,7 @@ impl EditSeq {
                         op1 = iter1.next();
                     } else {
                         // Only part deleted: keep the rest
-                        let byte_offset = s1.chars().take(n).map(char::len_utf8).sum();
-                        let after = Rc::from(&s1[byte_offset..]);
+                        let after = Rc::from(&s1[n..]);
                         *s1 = after;
                     }
 
@@ -236,10 +234,10 @@ impl EditSeq {
     // TODO
     #[doc(hidden)]
     pub fn transform(&self, other: &Self) -> anyhow::Result<(Self, Self)> {
-        if self.source_chars != other.source_chars {
+        if self.source_bytes != other.source_bytes {
             anyhow::bail!(Error::LengthMismatch {
-                left: self.source_chars,
-                right: other.source_chars,
+                left: self.source_bytes,
+                right: other.source_bytes,
             });
         }
 
@@ -249,7 +247,7 @@ impl EditSeq {
     }
 
     #[must_use]
-    pub fn transform_char_offset(&self, mut char_offset: usize) -> usize {
+    pub fn transform_byte_offset(&self, mut byte_offset: usize) -> usize {
         let mut position = 0;
 
         for edit in &self.edits {
@@ -258,29 +256,29 @@ impl EditSeq {
                     position += n;
                 }
                 Edit::Delete(n) => {
-                    if position < char_offset {
-                        char_offset -= n;
+                    if position < byte_offset {
+                        byte_offset -= n;
                     }
                 }
                 Edit::Insert(s) => {
-                    if position <= char_offset {
-                        char_offset += s.chars().count();
+                    if position <= byte_offset {
+                        byte_offset += s.len();
                     }
-                    position += s.chars().count();
+                    position += s.len();
                 }
             }
         }
 
-        char_offset
+        byte_offset
     }
 
     pub fn invert(&self, rope: &Rope) -> anyhow::Result<Self> {
         let length_mismatch = || Error::LengthMismatch {
-            left: self.source_chars,
-            right: rope.len_chars(),
+            left: self.source_bytes,
+            right: rope.len(),
         };
 
-        if self.source_chars != rope.len_chars() {
+        if self.source_bytes != rope.len() {
             anyhow::bail!(length_mismatch());
         }
 
@@ -290,15 +288,12 @@ impl EditSeq {
             match edit {
                 Edit::Retain(n) => inverted.retain(*n),
                 Edit::Delete(n) => {
-                    let start = inverted.target_chars;
+                    let start = inverted.target_bytes;
                     let end = start + n;
-                    let s = rope
-                        .get_slice(start..end)
-                        .ok_or_else(length_mismatch)?
-                        .to_string();
+                    let s = rope.slice(start..end).to_string();
                     inverted.insert(&s);
                 }
-                Edit::Insert(s) => inverted.delete(s.chars().count()),
+                Edit::Insert(s) => inverted.delete(s.len()),
             }
         }
 
@@ -306,17 +301,17 @@ impl EditSeq {
     }
 
     pub fn apply(&self, rope: &mut Rope) -> anyhow::Result<()> {
-        if self.source_chars != rope.len_chars() {
+        if self.source_bytes != rope.len() {
             anyhow::bail!(Error::LengthMismatch {
-                left: self.source_chars,
-                right: rope.len_chars(),
+                left: self.source_bytes,
+                right: rope.len(),
             });
         }
 
-        let mut char_offset = 0;
+        let mut byte_offset = 0;
 
         for edit in &self.edits {
-            char_offset = edit.apply(char_offset, rope)?;
+            byte_offset = edit.apply(byte_offset, rope)?;
         }
 
         Ok(())
@@ -370,27 +365,27 @@ pub enum Edit {
 }
 
 impl Edit {
-    pub fn apply(&self, char_offset: usize, rope: &mut Rope) -> anyhow::Result<usize> {
-        let char_offset = match self {
-            Self::Retain(n) => char_offset + n,
+    pub fn apply(&self, byte_offset: usize, rope: &mut Rope) -> anyhow::Result<usize> {
+        let byte_offset = match self {
+            Self::Retain(n) => byte_offset + n,
             Self::Delete(n) => {
-                rope.try_remove(char_offset..char_offset + n)?;
-                char_offset
+                rope.try_remove(byte_offset..byte_offset + n)?;
+                byte_offset
             }
             Self::Insert(s) => {
-                rope.try_insert(char_offset, s)?;
-                char_offset + s.chars().count()
+                rope.try_insert(byte_offset, s)?;
+                byte_offset + s.len()
             }
         };
 
-        if char_offset > rope.len_chars() {
-            anyhow::bail!(Error::CharOffsetPastEnd {
-                char_offset,
-                len_chars: rope.len_chars(),
+        if byte_offset > rope.len() {
+            anyhow::bail!(Error::ByteOffsetPastEnd {
+                byte_offset,
+                len_bytes: rope.len(),
             });
         }
 
-        Ok(char_offset)
+        Ok(byte_offset)
     }
 }
 
@@ -424,34 +419,34 @@ mod tests {
     fn edits_transform_offset() {
         let mut rope = Rope::from("Hello, world!");
 
-        let mut char_offset = 9;
-        assert_eq!(rope.char(char_offset), 'r');
+        let mut byte_offset = 9;
+        assert_eq!(rope.char(byte_offset), 'r');
 
         let mut edits = EditSeq::new();
-        edits.delete("Hello, ".chars().count());
-        edits.retain("world".chars().count());
+        edits.delete("Hello, ".len());
+        edits.retain("world".len());
         edits.insert("!!!");
-        edits.retain("!".chars().count());
+        edits.retain("!".len());
 
         edits.apply(&mut rope).unwrap();
         assert_eq!(rope, Rope::from("world!!!!"));
 
-        assert_eq!(rope.get_char(char_offset), None);
-        char_offset = edits.transform_char_offset(char_offset);
-        assert_eq!(char_offset, 2);
-        assert_eq!(rope.char(char_offset), 'r');
+        assert_eq!(rope.get_char(byte_offset).ok(), None);
+        byte_offset = edits.transform_byte_offset(byte_offset);
+        assert_eq!(byte_offset, 2);
+        assert_eq!(rope.char(byte_offset), 'r');
 
         let mut edits = EditSeq::new();
-        edits.delete("w".chars().count());
+        edits.delete("w".len());
         edits.insert("the whole w");
         edits.retain_rest(&rope);
         edits.apply(&mut rope).unwrap();
         assert_eq!(rope, Rope::from("the whole world!!!!"));
 
-        assert_eq!(rope.char(char_offset), 'e');
-        char_offset = edits.transform_char_offset(char_offset);
-        assert_eq!(char_offset, 12);
-        assert_eq!(rope.char(char_offset), 'r');
+        assert_eq!(rope.char(byte_offset), 'e');
+        byte_offset = edits.transform_byte_offset(byte_offset);
+        assert_eq!(byte_offset, 12);
+        assert_eq!(rope.char(byte_offset), 'r');
     }
 
     #[test]
@@ -459,11 +454,11 @@ mod tests {
         let rope1 = Rope::from("Hello, world!");
 
         let mut edits = EditSeq::new();
-        edits.delete("H".chars().count());
+        edits.delete("H".len());
         edits.insert("Y");
-        edits.retain("ello".chars().count());
+        edits.retain("ello".len());
         edits.insert("w");
-        edits.delete(", world!".chars().count());
+        edits.delete(", world!".len());
         edits.insert(" and pink");
 
         let mut rope2 = rope1.clone();
@@ -481,9 +476,9 @@ mod tests {
     fn edits_apply() {
         let mut edits = EditSeq::new();
         edits.retain(7);
-        edits.delete("world".chars().count());
+        edits.delete("world".len());
         edits.insert("Evan");
-        edits.delete("!".chars().count());
+        edits.delete("!".len());
         edits.insert("...");
         edits.insert("?");
 
@@ -499,25 +494,25 @@ mod tests {
     #[test]
     fn edit_apply() {
         let mut rope = Rope::from("Hello, world!");
-        let char_offset = 0;
-        let char_offset = Edit::Retain(7).apply(char_offset, &mut rope).unwrap();
-        let char_offset = Edit::Delete("world".chars().count())
-            .apply(char_offset, &mut rope)
+        let byte_offset = 0;
+        let byte_offset = Edit::Retain(7).apply(byte_offset, &mut rope).unwrap();
+        let byte_offset = Edit::Delete("world".len())
+            .apply(byte_offset, &mut rope)
             .unwrap();
-        let char_offset = Edit::Insert(Rc::from("Evan"))
-            .apply(char_offset, &mut rope)
+        let byte_offset = Edit::Insert(Rc::from("Evan"))
+            .apply(byte_offset, &mut rope)
             .unwrap();
-        let char_offset = Edit::Delete("!".chars().count())
-            .apply(char_offset, &mut rope)
+        let byte_offset = Edit::Delete("!".len())
+            .apply(byte_offset, &mut rope)
             .unwrap();
-        let char_offset = Edit::Insert(Rc::from("..."))
-            .apply(char_offset, &mut rope)
+        let byte_offset = Edit::Insert(Rc::from("..."))
+            .apply(byte_offset, &mut rope)
             .unwrap();
-        let char_offset = Edit::Insert(Rc::from("?"))
-            .apply(char_offset, &mut rope)
+        let byte_offset = Edit::Insert(Rc::from("?"))
+            .apply(byte_offset, &mut rope)
             .unwrap();
         assert_eq!(rope, Rope::from("Hello, Evan...?"));
-        assert!(Edit::Retain(1).apply(char_offset, &mut rope).is_err());
+        assert!(Edit::Retain(1).apply(byte_offset, &mut rope).is_err());
     }
 
     #[test]
@@ -647,10 +642,10 @@ mod tests {
 
     fn gen_edit_seq(
         u: &mut arbitrary::Unstructured<'_>,
-        source_chars: usize,
+        source_bytes: usize,
     ) -> arbitrary::Result<EditSeq> {
         let mut edits = EditSeq::new();
-        let mut remaining = source_chars;
+        let mut remaining = source_bytes;
 
         while remaining > 0 || u.arbitrary::<bool>()? {
             let op_type = u.int_in_range(0..=2)?;
@@ -715,14 +710,14 @@ mod tests {
             let rope = Rope::from(s.as_str());
 
             // Generate edit sequence A that's valid for the rope
-            let edit_a = gen_edit_seq(u, rope.len_chars())?;
+            let edit_a = gen_edit_seq(u, rope.len())?;
 
             // Apply A to get intermediate rope
             let mut rope1 = rope.clone();
             edit_a.apply(&mut rope1).expect("edit_a.apply failed");
 
             // Generate edit sequence B that's valid for the intermediate rope
-            let edit_b = gen_edit_seq(u, rope1.len_chars())?;
+            let edit_b = gen_edit_seq(u, rope1.len())?;
 
             // Test property: apply(apply(S, A), B) = apply(S, compose(A, B))
             let mut rope_sequential = rope.clone();
@@ -747,10 +742,10 @@ mod tests {
                  A = source:{} target:{}\n\
                  B = source:{} target:{}",
                 rope.to_string(),
-                edit_a.source_chars,
-                edit_a.target_chars,
-                edit_b.source_chars,
-                edit_b.target_chars,
+                edit_a.source_bytes,
+                edit_a.target_bytes,
+                edit_b.source_bytes,
+                edit_b.target_bytes,
             );
 
             Ok(())

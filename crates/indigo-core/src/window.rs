@@ -1,4 +1,8 @@
-use crate::{buffer::Buffer, editor::Editor, rope::RopeExt as _};
+use crate::{
+    buffer::Buffer,
+    editor::Editor,
+    rope::{LINE_TYPE, RopeExt as _},
+};
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::cmp::min;
 
@@ -61,8 +65,11 @@ impl<W: WrapMut> WindowView<'_, W> {
     pub fn scroll_to_selection(&mut self) {
         let selection = self.buffer.selection();
         let state = selection.state();
-        let head_char_offset = state.ranges[state.primary_range].head.char_offset;
-        let line = self.buffer.rope().char_to_line(head_char_offset);
+        let head_byte_offset = state.ranges[state.primary_range].head.byte_offset;
+        let line = self
+            .buffer
+            .rope()
+            .byte_to_line_idx(head_byte_offset, LINE_TYPE);
         let top = self.vertical_scroll();
         let bottom = (top + usize::from(self.state.height)) - 1;
         if line < top {
