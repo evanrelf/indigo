@@ -326,7 +326,8 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
             break;
         }
 
-        Line::raw(format!("{line_number}│"))
+        Line::raw(format!("{line_number} "))
+            .fg(Color::from_u32(0x00_cccccc))
             .right_aligned()
             .render(row, surface);
     }
