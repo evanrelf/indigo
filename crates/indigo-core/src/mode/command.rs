@@ -112,7 +112,7 @@ fn exec_command(editor: &mut Editor) {
         #[clap(name = "edit!", alias = "e!")]
         EditForce { path: Utf8PathBuf },
         #[clap(alias = "w")]
-        Write,
+        Write { path: Option<Utf8PathBuf> },
         #[clap(alias = "q")]
         Quit { exit_code: Option<u8> },
         #[clap(name = "quit!", alias = "q!")]
@@ -180,9 +180,14 @@ fn exec_command(editor: &mut Editor) {
                 editor.message = Some(Err(format!("Failed to open {path}")));
             }
         }
-        Command::Write => {
+        Command::Write { path } => {
             let fs = Rc::clone(&editor.fs);
-            if editor.window_mut().buffer_mut().save(&fs).is_err() {
+            let result = if let Some(path) = path {
+                editor.window_mut().buffer_mut().save_as(&fs, path)
+            } else {
+                editor.window_mut().buffer_mut().save(&fs)
+            };
+            if result.is_err() {
                 editor.message = Some(Err(String::from("Failed to save")));
             }
         }

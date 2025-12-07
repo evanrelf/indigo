@@ -71,6 +71,18 @@ impl Buffer {
         Ok(())
     }
 
+    pub fn save_as(&mut self, fs: &impl Fs, path: impl AsRef<Utf8Path>) -> anyhow::Result<()> {
+        let path = path.as_ref();
+        let mut bytes = Vec::with_capacity(self.text.len());
+        self.text.write_to(&mut bytes)?;
+        fs.write(path, &bytes)?;
+        self.kind = BufferKind::File {
+            path: path.to_owned(),
+            on_disk: self.text.clone(),
+        };
+        Ok(())
+    }
+
     #[must_use]
     pub fn kind(&self) -> &BufferKind {
         &self.kind
