@@ -101,7 +101,7 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
 }
 
 impl<W: WrapMut> SelectionView<'_, W> {
-    pub fn get_mut(&mut self, index: usize) -> Option<RangeMut<'_>> {
+    fn unchecked_get_mut(&mut self, index: usize) -> Option<RangeMut<'_>> {
         let range_state = self.state.ranges.get_mut(index)?;
         let range = RangeMut::new(&mut self.text, range_state)
             .expect("Selection text and range state are always kept valid")
@@ -109,16 +109,10 @@ impl<W: WrapMut> SelectionView<'_, W> {
         Some(range)
     }
 
-    pub fn get_primary_mut(&mut self) -> RangeMut<'_> {
-        self.get_mut(self.state.primary_range)
-            .expect("Primary range index is always kept valid")
-            .on_drop(|range| range.assert_invariants().unwrap())
-    }
-
     pub fn for_each_mut(&mut self, mut f: impl FnMut(RangeMut<'_>)) {
         for i in 0..self.state.ranges.len() {
             let version = self.text.version();
-            let range = self.get_mut(i).unwrap();
+            let range = self.unchecked_get_mut(i).unwrap();
             f(range);
             if let Some(edits) = self.text.edits_since(version) {
                 for j in 0..self.state.ranges.len() {
