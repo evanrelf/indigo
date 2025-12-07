@@ -254,11 +254,14 @@ fn select_all(editor: &mut Editor) {
 fn select_regex(editor: &mut Editor) {
     enter_prompt_mode(editor, "select", |editor, regex_str| {
         if let Ok(regex) = Regex::new(regex_str) {
-            editor
+            let matched = editor
                 .window_mut()
                 .buffer_mut()
                 .selection_mut()
                 .select_regex(&regex);
+            if !matched {
+                editor.message = Some(Err(String::from("Nothing selected")));
+            }
         } else {
             editor.message = Some(Err(String::from("Invalid regex")));
         }

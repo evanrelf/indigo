@@ -136,7 +136,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
         self.state.ranges.truncate(1);
     }
 
-    pub fn select_regex(&mut self, regex: &Regex) {
+    pub fn select_regex(&mut self, regex: &Regex) -> bool {
         let mut ranges = Vec::new();
         for range in &self.state.ranges {
             let start = min(range.anchor.byte_offset, range.head.byte_offset);
@@ -156,10 +156,12 @@ impl<W: WrapMut> SelectionView<'_, W> {
                 });
             }
         }
-        if !ranges.is_empty() {
+        let matched = !ranges.is_empty();
+        if matched {
             self.state.primary_range = ranges.len() - 1;
             self.state.ranges = ranges;
         }
+        matched
     }
 
     pub fn select_all(&mut self) {
