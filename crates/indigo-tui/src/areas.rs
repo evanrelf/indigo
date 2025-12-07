@@ -49,15 +49,42 @@ impl Areas {
     }
 }
 
+pub enum PositionToByteOffset {
+    Valid(usize),
+    SnappedToLineStart {
+        byte_offset: usize,
+        out_of_bounds: bool,
+    },
+    SnappedToLineEnd {
+        byte_offset: usize,
+        out_of_bounds: bool,
+    },
+    SnappedToBufferStart {
+        out_of_bounds: bool,
+    },
+    SnappedToBufferEnd {
+        byte_offset: usize,
+        out_of_bounds: bool,
+    },
+    OutOfBounds,
+}
+
+impl PositionToByteOffset {
+    #[must_use]
+    pub fn byte_offset(&self) -> Option<usize> {
+        match self {
+            Self::SnappedToBufferStart { .. } => Some(0),
+            Self::Valid(offset) => Some(*offset),
+            Self::SnappedToLineStart { byte_offset, .. }
+            | Self::SnappedToLineEnd { byte_offset, .. }
+            | Self::SnappedToBufferEnd { byte_offset, .. } => Some(*byte_offset),
+            Self::OutOfBounds => None,
+        }
+    }
+}
+
 /// Map position on the terminal to a character offset in the rope. Example use is moving a
 /// cursor to where a mouse was clicked.
-///
-/// `None` means the position was not contained within the area. `Some(Ok(_))` means the position
-/// was valid in the rope. `Some(Err(_))` means the position was not valid in the rope, but we were
-/// able to correct it.
-///
-/// Examples of corrections: snapping to the beginning of the grapheme, snapping to the end of the
-/// line, and snapping to the end of the buffer.
 #[must_use]
 pub fn position_to_byte_offset(
     position: Position,
@@ -65,24 +92,46 @@ pub fn position_to_byte_offset(
     vertical_scroll: usize,
     // TODO(horizontal_scroll)
     area: Rect,
-) -> Option<Result<usize, usize>> {
+) -> PositionToByteOffset {
     // TODO: Move this general purpose (x, y) <-> index logic somewhere else.
 
-    if !area.contains(position) {
-        return None;
+    if position.y < area.top() {
+        // Position is above the area, so we snap to first byte of rope
+        return PositionToByteOffset::SnappedToBufferStart {
+            out_of_bounds: true,
+        };
     }
 
-    // TODO(horizontal_scroll)
-    let x = usize::from(position.x - area.x);
+    if position.y >= area.bottom() {
+        // Position is below the area, so we snap to last byte of rope
+        return PositionToByteOffset::SnappedToBufferEnd {
+            byte_offset: rope.len(),
+            out_of_bounds: true,
+        };
+    }
 
     let y = usize::from(position.y - area.y) + vertical_scroll;
 
     let Some(line) = rope.get_line(y, LINE_TYPE) else {
-        // Position goes beyond last line of rope, so we snap to last character of rope
-        return Some(Err(rope.len()));
+        // Position goes beyond last line of rope, so we snap to last byte of rope
+        return PositionToByteOffset::SnappedToBufferEnd {
+            byte_offset: rope.len(),
+            out_of_bounds: false,
+        };
     };
 
     let line_byte_offset = rope.line_to_byte_idx(y, LINE_TYPE);
+
+    if position.x < area.x {
+        // Position is to the left of the area, so we snap to the first byte of the line
+        return PositionToByteOffset::SnappedToLineStart {
+            byte_offset: line_byte_offset,
+            out_of_bounds: true,
+        };
+    }
+
+    // TODO(horizontal_scroll)
+    let x = usize::from(position.x - area.x);
 
     let mut line_prefix = 0;
     let mut byte_offset = line_byte_offset;
@@ -95,14 +144,17 @@ pub fn position_to_byte_offset(
         let grapheme_width = grapheme.display_width();
 
         if line_prefix + grapheme_width > x {
-            return Some(Ok(byte_offset));
+            return PositionToByteOffset::Valid(byte_offset);
         }
 
         line_prefix += grapheme_width;
         byte_offset += grapheme.len();
     }
 
-    Some(Err(byte_offset))
+    PositionToByteOffset::SnappedToLineEnd {
+        byte_offset,
+        out_of_bounds: false,
+    }
 }
 
 #[must_use]

@@ -98,12 +98,14 @@ fn handle_event_normal(
                     x: mouse_event.column,
                     y: mouse_event.row,
                 };
-                if let Some(Err(byte_offset) | Ok(byte_offset)) = position_to_byte_offset(
+                if let Some(byte_offset) = position_to_byte_offset(
                     position,
                     editor.window().buffer().rope(),
                     editor.window().vertical_scroll(),
                     areas.text,
-                ) {
+                )
+                .byte_offset()
+                {
                     editor
                         .window_mut()
                         .buffer_mut()
@@ -122,12 +124,14 @@ fn handle_event_normal(
                     x: mouse_event.column,
                     y: mouse_event.row,
                 };
-                if let Some(Err(byte_offset) | Ok(byte_offset)) = position_to_byte_offset(
+                if let Some(byte_offset) = position_to_byte_offset(
                     position,
                     editor.window().buffer().rope(),
                     editor.window().vertical_scroll(),
                     areas.text,
-                ) {
+                )
+                .byte_offset()
+                {
                     editor
                         .window_mut()
                         .buffer_mut()
