@@ -116,11 +116,18 @@ impl<W: WrapMut> SelectionView<'_, W> {
     }
 
     pub fn for_each_mut(&mut self, mut f: impl FnMut(RangeMut<'_>)) {
-        for range_state in &mut self.state.ranges {
-            let range = RangeMut::new(&mut self.text, range_state)
-                .expect("Selection text and range state are always kept valid")
-                .on_drop(|range| range.assert_invariants().unwrap());
+        for i in 0..self.state.ranges.len() {
+            let version = self.text.version();
+            let range = self.get_mut(i).unwrap();
             f(range);
+            if let Some(edits) = self.text.edits_since(version) {
+                for j in 0..self.state.ranges.len() {
+                    if i == j {
+                        continue;
+                    }
+                    self.state.ranges[j].transform(&edits);
+                }
+            }
         }
     }
 
