@@ -56,6 +56,24 @@ impl RangeState {
         self.anchor.transform(edits);
         self.head.transform(edits);
     }
+
+    #[must_use]
+    pub fn start(&self) -> &CursorState {
+        if self.anchor.byte_offset <= self.head.byte_offset {
+            &self.anchor
+        } else {
+            &self.head
+        }
+    }
+
+    #[must_use]
+    pub fn end(&self) -> &CursorState {
+        if self.anchor.byte_offset <= self.head.byte_offset {
+            &self.head
+        } else {
+            &self.anchor
+        }
+    }
 }
 
 #[must_use]
