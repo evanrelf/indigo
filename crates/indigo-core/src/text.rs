@@ -3,14 +3,14 @@ use ropey::Rope;
 use std::ops::Deref;
 
 #[derive(Debug, Default)]
-struct Edit {
+struct BidiEditSeq {
     /// Inverted edit. Apply to undo the edit.
     undo: EditSeq,
     /// Original edit. Apply to perform the edit.
     redo: EditSeq,
 }
 
-impl Extend<Self> for Edit {
+impl Extend<Self> for BidiEditSeq {
     fn extend<T>(&mut self, edits: T)
     where
         T: IntoIterator<Item = Self>,
@@ -25,7 +25,7 @@ impl Extend<Self> for Edit {
 #[derive(Debug, Default)]
 pub struct Text {
     rope: Rope,
-    history: History<Edit>,
+    history: History<BidiEditSeq>,
     edit_log: Vec<EditSeq>,
 }
 
@@ -43,7 +43,7 @@ impl Text {
     pub fn edit(&mut self, edit: &EditSeq) -> anyhow::Result<()> {
         let undo = edit.invert(&self.rope)?;
         edit.apply(&mut self.rope)?;
-        self.history.push(Edit {
+        self.history.push(BidiEditSeq {
             redo: edit.clone(),
             undo,
         });
