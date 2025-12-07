@@ -119,7 +119,9 @@ impl<W: WrapMut> SelectionView<'_, W> {
                     if i == j {
                         continue;
                     }
-                    self.state.ranges[j].transform(&edits);
+                    for edit in edits {
+                        self.state.ranges[j].transform(edit);
+                    }
                 }
             }
         }

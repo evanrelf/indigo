@@ -85,13 +85,8 @@ impl Text {
     }
 
     #[must_use]
-    pub fn edits_since(&self, version: usize) -> Option<EditSeq> {
-        let mut iter = self.edit_log.get(version..)?.iter();
-        let mut edits = iter.next()?.clone();
-        for edit in iter {
-            edits = edits.compose(edit).expect("Edits are valid");
-        }
-        Some(edits)
+    pub fn edits_since(&self, version: usize) -> Option<&[EditSeq]> {
+        self.edit_log.get(version..)
     }
 }
 
