@@ -1,6 +1,6 @@
 use crate::{
     cursor::{Affinity, Cursor, CursorMut, CursorState},
-    ot::EditSeq,
+    edit::EditSeq,
     rope::RopeExt as _,
     text::Text,
 };

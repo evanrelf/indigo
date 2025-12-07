@@ -1,13 +1,13 @@
 pub mod buffer;
 pub mod cursor;
 pub mod display_width;
+pub mod edit;
 pub mod editor;
 pub mod event;
 pub mod fs;
 pub mod history;
 pub mod key;
 pub mod mode;
-pub mod ot;
 pub mod prelude;
 pub mod range;
 pub mod rope;

@@ -1,6 +1,6 @@
 use crate::{
     display_width::DisplayWidth,
-    ot::EditSeq,
+    edit::EditSeq,
     rope::{LINE_TYPE, RopeExt as _},
     text::Text,
 };
