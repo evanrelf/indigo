@@ -26,6 +26,7 @@ impl Extend<Self> for Edit {
 pub struct Text {
     rope: Rope,
     history: History<Edit>,
+    edit_log: Vec<EditSeq>,
 }
 
 impl Text {
@@ -46,6 +47,7 @@ impl Text {
             redo: edit.clone(),
             undo,
         });
+        self.edit_log.push(edit.clone());
         Ok(())
     }
 
@@ -57,6 +59,7 @@ impl Text {
         if let Some(edits) = self.history.undo() {
             for edit in edits.iter().rev() {
                 edit.undo.apply(&mut self.rope)?;
+                self.edit_log.push(edit.undo.clone());
             }
             Ok(true)
         } else {
@@ -68,11 +71,27 @@ impl Text {
         if let Some(edits) = self.history.redo() {
             for edit in edits {
                 edit.redo.apply(&mut self.rope)?;
+                self.edit_log.push(edit.undo.clone());
             }
             Ok(true)
         } else {
             Ok(false)
         }
+    }
+
+    #[must_use]
+    pub fn version(&self) -> usize {
+        self.edit_log.len()
+    }
+
+    #[must_use]
+    pub fn edits_since(&self, version: usize) -> Option<EditSeq> {
+        let mut iter = self.edit_log.get(version..)?.iter();
+        let mut edits = iter.next()?.clone();
+        for edit in iter {
+            edits = edits.compose(edit).expect("Edits are valid");
+        }
+        Some(edits)
     }
 }
 
