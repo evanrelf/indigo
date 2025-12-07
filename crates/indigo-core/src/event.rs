@@ -3,7 +3,7 @@ use crate::{
     key::Key,
     mode::{
         Mode, command::handle_event_command, goto::handle_event_goto, insert::handle_event_insert,
-        normal::handle_event_normal, seek::handle_event_seek,
+        normal::handle_event_normal, prompt::handle_event_prompt, seek::handle_event_seek,
     },
 };
 
@@ -43,6 +43,7 @@ pub fn handle_event(editor: &mut Editor, mut event: Event) -> anyhow::Result<boo
         Mode::Goto(_) => handle_event_goto(editor, &event),
         Mode::Insert(_) => handle_event_insert(editor, &event),
         Mode::Command(_) => handle_event_command(editor, &event)?,
+        Mode::Prompt(_) => handle_event_prompt(editor, &event),
     };
 
     Ok(handled)

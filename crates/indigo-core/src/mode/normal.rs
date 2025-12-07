@@ -4,7 +4,7 @@ use crate::{
     key::{KeyCode, is},
     mode::{
         Mode, command::enter_command_mode, goto::enter_goto_mode, insert::InsertMode,
-        insert::enter_insert_mode, seek::enter_seek_mode,
+        insert::enter_insert_mode, prompt::enter_prompt_mode, seek::enter_seek_mode,
     },
     window::{
         scroll_full_page_down, scroll_full_page_up, scroll_half_page_down, scroll_half_page_up,
@@ -242,14 +242,18 @@ fn select_all(editor: &mut Editor) {
 }
 
 fn select_regex(editor: &mut Editor) {
-    // TODO: Add a way for the user to type in a regex.
-    let regex = Regex::new(r"\blet\b").unwrap();
-    editor
-        .window_mut()
-        .buffer_mut()
-        .selection_mut()
-        .select_regex(&regex);
-    editor.mode.set_count(None);
+    enter_prompt_mode(editor, "select", |editor, regex_str| {
+        if let Ok(regex) = Regex::new(regex_str) {
+            editor
+                .window_mut()
+                .buffer_mut()
+                .selection_mut()
+                .select_regex(&regex);
+        } else {
+            editor.message = Some(Err(String::from("Invalid regex")));
+        }
+        editor.mode.set_count(None);
+    });
 }
 
 fn insert_at_line_non_blank_start(editor: &mut Editor) {

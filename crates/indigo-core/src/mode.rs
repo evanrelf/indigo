@@ -2,10 +2,12 @@ pub mod command;
 pub mod goto;
 pub mod insert;
 pub mod normal;
+pub mod prompt;
 pub mod seek;
 
 use crate::mode::{
-    command::CommandMode, goto::GotoMode, insert::InsertMode, normal::NormalMode, seek::SeekMode,
+    command::CommandMode, goto::GotoMode, insert::InsertMode, normal::NormalMode,
+    prompt::PromptMode, seek::SeekMode,
 };
 use std::num::NonZeroUsize;
 
@@ -17,6 +19,7 @@ pub enum Mode {
     Goto(GotoMode),
     Insert(InsertMode),
     Command(CommandMode),
+    Prompt(PromptMode),
 }
 
 impl Mode {

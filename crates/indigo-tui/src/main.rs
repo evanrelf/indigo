@@ -233,7 +233,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
-    if let Mode::Command(ref normal_mode) = editor.mode {
+    if let Mode::Command(ref command_mode) = editor.mode {
         if let Some(cell) = surface.cell_mut(area.as_position()) {
             cell.set_char(':');
         } else {
@@ -243,11 +243,33 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         area.x += 1;
         area.width -= 1;
 
-        Line::raw(Cow::<str>::from(normal_mode.rope())).render(area, surface);
+        Line::raw(Cow::<str>::from(command_mode.rope())).render(area, surface);
 
         if let Some(rect) = byte_index_to_area(
-            normal_mode.cursor().byte_offset(),
-            normal_mode.rope(),
+            command_mode.cursor().byte_offset(),
+            command_mode.rope(),
+            0,
+            area,
+        ) {
+            surface.set_style(rect, Style::default().bg(DARK_YELLOW));
+        }
+
+        return;
+    }
+
+    if let Mode::Prompt(ref prompt_mode) = editor.mode {
+        format!("{}:", prompt_mode.prompt()).render(area, surface);
+
+        area.x += u16::try_from(prompt_mode.prompt().display_width())
+            .expect("Prompt width is less than u16::MAX")
+            + 1;
+        area.width -= 1;
+
+        Line::raw(Cow::<str>::from(prompt_mode.rope())).render(area, surface);
+
+        if let Some(rect) = byte_index_to_area(
+            prompt_mode.cursor().byte_offset(),
+            prompt_mode.rope(),
             0,
             area,
         ) {
@@ -284,7 +306,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
             }
             Mode::Goto(_) => "goto",
             Mode::Insert(_) => "insert",
-            Mode::Command(_) => "command",
+            Mode::Command(_) | Mode::Prompt(_) => unreachable!(),
         };
 
         let path = match (&editor.pwd, &editor.window().buffer().kind()) {
