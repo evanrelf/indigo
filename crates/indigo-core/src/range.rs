@@ -51,6 +51,11 @@ impl RangeState {
         self.snap_to_grapheme_boundaries(text);
         self
     }
+
+    pub fn transform(&mut self, edits: &EditSeq) {
+        self.anchor.transform(edits);
+        self.head.transform(edits);
+    }
 }
 
 #[must_use]

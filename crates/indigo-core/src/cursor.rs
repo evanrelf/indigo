@@ -44,6 +44,10 @@ impl CursorState {
         self.snap_to_grapheme_boundary(text);
         self
     }
+
+    pub fn transform(&mut self, edits: &EditSeq) {
+        self.byte_offset = edits.transform_byte_offset(self.byte_offset);
+    }
 }
 
 #[must_use]
