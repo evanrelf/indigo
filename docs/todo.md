@@ -94,6 +94,7 @@ backward word key, not `b`).
 - [x] `<c-f>`
 - [x] `g`
 - [x] `;`
+- [x] `,`
 - [x] `<a-;>`
 - [x] `<a-:>`
 - [x] `:`

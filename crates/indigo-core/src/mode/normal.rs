@@ -61,6 +61,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "f") => enter_seek_mode(editor, Move, Onto, Next),
             _ if is(key, "F") => enter_seek_mode(editor, Extend, Onto, Next),
             _ if is(key, "g") => enter_goto_mode(editor),
+            _ if is(key, ",") => keep_primary(editor),
             _ if is(key, ";") => reduce(editor),
             _ if is(key, "<a-;>") => flip(editor),
             _ if is(key, "<a-:>") => flip_forward(editor),
@@ -189,6 +190,15 @@ fn flip_forward(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.flip_forward());
+    editor.mode.set_count(None);
+}
+
+fn keep_primary(editor: &mut Editor) {
+    editor
+        .window_mut()
+        .buffer_mut()
+        .selection_mut()
+        .keep_primary();
     editor.mode.set_count(None);
 }
 

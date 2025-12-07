@@ -125,6 +125,15 @@ impl<W: WrapMut> SelectionView<'_, W> {
         }
     }
 
+    pub fn keep_primary(&mut self) {
+        if self.state.primary_range != 0 {
+            let index = self.state.primary_range;
+            self.state.ranges.swap(0, index);
+            self.state.primary_range = 0;
+        }
+        self.state.ranges.truncate(1);
+    }
+
     pub fn select_regex(&mut self, regex: &Regex) {
         let mut ranges = Vec::new();
         for range in &self.state.ranges {
