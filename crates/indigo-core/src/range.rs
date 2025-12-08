@@ -235,6 +235,20 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         !self.is_forward()
     }
 
+    pub fn is_touching<W2>(&self, other: &RangeView<'_, W2>) -> bool
+    where
+        W2: WrapRef,
+    {
+        self.state.is_touching(&other.state)
+    }
+
+    pub fn is_overlapping<W2>(&self, other: &RangeView<'_, W2>) -> bool
+    where
+        W2: WrapRef,
+    {
+        self.state.is_overlapping(&other.state)
+    }
+
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
         self.anchor().assert_invariants().map_err(Error::Anchor)?;
         self.head().assert_invariants().map_err(Error::Head)?;
