@@ -367,4 +367,24 @@ mod tests {
             Ok(())
         });
     }
+
+    #[test]
+    fn normalize() {
+        let cases = [
+            (KeyModifiers::SHIFT, b'a', KeyModifiers::empty(), b'A'),
+            (KeyModifiers::SHIFT, b'Z', KeyModifiers::empty(), b'Z'),
+            (KeyModifiers::empty(), b'a', KeyModifiers::empty(), b'a'),
+            (KeyModifiers::SHIFT, b'1', KeyModifiers::SHIFT, b'1'),
+        ];
+
+        for (input_modifiers, input_code, expected_modifiers, expected_code) in cases {
+            let mut key = Key {
+                modifiers: input_modifiers,
+                code: KeyCode::Char(input_code),
+            };
+            key.normalize();
+            assert_eq!(key.modifiers, expected_modifiers);
+            assert_eq!(key.code, KeyCode::Char(expected_code));
+        }
+    }
 }
