@@ -172,6 +172,18 @@ mod tests {
         assert_eq!(history.undo(), Some(&vec![2]));
     }
 
+    #[test]
+    fn fork_timeline_discards_future() {
+        let mut history: History<u8> = History::new();
+        history.push(1);
+        history.commit();
+        history.push(2);
+        history.commit();
+        history.undo();
+        history.push(3);
+        assert_eq!(history.undo(), Some(&vec![3]));
+    }
+
     #[derive(Debug, Default, PartialEq)]
     struct Sum<T>(T);
 

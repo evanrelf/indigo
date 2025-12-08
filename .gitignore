@@ -1,4 +1,6 @@
-/target
+target/
+mutants.out/
+mutants.out.old/
 *.log
 profile.json
 profile.json.gz
