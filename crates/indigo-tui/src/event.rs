@@ -22,7 +22,9 @@ pub type TerminalEvent = crossterm::event::Event;
 #[must_use]
 pub fn should_skip_event(event: &TerminalEvent) -> bool {
     match event {
-        TerminalEvent::Key(key_event) => key_event.kind.is_release(),
+        TerminalEvent::Key(key_event) => {
+            matches!(key_event.code, KeyCode::Modifier(_)) || key_event.kind.is_release()
+        }
         TerminalEvent::Mouse(mouse_event) => matches!(
             mouse_event.kind,
             MouseEventKind::Moved | MouseEventKind::ScrollLeft | MouseEventKind::ScrollRight
