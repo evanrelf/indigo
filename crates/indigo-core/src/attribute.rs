@@ -18,15 +18,17 @@ impl<A> Attributes<A> {
         Self::default()
     }
 
-    pub fn insert(&mut self, range: impl RangeBounds<u32>, attribute: A)
+    pub fn insert<R>(&mut self, range: R, attribute: A)
     where
+        R: RangeBounds<u32>,
         A: Ord,
     {
         self.0.entry(attribute).or_default().insert_range(range);
     }
 
-    pub fn remove<Q>(&mut self, range: impl RangeBounds<u32>, attribute: &Q)
+    pub fn remove<R, Q>(&mut self, range: R, attribute: &Q)
     where
+        R: RangeBounds<u32>,
         A: Borrow<Q> + Ord,
         Q: Ord + ?Sized,
     {
@@ -40,8 +42,9 @@ impl<A> Attributes<A> {
     }
 
     #[must_use]
-    pub fn contains<Q>(&self, range: impl RangeBounds<u32>, attribute: &Q) -> bool
+    pub fn contains<R, Q>(&self, range: R, attribute: &Q) -> bool
     where
+        R: RangeBounds<u32>,
         A: Borrow<Q> + Ord,
         Q: Ord + ?Sized,
     {
@@ -63,7 +66,10 @@ impl<A> Attributes<A> {
         })
     }
 
-    pub fn attrs(&self, range: impl RangeBounds<u32> + Clone) -> impl Iterator<Item = &A> {
+    pub fn attrs<R>(&self, range: R) -> impl Iterator<Item = &A>
+    where
+        R: RangeBounds<u32> + Clone,
+    {
         iter::zip(self.0.iter(), iter::repeat(range))
             .filter_map(|((attr, ranges), range)| ranges.contains_range(range).then_some(attr))
     }
