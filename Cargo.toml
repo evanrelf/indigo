@@ -18,6 +18,7 @@ indigo-tui = { path = "crates/indigo-tui/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }
 memchr = "2.7.6"
 pathdiff = { version = "0.2.3", features = ["camino"] }
+range-set-blaze = "0.4.1"
 ratatui = "0.30.0-beta.0"
 regex-cursor = { version = "0.1.5", default-features = false, features = ["perf-inline"] }
 roaring = "0.11.2"

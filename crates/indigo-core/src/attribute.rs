@@ -23,6 +23,7 @@ impl Attributes {
         }
     }
 
+    #[must_use]
     pub fn contains(&self, range: impl RangeBounds<u32>, attribute: &'static str) -> bool {
         match self.0.get(attribute) {
             Some(r) => r.contains_range(range),
