@@ -49,22 +49,14 @@ impl<A> Attributes<A> {
     }
 
     #[must_use]
-    pub fn ranges<Q>(&self, attribute: &Q) -> Option<Vec<RangeInclusive<u32>>>
+    pub fn ranges<Q>(&self, attribute: &Q) -> Option<impl Iterator<Item = RangeInclusive<u32>>>
     where
         A: Borrow<Q> + Ord,
         Q: Ord + ?Sized,
     {
-        let attribute = attribute.borrow();
-        if let Some(r) = self.0.get(attribute) {
-            let mut ranges = Vec::new();
-            let mut iter = r.iter();
-            while let Some(range) = iter.next_range() {
-                ranges.push(range);
-            }
-            Some(ranges)
-        } else {
-            None
-        }
+        self.0
+            .get(attribute.borrow())
+            .map(|r| AttrRanges { iter: r.iter() })
     }
 
     pub fn attrs(&self, range: impl RangeBounds<u32> + Clone) -> impl Iterator<Item = &A> {
@@ -76,6 +68,17 @@ impl<A> Attributes<A> {
 impl<A> Default for Attributes<A> {
     fn default() -> Self {
         Self(BTreeMap::default())
+    }
+}
+
+pub struct AttrRanges<'a> {
+    iter: roaring::bitmap::Iter<'a>,
+}
+
+impl Iterator for AttrRanges<'_> {
+    type Item = RangeInclusive<u32>;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next_range()
     }
 }
 
@@ -94,7 +97,7 @@ mod tests {
         assert!(!attrs.contains(4..=6, "foo"));
         assert!(attrs.contains(7..=8, "foo"));
         let expected_ranges = vec![0..=3, 7..=8];
-        let actual_ranges = attrs.ranges("foo").unwrap();
+        let actual_ranges = attrs.ranges("foo").unwrap().collect::<Vec<_>>();
         assert_eq!(expected_ranges, actual_ranges);
         let expected_attrs: Vec<&str> = vec!["foo"];
         let actual_attrs: Vec<&str> = attrs.attrs(0..=3).copied().collect::<Vec<_>>();
