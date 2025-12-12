@@ -1,23 +1,31 @@
 use roaring::RoaringBitmap;
 use std::{
+    borrow::Borrow,
     collections::BTreeMap,
     ops::{RangeBounds, RangeInclusive},
 };
 
-#[derive(Default)]
-pub struct Attributes(BTreeMap<&'static str, RoaringBitmap>);
+pub struct Attributes<A>(BTreeMap<A, RoaringBitmap>);
 
-impl Attributes {
+impl<A> Attributes<A> {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    pub fn insert(&mut self, range: impl RangeBounds<u32>, attribute: &'static str) {
+    pub fn insert(&mut self, range: impl RangeBounds<u32>, attribute: A)
+    where
+        A: Ord,
+    {
         self.0.entry(attribute).or_default().insert_range(range);
     }
 
-    pub fn remove(&mut self, range: impl RangeBounds<u32>, attribute: &'static str) {
+    pub fn remove<Q>(&mut self, range: impl RangeBounds<u32>, attribute: &Q)
+    where
+        A: Borrow<Q> + Ord,
+        Q: Ord + ?Sized,
+    {
+        let attribute = attribute.borrow();
         if let Some(r) = self.0.get_mut(attribute) {
             r.remove_range(range);
             if r.is_empty() {
@@ -27,7 +35,12 @@ impl Attributes {
     }
 
     #[must_use]
-    pub fn contains(&self, range: impl RangeBounds<u32>, attribute: &'static str) -> bool {
+    pub fn contains<Q>(&self, range: impl RangeBounds<u32>, attribute: &Q) -> bool
+    where
+        A: Borrow<Q> + Ord,
+        Q: Ord + ?Sized,
+    {
+        let attribute = attribute.borrow();
         match self.0.get(attribute) {
             Some(r) => r.contains_range(range),
             None => false,
@@ -35,7 +48,12 @@ impl Attributes {
     }
 
     #[must_use]
-    pub fn ranges(&self, attribute: &'static str) -> Option<Vec<RangeInclusive<u32>>> {
+    pub fn ranges<Q>(&self, attribute: &Q) -> Option<Vec<RangeInclusive<u32>>>
+    where
+        A: Borrow<Q> + Ord,
+        Q: Ord + ?Sized,
+    {
+        let attribute = attribute.borrow();
         if let Some(r) = self.0.get(attribute) {
             let mut ranges = Vec::new();
             let mut iter = r.iter();
@@ -46,6 +64,12 @@ impl Attributes {
         } else {
             None
         }
+    }
+}
+
+impl<A> Default for Attributes<A> {
+    fn default() -> Self {
+        Self(BTreeMap::default())
     }
 }
 
