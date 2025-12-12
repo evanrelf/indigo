@@ -32,6 +32,8 @@ unicode-width = "0.2.2"
 winnow = "0.7.13"
 
 [patch.crates-io]
+# Fix generating zero for `NonZero<T>`.
+# https://github.com/rust-fuzz/arbitrary/pull/214
 arbitrary = { git = "https://github.com/rust-fuzz/arbitrary.git", rev = "69ac259b653cc094652a9e73eabd3f4ef9244d86" }
 
 [workspace.lints]
