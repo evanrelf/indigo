@@ -20,6 +20,7 @@ memchr = "2.7.6"
 pathdiff = { version = "0.2.3", features = ["camino"] }
 ratatui = "0.30.0-beta.0"
 regex-cursor = { version = "0.1.5", default-features = false, features = ["perf-inline"] }
+roaring = "0.11.2"
 ropey = { version = "2.0.0-beta.1" }
 shell-words = "1.1.0"
 thiserror = "2.0.17"
