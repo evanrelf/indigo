@@ -3,9 +3,6 @@ use crate::{
     event::{Event, KeyEvent},
     key::{KeyCode, is},
     mode::{Mode, normal::enter_normal_mode},
-    window::{
-        scroll_full_page_down, scroll_full_page_up, scroll_half_page_down, scroll_half_page_up,
-    },
 };
 
 #[derive(Default)]
@@ -26,10 +23,6 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
             (m, KeyCode::Char(c)) if m.is_empty() => insert_char(editor, char::from(c)),
             _ if is(key, "<ret>") => insert_char(editor, '\n'),
             _ if is(key, "<tab>") => insert_char(editor, '\t'),
-            _ if is(key, "<c-u>") => scroll_half_page_up(editor),
-            _ if is(key, "<c-d>") => scroll_half_page_down(editor),
-            _ if is(key, "<c-b>") => scroll_full_page_up(editor),
-            _ if is(key, "<c-f>") => scroll_full_page_down(editor),
             _ if is(key, "<c-c>") => editor.exit(1),
             _ => handled = false,
         },
