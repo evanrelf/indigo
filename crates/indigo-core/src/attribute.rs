@@ -1,5 +1,8 @@
 use roaring::RoaringBitmap;
-use std::{collections::BTreeMap, ops::RangeBounds};
+use std::{
+    collections::BTreeMap,
+    ops::{RangeBounds, RangeInclusive},
+};
 
 #[derive(Default)]
 pub struct Attributes(BTreeMap<&'static str, RoaringBitmap>);
@@ -30,6 +33,20 @@ impl Attributes {
             None => false,
         }
     }
+
+    #[must_use]
+    pub fn ranges(&self, attribute: &'static str) -> Option<Vec<RangeInclusive<u32>>> {
+        if let Some(r) = self.0.get(attribute) {
+            let mut ranges = Vec::new();
+            let mut iter = r.iter();
+            while let Some(range) = iter.next_range() {
+                ranges.push(range);
+            }
+            Some(ranges)
+        } else {
+            None
+        }
+    }
 }
 
 #[cfg(test)]
@@ -40,11 +57,14 @@ mod tests {
     fn demo() {
         let mut attrs = Attributes::new();
         attrs.insert(0..=4, "foo");
-        attrs.insert(2..8, "foo");
-        assert!(attrs.contains(0..8, "foo"));
-        attrs.remove(4..6, "foo");
-        assert!(attrs.contains(0..4, "foo"));
-        assert!(!attrs.contains(4..6, "foo"));
-        assert!(attrs.contains(6..8, "foo"));
+        attrs.insert(2..=8, "foo");
+        assert!(attrs.contains(0..=8, "foo"));
+        attrs.remove(4..=6, "foo");
+        assert!(attrs.contains(0..=3, "foo"));
+        assert!(!attrs.contains(4..=6, "foo"));
+        assert!(attrs.contains(7..=8, "foo"));
+        let expected_ranges = vec![0..=3, 7..=8];
+        let actual_ranges = attrs.ranges("foo").unwrap();
+        assert_eq!(expected_ranges, actual_ranges);
     }
 }

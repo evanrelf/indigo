@@ -35,6 +35,9 @@ winnow = "0.7.13"
 # Fix generating zero for `NonZero<T>`.
 # https://github.com/rust-fuzz/arbitrary/pull/214
 arbitrary = { git = "https://github.com/rust-fuzz/arbitrary.git", rev = "69ac259b653cc094652a9e73eabd3f4ef9244d86" }
+# Unreleased `next_range{,_back}` iterator methods.
+# https://github.com/RoaringBitmap/roaring-rs/pull/338
+roaring = { git = "https://github.com/RoaringBitmap/roaring-rs.git", rev = "ad96740edcbf838c1fec9c13680c5770c69b8c71" }
 
 [workspace.lints]
 clippy.allow_attributes = "warn"

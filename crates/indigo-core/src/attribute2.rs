@@ -30,6 +30,14 @@ impl Attributes {
             None => false,
         }
     }
+
+    #[must_use]
+    pub fn ranges(
+        &self,
+        attribute: &'static str,
+    ) -> Option<impl Iterator<Item = RangeInclusive<u32>>> {
+        self.0.get(attribute).map(|r| r.ranges())
+    }
 }
 
 #[cfg(test)]
@@ -46,5 +54,8 @@ mod tests {
         assert!(attrs.contains(0..=3, "foo"));
         assert!(!attrs.contains(4..=6, "foo"));
         assert!(attrs.contains(7..=8, "foo"));
+        let expected_ranges = vec![0..=3, 7..=8];
+        let actual_ranges = attrs.ranges("foo").unwrap().collect::<Vec<_>>();
+        assert_eq!(expected_ranges, actual_ranges);
     }
 }
