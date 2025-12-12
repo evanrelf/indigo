@@ -99,18 +99,18 @@ mod tests {
     #[test]
     fn demo() {
         let mut attrs = Attributes::new();
-        attrs.insert(0..=4, "foo");
-        attrs.insert(2..=8, "foo");
+        attrs.insert(0..=4, String::from("foo"));
+        attrs.insert(2..=8, String::from("foo"));
         assert!(attrs.contains(0..=8, "foo"));
         attrs.remove(4..=6, "foo");
         assert!(attrs.contains(0..=3, "foo"));
         assert!(!attrs.contains(4..=6, "foo"));
         assert!(attrs.contains(7..=8, "foo"));
         let expected_ranges = vec![0..=3, 7..=8];
-        let actual_ranges = attrs.ranges("foo").unwrap().collect::<Vec<_>>();
+        let actual_ranges: Vec<_> = attrs.ranges("foo").unwrap().collect();
         assert_eq!(expected_ranges, actual_ranges);
-        let expected_attrs: Vec<&str> = vec!["foo"];
-        let actual_attrs: Vec<&str> = attrs.attrs(0..=3).copied().collect::<Vec<_>>();
+        let expected_attrs = vec!["foo"];
+        let actual_attrs: Vec<_> = attrs.attrs(0..=3).cloned().collect();
         assert_eq!(expected_attrs, actual_attrs);
     }
 }
