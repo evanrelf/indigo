@@ -2,6 +2,7 @@ use roaring::RoaringBitmap;
 use std::{
     borrow::Borrow,
     collections::BTreeMap,
+    iter,
     ops::{RangeBounds, RangeInclusive},
 };
 
@@ -65,6 +66,11 @@ impl<A> Attributes<A> {
             None
         }
     }
+
+    pub fn attrs(&self, range: impl RangeBounds<u32> + Clone) -> impl Iterator<Item = &A> {
+        iter::zip(self.0.iter(), iter::repeat(range))
+            .filter_map(|((attr, ranges), range)| ranges.contains_range(range).then_some(attr))
+    }
 }
 
 impl<A> Default for Attributes<A> {
@@ -90,5 +96,8 @@ mod tests {
         let expected_ranges = vec![0..=3, 7..=8];
         let actual_ranges = attrs.ranges("foo").unwrap();
         assert_eq!(expected_ranges, actual_ranges);
+        let expected_attrs: Vec<&str> = vec!["foo"];
+        let actual_attrs: Vec<&str> = attrs.attrs(0..=3).copied().collect::<Vec<_>>();
+        assert_eq!(expected_attrs, actual_attrs);
     }
 }
