@@ -23,7 +23,6 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
             (m, KeyCode::Char(c)) if m.is_empty() => insert_char(editor, char::from(c)),
             _ if is(key, "<ret>") => insert_char(editor, '\n'),
             _ if is(key, "<tab>") => insert_char(editor, '\t'),
-            _ if is(key, "<c-c>") => editor.exit(1),
             _ => handled = false,
         },
     }
