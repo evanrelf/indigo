@@ -27,9 +27,9 @@ impl<A> Attributes<A> {
         Q: Ord + ?Sized,
     {
         let attribute = attribute.borrow();
-        if let Some(r) = self.0.get_mut(attribute) {
-            r.remove_range(range);
-            if r.is_empty() {
+        if let Some(ranges) = self.0.get_mut(attribute) {
+            ranges.remove_range(range);
+            if ranges.is_empty() {
                 self.0.remove(attribute);
             }
         }
@@ -43,7 +43,7 @@ impl<A> Attributes<A> {
     {
         let attribute = attribute.borrow();
         match self.0.get(attribute) {
-            Some(r) => r.contains_range(range),
+            Some(ranges) => ranges.contains_range(range),
             None => false,
         }
     }
@@ -54,9 +54,9 @@ impl<A> Attributes<A> {
         A: Borrow<Q> + Ord,
         Q: Ord + ?Sized,
     {
-        self.0
-            .get(attribute.borrow())
-            .map(|r| AttrRanges { iter: r.iter() })
+        self.0.get(attribute.borrow()).map(|ranges| AttrRanges {
+            iter: ranges.iter(),
+        })
     }
 
     pub fn attrs(&self, range: impl RangeBounds<u32> + Clone) -> impl Iterator<Item = &A> {
