@@ -8,6 +8,10 @@ use std::{
 
 pub struct Attributes<A>(BTreeMap<A, RoaringBitmap>);
 
+// TODO: Add range queries with `BTreeMap::range`. For example, if `A = &str`, and I have three
+// attributes `["color=red", "color=green", "color=blue"]`, then a range query could let me query
+// all the colors without caring about their values.
+
 impl<A> Attributes<A> {
     #[must_use]
     pub fn new() -> Self {
