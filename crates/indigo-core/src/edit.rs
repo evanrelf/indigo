@@ -14,11 +14,11 @@ pub trait Edit {
     type Insertion;
     type Deletion;
     type Error;
+    // TODO: Add associated anchor type
     fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error>;
     fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error>;
-    // TODO: Add function for integrating external insertions
-    // TODO: Add function for integrating external deletions
-    // TODO: Add associated anchor type
+    fn integrate_insertion(&mut self, insertion: &Self::Insertion) -> Result<(), Self::Error>;
+    fn integrate_deletion(&mut self, deletion: &Self::Deletion) -> Result<(), Self::Error>;
     // TODO: Add function for resolving anchor
 }
 
@@ -61,6 +61,14 @@ impl Edit for OtText {
         self.ot.push(edits);
         Ok(OtDeletion { range })
     }
+    // TODO: Store enough information in `OtInsertion` to transform and apply it correctly.
+    fn integrate_insertion(&mut self, insertion: &Self::Insertion) -> Result<(), Self::Error> {
+        todo!()
+    }
+    // TODO: Store enough information in `OtDeletion` to transform and apply it correctly.
+    fn integrate_deletion(&mut self, deletion: &Self::Deletion) -> Result<(), Self::Error> {
+        todo!()
+    }
 }
 
 pub struct CrdtText {
@@ -93,6 +101,19 @@ impl Edit for CrdtText {
         self.rope.remove(range.clone());
         let deletion = self.crdt.deleted(range);
         Ok(CrdtDeletion { crdt: deletion })
+    }
+    fn integrate_insertion(&mut self, insertion: &Self::Insertion) -> Result<(), Self::Error> {
+        if let Some(byte_offset) = self.crdt.integrate_insertion(&insertion.crdt) {
+            self.rope.insert(byte_offset, &insertion.text);
+        }
+        Ok(())
+    }
+    fn integrate_deletion(&mut self, deletion: &Self::Deletion) -> Result<(), Self::Error> {
+        let ranges = self.crdt.integrate_deletion(&deletion.crdt);
+        for range in ranges.into_iter().rev() {
+            self.rope.remove(range);
+        }
+        Ok(())
     }
 }
 
