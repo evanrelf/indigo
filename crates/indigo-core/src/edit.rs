@@ -56,6 +56,39 @@ impl Edit for Ot {
     }
 }
 
+pub struct Crdt {
+    pub rope: Rope,
+    pub crdt: cola::Replica,
+}
+
+pub struct CrdtInsertion {
+    pub text: String,
+    pub crdt: cola::Insertion,
+}
+
+pub struct CrdtDeletion {
+    pub crdt: cola::Deletion,
+}
+
+impl Edit for Crdt {
+    type Insertion = CrdtInsertion;
+    type Deletion = CrdtDeletion;
+    type Error = anyhow::Error;
+    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error> {
+        self.rope.insert(offset, text);
+        let insertion = self.crdt.inserted(offset, text.len());
+        Ok(CrdtInsertion {
+            text: String::from(text),
+            crdt: insertion,
+        })
+    }
+    fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error> {
+        self.rope.remove(range.clone());
+        let deletion = self.crdt.deleted(range);
+        Ok(CrdtDeletion { crdt: deletion })
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Length mismatch: {left} != {right}")]
@@ -447,6 +480,24 @@ mod tests {
     fn edit_ot() -> anyhow::Result<()> {
         let mut text = Ot {
             rope: Rope::from("The quick brown fox"),
+        };
+        text.delete(4..9)?;
+        assert_eq!(text.rope, Rope::from("The  brown fox"));
+        text.insert(4, "cute")?;
+        assert_eq!(text.rope, Rope::from("The cute brown fox"));
+        text.delete(9..14)?;
+        assert_eq!(text.rope, Rope::from("The cute  fox"));
+        text.insert(9, "white")?;
+        assert_eq!(text.rope, Rope::from("The cute white fox"));
+        Ok(())
+    }
+
+    #[test]
+    fn edit_crdt() -> anyhow::Result<()> {
+        let rope = Rope::from("The quick brown fox");
+        let mut text = Crdt {
+            crdt: cola::Replica::new(1, rope.len()),
+            rope,
         };
         text.delete(4..9)?;
         assert_eq!(text.rope, Rope::from("The  brown fox"));
