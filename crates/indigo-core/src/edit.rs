@@ -16,6 +16,10 @@ pub trait Edit {
     type Error;
     fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error>;
     fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error>;
+    // TODO: Add function for integrating external insertions
+    // TODO: Add function for integrating external deletions
+    // TODO: Add associated anchor type
+    // TODO: Add function for resolving anchor
 }
 
 pub struct Ot {
