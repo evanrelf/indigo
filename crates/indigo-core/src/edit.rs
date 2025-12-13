@@ -3,8 +3,58 @@
 //! <https://en.wikipedia.org/wiki/Operational_transformation>
 
 use ropey::Rope;
-use std::{cmp::min, ops::Deref, rc::Rc};
+use std::{
+    cmp::min,
+    ops::{Deref, Range},
+    rc::Rc,
+};
 use thiserror::Error;
+
+pub trait Edit {
+    type Insertion;
+    type Deletion;
+    type Error;
+    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error>;
+    fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error>;
+}
+
+pub struct Ot {
+    pub rope: Rope,
+}
+
+pub struct OtInsertion {
+    pub byte_offset: usize,
+    pub text: String,
+}
+
+pub struct OtDeletion {
+    pub range: Range<usize>,
+}
+
+impl Edit for Ot {
+    type Insertion = OtInsertion;
+    type Deletion = OtDeletion;
+    type Error = anyhow::Error;
+    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error> {
+        let mut edits = EditSeq::new();
+        edits.retain(offset);
+        edits.insert(text);
+        edits.retain_rest(&self.rope);
+        edits.apply(&mut self.rope)?;
+        Ok(OtInsertion {
+            byte_offset: offset,
+            text: String::from(text),
+        })
+    }
+    fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error> {
+        let mut edits = EditSeq::new();
+        edits.retain(range.start);
+        edits.delete(range.end - range.start);
+        edits.retain_rest(&self.rope);
+        edits.apply(&mut self.rope)?;
+        Ok(OtDeletion { range })
+    }
+}
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -392,6 +442,22 @@ impl EditOp {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn edit_ot() -> anyhow::Result<()> {
+        let mut text = Ot {
+            rope: Rope::from("The quick brown fox"),
+        };
+        text.delete(4..9)?;
+        assert_eq!(text.rope, Rope::from("The  brown fox"));
+        text.insert(4, "cute")?;
+        assert_eq!(text.rope, Rope::from("The cute brown fox"));
+        text.delete(9..14)?;
+        assert_eq!(text.rope, Rope::from("The cute  fox"));
+        text.insert(9, "white")?;
+        assert_eq!(text.rope, Rope::from("The cute white fox"));
+        Ok(())
+    }
 
     #[test]
     fn edit_seq_push() {
