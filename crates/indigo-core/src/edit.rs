@@ -22,7 +22,7 @@ pub trait Edit {
     // TODO: Add function for resolving anchor
 }
 
-pub struct Ot {
+pub struct OtText {
     pub rope: Rope,
     pub ot: Vec<EditSeq>,
 }
@@ -36,7 +36,7 @@ pub struct OtDeletion {
     pub range: Range<usize>,
 }
 
-impl Edit for Ot {
+impl Edit for OtText {
     type Insertion = OtInsertion;
     type Deletion = OtDeletion;
     type Error = anyhow::Error;
@@ -63,7 +63,7 @@ impl Edit for Ot {
     }
 }
 
-pub struct Crdt {
+pub struct CrdtText {
     pub rope: Rope,
     pub crdt: cola::Replica,
 }
@@ -77,7 +77,7 @@ pub struct CrdtDeletion {
     pub crdt: cola::Deletion,
 }
 
-impl Edit for Crdt {
+impl Edit for CrdtText {
     type Insertion = CrdtInsertion;
     type Deletion = CrdtDeletion;
     type Error = anyhow::Error;
@@ -485,7 +485,7 @@ mod tests {
 
     #[test]
     fn edit_ot() -> anyhow::Result<()> {
-        let mut text = Ot {
+        let mut text = OtText {
             rope: Rope::from("The quick brown fox"),
             ot: Vec::new(),
         };
@@ -503,7 +503,7 @@ mod tests {
     #[test]
     fn edit_crdt() -> anyhow::Result<()> {
         let rope = Rope::from("The quick brown fox");
-        let mut text = Crdt {
+        let mut text = CrdtText {
             crdt: cola::Replica::new(1, rope.len()),
             rope,
         };
