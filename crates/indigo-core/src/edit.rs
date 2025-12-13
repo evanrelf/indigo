@@ -5,6 +5,7 @@
 use ropey::Rope;
 use std::{
     cmp::min,
+    convert::Infallible,
     ops::{Deref, Range},
     rc::Rc,
 };
@@ -24,6 +25,22 @@ pub trait Collab: Edit {
     fn integrate_deletion(&mut self, deletion: &Self::Deletion) -> Result<(), Self::Error>;
     fn create_anchor(&self, offset: usize) -> Self::Anchor;
     fn resolve_anchor(&self, anchor: &Self::Anchor) -> Option<usize>;
+}
+
+pub struct StdText(pub String);
+
+impl Edit for StdText {
+    type Insertion = ();
+    type Deletion = ();
+    type Error = Infallible;
+    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error> {
+        self.0.insert_str(offset, text);
+        Ok(())
+    }
+    fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error> {
+        self.0.replace_range(range, "");
+        Ok(())
+    }
 }
 
 pub struct OtText {
@@ -551,6 +568,20 @@ impl EditOp {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn edit_std() -> anyhow::Result<()> {
+        let mut text = StdText(String::from("The quick brown fox"));
+        text.delete(4..9)?;
+        assert_eq!(&text.0, "The  brown fox");
+        text.insert(4, "cute")?;
+        assert_eq!(&text.0, "The cute brown fox");
+        text.delete(9..14)?;
+        assert_eq!(&text.0, "The cute  fox");
+        text.insert(9, "white")?;
+        assert_eq!(&text.0, "The cute white fox");
+        Ok(())
+    }
 
     #[test]
     fn edit_ot() -> anyhow::Result<()> {
