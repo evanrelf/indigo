@@ -27,13 +27,22 @@ pub struct OtText {
     pub ot: Vec<EditSeq>,
 }
 
+impl OtText {
+    #[must_use]
+    pub fn version(&self) -> usize {
+        self.ot.len()
+    }
+}
+
 pub struct OtInsertion {
-    pub byte_offset: usize,
     pub text: String,
+    pub edits: EditSeq,
+    pub version: usize,
 }
 
 pub struct OtDeletion {
-    pub range: Range<usize>,
+    pub edits: EditSeq,
+    pub version: usize,
 }
 
 impl Edit for OtText {
@@ -41,31 +50,32 @@ impl Edit for OtText {
     type Deletion = OtDeletion;
     type Error = anyhow::Error;
     fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error> {
+        let version = self.version();
         let mut edits = EditSeq::new();
         edits.retain(offset);
         edits.insert(text);
         edits.retain_rest(&self.rope);
         edits.apply(&mut self.rope)?;
-        self.ot.push(edits);
+        self.ot.push(edits.clone());
         Ok(OtInsertion {
-            byte_offset: offset,
             text: String::from(text),
+            edits,
+            version,
         })
     }
     fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error> {
+        let version = self.version();
         let mut edits = EditSeq::new();
         edits.retain(range.start);
         edits.delete(range.end - range.start);
         edits.retain_rest(&self.rope);
         edits.apply(&mut self.rope)?;
-        self.ot.push(edits);
-        Ok(OtDeletion { range })
+        self.ot.push(edits.clone());
+        Ok(OtDeletion { edits, version })
     }
-    // TODO: Store enough information in `OtInsertion` to transform and apply it correctly.
     fn integrate_insertion(&mut self, insertion: &Self::Insertion) -> Result<(), Self::Error> {
         todo!()
     }
-    // TODO: Store enough information in `OtDeletion` to transform and apply it correctly.
     fn integrate_deletion(&mut self, deletion: &Self::Deletion) -> Result<(), Self::Error> {
         todo!()
     }
