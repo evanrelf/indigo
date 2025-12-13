@@ -20,6 +20,7 @@ pub trait Edit {
 
 pub struct Ot {
     pub rope: Rope,
+    pub ot: Vec<EditSeq>,
 }
 
 pub struct OtInsertion {
@@ -41,6 +42,7 @@ impl Edit for Ot {
         edits.insert(text);
         edits.retain_rest(&self.rope);
         edits.apply(&mut self.rope)?;
+        self.ot.push(edits);
         Ok(OtInsertion {
             byte_offset: offset,
             text: String::from(text),
@@ -52,6 +54,7 @@ impl Edit for Ot {
         edits.delete(range.end - range.start);
         edits.retain_rest(&self.rope);
         edits.apply(&mut self.rope)?;
+        self.ot.push(edits);
         Ok(OtDeletion { range })
     }
 }
@@ -480,6 +483,7 @@ mod tests {
     fn edit_ot() -> anyhow::Result<()> {
         let mut text = Ot {
             rope: Rope::from("The quick brown fox"),
+            ot: Vec::new(),
         };
         text.delete(4..9)?;
         assert_eq!(text.rope, Rope::from("The  brown fox"));
