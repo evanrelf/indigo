@@ -1,7 +1,8 @@
 use crate::{
     bias::Bias,
     display_width::DisplayWidth,
-    edit::{Collab as _, Edit as _, OperationSeq},
+    edit::{Collab as _, Edit as _},
+    ot::OperationSeq,
     rope::{LINE_TYPE, RopeExt as _},
     text::Text,
 };

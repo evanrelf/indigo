@@ -1,5 +1,6 @@
 use crate::{
-    edit::{Collab, Edit, OperationSeq, OtAnchor, OtDeletion, OtInsertion},
+    edit::{Collab, Edit, OtAnchor, OtDeletion, OtInsertion},
+    ot::OperationSeq,
     history::History,
 };
 use ropey::Rope;

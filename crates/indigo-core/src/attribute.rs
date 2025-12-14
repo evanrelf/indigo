@@ -1,4 +1,4 @@
-use crate::edit::OperationSeq;
+use crate::ot::OperationSeq;
 use roaring::RoaringBitmap;
 use std::{
     borrow::Borrow,

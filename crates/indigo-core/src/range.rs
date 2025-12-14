@@ -1,7 +1,8 @@
 use crate::{
     bias::Bias,
     cursor::{Cursor, CursorMut, CursorState},
-    edit::{Collab as _, OperationSeq},
+    edit::{Collab as _},
+    ot::OperationSeq,
     rope::RopeExt as _,
     text::Text,
 };

@@ -10,6 +10,7 @@ pub mod fs;
 pub mod history;
 pub mod key;
 pub mod mode;
+pub mod ot;
 pub mod prelude;
 pub mod range;
 pub mod rope;
