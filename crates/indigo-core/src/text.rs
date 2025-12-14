@@ -1,7 +1,8 @@
 use crate::{
-    edit::{Edit, EditSeq, OtDeletion, OtInsertion},
+    edit::{Edit, EditSeq, OtDeletion, OtInsertion, OtText},
     history::History,
 };
+use indigo_wrap::WMut;
 use ropey::Rope;
 use std::ops::{Deref, Range};
 
@@ -98,28 +99,18 @@ impl Edit for Text {
     type Deletion = OtDeletion;
     type Error = anyhow::Error;
     fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error> {
-        let version = self.version();
-        let mut edits = EditSeq::new();
-        edits.retain(offset);
-        edits.insert(text);
-        edits.retain_rest(&self.rope);
-        edits.apply(&mut self.rope)?;
-        self.edit_log.push(edits.clone());
-        Ok(OtInsertion {
-            text: String::from(text),
-            edits,
-            version,
-        })
+        let mut ot_text: OtText<'_, WMut> = OtText {
+            rope: &mut self.rope,
+            ot: &mut self.edit_log,
+        };
+        ot_text.insert(offset, text)
     }
     fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error> {
-        let version = self.version();
-        let mut edits = EditSeq::new();
-        edits.retain(range.start);
-        edits.delete(range.end - range.start);
-        edits.retain_rest(&self.rope);
-        edits.apply(&mut self.rope)?;
-        self.edit_log.push(edits.clone());
-        Ok(OtDeletion { edits, version })
+        let mut ot_text: OtText<'_, WMut> = OtText {
+            rope: &mut self.rope,
+            ot: &mut self.edit_log,
+        };
+        ot_text.delete(range)
     }
 }
 
