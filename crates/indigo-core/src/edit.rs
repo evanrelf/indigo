@@ -20,9 +20,9 @@ pub trait Collab: Edit {
     fn resolve_anchor(&self, anchor: &Self::Anchor) -> Option<usize>;
 }
 
-pub struct StdText(pub String);
+pub struct LocalText(pub String);
 
-impl Edit for StdText {
+impl Edit for LocalText {
     type Insert = ();
     type Delete = ();
     type Error = Infallible;
@@ -180,8 +180,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn edit_std() -> anyhow::Result<()> {
-        let mut text = StdText(String::from("The quick brown fox"));
+    fn edit_local() -> anyhow::Result<()> {
+        let mut text = LocalText(String::from("The quick brown fox"));
         text.delete(4..9)?;
         assert_eq!(&text.0, "The  brown fox");
         text.insert(4, "cute")?;
