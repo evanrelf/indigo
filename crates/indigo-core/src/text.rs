@@ -103,14 +103,30 @@ impl Edit for Text {
             rope: &mut self.rope,
             ot: &mut self.edit_log,
         };
-        ot_text.insert(offset, text)
+        let insertion = ot_text.insert(offset, text)?;
+        let redo = self
+            .edit_log
+            .last()
+            .expect("`OtText::insert` just pushed one `EditSeq`")
+            .clone();
+        let undo = redo.invert(&self.rope)?;
+        self.history.push(BidiEditSeq { undo, redo });
+        Ok(insertion)
     }
     fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error> {
         let mut ot_text: OtText<'_, WMut> = OtText {
             rope: &mut self.rope,
             ot: &mut self.edit_log,
         };
-        ot_text.delete(range)
+        let deletion = ot_text.delete(range)?;
+        let redo = self
+            .edit_log
+            .last()
+            .expect("`OtText::delete` just pushed one `EditSeq`")
+            .clone();
+        let undo = redo.invert(&self.rope)?;
+        self.history.push(BidiEditSeq { undo, redo });
+        Ok(deletion)
     }
 }
 
