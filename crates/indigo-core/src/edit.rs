@@ -205,7 +205,7 @@ pub enum Error {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct EditSeq {
-    edits: Vec<Operation>,
+    ops: Vec<Operation>,
     source_bytes: usize,
     target_bytes: usize,
 }
@@ -219,7 +219,7 @@ impl EditSeq {
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            edits: Vec::with_capacity(capacity),
+            ops: Vec::with_capacity(capacity),
             source_bytes: 0,
             target_bytes: 0,
         }
@@ -227,7 +227,7 @@ impl EditSeq {
 
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.edits.is_empty()
+        self.ops.is_empty()
     }
 
     pub fn retain(&mut self, byte_length: usize) {
@@ -238,10 +238,10 @@ impl EditSeq {
         self.source_bytes += byte_length;
         self.target_bytes += byte_length;
 
-        if let Some(Operation::Retain(n)) = self.edits.last_mut() {
+        if let Some(Operation::Retain(n)) = self.ops.last_mut() {
             *n += byte_length;
         } else {
-            self.edits.push(Operation::Retain(byte_length));
+            self.ops.push(Operation::Retain(byte_length));
         }
     }
 
@@ -259,10 +259,10 @@ impl EditSeq {
 
         self.source_bytes += byte_length;
 
-        if let Some(Operation::Delete(n)) = self.edits.last_mut() {
+        if let Some(Operation::Delete(n)) = self.ops.last_mut() {
             *n += byte_length;
         } else {
-            self.edits.push(Operation::Delete(byte_length));
+            self.ops.push(Operation::Delete(byte_length));
         }
     }
 
@@ -273,18 +273,18 @@ impl EditSeq {
 
         self.target_bytes += text.len();
 
-        if let Some(Operation::Insert(last)) = self.edits.last_mut() {
+        if let Some(Operation::Insert(last)) = self.ops.last_mut() {
             let mut s = String::with_capacity(last.len() + text.len());
             s.push_str(last);
             s.push_str(text);
             *last = Rc::from(s);
         } else {
-            self.edits.push(Operation::Insert(Rc::from(text)));
+            self.ops.push(Operation::Insert(Rc::from(text)));
         }
     }
 
-    pub fn push(&mut self, edit: Operation) {
-        match edit {
+    pub fn push(&mut self, op: Operation) {
+        match op {
             Operation::Retain(n) => self.retain(n),
             Operation::Delete(n) => self.delete(n),
             Operation::Insert(s) => self.insert(&s),
@@ -301,8 +301,8 @@ impl EditSeq {
 
         let mut result = Self::with_capacity(self.len() + other.len());
 
-        let mut iter1 = self.edits.iter().cloned();
-        let mut iter2 = other.edits.iter().cloned();
+        let mut iter1 = self.ops.iter().cloned();
+        let mut iter2 = other.ops.iter().cloned();
 
         let mut op1 = iter1.next();
         let mut op2 = iter2.next();
@@ -426,8 +426,8 @@ impl EditSeq {
     pub fn transform_byte_offset(&self, mut byte_offset: usize) -> usize {
         let mut position = 0;
 
-        for edit in &self.edits {
-            match edit {
+        for op in &self.ops {
+            match op {
                 Operation::Retain(n) => {
                     position += n;
                 }
@@ -460,8 +460,8 @@ impl EditSeq {
 
         let mut inverted = Self::with_capacity(self.len());
 
-        for edit in &self.edits {
-            match edit {
+        for op in &self.ops {
+            match op {
                 Operation::Retain(n) => inverted.retain(*n),
                 Operation::Delete(n) => {
                     let start = inverted.target_bytes;
@@ -486,8 +486,8 @@ impl EditSeq {
 
         let mut byte_offset = 0;
 
-        for edit in &self.edits {
-            byte_offset = edit.apply(byte_offset, rope)?;
+        for op in &self.ops {
+            byte_offset = op.apply(byte_offset, rope)?;
         }
 
         Ok(())
@@ -498,7 +498,7 @@ impl Deref for EditSeq {
     type Target = [Operation];
 
     fn deref(&self) -> &Self::Target {
-        &self.edits
+        &self.ops
     }
 }
 
@@ -508,7 +508,7 @@ impl IntoIterator for EditSeq {
     type IntoIter = std::vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.edits.into_iter()
+        self.ops.into_iter()
     }
 }
 
@@ -518,17 +518,17 @@ impl<'a> IntoIterator for &'a EditSeq {
     type IntoIter = std::slice::Iter<'a, Operation>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.edits.iter()
+        self.ops.iter()
     }
 }
 
 impl Extend<Operation> for EditSeq {
-    fn extend<T>(&mut self, edits: T)
+    fn extend<T>(&mut self, ops: T)
     where
         T: IntoIterator<Item = Operation>,
     {
-        for edit in edits {
-            self.push(edit);
+        for op in ops {
+            self.push(op);
         }
     }
 }
