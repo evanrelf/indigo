@@ -205,7 +205,7 @@ pub enum Error {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct EditSeq {
-    edits: Vec<EditOp>,
+    edits: Vec<Operation>,
     source_bytes: usize,
     target_bytes: usize,
 }
@@ -238,10 +238,10 @@ impl EditSeq {
         self.source_bytes += byte_length;
         self.target_bytes += byte_length;
 
-        if let Some(EditOp::Retain(n)) = self.edits.last_mut() {
+        if let Some(Operation::Retain(n)) = self.edits.last_mut() {
             *n += byte_length;
         } else {
-            self.edits.push(EditOp::Retain(byte_length));
+            self.edits.push(Operation::Retain(byte_length));
         }
     }
 
@@ -259,10 +259,10 @@ impl EditSeq {
 
         self.source_bytes += byte_length;
 
-        if let Some(EditOp::Delete(n)) = self.edits.last_mut() {
+        if let Some(Operation::Delete(n)) = self.edits.last_mut() {
             *n += byte_length;
         } else {
-            self.edits.push(EditOp::Delete(byte_length));
+            self.edits.push(Operation::Delete(byte_length));
         }
     }
 
@@ -273,21 +273,21 @@ impl EditSeq {
 
         self.target_bytes += text.len();
 
-        if let Some(EditOp::Insert(last)) = self.edits.last_mut() {
+        if let Some(Operation::Insert(last)) = self.edits.last_mut() {
             let mut s = String::with_capacity(last.len() + text.len());
             s.push_str(last);
             s.push_str(text);
             *last = Rc::from(s);
         } else {
-            self.edits.push(EditOp::Insert(Rc::from(text)));
+            self.edits.push(Operation::Insert(Rc::from(text)));
         }
     }
 
-    pub fn push(&mut self, edit: EditOp) {
+    pub fn push(&mut self, edit: Operation) {
         match edit {
-            EditOp::Retain(n) => self.retain(n),
-            EditOp::Delete(n) => self.delete(n),
-            EditOp::Insert(s) => self.insert(&s),
+            Operation::Retain(n) => self.retain(n),
+            Operation::Delete(n) => self.delete(n),
+            Operation::Insert(s) => self.insert(&s),
         }
     }
 
@@ -310,19 +310,19 @@ impl EditSeq {
         while op1.is_some() || op2.is_some() {
             match (&mut op1, &mut op2) {
                 // Delete from first: pass through, doesn't consume from second
-                (Some(EditOp::Delete(n)), _) => {
+                (Some(Operation::Delete(n)), _) => {
                     result.delete(*n);
                     op1 = iter1.next();
                 }
 
                 // Insert from second: pass through, doesn't consume from first
-                (_, Some(EditOp::Insert(s))) => {
+                (_, Some(Operation::Insert(s))) => {
                     result.insert(s);
                     op2 = iter2.next();
                 }
 
                 // Retain + Retain: both consume, output retain
-                (Some(EditOp::Retain(n1)), Some(EditOp::Retain(n2))) => {
+                (Some(Operation::Retain(n1)), Some(Operation::Retain(n2))) => {
                     let n = min(*n1, *n2);
                     result.retain(n);
                     *n1 -= n;
@@ -336,7 +336,7 @@ impl EditSeq {
                 }
 
                 // Retain + Delete: both consume, output delete
-                (Some(EditOp::Retain(n1)), Some(EditOp::Delete(n2))) => {
+                (Some(Operation::Retain(n1)), Some(Operation::Delete(n2))) => {
                     let n = min(*n1, *n2);
                     result.delete(n);
                     *n1 -= n;
@@ -350,7 +350,7 @@ impl EditSeq {
                 }
 
                 // Insert + Retain: second retains inserted text
-                (Some(EditOp::Insert(s1)), Some(EditOp::Retain(n2))) => {
+                (Some(Operation::Insert(s1)), Some(Operation::Retain(n2))) => {
                     let len1 = s1.len();
                     let n = len1.min(*n2);
 
@@ -373,7 +373,7 @@ impl EditSeq {
                 }
 
                 // Insert + Delete: operations cancel out
-                (Some(EditOp::Insert(s1)), Some(EditOp::Delete(n2))) => {
+                (Some(Operation::Insert(s1)), Some(Operation::Delete(n2))) => {
                     let len1 = s1.len();
                     let n = len1.min(*n2);
 
@@ -392,11 +392,11 @@ impl EditSeq {
                     }
                 }
 
-                (None, Some(EditOp::Retain(_) | EditOp::Delete(_))) => {
+                (None, Some(Operation::Retain(_) | Operation::Delete(_))) => {
                     anyhow::bail!(Error::ComposeSecondExpectsMore);
                 }
 
-                (Some(EditOp::Retain(_) | EditOp::Insert(_)), None) => {
+                (Some(Operation::Retain(_) | Operation::Insert(_)), None) => {
                     anyhow::bail!(Error::ComposeFirstProducesMore);
                 }
 
@@ -428,15 +428,15 @@ impl EditSeq {
 
         for edit in &self.edits {
             match edit {
-                EditOp::Retain(n) => {
+                Operation::Retain(n) => {
                     position += n;
                 }
-                EditOp::Delete(n) => {
+                Operation::Delete(n) => {
                     if position < byte_offset {
                         byte_offset -= n;
                     }
                 }
-                EditOp::Insert(s) => {
+                Operation::Insert(s) => {
                     if position <= byte_offset {
                         byte_offset += s.len();
                     }
@@ -462,14 +462,14 @@ impl EditSeq {
 
         for edit in &self.edits {
             match edit {
-                EditOp::Retain(n) => inverted.retain(*n),
-                EditOp::Delete(n) => {
+                Operation::Retain(n) => inverted.retain(*n),
+                Operation::Delete(n) => {
                     let start = inverted.target_bytes;
                     let end = start + n;
                     let s = rope.slice(start..end).to_string();
                     inverted.insert(&s);
                 }
-                EditOp::Insert(s) => inverted.delete(s.len()),
+                Operation::Insert(s) => inverted.delete(s.len()),
             }
         }
 
@@ -495,7 +495,7 @@ impl EditSeq {
 }
 
 impl Deref for EditSeq {
-    type Target = [EditOp];
+    type Target = [Operation];
 
     fn deref(&self) -> &Self::Target {
         &self.edits
@@ -503,7 +503,7 @@ impl Deref for EditSeq {
 }
 
 impl IntoIterator for EditSeq {
-    type Item = EditOp;
+    type Item = Operation;
 
     type IntoIter = std::vec::IntoIter<Self::Item>;
 
@@ -513,19 +513,19 @@ impl IntoIterator for EditSeq {
 }
 
 impl<'a> IntoIterator for &'a EditSeq {
-    type Item = &'a EditOp;
+    type Item = &'a Operation;
 
-    type IntoIter = std::slice::Iter<'a, EditOp>;
+    type IntoIter = std::slice::Iter<'a, Operation>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.edits.iter()
     }
 }
 
-impl Extend<EditOp> for EditSeq {
+impl Extend<Operation> for EditSeq {
     fn extend<T>(&mut self, edits: T)
     where
-        T: IntoIterator<Item = EditOp>,
+        T: IntoIterator<Item = Operation>,
     {
         for edit in edits {
             self.push(edit);
@@ -534,13 +534,13 @@ impl Extend<EditOp> for EditSeq {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum EditOp {
+pub enum Operation {
     Retain(usize),
     Delete(usize),
     Insert(Rc<str>),
 }
 
-impl EditOp {
+impl Operation {
     pub fn apply(&self, byte_offset: usize, rope: &mut Rope) -> anyhow::Result<usize> {
         let byte_offset = match self {
             Self::Retain(n) => byte_offset + n,
@@ -650,20 +650,20 @@ mod tests {
     fn edit_seq_push() {
         let mut edits = EditSeq::new();
         edits.extend([
-            EditOp::Insert(Rc::from("Hello,")),
-            EditOp::Insert(Rc::from(" world!")),
-            EditOp::Retain(42),
-            EditOp::Retain(58),
-            EditOp::Delete(4),
-            EditOp::Delete(4),
-            EditOp::Delete(4),
+            Operation::Insert(Rc::from("Hello,")),
+            Operation::Insert(Rc::from(" world!")),
+            Operation::Retain(42),
+            Operation::Retain(58),
+            Operation::Delete(4),
+            Operation::Delete(4),
+            Operation::Delete(4),
         ]);
         assert_eq!(
             *edits,
             [
-                EditOp::Insert(Rc::from("Hello, world!")),
-                EditOp::Retain(100),
-                EditOp::Delete(12),
+                Operation::Insert(Rc::from("Hello, world!")),
+                Operation::Retain(100),
+                Operation::Delete(12),
             ]
         );
     }
@@ -745,27 +745,27 @@ mod tests {
     }
 
     #[test]
-    fn edit_apply() {
+    fn operation_apply() {
         let mut rope = Rope::from("Hello, world!");
         let byte_offset = 0;
-        let byte_offset = EditOp::Retain(7).apply(byte_offset, &mut rope).unwrap();
-        let byte_offset = EditOp::Delete("world".len())
+        let byte_offset = Operation::Retain(7).apply(byte_offset, &mut rope).unwrap();
+        let byte_offset = Operation::Delete("world".len())
             .apply(byte_offset, &mut rope)
             .unwrap();
-        let byte_offset = EditOp::Insert(Rc::from("Evan"))
+        let byte_offset = Operation::Insert(Rc::from("Evan"))
             .apply(byte_offset, &mut rope)
             .unwrap();
-        let byte_offset = EditOp::Delete("!".len())
+        let byte_offset = Operation::Delete("!".len())
             .apply(byte_offset, &mut rope)
             .unwrap();
-        let byte_offset = EditOp::Insert(Rc::from("..."))
+        let byte_offset = Operation::Insert(Rc::from("..."))
             .apply(byte_offset, &mut rope)
             .unwrap();
-        let byte_offset = EditOp::Insert(Rc::from("?"))
+        let byte_offset = Operation::Insert(Rc::from("?"))
             .apply(byte_offset, &mut rope)
             .unwrap();
         assert_eq!(rope, Rope::from("Hello, Evan...?"));
-        assert!(EditOp::Retain(1).apply(byte_offset, &mut rope).is_err());
+        assert!(Operation::Retain(1).apply(byte_offset, &mut rope).is_err());
     }
 
     #[test]
