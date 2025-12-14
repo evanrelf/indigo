@@ -615,7 +615,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         ops.retain(self.start().byte_offset());
         ops.delete(self.byte_length());
         ops.retain_rest(&self.text);
-        self.text.edit(&ops).expect("Operations are well formed");
+        self.text.apply(&ops).expect("Operations are well formed");
         self.state.anchor.byte_offset = ops.transform_byte_offset(self.state.anchor.byte_offset);
         self.state.head.byte_offset = ops.transform_byte_offset(self.state.head.byte_offset);
         debug_assert_eq!(self.state.anchor.byte_offset, self.state.head.byte_offset);

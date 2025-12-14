@@ -417,7 +417,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         ops.retain(self.state.byte_offset);
         ops.insert(text);
         ops.retain_rest(&self.text);
-        self.text.edit(&ops).expect("Operations are well formed");
+        self.text.apply(&ops).expect("Operations are well formed");
         self.state.byte_offset = ops.transform_byte_offset(self.state.byte_offset);
         self.snap_to_grapheme_boundary();
         ops
@@ -452,7 +452,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         ops.retain(byte_offset);
         ops.delete(self.state.byte_offset - byte_offset);
         ops.retain_rest(&self.text);
-        self.text.edit(&ops).expect("Operations are well formed");
+        self.text.apply(&ops).expect("Operations are well formed");
         self.state.byte_offset = ops.transform_byte_offset(self.state.byte_offset);
         self.snap_to_grapheme_boundary();
         Some(ops)
@@ -473,7 +473,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         ops.retain(self.state.byte_offset);
         ops.delete(byte_offset - self.state.byte_offset);
         ops.retain_rest(&self.text);
-        self.text.edit(&ops).expect("Operations are well formed");
+        self.text.apply(&ops).expect("Operations are well formed");
         self.state.byte_offset = ops.transform_byte_offset(self.state.byte_offset);
         self.snap_to_grapheme_boundary();
         Some(ops)

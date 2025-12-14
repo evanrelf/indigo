@@ -43,7 +43,7 @@ impl Text {
         &self.rope
     }
 
-    pub fn edit(&mut self, ops: &OperationSeq) -> anyhow::Result<()> {
+    pub fn apply(&mut self, ops: &OperationSeq) -> anyhow::Result<()> {
         let undo = ops.invert(&self.rope)?;
         ops.apply(&mut self.rope)?;
         self.history.push(BidiOperationSeq {
