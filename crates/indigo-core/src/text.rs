@@ -1,5 +1,5 @@
 use crate::{
-    edit::{Collab, Edit, OtAnchor, OtDelete, OtInsert},
+    edit::{Collab, Edit},
     history::History,
     ot::OperationSeq,
 };
@@ -94,9 +94,25 @@ impl Text {
     }
 }
 
+pub struct Insert {
+    pub text: String,
+    pub ops: OperationSeq,
+    pub version: usize,
+}
+
+pub struct Delete {
+    pub ops: OperationSeq,
+    pub version: usize,
+}
+
+pub struct Anchor {
+    pub byte_offset: usize,
+    pub version: usize,
+}
+
 impl Edit for Text {
-    type Insert = OtInsert;
-    type Delete = OtDelete;
+    type Insert = Insert;
+    type Delete = Delete;
     type Error = anyhow::Error;
     fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insert, Self::Error> {
         let version = self.version();
@@ -109,7 +125,7 @@ impl Edit for Text {
         let redo = ops.clone();
         let undo = redo.invert(&self.rope)?;
         self.history.push(BidiOperationSeq { undo, redo });
-        Ok(OtInsert {
+        Ok(Insert {
             text: String::from(text),
             ops,
             version,
@@ -126,12 +142,12 @@ impl Edit for Text {
         let redo = ops.clone();
         let undo = redo.invert(&self.rope)?;
         self.history.push(BidiOperationSeq { undo, redo });
-        Ok(OtDelete { ops, version })
+        Ok(Delete { ops, version })
     }
 }
 
 impl Collab for Text {
-    type Anchor = OtAnchor;
+    type Anchor = Anchor;
     fn integrate_insert(&mut self, insert: &Self::Insert) -> Result<(), Self::Error> {
         todo!()
     }
@@ -139,7 +155,7 @@ impl Collab for Text {
         todo!()
     }
     fn create_anchor(&self, offset: usize) -> Self::Anchor {
-        OtAnchor {
+        Anchor {
             byte_offset: offset,
             version: self.version(),
         }
