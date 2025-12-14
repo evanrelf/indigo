@@ -1,8 +1,7 @@
 use crate::{
-    edit::{Edit, EditSeq, OtDeletion, OtInsertion, OtText},
+    edit::{Edit, EditSeq, OtDeletion, OtInsertion},
     history::History,
 };
-use indigo_wrap::WMut;
 use ropey::Rope;
 use std::ops::{Deref, Range};
 
@@ -99,34 +98,34 @@ impl Edit for Text {
     type Deletion = OtDeletion;
     type Error = anyhow::Error;
     fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error> {
-        let mut ot_text: OtText<'_, WMut> = OtText {
-            rope: &mut self.rope,
-            ot: &mut self.edit_log,
-        };
-        let insertion = ot_text.insert(offset, text)?;
-        let redo = self
-            .edit_log
-            .last()
-            .expect("`OtText::insert` just pushed one `EditSeq`")
-            .clone();
+        let version = self.version();
+        let mut edits = EditSeq::new();
+        edits.retain(offset);
+        edits.insert(text);
+        edits.retain_rest(&self.rope);
+        edits.apply(&mut self.rope)?;
+        self.edit_log.push(edits.clone());
+        let redo = edits.clone();
         let undo = redo.invert(&self.rope)?;
         self.history.push(BidiEditSeq { undo, redo });
-        Ok(insertion)
+        Ok(OtInsertion {
+            text: String::from(text),
+            edits,
+            version,
+        })
     }
     fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error> {
-        let mut ot_text: OtText<'_, WMut> = OtText {
-            rope: &mut self.rope,
-            ot: &mut self.edit_log,
-        };
-        let deletion = ot_text.delete(range)?;
-        let redo = self
-            .edit_log
-            .last()
-            .expect("`OtText::delete` just pushed one `EditSeq`")
-            .clone();
+        let version = self.version();
+        let mut edits = EditSeq::new();
+        edits.retain(range.start);
+        edits.delete(range.end - range.start);
+        edits.retain_rest(&self.rope);
+        edits.apply(&mut self.rope)?;
+        self.edit_log.push(edits.clone());
+        let redo = edits.clone();
         let undo = redo.invert(&self.rope)?;
         self.history.push(BidiEditSeq { undo, redo });
-        Ok(deletion)
+        Ok(OtDeletion { edits, version })
     }
 }
 

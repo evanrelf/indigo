@@ -2,7 +2,6 @@
 //!
 //! <https://en.wikipedia.org/wiki/Operational_transformation>
 
-use indigo_wrap::{Wrap, WrapMut, WrapRef};
 use ropey::Rope;
 use std::{
     cmp::min,
@@ -28,9 +27,9 @@ pub trait Collab: Edit {
     fn resolve_anchor(&self, anchor: &Self::Anchor) -> Option<usize>;
 }
 
-pub struct StdText<'a, W: Wrap>(pub W::Wrap<'a, String>);
+pub struct StdText(pub String);
 
-impl<W: WrapMut> Edit for StdText<'_, W> {
+impl Edit for StdText {
     type Insertion = ();
     type Deletion = ();
     type Error = Infallible;
@@ -44,12 +43,12 @@ impl<W: WrapMut> Edit for StdText<'_, W> {
     }
 }
 
-pub struct OtText<'a, W: Wrap> {
-    pub rope: W::Wrap<'a, Rope>,
-    pub ot: W::Wrap<'a, Vec<EditSeq>>,
+pub struct OtText {
+    pub rope: Rope,
+    pub ot: Vec<EditSeq>,
 }
 
-impl<W: WrapRef> OtText<'_, W> {
+impl OtText {
     #[must_use]
     pub fn version(&self) -> usize {
         self.ot.len()
@@ -72,7 +71,7 @@ pub struct OtAnchor {
     pub version: usize,
 }
 
-impl<W: WrapMut> Edit for OtText<'_, W> {
+impl Edit for OtText {
     type Insertion = OtInsertion;
     type Deletion = OtDeletion;
     type Error = anyhow::Error;
@@ -102,7 +101,7 @@ impl<W: WrapMut> Edit for OtText<'_, W> {
     }
 }
 
-impl<W: WrapMut> Collab for OtText<'_, W> {
+impl Collab for OtText {
     type Anchor = OtAnchor;
     fn integrate_insertion(&mut self, insertion: &Self::Insertion) -> Result<(), Self::Error> {
         todo!()
@@ -125,9 +124,9 @@ impl<W: WrapMut> Collab for OtText<'_, W> {
     }
 }
 
-pub struct CrdtText<'a, W: Wrap> {
-    pub rope: W::Wrap<'a, Rope>,
-    pub crdt: W::Wrap<'a, cola::Replica>,
+pub struct CrdtText {
+    pub rope: Rope,
+    pub crdt: cola::Replica,
 }
 
 pub struct CrdtInsertion {
@@ -141,7 +140,7 @@ pub struct CrdtDeletion {
 
 pub struct CrdtAnchor(pub cola::Anchor);
 
-impl<W: WrapMut> Edit for CrdtText<'_, W> {
+impl Edit for CrdtText {
     type Insertion = CrdtInsertion;
     type Deletion = CrdtDeletion;
     type Error = anyhow::Error;
@@ -160,7 +159,7 @@ impl<W: WrapMut> Edit for CrdtText<'_, W> {
     }
 }
 
-impl<W: WrapMut> Collab for CrdtText<'_, W> {
+impl Collab for CrdtText {
     type Anchor = CrdtAnchor;
     fn integrate_insertion(&mut self, insertion: &Self::Insertion) -> Result<(), Self::Error> {
         if let Some(byte_offset) = self.crdt.integrate_insertion(&insertion.crdt) {
@@ -569,89 +568,81 @@ impl EditOp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use indigo_wrap::WMut;
 
     #[test]
     fn edit_std() -> anyhow::Result<()> {
-        let mut string = String::from("The quick brown fox");
-        let mut text: StdText<'_, WMut> = StdText(&mut string);
+        let mut text = StdText(String::from("The quick brown fox"));
         text.delete(4..9)?;
-        assert_eq!(text.0, "The  brown fox");
+        assert_eq!(&text.0, "The  brown fox");
         text.insert(4, "cute")?;
-        assert_eq!(text.0, "The cute brown fox");
+        assert_eq!(&text.0, "The cute brown fox");
         text.delete(9..14)?;
-        assert_eq!(text.0, "The cute  fox");
+        assert_eq!(&text.0, "The cute  fox");
         text.insert(9, "white")?;
-        assert_eq!(text.0, "The cute white fox");
+        assert_eq!(&text.0, "The cute white fox");
         Ok(())
     }
 
     #[test]
     fn edit_ot() -> anyhow::Result<()> {
-        let mut rope = Rope::from("The quick brown fox");
-        let mut ot = Vec::new();
-        let mut text: OtText<'_, WMut> = OtText {
-            rope: &mut rope,
-            ot: &mut ot,
+        let mut text = OtText {
+            rope: Rope::from("The quick brown fox"),
+            ot: Vec::new(),
         };
         text.delete(4..9)?;
-        assert_eq!(*text.rope, Rope::from("The  brown fox"));
+        assert_eq!(text.rope, Rope::from("The  brown fox"));
         text.insert(4, "cute")?;
-        assert_eq!(*text.rope, Rope::from("The cute brown fox"));
+        assert_eq!(text.rope, Rope::from("The cute brown fox"));
         text.delete(9..14)?;
-        assert_eq!(*text.rope, Rope::from("The cute  fox"));
+        assert_eq!(text.rope, Rope::from("The cute  fox"));
         text.insert(9, "white")?;
-        assert_eq!(*text.rope, Rope::from("The cute white fox"));
+        assert_eq!(text.rope, Rope::from("The cute white fox"));
         Ok(())
     }
 
     #[test]
     fn edit_crdt() -> anyhow::Result<()> {
-        let mut rope = Rope::from("The quick brown fox");
-        let mut crdt = cola::Replica::new(1, rope.len());
-        let mut text: CrdtText<'_, WMut> = CrdtText {
-            crdt: &mut crdt,
-            rope: &mut rope,
+        let rope = Rope::from("The quick brown fox");
+        let mut text = CrdtText {
+            crdt: cola::Replica::new(1, rope.len()),
+            rope,
         };
         text.delete(4..9)?;
-        assert_eq!(*text.rope, Rope::from("The  brown fox"));
+        assert_eq!(text.rope, Rope::from("The  brown fox"));
         text.insert(4, "cute")?;
-        assert_eq!(*text.rope, Rope::from("The cute brown fox"));
+        assert_eq!(text.rope, Rope::from("The cute brown fox"));
         text.delete(9..14)?;
-        assert_eq!(*text.rope, Rope::from("The cute  fox"));
+        assert_eq!(text.rope, Rope::from("The cute  fox"));
         text.insert(9, "white")?;
-        assert_eq!(*text.rope, Rope::from("The cute white fox"));
+        assert_eq!(text.rope, Rope::from("The cute white fox"));
         Ok(())
     }
 
     #[test]
     fn collab_crdt() -> anyhow::Result<()> {
-        let mut rope1 = Rope::from("Hello");
-        let mut rope2 = rope1.clone();
-        let mut crdt1 = cola::Replica::new(1, rope1.len());
-        let mut crdt2 = crdt1.fork(2);
-        let mut text1: CrdtText<'_, WMut> = CrdtText {
-            rope: &mut rope1,
-            crdt: &mut crdt1,
+        let rope = Rope::from("Hello");
+        let mut text1 = CrdtText {
+            crdt: cola::Replica::new(1, rope.len()),
+            rope: rope.clone(),
         };
-        let mut text2: CrdtText<'_, WMut> = CrdtText {
-            rope: &mut rope2,
-            crdt: &mut crdt2,
+        let mut text2 = CrdtText {
+            crdt: text1.crdt.fork(2),
+            rope: rope.clone(),
         };
 
         let text1_deletion = text1.delete(0..5)?;
         let text1_insertion = text1.insert(0, "Goodbye")?;
-        assert_eq!(*text1.rope, Rope::from("Goodbye"));
+        assert_eq!(text1.rope, Rope::from("Goodbye"));
 
         let text2_insertion = text2.insert(5, ", world!")?;
-        assert_eq!(*text2.rope, Rope::from("Hello, world!"));
+        assert_eq!(text2.rope, Rope::from("Hello, world!"));
 
         text1.integrate_insertion(&text2_insertion)?;
         // Integrating remote edits out of order still works
         text2.integrate_insertion(&text1_insertion)?;
         text2.integrate_deletion(&text1_deletion)?;
-        assert_eq!(*text1.rope, Rope::from("Goodbye, world!"));
-        assert_eq!(*text2.rope, Rope::from("Goodbye, world!"));
+        assert_eq!(text1.rope, Rope::from("Goodbye, world!"));
+        assert_eq!(text2.rope, Rope::from("Goodbye, world!"));
         Ok(())
     }
 
