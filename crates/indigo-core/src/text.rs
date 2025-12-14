@@ -1,5 +1,5 @@
 use crate::{
-    edit::{Collab, Edit, EditSeq, OtAnchor, OtDeletion, OtInsertion},
+    edit::{Collab, Edit, EditSeq, OperationSeq, OtAnchor, OtDeletion, OtInsertion},
     history::History,
 };
 use ropey::Rope;
@@ -99,33 +99,33 @@ impl Edit for Text {
     type Error = anyhow::Error;
     fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error> {
         let version = self.version();
-        let mut edits = EditSeq::new();
-        edits.retain(offset);
-        edits.insert(text);
-        edits.retain_rest(&self.rope);
-        edits.apply(&mut self.rope)?;
-        self.edit_log.push(edits.clone());
-        let redo = edits.clone();
+        let mut ops = OperationSeq::new();
+        ops.retain(offset);
+        ops.insert(text);
+        ops.retain_rest(&self.rope);
+        ops.apply(&mut self.rope)?;
+        self.edit_log.push(ops.clone());
+        let redo = ops.clone();
         let undo = redo.invert(&self.rope)?;
         self.history.push(BidiEditSeq { undo, redo });
         Ok(OtInsertion {
             text: String::from(text),
-            edits,
+            ops,
             version,
         })
     }
     fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error> {
         let version = self.version();
-        let mut edits = EditSeq::new();
-        edits.retain(range.start);
-        edits.delete(range.end - range.start);
-        edits.retain_rest(&self.rope);
-        edits.apply(&mut self.rope)?;
-        self.edit_log.push(edits.clone());
-        let redo = edits.clone();
+        let mut ops = OperationSeq::new();
+        ops.retain(range.start);
+        ops.delete(range.end - range.start);
+        ops.retain_rest(&self.rope);
+        ops.apply(&mut self.rope)?;
+        self.edit_log.push(ops.clone());
+        let redo = ops.clone();
         let undo = redo.invert(&self.rope)?;
         self.history.push(BidiEditSeq { undo, redo });
-        Ok(OtDeletion { edits, version })
+        Ok(OtDeletion { ops, version })
     }
 }
 

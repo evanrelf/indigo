@@ -45,7 +45,7 @@ impl Edit for StdText {
 
 pub struct OtText {
     pub rope: Rope,
-    pub ot: Vec<EditSeq>,
+    pub ot: Vec<OperationSeq>,
 }
 
 impl OtText {
@@ -57,12 +57,12 @@ impl OtText {
 
 pub struct OtInsertion {
     pub text: String,
-    pub edits: EditSeq,
+    pub ops: OperationSeq,
     pub version: usize,
 }
 
 pub struct OtDeletion {
-    pub edits: EditSeq,
+    pub ops: OperationSeq,
     pub version: usize,
 }
 
@@ -77,27 +77,27 @@ impl Edit for OtText {
     type Error = anyhow::Error;
     fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error> {
         let version = self.version();
-        let mut edits = EditSeq::new();
-        edits.retain(offset);
-        edits.insert(text);
-        edits.retain_rest(&self.rope);
-        edits.apply(&mut self.rope)?;
-        self.ot.push(edits.clone());
+        let mut ops = OperationSeq::new();
+        ops.retain(offset);
+        ops.insert(text);
+        ops.retain_rest(&self.rope);
+        ops.apply(&mut self.rope)?;
+        self.ot.push(ops.clone());
         Ok(OtInsertion {
             text: String::from(text),
-            edits,
+            ops,
             version,
         })
     }
     fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error> {
         let version = self.version();
-        let mut edits = EditSeq::new();
-        edits.retain(range.start);
-        edits.delete(range.end - range.start);
-        edits.retain_rest(&self.rope);
-        edits.apply(&mut self.rope)?;
-        self.ot.push(edits.clone());
-        Ok(OtDeletion { edits, version })
+        let mut ops = OperationSeq::new();
+        ops.retain(range.start);
+        ops.delete(range.end - range.start);
+        ops.retain_rest(&self.rope);
+        ops.apply(&mut self.rope)?;
+        self.ot.push(ops.clone());
+        Ok(OtDeletion { ops, version })
     }
 }
 
@@ -117,8 +117,8 @@ impl Collab for OtText {
     }
     fn resolve_anchor(&self, anchor: &Self::Anchor) -> Option<usize> {
         let mut byte_offset = anchor.byte_offset;
-        for edits in self.ot.get(anchor.version..)? {
-            byte_offset = edits.transform_byte_offset(byte_offset);
+        for ops in self.ot.get(anchor.version..)? {
+            byte_offset = ops.transform_byte_offset(byte_offset);
         }
         Some(byte_offset)
     }
@@ -203,14 +203,17 @@ pub enum Error {
     Rope(#[from] ropey::Error),
 }
 
+// TODO: Remove
+pub type EditSeq = OperationSeq;
+
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct EditSeq {
+pub struct OperationSeq {
     ops: Vec<Operation>,
     source_bytes: usize,
     target_bytes: usize,
 }
 
-impl EditSeq {
+impl OperationSeq {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -494,7 +497,7 @@ impl EditSeq {
     }
 }
 
-impl Deref for EditSeq {
+impl Deref for OperationSeq {
     type Target = [Operation];
 
     fn deref(&self) -> &Self::Target {
@@ -502,7 +505,7 @@ impl Deref for EditSeq {
     }
 }
 
-impl IntoIterator for EditSeq {
+impl IntoIterator for OperationSeq {
     type Item = Operation;
 
     type IntoIter = std::vec::IntoIter<Self::Item>;
@@ -512,7 +515,7 @@ impl IntoIterator for EditSeq {
     }
 }
 
-impl<'a> IntoIterator for &'a EditSeq {
+impl<'a> IntoIterator for &'a OperationSeq {
     type Item = &'a Operation;
 
     type IntoIter = std::slice::Iter<'a, Operation>;
@@ -522,7 +525,7 @@ impl<'a> IntoIterator for &'a EditSeq {
     }
 }
 
-impl Extend<Operation> for EditSeq {
+impl Extend<Operation> for OperationSeq {
     fn extend<T>(&mut self, ops: T)
     where
         T: IntoIterator<Item = Operation>,
@@ -647,9 +650,9 @@ mod tests {
     }
 
     #[test]
-    fn edit_seq_push() {
-        let mut edits = EditSeq::new();
-        edits.extend([
+    fn operation_seq_push() {
+        let mut ops = OperationSeq::new();
+        ops.extend([
             Operation::Insert(Rc::from("Hello,")),
             Operation::Insert(Rc::from(" world!")),
             Operation::Retain(42),
@@ -659,7 +662,7 @@ mod tests {
             Operation::Delete(4),
         ]);
         assert_eq!(
-            *edits,
+            *ops,
             [
                 Operation::Insert(Rc::from("Hello, world!")),
                 Operation::Retain(100),
@@ -669,79 +672,79 @@ mod tests {
     }
 
     #[test]
-    fn edits_transform_offset() {
+    fn ops_transform_offset() {
         let mut rope = Rope::from("Hello, world!");
 
         let mut byte_offset = 9;
         assert_eq!(rope.char(byte_offset), 'r');
 
-        let mut edits = EditSeq::new();
-        edits.delete("Hello, ".len());
-        edits.retain("world".len());
-        edits.insert("!!!");
-        edits.retain("!".len());
+        let mut ops = OperationSeq::new();
+        ops.delete("Hello, ".len());
+        ops.retain("world".len());
+        ops.insert("!!!");
+        ops.retain("!".len());
 
-        edits.apply(&mut rope).unwrap();
+        ops.apply(&mut rope).unwrap();
         assert_eq!(rope, Rope::from("world!!!!"));
 
         assert_eq!(rope.get_char(byte_offset).ok(), None);
-        byte_offset = edits.transform_byte_offset(byte_offset);
+        byte_offset = ops.transform_byte_offset(byte_offset);
         assert_eq!(byte_offset, 2);
         assert_eq!(rope.char(byte_offset), 'r');
 
-        let mut edits = EditSeq::new();
-        edits.delete("w".len());
-        edits.insert("the whole w");
-        edits.retain_rest(&rope);
-        edits.apply(&mut rope).unwrap();
+        let mut ops = OperationSeq::new();
+        ops.delete("w".len());
+        ops.insert("the whole w");
+        ops.retain_rest(&rope);
+        ops.apply(&mut rope).unwrap();
         assert_eq!(rope, Rope::from("the whole world!!!!"));
 
         assert_eq!(rope.char(byte_offset), 'e');
-        byte_offset = edits.transform_byte_offset(byte_offset);
+        byte_offset = ops.transform_byte_offset(byte_offset);
         assert_eq!(byte_offset, 12);
         assert_eq!(rope.char(byte_offset), 'r');
     }
 
     #[test]
-    fn edits_invert() {
+    fn ops_invert() {
         let rope1 = Rope::from("Hello, world!");
 
-        let mut edits = EditSeq::new();
-        edits.delete("H".len());
-        edits.insert("Y");
-        edits.retain("ello".len());
-        edits.insert("w");
-        edits.delete(", world!".len());
-        edits.insert(" and pink");
+        let mut ops = OperationSeq::new();
+        ops.delete("H".len());
+        ops.insert("Y");
+        ops.retain("ello".len());
+        ops.insert("w");
+        ops.delete(", world!".len());
+        ops.insert(" and pink");
 
         let mut rope2 = rope1.clone();
-        edits.apply(&mut rope2).unwrap();
+        ops.apply(&mut rope2).unwrap();
         assert_eq!(rope2, Rope::from("Yellow and pink"));
 
-        assert_eq!(edits.invert(&rope1).unwrap().invert(&rope2).unwrap(), edits);
+        assert_eq!(ops.invert(&rope1).unwrap().invert(&rope2).unwrap(), ops);
 
         let mut rope3 = rope2.clone();
-        edits.invert(&rope1).unwrap().apply(&mut rope3).unwrap();
+        ops.invert(&rope1).unwrap().apply(&mut rope3).unwrap();
         assert_eq!(rope3, Rope::from("Hello, world!"));
     }
 
     #[test]
-    fn edits_apply() {
-        let mut edits = EditSeq::new();
-        edits.retain(7);
-        edits.delete("world".len());
-        edits.insert("Evan");
-        edits.delete("!".len());
-        edits.insert("...");
-        edits.insert("?");
+    fn ops_apply() {
+        let mut ops = OperationSeq::new();
+        ops.retain(7);
+        ops.delete("world".len());
+        ops.insert("Evan");
+        ops.delete("!".len());
+        ops.insert("...");
+        ops.insert("?");
 
         let mut rope = Rope::from("Hello, world!");
-        edits.apply(&mut rope).unwrap();
+        ops.apply(&mut rope).unwrap();
         assert_eq!(rope, Rope::from("Hello, Evan...?"));
 
         let mut rope = Rope::from("Hello, world!");
-        edits.retain(1);
-        assert!(edits.apply(&mut rope).is_err());
+        ops.retain(1);
+        assert!(ops.apply(&mut rope).is_err());
     }
 
     #[test]
@@ -769,21 +772,21 @@ mod tests {
     }
 
     #[test]
-    fn edits_compose_basic() {
+    fn ops_compose_basic() {
         // S0 = "abcdef"
         // A: Delete "ab", retain "cdef" -> S1 = "cdef"
         // B: Retain "cd", delete "ef" -> S2 = "cd"
         // A ∘ B should transform "abcdef" -> "cd"
 
-        let mut edit_a = EditSeq::new();
-        edit_a.delete(2); // Delete "ab"
-        edit_a.retain(4); // Retain "cdef"
+        let mut ops_a = OperationSeq::new();
+        ops_a.delete(2); // Delete "ab"
+        ops_a.retain(4); // Retain "cdef"
 
-        let mut edit_b = EditSeq::new();
-        edit_b.retain(2); // Retain "cd"
-        edit_b.delete(2); // Delete "ef"
+        let mut ops_b = OperationSeq::new();
+        ops_b.retain(2); // Retain "cd"
+        ops_b.delete(2); // Delete "ef"
 
-        let composed = edit_a.compose(&edit_b).unwrap();
+        let composed = ops_a.compose(&ops_b).unwrap();
 
         // Test the composition directly
         let mut rope = Rope::from("abcdef");
@@ -792,27 +795,27 @@ mod tests {
 
         // Verify it equals sequential application
         let mut rope2 = Rope::from("abcdef");
-        edit_a.apply(&mut rope2).unwrap();
-        edit_b.apply(&mut rope2).unwrap();
+        ops_a.apply(&mut rope2).unwrap();
+        ops_b.apply(&mut rope2).unwrap();
         assert_eq!(rope, rope2);
     }
 
     #[test]
-    fn edits_compose_insert() {
+    fn ops_compose_insert() {
         // S0 = "hello"
         // A: Insert "X", retain "hello" -> S1 = "Xhello"
         // B: Retain "X", insert "Y", retain "hello" -> S2 = "XYhello"
 
-        let mut edit_a = EditSeq::new();
-        edit_a.insert("X");
-        edit_a.retain(5);
+        let mut ops_a = OperationSeq::new();
+        ops_a.insert("X");
+        ops_a.retain(5);
 
-        let mut edit_b = EditSeq::new();
-        edit_b.retain(1);
-        edit_b.insert("Y");
-        edit_b.retain(5);
+        let mut ops_b = OperationSeq::new();
+        ops_b.retain(1);
+        ops_b.insert("Y");
+        ops_b.retain(5);
 
-        let composed = edit_a.compose(&edit_b).unwrap();
+        let composed = ops_a.compose(&ops_b).unwrap();
 
         let mut rope = Rope::from("hello");
         composed.apply(&mut rope).unwrap();
@@ -820,22 +823,22 @@ mod tests {
     }
 
     #[test]
-    fn edits_compose_insert_delete() {
+    fn ops_compose_insert_delete() {
         // S0 = "abc"
         // A: Retain "a", insert "XYZ", retain "bc" -> S1 = "aXYZbc"
         // B: Retain "a", delete "XY", retain "Zbc" -> S2 = "aZbc"
 
-        let mut edit_a = EditSeq::new();
-        edit_a.retain(1);
-        edit_a.insert("XYZ");
-        edit_a.retain(2);
+        let mut ops_a = OperationSeq::new();
+        ops_a.retain(1);
+        ops_a.insert("XYZ");
+        ops_a.retain(2);
 
-        let mut edit_b = EditSeq::new();
-        edit_b.retain(1);
-        edit_b.delete(2);
-        edit_b.retain(3);
+        let mut ops_b = OperationSeq::new();
+        ops_b.retain(1);
+        ops_b.delete(2);
+        ops_b.retain(3);
 
-        let composed = edit_a.compose(&edit_b).unwrap();
+        let composed = ops_a.compose(&ops_b).unwrap();
 
         let mut rope = Rope::from("abc");
         composed.apply(&mut rope).unwrap();
@@ -843,33 +846,33 @@ mod tests {
 
         // Verify property: apply(apply(S, A), B) = apply(S, compose(A, B))
         let mut rope2 = Rope::from("abc");
-        edit_a.apply(&mut rope2).unwrap();
-        edit_b.apply(&mut rope2).unwrap();
+        ops_a.apply(&mut rope2).unwrap();
+        ops_b.apply(&mut rope2).unwrap();
         assert_eq!(rope, rope2);
     }
 
     #[test]
-    fn edits_compose_complex() {
+    fn ops_compose_complex() {
         // S0 = "Hello, world!"
         // A: Delete "H", insert "Y", retain "ello", insert "w", delete ", world!", insert " and pink"
         //    -> S1 = "Yellow and pink"
         // B: Retain "Yellow", delete " and", retain " pink"
         //    -> S2 = "Yellow pink"
 
-        let mut edit_a = EditSeq::new();
-        edit_a.delete(1);
-        edit_a.insert("Y");
-        edit_a.retain(4);
-        edit_a.insert("w");
-        edit_a.delete(8);
-        edit_a.insert(" and pink");
+        let mut ops_a = OperationSeq::new();
+        ops_a.delete(1);
+        ops_a.insert("Y");
+        ops_a.retain(4);
+        ops_a.insert("w");
+        ops_a.delete(8);
+        ops_a.insert(" and pink");
 
-        let mut edit_b = EditSeq::new();
-        edit_b.retain(6);
-        edit_b.delete(4);
-        edit_b.retain(5);
+        let mut ops_b = OperationSeq::new();
+        ops_b.retain(6);
+        ops_b.delete(4);
+        ops_b.retain(5);
 
-        let composed = edit_a.compose(&edit_b).unwrap();
+        let composed = ops_a.compose(&ops_b).unwrap();
 
         let mut rope = Rope::from("Hello, world!");
         composed.apply(&mut rope).unwrap();
@@ -877,27 +880,27 @@ mod tests {
 
         // Verify property
         let mut rope2 = Rope::from("Hello, world!");
-        edit_a.apply(&mut rope2).unwrap();
-        edit_b.apply(&mut rope2).unwrap();
+        ops_a.apply(&mut rope2).unwrap();
+        ops_b.apply(&mut rope2).unwrap();
         assert_eq!(rope, rope2);
     }
 
     #[test]
-    fn edits_compose_length_mismatch() {
-        let mut edit_a = EditSeq::new();
-        edit_a.retain(5);
+    fn ops_compose_length_mismatch() {
+        let mut ops_a = OperationSeq::new();
+        ops_a.retain(5);
 
-        let mut edit_b = EditSeq::new();
-        edit_b.retain(3);
+        let mut ops_b = OperationSeq::new();
+        ops_b.retain(3);
 
-        assert!(edit_a.compose(&edit_b).is_err());
+        assert!(ops_a.compose(&ops_b).is_err());
     }
 
-    fn gen_edit_seq(
+    fn gen_operation_seq(
         u: &mut arbitrary::Unstructured<'_>,
         source_bytes: usize,
-    ) -> arbitrary::Result<EditSeq> {
-        let mut edits = EditSeq::new();
+    ) -> arbitrary::Result<OperationSeq> {
+        let mut ops = OperationSeq::new();
         let mut remaining = source_bytes;
 
         while remaining > 0 || u.arbitrary::<bool>()? {
@@ -907,13 +910,13 @@ mod tests {
                 // Retain
                 0 if remaining > 0 => {
                     let n = u.int_in_range(1..=remaining)?;
-                    edits.retain(n);
+                    ops.retain(n);
                     remaining -= n;
                 }
                 // Delete
                 1 if remaining > 0 => {
                     let n = u.int_in_range(1..=remaining)?;
-                    edits.delete(n);
+                    ops.delete(n);
                     remaining -= n;
                 }
                 // Insert
@@ -922,7 +925,7 @@ mod tests {
                     let s: String = (0..len)
                         .map(|_| u.int_in_range(b'a'..=b'z').map(|b| char::from(b)))
                         .collect::<arbitrary::Result<_>>()?;
-                    edits.insert(&s);
+                    ops.insert(&s);
 
                     // If we've consumed all source chars, we can stop
                     if remaining == 0 {
@@ -946,10 +949,10 @@ mod tests {
 
         // Ensure we consumed all source chars
         if remaining > 0 {
-            edits.retain(remaining);
+            ops.retain(remaining);
         }
 
-        Ok(edits)
+        Ok(ops)
     }
 
     #[test]
@@ -962,26 +965,26 @@ mod tests {
                 .collect::<arbitrary::Result<_>>()?;
             let rope = Rope::from(s.as_str());
 
-            // Generate edit sequence A that's valid for the rope
-            let edit_a = gen_edit_seq(u, rope.len())?;
+            // Generate operation sequence A that's valid for the rope
+            let ops_a = gen_operation_seq(u, rope.len())?;
 
             // Apply A to get intermediate rope
             let mut rope1 = rope.clone();
-            edit_a.apply(&mut rope1).expect("edit_a.apply failed");
+            ops_a.apply(&mut rope1).expect("ops_a.apply failed");
 
-            // Generate edit sequence B that's valid for the intermediate rope
-            let edit_b = gen_edit_seq(u, rope1.len())?;
+            // Generate operation sequence B that's valid for the intermediate rope
+            let ops_b = gen_operation_seq(u, rope1.len())?;
 
             // Test property: apply(apply(S, A), B) = apply(S, compose(A, B))
             let mut rope_sequential = rope.clone();
-            edit_a
+            ops_a
                 .apply(&mut rope_sequential)
-                .expect("sequential: edit_a.apply failed");
-            edit_b
+                .expect("sequential: ops_a.apply failed");
+            ops_b
                 .apply(&mut rope_sequential)
-                .expect("sequential: edit_b.apply failed");
+                .expect("sequential: ops_b.apply failed");
 
-            let composed = edit_a.compose(&edit_b).expect("compose failed");
+            let composed = ops_a.compose(&ops_b).expect("compose failed");
             let mut rope_composed = rope.clone();
             composed
                 .apply(&mut rope_composed)
@@ -995,10 +998,10 @@ mod tests {
                  A = source:{} target:{}\n\
                  B = source:{} target:{}",
                 rope.to_string(),
-                edit_a.source_bytes,
-                edit_a.target_bytes,
-                edit_b.source_bytes,
-                edit_b.target_bytes,
+                ops_a.source_bytes,
+                ops_a.target_bytes,
+                ops_b.source_bytes,
+                ops_b.target_bytes,
             );
 
             Ok(())
