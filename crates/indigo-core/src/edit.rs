@@ -134,11 +134,16 @@ impl Undo for OtText {
                 Operation::Delete(_) => unreachable!(),
             }
         }
-        for ops in self.ot.get((insert.version + 1)..).unwrap_or(&[]) {
-            byte_offset = ops.transform_byte_offset(byte_offset);
-        }
-        let range = byte_offset..byte_offset + insert.text.len();
-        self.delete(range)
+        let anchor = OtAnchor {
+            byte_offset,
+            version: insert.version + 1,
+        };
+        let byte_offset = self
+            .resolve_anchor(&anchor)
+            .expect("Anchor version <= text version");
+        let start = byte_offset;
+        let end = start + insert.text.len();
+        self.delete(start..end)
     }
 
     fn undo_delete(&mut self, delete: &Self::Delete) -> Result<Self::Insert, Self::Error> {
@@ -150,9 +155,13 @@ impl Undo for OtText {
                 Operation::Insert(_) => unreachable!(),
             }
         }
-        for ops in self.ot.get((delete.version + 1)..).unwrap_or(&[]) {
-            byte_offset = ops.transform_byte_offset(byte_offset);
-        }
+        let anchor = OtAnchor {
+            byte_offset,
+            version: delete.version + 1,
+        };
+        let byte_offset = self
+            .resolve_anchor(&anchor)
+            .expect("Anchor version <= text version");
         self.insert(byte_offset, &delete.text)
     }
 }
