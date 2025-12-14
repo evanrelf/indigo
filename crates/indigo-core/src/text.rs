@@ -1,7 +1,7 @@
 use crate::{
-    edit::{Collab, Edit, OtAnchor, OtDeletion, OtInsertion},
-    ot::OperationSeq,
+    edit::{Collab, Edit, OtAnchor, OtDelete, OtInsert},
     history::History,
+    ot::OperationSeq,
 };
 use ropey::Rope;
 use std::ops::{Deref, Range};
@@ -95,10 +95,10 @@ impl Text {
 }
 
 impl Edit for Text {
-    type Insertion = OtInsertion;
-    type Deletion = OtDeletion;
+    type Insert = OtInsert;
+    type Delete = OtDelete;
     type Error = anyhow::Error;
-    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error> {
+    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insert, Self::Error> {
         let version = self.version();
         let mut ops = OperationSeq::new();
         ops.retain(offset);
@@ -109,13 +109,13 @@ impl Edit for Text {
         let redo = ops.clone();
         let undo = redo.invert(&self.rope)?;
         self.history.push(BidiOperationSeq { undo, redo });
-        Ok(OtInsertion {
+        Ok(OtInsert {
             text: String::from(text),
             ops,
             version,
         })
     }
-    fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error> {
+    fn delete(&mut self, range: Range<usize>) -> Result<Self::Delete, Self::Error> {
         let version = self.version();
         let mut ops = OperationSeq::new();
         ops.retain(range.start);
@@ -126,16 +126,16 @@ impl Edit for Text {
         let redo = ops.clone();
         let undo = redo.invert(&self.rope)?;
         self.history.push(BidiOperationSeq { undo, redo });
-        Ok(OtDeletion { ops, version })
+        Ok(OtDelete { ops, version })
     }
 }
 
 impl Collab for Text {
     type Anchor = OtAnchor;
-    fn integrate_insertion(&mut self, insertion: &Self::Insertion) -> Result<(), Self::Error> {
+    fn integrate_insert(&mut self, insert: &Self::Insert) -> Result<(), Self::Error> {
         todo!()
     }
-    fn integrate_deletion(&mut self, deletion: &Self::Deletion) -> Result<(), Self::Error> {
+    fn integrate_delete(&mut self, delete: &Self::Delete) -> Result<(), Self::Error> {
         todo!()
     }
     fn create_anchor(&self, offset: usize) -> Self::Anchor {

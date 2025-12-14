@@ -5,17 +5,17 @@ use ropey::Rope;
 use std::{convert::Infallible, ops::Range};
 
 pub trait Edit {
-    type Insertion;
-    type Deletion;
+    type Insert;
+    type Delete;
     type Error;
-    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error>;
-    fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error>;
+    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insert, Self::Error>;
+    fn delete(&mut self, range: Range<usize>) -> Result<Self::Delete, Self::Error>;
 }
 
 pub trait Collab: Edit {
     type Anchor;
-    fn integrate_insertion(&mut self, insertion: &Self::Insertion) -> Result<(), Self::Error>;
-    fn integrate_deletion(&mut self, deletion: &Self::Deletion) -> Result<(), Self::Error>;
+    fn integrate_insert(&mut self, insert: &Self::Insert) -> Result<(), Self::Error>;
+    fn integrate_delete(&mut self, delete: &Self::Delete) -> Result<(), Self::Error>;
     fn create_anchor(&self, offset: usize) -> Self::Anchor;
     fn resolve_anchor(&self, anchor: &Self::Anchor) -> Option<usize>;
 }
@@ -23,14 +23,14 @@ pub trait Collab: Edit {
 pub struct StdText(pub String);
 
 impl Edit for StdText {
-    type Insertion = ();
-    type Deletion = ();
+    type Insert = ();
+    type Delete = ();
     type Error = Infallible;
-    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error> {
+    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insert, Self::Error> {
         self.0.insert_str(offset, text);
         Ok(())
     }
-    fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error> {
+    fn delete(&mut self, range: Range<usize>) -> Result<Self::Delete, Self::Error> {
         self.0.replace_range(range, "");
         Ok(())
     }
@@ -48,13 +48,13 @@ impl OtText {
     }
 }
 
-pub struct OtInsertion {
+pub struct OtInsert {
     pub text: String,
     pub ops: OperationSeq,
     pub version: usize,
 }
 
-pub struct OtDeletion {
+pub struct OtDelete {
     pub ops: OperationSeq,
     pub version: usize,
 }
@@ -65,10 +65,10 @@ pub struct OtAnchor {
 }
 
 impl Edit for OtText {
-    type Insertion = OtInsertion;
-    type Deletion = OtDeletion;
+    type Insert = OtInsert;
+    type Delete = OtDelete;
     type Error = anyhow::Error;
-    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error> {
+    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insert, Self::Error> {
         let version = self.version();
         let mut ops = OperationSeq::new();
         ops.retain(offset);
@@ -76,13 +76,13 @@ impl Edit for OtText {
         ops.retain_rest(&self.rope);
         ops.apply(&mut self.rope)?;
         self.ot.push(ops.clone());
-        Ok(OtInsertion {
+        Ok(OtInsert {
             text: String::from(text),
             ops,
             version,
         })
     }
-    fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error> {
+    fn delete(&mut self, range: Range<usize>) -> Result<Self::Delete, Self::Error> {
         let version = self.version();
         let mut ops = OperationSeq::new();
         ops.retain(range.start);
@@ -90,16 +90,16 @@ impl Edit for OtText {
         ops.retain_rest(&self.rope);
         ops.apply(&mut self.rope)?;
         self.ot.push(ops.clone());
-        Ok(OtDeletion { ops, version })
+        Ok(OtDelete { ops, version })
     }
 }
 
 impl Collab for OtText {
     type Anchor = OtAnchor;
-    fn integrate_insertion(&mut self, insertion: &Self::Insertion) -> Result<(), Self::Error> {
+    fn integrate_insert(&mut self, insert: &Self::Insert) -> Result<(), Self::Error> {
         todo!()
     }
-    fn integrate_deletion(&mut self, deletion: &Self::Deletion) -> Result<(), Self::Error> {
+    fn integrate_delete(&mut self, delete: &Self::Delete) -> Result<(), Self::Error> {
         todo!()
     }
     fn create_anchor(&self, offset: usize) -> Self::Anchor {
@@ -122,46 +122,46 @@ pub struct CrdtText {
     pub crdt: cola::Replica,
 }
 
-pub struct CrdtInsertion {
+pub struct CrdtInsert {
     pub text: String,
     pub crdt: cola::Insertion,
 }
 
-pub struct CrdtDeletion {
+pub struct CrdtDelete {
     pub crdt: cola::Deletion,
 }
 
 pub struct CrdtAnchor(pub cola::Anchor);
 
 impl Edit for CrdtText {
-    type Insertion = CrdtInsertion;
-    type Deletion = CrdtDeletion;
+    type Insert = CrdtInsert;
+    type Delete = CrdtDelete;
     type Error = anyhow::Error;
-    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error> {
+    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insert, Self::Error> {
         self.rope.insert(offset, text);
-        let insertion = self.crdt.inserted(offset, text.len());
-        Ok(CrdtInsertion {
+        let insert = self.crdt.inserted(offset, text.len());
+        Ok(CrdtInsert {
             text: String::from(text),
-            crdt: insertion,
+            crdt: insert,
         })
     }
-    fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error> {
+    fn delete(&mut self, range: Range<usize>) -> Result<Self::Delete, Self::Error> {
         self.rope.remove(range.clone());
-        let deletion = self.crdt.deleted(range);
-        Ok(CrdtDeletion { crdt: deletion })
+        let delete = self.crdt.deleted(range);
+        Ok(CrdtDelete { crdt: delete })
     }
 }
 
 impl Collab for CrdtText {
     type Anchor = CrdtAnchor;
-    fn integrate_insertion(&mut self, insertion: &Self::Insertion) -> Result<(), Self::Error> {
-        if let Some(byte_offset) = self.crdt.integrate_insertion(&insertion.crdt) {
-            self.rope.insert(byte_offset, &insertion.text);
+    fn integrate_insert(&mut self, insert: &Self::Insert) -> Result<(), Self::Error> {
+        if let Some(byte_offset) = self.crdt.integrate_insertion(&insert.crdt) {
+            self.rope.insert(byte_offset, &insert.text);
         }
         Ok(())
     }
-    fn integrate_deletion(&mut self, deletion: &Self::Deletion) -> Result<(), Self::Error> {
-        let ranges = self.crdt.integrate_deletion(&deletion.crdt);
+    fn integrate_delete(&mut self, delete: &Self::Delete) -> Result<(), Self::Error> {
+        let ranges = self.crdt.integrate_deletion(&delete.crdt);
         for range in ranges.into_iter().rev() {
             self.rope.remove(range);
         }
@@ -240,17 +240,17 @@ mod tests {
             rope: rope.clone(),
         };
 
-        let text1_deletion = text1.delete(0..5)?;
-        let text1_insertion = text1.insert(0, "Goodbye")?;
+        let text1_delete = text1.delete(0..5)?;
+        let text1_insert = text1.insert(0, "Goodbye")?;
         assert_eq!(text1.rope, Rope::from("Goodbye"));
 
-        let text2_insertion = text2.insert(5, ", world!")?;
+        let text2_insert = text2.insert(5, ", world!")?;
         assert_eq!(text2.rope, Rope::from("Hello, world!"));
 
-        text1.integrate_insertion(&text2_insertion)?;
+        text1.integrate_insert(&text2_insert)?;
         // Integrating remote edits out of order still works
-        text2.integrate_insertion(&text1_insertion)?;
-        text2.integrate_deletion(&text1_deletion)?;
+        text2.integrate_insert(&text1_insert)?;
+        text2.integrate_delete(&text1_delete)?;
         assert_eq!(text1.rope, Rope::from("Goodbye, world!"));
         assert_eq!(text2.rope, Rope::from("Goodbye, world!"));
         Ok(())
