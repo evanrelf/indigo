@@ -1,6 +1,6 @@
 //! Abstract text editing interface.
 
-use crate::ot::OperationSeq;
+use crate::ot::{Operation, OperationSeq};
 use ropey::Rope;
 use std::{convert::Infallible, ops::Range};
 
@@ -18,6 +18,11 @@ pub trait Collab: Edit {
     fn integrate_delete(&mut self, delete: &Self::Delete) -> Result<(), Self::Error>;
     fn create_anchor(&self, offset: usize) -> Self::Anchor;
     fn resolve_anchor(&self, anchor: &Self::Anchor) -> Option<usize>;
+}
+
+pub trait Undo: Edit {
+    fn undo_insert(&mut self, insert: &Self::Insert) -> Result<Self::Delete, Self::Error>;
+    fn undo_delete(&mut self, delete: &Self::Delete) -> Result<Self::Insert, Self::Error>;
 }
 
 pub struct LocalText(pub String);
@@ -55,6 +60,7 @@ pub struct OtInsert {
 }
 
 pub struct OtDelete {
+    pub text: String,
     pub ops: OperationSeq,
     pub version: usize,
 }
@@ -84,13 +90,14 @@ impl Edit for OtText {
     }
     fn delete(&mut self, range: Range<usize>) -> Result<Self::Delete, Self::Error> {
         let version = self.version();
+        let text = self.rope.slice(range.clone()).to_string();
         let mut ops = OperationSeq::new();
         ops.retain(range.start);
         ops.delete(range.end - range.start);
         ops.retain_rest(&self.rope);
         ops.apply(&mut self.rope)?;
         self.ot.push(ops.clone());
-        Ok(OtDelete { ops, version })
+        Ok(OtDelete { text, ops, version })
     }
 }
 
@@ -114,6 +121,39 @@ impl Collab for OtText {
             byte_offset = ops.transform_byte_offset(byte_offset);
         }
         Some(byte_offset)
+    }
+}
+
+impl Undo for OtText {
+    fn undo_insert(&mut self, insert: &Self::Insert) -> Result<Self::Delete, Self::Error> {
+        let mut byte_offset = 0;
+        for op in &insert.ops {
+            match op {
+                Operation::Retain(n) => byte_offset += n,
+                Operation::Insert(_) => break,
+                Operation::Delete(_) => unreachable!(),
+            }
+        }
+        for ops in self.ot.get((insert.version + 1)..).unwrap_or(&[]) {
+            byte_offset = ops.transform_byte_offset(byte_offset);
+        }
+        let range = byte_offset..byte_offset + insert.text.len();
+        self.delete(range)
+    }
+
+    fn undo_delete(&mut self, delete: &Self::Delete) -> Result<Self::Insert, Self::Error> {
+        let mut byte_offset = 0;
+        for op in &delete.ops {
+            match op {
+                Operation::Retain(n) => byte_offset += n,
+                Operation::Delete(_) => break,
+                Operation::Insert(_) => unreachable!(),
+            }
+        }
+        for ops in self.ot.get((delete.version + 1)..).unwrap_or(&[]) {
+            byte_offset = ops.transform_byte_offset(byte_offset);
+        }
+        self.insert(byte_offset, &delete.text)
     }
 }
 
@@ -253,6 +293,110 @@ mod tests {
         text2.integrate_delete(&text1_delete)?;
         assert_eq!(text1.rope, Rope::from("Goodbye, world!"));
         assert_eq!(text2.rope, Rope::from("Goodbye, world!"));
+        Ok(())
+    }
+
+    #[test]
+    fn undo_ot_basic() -> anyhow::Result<()> {
+        let mut text = OtText {
+            rope: Rope::from("Hello, world!"),
+            ot: Vec::new(),
+        };
+
+        // Test undo insert
+        let insert = text.insert(7, "beautiful ")?;
+        assert_eq!(text.rope, Rope::from("Hello, beautiful world!"));
+        assert_eq!(text.version(), 1);
+
+        text.undo_insert(&insert)?;
+        assert_eq!(text.rope, Rope::from("Hello, world!"));
+        assert_eq!(text.version(), 2);
+
+        // Test undo delete
+        let delete = text.delete(5..12)?;
+        assert_eq!(text.rope, Rope::from("Hello!"));
+        assert_eq!(text.version(), 3);
+
+        text.undo_delete(&delete)?;
+        assert_eq!(text.rope, Rope::from("Hello, world!"));
+        assert_eq!(text.version(), 4);
+
+        Ok(())
+    }
+
+    #[test]
+    fn undo_ot_with_intervening_operations() -> anyhow::Result<()> {
+        let mut text = OtText {
+            rope: Rope::from("The quick brown fox"),
+            ot: Vec::new(),
+        };
+
+        // Insert "very " at position 10
+        let insert1 = text.insert(10, "very ")?;
+        assert_eq!(text.rope, Rope::from("The quick very brown fox"));
+
+        // Insert additional text after the first insert
+        text.insert(0, "Hello! ")?;
+        assert_eq!(text.rope, Rope::from("Hello! The quick very brown fox"));
+
+        // Now undo the first insert - should work despite intervening operation
+        text.undo_insert(&insert1)?;
+        assert_eq!(text.rope, Rope::from("Hello! The quick brown fox"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn undo_ot_delete_with_intervening_operations() -> anyhow::Result<()> {
+        let mut text = OtText {
+            rope: Rope::from("The quick brown fox"),
+            ot: Vec::new(),
+        };
+
+        // Delete "quick " at position 4
+        let delete1 = text.delete(4..10)?;
+        assert_eq!(text.rope, Rope::from("The brown fox"));
+
+        // Insert text before the deleted region
+        text.insert(0, "Well, ")?;
+        assert_eq!(text.rope, Rope::from("Well, The brown fox"));
+
+        // Undo the delete - should restore "quick " at the correct position
+        text.undo_delete(&delete1)?;
+        assert_eq!(text.rope, Rope::from("Well, The quick brown fox"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn undo_ot_complex_scenario() -> anyhow::Result<()> {
+        let mut text = OtText {
+            rope: Rope::from("abc"),
+            ot: Vec::new(),
+        };
+
+        // Perform a series of operations and save them
+        let insert1 = text.insert(3, "def")?; // "abcdef"
+        assert_eq!(text.rope, Rope::from("abcdef"));
+
+        let delete1 = text.delete(1..2)?; // "acdef"
+        assert_eq!(text.rope, Rope::from("acdef"));
+
+        let insert2 = text.insert(0, "X")?; // "Xacdef"
+        assert_eq!(text.rope, Rope::from("Xacdef"));
+
+        // Undo the first insert (should remove "def")
+        text.undo_insert(&insert1)?; // "Xac"
+        assert_eq!(text.rope, Rope::from("Xac"));
+
+        // Undo the delete (should restore "b")
+        text.undo_delete(&delete1)?; // "Xabc"
+        assert_eq!(text.rope, Rope::from("Xabc"));
+
+        // Undo the second insert (should remove "X")
+        text.undo_insert(&insert2)?; // "abc"
+        assert_eq!(text.rope, Rope::from("abc"));
+
         Ok(())
     }
 }
