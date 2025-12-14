@@ -1,3 +1,5 @@
+//! Abstract text editing interface.
+
 use crate::ot::OperationSeq;
 use ropey::Rope;
 use std::{convert::Infallible, ops::Range};
