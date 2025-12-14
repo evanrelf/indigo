@@ -1,5 +1,8 @@
 # Todo
 
+- edit: Implement `EditSeq::transform`
+- edit: Finish `Collab` impl for `OtText`
+- range: Rename `anchor` to something else to avoid conflict with edit anchors
 - range: Correct cursor positioning
 - fs: Add support for path canonicalization
 - buffer: Canonicalize path in `open`
