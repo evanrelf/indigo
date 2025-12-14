@@ -1,6 +1,9 @@
-use crate::{edit::EditSeq, history::History};
+use crate::{
+    edit::{Edit, EditSeq, OtDeletion, OtInsertion},
+    history::History,
+};
 use ropey::Rope;
-use std::ops::Deref;
+use std::ops::{Deref, Range};
 
 #[derive(Debug, Default)]
 struct BidiEditSeq {
@@ -87,6 +90,36 @@ impl Text {
     #[must_use]
     pub fn edits_since(&self, version: usize) -> Option<&[EditSeq]> {
         self.edit_log.get(version..)
+    }
+}
+
+impl Edit for Text {
+    type Insertion = OtInsertion;
+    type Deletion = OtDeletion;
+    type Error = anyhow::Error;
+    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error> {
+        let version = self.version();
+        let mut edits = EditSeq::new();
+        edits.retain(offset);
+        edits.insert(text);
+        edits.retain_rest(&self.rope);
+        edits.apply(&mut self.rope)?;
+        self.edit_log.push(edits.clone());
+        Ok(OtInsertion {
+            text: String::from(text),
+            edits,
+            version,
+        })
+    }
+    fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error> {
+        let version = self.version();
+        let mut edits = EditSeq::new();
+        edits.retain(range.start);
+        edits.delete(range.end - range.start);
+        edits.retain_rest(&self.rope);
+        edits.apply(&mut self.rope)?;
+        self.edit_log.push(edits.clone());
+        Ok(OtDeletion { edits, version })
     }
 }
 
