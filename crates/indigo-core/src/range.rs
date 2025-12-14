@@ -1,5 +1,5 @@
 use crate::{
-    cursor::{Affinity, Cursor, CursorMut, CursorState},
+    cursor::{Bias, Cursor, CursorMut, CursorState},
     edit::EditSeq,
     rope::RopeExt as _,
     text::Text,
@@ -169,38 +169,38 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 
     #[must_use]
-    pub fn anchor_affinity(&self) -> Affinity {
+    pub fn anchor_bias(&self) -> Bias {
         if self.is_forward() {
-            Affinity::After
+            Bias::After
         } else {
-            Affinity::Before
+            Bias::Before
         }
     }
 
     #[must_use]
-    pub fn head_affinity(&self) -> Affinity {
+    pub fn head_bias(&self) -> Bias {
         if self.is_forward() {
-            Affinity::Before
+            Bias::Before
         } else {
-            Affinity::After
+            Bias::After
         }
     }
 
     #[must_use]
-    pub fn start_affinity(&self) -> Affinity {
+    pub fn start_bias(&self) -> Bias {
         if self.state.anchor.byte_offset <= self.state.head.byte_offset {
-            self.anchor_affinity()
+            self.anchor_bias()
         } else {
-            self.head_affinity()
+            self.head_bias()
         }
     }
 
     #[must_use]
-    pub fn end_affinity(&self) -> Affinity {
+    pub fn end_bias(&self) -> Bias {
         if self.state.anchor.byte_offset <= self.state.head.byte_offset {
-            self.head_affinity()
+            self.head_bias()
         } else {
-            self.anchor_affinity()
+            self.anchor_bias()
         }
     }
 
@@ -304,10 +304,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     /// Should be called after performing any non-vertical movement.
     pub fn update_goal_column(&mut self) {
-        let head_column = self
-            .head()
-            .display_column(self.head_affinity())
-            .unwrap_or(0);
+        let head_column = self.head().display_column(self.head_bias()).unwrap_or(0);
         self.state.goal_column = head_column;
     }
 
@@ -353,8 +350,8 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_up(&mut self, count: usize) {
         let goal_column = self.state.goal_column;
-        let affinity = self.head_affinity();
-        self.head_mut().move_up(goal_column, affinity, count);
+        let bias = self.head_bias();
+        self.head_mut().move_up(goal_column, bias, count);
     }
 
     pub fn move_up(&mut self, count: usize) {
@@ -364,8 +361,8 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_down(&mut self, count: usize) {
         let goal_column = self.state.goal_column;
-        let affinity = self.head_affinity();
-        self.head_mut().move_down(goal_column, affinity, count);
+        let bias = self.head_bias();
+        self.head_mut().move_down(goal_column, bias, count);
     }
 
     pub fn move_down(&mut self, count: usize) {
@@ -446,8 +443,8 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_to_bottom(&mut self) {
-        let affinity = self.head_affinity();
-        self.head_mut().move_to_bottom(affinity);
+        let bias = self.head_bias();
+        self.head_mut().move_to_bottom(bias);
     }
 
     pub fn move_to_bottom(&mut self) {
@@ -457,8 +454,8 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_to_line_start(&mut self) {
-        let affinity = self.head_affinity();
-        self.head_mut().move_to_line_start(affinity);
+        let bias = self.head_bias();
+        self.head_mut().move_to_line_start(bias);
     }
 
     pub fn move_to_line_start(&mut self) {
@@ -468,8 +465,8 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_to_line_non_blank_start(&mut self) {
-        let affinity = self.head_affinity();
-        self.head_mut().move_to_line_non_blank_start(affinity);
+        let bias = self.head_bias();
+        self.head_mut().move_to_line_non_blank_start(bias);
     }
 
     pub fn move_to_line_non_blank_start(&mut self) {
@@ -479,8 +476,8 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_to_line_end(&mut self) {
-        let affinity = self.head_affinity();
-        self.head_mut().move_to_line_end(affinity);
+        let bias = self.head_bias();
+        self.head_mut().move_to_line_end(bias);
     }
 
     pub fn move_to_line_end(&mut self) {

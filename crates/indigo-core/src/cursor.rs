@@ -21,9 +21,8 @@ pub enum Error {
     NotOnGraphemeBoundary { byte_offset: usize },
 }
 
-/// <https://lord.io/text-editing-hates-you-too/#affinity>
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Affinity {
+pub enum Bias {
     Before,
     After,
 }
@@ -96,32 +95,32 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         self.state.byte_offset
     }
 
-    pub fn byte_index(&self, affinity: Affinity) -> Result<usize, Option<usize>> {
+    pub fn byte_index(&self, bias: Bias) -> Result<usize, Option<usize>> {
         let prev = || {
             self.text
                 .prev_grapheme_boundary(self.state.byte_offset)
                 .expect("Not at start so previous grapheme boundary exists")
         };
-        match affinity {
+        match bias {
             _ if self.text.len() == 0 => Err(None),
-            Affinity::Before if self.is_at_start() => Err(Some(self.state.byte_offset)),
-            Affinity::After if self.is_at_end() => Err(Some(prev())),
-            Affinity::Before => Ok(prev()),
-            Affinity::After => Ok(self.state.byte_offset),
+            Bias::Before if self.is_at_start() => Err(Some(self.state.byte_offset)),
+            Bias::After if self.is_at_end() => Err(Some(prev())),
+            Bias::Before => Ok(prev()),
+            Bias::After => Ok(self.state.byte_offset),
         }
     }
 
     #[must_use]
-    pub fn display_column(&self, affinity: Affinity) -> Option<usize> {
-        let Ok(byte_index) = self.byte_index(affinity) else {
+    pub fn display_column(&self, bias: Bias) -> Option<usize> {
+        let Ok(byte_index) = self.byte_index(bias) else {
             return None;
         };
         Some(self.text.display_column(byte_index))
     }
 
     #[must_use]
-    pub fn grapheme(&self, affinity: Affinity) -> Option<RopeSlice<'_>> {
-        let Ok(byte_index) = self.byte_index(affinity) else {
+    pub fn grapheme(&self, bias: Bias) -> Option<RopeSlice<'_>> {
+        let Ok(byte_index) = self.byte_index(bias) else {
             return None;
         };
         let start = byte_index;
@@ -130,8 +129,8 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     }
 
     #[must_use]
-    pub fn line(&self, affinity: Affinity) -> Option<RopeSlice<'_>> {
-        let byte_index = self.byte_index(affinity).ok()?;
+    pub fn line(&self, bias: Bias) -> Option<RopeSlice<'_>> {
+        let byte_index = self.byte_index(bias).ok()?;
         let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
         self.text.get_line(line_index, LINE_TYPE)
     }
@@ -198,13 +197,13 @@ impl<W: WrapMut> CursorView<'_, W> {
         count > 0
     }
 
-    pub fn move_up(&mut self, goal_column: usize, affinity: Affinity, count: usize) -> bool {
+    pub fn move_up(&mut self, goal_column: usize, bias: Bias, count: usize) -> bool {
         if self.text.len() == 0 {
             return false;
         }
         for _ in 0..count {
             #[expect(clippy::manual_let_else)]
-            let byte_index = match self.byte_index(affinity) {
+            let byte_index = match self.byte_index(bias) {
                 Ok(n) | Err(Some(n)) => n,
                 Err(None) => unreachable!("Already checked rope length"),
             };
@@ -233,13 +232,13 @@ impl<W: WrapMut> CursorView<'_, W> {
         count > 0
     }
 
-    pub fn move_down(&mut self, goal_column: usize, affinity: Affinity, count: usize) -> bool {
+    pub fn move_down(&mut self, goal_column: usize, bias: Bias, count: usize) -> bool {
         if self.text.len() == 0 {
             return false;
         }
         for _ in 0..count {
             #[expect(clippy::manual_let_else)]
-            let byte_index = match self.byte_index(affinity) {
+            let byte_index = match self.byte_index(bias) {
                 Ok(n) | Err(Some(n)) => n,
                 Err(None) => unreachable!("Already checked rope length"),
             };
@@ -328,18 +327,18 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.byte_offset = self.text.len();
     }
 
-    pub fn move_to_bottom(&mut self, affinity: Affinity) {
+    pub fn move_to_bottom(&mut self, bias: Bias) {
         self.move_to_end();
-        self.move_to_line_start(affinity);
+        self.move_to_line_start(bias);
     }
 
-    pub fn move_to_line_start(&mut self, affinity: Affinity) {
+    pub fn move_to_line_start(&mut self, bias: Bias) {
         if self.text.len() == 0 {
             return;
         }
 
         #[expect(clippy::manual_let_else)]
-        let byte_index = match self.byte_index(affinity) {
+        let byte_index = match self.byte_index(bias) {
             Ok(n) | Err(Some(n)) => n,
             Err(None) => unreachable!("Already checked rope length"),
         };
@@ -349,13 +348,13 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.byte_offset = line_start_byte_offset;
     }
 
-    pub fn move_to_line_non_blank_start(&mut self, affinity: Affinity) {
+    pub fn move_to_line_non_blank_start(&mut self, bias: Bias) {
         if self.text.len() == 0 {
             return;
         }
 
         #[expect(clippy::manual_let_else)]
-        let byte_index = match self.byte_index(affinity) {
+        let byte_index = match self.byte_index(bias) {
             Ok(n) | Err(Some(n)) => n,
             Err(None) => unreachable!("Already checked rope length"),
         };
@@ -377,26 +376,26 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.byte_offset = byte_offset;
     }
 
-    pub fn move_to_line_end(&mut self, affinity: Affinity) {
+    pub fn move_to_line_end(&mut self, bias: Bias) {
         if self.text.len() == 0 || self.is_at_end() {
             return;
         }
 
         #[expect(clippy::manual_let_else)]
-        let byte_index = match self.byte_index(affinity) {
+        let byte_index = match self.byte_index(bias) {
             Ok(n) | Err(Some(n)) => n,
             Err(None) => unreachable!("Already checked rope length"),
         };
 
         let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
 
-        if affinity == Affinity::Before
+        if bias == Bias::Before
             && self
                 .text
                 .byte_to_line_idx(self.state.byte_offset, LINE_TYPE)
                 != line_index
         {
-            // Already past the newline of the line we have affinity for
+            // Already past the newline of the line we have bias for
             return;
         }
 
@@ -564,7 +563,7 @@ mod tests {
 
     #[test]
     fn expected_behavior_up_down() {
-        let affinity = Affinity::After;
+        let bias = Bias::After;
 
         let mut cursor = CursorView::try_from(("", 0)).unwrap();
         cursor.assert_invariants().unwrap();
@@ -572,87 +571,83 @@ mod tests {
         let text = "0\n234\n6789AB\n";
         cursor.insert(text);
         // At end of text.
-        assert_eq!(cursor.grapheme(affinity), None);
-        assert_eq!(cursor.line(Affinity::After), None);
+        assert_eq!(cursor.grapheme(bias), None);
+        assert_eq!(cursor.line(Bias::After), None);
         assert_eq!(
-            cursor.line(Affinity::Before).map(|rope| rope.to_string()),
+            cursor.line(Bias::Before).map(|rope| rope.to_string()),
             Some(String::from("6789AB\n"))
         );
         assert_eq!(cursor.byte_offset(), 13);
         assert_eq!(cursor.byte_offset(), text.len());
-        assert_eq!(cursor.display_column(Affinity::Before), Some(6));
+        assert_eq!(cursor.display_column(Bias::Before), Some(6));
 
         cursor.move_left(1);
         // At final newline on line 2.
-        assert_eq!(cursor.grapheme(affinity), Some(Rope::from("\n").slice(..)));
+        assert_eq!(cursor.grapheme(bias), Some(Rope::from("\n").slice(..)));
         assert_eq!(cursor.byte_offset(), 12);
-        assert_eq!(cursor.display_column(Affinity::After), Some(6));
+        assert_eq!(cursor.display_column(Bias::After), Some(6));
 
-        cursor.move_up(cursor.display_column(affinity).unwrap_or(0), affinity, 1);
+        cursor.move_up(cursor.display_column(bias).unwrap_or(0), bias, 1);
         // At second newline on line 1, which is shorter than the goal column.
-        assert_eq!(cursor.grapheme(affinity), Some(Rope::from("\n").slice(..)));
+        assert_eq!(cursor.grapheme(bias), Some(Rope::from("\n").slice(..)));
         assert_eq!(cursor.byte_offset(), 5);
         // Goal column should remain the same through vertical movement.
-        assert_eq!(cursor.display_column(Affinity::After), Some(3));
+        assert_eq!(cursor.display_column(Bias::After), Some(3));
 
         cursor.move_left(1);
         // At "4" on line 1.
-        assert_eq!(cursor.grapheme(affinity), Some(Rope::from("4").slice(..)));
+        assert_eq!(cursor.grapheme(bias), Some(Rope::from("4").slice(..)));
         assert_eq!(
-            cursor.line(Affinity::After).map(|rope| rope.to_string()),
+            cursor.line(Bias::After).map(|rope| rope.to_string()),
             Some(String::from("234\n"))
         );
         assert_eq!(
-            cursor.line(Affinity::Before).map(|rope| rope.to_string()),
+            cursor.line(Bias::Before).map(|rope| rope.to_string()),
             Some(String::from("234\n"))
         );
         assert_eq!(cursor.byte_offset(), 4);
         // Goal column should change through horizontal movement.
-        assert_eq!(cursor.display_column(Affinity::After), Some(2));
+        assert_eq!(cursor.display_column(Bias::After), Some(2));
     }
 
     #[test]
     fn move_to_line_end() {
         let cases = [
-            // When affinity is for `\n` before cursor offset, should remain in place because it's
+            // When bias is for `\n` before cursor offset, should remain in place because it's
             // considered already at the end of line 1.
-            (Affinity::Before, 2),
-            // When affinity is for `y` after cursor offset, should move right to before following
+            (Bias::Before, 2),
+            // When bias is for `y` after cursor offset, should move right to before following
             // newline, because it's considered at the start of line 2.
-            (Affinity::After, 3),
+            (Bias::After, 3),
         ];
-        for (affinity, byte_offset) in cases {
+        for (bias, byte_offset) in cases {
             let mut cursor = CursorView::try_from(("x\ny\n", 0)).unwrap();
             assert_eq!(cursor.byte_offset(), 0);
             cursor.move_to_next_byte(b'\n', 1);
             cursor.move_right(1);
             assert_eq!(cursor.byte_offset(), 2);
-            cursor.move_to_line_end(affinity);
-            assert_eq!(
-                cursor.byte_offset(),
-                byte_offset,
-                "with affinity={affinity:?}"
-            );
+            cursor.move_to_line_end(bias);
+            assert_eq!(cursor.byte_offset(), byte_offset, "with bias={bias:?}");
         }
     }
 
     #[test]
     fn byte_index() {
         let cursor = CursorView::try_from(("xy", 1)).unwrap();
-        assert_eq!(cursor.byte_index(Affinity::Before), Ok(0));
-        assert_eq!(cursor.byte_index(Affinity::After), Ok(1));
+        assert_eq!(cursor.byte_index(Bias::Before), Ok(0));
+        assert_eq!(cursor.byte_index(Bias::After), Ok(1));
         assert_eq!(cursor.text().char(0), 'x');
         assert_eq!(cursor.text().char(1), 'y');
 
         let cursor = CursorView::try_from(("x", 0)).unwrap();
-        assert_eq!(cursor.byte_index(Affinity::Before), Err(Some(0)));
+        assert_eq!(cursor.byte_index(Bias::Before), Err(Some(0)));
 
         let cursor = CursorView::try_from(("x", 1)).unwrap();
-        assert_eq!(cursor.byte_index(Affinity::After), Err(Some(0)));
+        assert_eq!(cursor.byte_index(Bias::After), Err(Some(0)));
 
         let cursor = CursorView::try_from(("", 0)).unwrap();
-        assert_eq!(cursor.byte_index(Affinity::Before), Err(None));
-        assert_eq!(cursor.byte_index(Affinity::After), Err(None));
+        assert_eq!(cursor.byte_index(Bias::Before), Err(None));
+        assert_eq!(cursor.byte_index(Bias::After), Err(None));
     }
 
     #[test]
@@ -664,7 +659,7 @@ mod tests {
             } else {
                 text.ceil_grapheme_boundary(u.arbitrary::<usize>()?)
             };
-            let affinity = Affinity::After;
+            let bias = Bias::After;
             let mut cursor = CursorView::try_from((text, byte_offset)).unwrap();
             let (tx, rx) = mpsc::channel();
             defer!(|| {
@@ -690,20 +685,12 @@ mod tests {
 
                     2 => {
                         let count = max(1, u.choose_index(99)?);
-                        cursor.move_up(
-                            cursor.display_column(affinity).unwrap_or(0),
-                            affinity,
-                            count,
-                        );
+                        cursor.move_up(cursor.display_column(bias).unwrap_or(0), bias, count);
                         tx.send(format!("move_left() x{count}")).unwrap();
                     }
                     3 => {
                         let count = max(1, u.choose_index(99)?);
-                        cursor.move_down(
-                            cursor.display_column(affinity).unwrap_or(0),
-                            affinity,
-                            count,
-                        );
+                        cursor.move_down(cursor.display_column(bias).unwrap_or(0), bias, count);
                         tx.send(format!("move_right() x{count}")).unwrap();
                     }
                     4 => {
