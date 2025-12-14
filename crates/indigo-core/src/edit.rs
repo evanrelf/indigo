@@ -619,6 +619,34 @@ mod tests {
     }
 
     #[test]
+    fn collab_crdt() -> anyhow::Result<()> {
+        let rope = Rope::from("Hello");
+        let mut text1 = CrdtText {
+            crdt: cola::Replica::new(1, rope.len()),
+            rope: rope.clone(),
+        };
+        let mut text2 = CrdtText {
+            crdt: text1.crdt.fork(2),
+            rope: rope.clone(),
+        };
+
+        let text1_deletion = text1.delete(0..5)?;
+        let text1_insertion = text1.insert(0, "Goodbye")?;
+        assert_eq!(text1.rope, Rope::from("Goodbye"));
+
+        let text2_insertion = text2.insert(5, ", world!")?;
+        assert_eq!(text2.rope, Rope::from("Hello, world!"));
+
+        text1.integrate_insertion(&text2_insertion)?;
+        // Integrating remote edits out of order still works
+        text2.integrate_insertion(&text1_insertion)?;
+        text2.integrate_deletion(&text1_deletion)?;
+        assert_eq!(text1.rope, Rope::from("Goodbye, world!"));
+        assert_eq!(text2.rope, Rope::from("Goodbye, world!"));
+        Ok(())
+    }
+
+    #[test]
     fn edit_seq_push() {
         let mut edits = EditSeq::new();
         edits.extend([
