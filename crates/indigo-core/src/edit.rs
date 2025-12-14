@@ -203,9 +203,6 @@ pub enum Error {
     Rope(#[from] ropey::Error),
 }
 
-// TODO: Remove
-pub type EditSeq = OperationSeq;
-
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct OperationSeq {
     ops: Vec<Operation>,

@@ -1,7 +1,7 @@
 use crate::{
     bias::Bias,
     display_width::DisplayWidth,
-    edit::{Collab as _, Edit as _, EditSeq},
+    edit::{Collab as _, Edit as _, OperationSeq},
     rope::{LINE_TYPE, RopeExt as _},
     text::Text,
 };
@@ -39,8 +39,8 @@ impl CursorState {
         self
     }
 
-    pub fn transform(&mut self, edits: &EditSeq) {
-        self.byte_offset = edits.transform_byte_offset(self.byte_offset);
+    pub fn transform(&mut self, ops: &OperationSeq) {
+        self.byte_offset = ops.transform_byte_offset(self.byte_offset);
     }
 }
 
@@ -407,23 +407,23 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.byte_offset = byte_offset;
     }
 
-    pub fn insert_char(&mut self, char: char) -> EditSeq {
+    pub fn insert_char(&mut self, char: char) -> OperationSeq {
         self.insert(&char.to_string())
     }
 
-    pub fn insert(&mut self, text: &str) -> EditSeq {
+    pub fn insert(&mut self, text: &str) -> OperationSeq {
         self.assert_invariants().unwrap();
-        let mut edits = EditSeq::new();
-        edits.retain(self.state.byte_offset);
-        edits.insert(text);
-        edits.retain_rest(&self.text);
-        self.text.edit(&edits).expect("Edits are well formed");
-        self.state.byte_offset = edits.transform_byte_offset(self.state.byte_offset);
+        let mut ops = OperationSeq::new();
+        ops.retain(self.state.byte_offset);
+        ops.insert(text);
+        ops.retain_rest(&self.text);
+        self.text.edit(&ops).expect("Operations are well formed");
+        self.state.byte_offset = ops.transform_byte_offset(self.state.byte_offset);
         self.snap_to_grapheme_boundary();
-        edits
+        ops
     }
 
-    // `Self::insert` but using `Edit` and `Collab` traits rather than `EditSeq` directly.
+    // `Self::insert` but using `Edit` and `Collab` traits rather than `OperationSeq` directly.
     pub fn insert2(&mut self, text: &str) {
         self.assert_invariants().unwrap();
         let anchor = self.text.create_anchor(self.state.byte_offset);
@@ -438,7 +438,7 @@ impl<W: WrapMut> CursorView<'_, W> {
     }
 
     // Behavior traditionally associated with the Backspace key.
-    pub fn delete_before(&mut self) -> Option<EditSeq> {
+    pub fn delete_before(&mut self) -> Option<OperationSeq> {
         self.assert_invariants().unwrap();
         let mut byte_offset = self.state.byte_offset;
         if let Some(prev) = self.text.prev_grapheme_boundary(byte_offset)
@@ -448,18 +448,18 @@ impl<W: WrapMut> CursorView<'_, W> {
         } else {
             return None;
         }
-        let mut edits = EditSeq::new();
-        edits.retain(byte_offset);
-        edits.delete(self.state.byte_offset - byte_offset);
-        edits.retain_rest(&self.text);
-        self.text.edit(&edits).expect("Edits are well formed");
-        self.state.byte_offset = edits.transform_byte_offset(self.state.byte_offset);
+        let mut ops = OperationSeq::new();
+        ops.retain(byte_offset);
+        ops.delete(self.state.byte_offset - byte_offset);
+        ops.retain_rest(&self.text);
+        self.text.edit(&ops).expect("Operations are well formed");
+        self.state.byte_offset = ops.transform_byte_offset(self.state.byte_offset);
         self.snap_to_grapheme_boundary();
-        Some(edits)
+        Some(ops)
     }
 
     // Behavior traditionally associated with the Delete key.
-    pub fn delete_after(&mut self) -> Option<EditSeq> {
+    pub fn delete_after(&mut self) -> Option<OperationSeq> {
         self.assert_invariants().unwrap();
         let mut byte_offset = self.state.byte_offset;
         if let Some(next) = self.text.next_grapheme_boundary(byte_offset)
@@ -469,14 +469,14 @@ impl<W: WrapMut> CursorView<'_, W> {
         } else {
             return None;
         }
-        let mut edits = EditSeq::new();
-        edits.retain(self.state.byte_offset);
-        edits.delete(byte_offset - self.state.byte_offset);
-        edits.retain_rest(&self.text);
-        self.text.edit(&edits).expect("Edits are well formed");
-        self.state.byte_offset = edits.transform_byte_offset(self.state.byte_offset);
+        let mut ops = OperationSeq::new();
+        ops.retain(self.state.byte_offset);
+        ops.delete(byte_offset - self.state.byte_offset);
+        ops.retain_rest(&self.text);
+        self.text.edit(&ops).expect("Operations are well formed");
+        self.state.byte_offset = ops.transform_byte_offset(self.state.byte_offset);
         self.snap_to_grapheme_boundary();
-        Some(edits)
+        Some(ops)
     }
 }
 

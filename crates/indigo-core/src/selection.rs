@@ -114,13 +114,13 @@ impl<W: WrapMut> SelectionView<'_, W> {
             let version = self.text.version();
             let range = self.unchecked_get_mut(i).unwrap();
             f(range);
-            if let Some(edits) = self.text.edits_since(version) {
+            if let Some(opss) = self.text.ops_since(version) {
                 for j in 0..self.state.ranges.len() {
                     if i == j {
                         continue;
                     }
-                    for edit in edits {
-                        self.state.ranges[j].transform(edit);
+                    for ops in opss {
+                        self.state.ranges[j].transform(ops);
                     }
                 }
             }

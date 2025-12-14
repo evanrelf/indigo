@@ -1,4 +1,4 @@
-use crate::edit::EditSeq;
+use crate::edit::OperationSeq;
 use roaring::RoaringBitmap;
 use std::{
     borrow::Borrow,
@@ -74,16 +74,16 @@ impl<A> Attributes<A> {
             .filter_map(|((attr, ranges), range)| ranges.contains_range(range).then_some(attr))
     }
 
-    pub fn transform(&mut self, edits: &EditSeq) {
+    pub fn transform(&mut self, ops: &OperationSeq) {
         for old_ranges in self.0.values_mut() {
             let mut new_ranges = RoaringBitmap::new();
             let mut iter = old_ranges.iter();
             while let Some(range) = iter.next_range() {
-                let start = u32::try_from(edits.transform_byte_offset(
+                let start = u32::try_from(ops.transform_byte_offset(
                     usize::try_from(*range.start()).expect("Machine has 64-bit pointers"),
                 ))
                 .expect("Byte offset does not exceed u32::MAX");
-                let end = u32::try_from(edits.transform_byte_offset(
+                let end = u32::try_from(ops.transform_byte_offset(
                     usize::try_from(*range.end()).expect("Machine has 64-bit pointers"),
                 ))
                 .expect("Byte offset does not exceed u32::MAX");

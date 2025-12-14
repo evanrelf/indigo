@@ -1,26 +1,26 @@
 use crate::{
-    edit::{Collab, Edit, EditSeq, OperationSeq, OtAnchor, OtDeletion, OtInsertion},
+    edit::{Collab, Edit, OperationSeq, OtAnchor, OtDeletion, OtInsertion},
     history::History,
 };
 use ropey::Rope;
 use std::ops::{Deref, Range};
 
 #[derive(Debug, Default)]
-struct BidiEditSeq {
-    /// Inverted edit. Apply to undo the edit.
-    undo: EditSeq,
-    /// Original edit. Apply to perform the edit.
-    redo: EditSeq,
+struct BidiOperationSeq {
+    /// Inverted operations. Apply to undo the edit.
+    undo: OperationSeq,
+    /// Original operations. Apply to perform the edit.
+    redo: OperationSeq,
 }
 
-impl Extend<Self> for BidiEditSeq {
-    fn extend<T>(&mut self, edits: T)
+impl Extend<Self> for BidiOperationSeq {
+    fn extend<T>(&mut self, opss: T)
     where
         T: IntoIterator<Item = Self>,
     {
-        for edit in edits {
-            self.undo = edit.undo.compose(&self.undo).unwrap();
-            self.redo = self.redo.compose(&edit.redo).unwrap();
+        for ops in opss {
+            self.undo = ops.undo.compose(&self.undo).unwrap();
+            self.redo = self.redo.compose(&ops.redo).unwrap();
         }
     }
 }
@@ -28,8 +28,8 @@ impl Extend<Self> for BidiEditSeq {
 #[derive(Debug, Default)]
 pub struct Text {
     rope: Rope,
-    history: History<BidiEditSeq>,
-    edit_log: Vec<EditSeq>,
+    history: History<BidiOperationSeq>,
+    log: Vec<OperationSeq>,
 }
 
 impl Text {
@@ -43,14 +43,14 @@ impl Text {
         &self.rope
     }
 
-    pub fn edit(&mut self, edit: &EditSeq) -> anyhow::Result<()> {
-        let undo = edit.invert(&self.rope)?;
-        edit.apply(&mut self.rope)?;
-        self.history.push(BidiEditSeq {
-            redo: edit.clone(),
+    pub fn edit(&mut self, ops: &OperationSeq) -> anyhow::Result<()> {
+        let undo = ops.invert(&self.rope)?;
+        ops.apply(&mut self.rope)?;
+        self.history.push(BidiOperationSeq {
+            redo: ops.clone(),
             undo,
         });
-        self.edit_log.push(edit.clone());
+        self.log.push(ops.clone());
         Ok(())
     }
 
@@ -59,10 +59,10 @@ impl Text {
     }
 
     pub fn undo(&mut self) -> anyhow::Result<bool> {
-        if let Some(edits) = self.history.undo() {
-            for edit in edits.iter().rev() {
-                edit.undo.apply(&mut self.rope)?;
-                self.edit_log.push(edit.undo.clone());
+        if let Some(opss) = self.history.undo() {
+            for ops in opss.iter().rev() {
+                ops.undo.apply(&mut self.rope)?;
+                self.log.push(ops.undo.clone());
             }
             Ok(true)
         } else {
@@ -71,10 +71,10 @@ impl Text {
     }
 
     pub fn redo(&mut self) -> anyhow::Result<bool> {
-        if let Some(edits) = self.history.redo() {
-            for edit in edits {
-                edit.redo.apply(&mut self.rope)?;
-                self.edit_log.push(edit.undo.clone());
+        if let Some(opss) = self.history.redo() {
+            for ops in opss {
+                ops.redo.apply(&mut self.rope)?;
+                self.log.push(ops.undo.clone());
             }
             Ok(true)
         } else {
@@ -84,12 +84,12 @@ impl Text {
 
     #[must_use]
     pub fn version(&self) -> usize {
-        self.edit_log.len()
+        self.log.len()
     }
 
     #[must_use]
-    pub fn edits_since(&self, version: usize) -> Option<&[EditSeq]> {
-        self.edit_log.get(version..)
+    pub fn ops_since(&self, version: usize) -> Option<&[OperationSeq]> {
+        self.log.get(version..)
     }
 }
 
@@ -104,10 +104,10 @@ impl Edit for Text {
         ops.insert(text);
         ops.retain_rest(&self.rope);
         ops.apply(&mut self.rope)?;
-        self.edit_log.push(ops.clone());
+        self.log.push(ops.clone());
         let redo = ops.clone();
         let undo = redo.invert(&self.rope)?;
-        self.history.push(BidiEditSeq { undo, redo });
+        self.history.push(BidiOperationSeq { undo, redo });
         Ok(OtInsertion {
             text: String::from(text),
             ops,
@@ -121,10 +121,10 @@ impl Edit for Text {
         ops.delete(range.end - range.start);
         ops.retain_rest(&self.rope);
         ops.apply(&mut self.rope)?;
-        self.edit_log.push(ops.clone());
+        self.log.push(ops.clone());
         let redo = ops.clone();
         let undo = redo.invert(&self.rope)?;
-        self.history.push(BidiEditSeq { undo, redo });
+        self.history.push(BidiOperationSeq { undo, redo });
         Ok(OtDeletion { ops, version })
     }
 }
@@ -145,8 +145,8 @@ impl Collab for Text {
     }
     fn resolve_anchor(&self, anchor: &Self::Anchor) -> Option<usize> {
         let mut byte_offset = anchor.byte_offset;
-        for edits in self.edits_since(anchor.version)? {
-            byte_offset = edits.transform_byte_offset(byte_offset);
+        for ops in self.ops_since(anchor.version)? {
+            byte_offset = ops.transform_byte_offset(byte_offset);
         }
         Some(byte_offset)
     }

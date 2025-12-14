@@ -1,7 +1,7 @@
 use crate::{
     bias::Bias,
     cursor::{Cursor, CursorMut, CursorState},
-    edit::{Collab as _, EditSeq},
+    edit::{Collab as _, OperationSeq},
     rope::RopeExt as _,
     text::Text,
 };
@@ -53,9 +53,9 @@ impl RangeState {
         self
     }
 
-    pub fn transform(&mut self, edits: &EditSeq) {
-        self.anchor.transform(edits);
-        self.head.transform(edits);
+    pub fn transform(&mut self, ops: &OperationSeq) {
+        self.anchor.transform(ops);
+        self.head.transform(ops);
     }
 
     #[must_use]
@@ -549,26 +549,26 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
-    pub fn insert_char(&mut self, char: char) -> EditSeq {
+    pub fn insert_char(&mut self, char: char) -> OperationSeq {
         self.insert(&char.to_string())
     }
 
-    pub fn insert(&mut self, text: &str) -> EditSeq {
+    pub fn insert(&mut self, text: &str) -> OperationSeq {
         debug_assert!(
             self.grapheme_length() <= 1,
             "Range reduced before entering insert mode"
         );
         let anchor = self.state.anchor.byte_offset;
         let head = self.state.head.byte_offset;
-        let edits = self.start_mut().insert(text);
-        self.state.anchor.byte_offset = edits.transform_byte_offset(anchor);
-        self.state.head.byte_offset = edits.transform_byte_offset(head);
+        let ops = self.start_mut().insert(text);
+        self.state.anchor.byte_offset = ops.transform_byte_offset(anchor);
+        self.state.head.byte_offset = ops.transform_byte_offset(head);
         self.snap_to_grapheme_boundaries();
         self.update_goal_column();
-        edits
+        ops
     }
 
-    // `Self::insert` but using `Edit` and `Collab` traits rather than `EditSeq` directly.
+    // `Self::insert` but using `Edit` and `Collab` traits rather than `OperationSeq` directly.
     pub fn insert2(&mut self, text: &str) {
         debug_assert!(
             self.grapheme_length() <= 1,
@@ -589,7 +589,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.update_goal_column();
     }
 
-    pub fn delete_before(&mut self) -> Option<EditSeq> {
+    pub fn delete_before(&mut self) -> Option<OperationSeq> {
         if self.start().is_at_start() {
             return None;
         }
@@ -599,32 +599,32 @@ impl<W: WrapMut> RangeView<'_, W> {
         );
         let anchor = self.state.anchor.byte_offset;
         let head = self.state.head.byte_offset;
-        let edits = self.start_mut().delete_before()?;
-        self.state.anchor.byte_offset = edits.transform_byte_offset(anchor);
-        self.state.head.byte_offset = edits.transform_byte_offset(head);
+        let ops = self.start_mut().delete_before()?;
+        self.state.anchor.byte_offset = ops.transform_byte_offset(anchor);
+        self.state.head.byte_offset = ops.transform_byte_offset(head);
         self.snap_to_grapheme_boundaries();
         self.update_goal_column();
-        Some(edits)
+        Some(ops)
     }
 
-    pub fn delete(&mut self) -> Option<EditSeq> {
+    pub fn delete(&mut self) -> Option<OperationSeq> {
         if self.is_empty() {
             return None;
         }
-        let mut edits = EditSeq::new();
-        edits.retain(self.start().byte_offset());
-        edits.delete(self.byte_length());
-        edits.retain_rest(&self.text);
-        self.text.edit(&edits).expect("Edits are well formed");
-        self.state.anchor.byte_offset = edits.transform_byte_offset(self.state.anchor.byte_offset);
-        self.state.head.byte_offset = edits.transform_byte_offset(self.state.head.byte_offset);
+        let mut ops = OperationSeq::new();
+        ops.retain(self.start().byte_offset());
+        ops.delete(self.byte_length());
+        ops.retain_rest(&self.text);
+        self.text.edit(&ops).expect("Operations are well formed");
+        self.state.anchor.byte_offset = ops.transform_byte_offset(self.state.anchor.byte_offset);
+        self.state.head.byte_offset = ops.transform_byte_offset(self.state.head.byte_offset);
         debug_assert_eq!(self.state.anchor.byte_offset, self.state.head.byte_offset);
         self.snap_to_grapheme_boundaries();
         self.update_goal_column();
-        Some(edits)
+        Some(ops)
     }
 
-    pub fn delete_after(&mut self) -> Option<EditSeq> {
+    pub fn delete_after(&mut self) -> Option<OperationSeq> {
         if self.end().is_at_end() {
             return None;
         }
@@ -634,12 +634,12 @@ impl<W: WrapMut> RangeView<'_, W> {
         );
         let anchor = self.state.anchor.byte_offset;
         let head = self.state.head.byte_offset;
-        let edits = self.end_mut().delete_after()?;
-        self.state.anchor.byte_offset = edits.transform_byte_offset(anchor);
-        self.state.head.byte_offset = edits.transform_byte_offset(head);
+        let ops = self.end_mut().delete_after()?;
+        self.state.anchor.byte_offset = ops.transform_byte_offset(anchor);
+        self.state.head.byte_offset = ops.transform_byte_offset(head);
         self.snap_to_grapheme_boundaries();
         self.update_goal_column();
-        Some(edits)
+        Some(ops)
     }
 }
 

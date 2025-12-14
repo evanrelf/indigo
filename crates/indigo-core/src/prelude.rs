@@ -4,7 +4,7 @@ pub use crate::{
     buffer::{Buffer, BufferKind},
     cursor::{Cursor, CursorMut},
     display_width::DisplayWidth,
-    edit::EditSeq,
+    edit::OperationSeq,
     editor::Editor,
     event::{Event, KeyEvent, KeyEventKind},
     key::{Key, KeyCode, KeyModifiers, Keys},
