@@ -1,5 +1,6 @@
 #[doc(inline)]
 pub use crate::{
+    bias::Bias,
     buffer::{Buffer, BufferKind},
     cursor::{Cursor, CursorMut},
     display_width::DisplayWidth,

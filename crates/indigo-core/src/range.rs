@@ -1,5 +1,6 @@
 use crate::{
-    cursor::{Bias, Cursor, CursorMut, CursorState},
+    bias::Bias,
+    cursor::{Cursor, CursorMut, CursorState},
     edit::EditSeq,
     rope::RopeExt as _,
     text::Text,
