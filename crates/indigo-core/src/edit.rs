@@ -13,13 +13,16 @@ use thiserror::Error;
 pub trait Edit {
     type Insertion;
     type Deletion;
-    type Anchor;
     type Error;
     fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error>;
     fn delete(&mut self, range: Range<usize>) -> Result<Self::Deletion, Self::Error>;
+}
+
+pub trait Collab: Edit {
+    type Anchor;
     fn integrate_insertion(&mut self, insertion: &Self::Insertion) -> Result<(), Self::Error>;
     fn integrate_deletion(&mut self, deletion: &Self::Deletion) -> Result<(), Self::Error>;
-    fn create_anchor(&self, byte_offset: usize) -> Self::Anchor;
+    fn create_anchor(&self, offset: usize) -> Self::Anchor;
     fn resolve_anchor(&self, anchor: &Self::Anchor) -> Option<usize>;
 }
 
@@ -54,7 +57,6 @@ pub struct OtAnchor {
 impl Edit for OtText {
     type Insertion = OtInsertion;
     type Deletion = OtDeletion;
-    type Anchor = OtAnchor;
     type Error = anyhow::Error;
     fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error> {
         let version = self.version();
@@ -80,15 +82,19 @@ impl Edit for OtText {
         self.ot.push(edits.clone());
         Ok(OtDeletion { edits, version })
     }
+}
+
+impl Collab for OtText {
+    type Anchor = OtAnchor;
     fn integrate_insertion(&mut self, insertion: &Self::Insertion) -> Result<(), Self::Error> {
         todo!()
     }
     fn integrate_deletion(&mut self, deletion: &Self::Deletion) -> Result<(), Self::Error> {
         todo!()
     }
-    fn create_anchor(&self, byte_offset: usize) -> Self::Anchor {
+    fn create_anchor(&self, offset: usize) -> Self::Anchor {
         OtAnchor {
-            byte_offset,
+            byte_offset: offset,
             version: self.version(),
         }
     }
@@ -120,7 +126,6 @@ pub struct CrdtAnchor(pub cola::Anchor);
 impl Edit for CrdtText {
     type Insertion = CrdtInsertion;
     type Deletion = CrdtDeletion;
-    type Anchor = CrdtAnchor;
     type Error = anyhow::Error;
     fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insertion, Self::Error> {
         self.rope.insert(offset, text);
@@ -135,6 +140,10 @@ impl Edit for CrdtText {
         let deletion = self.crdt.deleted(range);
         Ok(CrdtDeletion { crdt: deletion })
     }
+}
+
+impl Collab for CrdtText {
+    type Anchor = CrdtAnchor;
     fn integrate_insertion(&mut self, insertion: &Self::Insertion) -> Result<(), Self::Error> {
         if let Some(byte_offset) = self.crdt.integrate_insertion(&insertion.crdt) {
             self.rope.insert(byte_offset, &insertion.text);
