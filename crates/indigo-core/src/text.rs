@@ -1,5 +1,5 @@
 use crate::{
-    edit::{Edit, EditSeq, OtDeletion, OtInsertion},
+    edit::{Collab, Edit, EditSeq, OtAnchor, OtDeletion, OtInsertion},
     history::History,
 };
 use ropey::Rope;
@@ -126,6 +126,29 @@ impl Edit for Text {
         let undo = redo.invert(&self.rope)?;
         self.history.push(BidiEditSeq { undo, redo });
         Ok(OtDeletion { edits, version })
+    }
+}
+
+impl Collab for Text {
+    type Anchor = OtAnchor;
+    fn integrate_insertion(&mut self, insertion: &Self::Insertion) -> Result<(), Self::Error> {
+        todo!()
+    }
+    fn integrate_deletion(&mut self, deletion: &Self::Deletion) -> Result<(), Self::Error> {
+        todo!()
+    }
+    fn create_anchor(&self, offset: usize) -> Self::Anchor {
+        OtAnchor {
+            byte_offset: offset,
+            version: self.version(),
+        }
+    }
+    fn resolve_anchor(&self, anchor: &Self::Anchor) -> Option<usize> {
+        let mut byte_offset = anchor.byte_offset;
+        for edits in self.edits_since(anchor.version)? {
+            byte_offset = edits.transform_byte_offset(byte_offset);
+        }
+        Some(byte_offset)
     }
 }
 
