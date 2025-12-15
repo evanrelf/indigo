@@ -1,8 +1,4 @@
-use crate::{
-    edit::{Collab, Edit},
-    history::History,
-    ot::OperationSeq,
-};
+use crate::{history::History, ot::OperationSeq};
 use ropey::Rope;
 use std::ops::{Deref, Range};
 
@@ -42,6 +38,24 @@ impl Text {
     #[must_use]
     pub fn rope(&self) -> &Rope {
         &self.rope
+    }
+
+    pub fn insert(&mut self, byte_offset: usize, text: &str) -> anyhow::Result<()> {
+        let mut ops = OperationSeq::new();
+        ops.retain(byte_offset);
+        ops.insert(text);
+        ops.retain_rest(&self.rope);
+        self.apply(&ops)?;
+        Ok(())
+    }
+
+    pub fn delete(&mut self, range: Range<usize>) -> anyhow::Result<()> {
+        let mut ops = OperationSeq::new();
+        ops.retain(range.start);
+        ops.delete(range.end - range.start);
+        ops.retain_rest(&self.rope);
+        self.apply(&ops)?;
+        Ok(())
     }
 
     pub fn apply(&mut self, ops: &OperationSeq) -> anyhow::Result<()> {
@@ -84,6 +98,23 @@ impl Text {
     }
 
     #[must_use]
+    pub fn create_anchor(&self, byte_offset: usize) -> Anchor {
+        Anchor {
+            byte_offset,
+            version: self.version(),
+        }
+    }
+
+    #[must_use]
+    pub fn resolve_anchor(&self, anchor: &Anchor) -> Option<usize> {
+        let mut byte_offset = anchor.byte_offset;
+        for ops in self.ops_since(anchor.version)? {
+            byte_offset = ops.transform_byte_offset(byte_offset);
+        }
+        Some(byte_offset)
+    }
+
+    #[must_use]
     pub fn version(&self) -> usize {
         self.log.len()
     }
@@ -91,81 +122,6 @@ impl Text {
     #[must_use]
     pub fn ops_since(&self, version: usize) -> Option<&[OperationSeq]> {
         self.log.get(version..)
-    }
-}
-
-pub struct Insert {
-    pub text: String,
-    pub ops: OperationSeq,
-    pub version: usize,
-}
-
-pub struct Delete {
-    pub ops: OperationSeq,
-    pub version: usize,
-}
-
-pub struct Anchor {
-    pub byte_offset: usize,
-    pub version: usize,
-}
-
-impl Edit for Text {
-    type Insert = Insert;
-    type Delete = Delete;
-    type Error = anyhow::Error;
-    fn insert(&mut self, offset: usize, text: &str) -> Result<Self::Insert, Self::Error> {
-        let version = self.version();
-        let mut ops = OperationSeq::new();
-        ops.retain(offset);
-        ops.insert(text);
-        ops.retain_rest(&self.rope);
-        ops.apply(&mut self.rope)?;
-        self.log.push(ops.clone());
-        let redo = ops.clone();
-        let undo = redo.invert(&self.rope)?;
-        self.history.push(BidiOperationSeq { undo, redo });
-        Ok(Insert {
-            text: String::from(text),
-            ops,
-            version,
-        })
-    }
-    fn delete(&mut self, range: Range<usize>) -> Result<Self::Delete, Self::Error> {
-        let version = self.version();
-        let mut ops = OperationSeq::new();
-        ops.retain(range.start);
-        ops.delete(range.end - range.start);
-        ops.retain_rest(&self.rope);
-        ops.apply(&mut self.rope)?;
-        self.log.push(ops.clone());
-        let redo = ops.clone();
-        let undo = redo.invert(&self.rope)?;
-        self.history.push(BidiOperationSeq { undo, redo });
-        Ok(Delete { ops, version })
-    }
-}
-
-impl Collab for Text {
-    type Anchor = Anchor;
-    fn integrate_insert(&mut self, insert: &Self::Insert) -> Result<(), Self::Error> {
-        todo!()
-    }
-    fn integrate_delete(&mut self, delete: &Self::Delete) -> Result<(), Self::Error> {
-        todo!()
-    }
-    fn create_anchor(&self, offset: usize) -> Self::Anchor {
-        Anchor {
-            byte_offset: offset,
-            version: self.version(),
-        }
-    }
-    fn resolve_anchor(&self, anchor: &Self::Anchor) -> Option<usize> {
-        let mut byte_offset = anchor.byte_offset;
-        for ops in self.ops_since(anchor.version)? {
-            byte_offset = ops.transform_byte_offset(byte_offset);
-        }
-        Some(byte_offset)
     }
 }
 
@@ -194,4 +150,9 @@ impl From<Rope> for Text {
             ..Self::default()
         }
     }
+}
+
+pub struct Anchor {
+    pub byte_offset: usize,
+    pub version: usize,
 }

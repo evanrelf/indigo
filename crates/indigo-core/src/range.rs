@@ -1,7 +1,6 @@
 use crate::{
     bias::Bias,
     cursor::{Cursor, CursorMut, CursorState},
-    edit::{Collab as _},
     ot::OperationSeq,
     rope::RopeExt as _,
     text::Text,
@@ -567,27 +566,6 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.snap_to_grapheme_boundaries();
         self.update_goal_column();
         ops
-    }
-
-    // `Self::insert` but using `Edit` and `Collab` traits rather than `OperationSeq` directly.
-    pub fn insert2(&mut self, text: &str) {
-        debug_assert!(
-            self.grapheme_length() <= 1,
-            "Range reduced before entering insert mode"
-        );
-        let anchor_anchor = self.text.create_anchor(self.state.anchor.byte_offset);
-        let head_anchor = self.text.create_anchor(self.state.head.byte_offset);
-        self.start_mut().insert2(text);
-        self.state.anchor.byte_offset = self
-            .text
-            .resolve_anchor(&anchor_anchor)
-            .expect("Anchor version <= text version");
-        self.state.head.byte_offset = self
-            .text
-            .resolve_anchor(&head_anchor)
-            .expect("Anchor version <= text version");
-        self.snap_to_grapheme_boundaries();
-        self.update_goal_column();
     }
 
     pub fn delete_before(&mut self) -> Option<OperationSeq> {

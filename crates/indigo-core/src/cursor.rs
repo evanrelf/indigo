@@ -1,7 +1,6 @@
 use crate::{
     bias::Bias,
     display_width::DisplayWidth,
-    edit::{Collab as _, Edit as _},
     ot::OperationSeq,
     rope::{LINE_TYPE, RopeExt as _},
     text::Text,
@@ -422,20 +421,6 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.byte_offset = ops.transform_byte_offset(self.state.byte_offset);
         self.snap_to_grapheme_boundary();
         ops
-    }
-
-    // `Self::insert` but using `Edit` and `Collab` traits rather than `OperationSeq` directly.
-    pub fn insert2(&mut self, text: &str) {
-        self.assert_invariants().unwrap();
-        let anchor = self.text.create_anchor(self.state.byte_offset);
-        self.text
-            .insert(self.state.byte_offset, text)
-            .expect("Byte offset valid in text");
-        self.state.byte_offset = self
-            .text
-            .resolve_anchor(&anchor)
-            .expect("Anchor version <= text version");
-        self.snap_to_grapheme_boundary();
     }
 
     // Behavior traditionally associated with the Backspace key.
