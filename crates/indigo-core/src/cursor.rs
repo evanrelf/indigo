@@ -1,5 +1,4 @@
 use crate::{
-    bias::Bias,
     display_width::DisplayWidth,
     ot::OperationSeq,
     rope::{LINE_TYPE, RopeExt as _},
@@ -20,6 +19,12 @@ pub enum Error {
 
     #[error("Byte offset {byte_offset} does not lie on grapheme boundary")]
     NotOnGraphemeBoundary { byte_offset: usize },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Bias {
+    Before,
+    After,
 }
 
 #[derive(Clone, Debug, Default)]
