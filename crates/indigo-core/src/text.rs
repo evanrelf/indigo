@@ -99,19 +99,12 @@ impl Text {
 
     #[must_use]
     pub fn create_anchor(&self, byte_offset: usize) -> Anchor {
-        Anchor {
-            byte_offset,
-            version: self.version(),
-        }
+        Anchor::new(self, byte_offset)
     }
 
     #[must_use]
     pub fn resolve_anchor(&self, anchor: &Anchor) -> Option<usize> {
-        let mut byte_offset = anchor.byte_offset;
-        for ops in self.ops_since(anchor.version)? {
-            byte_offset = ops.transform_byte_offset(byte_offset);
-        }
-        Some(byte_offset)
+        anchor.resolve(self)
     }
 
     #[must_use]
@@ -155,4 +148,23 @@ impl From<Rope> for Text {
 pub struct Anchor {
     byte_offset: usize,
     version: usize,
+}
+
+impl Anchor {
+    #[must_use]
+    pub fn new(text: &Text, byte_offset: usize) -> Self {
+        Self {
+            byte_offset,
+            version: text.version(),
+        }
+    }
+
+    #[must_use]
+    pub fn resolve(&self, text: &Text) -> Option<usize> {
+        let mut byte_offset = self.byte_offset;
+        for ops in text.ops_since(self.version)? {
+            byte_offset = ops.transform_byte_offset(byte_offset);
+        }
+        Some(byte_offset)
+    }
 }
