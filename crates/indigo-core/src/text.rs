@@ -153,6 +153,6 @@ impl From<Rope> for Text {
 }
 
 pub struct Anchor {
-    pub byte_offset: usize,
-    pub version: usize,
+    byte_offset: usize,
+    version: usize,
 }
