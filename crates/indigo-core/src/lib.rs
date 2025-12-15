@@ -3,7 +3,6 @@ pub mod bias;
 pub mod buffer;
 pub mod cursor;
 pub mod display_width;
-pub mod edit;
 pub mod editor;
 pub mod event;
 pub mod fs;

@@ -9,7 +9,6 @@ arbtest = "0.3.2"
 bitflags = { version = "2.10.0", features = ["arbitrary", "std"] }
 camino = "1.2.1"
 clap = { version = "4.5.51", features = ["derive", "env"] }
-cola = "0.5.1"
 diff = "0.1.13"
 etcetera = "0.11.0"
 hdrhistogram = "7.5.4"

@@ -248,12 +248,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1d728cc89cf3aee9ff92b05e62b19ee65a02b5702cff7d5a377e32c6ae29d8d"
 
 [[package]]
-name = "cola"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "242a0cf7940e81cc943599ce00889a975ca13abacfaff4f11796028193603ece"
-
-[[package]]
 name = "colorchoice"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -651,7 +645,6 @@ dependencies = [
  "bitflags 2.10.0",
  "camino",
  "clap",
- "cola",
  "indigo-wrap",
  "memchr",
  "regex-cursor",
