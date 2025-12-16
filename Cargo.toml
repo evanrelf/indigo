@@ -20,7 +20,7 @@ memchr = "2.7.6"
 pathdiff = { version = "0.2.3", features = ["camino"] }
 ratatui = "0.30.0-beta.0"
 regex-cursor = { version = "0.1.5", default-features = false, features = ["perf-inline"] }
-roaring = "0.11.2"
+roaring = "0.11.3"
 ropey = { version = "2.0.0-beta.1" }
 shell-words = "1.1.0"
 thiserror = "2.0.17"
@@ -34,9 +34,6 @@ winnow = "0.7.13"
 # Fix generating zero for `NonZero<T>`.
 # https://github.com/rust-fuzz/arbitrary/pull/214
 arbitrary = { git = "https://github.com/rust-fuzz/arbitrary.git", rev = "69ac259b653cc094652a9e73eabd3f4ef9244d86" }
-# Unreleased `next_range{,_back}` iterator methods.
-# https://github.com/RoaringBitmap/roaring-rs/pull/338
-roaring = { git = "https://github.com/RoaringBitmap/roaring-rs.git", rev = "ad96740edcbf838c1fec9c13680c5770c69b8c71" }
 
 [workspace.lints]
 clippy.allow_attributes = "warn"
