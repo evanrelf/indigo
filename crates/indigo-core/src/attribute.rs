@@ -9,10 +9,6 @@ use std::{
 
 pub struct Attributes<A>(BTreeMap<A, RoaringBitmap>);
 
-// TODO: Add range queries with `BTreeMap::range`. For example, if `A = &str`, and I have three
-// attributes `["color=red", "color=green", "color=blue"]`, then a range query could let me query
-// all the colors without caring about their values.
-
 impl<A> Attributes<A> {
     #[must_use]
     pub fn new() -> Self {
@@ -72,6 +68,15 @@ impl<A> Attributes<A> {
     {
         iter::zip(self.0.iter(), iter::repeat(range))
             .filter_map(|((attr, ranges), range)| ranges.contains_range(range).then_some(attr))
+    }
+
+    pub fn attr_range<Q, R>(&self, range: R) -> impl Iterator<Item = (&A, &RoaringBitmap)>
+    where
+        A: Borrow<Q> + Ord,
+        Q: Ord + ?Sized,
+        R: RangeBounds<Q>,
+    {
+        self.0.range(range)
     }
 
     pub fn transform(&mut self, ops: &OperationSeq) {
@@ -134,5 +139,30 @@ mod tests {
         let expected_attrs = vec!["foo"];
         let actual_attrs: Vec<_> = attrs.attrs(0..=3).cloned().collect();
         assert_eq!(expected_attrs, actual_attrs);
+    }
+
+    #[test]
+    fn attr_range() {
+        let mut attrs = Attributes::new();
+        attrs.insert(0..=10, String::from("color=red"));
+        attrs.insert(5..=15, String::from("color=green"));
+        attrs.insert(10..=20, String::from("color=blue"));
+        attrs.insert(0..=5, String::from("font=bold"));
+        attrs.insert(15..=25, String::from("font=italic"));
+        let color_attrs: Vec<_> = attrs
+            .attr_range(String::from("color=")..String::from("color=\u{10ffff}"))
+            .map(|(attr, _)| attr.as_str())
+            .collect();
+        assert_eq!(color_attrs, vec!["color=blue", "color=green", "color=red"]);
+        let font_attrs: Vec<_> = attrs
+            .attr_range(String::from("font=")..String::from("font=\u{10ffff}"))
+            .map(|(attr, _)| attr.as_str())
+            .collect();
+        assert_eq!(font_attrs, vec!["font=bold", "font=italic"]);
+        let specific_colors: Vec<_> = attrs
+            .attr_range(String::from("color=blue")..=String::from("color=green"))
+            .map(|(attr, _)| attr.as_str())
+            .collect();
+        assert_eq!(specific_colors, vec!["color=blue", "color=green"]);
     }
 }
