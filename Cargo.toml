@@ -8,7 +8,7 @@ arbitrary = { version = "1.4.2", features = ["derive"] }
 arbtest = "0.3.2"
 bitflags = { version = "2.10.0", features = ["arbitrary", "std"] }
 camino = "1.2.2"
-clap = { version = "4.5.53", features = ["derive", "env"] }
+clap = { version = "4.5.54", features = ["derive", "env"] }
 diff = "0.1.13"
 etcetera = "0.11.0"
 hdrhistogram = "7.5.4"
@@ -18,13 +18,13 @@ indigo-tui = { path = "crates/indigo-tui/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }
 memchr = "2.7.6"
 pathdiff = { version = "0.2.3", features = ["camino"] }
-ratatui = "0.30.0-beta.0"
+ratatui = "0.30.0"
 regex-cursor = { version = "0.1.5", default-features = false, features = ["perf-inline"] }
 roaring = "0.11.3"
 ropey = { version = "2.0.0-beta.1" }
 shell-words = "1.1.1"
 thiserror = "2.0.17"
-tracing = "0.1.43"
+tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 unicode-segmentation = "1.12.0"
 unicode-width = "0.2.2"
