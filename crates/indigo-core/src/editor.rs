@@ -2,6 +2,7 @@ use crate::{
     buffer::Buffer,
     fs::{Fs, NoFs},
     mode::Mode,
+    settings::Settings,
     window::{Window, WindowMut, WindowState},
 };
 use camino::Utf8PathBuf;
@@ -21,6 +22,7 @@ pub struct Editor {
     pub mode: Mode,
     pub pwd: Option<Utf8PathBuf>,
     pub message: Option<Result<String, String>>,
+    pub settings: Settings,
     exit_code: Option<ExitCode>,
 }
 
@@ -64,6 +66,7 @@ impl Default for Editor {
             mode: Mode::default(),
             pwd: None,
             message: None,
+            settings: Settings::default(),
             exit_code: None,
         }
     }

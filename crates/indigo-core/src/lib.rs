@@ -13,6 +13,7 @@ pub mod prelude;
 pub mod range;
 pub mod rope;
 pub mod selection;
+pub mod settings;
 pub mod text;
 pub mod unicode;
 pub mod window;

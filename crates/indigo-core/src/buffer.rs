@@ -2,6 +2,7 @@ use crate::{
     fs::Fs,
     range::RangeState,
     selection::{Selection, SelectionMut, SelectionState},
+    settings::Settings,
     text::Text,
 };
 use camino::Utf8Path;
@@ -34,6 +35,7 @@ pub struct Buffer {
     text: Text,
     // TODO: Track history of selection state
     selection: SelectionState,
+    pub settings: Settings,
 }
 
 impl Buffer {

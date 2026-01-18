@@ -2,6 +2,7 @@ use crate::{
     buffer::Buffer,
     editor::Editor,
     rope::{LINE_TYPE, RopeExt as _},
+    settings::Settings,
 };
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::cmp::min;
@@ -10,6 +11,7 @@ use std::cmp::min;
 pub struct WindowState {
     pub height: u16,
     pub prev_vertical_scroll: usize,
+    pub settings: Settings,
     // TODO(horizontal_scroll)
 }
 
@@ -42,6 +44,11 @@ impl<'a, W: WrapRef> WindowView<'a, W> {
     pub fn vertical_scroll(&self) -> usize {
         let last_line = self.buffer.rope().len_lines_indigo().saturating_sub(1);
         min(self.state.prev_vertical_scroll, last_line)
+    }
+
+    #[must_use]
+    pub fn settings(&self) -> &Settings {
+        &self.state.settings
     }
 
     // TODO(horizontal_scroll)
@@ -82,6 +89,11 @@ impl<W: WrapMut> WindowView<'_, W> {
     #[must_use]
     pub fn buffer_mut(&mut self) -> &mut Buffer {
         &mut self.buffer
+    }
+
+    #[must_use]
+    pub fn settings_mut(&mut self) -> &mut Settings {
+        &mut self.state.settings
     }
 }
 

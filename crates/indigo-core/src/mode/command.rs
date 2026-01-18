@@ -8,10 +8,11 @@ use crate::{
         Mode,
         normal::{NormalMode, enter_normal_mode},
     },
+    settings::Scope,
     text::Text,
 };
 use camino::Utf8PathBuf;
-use clap::Parser as _;
+use clap::{Parser as _, ValueEnum as _};
 use ropey::Rope;
 use std::{borrow::Cow, iter, rc::Rc};
 
@@ -93,6 +94,8 @@ fn delete_before(editor: &mut Editor) {
 
 #[expect(clippy::too_many_lines)]
 fn exec_command(editor: &mut Editor) {
+    // TODO: Move these types into module-level scope
+
     #[derive(clap::Parser)]
     #[clap(
         disable_help_flag = true,
@@ -104,6 +107,11 @@ fn exec_command(editor: &mut Editor) {
             #[clap(long)]
             error: bool,
             message: Vec<String>,
+        },
+        Set {
+            scope: Scope,
+            key: String,
+            value: String,
         },
         #[clap(alias = "e")]
         Edit { path: Utf8PathBuf },
@@ -161,6 +169,20 @@ fn exec_command(editor: &mut Editor) {
                 editor.message = Some(Err(message.join(" ")));
             } else {
                 editor.message = Some(Ok(message.join(" ")));
+            }
+        }
+        Command::Set { scope, key, value } => {
+            let result = match scope {
+                Scope::Global => editor.settings.set(&key, &value),
+                Scope::Buffer => editor.window_mut().buffer_mut().settings.set(&key, &value),
+                Scope::Window => editor.window_mut().settings_mut().set(&key, &value),
+            };
+            if result.is_err() {
+                let scope_value = scope.to_possible_value().unwrap();
+                let scope_name = scope_value.get_name();
+                editor.message = Some(Err(format!(
+                    "Failed to set '{key}' to '{value}' in {scope_name} scope"
+                )));
             }
         }
         Command::Edit { path } => {
