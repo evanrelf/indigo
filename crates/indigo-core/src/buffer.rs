@@ -126,20 +126,28 @@ impl Buffer {
         self.text.commit();
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn undo(&mut self) -> anyhow::Result<bool> {
         if self.text.undo()? {
-            self.selection_mut()
-                .for_each_mut(|mut range| range.snap_to_grapheme_boundaries());
+            self.selection_mut().for_each_mut(|mut range| {
+                if range.snap_to_grapheme_boundaries() {
+                    tracing::warn!("wasn't on grapheme boundary after");
+                }
+            });
             Ok(true)
         } else {
             Ok(false)
         }
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn redo(&mut self) -> anyhow::Result<bool> {
         if self.text.redo()? {
-            self.selection_mut()
-                .for_each_mut(|mut range| range.snap_to_grapheme_boundaries());
+            self.selection_mut().for_each_mut(|mut range| {
+                if range.snap_to_grapheme_boundaries() {
+                    tracing::warn!("wasn't on grapheme boundary after");
+                }
+            });
             Ok(true)
         } else {
             Ok(false)

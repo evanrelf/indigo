@@ -34,8 +34,10 @@ pub struct CursorState {
 
 impl CursorState {
     /// Snap to nearest grapheme boundary. This is a no-op if the cursor is already valid.
-    pub fn snap_to_grapheme_boundary(&mut self, text: &Rope) {
+    pub fn snap_to_grapheme_boundary(&mut self, text: &Rope) -> bool {
+        let prev_byte_offset = self.byte_offset;
         self.byte_offset = text.ceil_grapheme_boundary(self.byte_offset);
+        self.byte_offset != prev_byte_offset
     }
 
     #[must_use]
@@ -158,8 +160,8 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
 }
 
 impl<W: WrapMut> CursorView<'_, W> {
-    pub fn snap_to_grapheme_boundary(&mut self) {
-        self.state.snap_to_grapheme_boundary(&self.text);
+    pub fn snap_to_grapheme_boundary(&mut self) -> bool {
+        self.state.snap_to_grapheme_boundary(&self.text)
     }
 
     pub fn move_to(&mut self, byte_offset: usize) {
@@ -424,6 +426,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.insert(&char.to_string())
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn insert(&mut self, text: &str) -> OperationSeq {
         self.assert_invariants().unwrap();
         let mut ops = OperationSeq::new();
@@ -432,11 +435,14 @@ impl<W: WrapMut> CursorView<'_, W> {
         ops.retain_rest(&self.text);
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.byte_offset = ops.transform_byte_offset(self.state.byte_offset);
-        self.snap_to_grapheme_boundary();
+        if self.snap_to_grapheme_boundary() {
+            tracing::warn!("wasn't on grapheme boundary after");
+        }
         ops
     }
 
     // Behavior traditionally associated with the Backspace key.
+    #[tracing::instrument(skip_all)]
     pub fn delete_before(&mut self) -> Option<OperationSeq> {
         self.assert_invariants().unwrap();
         let mut byte_offset = self.state.byte_offset;
@@ -453,11 +459,14 @@ impl<W: WrapMut> CursorView<'_, W> {
         ops.retain_rest(&self.text);
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.byte_offset = ops.transform_byte_offset(self.state.byte_offset);
-        self.snap_to_grapheme_boundary();
+        if self.snap_to_grapheme_boundary() {
+            tracing::warn!("wasn't on grapheme boundary after");
+        }
         Some(ops)
     }
 
     // Behavior traditionally associated with the Delete key.
+    #[tracing::instrument(skip_all)]
     pub fn delete_after(&mut self) -> Option<OperationSeq> {
         self.assert_invariants().unwrap();
         let mut byte_offset = self.state.byte_offset;
@@ -474,7 +483,9 @@ impl<W: WrapMut> CursorView<'_, W> {
         ops.retain_rest(&self.text);
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.byte_offset = ops.transform_byte_offset(self.state.byte_offset);
-        self.snap_to_grapheme_boundary();
+        if self.snap_to_grapheme_boundary() {
+            tracing::warn!("wasn't on grapheme boundary after");
+        }
         Some(ops)
     }
 }

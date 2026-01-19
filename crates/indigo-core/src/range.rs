@@ -36,13 +36,23 @@ pub struct RangeState {
 impl RangeState {
     /// Snap anchor and head outward to nearest grapheme boundaries. This is a no-op if the range is
     /// already valid.
-    pub fn snap_to_grapheme_boundaries(&mut self, text: &Rope) {
+    pub fn snap_to_grapheme_boundaries(&mut self, text: &Rope) -> bool {
         if self.anchor.byte_offset < self.head.byte_offset {
+            let prev_anchor = self.anchor.byte_offset;
             self.anchor.byte_offset = text.floor_grapheme_boundary(self.anchor.byte_offset);
+
+            let prev_head = self.head.byte_offset;
             self.head.byte_offset = text.ceil_grapheme_boundary(self.head.byte_offset);
+
+            self.anchor.byte_offset != prev_anchor || self.head.byte_offset != prev_head
         } else {
+            let prev_head = self.head.byte_offset;
             self.head.byte_offset = text.floor_grapheme_boundary(self.head.byte_offset);
+
+            let prev_anchor = self.anchor.byte_offset;
             self.anchor.byte_offset = text.ceil_grapheme_boundary(self.anchor.byte_offset);
+
+            self.anchor.byte_offset != prev_anchor || self.head.byte_offset != prev_head
         }
     }
 
@@ -298,8 +308,8 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
-    pub fn snap_to_grapheme_boundaries(&mut self) {
-        self.state.snap_to_grapheme_boundaries(&self.text);
+    pub fn snap_to_grapheme_boundaries(&mut self) -> bool {
+        self.state.snap_to_grapheme_boundaries(&self.text)
     }
 
     /// Should be called after performing any non-vertical movement.
@@ -555,6 +565,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.insert(&char.to_string())
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn insert(&mut self, text: &str) -> OperationSeq {
         debug_assert!(
             self.grapheme_length() <= 1,
@@ -565,11 +576,14 @@ impl<W: WrapMut> RangeView<'_, W> {
         let ops = self.start_mut().insert(text);
         self.state.anchor.byte_offset = ops.transform_byte_offset(anchor);
         self.state.head.byte_offset = ops.transform_byte_offset(head);
-        self.snap_to_grapheme_boundaries();
+        if self.snap_to_grapheme_boundaries() {
+            tracing::warn!("wasn't on grapheme boundary after");
+        }
         self.update_goal_column();
         ops
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn delete_before(&mut self) -> Option<OperationSeq> {
         if self.start().is_at_start() {
             return None;
@@ -583,11 +597,14 @@ impl<W: WrapMut> RangeView<'_, W> {
         let ops = self.start_mut().delete_before()?;
         self.state.anchor.byte_offset = ops.transform_byte_offset(anchor);
         self.state.head.byte_offset = ops.transform_byte_offset(head);
-        self.snap_to_grapheme_boundaries();
+        if self.snap_to_grapheme_boundaries() {
+            tracing::warn!("wasn't on grapheme boundary after");
+        }
         self.update_goal_column();
         Some(ops)
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn delete(&mut self) -> Option<OperationSeq> {
         if self.is_empty() {
             return None;
@@ -600,11 +617,14 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.anchor.byte_offset = ops.transform_byte_offset(self.state.anchor.byte_offset);
         self.state.head.byte_offset = ops.transform_byte_offset(self.state.head.byte_offset);
         debug_assert_eq!(self.state.anchor.byte_offset, self.state.head.byte_offset);
-        self.snap_to_grapheme_boundaries();
+        if self.snap_to_grapheme_boundaries() {
+            tracing::warn!("wasn't on grapheme boundary after");
+        }
         self.update_goal_column();
         Some(ops)
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn delete_after(&mut self) -> Option<OperationSeq> {
         if self.end().is_at_end() {
             return None;
@@ -618,7 +638,9 @@ impl<W: WrapMut> RangeView<'_, W> {
         let ops = self.end_mut().delete_after()?;
         self.state.anchor.byte_offset = ops.transform_byte_offset(anchor);
         self.state.head.byte_offset = ops.transform_byte_offset(head);
-        self.snap_to_grapheme_boundaries();
+        if self.snap_to_grapheme_boundaries() {
+            tracing::warn!("wasn't on grapheme boundary after");
+        }
         self.update_goal_column();
         Some(ops)
     }
