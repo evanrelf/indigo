@@ -95,28 +95,34 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         self.state.byte_offset
     }
 
-    pub fn byte_index(&self, bias: Bias) -> Option<usize> {
+    pub fn byte_index(&self, bias: Bias) -> Result<usize, Option<usize>> {
+        let prev = || {
+            self.text
+                .prev_grapheme_boundary(self.state.byte_offset)
+                .expect("Not at start so previous grapheme boundary exists")
+        };
         match bias {
-            Bias::Before if self.is_at_start() => None,
-            Bias::After if self.is_at_end() => None,
-            Bias::Before => Some(
-                self.text
-                    .prev_grapheme_boundary(self.state.byte_offset)
-                    .expect("Not at start so previous grapheme boundary exists"),
-            ),
-            Bias::After => Some(self.state.byte_offset),
+            _ if self.text.len() == 0 => Err(None),
+            Bias::Before if self.is_at_start() => Err(Some(self.state.byte_offset)),
+            Bias::After if self.is_at_end() => Err(Some(prev())),
+            Bias::Before => Ok(prev()),
+            Bias::After => Ok(self.state.byte_offset),
         }
     }
 
     #[must_use]
     pub fn display_column(&self, bias: Bias) -> Option<usize> {
-        let byte_index = self.byte_index(bias)?;
+        let Ok(byte_index) = self.byte_index(bias) else {
+            return None;
+        };
         Some(self.text.display_column(byte_index))
     }
 
     #[must_use]
     pub fn grapheme(&self, bias: Bias) -> Option<RopeSlice<'_>> {
-        let byte_index = self.byte_index(bias)?;
+        let Ok(byte_index) = self.byte_index(bias) else {
+            return None;
+        };
         let start = byte_index;
         let end = self.text.next_grapheme_boundary(start)?;
         Some(self.text.slice(start..end))
@@ -124,7 +130,7 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
 
     #[must_use]
     pub fn line(&self, bias: Bias) -> Option<RopeSlice<'_>> {
-        let byte_index = self.byte_index(bias)?;
+        let byte_index = self.byte_index(bias).ok()?;
         let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
         self.text.get_line(line_index, LINE_TYPE)
     }
@@ -192,10 +198,14 @@ impl<W: WrapMut> CursorView<'_, W> {
     }
 
     pub fn move_up(&mut self, goal_column: usize, bias: Bias, count: usize) -> bool {
-        let mut moved = false;
+        if self.text.len() == 0 {
+            return false;
+        }
         for _ in 0..count {
-            let Some(byte_index) = self.byte_index(bias) else {
-                break;
+            #[expect(clippy::manual_let_else)]
+            let byte_index = match self.byte_index(bias) {
+                Ok(n) | Err(Some(n)) => n,
+                Err(None) => unreachable!("Already checked rope length"),
             };
             let current_line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
             if current_line_index == 0 {
@@ -218,16 +228,19 @@ impl<W: WrapMut> CursorView<'_, W> {
                 byte_offset += grapheme.len();
             }
             self.state.byte_offset = byte_offset;
-            moved = true;
         }
-        moved
+        count > 0
     }
 
     pub fn move_down(&mut self, goal_column: usize, bias: Bias, count: usize) -> bool {
-        let mut moved = false;
+        if self.text.len() == 0 {
+            return false;
+        }
         for _ in 0..count {
-            let Some(byte_index) = self.byte_index(bias) else {
-                break;
+            #[expect(clippy::manual_let_else)]
+            let byte_index = match self.byte_index(bias) {
+                Ok(n) | Err(Some(n)) => n,
+                Err(None) => unreachable!("Already checked rope length"),
             };
             let current_line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
             let target_line_index = current_line_index + 1;
@@ -254,9 +267,8 @@ impl<W: WrapMut> CursorView<'_, W> {
                 byte_offset += grapheme.len();
             }
             self.state.byte_offset = byte_offset;
-            moved = true;
         }
-        moved
+        count > 0
     }
 
     pub fn move_to_prev_byte(&mut self, byte: u8, count: usize) -> bool {
@@ -320,11 +332,15 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.move_to_line_start(bias);
     }
 
-    #[tracing::instrument(skip_all)]
     pub fn move_to_line_start(&mut self, bias: Bias) {
-        let Some(byte_index) = self.byte_index(bias) else {
-            tracing::warn!(byte_offset = self.state.byte_offset, ?bias, "weird...");
+        if self.text.len() == 0 {
             return;
+        }
+
+        #[expect(clippy::manual_let_else)]
+        let byte_index = match self.byte_index(bias) {
+            Ok(n) | Err(Some(n)) => n,
+            Err(None) => unreachable!("Already checked rope length"),
         };
 
         let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
@@ -332,12 +348,17 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.byte_offset = line_start_byte_offset;
     }
 
-    #[tracing::instrument(skip_all)]
     pub fn move_to_line_non_blank_start(&mut self, bias: Bias) {
-        let Some(byte_index) = self.byte_index(bias) else {
-            tracing::warn!(byte_offset = self.state.byte_offset, ?bias, "weird...");
+        if self.text.len() == 0 {
             return;
+        }
+
+        #[expect(clippy::manual_let_else)]
+        let byte_index = match self.byte_index(bias) {
+            Ok(n) | Err(Some(n)) => n,
+            Err(None) => unreachable!("Already checked rope length"),
         };
+
         let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
         let line_start_byte_offset = self.text.line_to_byte_idx(line_index, LINE_TYPE);
         let line_slice = self.text.line(line_index, LINE_TYPE);
@@ -355,15 +376,15 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.byte_offset = byte_offset;
     }
 
-    #[tracing::instrument(skip_all)]
-    pub fn move_to_line_end(&mut self, mut bias: Bias) {
-        if self.is_at_start() {
-            bias = Bias::After;
+    pub fn move_to_line_end(&mut self, bias: Bias) {
+        if self.text.len() == 0 || self.is_at_end() {
+            return;
         }
 
-        let Some(byte_index) = self.byte_index(bias) else {
-            tracing::warn!(byte_offset = self.state.byte_offset, ?bias, "weird...");
-            return;
+        #[expect(clippy::manual_let_else)]
+        let byte_index = match self.byte_index(bias) {
+            Ok(n) | Err(Some(n)) => n,
+            Err(None) => unreachable!("Already checked rope length"),
         };
 
         let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
@@ -613,22 +634,20 @@ mod tests {
     #[test]
     fn byte_index() {
         let cursor = CursorView::try_from(("xy", 1)).unwrap();
-        assert_eq!(cursor.byte_index(Bias::Before), Some(0));
-        assert_eq!(cursor.byte_index(Bias::After), Some(1));
+        assert_eq!(cursor.byte_index(Bias::Before), Ok(0));
+        assert_eq!(cursor.byte_index(Bias::After), Ok(1));
         assert_eq!(cursor.text().char(0), 'x');
         assert_eq!(cursor.text().char(1), 'y');
 
         let cursor = CursorView::try_from(("x", 0)).unwrap();
-        assert_eq!(cursor.byte_index(Bias::Before), None);
-        assert_eq!(cursor.byte_index(Bias::After), Some(0));
+        assert_eq!(cursor.byte_index(Bias::Before), Err(Some(0)));
 
         let cursor = CursorView::try_from(("x", 1)).unwrap();
-        assert_eq!(cursor.byte_index(Bias::Before), Some(0));
-        assert_eq!(cursor.byte_index(Bias::After), None);
+        assert_eq!(cursor.byte_index(Bias::After), Err(Some(0)));
 
         let cursor = CursorView::try_from(("", 0)).unwrap();
-        assert_eq!(cursor.byte_index(Bias::Before), None);
-        assert_eq!(cursor.byte_index(Bias::After), None);
+        assert_eq!(cursor.byte_index(Bias::Before), Err(None));
+        assert_eq!(cursor.byte_index(Bias::After), Err(None));
     }
 
     #[test]
