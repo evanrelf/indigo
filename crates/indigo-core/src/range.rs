@@ -349,6 +349,9 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_up(&mut self, count: usize) {
+        if self.grapheme_length() == 1 {
+            self.unchecked_flip_backward();
+        }
         let goal_column = self.state.goal_column;
         let bias = self.head_bias();
         self.head_mut().move_up(goal_column, bias, count);
