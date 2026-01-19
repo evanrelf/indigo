@@ -112,17 +112,13 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
 
     #[must_use]
     pub fn display_column(&self, bias: Bias) -> Option<usize> {
-        let Ok(byte_index) = self.byte_index(bias) else {
-            return None;
-        };
+        let byte_index = self.byte_index(bias).ok()?;
         Some(self.text.display_column(byte_index))
     }
 
     #[must_use]
     pub fn grapheme(&self, bias: Bias) -> Option<RopeSlice<'_>> {
-        let Ok(byte_index) = self.byte_index(bias) else {
-            return None;
-        };
+        let byte_index = self.byte_index(bias).ok()?;
         let start = byte_index;
         let end = self.text.next_grapheme_boundary(start)?;
         Some(self.text.slice(start..end))
