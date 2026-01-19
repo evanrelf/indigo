@@ -324,6 +324,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         let primary = &state.ranges[state.primary_range];
         let anchor = primary.anchor.byte_offset;
         let head = primary.head.byte_offset;
+        let goal = primary.goal_column;
 
         let count = match editor.mode.count() {
             Some(count) if count.get() == usize::MAX => &String::from(" count=∞"),
@@ -331,7 +332,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
             None => "",
         };
 
-        Line::raw(format!("{path} · {mode} {anchor}-{head}{count}")).render(area, surface);
+        Line::raw(format!("{path} · {mode} {anchor}-{head} {goal}{count}")).render(area, surface);
     }
 }
 
