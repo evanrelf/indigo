@@ -332,7 +332,10 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
             None => "",
         };
 
-        Line::raw(format!("{path} · {mode} {anchor}-{head} {goal}{count}")).render(area, surface);
+        Line::raw(format!(
+            "{path} · {mode} · anchor={anchor} head={head} goal={goal}{count}"
+        ))
+        .render(area, surface);
     }
 }
 
