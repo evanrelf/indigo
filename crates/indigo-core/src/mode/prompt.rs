@@ -13,7 +13,7 @@ pub struct PromptMode {
     text: Text,
     cursor: CursorState,
     #[expect(clippy::type_complexity)]
-    handler: Option<Box<dyn FnMut(&mut Editor, &str)>>,
+    handler: Option<Box<dyn FnOnce(&mut Editor, &str)>>,
 }
 
 impl PromptMode {
@@ -110,7 +110,7 @@ fn exec(editor: &mut Editor) {
         panic!("Not in prompt mode")
     };
     let text = prompt_mode.rope().to_string();
-    let mut handler = prompt_mode
+    let handler = prompt_mode
         .handler
         .take()
         .expect("Handler is always present");
