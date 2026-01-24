@@ -321,6 +321,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         let window = editor.window();
         let selection = window.buffer().selection();
         let state = selection.state();
+        let ranges = state.ranges.len();
         let primary = &state.ranges[state.primary_range];
         let tail = primary.tail.byte_offset;
         let head = primary.head.byte_offset;
@@ -333,7 +334,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         };
 
         Line::raw(format!(
-            "{path} · {mode} · tail={tail} head={head} goal={goal}{count}"
+            "{path} · {mode} · ranges={ranges} tail={tail} head={head} goal={goal}{count}"
         ))
         .render(area, surface);
     }
