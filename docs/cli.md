@@ -110,7 +110,7 @@ Using debug mode:
 <pre>
 $ echo -ne "hello\nworld\n" | ./bin/cli --debug 'foc<c-l>HELLO<c-l><esc>jgla!<c-l>'
 keys: foc
-primary range: anchor=0 head=1
+primary range: tail=0 head=1
 text:
 ```diff
 -hello
@@ -119,7 +119,7 @@ text:
 
 ```
 keys: HELLO
-primary range: anchor=5 head=6
+primary range: tail=5 head=6
 text:
 ```diff
 -
@@ -128,7 +128,7 @@ text:
 
 ```
 keys: <esc>jgla!
-primary range: anchor=12 head=13
+primary range: tail=12 head=13
 text:
 ```diff
  HELLO

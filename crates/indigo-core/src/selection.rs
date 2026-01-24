@@ -139,14 +139,14 @@ impl<W: WrapMut> SelectionView<'_, W> {
     pub fn select_regex(&mut self, regex: &Regex) -> bool {
         let mut ranges = Vec::new();
         for range in &self.state.ranges {
-            let start = min(range.anchor.byte_offset, range.head.byte_offset);
-            let end = max(range.anchor.byte_offset, range.head.byte_offset);
+            let start = min(range.tail.byte_offset, range.head.byte_offset);
+            let end = max(range.tail.byte_offset, range.head.byte_offset);
             let input = regex_cursor::Input::new(RegexCursorInput::from(
                 self.text.rope().slice(start..end),
             ));
             for needle in regex.find_iter(input) {
                 ranges.push(RangeState {
-                    anchor: CursorState {
+                    tail: CursorState {
                         byte_offset: start + needle.start(),
                     },
                     head: CursorState {

@@ -11,14 +11,14 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Empty but not at end of text (anchor={anchor}, head={head})")]
-    EmptyAndNotEnd { anchor: usize, head: usize },
+    #[error("Empty but not at end of text (tail={tail}, head={head})")]
+    EmptyAndNotEnd { tail: usize, head: usize },
 
-    #[error("Reduced but not facing forward (anchor={anchor}, head={head})")]
-    ReducedAndBackward { anchor: usize, head: usize },
+    #[error("Reduced but not facing forward (tail={tail}, head={head})")]
+    ReducedAndBackward { tail: usize, head: usize },
 
-    #[error("Error from anchor")]
-    Anchor(#[source] anyhow::Error),
+    #[error("Error from tail")]
+    Tail(#[source] anyhow::Error),
 
     #[error("Error from head")]
     Head(#[source] anyhow::Error),
@@ -26,7 +26,7 @@ pub enum Error {
 
 #[derive(Clone, Default)]
 pub struct RangeState {
-    pub anchor: CursorState,
+    pub tail: CursorState,
     pub head: CursorState,
     /// The display column the head _wants_ to be on. Saved to restore horizontal positioning
     /// through vertical movements. Reset on any non-vertical movement.
@@ -34,25 +34,25 @@ pub struct RangeState {
 }
 
 impl RangeState {
-    /// Snap anchor and head outward to nearest grapheme boundaries. This is a no-op if the range is
+    /// Snap tail and head outward to nearest grapheme boundaries. This is a no-op if the range is
     /// already valid.
     pub fn snap_to_grapheme_boundaries(&mut self, text: &Rope) -> bool {
-        if self.anchor.byte_offset < self.head.byte_offset {
-            let prev_anchor = self.anchor.byte_offset;
-            self.anchor.byte_offset = text.floor_grapheme_boundary(self.anchor.byte_offset);
+        if self.tail.byte_offset < self.head.byte_offset {
+            let prev_tail = self.tail.byte_offset;
+            self.tail.byte_offset = text.floor_grapheme_boundary(self.tail.byte_offset);
 
             let prev_head = self.head.byte_offset;
             self.head.byte_offset = text.ceil_grapheme_boundary(self.head.byte_offset);
 
-            self.anchor.byte_offset != prev_anchor || self.head.byte_offset != prev_head
+            self.tail.byte_offset != prev_tail || self.head.byte_offset != prev_head
         } else {
             let prev_head = self.head.byte_offset;
             self.head.byte_offset = text.floor_grapheme_boundary(self.head.byte_offset);
 
-            let prev_anchor = self.anchor.byte_offset;
-            self.anchor.byte_offset = text.ceil_grapheme_boundary(self.anchor.byte_offset);
+            let prev_tail = self.tail.byte_offset;
+            self.tail.byte_offset = text.ceil_grapheme_boundary(self.tail.byte_offset);
 
-            self.anchor.byte_offset != prev_anchor || self.head.byte_offset != prev_head
+            self.tail.byte_offset != prev_tail || self.head.byte_offset != prev_head
         }
     }
 
@@ -63,14 +63,14 @@ impl RangeState {
     }
 
     pub fn transform(&mut self, ops: &OperationSeq) {
-        self.anchor.transform(ops);
+        self.tail.transform(ops);
         self.head.transform(ops);
     }
 
     #[must_use]
     pub fn start(&self) -> &CursorState {
-        if self.anchor.byte_offset <= self.head.byte_offset {
-            &self.anchor
+        if self.tail.byte_offset <= self.head.byte_offset {
+            &self.tail
         } else {
             &self.head
         }
@@ -78,10 +78,10 @@ impl RangeState {
 
     #[must_use]
     pub fn end(&self) -> &CursorState {
-        if self.anchor.byte_offset <= self.head.byte_offset {
+        if self.tail.byte_offset <= self.head.byte_offset {
             &self.head
         } else {
-            &self.anchor
+            &self.tail
         }
     }
 
@@ -152,9 +152,9 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         self.text.slice(start..end)
     }
 
-    pub fn anchor(&self) -> Cursor<'_> {
-        Cursor::new(&self.text, &self.state.anchor)
-            .expect("Range text and anchor cursor state are always kept valid")
+    pub fn tail(&self) -> Cursor<'_> {
+        Cursor::new(&self.text, &self.state.tail)
+            .expect("Range text and tail cursor state are always kept valid")
     }
 
     pub fn head(&self) -> Cursor<'_> {
@@ -163,23 +163,23 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 
     pub fn start(&self) -> Cursor<'_> {
-        if self.state.anchor.byte_offset <= self.state.head.byte_offset {
-            self.anchor()
+        if self.state.tail.byte_offset <= self.state.head.byte_offset {
+            self.tail()
         } else {
             self.head()
         }
     }
 
     pub fn end(&self) -> Cursor<'_> {
-        if self.state.anchor.byte_offset <= self.state.head.byte_offset {
+        if self.state.tail.byte_offset <= self.state.head.byte_offset {
             self.head()
         } else {
-            self.anchor()
+            self.tail()
         }
     }
 
     #[must_use]
-    pub fn anchor_bias(&self) -> Bias {
+    pub fn tail_bias(&self) -> Bias {
         if self.is_forward() {
             Bias::After
         } else {
@@ -198,8 +198,8 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
 
     #[must_use]
     pub fn start_bias(&self) -> Bias {
-        if self.state.anchor.byte_offset <= self.state.head.byte_offset {
-            self.anchor_bias()
+        if self.state.tail.byte_offset <= self.state.head.byte_offset {
+            self.tail_bias()
         } else {
             self.head_bias()
         }
@@ -207,10 +207,10 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
 
     #[must_use]
     pub fn end_bias(&self) -> Bias {
-        if self.state.anchor.byte_offset <= self.state.head.byte_offset {
+        if self.state.tail.byte_offset <= self.state.head.byte_offset {
             self.head_bias()
         } else {
-            self.anchor_bias()
+            self.tail_bias()
         }
     }
 
@@ -233,12 +233,12 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.state.anchor.byte_offset == self.state.head.byte_offset
+        self.state.tail.byte_offset == self.state.head.byte_offset
     }
 
     /// An empty range is considered forward.
     pub fn is_forward(&self) -> bool {
-        self.state.anchor.byte_offset <= self.state.head.byte_offset
+        self.state.tail.byte_offset <= self.state.head.byte_offset
     }
 
     pub fn is_backward(&self) -> bool {
@@ -260,18 +260,18 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
-        self.anchor().assert_invariants().map_err(Error::Anchor)?;
+        self.tail().assert_invariants().map_err(Error::Tail)?;
         self.head().assert_invariants().map_err(Error::Head)?;
         // TODO: Restore invariants once positioning is rock solid.
         // if self.is_empty() && !self.head().is_at_end() {
         //     return Err(Error::EmptyAndNotEnd {
-        //         anchor: self.state.anchor.byte_offset,
+        //         tail: self.state.tail.byte_offset,
         //         head: self.state.head.byte_offset,
         //     });
         // }
         // if self.is_backward() && self.grapheme_length() <= 1 {
         //     return Err(Error::ReducedAndBackward {
-        //         anchor: self.state.anchor.byte_offset,
+        //         tail: self.state.tail.byte_offset,
         //         head: self.state.head.byte_offset,
         //     });
         // }
@@ -280,9 +280,9 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
 }
 
 impl<W: WrapMut> RangeView<'_, W> {
-    fn anchor_mut(&mut self) -> CursorMut<'_> {
-        CursorMut::new(&mut self.text, &mut self.state.anchor)
-            .expect("Range text and anchor cursor state are always kept valid")
+    fn tail_mut(&mut self) -> CursorMut<'_> {
+        CursorMut::new(&mut self.text, &mut self.state.tail)
+            .expect("Range text and tail cursor state are always kept valid")
             .on_drop(|cursor| cursor.assert_invariants().unwrap())
     }
 
@@ -293,18 +293,18 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     fn start_mut(&mut self) -> CursorMut<'_> {
-        if self.state.anchor.byte_offset <= self.state.head.byte_offset {
-            self.anchor_mut()
+        if self.state.tail.byte_offset <= self.state.head.byte_offset {
+            self.tail_mut()
         } else {
             self.head_mut()
         }
     }
 
     fn end_mut(&mut self) -> CursorMut<'_> {
-        if self.state.anchor.byte_offset <= self.state.head.byte_offset {
+        if self.state.tail.byte_offset <= self.state.head.byte_offset {
             self.head_mut()
         } else {
-            self.anchor_mut()
+            self.tail_mut()
         }
     }
 
@@ -508,10 +508,10 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     fn unchecked_flip(&mut self) {
         fn both(state: &mut RangeState) -> (&mut CursorState, &mut CursorState) {
-            (&mut state.anchor, &mut state.head)
+            (&mut state.tail, &mut state.head)
         }
-        let (anchor, cursor) = both(&mut self.state);
-        mem::swap(&mut anchor.byte_offset, &mut cursor.byte_offset);
+        let (tail, cursor) = both(&mut self.state);
+        mem::swap(&mut tail.byte_offset, &mut cursor.byte_offset);
     }
 
     pub fn flip_forward(&mut self) {
@@ -537,7 +537,7 @@ impl<W: WrapMut> RangeView<'_, W> {
             // Too small -> expand
             if self.head().is_at_end() {
                 // Expand from end
-                self.anchor_mut().move_left(1);
+                self.tail_mut().move_left(1);
             } else {
                 // Expand from start or middle
                 self.head_mut().move_right(1);
@@ -553,11 +553,11 @@ impl<W: WrapMut> RangeView<'_, W> {
 
         // Too big -> contract
         if self.is_backward() {
-            self.state.anchor.byte_offset = self.state.head.byte_offset;
+            self.state.tail.byte_offset = self.state.head.byte_offset;
             self.head_mut().move_right(1);
         } else {
-            self.state.anchor.byte_offset = self.state.head.byte_offset;
-            self.anchor_mut().move_left(1);
+            self.state.tail.byte_offset = self.state.head.byte_offset;
+            self.tail_mut().move_left(1);
         }
     }
 
@@ -571,10 +571,10 @@ impl<W: WrapMut> RangeView<'_, W> {
             self.grapheme_length() <= 1,
             "Range reduced before entering insert mode"
         );
-        let anchor = self.state.anchor.byte_offset;
+        let tail = self.state.tail.byte_offset;
         let head = self.state.head.byte_offset;
         let ops = self.start_mut().insert(text);
-        self.state.anchor.byte_offset = ops.transform_byte_offset(anchor);
+        self.state.tail.byte_offset = ops.transform_byte_offset(tail);
         self.state.head.byte_offset = ops.transform_byte_offset(head);
         if self.snap_to_grapheme_boundaries() {
             tracing::warn!("wasn't on grapheme boundary after");
@@ -592,10 +592,10 @@ impl<W: WrapMut> RangeView<'_, W> {
             self.grapheme_length() <= 1,
             "Range reduced before entering insert mode"
         );
-        let anchor = self.state.anchor.byte_offset;
+        let tail = self.state.tail.byte_offset;
         let head = self.state.head.byte_offset;
         let ops = self.start_mut().delete_before()?;
-        self.state.anchor.byte_offset = ops.transform_byte_offset(anchor);
+        self.state.tail.byte_offset = ops.transform_byte_offset(tail);
         self.state.head.byte_offset = ops.transform_byte_offset(head);
         if self.snap_to_grapheme_boundaries() {
             tracing::warn!("wasn't on grapheme boundary after");
@@ -614,9 +614,9 @@ impl<W: WrapMut> RangeView<'_, W> {
         ops.delete(self.byte_length());
         ops.retain_rest(&self.text);
         self.text.apply(&ops).expect("Operations are well formed");
-        self.state.anchor.byte_offset = ops.transform_byte_offset(self.state.anchor.byte_offset);
+        self.state.tail.byte_offset = ops.transform_byte_offset(self.state.tail.byte_offset);
         self.state.head.byte_offset = ops.transform_byte_offset(self.state.head.byte_offset);
-        debug_assert_eq!(self.state.anchor.byte_offset, self.state.head.byte_offset);
+        debug_assert_eq!(self.state.tail.byte_offset, self.state.head.byte_offset);
         if self.snap_to_grapheme_boundaries() {
             tracing::warn!("wasn't on grapheme boundary after");
         }
@@ -633,10 +633,10 @@ impl<W: WrapMut> RangeView<'_, W> {
             self.grapheme_length() <= 1,
             "Range reduced before entering insert mode"
         );
-        let anchor = self.state.anchor.byte_offset;
+        let tail = self.state.tail.byte_offset;
         let head = self.state.head.byte_offset;
         let ops = self.end_mut().delete_after()?;
-        self.state.anchor.byte_offset = ops.transform_byte_offset(anchor);
+        self.state.tail.byte_offset = ops.transform_byte_offset(tail);
         self.state.head.byte_offset = ops.transform_byte_offset(head);
         if self.snap_to_grapheme_boundaries() {
             tracing::warn!("wasn't on grapheme boundary after");
@@ -651,13 +651,11 @@ where
     R: Into<Text>,
 {
     type Error = anyhow::Error;
-    fn try_from((text, anchor, head): (R, usize, usize)) -> anyhow::Result<Self> {
+    fn try_from((text, tail, head): (R, usize, usize)) -> anyhow::Result<Self> {
         let text = Box::new(text.into());
         let head = CursorState { byte_offset: head };
         let state = Box::new(RangeState {
-            anchor: CursorState {
-                byte_offset: anchor,
-            },
+            tail: CursorState { byte_offset: tail },
             goal_column: 0,
             head,
         });
@@ -712,14 +710,14 @@ mod tests {
         range.insert("x\ny");
 
         range.move_to_line_start();
-        let first_anchor_offset = range.anchor().byte_offset();
+        let first_tail_offset = range.tail().byte_offset();
         let first_head_offset = range.head().byte_offset();
         assert_eq!(&range.slice().to_string(), "y");
 
         range.move_to_line_start();
-        let second_anchor_offset = range.anchor().byte_offset();
+        let second_tail_offset = range.tail().byte_offset();
         let second_head_offset = range.head().byte_offset();
-        assert_eq!(first_anchor_offset, second_anchor_offset);
+        assert_eq!(first_tail_offset, second_tail_offset);
         assert_eq!(first_head_offset, second_head_offset);
         assert_eq!(&range.slice().to_string(), "y");
     }
@@ -732,14 +730,14 @@ mod tests {
         range.insert(" x");
 
         range.move_to_line_non_blank_start();
-        let first_anchor_offset = range.anchor().byte_offset();
+        let first_tail_offset = range.tail().byte_offset();
         let first_head_offset = range.head().byte_offset();
         assert_eq!(&range.slice().to_string(), "x");
 
         range.move_to_line_non_blank_start();
-        let second_anchor_offset = range.anchor().byte_offset();
+        let second_tail_offset = range.tail().byte_offset();
         let second_head_offset = range.head().byte_offset();
-        assert_eq!(first_anchor_offset, second_anchor_offset);
+        assert_eq!(first_tail_offset, second_tail_offset);
         assert_eq!(first_head_offset, second_head_offset);
         assert_eq!(&range.slice().to_string(), "x");
     }

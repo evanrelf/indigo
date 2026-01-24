@@ -7,7 +7,6 @@
 - buffer: Add readonly flag
 - cursor: Add `anchor` convenience method
 - text: Make `apply` method private, move everyone to `insert`+`delete`+anchors
-- range: Rename `anchor` to something else to avoid conflict with edit anchors
 - range: Correct cursor positioning
 - fs: Add support for path canonicalization
 - buffer: Canonicalize path in `open`
