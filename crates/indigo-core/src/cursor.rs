@@ -341,6 +341,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.byte_offset = self.text.len();
     }
 
+    // TODO: This is broken. It lands on the second to last line.
     pub fn move_to_bottom(&mut self, bias: Bias) {
         self.move_to_end();
         self.move_to_line_start(bias);
