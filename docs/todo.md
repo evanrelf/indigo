@@ -14,6 +14,14 @@
 - range: Select word (for mouse double click)
 - range: Select line (for mouse triple click)
 
+## Friction in use
+
+- No `/` search
+- No `123g` to go to line
+- No `o` or `O`
+- `A` isn't idempotent
+- No auto-scroll to keep primary range in view
+
 ## Keys
 
 Most will have the same behavior as Kakoune, but not all (e.g. `q` is the
