@@ -252,8 +252,7 @@ impl<W: WrapMut> CursorView<'_, W> {
                 return false;
             }
             if target_line_index >= self.text.len_lines_indigo() {
-                self.state.byte_offset = self.text.len();
-                return true;
+                return false;
             }
             let target_line_byte_index = self.text.line_to_byte_idx(target_line_index, LINE_TYPE);
             let target_line_slice = self.text.line(target_line_index, LINE_TYPE);
