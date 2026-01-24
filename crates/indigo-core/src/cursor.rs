@@ -2,7 +2,7 @@ use crate::{
     display_width::DisplayWidth,
     ot::OperationSeq,
     rope::{LINE_TYPE, RopeExt as _},
-    text::Text,
+    text::{Anchor, Text},
 };
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
@@ -141,6 +141,11 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     #[must_use]
     pub fn is_at_end(&self) -> bool {
         self.state.byte_offset == self.text.len()
+    }
+
+    #[must_use]
+    pub fn anchor(&self) -> Anchor {
+        self.text.create_anchor(self.state.byte_offset)
     }
 
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
