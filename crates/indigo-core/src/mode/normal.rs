@@ -41,10 +41,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             // TODO: Make different ways of entering insert mode more consistent.
             _ if is(key, "i") => enter_insert_mode(editor),
             _ if is(key, "I") => insert_at_line_non_blank_start(editor),
-            _ if is(key, "a") => {
-                move_right(editor);
-                enter_insert_mode(editor);
-            }
+            _ if is(key, "a") => insert_after_head(editor),
             _ if is(key, "A") => insert_at_line_end(editor),
             _ if is(key, "h") => move_left(editor),
             _ if is(key, "l") => move_right(editor),
@@ -268,6 +265,17 @@ fn select_regex(editor: &mut Editor) {
         }
         editor.mode.set_count(None);
     });
+}
+
+fn insert_after_head(editor: &mut Editor) {
+    editor
+        .window_mut()
+        .buffer_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| {
+            range.move_right(1);
+        });
+    editor.mode = Mode::Insert(InsertMode::default());
 }
 
 fn insert_at_line_non_blank_start(editor: &mut Editor) {
