@@ -38,7 +38,6 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             (m, KeyCode::Char(c @ b'0'..=b'9')) if m.is_empty() => set_count(editor, count(c)),
             _ if is(key, "<esc>") => enter_normal_mode(editor),
             _ if is(key, ":") => enter_command_mode(editor),
-            // TODO: Make different ways of entering insert mode more consistent.
             _ if is(key, "i") => enter_insert_mode(editor),
             _ if is(key, "I") => insert_at_line_non_blank_start(editor),
             _ if is(key, "a") => insert_after_head(editor),
