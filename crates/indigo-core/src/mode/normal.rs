@@ -45,6 +45,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
                 move_right(editor);
                 enter_insert_mode(editor);
             }
+            _ if is(key, "A") => insert_at_line_end(editor),
             _ if is(key, "h") => move_left(editor),
             _ if is(key, "l") => move_right(editor),
             _ if is(key, "k") => move_up(editor),
@@ -277,7 +278,18 @@ fn insert_at_line_non_blank_start(editor: &mut Editor) {
         .for_each_mut(|mut range| {
             range.flip_backward();
             range.move_to_line_non_blank_start();
-            range.reduce();
+        });
+    editor.mode = Mode::Insert(InsertMode::default());
+}
+
+fn insert_at_line_end(editor: &mut Editor) {
+    editor
+        .window_mut()
+        .buffer_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| {
+            range.move_to_line_end();
+            range.move_right(1);
         });
     editor.mode = Mode::Insert(InsertMode::default());
 }

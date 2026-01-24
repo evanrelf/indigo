@@ -67,7 +67,7 @@ backward word key, not `b`).
 - [x] `i`
 - [x] `I`
 - [x] `a`
-- [ ] `A`
+- [x] `A`
 - [x] `d`
 - [ ] `<a-d>`
 - [x] `c`
