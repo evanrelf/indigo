@@ -107,6 +107,7 @@ backward word key, not `b`).
 - [x] `<a-:>`
 - [x] `:`
 - [x] `<esc>`
+- [ ] Ctrl + left click
 
 ### Goto Mode
 
