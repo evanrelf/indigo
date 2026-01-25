@@ -1,8 +1,9 @@
 use crate::{history::History, ot::OperationSeq};
+use imbl::Vector;
 use ropey::Rope;
 use std::ops::{Deref, Range};
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 struct BidiOperationSeq {
     /// Inverted operations. Apply to undo the edit.
     undo: OperationSeq,
@@ -25,8 +26,10 @@ impl Extend<Self> for BidiOperationSeq {
 #[derive(Debug, Default)]
 pub struct Text {
     rope: Rope,
+    // TODO:
+    // history: History<BidiOperationSeq, BidiOperationSeq>,
     history: History<BidiOperationSeq>,
-    log: Vec<OperationSeq>,
+    log: Vector<OperationSeq>,
 }
 
 impl Text {
@@ -65,7 +68,7 @@ impl Text {
             redo: ops.clone(),
             undo,
         });
-        self.log.push(ops.clone());
+        self.log.push_back(ops.clone());
         Ok(())
     }
 
@@ -77,7 +80,7 @@ impl Text {
         if let Some(opss) = self.history.undo() {
             for ops in opss.iter().rev() {
                 ops.undo.apply(&mut self.rope)?;
-                self.log.push(ops.undo.clone());
+                self.log.push_back(ops.undo.clone());
             }
             Ok(true)
         } else {
@@ -89,7 +92,7 @@ impl Text {
         if let Some(opss) = self.history.redo() {
             for ops in opss {
                 ops.redo.apply(&mut self.rope)?;
-                self.log.push(ops.undo.clone());
+                self.log.push_back(ops.undo.clone());
             }
             Ok(true)
         } else {
@@ -113,8 +116,13 @@ impl Text {
     }
 
     #[must_use]
-    pub fn ops_since(&self, version: usize) -> Option<&[OperationSeq]> {
-        self.log.get(version..)
+    pub fn ops_since(&self, version: usize) -> Option<impl Iterator<Item = &OperationSeq>> {
+        let focus = self.log.focus().narrow(version..);
+        if focus.is_empty() {
+            None
+        } else {
+            Some(focus.into_iter())
+        }
     }
 }
 

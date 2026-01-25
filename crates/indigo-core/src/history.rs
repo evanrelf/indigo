@@ -1,11 +1,12 @@
+use imbl::Vector;
 use std::{iter, marker::PhantomData};
 
 #[derive(Debug)]
 pub struct History<I, T = Vec<I>>
 where
-    T: Default + Extend<I>,
+    T: Clone + Default + Extend<I>,
 {
-    transactions: Vec<T>,
+    transactions: Vector<T>,
     index: usize,
     last_is_committed: bool,
     phantom: PhantomData<fn(I)>,
@@ -13,7 +14,7 @@ where
 
 impl<I, T> History<I, T>
 where
-    T: Default + Extend<I>,
+    T: Clone + Default + Extend<I>,
 {
     #[must_use]
     pub fn new() -> Self {
@@ -30,13 +31,13 @@ where
         }
         // If transaction is committed, start a new one.
         if self.last_is_committed {
-            self.transactions.push(T::default());
+            self.transactions.push_back(T::default());
             self.index += 1;
             self.last_is_committed = false;
         }
         // Extend transaction with item.
         self.transactions
-            .last_mut()
+            .back_mut()
             .unwrap()
             .extend(iter::once(item));
     }
@@ -70,11 +71,11 @@ where
 
 impl<I, T> Default for History<I, T>
 where
-    T: Default + Extend<I>,
+    T: Clone + Default + Extend<I>,
 {
     fn default() -> Self {
         Self {
-            transactions: Vec::new(),
+            transactions: Vector::new(),
             index: 0,
             last_is_committed: true,
             phantom: PhantomData,
@@ -82,7 +83,7 @@ where
     }
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct First<T>(pub Option<T>);
 
 impl<T> Extend<T> for First<T> {
@@ -96,7 +97,7 @@ impl<T> Extend<T> for First<T> {
     }
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Last<T>(pub Option<T>);
 
 impl<T> Extend<T> for Last<T> {
@@ -184,7 +185,7 @@ mod tests {
         assert_eq!(history.undo(), Some(&vec![3]));
     }
 
-    #[derive(Debug, Default, PartialEq)]
+    #[derive(Clone, Debug, Default, PartialEq)]
     struct Sum<T>(T);
 
     impl<T> Extend<T> for Sum<T>

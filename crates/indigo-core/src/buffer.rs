@@ -6,6 +6,7 @@ use crate::{
 };
 use camino::Utf8Path;
 use camino::Utf8PathBuf;
+use imbl::Vector;
 use ropey::Rope;
 use thiserror::Error;
 
@@ -166,7 +167,9 @@ impl From<Rope> for Buffer {
     fn from(rope: Rope) -> Self {
         let text = Text::from(rope);
         let selection = SelectionState {
-            ranges: vec![RangeState::default().snapped_to_grapheme_boundaries(text.rope())],
+            ranges: Vector::from([
+                RangeState::default().snapped_to_grapheme_boundaries(text.rope())
+            ]),
             primary_range: 0,
         };
         Self {
@@ -180,7 +183,9 @@ impl From<Rope> for Buffer {
 impl From<Text> for Buffer {
     fn from(text: Text) -> Self {
         let selection = SelectionState {
-            ranges: vec![RangeState::default().snapped_to_grapheme_boundaries(text.rope())],
+            ranges: Vector::from([
+                RangeState::default().snapped_to_grapheme_boundaries(text.rope())
+            ]),
             primary_range: 0,
         };
         Self {

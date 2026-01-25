@@ -12,6 +12,7 @@ clap = { version = "4.5.54", features = ["derive", "env"] }
 diff = "0.1.13"
 etcetera = "0.11.0"
 hdrhistogram = "7.5.4"
+imbl = "7.0.0"
 indigo-cli = { path = "crates/indigo-cli/" }
 indigo-core = { path = "crates/indigo-core/" }
 indigo-tui = { path = "crates/indigo-tui/" }

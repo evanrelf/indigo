@@ -1,4 +1,5 @@
 use bitflags::bitflags;
+use imbl::Vector;
 use std::{
     fmt::{self, Display, Formatter},
     hash::Hash,
@@ -15,9 +16,15 @@ use winnow::{
 #[cfg(any(feature = "arbitrary", test))]
 use arbitrary::Arbitrary;
 
-#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 #[derive(Clone, Debug)]
-pub struct Keys(pub Vec<Key>);
+pub struct Keys(pub Vector<Key>);
+
+#[cfg(any(feature = "arbitrary", test))]
+impl<'a> Arbitrary<'a> for Keys {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(Self(Vector::from(u.arbitrary::<Vec<_>>()?)))
+    }
+}
 
 impl FromStr for Keys {
     type Err = anyhow::Error;
@@ -50,7 +57,7 @@ fn not_key(input: &mut &str) -> ModalResult<()> {
 fn keys(input: &mut &str) -> ModalResult<Keys> {
     not_key.parse_next(input)?;
     repeat(0.., terminated(key, not_key))
-        .map(Keys)
+        .map(|ks: Vec<_>| Keys(Vector::from(ks)))
         .parse_next(input)
 }
 
