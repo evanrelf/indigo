@@ -5,9 +5,9 @@ use crate::{
     text::Text,
 };
 use camino::Utf8Path;
-use camino::Utf8PathBuf;
 use imbl::Vector;
 use ropey::Rope;
+use std::sync::Arc;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -16,14 +16,14 @@ pub enum Error {
     Selection(#[source] anyhow::Error),
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub enum BufferKind {
     /// In-memory scratch buffer.
     #[default]
     Scratch,
     /// Buffer mapping to a file on disk.
     File {
-        path: Utf8PathBuf,
+        path: Arc<Utf8Path>,
         /// Last known state of file on disk, used for modification tracking.
         on_disk: Rope,
     },
@@ -56,7 +56,7 @@ impl Buffer {
         };
         let mut buffer = Self::from(rope.clone());
         buffer.kind = BufferKind::File {
-            path: path.to_path_buf(),
+            path: Arc::from(path),
             on_disk: rope,
         };
         Ok(buffer)
@@ -78,7 +78,7 @@ impl Buffer {
         self.text.write_to(&mut bytes)?;
         fs.write(path, &bytes)?;
         self.kind = BufferKind::File {
-            path: path.to_owned(),
+            path: Arc::from(path),
             on_disk: self.text.clone(),
         };
         Ok(())
@@ -210,7 +210,7 @@ mod tests {
         let BufferKind::File { path, .. } = &mut buffer.kind else {
             unreachable!();
         };
-        *path = Utf8PathBuf::from("main2.rs");
+        *path = Arc::from(Utf8Path::new("main2.rs"));
         buffer.save(&fs)?;
         assert_eq!(fs.read("main2.rs".into())?, b"fn main() {}");
         Ok(())
