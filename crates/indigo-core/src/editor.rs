@@ -5,7 +5,7 @@ use crate::{
     window::{Window, WindowMut, WindowState},
 };
 use camino::Utf8PathBuf;
-use std::{process::ExitCode, rc::Rc};
+use std::{process::ExitCode, sync::Arc};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -15,7 +15,7 @@ pub enum Error {
 }
 
 pub struct Editor {
-    pub fs: Rc<dyn Fs>,
+    pub fs: Arc<dyn Fs>,
     buffer: Buffer,
     window: WindowState,
     pub mode: Mode,
@@ -58,7 +58,7 @@ impl Editor {
 impl Default for Editor {
     fn default() -> Self {
         Self {
-            fs: Rc::new(NoFs),
+            fs: Arc::new(NoFs),
             buffer: Buffer::default(),
             window: WindowState::default(),
             mode: Mode::default(),

@@ -2,7 +2,7 @@
 
 use anyhow::anyhow;
 use camino::{Utf8Path, Utf8PathBuf};
-use std::{cell::RefCell, collections::HashMap, fs, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, fs, sync::Arc};
 
 // Needs to remain dyn compatible.
 pub trait Fs {
@@ -13,7 +13,7 @@ pub trait Fs {
     fn exists(&self, path: &Utf8Path) -> anyhow::Result<bool>;
 }
 
-impl<T: Fs + ?Sized> Fs for Rc<T> {
+impl<T: Fs + ?Sized> Fs for Arc<T> {
     fn read(&self, path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
         T::read(self, path)
     }
@@ -64,7 +64,7 @@ impl Fs for RealFs {
 /// (i.e. absolute, normalized, and no symlinks).
 #[derive(Default)]
 pub struct TestFs {
-    pub files: Rc<RefCell<HashMap<Utf8PathBuf, Vec<u8>>>>,
+    pub files: Arc<RefCell<HashMap<Utf8PathBuf, Vec<u8>>>>,
 }
 
 impl Fs for TestFs {

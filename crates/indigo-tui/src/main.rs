@@ -18,7 +18,7 @@ use ratatui::{
     crossterm,
     prelude::{Buffer as Surface, *},
 };
-use std::{borrow::Cow, cmp::max, env, fs, process::ExitCode, rc::Rc, time::Instant};
+use std::{borrow::Cow, cmp::max, env, fs, process::ExitCode, sync::Arc, time::Instant};
 
 #[derive(Debug, clap::Parser)]
 struct Args {
@@ -166,7 +166,7 @@ fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
 
     let mut editor = Editor::from(buffer);
 
-    editor.fs = Rc::new(RealFs);
+    editor.fs = Arc::new(RealFs);
     editor.pwd = Some(Utf8PathBuf::try_from(env::current_dir()?)?);
 
     let mut areas = Areas::default();

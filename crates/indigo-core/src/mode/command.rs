@@ -13,7 +13,7 @@ use crate::{
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use ropey::Rope;
-use std::{borrow::Cow, iter, rc::Rc};
+use std::{borrow::Cow, iter, sync::Arc};
 
 #[derive(Default)]
 pub struct CommandMode {
@@ -180,7 +180,7 @@ fn exec_command(editor: &mut Editor) {
             }
         }
         Command::Write { path } => {
-            let fs = Rc::clone(&editor.fs);
+            let fs = Arc::clone(&editor.fs);
             let result = if let Some(path) = path {
                 editor.window_mut().buffer_mut().save_as(&fs, path)
             } else {
@@ -201,7 +201,7 @@ fn exec_command(editor: &mut Editor) {
             editor.exit(exit_code.unwrap_or(0));
         }
         Command::WriteQuit { exit_code } => {
-            let fs = Rc::clone(&editor.fs);
+            let fs = Arc::clone(&editor.fs);
             if editor.window_mut().buffer_mut().save(&fs).is_ok() {
                 editor.exit(exit_code.unwrap_or(0));
             } else {
