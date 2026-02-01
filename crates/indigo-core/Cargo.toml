@@ -11,6 +11,7 @@ arbitrary = { workspace = true, optional = true }
 bitflags = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
+imbl = { workspace = true }
 indigo-wrap = { workspace = true }
 memchr = { workspace = true }
 regex-cursor = { workspace = true }
