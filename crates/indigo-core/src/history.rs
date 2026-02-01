@@ -1,9 +1,25 @@
 use std::{iter, marker::PhantomData};
 
+pub trait FromItem<I> {
+    fn from_item(item: I) -> Self;
+}
+
+impl<I> FromItem<I> for I {
+    fn from_item(item: I) -> Self {
+        item
+    }
+}
+
+impl<I> FromItem<I> for Vec<I> {
+    fn from_item(item: I) -> Self {
+        vec![item]
+    }
+}
+
 #[derive(Debug)]
 pub struct History<I, T = Vec<I>>
 where
-    T: Default + Extend<I>,
+    T: FromItem<I> + Extend<I>,
 {
     transactions: Vec<T>,
     index: usize,
@@ -13,7 +29,7 @@ where
 
 impl<I, T> History<I, T>
 where
-    T: Default + Extend<I>,
+    T: FromItem<I> + Extend<I>,
 {
     #[must_use]
     pub fn new() -> Self {
@@ -30,15 +46,16 @@ where
         }
         // If transaction is committed, start a new one.
         if self.last_is_committed {
-            self.transactions.push(T::default());
+            self.transactions.push(T::from_item(item));
             self.index += 1;
             self.last_is_committed = false;
+        } else {
+            // Extend transaction with item.
+            self.transactions
+                .last_mut()
+                .unwrap()
+                .extend(iter::once(item));
         }
-        // Extend transaction with item.
-        self.transactions
-            .last_mut()
-            .unwrap()
-            .extend(iter::once(item));
     }
 
     pub fn commit(&mut self) {
@@ -70,7 +87,7 @@ where
 
 impl<I, T> Default for History<I, T>
 where
-    T: Default + Extend<I>,
+    T: FromItem<I> + Extend<I>,
 {
     fn default() -> Self {
         Self {
@@ -85,6 +102,12 @@ where
 #[derive(Debug, Default, PartialEq)]
 pub struct First<T>(pub Option<T>);
 
+impl<T> FromItem<T> for First<T> {
+    fn from_item(item: T) -> Self {
+        Self(Some(item))
+    }
+}
+
 impl<T> Extend<T> for First<T> {
     fn extend<I>(&mut self, iter: I)
     where
@@ -98,6 +121,12 @@ impl<T> Extend<T> for First<T> {
 
 #[derive(Debug, Default, PartialEq)]
 pub struct Last<T>(pub Option<T>);
+
+impl<T> FromItem<T> for Last<T> {
+    fn from_item(item: T) -> Self {
+        Self(Some(item))
+    }
+}
 
 impl<T> Extend<T> for Last<T> {
     fn extend<I>(&mut self, iter: I)
@@ -186,6 +215,12 @@ mod tests {
 
     #[derive(Debug, Default, PartialEq)]
     struct Sum<T>(T);
+
+    impl<T> FromItem<T> for Sum<T> {
+        fn from_item(item: T) -> Self {
+            Self(item)
+        }
+    }
 
     impl<T> Extend<T> for Sum<T>
     where
