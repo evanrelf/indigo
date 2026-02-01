@@ -8,7 +8,7 @@ where
     transactions: Vec<T>,
     index: usize,
     last_is_committed: bool,
-    phantom: PhantomData<fn(I)>,
+    _phantom: PhantomData<fn(I)>,
 }
 
 impl<I, T> History<I, T>
@@ -77,7 +77,7 @@ where
             transactions: Vec::new(),
             index: 0,
             last_is_committed: true,
-            phantom: PhantomData,
+            _phantom: PhantomData,
         }
     }
 }
