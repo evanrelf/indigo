@@ -2,8 +2,9 @@
 //!
 //! <https://en.wikipedia.org/wiki/Operational_transformation>
 
+use imbl::Vector;
 use ropey::Rope;
-use std::{cmp::min, ops::Deref, rc::Rc};
+use std::{cmp::min, rc::Rc};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -29,7 +30,7 @@ pub enum Error {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct OperationSeq {
-    ops: Vec<Operation>,
+    ops: Vector<Operation>,
     source_bytes: usize,
     target_bytes: usize,
 }
@@ -38,15 +39,6 @@ impl OperationSeq {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
-    }
-
-    #[must_use]
-    pub fn with_capacity(capacity: usize) -> Self {
-        Self {
-            ops: Vec::with_capacity(capacity),
-            source_bytes: 0,
-            target_bytes: 0,
-        }
     }
 
     #[must_use]
@@ -62,10 +54,10 @@ impl OperationSeq {
         self.source_bytes += byte_length;
         self.target_bytes += byte_length;
 
-        if let Some(Operation::Retain(n)) = self.ops.last_mut() {
+        if let Some(Operation::Retain(n)) = self.ops.back_mut() {
             *n += byte_length;
         } else {
-            self.ops.push(Operation::Retain(byte_length));
+            self.ops.push_back(Operation::Retain(byte_length));
         }
     }
 
@@ -83,10 +75,10 @@ impl OperationSeq {
 
         self.source_bytes += byte_length;
 
-        if let Some(Operation::Delete(n)) = self.ops.last_mut() {
+        if let Some(Operation::Delete(n)) = self.ops.back_mut() {
             *n += byte_length;
         } else {
-            self.ops.push(Operation::Delete(byte_length));
+            self.ops.push_back(Operation::Delete(byte_length));
         }
     }
 
@@ -97,13 +89,13 @@ impl OperationSeq {
 
         self.target_bytes += text.len();
 
-        if let Some(Operation::Insert(last)) = self.ops.last_mut() {
+        if let Some(Operation::Insert(last)) = self.ops.back_mut() {
             let mut s = String::with_capacity(last.len() + text.len());
             s.push_str(last);
             s.push_str(text);
             *last = Rc::from(s);
         } else {
-            self.ops.push(Operation::Insert(Rc::from(text)));
+            self.ops.push_back(Operation::Insert(Rc::from(text)));
         }
     }
 
@@ -123,7 +115,7 @@ impl OperationSeq {
             });
         }
 
-        let mut result = Self::with_capacity(self.len() + other.len());
+        let mut result = Self::new();
 
         let mut iter1 = self.ops.iter().cloned();
         let mut iter2 = other.ops.iter().cloned();
@@ -282,7 +274,7 @@ impl OperationSeq {
             anyhow::bail!(length_mismatch());
         }
 
-        let mut inverted = Self::with_capacity(self.len());
+        let mut inverted = Self::new();
 
         for op in &self.ops {
             match op {
@@ -316,20 +308,17 @@ impl OperationSeq {
 
         Ok(())
     }
-}
 
-impl Deref for OperationSeq {
-    type Target = [Operation];
-
-    fn deref(&self) -> &Self::Target {
-        &self.ops
+    #[must_use]
+    pub fn iter(&self) -> <&Self as IntoIterator>::IntoIter {
+        <&Self as IntoIterator>::into_iter(self)
     }
 }
 
 impl IntoIterator for OperationSeq {
     type Item = Operation;
 
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+    type IntoIter = imbl::vector::ConsumingIter<Self::Item, imbl::shared_ptr::DefaultSharedPtr>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.ops.into_iter()
@@ -339,7 +328,7 @@ impl IntoIterator for OperationSeq {
 impl<'a> IntoIterator for &'a OperationSeq {
     type Item = &'a Operation;
 
-    type IntoIter = std::slice::Iter<'a, Operation>;
+    type IntoIter = imbl::vector::Iter<'a, Operation, imbl::shared_ptr::DefaultSharedPtr>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.ops.iter()
@@ -406,8 +395,8 @@ mod tests {
             Operation::Delete(4),
         ]);
         assert_eq!(
-            *ops,
-            [
+            *ops.into_iter().collect::<Vec<_>>(),
+            vec![
                 Operation::Insert(Rc::from("Hello, world!")),
                 Operation::Retain(100),
                 Operation::Delete(12),
