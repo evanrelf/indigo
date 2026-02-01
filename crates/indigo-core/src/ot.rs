@@ -4,7 +4,7 @@
 
 use imbl::Vector;
 use ropey::Rope;
-use std::{cmp::min, rc::Rc};
+use std::{cmp::min, sync::Arc};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -93,9 +93,9 @@ impl OperationSeq {
             let mut s = String::with_capacity(last.len() + text.len());
             s.push_str(last);
             s.push_str(text);
-            *last = Rc::from(s);
+            *last = Arc::from(s);
         } else {
-            self.ops.push_back(Operation::Insert(Rc::from(text)));
+            self.ops.push_back(Operation::Insert(Arc::from(text)));
         }
     }
 
@@ -176,8 +176,8 @@ impl OperationSeq {
                         op1 = iter1.next();
                     } else {
                         // Second retains only part: split the insert
-                        let before = Rc::from(&s1[..n]);
-                        let after = Rc::from(&s1[n..]);
+                        let before = Arc::from(&s1[..n]);
+                        let after = Arc::from(&s1[n..]);
                         result.insert(&before);
                         *s1 = after;
                     }
@@ -198,7 +198,7 @@ impl OperationSeq {
                         op1 = iter1.next();
                     } else {
                         // Only part deleted: keep the rest
-                        let after = Rc::from(&s1[n..]);
+                        let after = Arc::from(&s1[n..]);
                         *s1 = after;
                     }
 
@@ -350,7 +350,7 @@ impl Extend<Operation> for OperationSeq {
 pub enum Operation {
     Retain(usize),
     Delete(usize),
-    Insert(Rc<str>),
+    Insert(Arc<str>),
 }
 
 impl Operation {
@@ -386,8 +386,8 @@ mod tests {
     fn operation_seq_push() {
         let mut ops = OperationSeq::new();
         ops.extend([
-            Operation::Insert(Rc::from("Hello,")),
-            Operation::Insert(Rc::from(" world!")),
+            Operation::Insert(Arc::from("Hello,")),
+            Operation::Insert(Arc::from(" world!")),
             Operation::Retain(42),
             Operation::Retain(58),
             Operation::Delete(4),
@@ -397,7 +397,7 @@ mod tests {
         assert_eq!(
             *ops.into_iter().collect::<Vec<_>>(),
             vec![
-                Operation::Insert(Rc::from("Hello, world!")),
+                Operation::Insert(Arc::from("Hello, world!")),
                 Operation::Retain(100),
                 Operation::Delete(12),
             ]
@@ -488,16 +488,16 @@ mod tests {
         let byte_offset = Operation::Delete("world".len())
             .apply(byte_offset, &mut rope)
             .unwrap();
-        let byte_offset = Operation::Insert(Rc::from("Evan"))
+        let byte_offset = Operation::Insert(Arc::from("Evan"))
             .apply(byte_offset, &mut rope)
             .unwrap();
         let byte_offset = Operation::Delete("!".len())
             .apply(byte_offset, &mut rope)
             .unwrap();
-        let byte_offset = Operation::Insert(Rc::from("..."))
+        let byte_offset = Operation::Insert(Arc::from("..."))
             .apply(byte_offset, &mut rope)
             .unwrap();
-        let byte_offset = Operation::Insert(Rc::from("?"))
+        let byte_offset = Operation::Insert(Arc::from("?"))
             .apply(byte_offset, &mut rope)
             .unwrap();
         assert_eq!(rope, Rope::from("Hello, Evan...?"));
