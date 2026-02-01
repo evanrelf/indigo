@@ -2,7 +2,7 @@ use crate::{history::History, ot::OperationSeq};
 use ropey::Rope;
 use std::ops::{Deref, Range};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct BidiOperationSeq {
     /// Inverted operations. Apply to undo the edit.
     undo: OperationSeq,

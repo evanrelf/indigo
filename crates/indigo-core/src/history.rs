@@ -1,3 +1,4 @@
+use imbl::Vector;
 use std::{iter, marker::PhantomData};
 
 pub trait FromItem<I> {
@@ -19,9 +20,9 @@ impl<I> FromItem<I> for Vec<I> {
 #[derive(Debug)]
 pub struct History<I, T = Vec<I>>
 where
-    T: FromItem<I> + Extend<I>,
+    T: FromItem<I> + Extend<I> + Clone,
 {
-    transactions: Vec<T>,
+    transactions: Vector<T>,
     index: usize,
     last_is_committed: bool,
     _phantom: PhantomData<fn(I)>,
@@ -29,7 +30,7 @@ where
 
 impl<I, T> History<I, T>
 where
-    T: FromItem<I> + Extend<I>,
+    T: FromItem<I> + Extend<I> + Clone,
 {
     #[must_use]
     pub fn new() -> Self {
@@ -46,13 +47,13 @@ where
         }
         // If transaction is committed, start a new one.
         if self.last_is_committed {
-            self.transactions.push(T::from_item(item));
+            self.transactions.push_back(T::from_item(item));
             self.index += 1;
             self.last_is_committed = false;
         } else {
             // Extend transaction with item.
             self.transactions
-                .last_mut()
+                .back_mut()
                 .unwrap()
                 .extend(iter::once(item));
         }
@@ -87,11 +88,11 @@ where
 
 impl<I, T> Default for History<I, T>
 where
-    T: FromItem<I> + Extend<I>,
+    T: FromItem<I> + Extend<I> + Clone,
 {
     fn default() -> Self {
         Self {
-            transactions: Vec::new(),
+            transactions: Vector::new(),
             index: 0,
             last_is_committed: true,
             _phantom: PhantomData,
@@ -99,7 +100,7 @@ where
     }
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct First<T>(pub Option<T>);
 
 impl<T> FromItem<T> for First<T> {
@@ -119,7 +120,7 @@ impl<T> Extend<T> for First<T> {
     }
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Last<T>(pub Option<T>);
 
 impl<T> FromItem<T> for Last<T> {
@@ -213,7 +214,7 @@ mod tests {
         assert_eq!(history.undo(), Some(&vec![3]));
     }
 
-    #[derive(Debug, Default, PartialEq)]
+    #[derive(Clone, Debug, Default, PartialEq)]
     struct Sum<T>(T);
 
     impl<T> FromItem<T> for Sum<T> {
