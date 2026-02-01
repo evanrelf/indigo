@@ -2,7 +2,7 @@ use crate::{history::History, ot::OperationSeq};
 use ropey::Rope;
 use std::ops::{Deref, Range};
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct BidiOperationSeq {
     /// Inverted operations. Apply to undo the edit.
     undo: OperationSeq,
@@ -16,8 +16,12 @@ impl Extend<Self> for BidiOperationSeq {
         T: IntoIterator<Item = Self>,
     {
         for ops in opss {
-            self.undo = ops.undo.compose(&self.undo).unwrap();
-            self.redo = self.redo.compose(&ops.redo).unwrap();
+            if self.redo.is_empty() {
+                *self = ops;
+            } else {
+                self.undo = ops.undo.compose(&self.undo).unwrap();
+                self.redo = self.redo.compose(&ops.redo).unwrap();
+            }
         }
     }
 }
@@ -25,7 +29,7 @@ impl Extend<Self> for BidiOperationSeq {
 #[derive(Debug, Default)]
 pub struct Text {
     rope: Rope,
-    history: History<BidiOperationSeq>,
+    history: History<BidiOperationSeq, BidiOperationSeq>,
     log: Vec<OperationSeq>,
 }
 
@@ -74,11 +78,9 @@ impl Text {
     }
 
     pub fn undo(&mut self) -> anyhow::Result<bool> {
-        if let Some(opss) = self.history.undo() {
-            for ops in opss.iter().rev() {
-                ops.undo.apply(&mut self.rope)?;
-                self.log.push(ops.undo.clone());
-            }
+        if let Some(ops) = self.history.undo() {
+            ops.undo.apply(&mut self.rope)?;
+            self.log.push(ops.undo.clone());
             Ok(true)
         } else {
             Ok(false)
@@ -86,11 +88,9 @@ impl Text {
     }
 
     pub fn redo(&mut self) -> anyhow::Result<bool> {
-        if let Some(opss) = self.history.redo() {
-            for ops in opss {
-                ops.redo.apply(&mut self.rope)?;
-                self.log.push(ops.undo.clone());
-            }
+        if let Some(ops) = self.history.redo() {
+            ops.redo.apply(&mut self.rope)?;
+            self.log.push(ops.undo.clone());
             Ok(true)
         } else {
             Ok(false)
