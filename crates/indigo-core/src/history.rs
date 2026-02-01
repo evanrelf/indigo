@@ -11,14 +11,17 @@ impl<I> FromItem<I> for I {
     }
 }
 
-impl<I> FromItem<I> for Vec<I> {
+impl<I> FromItem<I> for Vector<I>
+where
+    I: Clone,
+{
     fn from_item(item: I) -> Self {
-        vec![item]
+        Self::from([item])
     }
 }
 
 #[derive(Debug)]
-pub struct History<I, T = Vec<I>>
+pub struct History<I, T = Vector<I>>
 where
     T: FromItem<I> + Extend<I> + Clone,
 {
@@ -148,7 +151,7 @@ mod tests {
         let mut history: History<u8> = History::new();
         history.push(1);
         history.push(2);
-        assert_eq!(history.undo(), Some(&vec![1, 2]));
+        assert_eq!(history.undo(), Some(&Vector::from([1, 2])));
         assert_eq!(history.undo(), None);
     }
 
@@ -158,7 +161,7 @@ mod tests {
         history.push(1);
         history.push(2);
         history.undo();
-        assert_eq!(history.redo(), Some(&vec![1, 2]));
+        assert_eq!(history.redo(), Some(&Vector::from([1, 2])));
         assert_eq!(history.redo(), None);
     }
 
@@ -173,10 +176,10 @@ mod tests {
         history.push(5);
         history.push(6);
         history.commit();
-        assert_eq!(history.undo(), Some(&vec![4, 5, 6]));
-        assert_eq!(history.undo(), Some(&vec![1, 2, 3]));
-        assert_eq!(history.redo(), Some(&vec![1, 2, 3]));
-        assert_eq!(history.redo(), Some(&vec![4, 5, 6]));
+        assert_eq!(history.undo(), Some(&Vector::from([4, 5, 6])));
+        assert_eq!(history.undo(), Some(&Vector::from([1, 2, 3])));
+        assert_eq!(history.redo(), Some(&Vector::from([1, 2, 3])));
+        assert_eq!(history.redo(), Some(&Vector::from([4, 5, 6])));
     }
 
     #[test]
@@ -187,7 +190,7 @@ mod tests {
         history.redo();
         history.push(2);
         // No movement -> no commit.
-        assert_eq!(history.undo(), Some(&vec![1, 2]));
+        assert_eq!(history.undo(), Some(&Vector::from([1, 2])));
     }
 
     #[test]
@@ -199,7 +202,7 @@ mod tests {
         history.redo();
         history.push(2);
         // Movement -> commit.
-        assert_eq!(history.undo(), Some(&vec![2]));
+        assert_eq!(history.undo(), Some(&Vector::from([2])));
     }
 
     #[test]
@@ -211,7 +214,7 @@ mod tests {
         history.commit();
         history.undo();
         history.push(3);
-        assert_eq!(history.undo(), Some(&vec![3]));
+        assert_eq!(history.undo(), Some(&Vector::from([3])));
     }
 
     #[derive(Clone, Debug, Default, PartialEq)]
