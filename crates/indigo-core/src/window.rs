@@ -6,7 +6,7 @@ use crate::{
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::cmp::min;
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct WindowState {
     pub height: u16,
     pub prev_vertical_scroll: usize,
