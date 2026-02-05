@@ -7,11 +7,11 @@ log="$HOME/.local/state/indigo/tui.log"
 
 run_samply() {
   cargo build --profile profile --bin indigo-tui
-  samply record -- ./target/profile/indigo-tui --stats --log-filter debug "$@"
+  samply record -- ./target/profile/indigo-tui --stats --log-filter info,indigo_core=debug,indigo_tui=debug "$@"
 }
 
 run() {
-  cargo run --profile profile --bin indigo-tui -- --stats --log-filter debug "$@"
+  cargo run --profile profile --bin indigo-tui -- --stats --log-filter info,indigo_core=debug,indigo_tui=debug "$@"
 }
 
 print_log() {
