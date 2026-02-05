@@ -1,5 +1,6 @@
 use crate::{
     cursor::CursorState,
+    ot::OperationSeq,
     range::{Range, RangeMut, RangeState},
     rope::RegexCursorInput,
     text::Text,
@@ -23,6 +24,14 @@ pub enum Error {
 pub struct SelectionState {
     pub ranges: Vector<RangeState>,
     pub primary_range: usize,
+}
+
+impl SelectionState {
+    pub fn transform(&mut self, ops: &OperationSeq) {
+        for range in &mut self.ranges {
+            range.transform(ops);
+        }
+    }
 }
 
 impl Default for SelectionState {

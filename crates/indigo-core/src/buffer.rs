@@ -129,7 +129,13 @@ impl Buffer {
 
     #[tracing::instrument(skip_all)]
     pub fn undo(&mut self) -> anyhow::Result<bool> {
+        let version = self.text.version();
         if self.text.undo()? {
+            if let Some(opss) = self.text.ops_since(version) {
+                for ops in opss {
+                    self.selection.transform(ops);
+                }
+            }
             self.selection_mut().for_each_mut(|mut range| {
                 if range.snap_to_grapheme_boundaries() {
                     tracing::warn!("wasn't on grapheme boundary after");
@@ -143,7 +149,13 @@ impl Buffer {
 
     #[tracing::instrument(skip_all)]
     pub fn redo(&mut self) -> anyhow::Result<bool> {
+        let version = self.text.version();
         if self.text.redo()? {
+            if let Some(opss) = self.text.ops_since(version) {
+                for ops in opss {
+                    self.selection.transform(ops);
+                }
+            }
             self.selection_mut().for_each_mut(|mut range| {
                 if range.snap_to_grapheme_boundaries() {
                     tracing::warn!("wasn't on grapheme boundary after");
