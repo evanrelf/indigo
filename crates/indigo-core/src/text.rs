@@ -90,7 +90,7 @@ impl Text {
     pub fn redo(&mut self) -> anyhow::Result<bool> {
         if let Some(ops) = self.history.redo() {
             ops.redo.apply(&mut self.rope)?;
-            self.log.push(ops.undo.clone());
+            self.log.push(ops.redo.clone());
             Ok(true)
         } else {
             Ok(false)
