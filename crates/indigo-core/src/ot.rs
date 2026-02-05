@@ -249,7 +249,7 @@ impl OperationSeq {
                 }
                 Operation::Delete(n) => {
                     if position < byte_offset {
-                        byte_offset -= n;
+                        byte_offset -= min(*n, byte_offset - position);
                     }
                 }
                 Operation::Insert(s) => {
