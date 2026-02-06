@@ -118,6 +118,8 @@ fn exec_command(editor: &mut Editor) {
         QuitForce { exit_code: Option<u8> },
         #[clap(alias = "wq")]
         WriteQuit { exit_code: Option<u8> },
+        #[clap(alias = "ro")]
+        Readonly,
     }
 
     let Mode::Command(command_mode) = &editor.mode else {
@@ -206,6 +208,15 @@ fn exec_command(editor: &mut Editor) {
                 editor.exit(exit_code.unwrap_or(0));
             } else {
                 editor.message = Some(Err(String::from("Failed to save")));
+            }
+        }
+        Command::Readonly => {
+            let new_readonly = !editor.window().buffer().is_readonly();
+            editor.window_mut().buffer_mut().set_readonly(new_readonly);
+            if new_readonly {
+                editor.message = Some(Ok(String::from("Buffer is now readonly")));
+            } else {
+                editor.message = Some(Ok(String::from("Buffer is no longer readonly")));
             }
         }
     }

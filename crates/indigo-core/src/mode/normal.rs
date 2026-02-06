@@ -209,6 +209,11 @@ fn reduce(editor: &mut Editor) {
 }
 
 fn delete(editor: &mut Editor) {
+    if editor.window().buffer().is_readonly() {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.mode.set_count(None);
+        return;
+    }
     editor
         .window_mut()
         .buffer_mut()
@@ -220,6 +225,11 @@ fn delete(editor: &mut Editor) {
 }
 
 fn undo(editor: &mut Editor) {
+    if editor.window().buffer().is_readonly() {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.mode.set_count(None);
+        return;
+    }
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     for _ in 1..=count {
         if !editor.window_mut().buffer_mut().undo().unwrap() {
@@ -230,6 +240,11 @@ fn undo(editor: &mut Editor) {
 }
 
 fn redo(editor: &mut Editor) {
+    if editor.window().buffer().is_readonly() {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.mode.set_count(None);
+        return;
+    }
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     for _ in 1..=count {
         if !editor.window_mut().buffer_mut().redo().unwrap() {
@@ -267,6 +282,10 @@ fn select_regex(editor: &mut Editor) {
 }
 
 fn insert_after_head(editor: &mut Editor) {
+    if editor.window().buffer().is_readonly() {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        return;
+    }
     editor
         .window_mut()
         .buffer_mut()
@@ -278,6 +297,10 @@ fn insert_after_head(editor: &mut Editor) {
 }
 
 fn insert_at_line_non_blank_start(editor: &mut Editor) {
+    if editor.window().buffer().is_readonly() {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        return;
+    }
     editor
         .window_mut()
         .buffer_mut()
@@ -290,6 +313,10 @@ fn insert_at_line_non_blank_start(editor: &mut Editor) {
 }
 
 fn insert_at_line_end(editor: &mut Editor) {
+    if editor.window().buffer().is_readonly() {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        return;
+    }
     editor
         .window_mut()
         .buffer_mut()

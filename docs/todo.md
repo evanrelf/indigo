@@ -4,7 +4,6 @@
 - range: Adopt anchors
 - selection: Adopt anchors
 - buffer: Track selection history with anchors
-- buffer: Add readonly flag
 - text: Make `apply` method private, move everyone to `insert`+`delete`+anchors
 - range: Correct cursor positioning
 - fs: Add support for path canonicalization

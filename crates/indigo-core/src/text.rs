@@ -31,6 +31,7 @@ pub struct Text {
     rope: Rope,
     history: History<BidiOperationSeq, BidiOperationSeq>,
     log: Vec<OperationSeq>,
+    pub readonly: bool,
 }
 
 impl Text {
@@ -63,6 +64,7 @@ impl Text {
     }
 
     pub fn apply(&mut self, ops: &OperationSeq) -> anyhow::Result<()> {
+        anyhow::ensure!(!self.readonly, "Cannot modify readonly text");
         let undo = ops.invert(&self.rope)?;
         ops.apply(&mut self.rope)?;
         self.history.push(BidiOperationSeq {
@@ -78,6 +80,7 @@ impl Text {
     }
 
     pub fn undo(&mut self) -> anyhow::Result<bool> {
+        anyhow::ensure!(!self.readonly, "Cannot modify readonly text");
         if let Some(ops) = self.history.undo() {
             ops.undo.apply(&mut self.rope)?;
             self.log.push(ops.undo.clone());
@@ -88,6 +91,7 @@ impl Text {
     }
 
     pub fn redo(&mut self) -> anyhow::Result<bool> {
+        anyhow::ensure!(!self.readonly, "Cannot modify readonly text");
         if let Some(ops) = self.history.redo() {
             ops.redo.apply(&mut self.rope)?;
             self.log.push(ops.redo.clone());

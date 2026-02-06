@@ -112,6 +112,15 @@ impl Buffer {
         }
     }
 
+    #[must_use]
+    pub fn is_readonly(&self) -> bool {
+        self.text.readonly
+    }
+
+    pub fn set_readonly(&mut self, readonly: bool) {
+        self.text.readonly = readonly;
+    }
+
     pub fn selection(&self) -> Selection<'_> {
         Selection::new(&self.text, &self.selection)
             .expect("Buffer text and selection state are always kept valid")
