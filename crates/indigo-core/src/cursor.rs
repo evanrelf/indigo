@@ -391,9 +391,9 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.byte_offset = byte_offset;
     }
 
-    pub fn move_to_line_end(&mut self, bias: Bias) {
+    pub fn move_to_line_end(&mut self, bias: Bias) -> bool {
         if self.text.len() == 0 || self.is_at_end() {
-            return;
+            return false;
         }
 
         #[expect(clippy::manual_let_else)]
@@ -411,7 +411,7 @@ impl<W: WrapMut> CursorView<'_, W> {
                 != line_index
         {
             // Already past the newline of the line we have bias for
-            return;
+            return false;
         }
 
         // Find last character before line ending
@@ -425,6 +425,7 @@ impl<W: WrapMut> CursorView<'_, W> {
             byte_offset += grapheme.len();
         }
         self.state.byte_offset = byte_offset;
+        true
     }
 
     pub fn insert_char(&mut self, char: char) -> OperationSeq {

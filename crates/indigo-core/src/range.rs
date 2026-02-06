@@ -488,13 +488,26 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.update_goal_column();
     }
 
-    pub fn extend_to_line_end(&mut self) {
+    pub fn extend_until_line_end(&mut self) {
         let bias = self.head_bias();
         self.head_mut().move_to_line_end(bias);
     }
 
-    pub fn move_to_line_end(&mut self) {
-        self.extend_to_line_end();
+    pub fn move_until_line_end(&mut self) {
+        self.extend_until_line_end();
+        self.reduce();
+        self.update_goal_column();
+    }
+
+    pub fn extend_onto_line_end(&mut self) {
+        let bias = self.head_bias();
+        if self.head_mut().move_to_line_end(bias) {
+            self.head_mut().move_right(1);
+        }
+    }
+
+    pub fn move_onto_line_end(&mut self) {
+        self.extend_onto_line_end();
         self.reduce();
         self.update_goal_column();
     }
@@ -695,7 +708,7 @@ mod tests {
         let mut text = Text::from("hello world\n");
         let mut state = RangeState::default();
         let mut range = RangeMut::new(&mut text, &mut state).unwrap();
-        range.move_to_line_end();
+        range.move_until_line_end();
         range.move_right(1);
         assert_eq!(&range.slice().to_string(), "\n");
         range.move_to_line_start();

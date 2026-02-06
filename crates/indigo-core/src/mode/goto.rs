@@ -23,8 +23,8 @@ pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "H") => extend_to_line_start(editor),
             _ if is(key, "i") => move_to_line_non_blank_start(editor),
             _ if is(key, "I") => extend_to_line_non_blank_start(editor),
-            _ if is(key, "l") => move_to_line_end(editor),
-            _ if is(key, "L") => extend_to_line_end(editor),
+            _ if is(key, "l") => move_until_line_end(editor),
+            _ if is(key, "L") => extend_until_line_end(editor),
             _ => {}
         },
     }
@@ -110,20 +110,20 @@ fn move_to_line_non_blank_start(editor: &mut Editor) {
     editor.mode.set_count(None);
 }
 
-fn extend_to_line_end(editor: &mut Editor) {
+fn extend_until_line_end(editor: &mut Editor) {
     editor
         .window_mut()
         .buffer_mut()
         .selection_mut()
-        .for_each_mut(|mut range| range.extend_to_line_end());
+        .for_each_mut(|mut range| range.extend_until_line_end());
     editor.mode.set_count(None);
 }
 
-fn move_to_line_end(editor: &mut Editor) {
+fn move_until_line_end(editor: &mut Editor) {
     editor
         .window_mut()
         .buffer_mut()
         .selection_mut()
-        .for_each_mut(|mut range| range.move_to_line_end());
+        .for_each_mut(|mut range| range.move_until_line_end());
     editor.mode.set_count(None);
 }

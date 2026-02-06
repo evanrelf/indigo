@@ -322,8 +322,7 @@ fn insert_at_line_end(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| {
-            range.move_to_line_end();
-            range.move_right(1);
+            range.move_onto_line_end();
         });
     editor.mode = Mode::Insert(InsertMode::default());
 }

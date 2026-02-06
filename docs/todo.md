@@ -18,7 +18,6 @@
 - No `/` search
 - No `123g` to go to line
 - No `o` or `O`
-- `A` isn't idempotent
 - No auto-scroll to keep primary range in view
 
 ## Keys
