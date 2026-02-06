@@ -16,7 +16,6 @@
 ## Friction in use
 
 - No `/` search
-- No `123g` to go to line
 - No `o` or `O`
 - No auto-scroll to keep primary range in view
 

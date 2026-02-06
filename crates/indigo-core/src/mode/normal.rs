@@ -6,12 +6,13 @@ use crate::{
         Mode, command::enter_command_mode, goto::enter_goto_mode, insert::InsertMode,
         insert::enter_insert_mode, prompt::enter_prompt_mode, seek::enter_seek_mode,
     },
+    rope::{LINE_TYPE, RopeExt as _},
     window::{
         scroll_full_page_down, scroll_full_page_up, scroll_half_page_down, scroll_half_page_up,
     },
 };
 use regex_cursor::engines::meta::Regex;
-use std::num::NonZeroUsize;
+use std::{cmp::min, num::NonZeroUsize};
 
 #[derive(Default)]
 pub struct NormalMode {
@@ -58,7 +59,13 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "<a-F>") => enter_seek_mode(editor, Extend, Onto, Prev),
             _ if is(key, "f") => enter_seek_mode(editor, Move, Onto, Next),
             _ if is(key, "F") => enter_seek_mode(editor, Extend, Onto, Next),
-            _ if is(key, "g") => enter_goto_mode(editor),
+            _ if is(key, "g") => {
+                if editor.mode.count().is_some() {
+                    goto_line(editor);
+                } else {
+                    enter_goto_mode(editor);
+                }
+            }
             _ if is(key, ",") => keep_primary(editor),
             _ if is(key, ";") => reduce(editor),
             _ if is(key, "<a-;>") => flip(editor),
@@ -325,4 +332,24 @@ fn insert_at_line_end(editor: &mut Editor) {
             range.move_onto_line_end();
         });
     editor.mode = Mode::Insert(InsertMode::default());
+}
+
+fn goto_line(editor: &mut Editor) {
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    let window = editor.window();
+    let rope = window.buffer().rope();
+    let len_lines = rope.len_lines_indigo();
+    if len_lines == 0 {
+        editor.mode.set_count(None);
+        return;
+    }
+    let line_index = min(count - 1, len_lines - 1);
+    let byte_offset = rope.line_to_byte_idx(line_index, LINE_TYPE);
+    drop(window);
+    editor
+        .window_mut()
+        .buffer_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| range.move_to(byte_offset));
+    editor.mode.set_count(None);
 }
