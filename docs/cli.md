@@ -10,16 +10,14 @@ description: >
 ## Usage
 
 The `indigo-cli` bin crate is run with the `./bin/cli` shell script. It accepts
-the initial input text from `stdin`, keys to execute as the first argument, and
+the initial buffer text from `stdin`, keys to execute as the first argument, and
 prints the final edited text to `stdout`.
 
-```
-$ echo "hello, world!" | ./bin/cli 'focgoodbye'
-goodbye, world!
-```
-
-When testing cursor and range behavior, make edits to the text that reveal where
-the cursors are located.
+When testing the behavior of the selection / ranges / cursors, make edits to the
+text that reveal where the cursors are located. For example, if you want to test
+whether moving to the beginning of the line (`gh`) works, follow that action by
+inserting some unique text, then check where that text is in the output to
+intuit the final cursor position.
 
 ## Debug mode
 
@@ -42,6 +40,7 @@ Key mappings are defined per mode in these files:
 - Insert mode: `crates/indigo-core/src/mode/insert.rs`
 - Goto mode: `crates/indigo-core/src/mode/goto.rs`
 - Seek mode: `crates/indigo-core/src/mode/seek.rs`
+- Prompt mode: `crates/indigo-core/src/mode/prompt.rs`
 - Command mode: `crates/indigo-core/src/mode/command.rs` (discouraged with CLI)
 
 ## Comparing with Kakoune
@@ -49,11 +48,12 @@ Key mappings are defined per mode in these files:
 Indigo is inspired by Kakoune, so most keys have the same behavior. Try the same
 edit in both and compare output to find bugs.
 
-Kakoune's `-f` option starts with the entire buffer selected. To mimic how
-Indigo starts with the cursor at the beginning, execute `gk` first.
+Kakoune's `-f` option starts with the entire buffer selected, but Indigo starts
+with a cursor at the beginning. To compensate for this, execute `gk` first in
+Kakoune.
 
-You must the `-n` option to prevent sourcing configuration. We want to compare
-against vanilla, unconfigured Kakoune.
+You must use the `-n` option to prevent sourcing configuration. We want to
+compare against vanilla, unconfigured Kakoune.
 
 ## Examples
 
