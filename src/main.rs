@@ -1,41 +1,92 @@
 #![expect(dead_code)]
 
-use anyhow::Context;
+use anyhow::{Context as _, anyhow};
 use clap::Parser as _;
-use crossterm::event;
+use crossterm::event::{self, Event};
 use jiff::Timestamp;
 use ratatui::{DefaultTerminal, Frame};
 use serde::{Deserialize, Serialize};
-use std::{env, sync::LazyLock};
+use std::{env, process::ExitCode, sync::LazyLock, thread, time::Duration};
 
 #[derive(clap::Parser)]
 struct Args {}
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<ExitCode> {
     let args = Args::parse();
 
     let mut terminal = ratatui::init();
 
-    let result = run(args, &mut terminal).await;
+    let result = run(&args, &mut terminal);
 
     ratatui::restore();
 
     result
 }
 
-async fn run(args: Args, terminal: &mut DefaultTerminal) -> anyhow::Result<()> {
-    loop {
-        terminal.draw(|frame| render(frame))?;
+#[derive(Clone)]
+struct State {
+    message: String,
+}
 
-        if event::read()?.is_key_press() {
+fn run(args: &Args, terminal: &mut DefaultTerminal) -> anyhow::Result<ExitCode> {
+    let state = State {
+        message: String::from("Hello, world!"),
+    };
+
+    let (state_tx, state_rx) = tokio::sync::watch::channel(state.clone());
+    let (event_tx, event_rx) = tokio::sync::mpsc::channel(64);
+
+    thread::scope(|scope| {
+        let app_handle = scope.spawn(|| run_app(args, state, event_rx, state_tx));
+        let tui_result = run_tui(terminal, state_rx, event_tx);
+        let exit_code = app_handle
+            .join()
+            .map_err(|_| anyhow!("app thread panicked"))??;
+        tui_result?;
+        Ok(exit_code)
+    })
+}
+
+fn run_tui(
+    terminal: &mut DefaultTerminal,
+    state_rx: tokio::sync::watch::Receiver<State>,
+    event_tx: tokio::sync::mpsc::Sender<Event>,
+) -> anyhow::Result<()> {
+    loop {
+        // Stop TUI thread if app thread stops
+        if event_tx.is_closed() {
             break Ok(());
+        }
+
+        let state = state_rx.borrow();
+        terminal.draw(|frame| render(frame, &state))?;
+
+        if event::poll(Duration::from_millis(1_000 / 60))? {
+            let event = event::read()?;
+            // Drop events when app is overloaded instead of blocking rendering
+            let _ = event_tx.try_send(event);
         }
     }
 }
 
-fn render(frame: &mut Frame<'_>) {
-    frame.render_widget("Hello, world!", frame.area());
+#[tokio::main(flavor = "current_thread")]
+async fn run_app(
+    _args: &Args,
+    state: State,
+    mut event_rx: tokio::sync::mpsc::Receiver<Event>,
+    state_tx: tokio::sync::watch::Sender<State>,
+) -> anyhow::Result<ExitCode> {
+    while let Some(event) = event_rx.recv().await {
+        if event.is_key_press() {
+            break;
+        }
+    }
+
+    Ok(ExitCode::SUCCESS)
+}
+
+fn render(frame: &mut Frame<'_>, state: &State) {
+    frame.render_widget(&*state.message, frame.area());
 }
 
 async fn claude_demo() -> anyhow::Result<()> {
