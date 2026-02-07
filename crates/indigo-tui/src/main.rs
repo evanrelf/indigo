@@ -157,6 +157,13 @@ impl Times {
     }
 }
 
+// TODO: Fix incorrect terminal init and restore.
+//
+// > Note that when using `init()` and `restore()`, it’s important to use a separate function for
+// > the main loop to ensure that `restore()` is always called, even if the `?` operator causes
+// > early return from an error.
+//
+// https://docs.rs/ratatui/latest/ratatui/index.html#initialize-and-restore-the-terminal
 fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
     let buffer = if let Some(path) = &args.file {
         Buffer::open(&RealFs, path)?
