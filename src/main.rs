@@ -4,6 +4,7 @@ use anyhow::Context;
 use clap::Parser as _;
 use crossterm::event;
 use jiff::Timestamp;
+use ratatui::DefaultTerminal;
 use serde::{Deserialize, Serialize};
 use std::{env, sync::LazyLock};
 
@@ -12,23 +13,27 @@ struct Args {}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let _args = Args::parse();
+    let args = Args::parse();
 
     let mut terminal = ratatui::init();
 
+    let result = run(args, &mut terminal).await;
+
+    ratatui::restore();
+
+    result
+}
+
+async fn run(args: Args, terminal: &mut DefaultTerminal) -> anyhow::Result<()> {
     loop {
         terminal.draw(|frame| {
             frame.render_widget("Hello, world!", frame.area());
         })?;
 
         if event::read()?.is_key_press() {
-            break;
+            break Ok(());
         }
     }
-
-    ratatui::restore();
-
-    Ok(())
 }
 
 async fn claude_demo() -> anyhow::Result<()> {
