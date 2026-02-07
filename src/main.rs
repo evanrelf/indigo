@@ -13,6 +13,10 @@ struct Args {}
 async fn main() -> anyhow::Result<()> {
     let _args = Args::parse();
 
+    Ok(())
+}
+
+async fn claude_demo() -> anyhow::Result<()> {
     let model_id = "claude-haiku-4-5";
 
     // let model_info = claude::models_retrieve(model_id).await?;
