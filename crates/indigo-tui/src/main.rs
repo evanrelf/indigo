@@ -18,7 +18,14 @@ use ratatui::{
     crossterm,
     prelude::{Buffer as Surface, *},
 };
-use std::{borrow::Cow, cmp::max, env, fs, process::ExitCode, sync::Arc, time::Instant};
+use std::{
+    borrow::Cow,
+    cmp::{max, min},
+    env, fs,
+    process::ExitCode,
+    sync::Arc,
+    time::Instant,
+};
 
 #[derive(Debug, clap::Parser)]
 struct Args {
@@ -393,8 +400,7 @@ fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         return;
     }
 
-    let bar_units =
-        ((gutter_units * window_lines) / scroll_lines).clamp(MIN_UNITS, gutter_units);
+    let bar_units = ((gutter_units * window_lines) / scroll_lines).clamp(MIN_UNITS, gutter_units);
 
     let current_scroll = window.vertical_scroll();
     let max_scroll = text_lines.saturating_sub(1);
@@ -410,8 +416,8 @@ fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         let cell_top = i * UNITS_PER_CELL;
         let cell_bottom = cell_top + UNITS_PER_CELL;
 
-        let overlap_start = cell_top.max(bar_start_units);
-        let overlap_end = cell_bottom.min(bar_end_units);
+        let overlap_start = max(cell_top, bar_start_units);
+        let overlap_end = min(cell_bottom, bar_end_units);
         let overlap_units = overlap_end.saturating_sub(overlap_start);
 
         if overlap_units == 0 {
@@ -426,17 +432,23 @@ fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
         if overlap_end == cell_bottom && overlap_start > cell_top {
             let h = overlap_units;
-            LOWER_BLOCKS[h].fg(bar_color).bg(gutter_color).render(row, surface);
+            LOWER_BLOCKS[h]
+                .fg(bar_color)
+                .bg(gutter_color)
+                .render(row, surface);
             continue;
         }
 
         if overlap_start == cell_top && overlap_end < cell_bottom {
             let empty = UNITS_PER_CELL - overlap_units;
-            LOWER_BLOCKS[empty].fg(gutter_color).bg(bar_color).render(row, surface);
+            LOWER_BLOCKS[empty]
+                .fg(gutter_color)
+                .bg(bar_color)
+                .render(row, surface);
             continue;
         }
 
-        " ".bg(bar_color).render(row, surface);
+        unreachable!();
     }
 }
 
