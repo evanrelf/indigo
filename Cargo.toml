@@ -5,7 +5,9 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.100"
 clap = { version = "4.5.56", features = ["derive"] }
+crossterm = "0.29.0"
 jiff = { version = "0.2.18", features = ["serde"] }
+ratatui = "0.30.0"
 reqwest = { version = "0.13.1", features = ["json"] }
 rusqlite = { version = "0.38.0", features = ["bundled", "jiff", "serde_json"] }
 serde = { version = "1.0.228", features = ["derive"] }
