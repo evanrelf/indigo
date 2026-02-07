@@ -4,7 +4,7 @@ use anyhow::Context;
 use clap::Parser as _;
 use crossterm::event;
 use jiff::Timestamp;
-use ratatui::DefaultTerminal;
+use ratatui::{DefaultTerminal, Frame};
 use serde::{Deserialize, Serialize};
 use std::{env, sync::LazyLock};
 
@@ -26,14 +26,16 @@ async fn main() -> anyhow::Result<()> {
 
 async fn run(args: Args, terminal: &mut DefaultTerminal) -> anyhow::Result<()> {
     loop {
-        terminal.draw(|frame| {
-            frame.render_widget("Hello, world!", frame.area());
-        })?;
+        terminal.draw(|frame| render(frame))?;
 
         if event::read()?.is_key_press() {
             break Ok(());
         }
     }
+}
+
+fn render(frame: &mut Frame<'_>) {
+    frame.render_widget("Hello, world!", frame.area());
 }
 
 async fn claude_demo() -> anyhow::Result<()> {
