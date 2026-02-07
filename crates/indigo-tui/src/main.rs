@@ -369,39 +369,74 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
+    const LOWER_BLOCKS: [&str; 9] = [" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
+    const UNITS_PER_CELL: usize = 8;
+    const MIN_UNITS: usize = 8;
+
     if area.height == 0 {
         return;
     }
+
+    let gutter_color = Color::from_u32(0x00_cccccc);
+    let bar_color = Color::Black;
 
     let window = editor.window();
     let buffer = window.buffer();
 
     let text_lines = buffer.rope().len_lines_indigo();
     let window_lines = usize::from(window.height());
-    let scroll_lines = text_lines + (window_lines - 1);
+    let scroll_lines = text_lines.saturating_add(window_lines.saturating_sub(1));
+    let gutter_cells = usize::from(area.height);
+    let gutter_units = gutter_cells * UNITS_PER_CELL;
 
-    let gutter_height = usize::from(area.height);
-    let bar_height = if scroll_lines == 0 {
-        0
-    } else {
-        (gutter_height * window_lines) / scroll_lines
-    };
-    let bar_height = max(1, bar_height);
+    if gutter_units == 0 || scroll_lines == 0 {
+        return;
+    }
+
+    let bar_units =
+        ((gutter_units * window_lines) / scroll_lines).clamp(MIN_UNITS, gutter_units);
 
     let current_scroll = window.vertical_scroll();
     let max_scroll = text_lines.saturating_sub(1);
 
-    let bar_start = if max_scroll == 0 {
+    let bar_start_units = if max_scroll == 0 || gutter_units == bar_units {
         0
     } else {
-        ((gutter_height - bar_height) * current_scroll) / max_scroll
+        ((gutter_units - bar_units) * current_scroll) / max_scroll
     };
-    let bar_end = bar_start + bar_height;
+    let bar_end_units = bar_start_units + bar_units;
 
     for (i, row) in area.rows().enumerate() {
-        if (bar_start..bar_end).contains(&i) {
-            "▐".fg(Color::from_u32(0x00_cccccc)).render(row, surface);
+        let cell_top = i * UNITS_PER_CELL;
+        let cell_bottom = cell_top + UNITS_PER_CELL;
+
+        let overlap_start = cell_top.max(bar_start_units);
+        let overlap_end = cell_bottom.min(bar_end_units);
+        let overlap_units = overlap_end.saturating_sub(overlap_start);
+
+        if overlap_units == 0 {
+            " ".bg(gutter_color).render(row, surface);
+            continue;
         }
+
+        if overlap_units == UNITS_PER_CELL {
+            " ".bg(bar_color).render(row, surface);
+            continue;
+        }
+
+        if overlap_end == cell_bottom && overlap_start > cell_top {
+            let h = overlap_units;
+            LOWER_BLOCKS[h].fg(bar_color).bg(gutter_color).render(row, surface);
+            continue;
+        }
+
+        if overlap_start == cell_top && overlap_end < cell_bottom {
+            let empty = UNITS_PER_CELL - overlap_units;
+            LOWER_BLOCKS[empty].fg(gutter_color).bg(bar_color).render(row, surface);
+            continue;
+        }
+
+        " ".bg(bar_color).render(row, surface);
     }
 }
 
