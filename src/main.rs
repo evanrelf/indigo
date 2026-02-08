@@ -99,7 +99,17 @@ async fn run_app(
 }
 
 fn render(frame: &mut Frame<'_>, state: &State) {
-    frame.render_widget(&*state.message, frame.area());
+    use ratatui::{
+        layout::{Constraint, Layout},
+        widgets::{Block, Paragraph},
+    };
+
+    let layout = Layout::vertical([Constraint::Fill(1), Constraint::Length(5)]);
+    let [messages_area, input_area] = layout.areas(frame.area());
+
+    let input_block = Paragraph::new(&*state.message).block(Block::bordered().title("Input"));
+
+    frame.render_widget(input_block, input_area);
 }
 
 async fn claude_demo() -> anyhow::Result<()> {
