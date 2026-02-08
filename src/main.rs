@@ -112,17 +112,43 @@ async fn run_app(
 
 fn render(frame: &mut Frame<'_>, state: &State) {
     use ratatui::{
-        layout::{Constraint, Layout},
-        widgets::{Block, List, Paragraph, Wrap},
+        layout::{Constraint, Layout, Rect, Size},
+        widgets::{Block, Padding, Paragraph, Wrap},
     };
-    use tui_scrollview::ScrollView;
+    use tui_scrollview::{ScrollView, ScrollViewState, ScrollbarVisibility};
 
     let layout = Layout::vertical([Constraint::Fill(1), Constraint::Length(5)]);
     let [messages_area, input_area] = layout.areas(frame.area());
 
-    let messages_widget =
-        List::new(state.messages.iter().cloned()).block(Block::bordered().title("Messages"));
-    frame.render_widget(messages_widget, messages_area);
+    let messages_block_widget = Block::bordered().title("Messages").padding(Padding::ZERO);
+    let messages_block_inner_area = messages_block_widget.inner(messages_area);
+    let mut messages_scroll_widget = ScrollView::new(Size::from(messages_block_inner_area))
+        .vertical_scrollbar_visibility(ScrollbarVisibility::Never)
+        .horizontal_scrollbar_visibility(ScrollbarVisibility::Never);
+    let mut height = 0;
+    for message in &state.messages {
+        let message_widget = Paragraph::new(&**message)
+            .wrap(Wrap { trim: false })
+            .block(Block::bordered().title("User"));
+        let message_height = message_widget.line_count(messages_block_inner_area.width);
+        messages_scroll_widget.render_widget(
+            message_widget,
+            Rect::new(
+                0,
+                u16::try_from(height).unwrap(),
+                messages_block_inner_area.width,
+                u16::try_from(message_height).unwrap(),
+            ),
+        );
+        height += message_height;
+    }
+    let mut messages_scroll_state = ScrollViewState::default();
+    frame.render_widget(messages_block_widget, messages_area);
+    frame.render_stateful_widget(
+        messages_scroll_widget,
+        messages_block_inner_area,
+        &mut messages_scroll_state,
+    );
 
     let input_widget = Paragraph::new(&*state.input)
         .wrap(Wrap { trim: false })
