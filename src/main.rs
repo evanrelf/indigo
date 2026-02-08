@@ -24,8 +24,14 @@ fn main() -> anyhow::Result<ExitCode> {
 }
 
 #[derive(Clone)]
+enum Message {
+    User(String),
+    Assistant(String),
+}
+
+#[derive(Clone)]
 struct State {
-    messages: Vec<String>,
+    messages: Vec<Message>,
     input: String,
 }
 
@@ -94,7 +100,8 @@ async fn run_app(
                 }
                 (m, KeyCode::Enter) if m == KeyModifiers::NONE => {
                     let input = mem::take(&mut state.input);
-                    state.messages.push(input);
+                    state.messages.push(Message::User(input));
+                    state.messages.push(Message::Assistant(String::from("k")));
                 }
                 (m, KeyCode::Char('c')) if m == KeyModifiers::CONTROL => break,
                 _ => render = false,
@@ -110,6 +117,7 @@ async fn run_app(
     Ok(ExitCode::SUCCESS)
 }
 
+#[expect(clippy::similar_names)]
 fn render(frame: &mut Frame<'_>, state: &State) {
     use ratatui::{
         layout::{Constraint, Layout, Rect, Size},
@@ -127,16 +135,35 @@ fn render(frame: &mut Frame<'_>, state: &State) {
         .horizontal_scrollbar_visibility(ScrollbarVisibility::Never);
     let mut height = 0;
     for message in &state.messages {
-        let message_widget = Paragraph::new(&**message)
-            .wrap(Wrap { trim: false })
-            .block(Block::bordered().title("User"));
-        let message_height = message_widget.line_count(messages_block_inner_area.width);
+        let message_area = match message {
+            Message::User(_) => {
+                let [_, area] =
+                    Layout::horizontal([Constraint::Fill(1), Constraint::Percentage(80)])
+                        .areas(messages_block_inner_area);
+                area
+            }
+            Message::Assistant(_) => {
+                let [area, _] =
+                    Layout::horizontal([Constraint::Percentage(80), Constraint::Fill(1)])
+                        .areas(messages_block_inner_area);
+                area
+            }
+        };
+        let message_widget = match message {
+            Message::User(string) => Paragraph::new(string.clone())
+                .wrap(Wrap { trim: false })
+                .right_aligned(),
+            Message::Assistant(string) => Paragraph::new(string.clone())
+                .wrap(Wrap { trim: false })
+                .left_aligned(),
+        };
+        let message_height = message_widget.line_count(message_area.width);
         messages_scroll_widget.render_widget(
             message_widget,
             Rect::new(
-                0,
+                message_area.x - messages_block_inner_area.x,
                 u16::try_from(height).unwrap(),
-                messages_block_inner_area.width,
+                message_area.width,
                 u16::try_from(message_height).unwrap(),
             ),
         );
