@@ -84,6 +84,10 @@ async fn run_app(
                 (m, KeyCode::Char(char)) if m == KeyModifiers::NONE || m == KeyModifiers::SHIFT => {
                     state.message.push(char);
                 }
+                (m, KeyCode::Backspace) if m == KeyModifiers::NONE => {
+                    // TODO: Not grapheme aware
+                    state.message.pop();
+                }
                 (m, KeyCode::Char('c')) if m == KeyModifiers::CONTROL => break,
                 _ => render = false,
             },
