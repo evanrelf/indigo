@@ -47,6 +47,7 @@ fn run(args: &Args, terminal: &mut DefaultTerminal) -> anyhow::Result<ExitCode> 
     })
 }
 
+#[expect(clippy::needless_pass_by_value)]
 fn run_tui(
     terminal: &mut DefaultTerminal,
     state_rx: tokio::sync::watch::Receiver<State>,
@@ -69,6 +70,7 @@ fn run_tui(
     }
 }
 
+#[expect(clippy::needless_pass_by_value)]
 #[tokio::main(flavor = "current_thread")]
 async fn run_app(
     _args: &Args,
