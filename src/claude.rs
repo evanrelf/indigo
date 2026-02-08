@@ -50,7 +50,7 @@ pub async fn retrieve_model(model_id: &str) -> anyhow::Result<ModelInfo> {
 
 // Messages API
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Role {
     User,
@@ -58,14 +58,14 @@ pub enum Role {
 }
 
 /// Message content: either a plain string or an array of content blocks.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Content {
     Text(String),
     Blocks(Vec<ContentBlock>),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum CacheControlTtl {
     #[serde(rename = "5m")]
     FiveMinutes,
@@ -73,7 +73,7 @@ pub enum CacheControlTtl {
     OneHour,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum CacheControl {
     Ephemeral {
@@ -82,7 +82,7 @@ pub enum CacheControl {
     },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ImageSource {
     Base64 { data: String, media_type: String },
@@ -90,14 +90,14 @@ pub enum ImageSource {
 }
 
 /// Tool result content: either a plain string or an array of content blocks.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum ToolResultContent {
     Text(String),
     Blocks(Vec<ContentBlock>),
 }
 
-#[derive(Debug, Serialize)]
+#[derive(bon::Builder, Debug, Serialize)]
 pub struct MessageParam {
     pub role: Role,
     pub content: Content,
@@ -108,7 +108,7 @@ pub struct MessageParam {
 /// The API's input and output content block types overlap heavily. Using one
 /// enum with both `Serialize` and `Deserialize` lets us round-trip assistant
 /// content blocks back into the next request without conversion.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ContentBlock {
     Text {
@@ -163,7 +163,7 @@ pub enum SystemBlock {
     },
 }
 
-#[derive(Debug, Serialize)]
+#[derive(bon::Builder, Debug, Serialize)]
 pub struct MessageCreateParams {
     pub model: String,
     pub max_tokens: usize,
@@ -194,7 +194,7 @@ pub enum ThinkingConfig {
     Adaptive,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(bon::Builder, Debug, Serialize)]
 pub struct OutputConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub effort: Option<Effort>,
@@ -218,7 +218,7 @@ pub enum OutputFormat {
     JsonSchema { schema: serde_json::Value },
 }
 
-#[derive(Debug, Serialize)]
+#[derive(bon::Builder, Debug, Serialize)]
 pub struct Tool {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -611,7 +611,9 @@ mod tests {
         assert!(matches!(msg.stop_reason, Some(StopReason::ToolUse)));
         assert_eq!(msg.content.len(), 2);
         match &msg.content[1] {
-            ContentBlock::ToolUse { id, name, input, .. } => {
+            ContentBlock::ToolUse {
+                id, name, input, ..
+            } => {
                 assert_eq!(id, "toolu_abc123");
                 assert_eq!(name, "get_weather");
                 assert_eq!(input["location"], "San Francisco");
@@ -650,14 +652,18 @@ mod tests {
         assert_eq!(msg.content.len(), 3);
         match &msg.content[0] {
             ContentBlock::Thinking {
-                thinking, signature, ..
+                thinking,
+                signature,
+                ..
             } => {
                 assert_eq!(thinking, "Let me reason about this...");
                 assert_eq!(signature, "sig_abc");
             }
             other => panic!("expected Thinking, got {other:?}"),
         }
-        assert!(matches!(&msg.content[1], ContentBlock::RedactedThinking { data } if data == "encrypted_data_here"));
+        assert!(
+            matches!(&msg.content[1], ContentBlock::RedactedThinking { data } if data == "encrypted_data_here")
+        );
     }
 
     #[test]
@@ -731,11 +737,14 @@ mod tests {
             { "type": "image", "source": { "type": "url", "url": "https://example.com/img.png" } }
         ]);
         let content: Content = serde_json::from_value(json).unwrap();
+        #[expect(clippy::match_wildcard_for_single_variants)]
         match content {
             Content::Blocks(blocks) => {
                 assert_eq!(blocks.len(), 2);
                 assert!(matches!(&blocks[0], ContentBlock::Text { text, .. } if text == "hello"));
-                assert!(matches!(&blocks[1], ContentBlock::Image { source: ImageSource::Url { url }, .. } if url == "https://example.com/img.png"));
+                assert!(
+                    matches!(&blocks[1], ContentBlock::Image { source: ImageSource::Url { url }, .. } if url == "https://example.com/img.png")
+                );
             }
             other => panic!("expected Blocks, got {other:?}"),
         }
@@ -875,7 +884,10 @@ mod tests {
         };
         let msg = create_message(params).await.unwrap();
         assert!(matches!(msg.stop_reason, Some(StopReason::ToolUse)));
-        let has_tool_use = msg.content.iter().any(|b| matches!(b, ContentBlock::ToolUse { .. }));
+        let has_tool_use = msg
+            .content
+            .iter()
+            .any(|b| matches!(b, ContentBlock::ToolUse { .. }));
         assert!(has_tool_use, "expected a tool_use block in response");
     }
 }

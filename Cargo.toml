@@ -4,6 +4,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.100"
+bon = "3.8.2"
 clap = { version = "4.5.56", features = ["derive"] }
 crossterm = "0.29.0"
 jiff = { version = "0.2.18", features = ["serde"] }

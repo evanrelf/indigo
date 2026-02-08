@@ -188,28 +188,20 @@ async fn claude_demo() -> anyhow::Result<()> {
 
     // println!("model info:\n{model_info:?}\n");
 
-    let messages_create_params = claude::MessageCreateParams {
-        model: String::from(model_id),
-        max_tokens: 1024,
-        messages: vec![
-            claude::MessageParam {
-                role: claude::Role::User,
-                content: claude::Content::Text(String::from("Hello, Claude!")),
-            },
-            claude::MessageParam {
-                role: claude::Role::Assistant,
-                content: claude::Content::Text(String::from("Hello, Evan!")),
-            },
-        ],
-        system: None,
-        stop_sequences: None,
-        stream: None,
-        temperature: None,
-        thinking: None,
-        tool_choice: None,
-        tools: None,
-        output_config: None,
-    };
+    let messages_create_params = claude::MessageCreateParams::builder()
+        .model(String::from(model_id))
+        .max_tokens(1024)
+        .messages(vec![
+            claude::MessageParam::builder()
+                .role(claude::Role::User)
+                .content(claude::Content::Text(String::from("Hello, Claude!")))
+                .build(),
+            claude::MessageParam::builder()
+                .role(claude::Role::Assistant)
+                .content(claude::Content::Text(String::from("Hello, Evan!")))
+                .build(),
+        ])
+        .build();
 
     println!(
         "request:\n{}\n",
