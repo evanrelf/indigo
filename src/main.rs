@@ -6,7 +6,7 @@ use anyhow::anyhow;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
 use ratatui::{DefaultTerminal, Frame};
-use std::{mem, process::ExitCode, thread, time::Duration};
+use std::{fmt::Write as _, mem, process::ExitCode, thread, time::Duration};
 
 #[derive(clap::Parser)]
 struct Args {}
@@ -23,10 +23,23 @@ fn main() -> anyhow::Result<ExitCode> {
     result
 }
 
+enum ClaudeEvent {
+    MessageStart { request_id: u64 },
+    ContentBlockDelta { request_id: u64, text: String },
+    ContentBlockStop { request_id: u64 },
+    MessageStop { request_id: u64 },
+    Error { request_id: u64, error: String },
+}
+
 #[derive(Clone)]
 enum Message {
     User(String),
-    Assistant(String),
+    Assistant {
+        request_id: u64,
+        text: String,
+        streaming: bool,
+        done: bool,
+    },
 }
 
 #[derive(Clone)]
@@ -42,11 +55,13 @@ fn run(args: &Args, terminal: &mut DefaultTerminal) -> anyhow::Result<ExitCode> 
     };
 
     let (state_tx, state_rx) = tokio::sync::watch::channel(state.clone());
-    let (event_tx, event_rx) = tokio::sync::mpsc::channel(64);
+    let (tui_tx, tui_rx) = tokio::sync::mpsc::channel(64);
+    let (claude_tx, claude_rx) = tokio::sync::mpsc::channel(1024);
 
     thread::scope(|scope| {
-        let app_handle = scope.spawn(|| run_app(args, state, event_rx, state_tx));
-        let tui_result = run_tui(terminal, state_rx, event_tx);
+        let app_handle =
+            scope.spawn(|| run_app(args, state, tui_rx, claude_rx, claude_tx, state_tx));
+        let tui_result = run_tui(terminal, state_rx, tui_tx);
         let exit_code = app_handle
             .join()
             .map_err(|_| anyhow!("app thread panicked"))??;
@@ -59,11 +74,11 @@ fn run(args: &Args, terminal: &mut DefaultTerminal) -> anyhow::Result<ExitCode> 
 fn run_tui(
     terminal: &mut DefaultTerminal,
     state_rx: tokio::sync::watch::Receiver<State>,
-    event_tx: tokio::sync::mpsc::Sender<Event>,
+    tui_tx: tokio::sync::mpsc::Sender<Event>,
 ) -> anyhow::Result<()> {
     loop {
         // Stop TUI thread if app thread stops
-        if event_tx.is_closed() {
+        if tui_tx.is_closed() {
             break Ok(());
         }
 
@@ -73,7 +88,7 @@ fn run_tui(
         if event::poll(Duration::from_millis(1_000 / 60))? {
             let event = event::read()?;
             // Drop events when app is overloaded instead of blocking rendering
-            let _ = event_tx.try_send(event);
+            let _ = tui_tx.try_send(event);
         }
     }
 }
@@ -83,30 +98,125 @@ fn run_tui(
 async fn run_app(
     _args: &Args,
     mut state: State,
-    mut event_rx: tokio::sync::mpsc::Receiver<Event>,
+    mut tui_rx: tokio::sync::mpsc::Receiver<Event>,
+    mut claude_rx: tokio::sync::mpsc::Receiver<ClaudeEvent>,
+    claude_tx: tokio::sync::mpsc::Sender<ClaudeEvent>,
     state_tx: tokio::sync::watch::Sender<State>,
 ) -> anyhow::Result<ExitCode> {
-    while let Some(event) = event_rx.recv().await {
+    let mut next_request_id: u64 = 0;
+
+    loop {
         let mut render = true;
 
-        match event {
-            Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-                (m, KeyCode::Char(char)) if m == KeyModifiers::NONE || m == KeyModifiers::SHIFT => {
-                    state.input.push(char);
+        tokio::select! {
+            biased;
+
+            Some(event) = tui_rx.recv() => {
+                match event {
+                    Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+                        (m, KeyCode::Char(char)) if m == KeyModifiers::NONE || m == KeyModifiers::SHIFT => {
+                            state.input.push(char);
+                        }
+                        (m, KeyCode::Backspace) if m == KeyModifiers::NONE => {
+                            // TODO: Not grapheme aware
+                            state.input.pop();
+                        }
+                        (m, KeyCode::Enter) if m == KeyModifiers::NONE => {
+                            let input = mem::take(&mut state.input);
+                            if input.is_empty() {
+                                render = false;
+                            } else {
+                                let request_id = next_request_id;
+                                next_request_id += 1;
+
+                                state.messages.push(Message::User(input.clone()));
+                                state.messages.push(Message::Assistant {
+                                    request_id,
+                                    text: String::new(),
+                                    streaming: false,
+                                    done: false,
+                                });
+
+                                let tx = claude_tx.clone();
+                                let messages: Vec<claude::MessageParam> = state
+                                    .messages
+                                    .iter()
+                                    .filter_map(|m| match m {
+                                        Message::User(text) => Some(
+                                            claude::MessageParam::builder()
+                                                .role(claude::Role::User)
+                                                .content(claude::Content::Text(text.clone()))
+                                                .build(),
+                                        ),
+                                        Message::Assistant { text, done: true, .. } => Some(
+                                            claude::MessageParam::builder()
+                                                .role(claude::Role::Assistant)
+                                                .content(claude::Content::Text(text.clone()))
+                                                .build(),
+                                        ),
+                                        Message::Assistant { .. } => None,
+                                    })
+                                    .collect();
+                                tokio::spawn(async move {
+                                    send_message(tx, request_id, messages).await;
+                                });
+                            }
+                        }
+                        (m, KeyCode::Char('c')) if m == KeyModifiers::CONTROL => break,
+                        _ => render = false,
+                    },
+                    _ => render = false,
                 }
-                (m, KeyCode::Backspace) if m == KeyModifiers::NONE => {
-                    // TODO: Not grapheme aware
-                    state.input.pop();
+            }
+
+            Some(claude_event) = claude_rx.recv() => {
+                match claude_event {
+                    ClaudeEvent::MessageStart { request_id } => {
+                        if let Some(Message::Assistant { streaming, .. }) =
+                            find_assistant_message(&mut state.messages, request_id)
+                        {
+                            *streaming = true;
+                        } else {
+                            render = false;
+                        }
+                    }
+                    ClaudeEvent::ContentBlockDelta { request_id, text } => {
+                        if let Some(Message::Assistant { text: t, .. }) =
+                            find_assistant_message(&mut state.messages, request_id)
+                        {
+                            t.push_str(&text);
+                        } else {
+                            render = false;
+                        }
+                    }
+                    ClaudeEvent::ContentBlockStop { request_id } => {
+                        if find_assistant_message(&mut state.messages, request_id).is_none() {
+                            render = false;
+                        }
+                    }
+                    ClaudeEvent::MessageStop { request_id } => {
+                        if let Some(Message::Assistant { done, .. }) =
+                            find_assistant_message(&mut state.messages, request_id)
+                        {
+                            *done = true;
+                        } else {
+                            render = false;
+                        }
+                    }
+                    ClaudeEvent::Error { request_id, error } => {
+                        if let Some(Message::Assistant { text, done, .. }) =
+                            find_assistant_message(&mut state.messages, request_id)
+                        {
+                            let _ = write!(text, "[Error: {error}]");
+                            *done = true;
+                        } else {
+                            render = false;
+                        }
+                    }
                 }
-                (m, KeyCode::Enter) if m == KeyModifiers::NONE => {
-                    let input = mem::take(&mut state.input);
-                    state.messages.push(Message::User(input));
-                    state.messages.push(Message::Assistant(String::from("k")));
-                }
-                (m, KeyCode::Char('c')) if m == KeyModifiers::CONTROL => break,
-                _ => render = false,
-            },
-            _ => render = false,
+            }
+
+            else => break,
         }
 
         if render {
@@ -115,6 +225,51 @@ async fn run_app(
     }
 
     Ok(ExitCode::SUCCESS)
+}
+
+fn find_assistant_message(messages: &mut [Message], request_id: u64) -> Option<&mut Message> {
+    messages
+        .iter_mut()
+        .find(|m| matches!(m, Message::Assistant { request_id: rid, .. } if *rid == request_id))
+}
+
+// TODO: Return error
+async fn send_message(
+    tx: tokio::sync::mpsc::Sender<ClaudeEvent>,
+    request_id: u64,
+    messages: Vec<claude::MessageParam>,
+) {
+    let params = claude::MessageCreateParams::builder()
+        .model(String::from("claude-haiku-4-5"))
+        .max_tokens(4096)
+        .messages(messages)
+        .build();
+
+    match claude::create_message(params).await {
+        Ok(response) => {
+            let _ = tx.send(ClaudeEvent::MessageStart { request_id }).await;
+            for block in &response.content {
+                if let claude::ContentBlock::Text { text, .. } = block {
+                    let _ = tx
+                        .send(ClaudeEvent::ContentBlockDelta {
+                            request_id,
+                            text: text.clone(),
+                        })
+                        .await;
+                    let _ = tx.send(ClaudeEvent::ContentBlockStop { request_id }).await;
+                }
+            }
+            let _ = tx.send(ClaudeEvent::MessageStop { request_id }).await;
+        }
+        Err(err) => {
+            let _ = tx
+                .send(ClaudeEvent::Error {
+                    request_id,
+                    error: err.to_string(),
+                })
+                .await;
+        }
+    }
 }
 
 #[expect(clippy::similar_names)]
@@ -142,7 +297,7 @@ fn render(frame: &mut Frame<'_>, state: &State) {
                         .areas(messages_block_inner_area);
                 area
             }
-            Message::Assistant(_) => {
+            Message::Assistant { .. } => {
                 let [area, _] =
                     Layout::horizontal([Constraint::Percentage(80), Constraint::Fill(1)])
                         .areas(messages_block_inner_area);
@@ -153,7 +308,7 @@ fn render(frame: &mut Frame<'_>, state: &State) {
             Message::User(string) => Paragraph::new(string.clone())
                 .wrap(Wrap { trim: false })
                 .right_aligned(),
-            Message::Assistant(string) => Paragraph::new(string.clone())
+            Message::Assistant { text, .. } => Paragraph::new(text.clone())
                 .wrap(Wrap { trim: false })
                 .left_aligned(),
         };
