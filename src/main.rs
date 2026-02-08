@@ -101,15 +101,22 @@ async fn run_app(
 fn render(frame: &mut Frame<'_>, state: &State) {
     use ratatui::{
         layout::{Constraint, Layout},
-        widgets::{Block, Paragraph},
+        text::Text,
+        widgets::{Block, List, Paragraph},
     };
 
     let layout = Layout::vertical([Constraint::Fill(1), Constraint::Length(5)]);
     let [messages_area, input_area] = layout.areas(frame.area());
 
-    let input_block = Paragraph::new(&*state.message).block(Block::bordered().title("Input"));
+    let messages = [
+        Text::from("user: what's 2 + 2").right_aligned(),
+        Text::from("assistant: 4"),
+    ];
+    let messages_widget = List::new(messages).block(Block::bordered().title("Messages"));
+    frame.render_widget(messages_widget, messages_area);
 
-    frame.render_widget(input_block, input_area);
+    let input_widget = Paragraph::new(&*state.message).block(Block::bordered().title("Input"));
+    frame.render_widget(input_widget, input_area);
 }
 
 async fn claude_demo() -> anyhow::Result<()> {
