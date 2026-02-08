@@ -108,7 +108,7 @@ fn render(frame: &mut Frame<'_>, state: &State) {
     use ratatui::{
         layout::{Constraint, Layout},
         text::Text,
-        widgets::{Block, List, Paragraph},
+        widgets::{Block, List, Paragraph, Wrap},
     };
 
     let layout = Layout::vertical([Constraint::Fill(1), Constraint::Length(5)]);
@@ -121,7 +121,9 @@ fn render(frame: &mut Frame<'_>, state: &State) {
     let messages_widget = List::new(messages).block(Block::bordered().title("Messages"));
     frame.render_widget(messages_widget, messages_area);
 
-    let input_widget = Paragraph::new(&*state.message).block(Block::bordered().title("Input"));
+    let input_widget = Paragraph::new(&*state.message)
+        .wrap(Wrap { trim: false })
+        .block(Block::bordered().title("Input"));
     frame.render_widget(input_widget, input_area);
 }
 
