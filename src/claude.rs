@@ -40,7 +40,10 @@ pub async fn retrieve_model(model_id: &str) -> anyhow::Result<ModelInfo> {
         let text = response.text().await?;
         anyhow::bail!("failed\nstatus: {status}\ntext: {text}");
     }
-    let model_info: ModelInfo = response.json().await?;
+    let text = response.text().await?;
+    let de = &mut serde_json::Deserializer::from_str(&text);
+    let model_info: ModelInfo = serde_path_to_error::deserialize(de)
+        .with_context(|| format!("failed to parse response:\n{text}"))?;
     anyhow::ensure!(model_info.r#type == "model");
     Ok(model_info)
 }
@@ -294,6 +297,9 @@ pub async fn create_message(params: MessageCreateParams) -> anyhow::Result<Messa
         let text = response.text().await?;
         anyhow::bail!("failed\nstatus: {status}\ntext: {text}");
     }
-    let message: Message = response.json().await?;
+    let text = response.text().await?;
+    let de = &mut serde_json::Deserializer::from_str(&text);
+    let message: Message = serde_path_to_error::deserialize(de)
+        .with_context(|| format!("failed to parse response:\n{text}"))?;
     Ok(message)
 }
