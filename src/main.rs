@@ -2,7 +2,7 @@
 
 use anyhow::{Context as _, anyhow};
 use clap::Parser as _;
-use crossterm::event::{self, Event};
+use crossterm::event::{self, Event, KeyCode, KeyModifiers};
 use jiff::Timestamp;
 use ratatui::{DefaultTerminal, Frame};
 use serde::{Deserialize, Serialize};
@@ -72,13 +72,26 @@ fn run_tui(
 #[tokio::main(flavor = "current_thread")]
 async fn run_app(
     _args: &Args,
-    state: State,
+    mut state: State,
     mut event_rx: tokio::sync::mpsc::Receiver<Event>,
     state_tx: tokio::sync::watch::Sender<State>,
 ) -> anyhow::Result<ExitCode> {
     while let Some(event) = event_rx.recv().await {
-        if event.is_key_press() {
-            break;
+        let mut render = true;
+
+        match event {
+            Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+                (m, KeyCode::Char(char)) if m == KeyModifiers::NONE || m == KeyModifiers::SHIFT => {
+                    state.message.push(char);
+                }
+                (m, KeyCode::Char('c')) if m == KeyModifiers::CONTROL => break,
+                _ => render = false,
+            },
+            _ => render = false,
+        }
+
+        if render {
+            state_tx.send(state.clone())?;
         }
     }
 
