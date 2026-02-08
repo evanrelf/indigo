@@ -115,6 +115,7 @@ fn render(frame: &mut Frame<'_>, state: &State) {
         layout::{Constraint, Layout},
         widgets::{Block, List, Paragraph, Wrap},
     };
+    use tui_scrollview::ScrollView;
 
     let layout = Layout::vertical([Constraint::Fill(1), Constraint::Length(5)]);
     let [messages_area, input_area] = layout.areas(frame.area());
