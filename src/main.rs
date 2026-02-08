@@ -6,7 +6,7 @@ use crossterm::event::{self, Event, KeyCode, KeyModifiers};
 use jiff::Timestamp;
 use ratatui::{DefaultTerminal, Frame};
 use serde::{Deserialize, Serialize};
-use std::{env, process::ExitCode, sync::LazyLock, thread, time::Duration};
+use std::{env, mem, process::ExitCode, sync::LazyLock, thread, time::Duration};
 
 #[derive(clap::Parser)]
 struct Args {}
@@ -25,12 +25,14 @@ fn main() -> anyhow::Result<ExitCode> {
 
 #[derive(Clone)]
 struct State {
-    message: String,
+    messages: Vec<String>,
+    input: String,
 }
 
 fn run(args: &Args, terminal: &mut DefaultTerminal) -> anyhow::Result<ExitCode> {
     let state = State {
-        message: String::from("Hello, world!"),
+        messages: Vec::new(),
+        input: String::new(),
     };
 
     let (state_tx, state_rx) = tokio::sync::watch::channel(state.clone());
@@ -84,11 +86,15 @@ async fn run_app(
         match event {
             Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
                 (m, KeyCode::Char(char)) if m == KeyModifiers::NONE || m == KeyModifiers::SHIFT => {
-                    state.message.push(char);
+                    state.input.push(char);
                 }
                 (m, KeyCode::Backspace) if m == KeyModifiers::NONE => {
                     // TODO: Not grapheme aware
-                    state.message.pop();
+                    state.input.pop();
+                }
+                (m, KeyCode::Enter) if m == KeyModifiers::NONE => {
+                    let input = mem::take(&mut state.input);
+                    state.messages.push(input);
                 }
                 (m, KeyCode::Char('c')) if m == KeyModifiers::CONTROL => break,
                 _ => render = false,
@@ -107,21 +113,17 @@ async fn run_app(
 fn render(frame: &mut Frame<'_>, state: &State) {
     use ratatui::{
         layout::{Constraint, Layout},
-        text::Text,
         widgets::{Block, List, Paragraph, Wrap},
     };
 
     let layout = Layout::vertical([Constraint::Fill(1), Constraint::Length(5)]);
     let [messages_area, input_area] = layout.areas(frame.area());
 
-    let messages = [
-        Text::from("user: what's 2 + 2").right_aligned(),
-        Text::from("assistant: 4"),
-    ];
-    let messages_widget = List::new(messages).block(Block::bordered().title("Messages"));
+    let messages_widget =
+        List::new(state.messages.iter().cloned()).block(Block::bordered().title("Messages"));
     frame.render_widget(messages_widget, messages_area);
 
-    let input_widget = Paragraph::new(&*state.message)
+    let input_widget = Paragraph::new(&*state.input)
         .wrap(Wrap { trim: false })
         .block(Block::bordered().title("Input"));
     frame.render_widget(input_widget, input_area);
