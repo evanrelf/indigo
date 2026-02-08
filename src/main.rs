@@ -1,5 +1,7 @@
 #![expect(dead_code)]
 
+mod claude;
+
 use anyhow::anyhow;
 use clap::Parser as _;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
@@ -180,39 +182,3 @@ fn render(frame: &mut Frame<'_>, state: &State) {
         .block(Block::bordered().title("Input"));
     frame.render_widget(input_widget, input_area);
 }
-
-async fn claude_demo() -> anyhow::Result<()> {
-    let model_id = "claude-haiku-4-5";
-
-    // let model_info = claude::models_retrieve(model_id).await?;
-
-    // println!("model info:\n{model_info:?}\n");
-
-    let messages_create_params = claude::MessageCreateParams::builder()
-        .model(String::from(model_id))
-        .max_tokens(1024)
-        .messages(vec![
-            claude::MessageParam::builder()
-                .role(claude::Role::User)
-                .content(claude::Content::Text(String::from("Hello, Claude!")))
-                .build(),
-            claude::MessageParam::builder()
-                .role(claude::Role::Assistant)
-                .content(claude::Content::Text(String::from("Hello, Evan!")))
-                .build(),
-        ])
-        .build();
-
-    println!(
-        "request:\n{}\n",
-        serde_json::to_string(&messages_create_params)?
-    );
-
-    let message = claude::create_message(messages_create_params).await?;
-
-    println!("response:\n{message:?}\n");
-
-    Ok(())
-}
-
-mod claude;
