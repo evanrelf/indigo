@@ -4,7 +4,7 @@ mod claude;
 
 use anyhow::anyhow;
 use clap::Parser as _;
-use crossterm::event::{self, Event, KeyCode, KeyModifiers};
+use crossterm::event::{self, Event as TerminalEvent, KeyCode, KeyModifiers};
 use ratatui::{DefaultTerminal, Frame};
 use std::{fmt::Write as _, mem, process::ExitCode, thread, time::Duration};
 
@@ -59,13 +59,13 @@ fn run(args: &Args, terminal: &mut DefaultTerminal) -> anyhow::Result<ExitCode> 
     };
 
     let (state_tx, state_rx) = tokio::sync::watch::channel(state.clone());
-    let (tui_tx, tui_rx) = tokio::sync::mpsc::channel(64);
+    let (terminal_tx, terminal_rx) = tokio::sync::mpsc::channel(64);
     let (claude_tx, claude_rx) = tokio::sync::mpsc::channel(1024);
 
     thread::scope(|scope| {
         let app_handle =
-            scope.spawn(|| run_app(args, state, tui_rx, claude_rx, claude_tx, state_tx));
-        let tui_result = run_tui(terminal, state_rx, tui_tx);
+            scope.spawn(|| run_app(args, state, terminal_rx, claude_rx, claude_tx, state_tx));
+        let tui_result = run_tui(terminal, state_rx, terminal_tx);
         let exit_code = app_handle
             .join()
             .map_err(|_| anyhow!("app thread panicked"))??;
@@ -78,11 +78,11 @@ fn run(args: &Args, terminal: &mut DefaultTerminal) -> anyhow::Result<ExitCode> 
 fn run_tui(
     terminal: &mut DefaultTerminal,
     state_rx: tokio::sync::watch::Receiver<State>,
-    tui_tx: tokio::sync::mpsc::Sender<Event>,
+    terminal_tx: tokio::sync::mpsc::Sender<TerminalEvent>,
 ) -> anyhow::Result<()> {
     loop {
         // Stop TUI thread if app thread stops
-        if tui_tx.is_closed() {
+        if terminal_tx.is_closed() {
             break Ok(());
         }
 
@@ -91,8 +91,8 @@ fn run_tui(
 
         if event::poll(Duration::from_millis(1_000 / 60))? {
             let event = event::read()?;
-            // Drop events when app is overloaded instead of blocking rendering
-            let _ = tui_tx.try_send(event);
+            // Drop terminal events when app is overloaded instead of blocking rendering
+            let _ = terminal_tx.try_send(event);
         }
     }
 }
@@ -102,7 +102,7 @@ fn run_tui(
 async fn run_app(
     _args: &Args,
     mut state: State,
-    mut tui_rx: tokio::sync::mpsc::Receiver<Event>,
+    mut terminal_rx: tokio::sync::mpsc::Receiver<TerminalEvent>,
     mut claude_rx: tokio::sync::mpsc::Receiver<ClaudeEvent>,
     claude_tx: tokio::sync::mpsc::Sender<ClaudeEvent>,
     state_tx: tokio::sync::watch::Sender<State>,
@@ -111,8 +111,8 @@ async fn run_app(
         tokio::select! {
             biased;
 
-            Some(tui_event) = tui_rx.recv() => {
-                handle_tui_event(&mut state, &claude_tx, &tui_event);
+            Some(terminal_event) = terminal_rx.recv() => {
+                handle_terminal_event(&mut state, &claude_tx, &terminal_event);
             }
 
             Some(claude_event) = claude_rx.recv() => {
@@ -130,14 +130,14 @@ async fn run_app(
     }
 }
 
-fn handle_tui_event(
+fn handle_terminal_event(
     state: &mut State,
     claude_tx: &tokio::sync::mpsc::Sender<ClaudeEvent>,
-    tui_event: &Event,
+    terminal_event: &TerminalEvent,
 ) {
     #[expect(clippy::single_match)]
-    match tui_event {
-        Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+    match terminal_event {
+        TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
             (m, KeyCode::Char(char)) if m == KeyModifiers::NONE || m == KeyModifiers::SHIFT => {
                 state.input.push(char);
             }
