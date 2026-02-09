@@ -107,16 +107,27 @@ async fn run_app(
     claude_tx: tokio::sync::mpsc::Sender<ClaudeEvent>,
     state_tx: tokio::sync::watch::Sender<State>,
 ) -> anyhow::Result<ExitCode> {
+    let mut terminal_events_buffer = Vec::with_capacity(8);
+    let mut claude_events_buffer = Vec::with_capacity(32);
+
     loop {
         tokio::select! {
-            biased;
-
-            Some(terminal_event) = terminal_rx.recv() => {
-                handle_terminal_event(&mut state, &claude_tx, &terminal_event);
+            terminal_events_count = terminal_rx.recv_many(&mut terminal_events_buffer, 8) => {
+                if terminal_events_count == 0 {
+                    break Ok(ExitCode::FAILURE);
+                }
+                for terminal_event in terminal_events_buffer.drain(..) {
+                    handle_terminal_event(&mut state, &claude_tx, terminal_event);
+                }
             }
 
-            Some(claude_event) = claude_rx.recv() => {
-                handle_claude_event(&mut state, &claude_event)?;
+            claude_events_count = claude_rx.recv_many(&mut claude_events_buffer, 32) => {
+                if claude_events_count == 0 {
+                    break Ok(ExitCode::FAILURE);
+                }
+                for claude_event in claude_events_buffer.drain(..) {
+                    handle_claude_event(&mut state, claude_event)?;
+                }
             }
 
             else => break Ok(ExitCode::FAILURE),
@@ -130,10 +141,11 @@ async fn run_app(
     }
 }
 
+#[expect(clippy::needless_pass_by_value)]
 fn handle_terminal_event(
     state: &mut State,
     claude_tx: &tokio::sync::mpsc::Sender<ClaudeEvent>,
-    terminal_event: &TerminalEvent,
+    terminal_event: TerminalEvent,
 ) {
     #[expect(clippy::single_match)]
     match terminal_event {
@@ -197,33 +209,33 @@ fn handle_terminal_event(
     }
 }
 
-fn handle_claude_event(state: &mut State, claude_event: &ClaudeEvent) -> anyhow::Result<()> {
+fn handle_claude_event(state: &mut State, claude_event: ClaudeEvent) -> anyhow::Result<()> {
     match claude_event {
         ClaudeEvent::MessageStart { request_id } => {
             if let Some(Message::Assistant { streaming, .. }) =
-                find_assistant_message(&mut state.messages, *request_id)
+                find_assistant_message(&mut state.messages, request_id)
             {
                 *streaming = true;
             }
         }
         ClaudeEvent::ContentBlockDelta { request_id, text } => {
             if let Some(Message::Assistant { text: t, .. }) =
-                find_assistant_message(&mut state.messages, *request_id)
+                find_assistant_message(&mut state.messages, request_id)
             {
-                t.push_str(text);
+                t.push_str(&text);
             }
         }
         ClaudeEvent::ContentBlockStop { request_id: _ } => {}
         ClaudeEvent::MessageStop { request_id } => {
             if let Some(Message::Assistant { done, .. }) =
-                find_assistant_message(&mut state.messages, *request_id)
+                find_assistant_message(&mut state.messages, request_id)
             {
                 *done = true;
             }
         }
         ClaudeEvent::Error { request_id, error } => {
             if let Some(Message::Assistant { text, done, .. }) =
-                find_assistant_message(&mut state.messages, *request_id)
+                find_assistant_message(&mut state.messages, request_id)
             {
                 write!(text, "[Error: {error}]")?;
                 *done = true;
@@ -240,7 +252,6 @@ fn find_assistant_message(messages: &mut [Message], request_id: u64) -> Option<&
         .find(|m| matches!(m, Message::Assistant { request_id: rid, .. } if *rid == request_id))
 }
 
-// TODO: Return error
 async fn send_message(
     tx: tokio::sync::mpsc::Sender<ClaudeEvent>,
     request_id: u64,
