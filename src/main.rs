@@ -45,6 +45,7 @@ enum Message {
 #[derive(Clone)]
 struct State {
     messages: Vec<Message>,
+    queued_messages: Vec<String>,
     input: String,
     next_request_id: u64,
     exit_code: Option<ExitCode>,
@@ -53,6 +54,7 @@ struct State {
 fn run(args: &Args, terminal: &mut DefaultTerminal) -> anyhow::Result<ExitCode> {
     let state = State {
         messages: Vec::new(),
+        queued_messages: Vec::new(),
         input: String::new(),
         next_request_id: 0,
         exit_code: None,
@@ -117,7 +119,7 @@ async fn run_app(
                     break;
                 }
                 for terminal_event in terminal_events_buffer.drain(..) {
-                    handle_terminal_event(&mut state, &claude_tx, terminal_event);
+                    handle_terminal_event(&mut state, terminal_event);
                 }
             }
 
@@ -133,6 +135,45 @@ async fn run_app(
             else => break,
         }
 
+        for queued_message in state.queued_messages.drain(..) {
+            let request_id = state.next_request_id;
+            state.next_request_id += 1;
+
+            state.messages.push(Message::User(queued_message));
+            state.messages.push(Message::Assistant {
+                request_id,
+                text: String::new(),
+                streaming: false,
+                done: false,
+            });
+
+            let tx = claude_tx.clone();
+            let messages: Vec<claude::MessageParam> = state
+                .messages
+                .iter()
+                .filter_map(|m| match m {
+                    Message::User(text) => Some(
+                        claude::MessageParam::builder()
+                            .role(claude::Role::User)
+                            .content(claude::Content::Text(text.clone()))
+                            .build(),
+                    ),
+                    Message::Assistant {
+                        text, done: true, ..
+                    } => Some(
+                        claude::MessageParam::builder()
+                            .role(claude::Role::Assistant)
+                            .content(claude::Content::Text(text.clone()))
+                            .build(),
+                    ),
+                    Message::Assistant { .. } => None,
+                })
+                .collect();
+            tokio::spawn(async move {
+                send_message(tx, request_id, messages).await;
+            });
+        }
+
         if state.exit_code.is_some() {
             break;
         }
@@ -144,11 +185,7 @@ async fn run_app(
 }
 
 #[expect(clippy::needless_pass_by_value)]
-fn handle_terminal_event(
-    state: &mut State,
-    claude_tx: &tokio::sync::mpsc::Sender<ClaudeEvent>,
-    terminal_event: TerminalEvent,
-) {
+fn handle_terminal_event(state: &mut State, terminal_event: TerminalEvent) {
     #[expect(clippy::single_match)]
     match terminal_event {
         TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
@@ -160,47 +197,10 @@ fn handle_terminal_event(
                 state.input.pop();
             }
             (m, KeyCode::Enter) if m == KeyModifiers::NONE => {
-                let input = mem::take(&mut state.input);
-                if input.is_empty() {
-                    return;
+                let message = mem::take(&mut state.input);
+                if !message.is_empty() {
+                    state.queued_messages.push(message);
                 }
-
-                let request_id = state.next_request_id;
-                state.next_request_id += 1;
-
-                state.messages.push(Message::User(input.clone()));
-                state.messages.push(Message::Assistant {
-                    request_id,
-                    text: String::new(),
-                    streaming: false,
-                    done: false,
-                });
-
-                let tx = claude_tx.clone();
-                let messages: Vec<claude::MessageParam> = state
-                    .messages
-                    .iter()
-                    .filter_map(|m| match m {
-                        Message::User(text) => Some(
-                            claude::MessageParam::builder()
-                                .role(claude::Role::User)
-                                .content(claude::Content::Text(text.clone()))
-                                .build(),
-                        ),
-                        Message::Assistant {
-                            text, done: true, ..
-                        } => Some(
-                            claude::MessageParam::builder()
-                                .role(claude::Role::Assistant)
-                                .content(claude::Content::Text(text.clone()))
-                                .build(),
-                        ),
-                        Message::Assistant { .. } => None,
-                    })
-                    .collect();
-                tokio::spawn(async move {
-                    send_message(tx, request_id, messages).await;
-                });
             }
             (m, KeyCode::Char('c')) if m == KeyModifiers::CONTROL => {
                 state.exit_code = Some(ExitCode::SUCCESS);
