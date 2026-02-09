@@ -114,7 +114,7 @@ async fn run_app(
         tokio::select! {
             terminal_events_count = terminal_rx.recv_many(&mut terminal_events_buffer, 8) => {
                 if terminal_events_count == 0 {
-                    break Ok(ExitCode::FAILURE);
+                    break;
                 }
                 for terminal_event in terminal_events_buffer.drain(..) {
                     handle_terminal_event(&mut state, &claude_tx, terminal_event);
@@ -123,22 +123,24 @@ async fn run_app(
 
             claude_events_count = claude_rx.recv_many(&mut claude_events_buffer, 32) => {
                 if claude_events_count == 0 {
-                    break Ok(ExitCode::FAILURE);
+                    break;
                 }
                 for claude_event in claude_events_buffer.drain(..) {
                     handle_claude_event(&mut state, claude_event)?;
                 }
             }
 
-            else => break Ok(ExitCode::FAILURE),
+            else => break,
         }
 
-        if let Some(exit_code) = state.exit_code {
-            break Ok(exit_code);
+        if state.exit_code.is_some() {
+            break;
         }
 
         state_tx.send(state.clone())?;
     }
+
+    Ok(state.exit_code.unwrap_or(ExitCode::SUCCESS))
 }
 
 #[expect(clippy::needless_pass_by_value)]
