@@ -46,12 +46,16 @@ enum Message {
 struct State {
     messages: Vec<Message>,
     input: String,
+    next_request_id: u64,
+    exit_code: Option<ExitCode>,
 }
 
 fn run(args: &Args, terminal: &mut DefaultTerminal) -> anyhow::Result<ExitCode> {
     let state = State {
         messages: Vec::new(),
         input: String::new(),
+        next_request_id: 0,
+        exit_code: None,
     };
 
     let (state_tx, state_rx) = tokio::sync::watch::channel(state.clone());
@@ -103,128 +107,131 @@ async fn run_app(
     claude_tx: tokio::sync::mpsc::Sender<ClaudeEvent>,
     state_tx: tokio::sync::watch::Sender<State>,
 ) -> anyhow::Result<ExitCode> {
-    let mut next_request_id: u64 = 0;
-
     loop {
-        let mut render = true;
-
         tokio::select! {
             biased;
 
-            Some(event) = tui_rx.recv() => {
-                match event {
-                    Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
-                        (m, KeyCode::Char(char)) if m == KeyModifiers::NONE || m == KeyModifiers::SHIFT => {
-                            state.input.push(char);
-                        }
-                        (m, KeyCode::Backspace) if m == KeyModifiers::NONE => {
-                            // TODO: Not grapheme aware
-                            state.input.pop();
-                        }
-                        (m, KeyCode::Enter) if m == KeyModifiers::NONE => {
-                            let input = mem::take(&mut state.input);
-                            if input.is_empty() {
-                                render = false;
-                            } else {
-                                let request_id = next_request_id;
-                                next_request_id += 1;
-
-                                state.messages.push(Message::User(input.clone()));
-                                state.messages.push(Message::Assistant {
-                                    request_id,
-                                    text: String::new(),
-                                    streaming: false,
-                                    done: false,
-                                });
-
-                                let tx = claude_tx.clone();
-                                let messages: Vec<claude::MessageParam> = state
-                                    .messages
-                                    .iter()
-                                    .filter_map(|m| match m {
-                                        Message::User(text) => Some(
-                                            claude::MessageParam::builder()
-                                                .role(claude::Role::User)
-                                                .content(claude::Content::Text(text.clone()))
-                                                .build(),
-                                        ),
-                                        Message::Assistant { text, done: true, .. } => Some(
-                                            claude::MessageParam::builder()
-                                                .role(claude::Role::Assistant)
-                                                .content(claude::Content::Text(text.clone()))
-                                                .build(),
-                                        ),
-                                        Message::Assistant { .. } => None,
-                                    })
-                                    .collect();
-                                tokio::spawn(async move {
-                                    send_message(tx, request_id, messages).await;
-                                });
-                            }
-                        }
-                        (m, KeyCode::Char('c')) if m == KeyModifiers::CONTROL => break,
-                        _ => render = false,
-                    },
-                    _ => render = false,
-                }
+            Some(tui_event) = tui_rx.recv() => {
+                handle_tui_event(&mut state, &claude_tx, &tui_event);
             }
 
             Some(claude_event) = claude_rx.recv() => {
-                match claude_event {
-                    ClaudeEvent::MessageStart { request_id } => {
-                        if let Some(Message::Assistant { streaming, .. }) =
-                            find_assistant_message(&mut state.messages, request_id)
-                        {
-                            *streaming = true;
-                        } else {
-                            render = false;
-                        }
-                    }
-                    ClaudeEvent::ContentBlockDelta { request_id, text } => {
-                        if let Some(Message::Assistant { text: t, .. }) =
-                            find_assistant_message(&mut state.messages, request_id)
-                        {
-                            t.push_str(&text);
-                        } else {
-                            render = false;
-                        }
-                    }
-                    ClaudeEvent::ContentBlockStop { request_id } => {
-                        if find_assistant_message(&mut state.messages, request_id).is_none() {
-                            render = false;
-                        }
-                    }
-                    ClaudeEvent::MessageStop { request_id } => {
-                        if let Some(Message::Assistant { done, .. }) =
-                            find_assistant_message(&mut state.messages, request_id)
-                        {
-                            *done = true;
-                        } else {
-                            render = false;
-                        }
-                    }
-                    ClaudeEvent::Error { request_id, error } => {
-                        if let Some(Message::Assistant { text, done, .. }) =
-                            find_assistant_message(&mut state.messages, request_id)
-                        {
-                            let _ = write!(text, "[Error: {error}]");
-                            *done = true;
-                        } else {
-                            render = false;
-                        }
-                    }
-                }
+                handle_claude_event(&mut state, &claude_event)?;
             }
 
-            else => break,
+            else => break Ok(ExitCode::FAILURE),
         }
 
-        if render {
-            state_tx.send(state.clone())?;
+        if let Some(exit_code) = state.exit_code {
+            break Ok(exit_code);
+        }
+
+        state_tx.send(state.clone())?;
+    }
+}
+
+fn handle_tui_event(
+    state: &mut State,
+    claude_tx: &tokio::sync::mpsc::Sender<ClaudeEvent>,
+    tui_event: &Event,
+) {
+    #[expect(clippy::single_match)]
+    match tui_event {
+        Event::Key(key_event) => match (key_event.modifiers, key_event.code) {
+            (m, KeyCode::Char(char)) if m == KeyModifiers::NONE || m == KeyModifiers::SHIFT => {
+                state.input.push(char);
+            }
+            (m, KeyCode::Backspace) if m == KeyModifiers::NONE => {
+                // TODO: Not grapheme aware
+                state.input.pop();
+            }
+            (m, KeyCode::Enter) if m == KeyModifiers::NONE => {
+                let input = mem::take(&mut state.input);
+                if input.is_empty() {
+                    return;
+                }
+
+                let request_id = state.next_request_id;
+                state.next_request_id += 1;
+
+                state.messages.push(Message::User(input.clone()));
+                state.messages.push(Message::Assistant {
+                    request_id,
+                    text: String::new(),
+                    streaming: false,
+                    done: false,
+                });
+
+                let tx = claude_tx.clone();
+                let messages: Vec<claude::MessageParam> = state
+                    .messages
+                    .iter()
+                    .filter_map(|m| match m {
+                        Message::User(text) => Some(
+                            claude::MessageParam::builder()
+                                .role(claude::Role::User)
+                                .content(claude::Content::Text(text.clone()))
+                                .build(),
+                        ),
+                        Message::Assistant {
+                            text, done: true, ..
+                        } => Some(
+                            claude::MessageParam::builder()
+                                .role(claude::Role::Assistant)
+                                .content(claude::Content::Text(text.clone()))
+                                .build(),
+                        ),
+                        Message::Assistant { .. } => None,
+                    })
+                    .collect();
+                tokio::spawn(async move {
+                    send_message(tx, request_id, messages).await;
+                });
+            }
+            (m, KeyCode::Char('c')) if m == KeyModifiers::CONTROL => {
+                state.exit_code = Some(ExitCode::SUCCESS);
+            }
+            _ => {}
+        },
+        _ => {}
+    }
+}
+
+fn handle_claude_event(state: &mut State, claude_event: &ClaudeEvent) -> anyhow::Result<()> {
+    match claude_event {
+        ClaudeEvent::MessageStart { request_id } => {
+            if let Some(Message::Assistant { streaming, .. }) =
+                find_assistant_message(&mut state.messages, *request_id)
+            {
+                *streaming = true;
+            }
+        }
+        ClaudeEvent::ContentBlockDelta { request_id, text } => {
+            if let Some(Message::Assistant { text: t, .. }) =
+                find_assistant_message(&mut state.messages, *request_id)
+            {
+                t.push_str(text);
+            }
+        }
+        ClaudeEvent::ContentBlockStop { request_id: _ } => {}
+        ClaudeEvent::MessageStop { request_id } => {
+            if let Some(Message::Assistant { done, .. }) =
+                find_assistant_message(&mut state.messages, *request_id)
+            {
+                *done = true;
+            }
+        }
+        ClaudeEvent::Error { request_id, error } => {
+            if let Some(Message::Assistant { text, done, .. }) =
+                find_assistant_message(&mut state.messages, *request_id)
+            {
+                write!(text, "[Error: {error}]")?;
+                *done = true;
+            }
         }
     }
 
-    Ok(ExitCode::SUCCESS)
+    Ok(())
 }
 
 fn find_assistant_message(messages: &mut [Message], request_id: u64) -> Option<&mut Message> {
