@@ -63,6 +63,7 @@ impl Text {
         Ok(())
     }
 
+    // TODO: Make this private, move everything to `insert` + `delete` + anchors.
     pub fn apply(&mut self, ops: &OperationSeq) -> anyhow::Result<()> {
         anyhow::ensure!(!self.readonly, "Cannot modify readonly text");
         let undo = ops.invert(&self.rope)?;

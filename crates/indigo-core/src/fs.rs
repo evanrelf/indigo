@@ -11,6 +11,8 @@ pub trait Fs {
     fn write(&self, path: &Utf8Path, bytes: &[u8]) -> anyhow::Result<()>;
 
     fn exists(&self, path: &Utf8Path) -> anyhow::Result<bool>;
+
+    // TODO: Add `std::fs::canonicalize` equivalent.
 }
 
 impl<T: Fs + ?Sized> Fs for Arc<T> {

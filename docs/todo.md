@@ -1,28 +1,21 @@
 # Todo
 
-- cursor: Adopt anchors
-- range: Adopt anchors
-- selection: Adopt anchors
-- buffer: Track selection history with anchors
-- text: Make `apply` method private, move everyone to `insert`+`delete`+anchors
-- range: Correct cursor positioning
-- fs: Add support for path canonicalization
-- buffer: Canonicalize path in `open`
-- buffer: Store history of ranges
-- editor: Hold multiple buffers
-- range: Select word (for mouse double click)
-- range: Select line (for mouse triple click)
+- range: Select word for mouse double click
+- range: Select line for mouse triple click
 
 ## Friction in use
 
 - No `/` search
 - No `o` or `O`
 - No auto-scroll to keep primary range in view
+- No `C` or `<a-C>`
 
 ## Keys
 
 Most will have the same behavior as Kakoune, but not all (e.g. `q` is the
 backward word key, not `b`).
+
+See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 
 ### Insert mode
 
