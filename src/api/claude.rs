@@ -73,11 +73,12 @@ pub enum CacheControlTtl {
     OneHour,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum CacheControl {
     Ephemeral {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
         ttl: Option<CacheControlTtl>,
     },
 }
@@ -108,12 +109,13 @@ pub struct MessageParam {
 /// The API's input and output content block types overlap heavily. Using one
 /// enum with both `Serialize` and `Deserialize` lets us round-trip assistant
 /// content blocks back into the next request without conversion.
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ContentBlock {
     Text {
         text: String,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
         cache_control: Option<CacheControl>,
     },
     Thinking {
@@ -125,23 +127,23 @@ pub enum ContentBlock {
     },
     Image {
         source: ImageSource,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
         cache_control: Option<CacheControl>,
     },
     ToolUse {
         id: String,
         name: String,
         input: serde_json::Value,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
         cache_control: Option<CacheControl>,
     },
     ToolResult {
         tool_use_id: String,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
         content: Option<ToolResultContent>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
         is_error: Option<bool>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
         cache_control: Option<CacheControl>,
     },
 }
@@ -153,36 +155,29 @@ pub enum SystemPrompt {
     Blocks(Vec<SystemBlock>),
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum SystemBlock {
     Text {
         text: String,
-        #[serde(skip_serializing_if = "Option::is_none")]
         cache_control: Option<CacheControl>,
     },
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(bon::Builder, Debug, Serialize)]
 pub struct MessageCreateParams {
     pub model: String,
     pub max_tokens: usize,
     pub messages: Vec<MessageParam>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub system: Option<SystemPrompt>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub stop_sequences: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub stream: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub temperature: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub thinking: Option<ThinkingConfig>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_choice: Option<ToolChoice>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub tools: Option<Vec<Tool>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub output_config: Option<OutputConfig>,
 }
 
@@ -194,11 +189,10 @@ pub enum ThinkingConfig {
     Adaptive,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(bon::Builder, Debug, Serialize)]
 pub struct OutputConfig {
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub effort: Option<Effort>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub format: Option<OutputFormat>,
 }
 
@@ -218,32 +212,28 @@ pub enum OutputFormat {
     JsonSchema { schema: serde_json::Value },
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(bon::Builder, Debug, Serialize)]
 pub struct Tool {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     pub input_schema: serde_json::Value,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub cache_control: Option<CacheControl>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub strict: Option<bool>,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ToolChoice {
     Auto {
-        #[serde(skip_serializing_if = "Option::is_none")]
         disable_parallel_tool_use: Option<bool>,
     },
     Any {
-        #[serde(skip_serializing_if = "Option::is_none")]
         disable_parallel_tool_use: Option<bool>,
     },
     Tool {
         name: String,
-        #[serde(skip_serializing_if = "Option::is_none")]
         disable_parallel_tool_use: Option<bool>,
     },
     None,

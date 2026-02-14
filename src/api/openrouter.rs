@@ -31,37 +31,39 @@ pub enum ContentPart {
     ImageUrl { image_url: ImageUrl },
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ImageUrl {
     pub url: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub detail: Option<String>,
 }
 
 // Messages
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(tag = "role", rename_all = "snake_case")]
 pub enum Message {
     System {
         content: Content,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
         name: Option<String>,
     },
     Developer {
         content: Content,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
         name: Option<String>,
     },
     User {
         content: Content,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
         name: Option<String>,
     },
     Assistant {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
         content: Option<Content>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
         tool_calls: Option<Vec<ToolCall>>,
     },
     Tool {
@@ -102,14 +104,12 @@ enum ToolType {
     Function,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(bon::Builder, Debug, Serialize)]
 pub struct FunctionDefinition {
     pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub strict: Option<bool>,
 }
 
@@ -168,11 +168,11 @@ pub enum ResponseFormat {
     JsonSchema { json_schema: JsonSchemaFormat },
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize)]
 pub struct JsonSchemaFormat {
     pub name: String,
     pub schema: serde_json::Value,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub strict: Option<bool>,
 }
 
@@ -198,26 +198,18 @@ pub enum ReasoningEffort {
 
 // Request
 
+#[serde_with::skip_serializing_none]
 #[derive(bon::Builder, Debug, Serialize)]
 pub struct ChatCompletionParams {
     pub messages: Vec<Message>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_tokens: Option<usize>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub temperature: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub stop: Option<Stop>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub stream: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub tools: Option<Vec<ToolDefinition>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_choice: Option<ToolChoice>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub response_format: Option<ResponseFormat>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub reasoning: Option<ReasoningConfig>,
 }
 
