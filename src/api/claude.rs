@@ -811,7 +811,7 @@ mod tests {
         }
     }
 
-    #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+    #[tokio::test]
     #[ignore = "live API test; run with --ignored --test-threads=1"]
     async fn retrieve_model_live() {
         let info = retrieve_model(MODEL).await.unwrap();
@@ -820,7 +820,7 @@ mod tests {
         assert!(!info.display_name.is_empty());
     }
 
-    #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+    #[tokio::test]
     #[ignore = "live API test; run with --ignored --test-threads=1"]
     async fn create_message_live_simple() {
         let params = MessageCreateParams {
@@ -846,7 +846,7 @@ mod tests {
         assert!(msg.usage.output_tokens > 0);
     }
 
-    #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+    #[tokio::test]
     #[ignore = "live API test; run with --ignored --test-threads=1"]
     async fn create_message_live_with_tools() {
         let params = MessageCreateParams {
