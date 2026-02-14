@@ -1,7 +1,8 @@
 #![expect(dead_code)]
 
-mod claude;
+mod api;
 
+use crate::api::claude;
 use anyhow::anyhow;
 use clap::Parser as _;
 use crossterm::event::{self, Event as TerminalEvent, KeyCode, KeyModifiers};
