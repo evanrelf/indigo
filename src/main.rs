@@ -5,20 +5,20 @@ mod claude;
 use anyhow::anyhow;
 use clap::Parser as _;
 use crossterm::event::{self, Event as TerminalEvent, KeyCode, KeyModifiers};
-use ratatui::{DefaultTerminal, Frame};
 use std::{fmt::Write as _, mem, process::ExitCode, thread, time::Duration};
 
 #[derive(clap::Parser)]
 struct Args {}
 
+#[expect(clippy::let_and_return)]
 fn main() -> anyhow::Result<ExitCode> {
     let args = Args::parse();
 
-    let mut terminal = ratatui::init();
+    // TODO: init TUI
 
-    let result = run(&args, &mut terminal);
+    let result = run(&args);
 
-    ratatui::restore();
+    // TODO: restore TUI
 
     result
 }
@@ -51,7 +51,7 @@ struct State {
     exit_code: Option<ExitCode>,
 }
 
-fn run(args: &Args, terminal: &mut DefaultTerminal) -> anyhow::Result<ExitCode> {
+fn run(args: &Args) -> anyhow::Result<ExitCode> {
     let state = State {
         messages: Vec::new(),
         queued_messages: Vec::new(),
@@ -67,7 +67,7 @@ fn run(args: &Args, terminal: &mut DefaultTerminal) -> anyhow::Result<ExitCode> 
     thread::scope(|scope| {
         let app_handle =
             scope.spawn(|| run_app(args, state, terminal_rx, claude_rx, claude_tx, state_tx));
-        let tui_result = run_tui(terminal, state_rx, terminal_tx);
+        let tui_result = run_tui(state_rx, terminal_tx);
         let exit_code = app_handle
             .join()
             .map_err(|_| anyhow!("app thread panicked"))??;
@@ -78,7 +78,6 @@ fn run(args: &Args, terminal: &mut DefaultTerminal) -> anyhow::Result<ExitCode> 
 
 #[expect(clippy::needless_pass_by_value)]
 fn run_tui(
-    terminal: &mut DefaultTerminal,
     state_rx: tokio::sync::watch::Receiver<State>,
     terminal_tx: tokio::sync::mpsc::Sender<TerminalEvent>,
 ) -> anyhow::Result<()> {
@@ -89,7 +88,8 @@ fn run_tui(
         }
 
         let state = state_rx.borrow();
-        terminal.draw(|frame| render(frame, &state))?;
+
+        render(&state);
 
         if event::poll(Duration::from_millis(1_000 / 60))? {
             let event = event::read()?;
@@ -292,68 +292,6 @@ async fn send_message(
     }
 }
 
-#[expect(clippy::similar_names)]
-fn render(frame: &mut Frame<'_>, state: &State) {
-    use ratatui::{
-        layout::{Constraint, Layout, Rect, Size},
-        widgets::{Block, Padding, Paragraph, Wrap},
-    };
-    use tui_scrollview::{ScrollView, ScrollViewState, ScrollbarVisibility};
-
-    let layout = Layout::vertical([Constraint::Fill(1), Constraint::Length(5)]);
-    let [messages_area, input_area] = layout.areas(frame.area());
-
-    let messages_block_widget = Block::bordered().title("Messages").padding(Padding::ZERO);
-    let messages_block_inner_area = messages_block_widget.inner(messages_area);
-    let mut messages_scroll_widget = ScrollView::new(Size::from(messages_block_inner_area))
-        .vertical_scrollbar_visibility(ScrollbarVisibility::Never)
-        .horizontal_scrollbar_visibility(ScrollbarVisibility::Never);
-    let mut height = 0;
-    for message in &state.messages {
-        let message_area = match message {
-            Message::User(_) => {
-                let [_, area] =
-                    Layout::horizontal([Constraint::Fill(1), Constraint::Percentage(80)])
-                        .areas(messages_block_inner_area);
-                area
-            }
-            Message::Assistant { .. } => {
-                let [area, _] =
-                    Layout::horizontal([Constraint::Percentage(80), Constraint::Fill(1)])
-                        .areas(messages_block_inner_area);
-                area
-            }
-        };
-        let message_widget = match message {
-            Message::User(string) => Paragraph::new(string.clone())
-                .wrap(Wrap { trim: false })
-                .right_aligned(),
-            Message::Assistant { text, .. } => Paragraph::new(text.clone())
-                .wrap(Wrap { trim: false })
-                .left_aligned(),
-        };
-        let message_height = message_widget.line_count(message_area.width);
-        messages_scroll_widget.render_widget(
-            message_widget,
-            Rect::new(
-                message_area.x - messages_block_inner_area.x,
-                u16::try_from(height).unwrap(),
-                message_area.width,
-                u16::try_from(message_height).unwrap(),
-            ),
-        );
-        height += message_height;
-    }
-    let mut messages_scroll_state = ScrollViewState::default();
-    frame.render_widget(messages_block_widget, messages_area);
-    frame.render_stateful_widget(
-        messages_scroll_widget,
-        messages_block_inner_area,
-        &mut messages_scroll_state,
-    );
-
-    let input_widget = Paragraph::new(&*state.input)
-        .wrap(Wrap { trim: false })
-        .block(Block::bordered().title("Input"));
-    frame.render_widget(input_widget, input_area);
+fn render(_state: &State) {
+    todo!()
 }
