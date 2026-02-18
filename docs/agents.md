@@ -78,8 +78,8 @@ goal is to keep this relatively lightweight, keeping all non-trivial logic in
   used for rendering and converting mouse clicks into cursor movement.
 - `main`: Entrypoint for the program. Includes parsing command-line arguments,
   setting up XDG directories, setting up tracing, setting up the terminal, an
-  event loop with timing stats, and rendering state to the terminal. More or
-  less follows The Elm Architecture.
+  event loop, and rendering state to the terminal. More or less follows The Elm
+  Architecture.
 
 ### indigo-cli
 
