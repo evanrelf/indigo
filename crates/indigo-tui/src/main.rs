@@ -54,7 +54,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let args = Args::parse();
 
-    let xdg = init_etcetera()?;
+    let xdg = init_xdg()?;
 
     init_tracing_subscriber(&args, &xdg)?;
 
@@ -63,7 +63,7 @@ fn main() -> anyhow::Result<ExitCode> {
     run(&args, terminal)
 }
 
-fn init_etcetera() -> anyhow::Result<Xdg> {
+fn init_xdg() -> anyhow::Result<Xdg> {
     use etcetera::app_strategy::AppStrategyArgs;
 
     Ok(Xdg::new(AppStrategyArgs {
