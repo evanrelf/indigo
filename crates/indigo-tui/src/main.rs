@@ -53,9 +53,13 @@ fn main() -> anyhow::Result<ExitCode> {
 
     init_tracing(&args, &xdg)?;
 
-    let terminal = terminal::init()?;
+    let mut terminal = terminal::init()?;
 
-    run(&args, terminal)
+    let result = run(&args, &mut terminal);
+
+    drop(terminal);
+
+    result
 }
 
 fn init_xdg() -> anyhow::Result<Xdg> {
@@ -93,14 +97,7 @@ fn init_tracing(args: &Args, xdg: &Xdg) -> anyhow::Result<()> {
     Ok(())
 }
 
-// TODO: Fix incorrect terminal init and restore.
-//
-// > Note that when using `init()` and `restore()`, it’s important to use a separate function for
-// > the main loop to ensure that `restore()` is always called, even if the `?` operator causes
-// > early return from an error.
-//
-// https://docs.rs/ratatui/latest/ratatui/index.html#initialize-and-restore-the-terminal
-fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
+fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
     let buffer = if let Some(path) = &args.file {
         Buffer::open(&RealFs, path)?
     } else {
@@ -133,14 +130,12 @@ fn run(args: &Args, mut terminal: TerminalGuard) -> anyhow::Result<ExitCode> {
             }
         };
 
-        handle_event(&mut editor, &mut terminal, areas, event)?;
+        handle_event(&mut editor, terminal, areas, event)?;
 
         if let Some(exit_code) = editor.exit_code() {
             break exit_code;
         }
     };
-
-    drop(terminal);
 
     Ok(exit_code)
 }
