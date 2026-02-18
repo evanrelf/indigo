@@ -56,7 +56,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let xdg = init_xdg()?;
 
-    init_tracing_subscriber(&args, &xdg)?;
+    init_tracing(&args, &xdg)?;
 
     let terminal = terminal::init()?;
 
@@ -73,7 +73,7 @@ fn init_xdg() -> anyhow::Result<Xdg> {
     })?)
 }
 
-fn init_tracing_subscriber(args: &Args, xdg: &Xdg) -> anyhow::Result<()> {
+fn init_tracing(args: &Args, xdg: &Xdg) -> anyhow::Result<()> {
     use tracing_subscriber::{EnvFilter, Registry, fmt, prelude::*};
 
     let log_path = xdg
