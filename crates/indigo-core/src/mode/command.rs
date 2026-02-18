@@ -106,20 +106,33 @@ fn exec_command(editor: &mut Editor) {
             message: Vec<String>,
         },
         #[clap(alias = "e")]
-        Edit { path: Utf8PathBuf },
+        Edit {
+            path: Utf8PathBuf,
+        },
         // TODO: Delete `edit!` once multiple buffers are supported.
         #[clap(name = "edit!", alias = "e!")]
-        EditForce { path: Utf8PathBuf },
+        EditForce {
+            path: Utf8PathBuf,
+        },
         #[clap(alias = "w")]
-        Write { path: Option<Utf8PathBuf> },
+        Write {
+            path: Option<Utf8PathBuf>,
+        },
         #[clap(alias = "q")]
-        Quit { exit_code: Option<u8> },
+        Quit {
+            exit_code: Option<u8>,
+        },
         #[clap(name = "quit!", alias = "q!")]
-        QuitForce { exit_code: Option<u8> },
+        QuitForce {
+            exit_code: Option<u8>,
+        },
         #[clap(alias = "wq")]
-        WriteQuit { exit_code: Option<u8> },
+        WriteQuit {
+            exit_code: Option<u8>,
+        },
         #[clap(alias = "ro")]
         Readonly,
+        Panic,
     }
 
     let Mode::Command(command_mode) = &editor.mode else {
@@ -219,6 +232,7 @@ fn exec_command(editor: &mut Editor) {
                 editor.message = Some(Ok(String::from("Buffer is no longer readonly")));
             }
         }
+        Command::Panic => panic!(),
     }
 
     editor.mode = Mode::Normal(NormalMode::default());
