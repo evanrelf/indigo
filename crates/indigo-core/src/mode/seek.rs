@@ -24,6 +24,7 @@ pub enum SeekDirection {
     Next,
 }
 
+#[derive(Clone)]
 pub struct SeekMode {
     pub count: Option<NonZeroUsize>,
     /// Move and create a new selection, or extend the current one?

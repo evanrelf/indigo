@@ -7,13 +7,17 @@ use crate::{
     text::Text,
 };
 use ropey::Rope;
+use std::sync::{Arc, Mutex};
 
+#[derive(Clone)]
 pub struct PromptMode {
     prompt: &'static str,
     text: Text,
     cursor: CursorState,
+    // TODO: Consider changing this back to `Box<dyn FnOnce(..)>`. Either write a weird `Clone` impl
+    // that makes `handler = None` or add a new trait for deriving view state?
     #[expect(clippy::type_complexity)]
-    handler: Option<Box<dyn FnOnce(&mut Editor, &str)>>,
+    handler: Option<Arc<Mutex<dyn FnMut(&mut Editor, &str)>>>,
 }
 
 impl PromptMode {
@@ -23,7 +27,7 @@ impl PromptMode {
             prompt,
             text: Text::default(),
             cursor: CursorState::default(),
-            handler: Some(Box::new(handler)),
+            handler: Some(Arc::new(Mutex::new(handler))),
         }
     }
 
@@ -114,6 +118,6 @@ fn exec(editor: &mut Editor) {
         .handler
         .take()
         .expect("Handler is always present");
-    handler(editor, &text);
+    handler.lock().unwrap()(editor, &text);
     enter_normal_mode(editor);
 }

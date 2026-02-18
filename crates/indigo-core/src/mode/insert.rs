@@ -5,7 +5,7 @@ use crate::{
     mode::{Mode, normal::enter_normal_mode},
 };
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct InsertMode {}
 
 pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {

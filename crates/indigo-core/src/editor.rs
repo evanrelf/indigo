@@ -14,6 +14,7 @@ pub enum Error {
     Buffer(#[source] anyhow::Error),
 }
 
+#[derive(Clone)]
 pub struct Editor {
     pub fs: Arc<dyn Fs>,
     buffer: Buffer,

@@ -20,7 +20,7 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct History<I, T = Vector<I>>
 where
     T: FromItem<I> + Extend<I> + Clone,

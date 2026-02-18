@@ -26,7 +26,7 @@ impl Extend<Self> for BidiOperationSeq {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Text {
     rope: Rope,
     history: History<BidiOperationSeq, BidiOperationSeq>,

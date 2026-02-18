@@ -5,7 +5,7 @@ use crate::{
     mode::{Mode, normal::enter_normal_mode},
 };
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct GotoMode {}
 
 pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {

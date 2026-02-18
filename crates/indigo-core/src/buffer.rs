@@ -29,7 +29,7 @@ pub enum BufferKind {
     },
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Buffer {
     kind: BufferKind,
     text: Text,
@@ -67,7 +67,7 @@ impl Buffer {
             let mut bytes = Vec::with_capacity(self.text.len());
             self.text.write_to(&mut bytes)?;
             fs.write(path, &bytes)?;
-            *on_disk = self.text.clone();
+            *on_disk = self.text.rope().clone();
         }
         Ok(())
     }
@@ -79,7 +79,7 @@ impl Buffer {
         fs.write(path, &bytes)?;
         self.kind = BufferKind::File {
             path: Arc::from(path),
-            on_disk: self.text.clone(),
+            on_disk: self.text.rope().clone(),
         };
         Ok(())
     }

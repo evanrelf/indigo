@@ -13,6 +13,7 @@ use std::num::NonZeroUsize;
 
 // TODO: Mode stack so that seek mode can look at normal mode's count instead of keeping a copy?
 
+#[derive(Clone)]
 pub enum Mode {
     Normal(NormalMode),
     Seek(SeekMode),

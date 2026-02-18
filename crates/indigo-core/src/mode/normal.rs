@@ -14,7 +14,7 @@ use crate::{
 use regex_cursor::engines::meta::Regex;
 use std::{cmp::min, num::NonZeroUsize};
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct NormalMode {
     pub count: Option<NonZeroUsize>,
 }

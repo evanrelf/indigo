@@ -14,7 +14,7 @@ use camino::Utf8PathBuf;
 use ropey::Rope;
 use std::{borrow::Cow, sync::Arc};
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct CommandMode {
     text: Text,
     cursor: CursorState,
