@@ -11,9 +11,8 @@ use crate::{
     text::Text,
 };
 use camino::Utf8PathBuf;
-use clap::Parser as _;
 use ropey::Rope;
-use std::{borrow::Cow, iter, sync::Arc};
+use std::{borrow::Cow, sync::Arc};
 
 #[derive(Default)]
 pub struct CommandMode {
@@ -91,78 +90,14 @@ fn delete_before(editor: &mut Editor) {
     }
 }
 
-#[derive(clap::Parser)]
-#[clap(
-    disable_help_flag = true,
-    disable_help_subcommand = true,
-    override_usage = ""
-)]
-enum Command {
-    Echo {
-        #[clap(long)]
-        error: bool,
-        message: Vec<String>,
-    },
-    #[clap(alias = "e")]
-    Edit {
-        path: Utf8PathBuf,
-    },
-    // TODO: Delete `edit!` once multiple buffers are supported.
-    #[clap(name = "edit!", alias = "e!")]
-    EditForce {
-        path: Utf8PathBuf,
-    },
-    #[clap(alias = "w")]
-    Write {
-        path: Option<Utf8PathBuf>,
-    },
-    #[clap(alias = "q")]
-    Quit {
-        exit_code: Option<u8>,
-    },
-    #[clap(name = "quit!", alias = "q!")]
-    QuitForce {
-        exit_code: Option<u8>,
-    },
-    #[clap(alias = "wq")]
-    WriteQuit {
-        exit_code: Option<u8>,
-    },
-    #[clap(alias = "ro")]
-    Readonly,
-    Panic,
-}
-
 fn exec_command(editor: &mut Editor) {
     let Mode::Command(command_mode) = &editor.mode else {
         return;
     };
 
-    let command = Cow::<str>::from(command_mode.rope());
-
-    let Ok(args) = shell_words::split(&command) else {
-        editor.message = Some(Err(String::from("Invalid command")));
-        editor.mode = Mode::Normal(NormalMode::default());
-        return;
-    };
-
-    if args.is_empty() {
-        editor.mode = Mode::Normal(NormalMode::default());
-        return;
-    }
-
-    let args = iter::once(String::from("indigo")).chain(args);
-
-    let command = match Command::try_parse_from(args) {
+    let command = match parse_command(command_mode.rope()) {
         Ok(command) => command,
         Err(error) => {
-            let error = error.to_string();
-            let error = error
-                .strip_prefix("error: ")
-                .unwrap_or(&error)
-                .lines()
-                .next()
-                .unwrap_or("");
             editor.message = Some(Err(error.to_string()));
             editor.mode = Mode::Normal(NormalMode::default());
             return;
@@ -235,4 +170,99 @@ fn exec_command(editor: &mut Editor) {
     }
 
     editor.mode = Mode::Normal(NormalMode::default());
+}
+
+enum Command {
+    Echo { error: bool, message: Vec<String> },
+    Edit { path: Utf8PathBuf },
+    // TODO: Delete `edit!` once multiple buffers are supported.
+    EditForce { path: Utf8PathBuf },
+    Write { path: Option<Utf8PathBuf> },
+    Quit { exit_code: Option<u8> },
+    QuitForce { exit_code: Option<u8> },
+    WriteQuit { exit_code: Option<u8> },
+    Readonly,
+    Panic,
+}
+
+fn parse_command(command: &Rope) -> anyhow::Result<Command> {
+    use lexopt::prelude::*;
+
+    let command = Cow::<str>::from(command);
+
+    let Ok(args) = shell_words::split(&command) else {
+        anyhow::bail!("Invalid command");
+    };
+
+    let Some(subcommand) = args.first() else {
+        anyhow::bail!("Empty command");
+    };
+
+    let mut parser = lexopt::Parser::from_args(args[1..].iter().map(|s| s.as_str()));
+
+    match subcommand.as_str() {
+        "echo" => {
+            let mut error = false;
+            let mut message = Vec::new();
+            while let Some(arg) = parser.next()? {
+                match arg {
+                    Long("error") => error = true,
+                    Value(val) => message.push(val.string()?),
+                    _ => return Err(arg.unexpected().into()),
+                }
+            }
+            Ok(Command::Echo { error, message })
+        }
+        "edit" | "e" => {
+            let path: Utf8PathBuf = parser
+                .value()
+                .map_err(|_| anyhow::anyhow!("Missing path"))?
+                .string()?
+                .into();
+            Ok(Command::Edit { path })
+        }
+        "edit!" | "e!" => {
+            let path: Utf8PathBuf = parser
+                .value()
+                .map_err(|_| anyhow::anyhow!("Missing path"))?
+                .string()?
+                .into();
+            Ok(Command::EditForce { path })
+        }
+        "write" | "w" => {
+            let path = match parser.next()? {
+                Some(Value(val)) => Some(val.string()?.into()),
+                Some(arg) => return Err(arg.unexpected().into()),
+                None => None,
+            };
+            Ok(Command::Write { path })
+        }
+        "quit" | "q" => {
+            let exit_code = match parser.next()? {
+                Some(Value(val)) => Some(val.parse()?),
+                Some(arg) => return Err(arg.unexpected().into()),
+                None => None,
+            };
+            Ok(Command::Quit { exit_code })
+        }
+        "quit!" | "q!" => {
+            let exit_code = match parser.next()? {
+                Some(Value(val)) => Some(val.parse()?),
+                None => None,
+                Some(arg) => return Err(arg.unexpected().into()),
+            };
+            Ok(Command::QuitForce { exit_code })
+        }
+        "writequit" | "wq" => {
+            let exit_code = match parser.next()? {
+                Some(Value(val)) => Some(val.parse()?),
+                None => None,
+                Some(arg) => return Err(arg.unexpected().into()),
+            };
+            Ok(Command::WriteQuit { exit_code })
+        }
+        "readonly" | "ro" => Ok(Command::Readonly),
+        "panic" => Ok(Command::Panic),
+        _ => anyhow::bail!("Unknown command: {subcommand}"),
+    }
 }

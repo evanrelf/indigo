@@ -16,6 +16,7 @@ indigo-cli = { path = "crates/indigo-cli/" }
 indigo-core = { path = "crates/indigo-core/" }
 indigo-tui = { path = "crates/indigo-tui/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }
+lexopt = "0.3.1"
 memchr = "2.7.6"
 pathdiff = { version = "0.2.3", features = ["camino"] }
 ratatui = "0.30.0"

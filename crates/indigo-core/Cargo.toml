@@ -13,6 +13,7 @@ camino = { workspace = true }
 clap = { workspace = true }
 imbl = { workspace = true }
 indigo-wrap = { workspace = true }
+lexopt = { workspace = true }
 memchr = { workspace = true }
 regex-cursor = { workspace = true }
 roaring = { workspace = true }
