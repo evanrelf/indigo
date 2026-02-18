@@ -91,50 +91,49 @@ fn delete_before(editor: &mut Editor) {
     }
 }
 
-#[expect(clippy::too_many_lines)]
-fn exec_command(editor: &mut Editor) {
-    #[derive(clap::Parser)]
-    #[clap(
-        disable_help_flag = true,
-        disable_help_subcommand = true,
-        override_usage = ""
-    )]
-    enum Command {
-        Echo {
-            #[clap(long)]
-            error: bool,
-            message: Vec<String>,
-        },
-        #[clap(alias = "e")]
-        Edit {
-            path: Utf8PathBuf,
-        },
-        // TODO: Delete `edit!` once multiple buffers are supported.
-        #[clap(name = "edit!", alias = "e!")]
-        EditForce {
-            path: Utf8PathBuf,
-        },
-        #[clap(alias = "w")]
-        Write {
-            path: Option<Utf8PathBuf>,
-        },
-        #[clap(alias = "q")]
-        Quit {
-            exit_code: Option<u8>,
-        },
-        #[clap(name = "quit!", alias = "q!")]
-        QuitForce {
-            exit_code: Option<u8>,
-        },
-        #[clap(alias = "wq")]
-        WriteQuit {
-            exit_code: Option<u8>,
-        },
-        #[clap(alias = "ro")]
-        Readonly,
-        Panic,
-    }
+#[derive(clap::Parser)]
+#[clap(
+    disable_help_flag = true,
+    disable_help_subcommand = true,
+    override_usage = ""
+)]
+enum Command {
+    Echo {
+        #[clap(long)]
+        error: bool,
+        message: Vec<String>,
+    },
+    #[clap(alias = "e")]
+    Edit {
+        path: Utf8PathBuf,
+    },
+    // TODO: Delete `edit!` once multiple buffers are supported.
+    #[clap(name = "edit!", alias = "e!")]
+    EditForce {
+        path: Utf8PathBuf,
+    },
+    #[clap(alias = "w")]
+    Write {
+        path: Option<Utf8PathBuf>,
+    },
+    #[clap(alias = "q")]
+    Quit {
+        exit_code: Option<u8>,
+    },
+    #[clap(name = "quit!", alias = "q!")]
+    QuitForce {
+        exit_code: Option<u8>,
+    },
+    #[clap(alias = "wq")]
+    WriteQuit {
+        exit_code: Option<u8>,
+    },
+    #[clap(alias = "ro")]
+    Readonly,
+    Panic,
+}
 
+fn exec_command(editor: &mut Editor) {
     let Mode::Command(command_mode) = &editor.mode else {
         return;
     };
