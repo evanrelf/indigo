@@ -17,12 +17,15 @@ pub struct PromptMode {
     // TODO: Consider changing this back to `Box<dyn FnOnce(..)>`. Either write a weird `Clone` impl
     // that makes `handler = None` or add a new trait for deriving view state?
     #[expect(clippy::type_complexity)]
-    handler: Option<Arc<Mutex<dyn FnMut(&mut Editor, &str)>>>,
+    handler: Option<Arc<Mutex<dyn FnMut(&mut Editor, &str) + Send>>>,
 }
 
 impl PromptMode {
     #[must_use]
-    pub fn new(prompt: &'static str, handler: impl FnMut(&mut Editor, &str) + 'static) -> Self {
+    pub fn new(
+        prompt: &'static str,
+        handler: impl FnMut(&mut Editor, &str) + Send + 'static,
+    ) -> Self {
         Self {
             prompt,
             text: Text::default(),
@@ -79,7 +82,7 @@ pub fn handle_event_prompt(editor: &mut Editor, event: &Event) -> bool {
 pub fn enter_prompt_mode(
     editor: &mut Editor,
     prompt: &'static str,
-    handler: impl FnMut(&mut Editor, &str) + 'static,
+    handler: impl FnMut(&mut Editor, &str) + Send + 'static,
 ) {
     editor.mode = Mode::Prompt(PromptMode::new(prompt, handler));
 }
