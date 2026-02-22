@@ -2,7 +2,11 @@
 
 use anyhow::anyhow;
 use camino::{Utf8Path, Utf8PathBuf};
-use std::{cell::RefCell, collections::HashMap, fs, sync::Arc};
+use std::{
+    collections::HashMap,
+    fs,
+    sync::{Arc, Mutex},
+};
 
 // Needs to remain dyn compatible.
 pub trait Fs {
@@ -66,12 +70,13 @@ impl Fs for RealFs {
 /// (i.e. absolute, normalized, and no symlinks).
 #[derive(Default)]
 pub struct TestFs {
-    pub files: Arc<RefCell<HashMap<Utf8PathBuf, Vec<u8>>>>,
+    pub files: Arc<Mutex<HashMap<Utf8PathBuf, Vec<u8>>>>,
 }
 
 impl Fs for TestFs {
     fn read(&self, path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
-        if let Some(bytes) = self.files.borrow().get(path) {
+        let files = self.files.lock().unwrap();
+        if let Some(bytes) = files.get(path) {
             Ok(bytes.clone())
         } else {
             Err(anyhow!("File not found: `{path}`"))
@@ -79,14 +84,14 @@ impl Fs for TestFs {
     }
 
     fn write(&self, path: &Utf8Path, bytes: &[u8]) -> anyhow::Result<()> {
-        self.files
-            .borrow_mut()
-            .insert(path.to_path_buf(), bytes.to_vec());
+        let mut files = self.files.lock().unwrap();
+        files.insert(path.to_path_buf(), bytes.to_vec());
         Ok(())
     }
 
     fn exists(&self, path: &Utf8Path) -> anyhow::Result<bool> {
-        let exists = self.files.borrow().contains_key(path);
+        let files = self.files.lock().unwrap();
+        let exists = files.contains_key(path);
         Ok(exists)
     }
 }
