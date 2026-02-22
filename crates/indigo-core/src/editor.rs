@@ -16,7 +16,7 @@ pub enum Error {
 
 #[derive(Clone)]
 pub struct Editor {
-    pub fs: Arc<dyn Fs>,
+    pub fs: Arc<dyn Fs + Send + Sync>,
     buffer: Buffer,
     window: WindowState,
     pub mode: Mode,
