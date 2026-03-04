@@ -146,6 +146,9 @@ pub const LIGHT_RED: Color = Color::from_u32(0x00_ffdce0);
 pub const RED: Color = Color::from_u32(0x00_d73a4a);
 
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
+    if area.is_empty() {
+        return;
+    }
     let areas = Areas::new(editor, area);
     render_status_bar(editor, areas.status_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
