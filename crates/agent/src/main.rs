@@ -15,6 +15,8 @@ struct Args {}
 fn main() -> anyhow::Result<ExitCode> {
     let args = Args::parse();
 
+    panic!();
+
     // TODO: init TUI
 
     let result = run(&args);
