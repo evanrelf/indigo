@@ -1,4 +1,5 @@
 use illuso_tui::{
+    escape,
     event::{self, Event},
     terminal,
 };
@@ -16,8 +17,8 @@ fn main() -> io::Result<()> {
     write!(
         stdout,
         "{}{}",
-        terminal::HIDE_CURSOR,
-        terminal::ENABLE_IN_BAND_RESIZE
+        escape::HIDE_CURSOR,
+        escape::ENABLE_IN_BAND_RESIZE
     )?;
     stdout.flush()?;
 
@@ -29,8 +30,8 @@ fn main() -> io::Result<()> {
                 write!(
                     stdout,
                     "{}{}pid:{pid},height:{height},width:{width}",
-                    terminal::MoveToColumn(1),
-                    terminal::CLEAR_LINE,
+                    escape::MoveToColumn(1),
+                    escape::CLEAR_LINE,
                 )?;
                 stdout.flush()?;
             }
