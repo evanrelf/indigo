@@ -5,18 +5,18 @@ default-members = ["crates/agent/"]
 
 [workspace.dependencies]
 agent = { path = "crates/agent/" }
-anyhow = "1.0.100"
-bon = "3.8.2"
-clap = { version = "4.5.56", features = ["derive"] }
+anyhow = "1.0.102"
+bon = "3.9.0"
+clap = { version = "4.5.60", features = ["derive"] }
 crossterm = "0.29.0"
-jiff = { version = "0.2.18", features = ["serde"] }
-reqwest = { version = "0.13.1", features = ["json"] }
+jiff = { version = "0.2.23", features = ["serde"] }
+reqwest = { version = "0.13.2", features = ["json"] }
 rusqlite = { version = "0.38.0", features = ["bundled", "jiff", "serde_json"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 serde_path_to_error = "0.1.20"
-serde_with = { version = "3.16.1", default-features = false, features = ["macros"] }
-tokio = { version = "1.49.0", features = ["full"] }
+serde_with = { version = "3.17.0", default-features = false, features = ["macros"] }
+tokio = { version = "1.50.0", features = ["full"] }
 
 [workspace.lints]
 clippy.pedantic = { level = "warn", priority = -1 }
