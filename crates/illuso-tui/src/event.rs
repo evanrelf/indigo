@@ -128,7 +128,27 @@ pub fn supports_in_band_resize() -> io::Result<bool> {
         }
         match read_event_internal(Some(remaining))? {
             Some(InternalEvent::Decrpm { mode: 2048, value }) => {
-                // 1=set, 2=reset, 0=not recognized, 4=permanently reset
+                return Ok(value == 1 || value == 2);
+            }
+            None => return Ok(false),
+            _ => {}
+        }
+    }
+}
+
+pub fn supports_sync_update() -> io::Result<bool> {
+    let mut stdout = io::stdout().lock();
+    stdout.write_all(escape::QUERY_SYNC_UPDATE.as_bytes())?;
+    stdout.flush()?;
+
+    let deadline = std::time::Instant::now() + Duration::from_secs(1);
+    loop {
+        let remaining = deadline.saturating_duration_since(std::time::Instant::now());
+        if remaining.is_zero() {
+            return Ok(false);
+        }
+        match read_event_internal(Some(remaining))? {
+            Some(InternalEvent::Decrpm { mode: 2026, value }) => {
                 return Ok(value == 1 || value == 2);
             }
             None => return Ok(false),

@@ -62,11 +62,6 @@ pub const CLEAR_TO_END_OF_SCREEN: &str = "\x1b[J";
 pub const CLEAR_TO_START_OF_SCREEN: &str = "\x1b[1J";
 pub const CLEAR_SCREEN: &str = "\x1b[2J";
 
-// Synchronized output
-
-pub const BEGIN_SYNC_UPDATE: &str = "\x1b[?2026h";
-pub const END_SYNC_UPDATE: &str = "\x1b[?2026l";
-
 // Cursor visibility
 
 pub const HIDE_CURSOR: &str = "\x1b[?25l";
@@ -80,6 +75,13 @@ pub const QUERY_TERMINAL_SIZE: &str = "\x1b[18t";
 // In-band resize
 // https://gist.github.com/rockorager/e695fb2924d36b2bcf1fff4a3704bd83
 
+pub const QUERY_IN_BAND_RESIZE: &str = "\x1b[?2048$p";
 pub const ENABLE_IN_BAND_RESIZE: &str = "\x1b[?2048h";
 pub const DISABLE_IN_BAND_RESIZE: &str = "\x1b[?2048l";
-pub const QUERY_IN_BAND_RESIZE: &str = "\x1b[?2048$p";
+
+// Synchronized output
+// https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md
+
+pub const QUERY_SYNC_UPDATE: &str = "\x1b[?2026$p";
+pub const BEGIN_SYNC_UPDATE: &str = "\x1b[?2026h";
+pub const END_SYNC_UPDATE: &str = "\x1b[?2026l";
