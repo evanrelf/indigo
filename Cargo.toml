@@ -1,10 +1,10 @@
 [workspace]
 resolver = "3"
 members = ["crates/*"]
-default-members = ["crates/agent/"]
+default-members = ["crates/illuso/"]
 
 [workspace.dependencies]
-agent = { path = "crates/agent/" }
+illuso = { path = "crates/illuso/" }
 anyhow = "1.0.102"
 bon = "3.9.0"
 clap = { version = "4.5.60", features = ["derive"] }

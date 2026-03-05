@@ -3,24 +3,6 @@
 version = 4
 
 [[package]]
-name = "agent"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "bon",
- "clap",
- "crossterm",
- "jiff",
- "reqwest",
- "rusqlite",
- "serde",
- "serde_json",
- "serde_path_to_error",
- "serde_with",
- "tokio",
-]
-
-[[package]]
 name = "anstream"
 version = "0.6.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -814,6 +796,24 @@ checksum = "3acae9609540aa318d1bc588455225fb2085b9ed0c4f6bd0d9d5bcd86f1a0344"
 dependencies = [
  "icu_normalizer",
  "icu_properties",
+]
+
+[[package]]
+name = "illuso"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "bon",
+ "clap",
+ "crossterm",
+ "jiff",
+ "reqwest",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "serde_path_to_error",
+ "serde_with",
+ "tokio",
 ]
 
 [[package]]

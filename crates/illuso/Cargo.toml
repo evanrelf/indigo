@@ -1,5 +1,5 @@
 [package]
-name = "agent"
+name = "illuso"
 edition = "2024"
 
 [dependencies]
