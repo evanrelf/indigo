@@ -817,6 +817,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "illuso-tui"
+version = "0.0.0"
+
+[[package]]
 name = "indexmap"
 version = "2.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
