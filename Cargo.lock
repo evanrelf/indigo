@@ -819,6 +819,9 @@ dependencies = [
 [[package]]
 name = "illuso-tui"
 version = "0.0.0"
+dependencies = [
+ "rustix",
+]
 
 [[package]]
 name = "indexmap"

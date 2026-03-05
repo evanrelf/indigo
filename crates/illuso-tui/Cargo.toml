@@ -3,6 +3,7 @@ name = "illuso-tui"
 edition = "2024"
 
 [dependencies]
+rustix = { workspace = true }
 
 [lints]
 workspace = true
