@@ -82,6 +82,13 @@ pub const SHOW_CURSOR: &str = "\x1b[?25h";
 pub const QUERY_CURSOR_POSITION: &str = "\x1b[6n";
 pub const QUERY_TERMINAL_SIZE: &str = "\x1b[18t";
 
+// In-band resize
+// https://gist.github.com/rockorager/e695fb2924d36b2bcf1fff4a3704bd83
+
+pub const ENABLE_IN_BAND_RESIZE: &str = "\x1b[?2048h";
+pub const DISABLE_IN_BAND_RESIZE: &str = "\x1b[?2048l";
+pub const QUERY_IN_BAND_RESIZE: &str = "\x1b[?2048$p";
+
 // Raw mode
 
 static ORIGINAL_TERMIOS: Mutex<Option<Termios>> = Mutex::new(None);
