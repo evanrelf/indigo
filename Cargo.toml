@@ -1,8 +1,10 @@
-[package]
-name = "agent"
-edition = "2024"
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+default-members = ["crates/agent/"]
 
-[dependencies]
+[workspace.dependencies]
+agent = { path = "crates/agent/" }
 anyhow = "1.0.100"
 bon = "3.8.2"
 clap = { version = "4.5.56", features = ["derive"] }
@@ -16,7 +18,7 @@ serde_path_to_error = "0.1.20"
 serde_with = { version = "3.16.1", default-features = false, features = ["macros"] }
 tokio = { version = "1.49.0", features = ["full"] }
 
-[lints]
+[workspace.lints]
 clippy.pedantic = { level = "warn", priority = -1 }
 clippy.redundant_closure = "allow"
 clippy.wildcard_imports = "allow"
