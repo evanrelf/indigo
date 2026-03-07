@@ -1,4 +1,4 @@
-use crate::escape;
+use crate::*;
 use rustix::{
     event::{PollFd, PollFlags, poll},
     time::Timespec,
@@ -117,7 +117,7 @@ fn parse_csi(
 
 pub fn supports_in_band_resize() -> io::Result<bool> {
     let mut stdout = io::stdout().lock();
-    stdout.write_all(escape::QUERY_IN_BAND_RESIZE.as_bytes())?;
+    stdout.write_all(QUERY_IN_BAND_RESIZE.as_bytes())?;
     stdout.flush()?;
 
     let deadline = std::time::Instant::now() + Duration::from_secs(1);
@@ -138,7 +138,7 @@ pub fn supports_in_band_resize() -> io::Result<bool> {
 
 pub fn supports_sync_update() -> io::Result<bool> {
     let mut stdout = io::stdout().lock();
-    stdout.write_all(escape::QUERY_SYNC_UPDATE.as_bytes())?;
+    stdout.write_all(QUERY_SYNC_UPDATE.as_bytes())?;
     stdout.flush()?;
 
     let deadline = std::time::Instant::now() + Duration::from_secs(1);
