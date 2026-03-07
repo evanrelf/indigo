@@ -133,14 +133,16 @@ impl Display for ResetMode {
 // In-band resize
 // https://gist.github.com/rockorager/e695fb2924d36b2bcf1fff4a3704bd83
 
-pub const ENABLE_IN_BAND_RESIZE: &str = "\x1b[?2048h";
-pub const DISABLE_IN_BAND_RESIZE: &str = "\x1b[?2048l";
+pub const IN_BAND_RESIZE_QUERY: QueryMode = QueryMode(2048);
+pub const IN_BAND_RESIZE_SET: SetMode = SetMode(2048);
+pub const IN_BAND_RESIZE_RESET: ResetMode = ResetMode(2048);
 
 // Synchronized output
 // https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md
 
-pub const BEGIN_SYNC_UPDATE: &str = "\x1b[?2026h";
-pub const END_SYNC_UPDATE: &str = "\x1b[?2026l";
+pub const SYNC_UPDATE_QUERY: QueryMode = QueryMode(2026);
+pub const SYNC_UPDATE_SET: SetMode = SetMode(2026);
+pub const SYNC_UPDATE_RESET: ResetMode = ResetMode(2026);
 
 enum Message {
     Event(Event),
@@ -515,7 +517,7 @@ pub fn enable_in_band_resize(parser: &mut Parser) -> io::Result<bool> {
         Some(ModeSetting::Set | ModeSetting::PermanentlySet) => Ok(true),
         Some(ModeSetting::Reset) => {
             let mut stdout = io::stdout().lock();
-            stdout.write_all(ENABLE_IN_BAND_RESIZE.as_bytes())?;
+            write!(stdout, "{IN_BAND_RESIZE_SET}")?;
             stdout.flush()?;
             Ok(true)
         }
@@ -531,7 +533,7 @@ pub fn disable_in_band_resize(parser: &mut Parser) -> io::Result<bool> {
         ) => Ok(true),
         Some(ModeSetting::Set) => {
             let mut stdout = io::stdout().lock();
-            stdout.write_all(DISABLE_IN_BAND_RESIZE.as_bytes())?;
+            write!(stdout, "{IN_BAND_RESIZE_RESET}")?;
             stdout.flush()?;
             Ok(true)
         }
