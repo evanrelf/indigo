@@ -1,4 +1,4 @@
-use illuso_tui::*;
+use illuso_term::*;
 use std::io::{self, Write as _};
 
 fn main() -> io::Result<()> {
