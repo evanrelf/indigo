@@ -3,7 +3,9 @@ name = "illuso-tui"
 edition = "2024"
 
 [dependencies]
+bitflags = { workspace = true }
 rustix = { workspace = true }
+tracing = { workspace = true }
 
 [lints]
 workspace = true

@@ -9,6 +9,10 @@ use std::{
     time::Duration,
 };
 
+pub const QUERY_IN_BAND_RESIZE: &str = "\x1b[?2048$p";
+
+pub const QUERY_SYNC_UPDATE: &str = "\x1b[?2026$p";
+
 pub enum Event {
     Resize { height: u16, width: u16 },
 }
