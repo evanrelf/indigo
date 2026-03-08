@@ -1,5 +1,8 @@
 use illuso_term::*;
-use std::io::{self, Write as _};
+use std::{
+    io::{self, Write as _},
+    process,
+};
 
 fn main() -> io::Result<()> {
     enable_raw_mode()?;
@@ -12,15 +15,15 @@ fn main() -> io::Result<()> {
     }
 
     let mut stdout = io::stdout().lock();
-    let pid = std::process::id();
+    let pid = process::id();
 
     loop {
         if let Some(Event::Resize { height, width, .. }) = read_event(&mut parser, None)? {
             write!(
                 stdout,
                 "{}{}pid:{pid},height:{height},width:{width}",
-                MoveToColumn(1),
-                CLEAR_LINE,
+                escape::MoveToColumn(1),
+                escape::CLEAR_LINE,
             )?;
             stdout.flush()?;
         }
