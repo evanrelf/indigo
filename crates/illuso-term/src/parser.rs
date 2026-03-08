@@ -2,13 +2,18 @@ use crate::event::Event;
 use std::str;
 use winnow::{
     ascii::digit1,
-    combinator::{alt, opt, repeat, separated},
+    combinator::{alt, cut_err, opt, peek, repeat, separated},
     prelude::*,
     token::one_of,
 };
 
 fn event(input: &mut &[u8]) -> winnow::ModalResult<Event> {
-    alt((da1, decrpm, unknown_csi)).parse_next(input)
+    csi.parse_next(input)
+}
+
+fn csi(input: &mut &[u8]) -> winnow::ModalResult<Event> {
+    peek("\x1b[").parse_next(input)?;
+    cut_err(alt((da1, decrpm, unknown_csi))).parse_next(input)
 }
 
 // CSI ? Ps1 ; ... Psn c
@@ -53,6 +58,7 @@ mod tests {
         let input = b"\x1b[?64;1234c";
         let output = Ok((&b""[..], Event::Da1));
         assert_eq!(da1.parse_peek(input), output);
+        assert_eq!(csi.parse_peek(input), output);
         assert_eq!(event.parse_peek(input), output);
     }
 
@@ -67,6 +73,7 @@ mod tests {
             },
         ));
         assert_eq!(decrpm.parse_peek(input), output);
+        assert_eq!(csi.parse_peek(input), output);
         assert_eq!(event.parse_peek(input), output);
     }
 
@@ -81,6 +88,7 @@ mod tests {
             },
         ));
         assert_eq!(decrpm.parse_peek(input), output);
+        assert_eq!(csi.parse_peek(input), output);
         assert_eq!(event.parse_peek(input), output);
     }
 }
