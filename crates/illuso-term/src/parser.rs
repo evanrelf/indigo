@@ -2,12 +2,13 @@ use crate::event::Event;
 use std::str;
 use winnow::{
     ascii::digit1,
-    combinator::{alt, opt, separated},
+    combinator::{alt, opt, repeat, separated},
     prelude::*,
+    token::one_of,
 };
 
 fn event(input: &mut &[u8]) -> winnow::ModalResult<Event> {
-    alt((da1, decrpm)).parse_next(input)
+    alt((da1, decrpm, unknown_csi)).parse_next(input)
 }
 
 // CSI ? Ps1 ; ... Psn c
@@ -33,6 +34,14 @@ fn decrpm(input: &mut &[u8]) -> winnow::ModalResult<Event> {
         .parse_next(input)?;
     "$y".void().parse_next(input)?;
     Ok(Event::Decrpm { mode, value })
+}
+
+fn unknown_csi(input: &mut &[u8]) -> winnow::ModalResult<Event> {
+    "\x1b[".void().parse_next(input)?;
+    let _parameter_bytes: () = repeat(0.., one_of(0x30..=0x3F).void()).parse_next(input)?;
+    let _intermediate_bytes: () = repeat(0.., one_of(0x20..=0x2F).void()).parse_next(input)?;
+    let _final_byte: () = one_of(0x40..=0x7E).void().parse_next(input)?;
+    Ok(Event::UnknownCsi)
 }
 
 #[cfg(test)]

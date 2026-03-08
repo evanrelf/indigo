@@ -14,6 +14,7 @@ pub enum Event {
         mode: u16,
         value: u8,
     },
+    UnknownCsi,
 }
 
 #[derive(Debug, PartialEq)]
