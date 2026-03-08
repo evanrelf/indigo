@@ -1,14 +1,14 @@
 use rustix::termios::{self, OptionalActions, Termios};
 use std::{
     fs::{self, File},
-    io::{self, BufWriter},
+    io::{self, BufWriter, Read, Write},
     os::fd::{AsFd as _, BorrowedFd},
 };
 
 pub struct Tty {
-    pub reader: File,
-    pub writer: BufWriter<File>,
-    pub original_termios: Termios,
+    reader: File,
+    writer: BufWriter<File>,
+    original_termios: Termios,
 }
 
 impl Tty {
@@ -25,20 +25,30 @@ impl Tty {
             original_termios,
         })
     }
-
-    pub fn restore(self) {
-        drop(self);
-    }
-}
-
-#[must_use]
-pub fn init() -> Tty {
-    Tty::init().unwrap()
 }
 
 impl Drop for Tty {
     fn drop(&mut self) {
         let _ = disable_raw_mode(self.reader.as_fd(), &self.original_termios);
+    }
+}
+
+impl Read for Tty {
+    #[inline]
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        (&self.reader).read(buf)
+    }
+}
+
+impl Write for Tty {
+    #[inline]
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.writer.write(buf)
+    }
+
+    #[inline]
+    fn flush(&mut self) -> io::Result<()> {
+        self.writer.flush()
     }
 }
 
