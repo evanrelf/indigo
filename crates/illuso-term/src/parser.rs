@@ -1,37 +1,34 @@
 use crate::event::Event;
+use std::str;
+use winnow::{
+    ascii::digit1,
+    combinator::{alt, cut_err, opt, separated},
+    prelude::*,
+};
 
-pub fn parse(input: &mut &[u8]) -> Option<Event> {
-    assert!(!input.is_empty());
-
-    if input[0] == /* ESC */ 0x1b && input.len() > 1 {
-        match input[1] {
-            b'[' => parse_csi(input),
-            _ => None,
-        }
-    } else {
-        parse_ground(input)
-    }
+// CSI ? Ps1 ; ... Psn c
+fn da1(input: &mut &[u8]) -> winnow::ModalResult<Event> {
+    cut_err("\x1b[?").void().parse_next(input)?;
+    separated(0.., digit1, ";").map(|()| ()).parse_next(input)?;
+    "c".void().parse_next(input)?;
+    Ok(Event::Da1)
 }
 
-fn parse_ground(input: &mut &[u8]) -> Option<Event> {
-    assert!(!input.is_empty());
-
-    todo!()
-}
-
-fn parse_csi(input: &mut &[u8]) -> Option<Event> {
-    assert_eq!(input[0..2], [0x1b, b'[']);
-
-    // 'c' => {
-    //     // Primary DA (CSI ? Pm c)
-    //     std.debug.assert(sequence.len >= 4); // ESC [ ? c == 4 bytes
-    //     switch (input[2]) {
-    //         '?' => return .{ .event = .cap_da1, .n = sequence.len },
-    //         else => return null_event,
-    //     }
-    // },
-
-    todo!()
+// CSI Pa ; Ps $ y
+// CSI ? Pd ; Ps $ y
+fn decrpm(input: &mut &[u8]) -> winnow::ModalResult<Event> {
+    cut_err(("\x1b[", opt("?"))).void().parse_next(input)?;
+    let mode = digit1
+        .try_map(|bytes| str::from_utf8(bytes))
+        .try_map(|str| str::parse(str))
+        .parse_next(input)?;
+    ";".void().parse_next(input)?;
+    let value = alt((b"0", b"1", b"2", b"3", b"4"))
+        .try_map(|bytes| str::from_utf8(bytes))
+        .try_map(|str| str::parse(str))
+        .parse_next(input)?;
+    "$y".void().parse_next(input)?;
+    Ok(Event::Decrpm { mode, value })
 }
 
 #[cfg(test)]
@@ -40,34 +37,34 @@ mod tests {
 
     #[test]
     fn parses_da1() {
-        // CSI ? 64 ; Ps1 ; ... Psn c
-        let mut input: &[u8] = b"\x1b[?64;1234c";
-        let output = Some(Event::Da1);
-        assert_eq!(parse(&mut input), output);
-        // TODO: Assert that input was consumed
+        let mut input = &b"\x1b[?64;1234c"[..];
+        assert_eq!(da1.parse_next(&mut input), Ok(Event::Da1));
+        assert_eq!(input, b"");
     }
 
     #[test]
     fn parses_ansi_decrpm() {
-        // CSI Pa ; Ps $ y
-        let mut input: &[u8] = b"\x1b[1234;1$y";
-        let output = Some(Event::Decrpm {
-            mode: 1234,
-            value: 1,
-        });
-        assert_eq!(parse(&mut input), output);
-        // TODO: Assert that input was consumed
+        let mut input = &b"\x1b[1234;1$y"[..];
+        assert_eq!(
+            decrpm.parse_next(&mut input),
+            Ok(Event::Decrpm {
+                mode: 1234,
+                value: 1,
+            })
+        );
+        assert_eq!(input, b"");
     }
 
     #[test]
     fn parses_dec_decrpm() {
-        // CSI ? Pd ; Ps $ y
-        let mut input: &[u8] = b"\x1b[?1234;1$y";
-        let output = Some(Event::Decrpm {
-            mode: 1234,
-            value: 1,
-        });
-        assert_eq!(parse(&mut input), output);
-        // TODO: Assert that input was consumed
+        let mut input = &b"\x1b[?1234;1$y"[..];
+        assert_eq!(
+            decrpm.parse_next(&mut input),
+            Ok(Event::Decrpm {
+                mode: 1234,
+                value: 1,
+            })
+        );
+        assert_eq!(input, b"");
     }
 }
