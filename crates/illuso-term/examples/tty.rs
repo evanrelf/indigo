@@ -8,31 +8,31 @@ use std::{
 fn main() -> io::Result<()> {
     let mut tty = tty::init();
 
-    write!(&mut tty, "{}", escape::HIDE_CURSOR)?;
-    tty.flush()?;
+    write!(&mut tty.writer, "{}", escape::HIDE_CURSOR)?;
+    tty.writer.flush()?;
 
     let n = 3;
 
     for i in 0..n {
         write!(
-            &mut tty,
+            &mut tty.writer,
             "{}{}",
             escape::CLEAR_LINE,
             escape::MoveToColumn(0)
         )?;
-        write!(&mut tty, "{}", n - i)?;
-        tty.flush()?;
+        write!(&mut tty.writer, "{}", n - i)?;
+        tty.writer.flush()?;
         thread::sleep(Duration::from_secs(1));
     }
 
     write!(
-        &mut tty,
+        &mut tty.writer,
         "{}{}{}",
         escape::CLEAR_LINE,
         escape::MoveToColumn(0),
         escape::SHOW_CURSOR,
     )?;
-    tty.flush()?;
+    tty.writer.flush()?;
 
     Ok(())
 }

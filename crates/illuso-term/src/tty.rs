@@ -1,16 +1,14 @@
 use rustix::termios::{self, OptionalActions, Termios};
 use std::{
     fs::{self, File},
-    io,
-    ops::{Deref, DerefMut},
+    io::{self, BufWriter},
     os::fd::{AsFd as _, BorrowedFd},
 };
 
 pub struct Tty {
-    // The TTY's file (i.e. `/dev/tty`)
-    file: File,
-    // Original terminal state before enabling raw mode
-    termios: Termios,
+    pub reader: File,
+    pub writer: BufWriter<File>,
+    pub original_termios: Termios,
 }
 
 impl Tty {
@@ -19,8 +17,13 @@ impl Tty {
             .read(true)
             .write(true)
             .open("/dev/tty")?;
-        let termios = enable_raw_mode(file.as_fd())?;
-        Ok(Self { file, termios })
+        let writer = BufWriter::new(file.try_clone()?);
+        let original_termios = enable_raw_mode(file.as_fd())?;
+        Ok(Self {
+            reader: file,
+            writer,
+            original_termios,
+        })
     }
 
     pub fn restore(self) {
@@ -35,28 +38,16 @@ pub fn init() -> Tty {
 
 impl Drop for Tty {
     fn drop(&mut self) {
-        let _ = disable_raw_mode(self.file.as_fd(), &self.termios);
-    }
-}
-
-impl Deref for Tty {
-    type Target = File;
-    fn deref(&self) -> &Self::Target {
-        &self.file
-    }
-}
-
-impl DerefMut for Tty {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.file
+        let _ = disable_raw_mode(self.reader.as_fd(), &self.original_termios);
     }
 }
 
 fn enable_raw_mode(fd: BorrowedFd<'_>) -> io::Result<Termios> {
     let mut termios = termios::tcgetattr(fd)?;
+    let cooked_termios = termios.clone();
     termios.make_raw();
     termios::tcsetattr(fd, OptionalActions::Flush, &termios)?;
-    Ok(termios)
+    Ok(cooked_termios)
 }
 
 fn disable_raw_mode(fd: BorrowedFd<'_>, termios: &Termios) -> io::Result<()> {
