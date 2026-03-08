@@ -1,8 +1,6 @@
 #![allow(unused)]
 
-pub mod escape;
-pub mod old;
-
+use crate::escape;
 use bitflags::bitflags;
 use rustix::event::{PollFd, PollFlags, Timespec, poll};
 use rustix::termios::{self, OptionalActions, Termios};

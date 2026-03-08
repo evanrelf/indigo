@@ -1,4 +1,4 @@
-use illuso_term::*;
+use illuso_term::{escape, old::*};
 use std::{
     io::{self, Write as _},
     process,
