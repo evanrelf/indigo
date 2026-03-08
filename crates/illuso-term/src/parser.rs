@@ -37,34 +37,34 @@ mod tests {
 
     #[test]
     fn parses_da1() {
-        let mut input = &b"\x1b[?64;1234c"[..];
-        assert_eq!(da1.parse_next(&mut input), Ok(Event::Da1));
-        assert_eq!(input, b"");
+        let input = b"\x1b[?64;1234c";
+        let output = Ok((&b""[..], Event::Da1));
+        assert_eq!(da1.parse_peek(input), output);
     }
 
     #[test]
     fn parses_ansi_decrpm() {
-        let mut input = &b"\x1b[1234;1$y"[..];
-        assert_eq!(
-            decrpm.parse_next(&mut input),
-            Ok(Event::Decrpm {
+        let input = b"\x1b[1234;1$y";
+        let output = Ok((
+            &b""[..],
+            Event::Decrpm {
                 mode: 1234,
                 value: 1,
-            })
-        );
-        assert_eq!(input, b"");
+            },
+        ));
+        assert_eq!(decrpm.parse_peek(input), output);
     }
 
     #[test]
     fn parses_dec_decrpm() {
-        let mut input = &b"\x1b[?1234;1$y"[..];
-        assert_eq!(
-            decrpm.parse_next(&mut input),
-            Ok(Event::Decrpm {
+        let input = b"\x1b[?1234;1$y";
+        let output = Ok((
+            &b""[..],
+            Event::Decrpm {
                 mode: 1234,
                 value: 1,
-            })
-        );
-        assert_eq!(input, b"");
+            },
+        ));
+        assert_eq!(decrpm.parse_peek(input), output);
     }
 }
