@@ -13,7 +13,7 @@ fn event(input: &mut &[u8]) -> winnow::ModalResult<Event> {
 
 fn csi(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     peek("\x1b[").parse_next(input)?;
-    cut_err(alt((da1, decrpm, unknown_csi))).parse_next(input)
+    cut_err(alt((in_band_resize, da1, decrpm, unknown_csi))).parse_next(input)
 }
 
 // CSI ? Ps1 ; ... Psn c
@@ -49,9 +49,50 @@ fn unknown_csi(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     Ok(Event::UnknownCsi)
 }
 
+// CSI 48 ; height ; width ; height_pixels ; width_pixels t
+fn in_band_resize(input: &mut &[u8]) -> winnow::ModalResult<Event> {
+    "\x1b[48;".void().parse_next(input)?;
+    let height = digit1
+        .try_map(|bytes| str::from_utf8(bytes))
+        .try_map(|str| str::parse(str))
+        .parse_next(input)?;
+    ";".void().parse_next(input)?;
+    let width = digit1
+        .try_map(|bytes| str::from_utf8(bytes))
+        .try_map(|str| str::parse(str))
+        .parse_next(input)?;
+    ";".void().parse_next(input)?;
+    let _height_pixels: u16 = digit1
+        .try_map(|bytes| str::from_utf8(bytes))
+        .try_map(|str| str::parse(str))
+        .parse_next(input)?;
+    ";".void().parse_next(input)?;
+    let _width_pixels: u16 = digit1
+        .try_map(|bytes| str::from_utf8(bytes))
+        .try_map(|str| str::parse(str))
+        .parse_next(input)?;
+    "t".void().parse_next(input)?;
+    Ok(Event::Resize { height, width })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses_in_band_resize() {
+        let input = b"\x1b[48;40;80;0;0t";
+        let output = Ok((
+            &b""[..],
+            Event::Resize {
+                height: 40,
+                width: 80,
+            },
+        ));
+        assert_eq!(in_band_resize.parse_peek(input), output);
+        assert_eq!(csi.parse_peek(input), output);
+        assert_eq!(event.parse_peek(input), output);
+    }
 
     #[test]
     fn parses_da1() {
