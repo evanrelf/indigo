@@ -2,7 +2,7 @@ use crate::event::Event;
 use std::str;
 use winnow::{
     ascii::digit1,
-    combinator::{alt, cut_err, opt, peek, repeat, separated},
+    combinator::{alt, cut_err, opt, peek, repeat, separated, seq},
     prelude::*,
     token::one_of,
 };
@@ -45,16 +45,18 @@ fn unknown_csi(input: &mut &[u8]) -> winnow::ModalResult<Event> {
 
 // CSI 48 ; height ; width ; height_pixels ; width_pixels t
 fn in_band_resize(input: &mut &[u8]) -> winnow::ModalResult<Event> {
-    "\x1b[48;".void().parse_next(input)?;
-    let height = u16.parse_next(input)?;
-    ";".void().parse_next(input)?;
-    let width = u16.parse_next(input)?;
-    ";".void().parse_next(input)?;
-    let _height_pixels = u16.parse_next(input)?;
-    ";".void().parse_next(input)?;
-    let _width_pixels = u16.parse_next(input)?;
-    "t".void().parse_next(input)?;
-    Ok(Event::Resize { height, width })
+    seq!(Event::Resize {
+        _: "\x1b[48;",
+        height: u16,
+        _: ";",
+        width: u16,
+        _: ";",
+        _: u16,
+        _: ";",
+        _: u16,
+        _: "t",
+    })
+    .parse_next(input)
 }
 
 fn u8(input: &mut &[u8]) -> winnow::ModalResult<u8> {
