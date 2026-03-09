@@ -28,15 +28,9 @@ fn da1(input: &mut &[u8]) -> winnow::ModalResult<Event> {
 // CSI ? Pd ; Ps $ y
 fn decrpm(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     ("\x1b[", opt("?")).void().parse_next(input)?;
-    let mode = digit1
-        .try_map(|bytes| str::from_utf8(bytes))
-        .try_map(|str| str::parse(str))
-        .parse_next(input)?;
+    let mode = u16.parse_next(input)?;
     ";".void().parse_next(input)?;
-    let value = alt((b"0", b"1", b"2", b"3", b"4"))
-        .try_map(|bytes| str::from_utf8(bytes))
-        .try_map(|str| str::parse(str))
-        .parse_next(input)?;
+    let value = u8.verify(|n| (0..=4).contains(n)).parse_next(input)?;
     "$y".void().parse_next(input)?;
     Ok(Event::Decrpm { mode, value })
 }
@@ -52,27 +46,29 @@ fn unknown_csi(input: &mut &[u8]) -> winnow::ModalResult<Event> {
 // CSI 48 ; height ; width ; height_pixels ; width_pixels t
 fn in_band_resize(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     "\x1b[48;".void().parse_next(input)?;
-    let height = digit1
-        .try_map(|bytes| str::from_utf8(bytes))
-        .try_map(|str| str::parse(str))
-        .parse_next(input)?;
+    let height = u16.parse_next(input)?;
     ";".void().parse_next(input)?;
-    let width = digit1
-        .try_map(|bytes| str::from_utf8(bytes))
-        .try_map(|str| str::parse(str))
-        .parse_next(input)?;
+    let width = u16.parse_next(input)?;
     ";".void().parse_next(input)?;
-    let _height_pixels: u16 = digit1
-        .try_map(|bytes| str::from_utf8(bytes))
-        .try_map(|str| str::parse(str))
-        .parse_next(input)?;
+    let _height_pixels = u16.parse_next(input)?;
     ";".void().parse_next(input)?;
-    let _width_pixels: u16 = digit1
-        .try_map(|bytes| str::from_utf8(bytes))
-        .try_map(|str| str::parse(str))
-        .parse_next(input)?;
+    let _width_pixels = u16.parse_next(input)?;
     "t".void().parse_next(input)?;
     Ok(Event::Resize { height, width })
+}
+
+fn u8(input: &mut &[u8]) -> winnow::ModalResult<u8> {
+    digit1
+        .try_map(|bytes| str::from_utf8(bytes))
+        .try_map(|str| str::parse(str))
+        .parse_next(input)
+}
+
+fn u16(input: &mut &[u8]) -> winnow::ModalResult<u16> {
+    digit1
+        .try_map(|bytes| str::from_utf8(bytes))
+        .try_map(|str| str::parse(str))
+        .parse_next(input)
 }
 
 #[cfg(test)]
