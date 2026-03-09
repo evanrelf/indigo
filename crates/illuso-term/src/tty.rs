@@ -36,7 +36,7 @@ impl Drop for Tty {
 impl Read for Tty {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        (&self.reader).read(buf)
+        self.reader.read(buf)
     }
 }
 
