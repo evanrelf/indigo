@@ -1,4 +1,4 @@
-use crate::event::Event;
+use crate::{escape::KittyKeyboardFlags, event::Event};
 use std::{ops::Deref, str};
 use tinyvec::TinyVec;
 use winnow::{
@@ -16,7 +16,38 @@ pub fn event(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
 
 fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     peek("\x1b[").parse_next(input)?;
-    cut_err(alt((in_band_resize, da1, decrpm, unknown_csi))).parse_next(input)
+    cut_err(alt((
+        kitty_keyboard_flags,
+        in_band_resize,
+        da1,
+        decrpm,
+        unknown_csi,
+    )))
+    .parse_next(input)
+}
+
+// CSI ? flags u
+fn kitty_keyboard_flags(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
+    "\x1b[?".void().parse_next(input)?;
+    let flags = u8
+        .verify_map(|n| KittyKeyboardFlags::from_bits(n))
+        .parse_next(input)?;
+    "u".void().parse_next(input)?;
+    Ok(Event::KittyKeyboardFlags(flags))
+}
+
+// CSI 48 ; height ; width ; height_pixels ; width_pixels t
+fn in_band_resize(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
+    "\x1b[48;".void().parse_next(input)?;
+    let height = u16.parse_next(input)?;
+    ";".void().parse_next(input)?;
+    let width = u16.parse_next(input)?;
+    ";".void().parse_next(input)?;
+    let _height_pixels = u16.parse_next(input)?;
+    ";".void().parse_next(input)?;
+    let _width_pixels = u16.parse_next(input)?;
+    "t".void().parse_next(input)?;
+    Ok(Event::Resize { height, width })
 }
 
 // CSI ? Ps1 ; ... Psn c
@@ -54,20 +85,6 @@ fn unknown_csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
         intermediate_bytes,
         final_byte,
     })
-}
-
-// CSI 48 ; height ; width ; height_pixels ; width_pixels t
-fn in_band_resize(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
-    "\x1b[48;".void().parse_next(input)?;
-    let height = u16.parse_next(input)?;
-    ";".void().parse_next(input)?;
-    let width = u16.parse_next(input)?;
-    ";".void().parse_next(input)?;
-    let _height_pixels = u16.parse_next(input)?;
-    ";".void().parse_next(input)?;
-    let _width_pixels = u16.parse_next(input)?;
-    "t".void().parse_next(input)?;
-    Ok(Event::Resize { height, width })
 }
 
 fn u8(input: &mut Partial<&[u8]>) -> winnow::ModalResult<u8> {
@@ -112,6 +129,20 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses_kitty_keyboard_flags() {
+        let input = b"\x1b[?3u";
+        let output = Ok((
+            Partial::new(&b""[..]),
+            Event::KittyKeyboardFlags(
+                KittyKeyboardFlags::DISAMBIGUATE | KittyKeyboardFlags::REPORT_EVENTS,
+            ),
+        ));
+        assert_eq!(kitty_keyboard_flags.parse_peek(Partial::new(input)), output);
+        assert_eq!(csi.parse_peek(Partial::new(input)), output);
+        assert_eq!(event.parse_peek(Partial::new(input)), output);
+    }
 
     #[test]
     fn parses_in_band_resize() {

@@ -1,3 +1,4 @@
+use bitflags::bitflags;
 use std::fmt::{self, Display};
 
 // Clearing
@@ -94,6 +95,44 @@ impl Display for ResetMode {
 // https://vt100.net/docs/vt510-rm/DA1.html
 
 pub const DA1_QUERY: &str = "\x1b[c";
+
+// Kitty keyboard protocol
+// https://sw.kovidgoyal.net/kitty/keyboard-protocol/
+
+bitflags! {
+    #[derive(Debug, PartialEq)]
+    pub struct KittyKeyboardFlags: u8 {
+        const DISAMBIGUATE = 1;
+        const REPORT_EVENTS = 2;
+        const REPORT_ALTERNATES = 4;
+        const REPORT_ALL_KEYS = 8;
+        const REPORT_TEXT = 16;
+    }
+}
+
+impl Display for KittyKeyboardFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.bits())
+    }
+}
+
+pub struct KittyKeyboardFlagsPush(pub KittyKeyboardFlags);
+
+impl Display for KittyKeyboardFlagsPush {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "\x1b[>{}u", self.0)
+    }
+}
+
+pub struct KittyKeyboardFlagsPop;
+
+impl Display for KittyKeyboardFlagsPop {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "\x1b[<1u")
+    }
+}
+
+pub const KITTY_KEYBOARD_FLAGS_QUERY: &str = "\x1b[?u";
 
 // In-band resize
 // https://gist.github.com/rockorager/e695fb2924d36b2bcf1fff4a3704bd83

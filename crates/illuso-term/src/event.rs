@@ -1,3 +1,4 @@
+use crate::escape::KittyKeyboardFlags;
 use bitflags::bitflags;
 use tinyvec::TinyVec;
 
@@ -8,6 +9,7 @@ pub enum Event {
         height: u16,
         width: u16,
     },
+    KittyKeyboardFlags(KittyKeyboardFlags),
     /// Device attributes <https://vt100.net/docs/vt510-rm/DA1.html>
     Da1,
     /// Report mode <https://vt100.net/docs/vt510-rm/DECRPM.html>
