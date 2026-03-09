@@ -39,16 +39,18 @@ fn decrpm(input: &mut &[u8]) -> winnow::ModalResult<Event> {
 
 fn unknown_csi(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     "\x1b[".void().parse_next(input)?;
-    let parameter_bytes: MyTinyVec<[u8; 32]> =
-        repeat(0.., one_of(0x30..=0x3F)).parse_next(input)?;
-    let intermediate_bytes: MyTinyVec<[u8; 2]> =
-        repeat(0.., one_of(0x20..=0x2F)).parse_next(input)?;
+    let MyTinyVec(parameter_bytes) = repeat(0.., one_of(0x30..=0x3F)).parse_next(input)?;
+    if parameter_bytes.is_heap() {
+        tracing::warn!("found {} parameter bytes", parameter_bytes.len());
+    }
+    let MyTinyVec(intermediate_bytes) = repeat(0.., one_of(0x20..=0x2F)).parse_next(input)?;
+    if intermediate_bytes.is_heap() {
+        tracing::warn!("found {} intermediate bytes", intermediate_bytes.len());
+    }
     let final_byte = one_of(0x40..=0x7E).parse_next(input)?;
     Ok(Event::UnknownCsi {
-        parameter_bytes: ArrayVec::<[u8; 32]>::try_from(parameter_bytes.as_slice())
-            .expect("no more than 32 parameter bytes"),
-        intermediate_bytes: ArrayVec::<[u8; 2]>::try_from(intermediate_bytes.as_slice())
-            .expect("no more than 2 intermediate bytes"),
+        parameter_bytes: parameter_bytes,
+        intermediate_bytes: intermediate_bytes,
         final_byte,
     })
 }
