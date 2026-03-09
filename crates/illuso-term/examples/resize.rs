@@ -1,4 +1,4 @@
-use illuso_term::{escape, event::Event, reader::Reader, tty::Tty};
+use illuso_term::{Event, Reader, Tty, escape};
 use std::{
     io::{self, Write as _},
     process,

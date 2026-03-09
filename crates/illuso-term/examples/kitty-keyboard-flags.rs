@@ -1,8 +1,6 @@
 use illuso_term::{
+    Event, Reader, Tty,
     escape::{self, KittyKeyboardFlags as KKF},
-    event::Event,
-    reader::Reader,
-    tty::Tty,
 };
 use std::io::{self, Write as _};
 

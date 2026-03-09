@@ -1,4 +1,4 @@
-use illuso_term::{escape, tty::Tty};
+use illuso_term::{Tty, escape};
 use std::{
     io::{self, Write as _},
     thread,
