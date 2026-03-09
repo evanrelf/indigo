@@ -1,10 +1,11 @@
 use crate::event::Event;
-use std::str;
-use tinyvec::ArrayVec;
+use std::{ops::Deref, str};
+use tinyvec::{ArrayVec, TinyVec};
 use winnow::{
     ascii::digit1,
     combinator::{alt, cut_err, opt, peek, repeat, separated},
     prelude::*,
+    stream::Accumulate,
     token::one_of,
 };
 
@@ -38,8 +39,10 @@ fn decrpm(input: &mut &[u8]) -> winnow::ModalResult<Event> {
 
 fn unknown_csi(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     "\x1b[".void().parse_next(input)?;
-    let parameter_bytes: Vec<u8> = repeat(0.., one_of(0x30..=0x3F)).parse_next(input)?;
-    let intermediate_bytes: Vec<u8> = repeat(0.., one_of(0x20..=0x2F)).parse_next(input)?;
+    let parameter_bytes: MyTinyVec<[u8; 32]> =
+        repeat(0.., one_of(0x30..=0x3F)).parse_next(input)?;
+    let intermediate_bytes: MyTinyVec<[u8; 2]> =
+        repeat(0.., one_of(0x20..=0x2F)).parse_next(input)?;
     let final_byte = one_of(0x40..=0x7E).parse_next(input)?;
     Ok(Event::UnknownCsi {
         parameter_bytes: ArrayVec::<[u8; 32]>::try_from(parameter_bytes.as_slice())
@@ -76,6 +79,31 @@ fn u16(input: &mut &[u8]) -> winnow::ModalResult<u16> {
         .try_map(|bytes| str::from_utf8(bytes))
         .try_map(|str| str::parse(str))
         .parse_next(input)
+}
+
+struct MyTinyVec<T: tinyvec::Array>(TinyVec<T>);
+
+impl<T: tinyvec::Array> Deref for MyTinyVec<T> {
+    type Target = TinyVec<T>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T, const N: usize> Accumulate<T> for MyTinyVec<[T; N]>
+where
+    T: Default,
+{
+    fn initial(capacity: Option<usize>) -> Self {
+        if let Some(capacity) = capacity {
+            Self(TinyVec::with_capacity(capacity))
+        } else {
+            Self(TinyVec::new())
+        }
+    }
+    fn accumulate(&mut self, acc: T) {
+        self.0.push(acc)
+    }
 }
 
 #[cfg(test)]
