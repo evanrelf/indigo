@@ -90,6 +90,11 @@ impl Display for ResetMode {
     }
 }
 
+// Primary Device Attributes (DA1)
+// https://vt100.net/docs/vt510-rm/DA1.html
+
+pub const DA1_QUERY: &str = "\x1b[c";
+
 // In-band resize
 // https://gist.github.com/rockorager/e695fb2924d36b2bcf1fff4a3704bd83
 
