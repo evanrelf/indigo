@@ -1,6 +1,7 @@
 pub mod escape;
 pub mod event;
 pub mod parser;
+pub mod reader;
 pub mod tty;
 
 //

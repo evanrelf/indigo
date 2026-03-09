@@ -1,7 +1,8 @@
 use crate::event::Event;
 use std::{ops::Deref, str};
-use tinyvec::{ArrayVec, TinyVec};
+use tinyvec::TinyVec;
 use winnow::{
+    Partial,
     ascii::digit1,
     combinator::{alt, cut_err, opt, peek, repeat, separated},
     prelude::*,
@@ -9,17 +10,17 @@ use winnow::{
     token::one_of,
 };
 
-fn event(input: &mut &[u8]) -> winnow::ModalResult<Event> {
+pub fn event(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     csi.parse_next(input)
 }
 
-fn csi(input: &mut &[u8]) -> winnow::ModalResult<Event> {
+fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     peek("\x1b[").parse_next(input)?;
     cut_err(alt((in_band_resize, da1, decrpm, unknown_csi))).parse_next(input)
 }
 
 // CSI ? Ps1 ; ... Psn c
-fn da1(input: &mut &[u8]) -> winnow::ModalResult<Event> {
+fn da1(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     "\x1b[?".void().parse_next(input)?;
     separated(0.., digit1, ";").map(|()| ()).parse_next(input)?;
     "c".void().parse_next(input)?;
@@ -28,7 +29,7 @@ fn da1(input: &mut &[u8]) -> winnow::ModalResult<Event> {
 
 // CSI Pa ; Ps $ y
 // CSI ? Pd ; Ps $ y
-fn decrpm(input: &mut &[u8]) -> winnow::ModalResult<Event> {
+fn decrpm(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     ("\x1b[", opt("?")).void().parse_next(input)?;
     let mode = u16.parse_next(input)?;
     ";".void().parse_next(input)?;
@@ -37,7 +38,7 @@ fn decrpm(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     Ok(Event::Decrpm { mode, value })
 }
 
-fn unknown_csi(input: &mut &[u8]) -> winnow::ModalResult<Event> {
+fn unknown_csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     "\x1b[".void().parse_next(input)?;
     let MyTinyVec(parameter_bytes) = repeat(0.., one_of(0x30..=0x3F)).parse_next(input)?;
     if parameter_bytes.is_heap() {
@@ -49,14 +50,14 @@ fn unknown_csi(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     }
     let final_byte = one_of(0x40..=0x7E).parse_next(input)?;
     Ok(Event::UnknownCsi {
-        parameter_bytes: parameter_bytes,
-        intermediate_bytes: intermediate_bytes,
+        parameter_bytes,
+        intermediate_bytes,
         final_byte,
     })
 }
 
 // CSI 48 ; height ; width ; height_pixels ; width_pixels t
-fn in_band_resize(input: &mut &[u8]) -> winnow::ModalResult<Event> {
+fn in_band_resize(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     "\x1b[48;".void().parse_next(input)?;
     let height = u16.parse_next(input)?;
     ";".void().parse_next(input)?;
@@ -69,14 +70,14 @@ fn in_band_resize(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     Ok(Event::Resize { height, width })
 }
 
-fn u8(input: &mut &[u8]) -> winnow::ModalResult<u8> {
+fn u8(input: &mut Partial<&[u8]>) -> winnow::ModalResult<u8> {
     digit1
         .try_map(|bytes| str::from_utf8(bytes))
         .try_map(|str| str::parse(str))
         .parse_next(input)
 }
 
-fn u16(input: &mut &[u8]) -> winnow::ModalResult<u16> {
+fn u16(input: &mut Partial<&[u8]>) -> winnow::ModalResult<u16> {
     digit1
         .try_map(|bytes| str::from_utf8(bytes))
         .try_map(|str| str::parse(str))
@@ -104,7 +105,7 @@ where
         }
     }
     fn accumulate(&mut self, acc: T) {
-        self.0.push(acc)
+        self.0.push(acc);
     }
 }
 
@@ -116,53 +117,53 @@ mod tests {
     fn parses_in_band_resize() {
         let input = b"\x1b[48;40;80;0;0t";
         let output = Ok((
-            &b""[..],
+            Partial::new(&b""[..]),
             Event::Resize {
                 height: 40,
                 width: 80,
             },
         ));
-        assert_eq!(in_band_resize.parse_peek(input), output);
-        assert_eq!(csi.parse_peek(input), output);
-        assert_eq!(event.parse_peek(input), output);
+        assert_eq!(in_band_resize.parse_peek(Partial::new(input)), output);
+        assert_eq!(csi.parse_peek(Partial::new(input)), output);
+        assert_eq!(event.parse_peek(Partial::new(input)), output);
     }
 
     #[test]
     fn parses_da1() {
         let input = b"\x1b[?64;1234c";
-        let output = Ok((&b""[..], Event::Da1));
-        assert_eq!(da1.parse_peek(input), output);
-        assert_eq!(csi.parse_peek(input), output);
-        assert_eq!(event.parse_peek(input), output);
+        let output = Ok((Partial::new(&b""[..]), Event::Da1));
+        assert_eq!(da1.parse_peek(Partial::new(input)), output);
+        assert_eq!(csi.parse_peek(Partial::new(input)), output);
+        assert_eq!(event.parse_peek(Partial::new(input)), output);
     }
 
     #[test]
     fn parses_ansi_decrpm() {
         let input = b"\x1b[1234;1$y";
         let output = Ok((
-            &b""[..],
+            Partial::new(&b""[..]),
             Event::Decrpm {
                 mode: 1234,
                 value: 1,
             },
         ));
-        assert_eq!(decrpm.parse_peek(input), output);
-        assert_eq!(csi.parse_peek(input), output);
-        assert_eq!(event.parse_peek(input), output);
+        assert_eq!(decrpm.parse_peek(Partial::new(input)), output);
+        assert_eq!(csi.parse_peek(Partial::new(input)), output);
+        assert_eq!(event.parse_peek(Partial::new(input)), output);
     }
 
     #[test]
     fn parses_dec_decrpm() {
         let input = b"\x1b[?1234;1$y";
         let output = Ok((
-            &b""[..],
+            Partial::new(&b""[..]),
             Event::Decrpm {
                 mode: 1234,
                 value: 1,
             },
         ));
-        assert_eq!(decrpm.parse_peek(input), output);
-        assert_eq!(csi.parse_peek(input), output);
-        assert_eq!(event.parse_peek(input), output);
+        assert_eq!(decrpm.parse_peek(Partial::new(input)), output);
+        assert_eq!(csi.parse_peek(Partial::new(input)), output);
+        assert_eq!(event.parse_peek(Partial::new(input)), output);
     }
 }
