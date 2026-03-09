@@ -1,4 +1,5 @@
 use bitflags::bitflags;
+use tinyvec::ArrayVec;
 
 #[derive(Debug, PartialEq)]
 pub enum Event {
@@ -14,7 +15,11 @@ pub enum Event {
         mode: u16,
         value: u8,
     },
-    UnknownCsi,
+    UnknownCsi {
+        parameter_bytes: ArrayVec<[u8; 32]>,
+        intermediate_bytes: ArrayVec<[u8; 2]>,
+        final_byte: u8,
+    },
 }
 
 #[derive(Debug, PartialEq)]

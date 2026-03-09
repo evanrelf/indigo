@@ -822,6 +822,7 @@ version = "0.0.0"
 dependencies = [
  "bitflags",
  "rustix",
+ "tinyvec",
  "tracing",
  "winnow",
 ]
