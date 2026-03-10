@@ -134,6 +134,15 @@ impl Display for KittyKeyboardFlagsPop {
 
 pub const KITTY_KEYBOARD_FLAGS_QUERY: &str = "\x1b[?u";
 
+// Bracketed paste
+// https://en.wikipedia.org/wiki/Bracketed-paste
+
+pub const BRACKETED_PASTE_QUERY: QueryMode = QueryMode(2004);
+pub const BRACKETED_PASTE_SET: SetMode = SetMode(2004);
+pub const BRACKETED_PASTE_RESET: ResetMode = ResetMode(2004);
+pub const BRACKETED_PASTE_BEGIN: &str = "\x1b[200~";
+pub const BRACKETED_PASTE_END: &str = "\x1b[201~";
+
 // In-band resize
 // https://gist.github.com/rockorager/e695fb2924d36b2bcf1fff4a3704bd83
 
