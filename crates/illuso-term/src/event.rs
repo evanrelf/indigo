@@ -22,6 +22,9 @@ pub enum Event {
         intermediate_bytes: TinyVec<[u8; 2]>,
         final_byte: u8,
     },
+    UnknownOsc {
+        data_bytes: TinyVec<[u8; 256]>,
+    },
 }
 
 #[derive(Debug, PartialEq)]

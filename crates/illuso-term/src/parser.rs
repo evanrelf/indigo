@@ -11,7 +11,7 @@ use winnow::{
 };
 
 pub fn event(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
-    csi.parse_next(input)
+    alt((csi, osc)).parse_next(input)
 }
 
 fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
@@ -85,6 +85,18 @@ fn unknown_csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
         intermediate_bytes,
         final_byte,
     })
+}
+
+fn osc(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
+    peek("\x1b]").parse_next(input)?;
+    cut_err(unknown_osc).parse_next(input)
+}
+
+fn unknown_osc(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
+    "\x1b]".void().parse_next(input)?;
+    let MyTinyVec(data_bytes) = repeat(0.., one_of(0x20..=0xFF)).parse_next(input)?;
+    alt(("\x07", "\x1b\x5c")).void().parse_next(input)?;
+    Ok(Event::UnknownOsc { data_bytes })
 }
 
 fn u8(input: &mut Partial<&[u8]>) -> winnow::ModalResult<u8> {
