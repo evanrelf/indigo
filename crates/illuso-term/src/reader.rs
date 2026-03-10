@@ -66,7 +66,7 @@ impl Reader {
         let garbage_count = self
             .buffer
             .iter()
-            .position(|&byte| byte == /* ESC */ 0x1b)
+            .position(|&byte| byte == /* ESC */ 0x1B)
             .unwrap_or(self.buffer.len());
         if garbage_count > 0 {
             self.buffer.drain(..garbage_count);
