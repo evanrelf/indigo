@@ -1,6 +1,6 @@
 use crate::{
-    escape::KittyKeyboardFlags,
-    event::{Event, Key, KeyCode, KeyModifiers},
+    event::Event,
+    key::{Key, KeyCode, KeyModifiers, KittyKeyboardFlags},
 };
 use std::{ops::Deref, str};
 use tinyvec::TinyVec;

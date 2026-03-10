@@ -1,5 +1,4 @@
-use crate::escape::KittyKeyboardFlags;
-use bitflags::bitflags;
+use crate::key::{Key, KittyKeyboardFlags};
 use tinyvec::TinyVec;
 
 #[derive(Debug, PartialEq)]
@@ -40,32 +39,4 @@ pub enum Event {
     UnknownOsc {
         data_bytes: TinyVec<[u8; 32]>,
     },
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Key {
-    pub code: KeyCode,
-    pub modifiers: KeyModifiers,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum KeyCode {
-    Esc,
-    Backspace,
-    Tab,
-    Enter,
-    Left,
-    Right,
-    Up,
-    Down,
-    Char(char),
-}
-
-bitflags! {
-    #[derive(Debug, PartialEq)]
-    pub struct KeyModifiers: u8 {
-        const SHIFT = 1;
-        const ALT = 2;
-        const CTRL = 4;
-    }
 }
