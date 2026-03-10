@@ -14,7 +14,7 @@ use winnow::{
 };
 
 pub fn event(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
-    alt((csi, osc, raw_key)).parse_next(input)
+    alt((csi, osc)).parse_next(input)
 }
 
 fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
@@ -107,49 +107,6 @@ fn make_key_event(key: Key, event_type: u8) -> Event {
         3 => Event::KeyRelease(key),
         _ => Event::KeyPress(key),
     }
-}
-
-fn raw_key(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
-    let code = alt((raw_special_key, raw_utf8_key)).parse_next(input)?;
-    let modifiers = KeyModifiers::empty();
-    Ok(Event::KeyPress(Key { code, modifiers }))
-}
-
-fn raw_special_key(input: &mut Partial<&[u8]>) -> winnow::ModalResult<KeyCode> {
-    winnow::token::any
-        .verify_map(|b| match b {
-            0x0d => Some(KeyCode::Enter),
-            0x09 => Some(KeyCode::Tab),
-            0x7f | 0x08 => Some(KeyCode::Backspace),
-            _ => None,
-        })
-        .parse_next(input)
-}
-
-fn raw_utf8_key(input: &mut Partial<&[u8]>) -> winnow::ModalResult<KeyCode> {
-    let first = winnow::token::any
-        .verify(|b: &u8| *b >= 0x20)
-        .parse_next(input)?;
-    let continuation_len = match first {
-        0x20..=0x7F => 0,
-        0xC0..=0xDF => 1,
-        0xE0..=0xEF => 2,
-        0xF0..=0xF7 => 3,
-        _ => {
-            return Err(winnow::error::ErrMode::Backtrack(
-                winnow::error::ContextError::new(),
-            ));
-        }
-    };
-    let mut buf = [0u8; 4];
-    buf[0] = first;
-    for b in buf.iter_mut().skip(1).take(continuation_len) {
-        *b = one_of(0x80..=0xBF).parse_next(input)?;
-    }
-    let s = str::from_utf8(&buf[..=continuation_len])
-        .map_err(|_| winnow::error::ErrMode::Backtrack(winnow::error::ContextError::new()))?;
-    let c = s.chars().next().unwrap();
-    Ok(KeyCode::Char(c))
 }
 
 fn u32(input: &mut Partial<&[u8]>) -> winnow::ModalResult<u32> {
@@ -458,90 +415,6 @@ mod tests {
         ));
         assert_eq!(kitty_key_letter.parse_peek(Partial::new(input)), output);
         assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
-    }
-
-    #[test]
-    fn parses_raw_ascii_char() {
-        let input = b"j";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::KeyPress(Key {
-                code: KeyCode::Char('j'),
-                modifiers: KeyModifiers::empty(),
-            }),
-        ));
-        assert_eq!(raw_key.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
-    }
-
-    #[test]
-    fn parses_raw_space() {
-        let input = b" ";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::KeyPress(Key {
-                code: KeyCode::Char(' '),
-                modifiers: KeyModifiers::empty(),
-            }),
-        ));
-        assert_eq!(raw_key.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
-    }
-
-    #[test]
-    fn parses_raw_enter() {
-        let input = b"\x0d";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::KeyPress(Key {
-                code: KeyCode::Enter,
-                modifiers: KeyModifiers::empty(),
-            }),
-        ));
-        assert_eq!(raw_key.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
-    }
-
-    #[test]
-    fn parses_raw_tab() {
-        let input = b"\x09";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::KeyPress(Key {
-                code: KeyCode::Tab,
-                modifiers: KeyModifiers::empty(),
-            }),
-        ));
-        assert_eq!(raw_key.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
-    }
-
-    #[test]
-    fn parses_raw_backspace() {
-        let input = b"\x7f";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::KeyPress(Key {
-                code: KeyCode::Backspace,
-                modifiers: KeyModifiers::empty(),
-            }),
-        ));
-        assert_eq!(raw_key.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
-    }
-
-    #[test]
-    fn parses_raw_multibyte_utf8() {
-        let input = "é".as_bytes();
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::KeyPress(Key {
-                code: KeyCode::Char('é'),
-                modifiers: KeyModifiers::empty(),
-            }),
-        ));
-        assert_eq!(raw_key.parse_peek(Partial::new(input)), output);
         assert_eq!(event.parse_peek(Partial::new(input)), output);
     }
 }
