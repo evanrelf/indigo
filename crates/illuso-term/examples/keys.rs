@@ -25,15 +25,32 @@ fn main() -> io::Result<()> {
     )?;
     tty.flush()?;
 
+    let mut repeat_count: u32 = 0;
+
     loop {
         let event = reader.read_event(&mut tty)?;
         match &event {
-            Event::KeyPress(_) | Event::KeyRepeat(_) | Event::KeyRelease(_) => {
+            Event::KeyPress(_) | Event::KeyRelease(_) => {
+                repeat_count = 0;
                 write!(tty, "{event:?}\n\r")?;
                 tty.flush()?;
                 if event == CTRL_C {
                     break;
                 }
+            }
+            Event::KeyRepeat(_) => {
+                repeat_count += 1;
+                if repeat_count == 1 {
+                    write!(tty, "{event:?}\n\r")?;
+                } else {
+                    write!(
+                        tty,
+                        "{}\r{}{event:?} (x{repeat_count})\n\r",
+                        escape::MoveUp(1),
+                        escape::CLEAR_LINE
+                    )?;
+                }
+                tty.flush()?;
             }
             _ => {}
         }
