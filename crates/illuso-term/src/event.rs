@@ -36,7 +36,7 @@ pub enum Event {
     ///
     /// <https://ghostty.org/docs/vt/concepts/sequences#osc>
     UnknownOsc {
-        data_bytes: TinyVec<[u8; 256]>,
+        data_bytes: TinyVec<[u8; 32]>,
     },
 }
 
