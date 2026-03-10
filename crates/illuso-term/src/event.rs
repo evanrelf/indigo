@@ -5,6 +5,8 @@ use tinyvec::TinyVec;
 #[derive(Debug, PartialEq)]
 pub enum Event {
     KeyPress(Key),
+    KeyRepeat(Key),
+    KeyRelease(Key),
     Resize {
         height: u16,
         width: u16,

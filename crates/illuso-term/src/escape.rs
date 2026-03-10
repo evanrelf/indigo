@@ -104,9 +104,9 @@ bitflags! {
     pub struct KittyKeyboardFlags: u8 {
         const DISAMBIGUATE = 1;
         const REPORT_EVENTS = 2;
-        const REPORT_ALTERNATES = 4;
-        const REPORT_ALL_KEYS = 8;
-        const REPORT_TEXT = 16;
+        const REPORT_ALTERNATES = 4; // Unsupported
+        const REPORT_ALL_KEYS = 8;   // Supported, but only for keys we represent
+        const REPORT_TEXT = 16;      // Ignored, but safe to enable
     }
 }
 
