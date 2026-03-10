@@ -7,7 +7,7 @@ pub mod tty;
 
 pub use crate::{
     event::Event,
-    key::{Key, KeyCode, KeyModifiers, KittyKeyboardFlags},
+    key::{Key, KeyCode, KeyModifiers, KeyboardEnhancementFlags},
     reader::Reader,
     tty::Tty,
 };

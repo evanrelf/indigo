@@ -1,4 +1,4 @@
-use crate::key::KittyKeyboardFlags;
+use crate::key::KeyboardEnhancementFlags;
 use std::fmt::{self, Display};
 
 // Clearing
@@ -99,29 +99,23 @@ pub const DA1_QUERY: &str = "\x1b[c";
 // Kitty keyboard protocol
 // https://sw.kovidgoyal.net/kitty/keyboard-protocol/
 
-impl Display for KittyKeyboardFlags {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.bits())
-    }
-}
+pub struct KeyboardEnhancementFlagsPush(pub KeyboardEnhancementFlags);
 
-pub struct KittyKeyboardFlagsPush(pub KittyKeyboardFlags);
-
-impl Display for KittyKeyboardFlagsPush {
+impl Display for KeyboardEnhancementFlagsPush {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "\x1b[>{}u", self.0)
     }
 }
 
-pub struct KittyKeyboardFlagsPop;
+pub struct KeyboardEnhancementFlagsPop;
 
-impl Display for KittyKeyboardFlagsPop {
+impl Display for KeyboardEnhancementFlagsPop {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "\x1b[<1u")
     }
 }
 
-pub const KITTY_KEYBOARD_FLAGS_QUERY: &str = "\x1b[?u";
+pub const KEYBOARD_ENHANCEMENT_FLAGS_QUERY: &str = "\x1b[?u";
 
 // Bracketed paste
 // https://en.wikipedia.org/wiki/Bracketed-paste

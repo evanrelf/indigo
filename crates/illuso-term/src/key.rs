@@ -1,4 +1,5 @@
 use bitflags::bitflags;
+use std::fmt::{self, Display};
 
 #[derive(Debug, PartialEq)]
 pub struct Key {
@@ -30,11 +31,17 @@ bitflags! {
 
 bitflags! {
     #[derive(Debug, PartialEq)]
-    pub struct KittyKeyboardFlags: u8 {
+    pub struct KeyboardEnhancementFlags: u8 {
         const DISAMBIGUATE = 1;
         const REPORT_EVENTS = 2;
         const REPORT_ALTERNATES = 4; // Unsupported
         const REPORT_ALL_KEYS = 8;   // Supported, but only for keys we represent
         const REPORT_TEXT = 16;      // Ignored, but safe to enable
+    }
+}
+
+impl Display for KeyboardEnhancementFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.bits())
     }
 }

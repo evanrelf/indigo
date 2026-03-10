@@ -1,4 +1,4 @@
-use crate::key::{Key, KittyKeyboardFlags};
+use crate::key::{Key, KeyboardEnhancementFlags};
 use tinyvec::TinyVec;
 
 #[derive(Debug, PartialEq)]
@@ -13,7 +13,7 @@ pub enum Event {
     /// Kitty keyboard protocol progressive enhancement flags
     ///
     /// <https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement>
-    KittyKeyboardFlags(KittyKeyboardFlags),
+    KeyboardEnhancementFlags(KeyboardEnhancementFlags),
     /// Primary device attributes
     ///
     /// <https://vt100.net/docs/vt510-rm/DA1.html>

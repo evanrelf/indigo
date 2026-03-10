@@ -1,4 +1,4 @@
-use illuso_term::{Event, KittyKeyboardFlags as KKF, Reader, Tty, escape};
+use illuso_term::{Event, KeyboardEnhancementFlags as KKF, Reader, Tty, escape};
 use std::io::{self, Write as _};
 
 fn main() -> io::Result<()> {
@@ -8,9 +8,9 @@ fn main() -> io::Result<()> {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     write!(tty, "querying kitty keyboard flags...\n\r")?;
-    write!(tty, "{}", escape::KITTY_KEYBOARD_FLAGS_QUERY)?;
+    write!(tty, "{}", escape::KEYBOARD_ENHANCEMENT_FLAGS_QUERY)?;
     tty.flush()?;
-    let Event::KittyKeyboardFlags(flags) = reader.read_event(&mut tty)? else {
+    let Event::KeyboardEnhancementFlags(flags) = reader.read_event(&mut tty)? else {
         drop(tty);
         panic!("expected kitty keyboard flags, actually read a different event");
     };
@@ -23,16 +23,16 @@ fn main() -> io::Result<()> {
     write!(
         tty,
         "{}",
-        escape::KittyKeyboardFlagsPush(KKF::DISAMBIGUATE | KKF::REPORT_EVENTS)
+        escape::KeyboardEnhancementFlagsPush(KKF::DISAMBIGUATE | KKF::REPORT_EVENTS)
     )?;
     tty.flush()?;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     write!(tty, "querying kitty keyboard flags...\n\r")?;
-    write!(tty, "{}", escape::KITTY_KEYBOARD_FLAGS_QUERY)?;
+    write!(tty, "{}", escape::KEYBOARD_ENHANCEMENT_FLAGS_QUERY)?;
     tty.flush()?;
-    let Event::KittyKeyboardFlags(flags) = reader.read_event(&mut tty)? else {
+    let Event::KeyboardEnhancementFlags(flags) = reader.read_event(&mut tty)? else {
         drop(tty);
         panic!("expected kitty keyboard flags, actually read a different event");
     };
@@ -42,15 +42,15 @@ fn main() -> io::Result<()> {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     write!(tty, "popping kitty keyboard flags...\n\r")?;
-    write!(tty, "{}", escape::KittyKeyboardFlagsPop)?;
+    write!(tty, "{}", escape::KeyboardEnhancementFlagsPop)?;
     tty.flush()?;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     write!(tty, "querying kitty keyboard flags...\n\r")?;
-    write!(tty, "{}", escape::KITTY_KEYBOARD_FLAGS_QUERY)?;
+    write!(tty, "{}", escape::KEYBOARD_ENHANCEMENT_FLAGS_QUERY)?;
     tty.flush()?;
-    let Event::KittyKeyboardFlags(flags) = reader.read_event(&mut tty)? else {
+    let Event::KeyboardEnhancementFlags(flags) = reader.read_event(&mut tty)? else {
         drop(tty);
         panic!("expected kitty keyboard flags, actually read a different event");
     };

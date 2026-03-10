@@ -1,6 +1,6 @@
 use crate::{
     event::Event,
-    key::{Key, KeyCode, KeyModifiers, KittyKeyboardFlags},
+    key::{Key, KeyCode, KeyModifiers, KeyboardEnhancementFlags},
 };
 use std::{ops::Deref, str};
 use tinyvec::TinyVec;
@@ -34,10 +34,10 @@ fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
 fn kitty_keyboard_flags(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     "\x1b[?".void().parse_next(input)?;
     let flags = u8
-        .verify_map(|n| KittyKeyboardFlags::from_bits(n))
+        .verify_map(|n| KeyboardEnhancementFlags::from_bits(n))
         .parse_next(input)?;
     "u".void().parse_next(input)?;
-    Ok(Event::KittyKeyboardFlags(flags))
+    Ok(Event::KeyboardEnhancementFlags(flags))
 }
 
 fn kitty_key_u(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
@@ -235,8 +235,8 @@ mod tests {
         let input = b"\x1b[?3u";
         let output = Ok((
             Partial::new(&b""[..]),
-            Event::KittyKeyboardFlags(
-                KittyKeyboardFlags::DISAMBIGUATE | KittyKeyboardFlags::REPORT_EVENTS,
+            Event::KeyboardEnhancementFlags(
+                KeyboardEnhancementFlags::DISAMBIGUATE | KeyboardEnhancementFlags::REPORT_EVENTS,
             ),
         ));
         assert_eq!(kitty_keyboard_flags.parse_peek(Partial::new(input)), output);

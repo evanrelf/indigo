@@ -1,5 +1,5 @@
 use illuso_term::{
-    Event, Key, KeyCode, KeyModifiers, KittyKeyboardFlags as KKF, Reader, Tty, escape,
+    Event, Key, KeyCode, KeyModifiers, KeyboardEnhancementFlags as KKF, Reader, Tty, escape,
 };
 use std::io::{self, Write as _};
 
@@ -17,7 +17,7 @@ fn main() -> io::Result<()> {
         "{}",
         // NOTE: All these flags must be enabled to get full keyboard functionality, since the
         // raw/legacy keys are intentionally not supported.
-        escape::KittyKeyboardFlagsPush(
+        escape::KeyboardEnhancementFlagsPush(
             KKF::DISAMBIGUATE | KKF::REPORT_EVENTS | KKF::REPORT_ALL_KEYS
         )
     )?;
@@ -54,7 +54,7 @@ fn main() -> io::Result<()> {
         }
     }
 
-    write!(tty, "{}", escape::KittyKeyboardFlagsPop)?;
+    write!(tty, "{}", escape::KeyboardEnhancementFlagsPop)?;
     tty.flush()?;
 
     Ok(())
