@@ -18,8 +18,6 @@ impl Reader {
     /// Read the next event from the input source. Blocks until a complete event is available.
     pub fn read_event(&mut self, input: &mut impl Read) -> io::Result<Event> {
         loop {
-            self.skip_garbage();
-
             if !self.buffer.is_empty() {
                 let input_slice = Partial::new(self.buffer.as_slice());
                 match parser::event.parse_peek(input_slice) {
@@ -32,7 +30,7 @@ impl Reader {
                         // Need more bytes, fall through to fill_buffer below
                     }
                     Err(_) => {
-                        // Malformed sequence, skip the leading 0x1b and retry
+                        // Unparseable byte, skip it and retry
                         self.buffer.drain(..1);
                         continue;
                     }
@@ -60,16 +58,4 @@ impl Reader {
         Ok(())
     }
 
-    /// Skip any non-ESC bytes at the front of the buffer. These are garbage bytes that don't start
-    /// any recognized sequence.
-    fn skip_garbage(&mut self) {
-        let garbage_count = self
-            .buffer
-            .iter()
-            .position(|&byte| byte == /* ESC */ 0x1B)
-            .unwrap_or(self.buffer.len());
-        if garbage_count > 0 {
-            self.buffer.drain(..garbage_count);
-        }
-    }
 }
