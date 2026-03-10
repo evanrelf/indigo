@@ -26,7 +26,6 @@ fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     .parse_next(input)
 }
 
-// CSI ? flags u
 fn kitty_keyboard_flags(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     "\x1b[?".void().parse_next(input)?;
     let flags = u8
@@ -36,7 +35,6 @@ fn kitty_keyboard_flags(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event
     Ok(Event::KittyKeyboardFlags(flags))
 }
 
-// CSI 48 ; height ; width ; height_pixels ; width_pixels t
 fn in_band_resize(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     "\x1b[48;".void().parse_next(input)?;
     let height = u16.parse_next(input)?;
@@ -50,7 +48,6 @@ fn in_band_resize(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     Ok(Event::Resize { height, width })
 }
 
-// CSI ? Ps1 ; ... Psn c
 fn da1(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     "\x1b[?".void().parse_next(input)?;
     separated(0.., digit1, ";").map(|()| ()).parse_next(input)?;
@@ -58,8 +55,6 @@ fn da1(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     Ok(Event::Da1)
 }
 
-// CSI Pa ; Ps $ y
-// CSI ? Pd ; Ps $ y
 fn decrpm(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     ("\x1b[", opt("?")).void().parse_next(input)?;
     let mode = u16.parse_next(input)?;
