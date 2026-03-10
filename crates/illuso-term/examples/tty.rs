@@ -1,4 +1,4 @@
-use illuso_term::{Tty, escape};
+use illuso_term::{Tty, output};
 use std::{
     io::{self, Write as _},
     thread,
@@ -8,7 +8,7 @@ use std::{
 fn main() -> io::Result<()> {
     let mut tty = Tty::init()?;
 
-    write!(&mut tty, "{}", escape::HIDE_CURSOR)?;
+    write!(&mut tty, "{}", output::HIDE_CURSOR)?;
     tty.flush()?;
 
     let n = 3;
@@ -17,8 +17,8 @@ fn main() -> io::Result<()> {
         write!(
             &mut tty,
             "{}{}",
-            escape::CLEAR_LINE,
-            escape::MoveToColumn(0)
+            output::CLEAR_LINE,
+            output::MoveToColumn(0)
         )?;
         write!(&mut tty, "{}", n - i)?;
         tty.flush()?;
@@ -28,9 +28,9 @@ fn main() -> io::Result<()> {
     write!(
         &mut tty,
         "{}{}{}",
-        escape::CLEAR_LINE,
-        escape::MoveToColumn(0),
-        escape::SHOW_CURSOR,
+        output::CLEAR_LINE,
+        output::MoveToColumn(0),
+        output::SHOW_CURSOR,
     )?;
     tty.flush()?;
 

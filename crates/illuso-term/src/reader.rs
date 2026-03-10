@@ -1,5 +1,4 @@
-use crate::event::Event;
-use crate::parser;
+use crate::input::{self, Event};
 use std::io::{self, Read};
 use tinyvec::ArrayVec;
 use winnow::{Parser, Partial, error::ErrMode};
@@ -22,7 +21,7 @@ impl Reader {
 
             if !self.buffer.is_empty() {
                 let input_slice = Partial::new(self.buffer.as_slice());
-                match parser::event.parse_peek(input_slice) {
+                match input::event.parse_peek(input_slice) {
                     Ok((remaining, event)) => {
                         let consumed = self.buffer.len() - remaining.len();
                         self.buffer.drain(..consumed);

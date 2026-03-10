@@ -1,4 +1,4 @@
-use illuso_term::{Event, Reader, Tty, escape};
+use illuso_term::{Event, Reader, Tty, output};
 use std::{
     io::{self, Write as _},
     process,
@@ -9,7 +9,7 @@ fn main() -> io::Result<()> {
     let mut reader = Reader::new();
 
     // Send the DECRQM query followed by DA1 as a sentinel
-    write!(tty, "{}{}", escape::IN_BAND_RESIZE_QUERY, escape::DA1_QUERY)?;
+    write!(tty, "{}{}", output::IN_BAND_RESIZE_QUERY, output::DA1_QUERY)?;
     tty.flush()?;
 
     // Read events until we see either a DECRPM reply or DA1
@@ -22,7 +22,7 @@ fn main() -> io::Result<()> {
                 }
                 2 => {
                     // Reset but settable, enable it
-                    write!(tty, "{}", escape::IN_BAND_RESIZE_SET)?;
+                    write!(tty, "{}", output::IN_BAND_RESIZE_SET)?;
                     tty.flush()?;
                     break;
                 }
@@ -55,8 +55,8 @@ fn main() -> io::Result<()> {
             write!(
                 stdout,
                 "{}{}pid:{pid},height:{height},width:{width}",
-                escape::MoveToColumn(1),
-                escape::CLEAR_LINE,
+                output::MoveToColumn(1),
+                output::CLEAR_LINE,
             )?;
             stdout.flush()?;
         }

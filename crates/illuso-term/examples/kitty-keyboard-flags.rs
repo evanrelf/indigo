@@ -1,4 +1,4 @@
-use illuso_term::{Event, KeyboardEnhancementFlags as KKF, Reader, Tty, escape};
+use illuso_term::{Event, KeyboardEnhancementFlags as KKF, Reader, Tty, output};
 use std::io::{self, Write as _};
 
 fn main() -> io::Result<()> {
@@ -8,7 +8,7 @@ fn main() -> io::Result<()> {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     write!(tty, "querying kitty keyboard flags...\n\r")?;
-    write!(tty, "{}", escape::KEYBOARD_ENHANCEMENT_FLAGS_QUERY)?;
+    write!(tty, "{}", output::KEYBOARD_ENHANCEMENT_FLAGS_QUERY)?;
     tty.flush()?;
     let Event::KeyboardEnhancementFlags(flags) = reader.read_event(&mut tty)? else {
         drop(tty);
@@ -23,14 +23,14 @@ fn main() -> io::Result<()> {
     write!(
         tty,
         "{}",
-        escape::KeyboardEnhancementFlagsPush(KKF::DISAMBIGUATE | KKF::REPORT_EVENTS)
+        output::KeyboardEnhancementFlagsPush(KKF::DISAMBIGUATE | KKF::REPORT_EVENTS)
     )?;
     tty.flush()?;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     write!(tty, "querying kitty keyboard flags...\n\r")?;
-    write!(tty, "{}", escape::KEYBOARD_ENHANCEMENT_FLAGS_QUERY)?;
+    write!(tty, "{}", output::KEYBOARD_ENHANCEMENT_FLAGS_QUERY)?;
     tty.flush()?;
     let Event::KeyboardEnhancementFlags(flags) = reader.read_event(&mut tty)? else {
         drop(tty);
@@ -42,13 +42,13 @@ fn main() -> io::Result<()> {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     write!(tty, "popping kitty keyboard flags...\n\r")?;
-    write!(tty, "{}", escape::KeyboardEnhancementFlagsPop)?;
+    write!(tty, "{}", output::KeyboardEnhancementFlagsPop)?;
     tty.flush()?;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     write!(tty, "querying kitty keyboard flags...\n\r")?;
-    write!(tty, "{}", escape::KEYBOARD_ENHANCEMENT_FLAGS_QUERY)?;
+    write!(tty, "{}", output::KEYBOARD_ENHANCEMENT_FLAGS_QUERY)?;
     tty.flush()?;
     let Event::KeyboardEnhancementFlags(flags) = reader.read_event(&mut tty)? else {
         drop(tty);
