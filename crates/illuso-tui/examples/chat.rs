@@ -49,6 +49,7 @@ fn update(state: &mut State, event: Event) {
                 let message = mem::take(&mut state.message);
                 state.queued_message = Some(message);
             }
+            KeyCode::Char('u') if key.modifiers == KeyModifiers::CTRL => state.message.clear(),
             KeyCode::Char('c' | 'd') if key.modifiers == KeyModifiers::CTRL => {
                 state.quit = true;
             }
