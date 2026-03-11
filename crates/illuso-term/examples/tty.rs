@@ -18,7 +18,7 @@ fn main() -> io::Result<()> {
             &mut tty,
             "{}{}",
             output::CLEAR_LINE,
-            output::MoveToColumn(0)
+            output::CursorColumn(1)
         )?;
         write!(&mut tty, "{}", n - i)?;
         tty.flush()?;
@@ -29,7 +29,7 @@ fn main() -> io::Result<()> {
         &mut tty,
         "{}{}{}",
         output::CLEAR_LINE,
-        output::MoveToColumn(0),
+        output::CursorColumn(1),
         output::SHOW_CURSOR,
     )?;
     tty.flush()?;

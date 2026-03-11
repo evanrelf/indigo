@@ -44,7 +44,7 @@ fn main() -> io::Result<()> {
                     write!(
                         tty,
                         "{}\r{}{event:?} (x{repeat_count})\n\r",
-                        output::MoveUp(1),
+                        output::CursorUp(1),
                         output::CLEAR_LINE
                     )?;
                 }

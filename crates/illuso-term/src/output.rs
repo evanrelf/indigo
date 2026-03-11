@@ -12,51 +12,67 @@ pub const CLEAR_SCREEN: &str = "\x1b[2J";
 
 // Cursor
 
-pub struct MoveUp(pub u16);
+pub struct CursorUp(pub u16);
 
-impl Display for MoveUp {
+impl Display for CursorUp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "\x1b[{}A", self.0)
     }
 }
 
-pub struct MoveDown(pub u16);
+pub struct CursorDown(pub u16);
 
-impl Display for MoveDown {
+impl Display for CursorDown {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "\x1b[{}B", self.0)
     }
 }
 
-pub struct MoveForward(pub u16);
+pub struct CursorForward(pub u16);
 
-impl Display for MoveForward {
+impl Display for CursorForward {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "\x1b[{}C", self.0)
     }
 }
 
-pub struct MoveBackward(pub u16);
+pub struct CursorBackward(pub u16);
 
-impl Display for MoveBackward {
+impl Display for CursorBackward {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "\x1b[{}D", self.0)
     }
 }
 
-pub struct MoveTo(pub u16, pub u16);
+pub struct CursorNextLine(pub u16);
 
-impl Display for MoveTo {
+impl Display for CursorNextLine {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "\x1b[{};{}H", self.0, self.1)
+        write!(f, "\x1b[{}E", self.0)
     }
 }
 
-pub struct MoveToColumn(pub u16);
+pub struct CursorPrevLine(pub u16);
 
-impl Display for MoveToColumn {
+impl Display for CursorPrevLine {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "\x1b[{}F", self.0)
+    }
+}
+
+pub struct CursorColumn(pub u16);
+
+impl Display for CursorColumn {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "\x1b[{}G", self.0)
+    }
+}
+
+pub struct CursorPosition(pub u16, pub u16);
+
+impl Display for CursorPosition {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "\x1b[{};{}H", self.0, self.1)
     }
 }
 

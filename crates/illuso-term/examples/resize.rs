@@ -55,7 +55,7 @@ fn main() -> io::Result<()> {
             write!(
                 stdout,
                 "{}{}pid:{pid},height:{height},width:{width}",
-                output::MoveToColumn(1),
+                output::CursorColumn(1),
                 output::CLEAR_LINE,
             )?;
             stdout.flush()?;
