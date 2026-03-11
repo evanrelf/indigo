@@ -3,6 +3,7 @@
 use illuso_term::*;
 use illuso_tui::Terminal;
 use std::{
+    cmp::min,
     io::{self, Write as _},
     mem,
 };
@@ -11,43 +12,203 @@ fn main() -> io::Result<()> {
     let mut terminal = Terminal::init()?;
     let (_, width) = terminal.size()?;
 
-    let mut state = State { quit: false, width };
+    let mut state = State {
+        width,
+        ..State::default()
+    };
 
     loop {
         let event = terminal.read_event()?;
 
         update(&mut state, event);
 
+        render(&mut state, &mut terminal)?;
+
         if state.quit {
             break;
         }
-
-        render(&state, &mut terminal)?;
     }
 
     Ok(())
 }
 
+#[derive(Default)]
 struct State {
     quit: bool,
+    prev_width: Option<u16>,
     width: u16,
+    queued_messages: Vec<String>,
+    message: String,
 }
 
 fn update(state: &mut State, event: Event) {
     match event {
         Event::KeyPress(key) | Event::KeyRepeat(key) => match key.code {
+            KeyCode::Char(char @ ' '..='~') if key.modifiers.is_empty() => {
+                state.message.push(char);
+            }
+            KeyCode::Backspace if key.modifiers.is_empty() => {
+                state.message.pop();
+            }
+            KeyCode::Enter if key.modifiers.is_empty() && !state.message.is_empty() => {
+                let message = mem::take(&mut state.message);
+                state.queued_messages.push(message);
+            }
             KeyCode::Char('c' | 'd') if key.modifiers == KeyModifiers::CTRL => {
                 state.quit = true;
             }
             _ => {}
         },
+        Event::Resize { width, .. } => {
+            state.prev_width = Some(state.width);
+            state.width = width;
+        }
         _ => {}
     }
 }
 
-fn render(state: &State, terminal: &mut Terminal) -> io::Result<()> {
-    write!(terminal, "{}{}Hello, world!", CLEAR_LINE, CursorColumn(1))?;
+fn render(state: &mut State, terminal: &mut Terminal) -> io::Result<()> {
+    if state.quit {
+        render_quit(state, terminal)?;
+        return Ok(());
+    }
+
+    write!(terminal, "{}", SYNC_UPDATE_SET)?;
+    terminal.flush()?;
+
+    // Clear line and input
+    write!(terminal, "{}\r{}", CursorUp(1), CLEAR_TO_END_OF_SCREEN)?;
+
+    for message in &state.queued_messages {
+        render_user_message(state, terminal, message)?;
+        render_assistant_message(state, terminal)?;
+    }
+    state.queued_messages.clear();
+
+    render_line(state, terminal)?;
+    render_input(state, terminal)?;
+
+    write!(terminal, "{}", SYNC_UPDATE_RESET)?;
     terminal.flush()?;
 
     Ok(())
 }
+
+fn render_clear(state: &mut State, terminal: &mut Terminal) -> io::Result<()> {
+    let prev_width = mem::take(&mut state.prev_width);
+
+    todo!();
+
+    Ok(())
+}
+
+fn render_user_message(state: &State, terminal: &mut Terminal, message: &str) -> io::Result<()> {
+    write!(
+        terminal,
+        "{BOLD}{}user:{RESET} {message}\r\n\n",
+        Fg(Color::Blue)
+    )?;
+    Ok(())
+}
+
+fn render_assistant_message(state: &State, terminal: &mut Terminal) -> io::Result<()> {
+    let message = assistant_message(state);
+    write!(
+        terminal,
+        "{BOLD}{}assistant:{RESET} {message}\r\n\n",
+        Fg(Color::Red)
+    )?;
+    Ok(())
+}
+
+fn render_line(state: &State, terminal: &mut Terminal) -> io::Result<()> {
+    write!(terminal, "\r")?;
+    for _ in 0..state.width {
+        write!(terminal, "─")?;
+    }
+    write!(terminal, "\r\n")?;
+    Ok(())
+}
+
+fn render_input(state: &State, terminal: &mut Terminal) -> io::Result<()> {
+    write!(terminal, "\r{}", CLEAR_LINE)?;
+
+    let max_chars = state.width as usize;
+
+    if state.message.is_empty() {
+        let placeholder = "type something";
+        let end = min(placeholder.len(), max_chars);
+        write!(
+            terminal,
+            "{}{}{}\r",
+            Fg(Color::White),
+            &placeholder[..end],
+            RESET,
+        )?;
+    } else {
+        let start = state.message.len().saturating_sub(max_chars - 1);
+        write!(terminal, "{}", &state.message[start..])?;
+    }
+
+    Ok(())
+}
+
+fn render_quit(state: &State, terminal: &mut Terminal) -> io::Result<()> {
+    write!(terminal, "{}", SYNC_UPDATE_SET)?;
+    terminal.flush()?;
+
+    // Clear line and input
+    write!(terminal, "{}\r{}", CursorUp(1), CLEAR_TO_END_OF_SCREEN)?;
+
+    write!(terminal, "{}", SYNC_UPDATE_RESET)?;
+    terminal.flush()?;
+
+    Ok(())
+}
+
+fn assistant_message(state: &State) -> &'static str {
+    // Arbitrary pieces of state
+    let width = u32::from(state.width);
+    let first_char = state
+        .message
+        .chars()
+        .next()
+        .map_or(1, |char| u32::from(char));
+    let length = state.message.len();
+
+    // Combined in a dumbass way
+    let seed = (width + first_char) << length;
+
+    // To get a pseudorandom number
+    let random = xorshift(seed);
+
+    // To pick an assistant message
+    ASSISTANT_MESSAGES[random as usize % ASSISTANT_MESSAGES.len()]
+
+    // And avoid depending on `fastrand` just for an example program
+}
+
+fn xorshift(mut x: u32) -> u32 {
+    assert!(x != 0);
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    x
+}
+
+const ASSISTANT_MESSAGES: &[&str] = &[
+    "That's crazy dude",
+    "Wait, say that again?",
+    "I'm happy for you. Or sorry that happened.",
+    "I see",
+    "k",
+    "heyyy",
+    "You're absolutely right!",
+    "Yes",
+    "No",
+    "Maybe",
+    "Yeah nah",
+    "Nah yeah",
+    "And how does that make you feel?",
+    "frfr no cap on god",
+];
