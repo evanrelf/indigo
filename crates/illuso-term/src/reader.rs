@@ -1,4 +1,4 @@
-use crate::input::{self, Event};
+use crate::{event::Event, input};
 use std::io::{self, Read};
 use tinyvec::ArrayVec;
 use winnow::{Parser, Partial, error::ErrMode};
