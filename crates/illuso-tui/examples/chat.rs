@@ -176,17 +176,20 @@ fn render_quit(state: &State, terminal: &mut Terminal) -> io::Result<()> {
 }
 
 fn assistant_message(state: &State) -> &'static str {
+    let message = state.queued_message.as_deref().unwrap_or("");
+
     // Arbitrary pieces of state
     let width = u32::from(state.width);
-    let first_char = state
-        .message
-        .chars()
-        .next()
-        .map_or(1, |char| u32::from(char));
-    let length = state.message.len();
+    let first_char = message.chars().next().map_or(1, |char| u32::from(char));
+    let length = message.len();
 
     // Combined in a dumbass way
-    let seed = (width + first_char) << length;
+    let seed = width
+        .wrapping_mul(31)
+        .wrapping_add(first_char)
+        .wrapping_mul(31)
+        .wrapping_add(length as u32)
+        | 1;
 
     // To get a pseudorandom number
     let random = xorshift(seed);
