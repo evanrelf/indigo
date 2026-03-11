@@ -64,7 +64,7 @@ impl Display for CursorPosition {
     }
 }
 
-pub const SAVE_CURSOR: &str = "\x1b[s";
-pub const RESTORE_CURSOR: &str = "\x1b[u";
-pub const HIDE_CURSOR: &str = "\x1b[?25l";
-pub const SHOW_CURSOR: &str = "\x1b[?25h";
+pub const CURSOR_SAVE: &str = "\x1b[s";
+pub const CURSOR_RESTORE: &str = "\x1b[u";
+pub const CURSOR_HIDE: &str = "\x1b[?25l";
+pub const CURSOR_SHOW: &str = "\x1b[?25h";

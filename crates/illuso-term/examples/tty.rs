@@ -8,7 +8,7 @@ use std::{
 fn main() -> io::Result<()> {
     let mut tty = Tty::init()?;
 
-    write!(&mut tty, "{}", cursor::HIDE_CURSOR)?;
+    write!(&mut tty, "{}", cursor::CURSOR_HIDE)?;
     tty.flush()?;
 
     let n = 3;
@@ -30,7 +30,7 @@ fn main() -> io::Result<()> {
         "{}{}{}",
         output::CLEAR_LINE,
         cursor::CursorColumn(1),
-        cursor::SHOW_CURSOR,
+        cursor::CURSOR_SHOW,
     )?;
     tty.flush()?;
 
