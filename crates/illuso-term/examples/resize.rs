@@ -1,4 +1,4 @@
-use illuso_term::{Event, Reader, Tty, output};
+use illuso_term::{Event, Reader, Tty, cursor, output};
 use std::{
     io::{self, Write as _},
     process,
@@ -55,7 +55,7 @@ fn main() -> io::Result<()> {
             write!(
                 stdout,
                 "{}{}pid:{pid},height:{height},width:{width}",
-                output::CursorColumn(1),
+                cursor::CursorColumn(1),
                 output::CLEAR_LINE,
             )?;
             stdout.flush()?;

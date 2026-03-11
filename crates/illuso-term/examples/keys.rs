@@ -1,5 +1,5 @@
 use illuso_term::{
-    Event, Key, KeyCode, KeyModifiers, KeyboardEnhancementFlags as KKF, Reader, Tty, output,
+    Event, Key, KeyCode, KeyModifiers, KeyboardEnhancementFlags as KKF, Reader, Tty, cursor, output,
 };
 use std::io::{self, Write as _};
 
@@ -44,7 +44,7 @@ fn main() -> io::Result<()> {
                     write!(
                         tty,
                         "{}\r{}{event:?} (x{repeat_count})\n\r",
-                        output::CursorUp(1),
+                        cursor::CursorUp(1),
                         output::CLEAR_LINE
                     )?;
                 }
