@@ -1,9 +1,7 @@
-#![allow(unused)]
-
 use illuso_term::*;
 use illuso_tui::Terminal;
 use std::{
-    cmp::min,
+    cmp::{max, min},
     io::{self, Write as _},
     mem,
 };
@@ -76,11 +74,10 @@ fn render(state: &mut State, terminal: &mut Terminal) -> io::Result<()> {
     write!(terminal, "{}", SYNC_UPDATE_SET)?;
     terminal.flush()?;
 
-    // Clear line and input
-    write!(terminal, "{}\r{}", CursorUp(1), CLEAR_TO_END_OF_SCREEN)?;
+    render_clear(state, terminal)?;
 
     for message in &state.queued_messages {
-        render_user_message(state, terminal, message)?;
+        render_user_message(terminal, message)?;
         render_assistant_message(state, terminal)?;
     }
     state.queued_messages.clear();
@@ -97,12 +94,30 @@ fn render(state: &mut State, terminal: &mut Terminal) -> io::Result<()> {
 fn render_clear(state: &mut State, terminal: &mut Terminal) -> io::Result<()> {
     let prev_width = mem::take(&mut state.prev_width);
 
-    todo!();
+    let height = match prev_width {
+        Some(prev_width) => {
+            let width = max(1, state.width) as usize;
+            let line_height = (max(1, prev_width) as usize).div_ceil(width);
+            let input_display = min(state.message.len(), prev_width as usize);
+            let input_height = if input_display == 0 {
+                1
+            } else {
+                input_display.div_ceil(width)
+            };
+            #[allow(clippy::cast_possible_truncation)]
+            {
+                (line_height + input_height - 1) as u16
+            }
+        }
+        None => 1,
+    };
+
+    write!(terminal, "{}\r{}", CursorUp(height), CLEAR_TO_END_OF_SCREEN)?;
 
     Ok(())
 }
 
-fn render_user_message(state: &State, terminal: &mut Terminal, message: &str) -> io::Result<()> {
+fn render_user_message(terminal: &mut Terminal, message: &str) -> io::Result<()> {
     write!(
         terminal,
         "{BOLD}{}user:{RESET} {message}\r\n\n",
@@ -136,7 +151,7 @@ fn render_input(state: &State, terminal: &mut Terminal) -> io::Result<()> {
     let max_chars = state.width as usize;
 
     if state.message.is_empty() {
-        let placeholder = "type something";
+        let placeholder = "say something";
         let end = min(placeholder.len(), max_chars);
         write!(
             terminal,
@@ -153,12 +168,11 @@ fn render_input(state: &State, terminal: &mut Terminal) -> io::Result<()> {
     Ok(())
 }
 
-fn render_quit(state: &State, terminal: &mut Terminal) -> io::Result<()> {
+fn render_quit(state: &mut State, terminal: &mut Terminal) -> io::Result<()> {
     write!(terminal, "{}", SYNC_UPDATE_SET)?;
     terminal.flush()?;
 
-    // Clear line and input
-    write!(terminal, "{}\r{}", CursorUp(1), CLEAR_TO_END_OF_SCREEN)?;
+    render_clear(state, terminal)?;
 
     write!(terminal, "{}", SYNC_UPDATE_RESET)?;
     terminal.flush()?;
