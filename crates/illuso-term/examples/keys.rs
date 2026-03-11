@@ -1,4 +1,4 @@
-use illuso_term::{KeyboardEnhancementFlags as KKF, *};
+use illuso_term::{KeyboardEnhancementFlags as KEF, *};
 use std::io::{self, Write as _};
 
 const CTRL_C: Event = Event::KeyPress(Key {
@@ -15,7 +15,7 @@ fn main() -> io::Result<()> {
         "{}",
         // NOTE: All these flags must be enabled to get full keyboard functionality, since the
         // raw/legacy keys are intentionally not supported.
-        KeyboardEnhancementFlagsPush(KKF::DISAMBIGUATE | KKF::REPORT_EVENTS | KKF::REPORT_ALL_KEYS)
+        KeyboardEnhancementFlagsPush(KEF::DISAMBIGUATE | KEF::REPORT_EVENTS | KEF::REPORT_ALL_KEYS)
     )?;
     tty.flush()?;
 

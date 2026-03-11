@@ -1,4 +1,4 @@
-use illuso_term::{KeyboardEnhancementFlags as KKF, *};
+use illuso_term::{KeyboardEnhancementFlags as KEF, *};
 use std::io::{self, Write as _};
 
 fn main() -> io::Result<()> {
@@ -23,7 +23,7 @@ fn main() -> io::Result<()> {
     write!(
         tty,
         "{}",
-        KeyboardEnhancementFlagsPush(KKF::DISAMBIGUATE | KKF::REPORT_EVENTS)
+        KeyboardEnhancementFlagsPush(KEF::DISAMBIGUATE | KEF::REPORT_EVENTS)
     )?;
     tty.flush()?;
 

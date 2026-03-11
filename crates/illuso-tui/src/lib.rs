@@ -1,4 +1,4 @@
-use illuso_term::{KeyboardEnhancementFlags as KKF, *};
+use illuso_term::{KeyboardEnhancementFlags as KEF, *};
 use std::io::{self, Write as _};
 
 pub struct Terminal {
@@ -19,7 +19,7 @@ impl Terminal {
             tty,
             "{}",
             KeyboardEnhancementFlagsPush(
-                KKF::DISAMBIGUATE | KKF::REPORT_EVENTS | KKF::REPORT_ALL_KEYS
+                KEF::DISAMBIGUATE | KEF::REPORT_EVENTS | KEF::REPORT_ALL_KEYS
             )
         )?;
 
