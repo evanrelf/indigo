@@ -1,8 +1,6 @@
-use illuso_term::{
-    Event, Reader, Tty, cursor,
-    key::{self, Key, KeyCode, KeyModifiers, KeyboardEnhancementFlags as KKF},
-    output,
-};
+#![allow(clippy::uninlined_format_args)]
+
+use illuso_term::{KeyboardEnhancementFlags as KKF, *};
 use std::io::{self, Write as _};
 
 const CTRL_C: Event = Event::KeyPress(Key {
@@ -19,9 +17,7 @@ fn main() -> io::Result<()> {
         "{}",
         // NOTE: All these flags must be enabled to get full keyboard functionality, since the
         // raw/legacy keys are intentionally not supported.
-        key::KeyboardEnhancementFlagsPush(
-            KKF::DISAMBIGUATE | KKF::REPORT_EVENTS | KKF::REPORT_ALL_KEYS
-        )
+        KeyboardEnhancementFlagsPush(KKF::DISAMBIGUATE | KKF::REPORT_EVENTS | KKF::REPORT_ALL_KEYS)
     )?;
     tty.flush()?;
 
@@ -46,8 +42,8 @@ fn main() -> io::Result<()> {
                     write!(
                         tty,
                         "{}\r{}{event:?} (x{repeat_count})\n\r",
-                        cursor::CursorUp(1),
-                        output::CLEAR_LINE
+                        CursorUp(1),
+                        CLEAR_LINE
                     )?;
                 }
                 tty.flush()?;
@@ -56,7 +52,7 @@ fn main() -> io::Result<()> {
         }
     }
 
-    write!(tty, "{}", key::KeyboardEnhancementFlagsPop)?;
+    write!(tty, "{}", KeyboardEnhancementFlagsPop)?;
     tty.flush()?;
 
     Ok(())

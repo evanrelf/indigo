@@ -1,4 +1,6 @@
-use illuso_term::{Event, Reader, Tty, cursor, output};
+#![allow(clippy::uninlined_format_args)]
+
+use illuso_term::*;
 use std::{
     io::{self, Write as _},
     process,
@@ -9,7 +11,7 @@ fn main() -> io::Result<()> {
     let mut reader = Reader::new();
 
     // Send the DECRQM query followed by DA1 as a sentinel
-    write!(tty, "{}{}", output::IN_BAND_RESIZE_QUERY, output::DA1_QUERY)?;
+    write!(tty, "{}{}", IN_BAND_RESIZE_QUERY, DA1_QUERY)?;
     tty.flush()?;
 
     // Read events until we see either a DECRPM reply or DA1
@@ -22,7 +24,7 @@ fn main() -> io::Result<()> {
                 }
                 2 => {
                     // Reset but settable, enable it
-                    write!(tty, "{}", output::IN_BAND_RESIZE_SET)?;
+                    write!(tty, "{}", IN_BAND_RESIZE_SET)?;
                     tty.flush()?;
                     break;
                 }
@@ -55,8 +57,8 @@ fn main() -> io::Result<()> {
             write!(
                 stdout,
                 "{}{}pid:{pid},height:{height},width:{width}",
-                cursor::CursorColumn(1),
-                output::CLEAR_LINE,
+                CursorColumn(1),
+                CLEAR_LINE,
             )?;
             stdout.flush()?;
         }
