@@ -3,11 +3,12 @@ mod event;
 mod key;
 mod parser;
 mod reader;
+mod style;
 mod tty;
 
 use std::fmt::{self, Display};
 
-pub use crate::{cursor::*, event::Event, key::*, reader::Reader, tty::Tty};
+pub use crate::{cursor::*, event::Event, key::*, reader::Reader, style::*, tty::Tty};
 
 // Clearing
 
