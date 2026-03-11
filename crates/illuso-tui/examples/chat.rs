@@ -20,7 +20,7 @@ fn main() -> io::Result<()> {
 
         update(&mut state, event);
 
-        render(&mut state, &mut terminal)?;
+        render(&state, &mut terminal)?;
 
         if state.quit {
             break;
@@ -40,6 +40,9 @@ struct State {
 }
 
 fn update(state: &mut State, event: Event) {
+    state.prev_width = None;
+    state.queued_messages.clear();
+
     match event {
         Event::KeyPress(key) | Event::KeyRepeat(key) => match key.code {
             KeyCode::Char(char @ ' '..='~') if key.modifiers.is_empty() => {
@@ -65,7 +68,7 @@ fn update(state: &mut State, event: Event) {
     }
 }
 
-fn render(state: &mut State, terminal: &mut Terminal) -> io::Result<()> {
+fn render(state: &State, terminal: &mut Terminal) -> io::Result<()> {
     if state.quit {
         render_quit(state, terminal)?;
         return Ok(());
@@ -80,7 +83,6 @@ fn render(state: &mut State, terminal: &mut Terminal) -> io::Result<()> {
         render_user_message(terminal, message)?;
         render_assistant_message(state, terminal)?;
     }
-    state.queued_messages.clear();
 
     render_line(state, terminal)?;
     render_input(state, terminal)?;
@@ -91,10 +93,8 @@ fn render(state: &mut State, terminal: &mut Terminal) -> io::Result<()> {
     Ok(())
 }
 
-fn render_clear(state: &mut State, terminal: &mut Terminal) -> io::Result<()> {
-    let prev_width = mem::take(&mut state.prev_width);
-
-    let height = match prev_width {
+fn render_clear(state: &State, terminal: &mut Terminal) -> io::Result<()> {
+    let height = match state.prev_width {
         Some(prev_width) => {
             let width = max(1, state.width) as usize;
             let line_height = (max(1, prev_width) as usize).div_ceil(width);
@@ -168,7 +168,7 @@ fn render_input(state: &State, terminal: &mut Terminal) -> io::Result<()> {
     Ok(())
 }
 
-fn render_quit(state: &mut State, terminal: &mut Terminal) -> io::Result<()> {
+fn render_quit(state: &State, terminal: &mut Terminal) -> io::Result<()> {
     write!(terminal, "{}", SYNC_UPDATE_SET)?;
     terminal.flush()?;
 
