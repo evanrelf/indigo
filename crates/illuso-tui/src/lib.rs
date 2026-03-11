@@ -57,6 +57,7 @@ impl Write for Terminal {
 
 impl Drop for Terminal {
     fn drop(&mut self) {
+        let _ = write!(self.tty, "{}", IN_BAND_RESIZE_RESET);
         let _ = write!(self.tty, "{}", KeyboardEnhancementFlagsPop);
         let _ = self.tty.flush();
     }
