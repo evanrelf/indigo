@@ -1,8 +1,8 @@
 pub mod cursor;
 pub mod event;
-pub mod input;
 pub mod key;
 pub mod output;
+pub mod parser;
 pub mod reader;
 pub mod tty;
 
