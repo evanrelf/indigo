@@ -15,16 +15,10 @@ fn main() -> io::Result<()> {
         ..State::default()
     };
 
-    loop {
+    while !state.quit {
         let event = terminal.read_event()?;
-
         update(&mut state, event);
-
         render(&state, &mut terminal)?;
-
-        if state.quit {
-            break;
-        }
     }
 
     Ok(())
