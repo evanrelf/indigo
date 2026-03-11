@@ -1,5 +1,5 @@
 use illuso_term::{KeyboardEnhancementFlags as KEF, *};
-use std::io::{self, Write as _};
+use std::io::{self, Write};
 
 pub struct Terminal {
     tty: Tty,
@@ -32,6 +32,22 @@ impl Terminal {
         tty.flush()?;
 
         Ok(Self { tty, reader })
+    }
+
+    pub fn read_event(&mut self) -> io::Result<Event> {
+        self.reader.read_event(&mut self.tty)
+    }
+}
+
+impl Write for Terminal {
+    #[inline]
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.tty.write(buf)
+    }
+
+    #[inline]
+    fn flush(&mut self) -> io::Result<()> {
+        self.tty.flush()
     }
 }
 
