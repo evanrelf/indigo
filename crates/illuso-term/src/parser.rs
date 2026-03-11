@@ -101,7 +101,46 @@ fn modifiers_and_event_type(input: &mut Partial<&[u8]>) -> winnow::ModalResult<(
     Ok((modifiers, event_type))
 }
 
-fn make_key_event(key: Key, event_type: u8) -> Event {
+fn resolve_shifted_char(key: &mut Key) {
+    if key.modifiers == KeyModifiers::SHIFT
+        && let KeyCode::Char(c) = key.code
+        && let Some(shifted) = shifted_char(c)
+    {
+        key.code = KeyCode::Char(shifted);
+        key.modifiers = KeyModifiers::empty();
+    }
+}
+
+fn shifted_char(c: char) -> Option<char> {
+    match c {
+        'a'..='z' => Some(c.to_ascii_uppercase()),
+        '1' => Some('!'),
+        '2' => Some('@'),
+        '3' => Some('#'),
+        '4' => Some('$'),
+        '5' => Some('%'),
+        '6' => Some('^'),
+        '7' => Some('&'),
+        '8' => Some('*'),
+        '9' => Some('('),
+        '0' => Some(')'),
+        '-' => Some('_'),
+        '=' => Some('+'),
+        '[' => Some('{'),
+        ']' => Some('}'),
+        '\\' => Some('|'),
+        ';' => Some(':'),
+        '\'' => Some('"'),
+        ',' => Some('<'),
+        '.' => Some('>'),
+        '/' => Some('?'),
+        '`' => Some('~'),
+        _ => None,
+    }
+}
+
+fn make_key_event(mut key: Key, event_type: u8) -> Event {
+    resolve_shifted_char(&mut key);
     match event_type {
         2 => Event::KeyRepeat(key),
         3 => Event::KeyRelease(key),
