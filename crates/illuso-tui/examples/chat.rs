@@ -35,13 +35,13 @@ struct State {
     quit: bool,
     prev_width: Option<u16>,
     width: u16,
-    queued_messages: Vec<String>,
+    queued_message: Option<String>,
     message: String,
 }
 
 fn update(state: &mut State, event: Event) {
     state.prev_width = None;
-    state.queued_messages.clear();
+    state.queued_message = None;
 
     match event {
         Event::KeyPress(key) | Event::KeyRepeat(key) => match key.code {
@@ -53,7 +53,7 @@ fn update(state: &mut State, event: Event) {
             }
             KeyCode::Enter if key.modifiers.is_empty() && !state.message.is_empty() => {
                 let message = mem::take(&mut state.message);
-                state.queued_messages.push(message);
+                state.queued_message = Some(message);
             }
             KeyCode::Char('c' | 'd') if key.modifiers == KeyModifiers::CTRL => {
                 state.quit = true;
@@ -79,7 +79,7 @@ fn render(state: &State, terminal: &mut Terminal) -> io::Result<()> {
 
     render_clear(state, terminal)?;
 
-    for message in &state.queued_messages {
+    if let Some(message) = &state.queued_message {
         render_user_message(terminal, message)?;
         render_assistant_message(state, terminal)?;
     }
