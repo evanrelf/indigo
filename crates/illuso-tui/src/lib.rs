@@ -34,6 +34,10 @@ impl Terminal {
         Ok(Self { tty, reader })
     }
 
+    pub fn size(&self) -> io::Result<(u16, u16)> {
+        self.tty.size()
+    }
+
     pub fn read_event(&mut self) -> io::Result<Event> {
         self.reader.read_event(&mut self.tty)
     }

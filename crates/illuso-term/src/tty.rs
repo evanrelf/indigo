@@ -1,4 +1,4 @@
-use rustix::termios::{self, OptionalActions, Termios};
+use rustix::termios::{self, OptionalActions, Termios, tcgetwinsize};
 use std::{
     fs::{self, File},
     io::{self, BufWriter, Read, Write},
@@ -24,6 +24,11 @@ impl Tty {
             writer,
             original_termios,
         })
+    }
+
+    pub fn size(&self) -> io::Result<(u16, u16)> {
+        let winsize = tcgetwinsize(&self.reader)?;
+        Ok((winsize.ws_row, winsize.ws_col))
     }
 }
 
