@@ -1,4 +1,4 @@
-use illuso_term::{Event, KeyboardEnhancementFlags as KKF, Reader, Tty, output};
+use illuso_term::{Event, Reader, Tty, key::KeyboardEnhancementFlags as KKF, output};
 use std::io::{self, Write as _};
 
 fn main() -> io::Result<()> {

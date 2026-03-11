@@ -1,5 +1,7 @@
 use illuso_term::{
-    Event, Key, KeyCode, KeyModifiers, KeyboardEnhancementFlags as KKF, Reader, Tty, cursor, output,
+    Event, Reader, Tty, cursor,
+    key::{Key, KeyCode, KeyModifiers, KeyboardEnhancementFlags as KKF},
+    output,
 };
 use std::io::{self, Write as _};
 

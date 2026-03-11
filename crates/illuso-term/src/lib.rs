@@ -1,14 +1,9 @@
 pub mod cursor;
-pub mod event;
+mod event;
 pub mod key;
 pub mod output;
-pub mod parser;
-pub mod reader;
-pub mod tty;
+mod parser;
+mod reader;
+mod tty;
 
-pub use crate::{
-    event::Event,
-    key::{Key, KeyCode, KeyModifiers, KeyboardEnhancementFlags},
-    reader::Reader,
-    tty::Tty,
-};
+pub use crate::{event::Event, reader::Reader, tty::Tty};
