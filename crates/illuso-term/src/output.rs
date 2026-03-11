@@ -1,4 +1,3 @@
-use crate::key::KeyboardEnhancementFlags;
 use std::fmt::{self, Display};
 
 // Clearing
@@ -40,27 +39,6 @@ impl Display for ResetMode {
 // https://vt100.net/docs/vt510-rm/DA1.html
 
 pub const DA1_QUERY: &str = "\x1b[c";
-
-// Kitty keyboard protocol
-// https://sw.kovidgoyal.net/kitty/keyboard-protocol/
-
-pub struct KeyboardEnhancementFlagsPush(pub KeyboardEnhancementFlags);
-
-impl Display for KeyboardEnhancementFlagsPush {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "\x1b[>{}u", self.0)
-    }
-}
-
-pub struct KeyboardEnhancementFlagsPop;
-
-impl Display for KeyboardEnhancementFlagsPop {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "\x1b[<1u")
-    }
-}
-
-pub const KEYBOARD_ENHANCEMENT_FLAGS_QUERY: &str = "\x1b[?u";
 
 // Bracketed paste
 // https://en.wikipedia.org/wiki/Bracketed-paste
