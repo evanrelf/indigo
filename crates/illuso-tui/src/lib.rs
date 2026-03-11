@@ -25,7 +25,9 @@ impl Terminal {
 
         // TODO: Query whether keyboard enhancement flags took effect.
 
-        // TODO: Query whether in-band resize is supported. If it is, enable it. If it isn't, panic.
+        // TODO: Query whether in-band resize is supported.
+
+        write!(tty, "{}", IN_BAND_RESIZE_SET)?;
 
         tty.flush()?;
 
