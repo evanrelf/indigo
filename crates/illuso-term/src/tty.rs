@@ -2,13 +2,14 @@ use rustix::termios::{self, OptionalActions, Termios, tcgetwinsize};
 use std::{
     fs::{self, File},
     io::{self, BufWriter, Read, Write},
+    mem,
     os::fd::{AsFd as _, BorrowedFd},
 };
 
 pub struct Tty {
     reader: File,
     writer: BufWriter<File>,
-    original_termios: Termios,
+    original_termios: Option<Termios>,
 }
 
 impl Tty {
@@ -17,13 +18,28 @@ impl Tty {
             .read(true)
             .write(true)
             .open("/dev/tty")?;
+
         let writer = BufWriter::new(file.try_clone()?);
-        let original_termios = enable_raw_mode(file.as_fd())?;
+
         Ok(Self {
             reader: file,
             writer,
-            original_termios,
+            original_termios: None,
         })
+    }
+
+    pub fn enable_raw_mode(&mut self) -> io::Result<()> {
+        self.original_termios = Some(enable_raw_mode(self.reader.as_fd())?);
+
+        Ok(())
+    }
+
+    pub fn disable_raw_mode(&mut self) -> io::Result<()> {
+        if let Some(original_termios) = mem::take(&mut self.original_termios) {
+            disable_raw_mode(self.reader.as_fd(), &original_termios)?;
+        }
+
+        Ok(())
     }
 
     pub fn size(&self) -> io::Result<(u16, u16)> {
@@ -34,7 +50,7 @@ impl Tty {
 
 impl Drop for Tty {
     fn drop(&mut self) {
-        let _ = disable_raw_mode(self.reader.as_fd(), &self.original_termios);
+        let _ = self.disable_raw_mode();
     }
 }
 

@@ -18,6 +18,8 @@ impl Terminal {
             events: VecDeque::new(),
         };
 
+        this.tty.enable_raw_mode()?;
+
         if !this.enable_mode(IN_BAND_RESIZE_MODE)? {
             drop(this);
             panic!("terminal does not support in-band resize");
