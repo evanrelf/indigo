@@ -18,8 +18,12 @@ impl Terminal {
             events: VecDeque::new(),
         };
 
-        // TODO: Query whether Kitty keyboard protocol is supported (if possible?).
+        // In-band resize
+        assert!(this.enable_mode(IN_BAND_RESIZE_MODE)?);
+        write!(this.tty, "{}", IN_BAND_RESIZE_SET)?;
+        this.tty.flush()?;
 
+        // TODO: Query whether Kitty keyboard protocol is supported (if possible?).
         // NOTE: All these flags must be enabled to get full keyboard functionality, since the
         // raw/legacy keys are intentionally not supported.
         write!(
@@ -29,14 +33,7 @@ impl Terminal {
                 KEF::DISAMBIGUATE | KEF::REPORT_EVENTS | KEF::REPORT_ALL_KEYS
             )
         )?;
-
         // TODO: Query whether keyboard enhancement flags took effect.
-
-        // TODO: Query whether in-band resize is supported.
-
-        write!(this.tty, "{}", IN_BAND_RESIZE_SET)?;
-
-        this.tty.flush()?;
 
         Ok(this)
     }
