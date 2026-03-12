@@ -45,6 +45,14 @@ impl Display for ModeReset {
     }
 }
 
+pub enum ModeSetting {
+    NotRecognized,
+    Set,
+    Reset,
+    PermanentlySet,
+    PermanentlyReset,
+}
+
 // Primary Device Attributes (DA1)
 // https://vt100.net/docs/vt510-rm/DA1.html
 
