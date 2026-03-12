@@ -12,15 +12,18 @@ pub struct Terminal {
 
 impl Terminal {
     pub fn init() -> io::Result<Self> {
-        let mut tty = Tty::init()?;
-        let reader = Reader::new();
+        let mut this = Self {
+            tty: Tty::init()?,
+            reader: Reader::new(),
+            events: VecDeque::new(),
+        };
 
         // TODO: Query whether Kitty keyboard protocol is supported (if possible?).
 
         // NOTE: All these flags must be enabled to get full keyboard functionality, since the
         // raw/legacy keys are intentionally not supported.
         write!(
-            tty,
+            this.tty,
             "{}",
             KeyboardEnhancementFlagsPush(
                 KEF::DISAMBIGUATE | KEF::REPORT_EVENTS | KEF::REPORT_ALL_KEYS
@@ -31,15 +34,11 @@ impl Terminal {
 
         // TODO: Query whether in-band resize is supported.
 
-        write!(tty, "{}", IN_BAND_RESIZE_SET)?;
+        write!(this.tty, "{}", IN_BAND_RESIZE_SET)?;
 
-        tty.flush()?;
+        this.tty.flush()?;
 
-        Ok(Self {
-            tty,
-            reader,
-            events: VecDeque::new(),
-        })
+        Ok(this)
     }
 
     pub fn size(&self) -> io::Result<(u16, u16)> {
