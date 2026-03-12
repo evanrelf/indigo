@@ -1,4 +1,7 @@
-use illuso_term::*;
+use illuso_term::{
+    BOLD, CLEAR_LINE, CLEAR_TO_END_OF_SCREEN, Color, CursorUp, Event, Fg, KeyCode, KeyModifiers,
+    RESET, SYNC_UPDATE_RESET, SYNC_UPDATE_SET,
+};
 use illuso_tui::Terminal;
 use std::{
     cmp::{max, min},
