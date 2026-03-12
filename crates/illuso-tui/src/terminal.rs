@@ -91,6 +91,39 @@ impl Terminal {
         }
     }
 
+    pub fn query_keyboard_flags(&mut self) -> io::Result<Option<KeyboardEnhancementFlags>> {
+        write!(
+            self.tty,
+            "{}{}",
+            KEYBOARD_ENHANCEMENT_FLAGS_QUERY, DA1_QUERY
+        )?;
+        self.tty.flush()?;
+
+        let mut flags = None;
+
+        loop {
+            // We record the setting from the reply, but continue reading events until a DA1 event
+            // is consumed. Leaving it in the event stream would confuse future queries.
+            match self.reader.read_event(&mut self.tty)? {
+                Event::KeyboardEnhancementFlags(event_flags) => flags = Some(event_flags),
+                Event::Da1 => return Ok(flags),
+                event => self.events.push_back(event),
+            }
+        }
+    }
+
+    pub fn push_keyboard_flags(&mut self, flags: KeyboardEnhancementFlags) -> io::Result<()> {
+        write!(self.tty, "{}", KeyboardEnhancementFlagsPush(flags))?;
+        self.tty.flush()?;
+        Ok(())
+    }
+
+    pub fn pop_keyboard_flags(&mut self) -> io::Result<()> {
+        write!(self.tty, "{}", KeyboardEnhancementFlagsPop)?;
+        self.tty.flush()?;
+        Ok(())
+    }
+
     pub fn size(&self) -> io::Result<(u16, u16)> {
         self.tty.size()
     }
