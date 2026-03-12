@@ -1,9 +1,13 @@
 use illuso_term::{KeyboardEnhancementFlags as KEF, *};
-use std::io::{self, Write};
+use std::{
+    collections::VecDeque,
+    io::{self, Write},
+};
 
 pub struct Terminal {
     tty: Tty,
     reader: Reader,
+    events: VecDeque<Event>,
 }
 
 impl Terminal {
@@ -31,7 +35,11 @@ impl Terminal {
 
         tty.flush()?;
 
-        Ok(Self { tty, reader })
+        Ok(Self {
+            tty,
+            reader,
+            events: VecDeque::new(),
+        })
     }
 
     pub fn size(&self) -> io::Result<(u16, u16)> {
@@ -39,7 +47,11 @@ impl Terminal {
     }
 
     pub fn read_event(&mut self) -> io::Result<Event> {
-        self.reader.read_event(&mut self.tty)
+        if let Some(event) = self.events.pop_front() {
+            Ok(event)
+        } else {
+            self.reader.read_event(&mut self.tty)
+        }
     }
 }
 
