@@ -62,22 +62,25 @@ pub const DA1_QUERY: &str = "\x1b[c";
 // Bracketed paste
 // https://en.wikipedia.org/wiki/Bracketed-paste
 
-pub const BRACKETED_PASTE_QUERY: ModeQuery = ModeQuery(2004);
-pub const BRACKETED_PASTE_SET: ModeSet = ModeSet(2004);
-pub const BRACKETED_PASTE_RESET: ModeReset = ModeReset(2004);
+pub const BRACKETED_PASTE_MODE: u16 = 2004;
+pub const BRACKETED_PASTE_QUERY: ModeQuery = ModeQuery(BRACKETED_PASTE_MODE);
+pub const BRACKETED_PASTE_SET: ModeSet = ModeSet(BRACKETED_PASTE_MODE);
+pub const BRACKETED_PASTE_RESET: ModeReset = ModeReset(BRACKETED_PASTE_MODE);
 pub const BRACKETED_PASTE_BEGIN: &str = "\x1b[200~";
 pub const BRACKETED_PASTE_END: &str = "\x1b[201~";
 
 // In-band resize
 // https://gist.github.com/rockorager/e695fb2924d36b2bcf1fff4a3704bd83
 
-pub const IN_BAND_RESIZE_QUERY: ModeQuery = ModeQuery(2048);
-pub const IN_BAND_RESIZE_SET: ModeSet = ModeSet(2048);
-pub const IN_BAND_RESIZE_RESET: ModeReset = ModeReset(2048);
+pub const IN_BAND_RESIZE_MODE: u16 = 2048;
+pub const IN_BAND_RESIZE_QUERY: ModeQuery = ModeQuery(IN_BAND_RESIZE_MODE);
+pub const IN_BAND_RESIZE_SET: ModeSet = ModeSet(IN_BAND_RESIZE_MODE);
+pub const IN_BAND_RESIZE_RESET: ModeReset = ModeReset(IN_BAND_RESIZE_MODE);
 
 // Synchronized output
 // https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md
 
-pub const SYNC_UPDATE_QUERY: ModeQuery = ModeQuery(2026);
-pub const SYNC_UPDATE_SET: ModeSet = ModeSet(2026);
-pub const SYNC_UPDATE_RESET: ModeReset = ModeReset(2026);
+pub const SYNC_UPDATE_MODE: u16 = 2026;
+pub const SYNC_UPDATE_QUERY: ModeQuery = ModeQuery(SYNC_UPDATE_MODE);
+pub const SYNC_UPDATE_SET: ModeSet = ModeSet(SYNC_UPDATE_MODE);
+pub const SYNC_UPDATE_RESET: ModeReset = ModeReset(SYNC_UPDATE_MODE);
