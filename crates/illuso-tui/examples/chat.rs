@@ -188,7 +188,7 @@ fn assistant_message(state: &State) -> &'static str {
         .wrapping_mul(31)
         .wrapping_add(first_char)
         .wrapping_mul(31)
-        .wrapping_add(length as u32)
+        .wrapping_add(u32::try_from(length).unwrap())
         | 1;
 
     // To get a pseudorandom number
