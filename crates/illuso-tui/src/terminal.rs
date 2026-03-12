@@ -23,6 +23,9 @@ impl Terminal {
         write!(this.tty, "{}", IN_BAND_RESIZE_SET)?;
         this.tty.flush()?;
 
+        // Synchronized update
+        assert!(this.query_mode(SYNC_UPDATE_MODE)?.is_configurable());
+
         // TODO: Query whether Kitty keyboard protocol is supported (if possible?).
         // NOTE: All these flags must be enabled to get full keyboard functionality, since the
         // raw/legacy keys are intentionally not supported.
