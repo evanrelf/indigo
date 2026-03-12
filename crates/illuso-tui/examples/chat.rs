@@ -67,14 +67,14 @@ fn update(state: &mut State, event: Event) {
 }
 
 fn render(state: &State, terminal: &mut Terminal) -> io::Result<()> {
-    if state.quit {
-        render_quit(state, terminal)?;
-        return Ok(());
-    }
-
     terminal.begin_sync_update()?;
 
     render_clear(state, terminal)?;
+
+    if state.quit {
+        terminal.end_sync_update()?;
+        return Ok(());
+    }
 
     if let Some(message) = &state.queued_message {
         render_user_message(terminal, message)?;
@@ -160,16 +160,6 @@ fn render_input(state: &State, terminal: &mut Terminal) -> io::Result<()> {
         let start = state.message.len().saturating_sub(max_chars - 1);
         write!(terminal, "{}", &state.message[start..])?;
     }
-
-    Ok(())
-}
-
-fn render_quit(state: &State, terminal: &mut Terminal) -> io::Result<()> {
-    terminal.begin_sync_update()?;
-
-    render_clear(state, terminal)?;
-
-    terminal.end_sync_update()?;
 
     Ok(())
 }
