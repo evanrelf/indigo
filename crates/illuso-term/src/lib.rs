@@ -54,6 +54,31 @@ pub enum ModeSetting {
     PermanentlyReset,
 }
 
+impl ModeSetting {
+    #[must_use]
+    pub fn is_recognized(&self) -> bool {
+        !matches!(self, Self::NotRecognized)
+    }
+
+    #[must_use]
+    pub fn is_enabled(&self) -> bool {
+        matches!(self, Self::Set | Self::PermanentlySet)
+    }
+
+    #[must_use]
+    pub fn is_disabled(&self) -> bool {
+        matches!(
+            self,
+            Self::NotRecognized | Self::Reset | Self::PermanentlyReset
+        )
+    }
+
+    #[must_use]
+    pub fn is_configurable(&self) -> bool {
+        matches!(self, Self::Set | Self::Reset)
+    }
+}
+
 // Primary Device Attributes (DA1)
 // https://vt100.net/docs/vt510-rm/DA1.html
 
