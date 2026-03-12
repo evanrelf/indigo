@@ -41,6 +41,56 @@ impl Terminal {
         Ok(this)
     }
 
+    pub fn query_mode(&mut self, mode: u16) -> io::Result<ModeSetting> {
+        write!(self.tty, "{}{}", ModeQuery(mode), DA1_QUERY)?;
+        self.tty.flush()?;
+
+        let mut setting = ModeSetting::NotRecognized;
+
+        loop {
+            // We record the setting from the reply, but continue reading events until a DA1 event
+            // is consumed. Leaving it in the event stream would confuse future queries.
+            match self.reader.read_event(&mut self.tty)? {
+                Event::Decrpm {
+                    mode: event_mode,
+                    setting: event_setting,
+                } if mode == event_mode => setting = event_setting,
+                Event::Da1 => return Ok(setting),
+                event => self.events.push_back(event),
+            }
+        }
+    }
+
+    pub fn enable_mode(&mut self, mode: u16) -> io::Result<bool> {
+        #[allow(clippy::enum_glob_use)]
+        use ModeSetting::*;
+
+        match self.query_mode(mode)? {
+            NotRecognized | PermanentlyReset => Ok(false),
+            Set | PermanentlySet => Ok(true),
+            Reset => {
+                write!(self.tty, "{}", ModeSet(mode))?;
+                self.tty.flush()?;
+                Ok(true)
+            }
+        }
+    }
+
+    pub fn disable_mode(&mut self, mode: u16) -> io::Result<bool> {
+        #[allow(clippy::enum_glob_use)]
+        use ModeSetting::*;
+
+        match self.query_mode(mode)? {
+            NotRecognized | Reset | PermanentlyReset => Ok(true),
+            PermanentlySet => Ok(false),
+            Set => {
+                write!(self.tty, "{}", ModeReset(mode))?;
+                self.tty.flush()?;
+                Ok(true)
+            }
+        }
+    }
+
     pub fn size(&self) -> io::Result<(u16, u16)> {
         self.tty.size()
     }
