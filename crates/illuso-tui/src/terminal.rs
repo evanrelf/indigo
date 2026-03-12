@@ -18,17 +18,22 @@ impl Terminal {
             events: VecDeque::new(),
         };
 
-        assert!(
-            this.enable_mode(IN_BAND_RESIZE_MODE)?,
-            "terminal does not support in-band resize"
-        );
+        if !this.enable_mode(IN_BAND_RESIZE_MODE)? {
+            drop(this);
+            panic!("terminal does not support in-band resize");
+        }
         write!(this.tty, "{}", IN_BAND_RESIZE_SET)?;
         this.tty.flush()?;
 
-        assert!(
-            this.query_keyboard_flags()?.is_some(),
-            "terminal does not support kitty keyboard protocol"
-        );
+        if !this.query_mode(SYNC_UPDATE_MODE)?.is_configurable() {
+            drop(this);
+            panic!("terminal does not support synchronized update");
+        }
+
+        if this.query_keyboard_flags()?.is_none() {
+            drop(this);
+            panic!("terminal does not support kitty keyboard protocol");
+        }
         write!(
             this.tty,
             "{}",
