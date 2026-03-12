@@ -1,6 +1,6 @@
 use illuso_term::{
     BOLD, CLEAR_LINE, CLEAR_TO_END_OF_SCREEN, Color, CursorUp, Event, Fg, KeyCode, KeyModifiers,
-    RESET, SYNC_UPDATE_RESET, SYNC_UPDATE_SET,
+    RESET,
 };
 use illuso_tui::Terminal;
 use std::{
@@ -72,8 +72,7 @@ fn render(state: &State, terminal: &mut Terminal) -> io::Result<()> {
         return Ok(());
     }
 
-    write!(terminal, "{}", SYNC_UPDATE_SET)?;
-    terminal.flush()?;
+    terminal.begin_sync_update()?;
 
     render_clear(state, terminal)?;
 
@@ -85,8 +84,7 @@ fn render(state: &State, terminal: &mut Terminal) -> io::Result<()> {
     render_line(state, terminal)?;
     render_input(state, terminal)?;
 
-    write!(terminal, "{}", SYNC_UPDATE_RESET)?;
-    terminal.flush()?;
+    terminal.end_sync_update()?;
 
     Ok(())
 }
@@ -167,13 +165,11 @@ fn render_input(state: &State, terminal: &mut Terminal) -> io::Result<()> {
 }
 
 fn render_quit(state: &State, terminal: &mut Terminal) -> io::Result<()> {
-    write!(terminal, "{}", SYNC_UPDATE_SET)?;
-    terminal.flush()?;
+    terminal.begin_sync_update()?;
 
     render_clear(state, terminal)?;
 
-    write!(terminal, "{}", SYNC_UPDATE_RESET)?;
-    terminal.flush()?;
+    terminal.end_sync_update()?;
 
     Ok(())
 }

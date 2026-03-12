@@ -132,6 +132,18 @@ impl Terminal {
         Ok(())
     }
 
+    pub fn begin_sync_update(&mut self) -> io::Result<()> {
+        write!(self.tty, "{}", SYNC_UPDATE_SET)?;
+        self.tty.flush()?;
+        Ok(())
+    }
+
+    pub fn end_sync_update(&mut self) -> io::Result<()> {
+        write!(self.tty, "{}", SYNC_UPDATE_RESET)?;
+        self.tty.flush()?;
+        Ok(())
+    }
+
     pub fn size(&self) -> io::Result<(u16, u16)> {
         self.tty.size()
     }
