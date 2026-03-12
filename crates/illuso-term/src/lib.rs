@@ -45,6 +45,7 @@ impl Display for ModeReset {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum ModeSetting {
     NotRecognized,
     Set,

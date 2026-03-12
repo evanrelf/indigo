@@ -1,4 +1,7 @@
-use crate::key::{Key, KeyboardEnhancementFlags};
+use crate::{
+    ModeSetting,
+    key::{Key, KeyboardEnhancementFlags},
+};
 use tinyvec::TinyVec;
 
 #[derive(Debug, PartialEq)]
@@ -23,7 +26,7 @@ pub enum Event {
     /// <https://vt100.net/docs/vt510-rm/DECRPM.html>
     Decrpm {
         mode: u16,
-        value: u8,
+        setting: ModeSetting,
     },
     /// Control Sequence Introducer
     ///

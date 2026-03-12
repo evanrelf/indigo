@@ -15,33 +15,28 @@ fn main() -> io::Result<()> {
     // Read events until we see either a DECRPM reply or DA1
     loop {
         match reader.read_event(&mut tty)? {
-            Event::Decrpm { mode: 2048, value } => match value {
-                1 | 3 => {
-                    // Already set (1) or permanently set (3), no action needed
-                    break;
-                }
-                2 => {
-                    // Reset but settable, enable it
+            Event::Decrpm {
+                mode: 2048,
+                setting,
+            } => match setting {
+                ModeSetting::Set | ModeSetting::PermanentlySet => break,
+                ModeSetting::Reset => {
                     write!(tty, "{}", IN_BAND_RESIZE_SET)?;
                     tty.flush()?;
                     break;
                 }
-                4 => {
+                ModeSetting::PermanentlyReset => {
                     drop(tty);
                     panic!("terminal does not support enabling in-band resize (mode 2048)");
                 }
-                0 => {
+                ModeSetting::NotRecognized => {
                     drop(tty);
                     panic!("terminal does not support in-band resize (mode 2048)");
-                }
-                _ => {
-                    drop(tty);
-                    panic!("unexpected setting for in-band resize (mode 2048): {value}");
                 }
             },
             Event::Da1 => {
                 drop(tty);
-                panic!("terminal does not recognize in-band resize (mode 2048)");
+                panic!("terminal does not support in-band resize (mode 2048)");
             }
             _ => {}
         }

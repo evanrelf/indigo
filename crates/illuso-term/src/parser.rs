@@ -1,4 +1,5 @@
 use crate::{
+    ModeSetting,
     event::Event,
     key::{Key, KeyCode, KeyModifiers, KeyboardEnhancementFlags},
 };
@@ -179,9 +180,18 @@ fn decrpm(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     ("\x1b[", opt("?")).void().parse_next(input)?;
     let mode = u16.parse_next(input)?;
     ";".void().parse_next(input)?;
-    let value = u8.verify(|n| (0..=4).contains(n)).parse_next(input)?;
+    let setting = u8
+        .verify_map(|n| match n {
+            0 => Some(ModeSetting::NotRecognized),
+            1 => Some(ModeSetting::Set),
+            2 => Some(ModeSetting::Reset),
+            3 => Some(ModeSetting::PermanentlySet),
+            4 => Some(ModeSetting::PermanentlyReset),
+            _ => None,
+        })
+        .parse_next(input)?;
     "$y".void().parse_next(input)?;
-    Ok(Event::Decrpm { mode, value })
+    Ok(Event::Decrpm { mode, setting })
 }
 
 fn unknown_csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
@@ -314,7 +324,7 @@ mod tests {
             Partial::new(&b""[..]),
             Event::Decrpm {
                 mode: 1234,
-                value: 1,
+                setting: ModeSetting::Set,
             },
         ));
         assert_eq!(decrpm.parse_peek(Partial::new(input)), output);
@@ -324,12 +334,12 @@ mod tests {
 
     #[test]
     fn parses_dec_decrpm() {
-        let input = b"\x1b[?1234;1$y";
+        let input = b"\x1b[?1234;2$y";
         let output = Ok((
             Partial::new(&b""[..]),
             Event::Decrpm {
                 mode: 1234,
-                value: 1,
+                setting: ModeSetting::Reset,
             },
         ));
         assert_eq!(decrpm.parse_peek(Partial::new(input)), output);
