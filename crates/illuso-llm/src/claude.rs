@@ -20,6 +20,50 @@ impl Client {
             api_key,
         })
     }
+
+    /// <https://platform.claude.com/docs/en/api/models/retrieve>
+    pub async fn retrieve_model(&self, model_id: &str) -> anyhow::Result<ModelInfo> {
+        let response = self
+            .http_client
+            .get(format!("{BASE_URL}/v1/models/{model_id}"))
+            .header("anthropic-version", "2023-06-01")
+            .header("X-Api-Key", &self.api_key)
+            .send()
+            .await?;
+        if !response.status().is_success() {
+            let status = response.status();
+            let text = response.text().await?;
+            anyhow::bail!("failed\nstatus: {status}\ntext: {text}");
+        }
+        let text = response.text().await?;
+        let de = &mut serde_json::Deserializer::from_str(&text);
+        let model_info: ModelInfo = serde_path_to_error::deserialize(de)
+            .with_context(|| format!("failed to parse response:\n{text}"))?;
+        anyhow::ensure!(model_info.r#type == "model");
+        Ok(model_info)
+    }
+
+    /// <https://platform.claude.com/docs/en/api/messages/create>
+    pub async fn create_message(&self, params: MessageCreateParams) -> anyhow::Result<Message> {
+        let response = self
+            .http_client
+            .post(format!("{BASE_URL}/v1/messages"))
+            .header("anthropic-version", "2023-06-01")
+            .header("X-Api-Key", &self.api_key)
+            .json(&params)
+            .send()
+            .await?;
+        if !response.status().is_success() {
+            let status = response.status();
+            let text = response.text().await?;
+            anyhow::bail!("failed\nstatus: {status}\ntext: {text}");
+        }
+        let text = response.text().await?;
+        let de = &mut serde_json::Deserializer::from_str(&text);
+        let message: Message = serde_path_to_error::deserialize(de)
+            .with_context(|| format!("failed to parse response:\n{text}"))?;
+        Ok(message)
+    }
 }
 
 // Models API
@@ -31,28 +75,6 @@ pub struct ModelInfo {
     pub display_name: String,
     /// Always "model"
     pub r#type: String,
-}
-
-/// <https://platform.claude.com/docs/en/api/models/retrieve>
-pub async fn retrieve_model(client: &Client, model_id: &str) -> anyhow::Result<ModelInfo> {
-    let response = client
-        .http_client
-        .get(format!("{BASE_URL}/v1/models/{model_id}"))
-        .header("anthropic-version", "2023-06-01")
-        .header("X-Api-Key", &client.api_key)
-        .send()
-        .await?;
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await?;
-        anyhow::bail!("failed\nstatus: {status}\ntext: {text}");
-    }
-    let text = response.text().await?;
-    let de = &mut serde_json::Deserializer::from_str(&text);
-    let model_info: ModelInfo = serde_path_to_error::deserialize(de)
-        .with_context(|| format!("failed to parse response:\n{text}"))?;
-    anyhow::ensure!(model_info.r#type == "model");
-    Ok(model_info)
 }
 
 // Messages API
@@ -277,31 +299,6 @@ pub struct Usage {
     pub cache_creation_input_tokens: Option<usize>,
     #[serde(default)]
     pub cache_read_input_tokens: Option<usize>,
-}
-
-/// <https://platform.claude.com/docs/en/api/messages/create>
-pub async fn create_message(
-    client: &Client,
-    params: MessageCreateParams,
-) -> anyhow::Result<Message> {
-    let response = client
-        .http_client
-        .post(format!("{BASE_URL}/v1/messages"))
-        .header("anthropic-version", "2023-06-01")
-        .header("X-Api-Key", &client.api_key)
-        .json(&params)
-        .send()
-        .await?;
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await?;
-        anyhow::bail!("failed\nstatus: {status}\ntext: {text}");
-    }
-    let text = response.text().await?;
-    let de = &mut serde_json::Deserializer::from_str(&text);
-    let message: Message = serde_path_to_error::deserialize(de)
-        .with_context(|| format!("failed to parse response:\n{text}"))?;
-    Ok(message)
 }
 
 #[cfg(test)]
@@ -817,7 +814,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "live API test; run with --ignored --test-threads=1"]
     async fn retrieve_model_live() {
-        let info = retrieve_model(&CLIENT, MODEL).await.unwrap();
+        let info = CLIENT.retrieve_model(MODEL).await.unwrap();
         assert!(info.id.starts_with("claude-haiku-4-5"));
         assert_eq!(info.r#type, "model");
         assert!(!info.display_name.is_empty());
@@ -842,7 +839,7 @@ mod tests {
             tools: None,
             output_config: None,
         };
-        let msg = create_message(&CLIENT, params).await.unwrap();
+        let msg = CLIENT.create_message(params).await.unwrap();
         assert!(matches!(msg.stop_reason, Some(StopReason::EndTurn)));
         assert!(!msg.content.is_empty());
         assert!(msg.usage.input_tokens > 0);
@@ -885,7 +882,7 @@ mod tests {
             }]),
             output_config: None,
         };
-        let msg = create_message(&CLIENT, params).await.unwrap();
+        let msg = CLIENT.create_message(params).await.unwrap();
         assert!(matches!(msg.stop_reason, Some(StopReason::ToolUse)));
         let has_tool_use = msg
             .content
