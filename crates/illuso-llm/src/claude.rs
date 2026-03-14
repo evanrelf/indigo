@@ -11,6 +11,7 @@ pub fn api_key() -> anyhow::Result<&'static str> {
     API_KEY.as_deref().context("Missing `ANTHROPIC_API_KEY`")
 }
 
+#[must_use]
 pub fn client() -> &'static reqwest::Client {
     static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
     &CLIENT
@@ -263,7 +264,6 @@ pub enum StopReason {
 }
 
 #[derive(Debug, Deserialize)]
-#[expect(clippy::struct_field_names)]
 pub struct Usage {
     pub input_tokens: usize,
     pub output_tokens: usize,

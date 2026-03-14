@@ -9,7 +9,9 @@ bon = "3.9.0"
 clap = { version = "4.5.60", features = ["derive"] }
 crossterm = "0.29.0"
 illuso = { path = "crates/illuso/" }
+illuso-llm = { path = "crates/illuso-llm/" }
 illuso-term = { path = "crates/illuso-term/" }
+illuso-tui = { path = "crates/illuso-tui/" }
 jiff = { version = "0.2.23", features = ["serde"] }
 reqwest = { version = "0.13.2", features = ["json"] }
 rusqlite = { version = "0.38.0", features = ["bundled", "jiff", "serde_json"] }

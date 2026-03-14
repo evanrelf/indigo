@@ -10,6 +10,7 @@ pub fn api_key() -> anyhow::Result<&'static str> {
     API_KEY.as_deref().context("Missing `OPENROUTER_API_KEY`")
 }
 
+#[must_use]
 pub fn client() -> &'static reqwest::Client {
     static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
     &CLIENT
@@ -90,6 +91,7 @@ pub struct ToolDefinition {
 }
 
 impl ToolDefinition {
+    #[must_use]
     pub fn function(f: FunctionDefinition) -> Self {
         Self {
             r#type: ToolType::Function,
@@ -254,7 +256,6 @@ pub enum FinishReason {
 }
 
 #[derive(Debug, Deserialize)]
-#[expect(clippy::struct_field_names)]
 pub struct Usage {
     pub prompt_tokens: usize,
     pub completion_tokens: usize,

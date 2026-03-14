@@ -1,11 +1,9 @@
 #![expect(dead_code)]
 
-mod api;
-
-use crate::api::claude;
 use anyhow::anyhow;
 use clap::Parser as _;
 use crossterm::event::{self, Event as TerminalEvent, KeyCode, KeyModifiers};
+use illuso_llm::claude;
 use std::{fmt::Write as _, mem, process::ExitCode, thread, time::Duration};
 
 #[derive(clap::Parser)]
