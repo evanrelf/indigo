@@ -1,4 +1,3 @@
 # illuso-term
 
-A terminal manipulation library. Only supports Unix-like operating systems and
-modern terminals.
+A low-level terminal manipulation library.
