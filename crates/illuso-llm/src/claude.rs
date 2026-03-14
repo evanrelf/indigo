@@ -1,20 +1,25 @@
 use anyhow::Context as _;
 use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
-use std::{env, sync::LazyLock};
+use std::env;
 
 pub const BASE_URL: &str = "https://api.anthropic.com";
 
-pub fn api_key() -> anyhow::Result<&'static str> {
-    static API_KEY: LazyLock<Result<String, env::VarError>> =
-        LazyLock::new(|| env::var("ANTHROPIC_API_KEY"));
-    API_KEY.as_deref().context("Missing `ANTHROPIC_API_KEY`")
+#[derive(Clone)]
+pub struct Client {
+    http_client: reqwest::Client,
+    api_key: String,
 }
 
-#[must_use]
-pub fn client() -> &'static reqwest::Client {
-    static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
-    &CLIENT
+impl Client {
+    pub fn from_env() -> anyhow::Result<Self> {
+        let http_client = reqwest::Client::new();
+        let api_key = env::var("ANTHROPIC_API_KEY").context("Missing `ANTHROPIC_API_KEY`")?;
+        Ok(Self {
+            http_client,
+            api_key,
+        })
+    }
 }
 
 // Models API
@@ -29,11 +34,12 @@ pub struct ModelInfo {
 }
 
 /// <https://platform.claude.com/docs/en/api/models/retrieve>
-pub async fn retrieve_model(model_id: &str) -> anyhow::Result<ModelInfo> {
-    let response = client()
+pub async fn retrieve_model(client: &Client, model_id: &str) -> anyhow::Result<ModelInfo> {
+    let response = client
+        .http_client
         .get(format!("{BASE_URL}/v1/models/{model_id}"))
         .header("anthropic-version", "2023-06-01")
-        .header("X-Api-Key", api_key()?)
+        .header("X-Api-Key", &client.api_key)
         .send()
         .await?;
     if !response.status().is_success() {
@@ -274,11 +280,15 @@ pub struct Usage {
 }
 
 /// <https://platform.claude.com/docs/en/api/messages/create>
-pub async fn create_message(params: MessageCreateParams) -> anyhow::Result<Message> {
-    let response = client()
+pub async fn create_message(
+    client: &Client,
+    params: MessageCreateParams,
+) -> anyhow::Result<Message> {
+    let response = client
+        .http_client
         .post(format!("{BASE_URL}/v1/messages"))
         .header("anthropic-version", "2023-06-01")
-        .header("X-Api-Key", api_key()?)
+        .header("X-Api-Key", &client.api_key)
         .json(&params)
         .send()
         .await?;
@@ -297,6 +307,9 @@ pub async fn create_message(params: MessageCreateParams) -> anyhow::Result<Messa
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::LazyLock;
+
+    static CLIENT: LazyLock<Client> = LazyLock::new(|| Client::from_env().unwrap());
 
     const MODEL: &str = "claude-haiku-4-5";
 
@@ -804,7 +817,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "live API test; run with --ignored --test-threads=1"]
     async fn retrieve_model_live() {
-        let info = retrieve_model(MODEL).await.unwrap();
+        let info = retrieve_model(&CLIENT, MODEL).await.unwrap();
         assert!(info.id.starts_with("claude-haiku-4-5"));
         assert_eq!(info.r#type, "model");
         assert!(!info.display_name.is_empty());
@@ -829,7 +842,7 @@ mod tests {
             tools: None,
             output_config: None,
         };
-        let msg = create_message(params).await.unwrap();
+        let msg = create_message(&CLIENT, params).await.unwrap();
         assert!(matches!(msg.stop_reason, Some(StopReason::EndTurn)));
         assert!(!msg.content.is_empty());
         assert!(msg.usage.input_tokens > 0);
@@ -872,7 +885,7 @@ mod tests {
             }]),
             output_config: None,
         };
-        let msg = create_message(params).await.unwrap();
+        let msg = create_message(&CLIENT, params).await.unwrap();
         assert!(matches!(msg.stop_reason, Some(StopReason::ToolUse)));
         let has_tool_use = msg
             .content
