@@ -60,7 +60,7 @@ functional core).
   Emacs. Plan is to use this for syntax highlighting and other stuff (tags?
   read-only text? who knows).
 
-### indigo-tui
+### indigo
 
 Implements an interactive TUI with the `ratatui` and `crossterm` crates. The
 goal is to keep this relatively lightweight, keeping all non-trivial logic in
@@ -107,14 +107,14 @@ you'll find throughout `indigo-core` (e.g. `CursorView`, `WindowView`, etc).
 - Always run `cargo clippy` to check if code compiles. Never run `cargo check`
   or `cargo build`.
 
-- Never run `indigo-tui`; you cannot control it. Always check runtime behavior
-  by writing tests or executables at `crates/<crate>/src/bin/<name>.rs`. Always
-  run these ad-hoc executables with `cargo run --bin <name>`, never with `rustc`
-  (no dependencies outside of Cargo workspace).
+- Never run `indigo`; you cannot control it. Always check runtime behavior by
+  writing tests or executables at `crates/<crate>/src/bin/<name>.rs`. Always run
+  these ad-hoc executables with `cargo run --bin <name>`, never with `rustc` (no
+  dependencies outside of Cargo workspace).
 
 - Run `indigo-cli` to test editor behavior. With the `--debug` flag, the `<c-l>`
   key prints information and a diff. Try running this command as an example:
 
   ```
-  $ echo -ne "hello\nworld\n" | ./bin/cli --debug 'fod<c-l>iHELLO<c-l><esc>jgla!<c-l>'
+  $ echo -ne "hello\nworld\n" | ./bin/run-cli --debug 'fod<c-l>iHELLO<c-l><esc>jgla!<c-l>'
   ```

@@ -1,16 +1,16 @@
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use etcetera::app_strategy::{AppStrategy as _, Xdg};
-use indigo_core::{
-    fs::RealFs,
-    prelude::{Buffer, *},
-    rope::LINE_TYPE,
-};
-use indigo_tui::{
+use indigo::{
     areas::{Areas, byte_index_to_area, line_index_to_area},
     event::{handle_event, should_skip_event},
     terminal,
     terminal::TerminalGuard,
+};
+use indigo_core::{
+    fs::RealFs,
+    prelude::{Buffer, *},
+    rope::LINE_TYPE,
 };
 use pathdiff::diff_utf8_paths;
 use ratatui::{

@@ -9,9 +9,9 @@ description: >
 
 ## Usage
 
-The `indigo-cli` bin crate is run with the `./bin/cli` shell script. It accepts
-the initial buffer text from `stdin`, keys to execute as the first argument, and
-prints the final edited text to `stdout`.
+The `indigo-cli` bin crate is run with the `./bin/run-cli` shell script. It
+accepts the initial buffer text from `stdin`, keys to execute as the first
+argument, and prints the final edited text to `stdout`.
 
 When testing the behavior of the selection / ranges / cursors, make edits to the
 text that reveal where the cursors are located. For example, if you want to test
@@ -60,7 +60,7 @@ compare against vanilla, unconfigured Kakoune.
 Trivial example making no changes:
 
 ```
-$ echo -ne "hello\nworld\n" | ./bin/cli ''
+$ echo -ne "hello\nworld\n" | ./bin/run-cli ''
 hello
 world
 ```
@@ -68,7 +68,7 @@ world
 Editing the text:
 
 ```
-$ echo -ne "hello\nworld\n" | ./bin/cli 'focHELLO<esc>jgla!'
+$ echo -ne "hello\nworld\n" | ./bin/run-cli 'focHELLO<esc>jgla!'
 HELLO
 world!
 ```
@@ -76,7 +76,7 @@ world!
 Whitespace and comments are ignored, so you can write "literate" keys:
 
 ```
-$ echo -ne "hello\nworld\n" | ./bin/cli '
+$ echo -ne "hello\nworld\n" | ./bin/run-cli '
       # Extend the selection to the first `o` character
       fo
 
@@ -108,7 +108,7 @@ world!
 Using debug mode:
 
 <pre>
-$ echo -ne "hello\nworld\n" | ./bin/cli --debug 'foc<c-l>HELLO<c-l><esc>jgla!<c-l>'
+$ echo -ne "hello\nworld\n" | ./bin/run-cli --debug 'foc<c-l>HELLO<c-l><esc>jgla!<c-l>'
 keys: foc
 primary range: tail=0 head=1
 text:

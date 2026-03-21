@@ -1,5 +1,5 @@
 [package]
-name = "indigo-tui"
+name = "indigo"
 edition = "2024"
 
 [dependencies]

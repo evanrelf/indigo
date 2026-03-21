@@ -1038,6 +1038,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "indigo"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "camino",
+ "clap",
+ "etcetera",
+ "indigo-core",
+ "pathdiff",
+ "ratatui",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "indigo-cli"
 version = "0.0.0"
 dependencies = [
@@ -1096,21 +1111,6 @@ dependencies = [
  "tinyvec",
  "tracing",
  "winnow",
-]
-
-[[package]]
-name = "indigo-tui"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "camino",
- "clap",
- "etcetera",
- "indigo-core",
- "pathdiff",
- "ratatui",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
