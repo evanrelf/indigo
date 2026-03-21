@@ -1,0 +1,13 @@
+[package]
+name = "illuso-term"
+edition = "2024"
+
+[dependencies]
+bitflags = { workspace = true }
+rustix = { workspace = true }
+tinyvec = { workspace = true }
+tracing = { workspace = true }
+winnow = { workspace = true }
+
+[lints]
+workspace = true

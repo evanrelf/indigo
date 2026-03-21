@@ -1,0 +1,13 @@
+[package]
+name = "illuso"
+edition = "2024"
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+crossterm = { workspace = true }
+illuso-llm = { workspace = true }
+tokio = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,9 @@
+[package]
+name = "illuso-tui"
+edition = "2024"
+
+[dependencies]
+illuso-term = { workspace = true }
+
+[lints]
+workspace = true
