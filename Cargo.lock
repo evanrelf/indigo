@@ -997,21 +997,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "illuso-term"
-version = "0.0.0"
-dependencies = [
- "bitflags 2.10.0",
- "rustix",
- "tinyvec",
- "tracing",
- "winnow",
-]
-
-[[package]]
 name = "illuso-tui"
 version = "0.0.0"
 dependencies = [
- "illuso-term",
+ "indigo-term",
 ]
 
 [[package]]
@@ -1096,6 +1085,17 @@ dependencies = [
  "serde_path_to_error",
  "serde_with",
  "tokio",
+]
+
+[[package]]
+name = "indigo-term"
+version = "0.0.0"
+dependencies = [
+ "bitflags 2.10.0",
+ "rustix",
+ "tinyvec",
+ "tracing",
+ "winnow",
 ]
 
 [[package]]

@@ -1,7 +1,7 @@
 #![allow(clippy::uninlined_format_args)]
 #![allow(clippy::wildcard_imports)]
 
-use illuso_term::*;
+use indigo_term::*;
 use std::{
     io::{self, Write as _},
     process,

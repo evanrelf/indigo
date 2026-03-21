@@ -3,7 +3,7 @@
 #![allow(clippy::uninlined_format_args)]
 #![allow(clippy::wildcard_imports)]
 
-use illuso_term::{
+use indigo_term::{
     BOLD, CLEAR_LINE, CLEAR_TO_END_OF_SCREEN, Color, CursorUp, Event, Fg, KeyCode, KeyModifiers,
     RESET,
 };
