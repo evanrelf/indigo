@@ -7,7 +7,7 @@ use indigo_term::{
     BOLD, CLEAR_LINE, CLEAR_TO_END_OF_SCREEN, Color, CursorUp, Event, Fg, KeyCode, KeyModifiers,
     RESET,
 };
-use illuso_tui::Terminal;
+use indigo_tui::Terminal;
 use std::{
     cmp::{max, min},
     io::{self, Write as _},

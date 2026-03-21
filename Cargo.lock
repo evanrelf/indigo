@@ -997,13 +997,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "illuso-tui"
-version = "0.0.0"
-dependencies = [
- "indigo-term",
-]
-
-[[package]]
 name = "imbl"
 version = "7.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1111,6 +1104,13 @@ dependencies = [
  "tinyvec",
  "tracing",
  "winnow",
+]
+
+[[package]]
+name = "indigo-tui"
+version = "0.0.0"
+dependencies = [
+ "indigo-term",
 ]
 
 [[package]]
