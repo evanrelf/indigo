@@ -6,9 +6,6 @@ members = ["crates/*"]
 anyhow = "1.0.102"
 bitflags = "2.11.0"
 bon = "3.9.1"
-clap = { version = "4.6.0", features = ["derive"] }
-crossterm = "0.29.0"
-illuso = { path = "crates/illuso/" }
 illuso-llm = { path = "crates/illuso-llm/" }
 illuso-term = { path = "crates/illuso-term/" }
 illuso-tui = { path = "crates/illuso-tui/" }
