@@ -18,7 +18,7 @@ serde_json = "1.0.149"
 serde_path_to_error = "0.1.20"
 serde_with = { version = "3.18.0", default-features = false, features = ["macros"] }
 tinyvec = { version = "1.10.0", features = ["std"] }
-tokio = { version = "1.50.0", features = ["full"] }
+tokio = { version = "1.50.0", features = ["macros"] }
 tracing = "0.1.44"
 winnow = "0.7.15"
 
