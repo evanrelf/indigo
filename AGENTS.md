@@ -12,8 +12,6 @@
 
 Indigo is written in Rust, across multiple crates in a Cargo workspace.
 
-```
-$ find crates/ -name README.md | sed 's/^/@/'
 @crates/indigo-core/README.md
 @crates/indigo-llm/README.md
 @crates/indigo-cli/README.md
@@ -21,7 +19,6 @@ $ find crates/ -name README.md | sed 's/^/@/'
 @crates/indigo-tui/README.md
 @crates/indigo/README.md
 @crates/indigo-wrap/README.md
-```
 
 ## Checking your work
 
