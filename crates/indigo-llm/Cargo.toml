@@ -1,5 +1,5 @@
 [package]
-name = "illuso-llm"
+name = "indigo-llm"
 edition = "2024"
 
 [dependencies]

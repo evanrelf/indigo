@@ -11,12 +11,12 @@ camino = "1.2.2"
 clap = { version = "4.5.54", features = ["derive", "env"] }
 diff = "0.1.13"
 etcetera = "0.11.0"
-illuso-llm = { path = "crates/illuso-llm/" }
 illuso-term = { path = "crates/illuso-term/" }
 illuso-tui = { path = "crates/illuso-tui/" }
 imbl = "7.0.0"
 indigo-cli = { path = "crates/indigo-cli/" }
 indigo-core = { path = "crates/indigo-core/" }
+indigo-llm = { path = "crates/indigo-llm/" }
 indigo-tui = { path = "crates/indigo-tui/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }
 jiff = { version = "0.2.23", features = ["serde"] }

@@ -997,20 +997,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "illuso-llm"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "jiff",
- "reqwest",
- "serde",
- "serde_json",
- "serde_path_to_error",
- "serde_with",
- "tokio",
-]
-
-[[package]]
 name = "illuso-term"
 version = "0.0.0"
 dependencies = [
@@ -1096,6 +1082,20 @@ dependencies = [
  "unicode-segmentation",
  "unicode-width",
  "winnow",
+]
+
+[[package]]
+name = "indigo-llm"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "jiff",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serde_path_to_error",
+ "serde_with",
+ "tokio",
 ]
 
 [[package]]
