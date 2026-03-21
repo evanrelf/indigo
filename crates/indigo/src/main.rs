@@ -130,7 +130,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
             }
         };
 
-        handle_event(&mut editor, terminal, areas, event)?;
+        handle_event(&mut editor, areas, event)?;
 
         if let Some(exit_code) = editor.exit_code() {
             break exit_code;

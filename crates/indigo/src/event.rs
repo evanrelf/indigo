@@ -1,7 +1,6 @@
 use crate::{
     areas::{Areas, position_to_byte_offset},
     key::{key_event_i2t, key_event_t2i},
-    terminal::TerminalGuard,
 };
 use anyhow::anyhow;
 use indigo_core::{
@@ -33,12 +32,7 @@ pub fn should_skip_event(event: &TerminalEvent) -> bool {
     }
 }
 
-pub fn handle_event(
-    editor: &mut Editor,
-    terminal: &mut TerminalGuard,
-    areas: Areas,
-    event: TerminalEvent,
-) -> anyhow::Result<()> {
+pub fn handle_event(editor: &mut Editor, areas: Areas, event: TerminalEvent) -> anyhow::Result<()> {
     let dismiss_message = match event {
         TerminalEvent::Mouse(mouse) => !matches!(
             mouse.kind,
@@ -63,31 +57,22 @@ pub fn handle_event(
     }
 
     let _handled = match editor.mode {
-        Mode::Normal(_) => handle_event_normal(editor, terminal, areas, event)?,
-        Mode::Seek(_) => handle_event_seek(editor, terminal, areas, event)?,
-        Mode::Goto(_) => handle_event_goto(editor, terminal, areas, event)?,
-        Mode::Insert(_) => handle_event_insert(editor, terminal, areas, event)?,
-        Mode::Command(_) => handle_event_command(editor, terminal, areas, event)?,
-        Mode::Prompt(_) => handle_event_prompt(editor, terminal, areas, event)?,
+        Mode::Normal(_) => handle_event_normal(editor, areas, event),
+        Mode::Seek(_) => handle_event_seek(editor, areas, event)?,
+        Mode::Goto(_) => handle_event_goto(editor, areas, event)?,
+        Mode::Insert(_) => handle_event_insert(editor, areas, event),
+        Mode::Command(_) => handle_event_command(editor, areas, event)?,
+        Mode::Prompt(_) => handle_event_prompt(editor, areas, event)?,
     };
 
     Ok(())
 }
 
 #[expect(clippy::needless_pass_by_value)]
-fn handle_event_normal(
-    editor: &mut Editor,
-    terminal: &mut TerminalGuard,
-    areas: Areas,
-    event: TerminalEvent,
-) -> anyhow::Result<bool> {
+fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) -> bool {
     let mut handled = true;
 
     match event {
-        TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
-            (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
-            _ => handled = false,
-        },
         // TODO(horizontal_scroll)
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
             (KeyModifiers::NONE, MouseEventKind::ScrollUp) => scroll_up(editor),
@@ -149,14 +134,13 @@ fn handle_event_normal(
         _ => handled = false,
     }
 
-    Ok(handled)
+    handled
 }
 
 #[expect(clippy::needless_pass_by_value)]
 #[expect(clippy::unnecessary_wraps)]
 fn handle_event_seek(
     editor: &mut Editor,
-    _terminal: &mut TerminalGuard,
     _areas: Areas,
     event: TerminalEvent,
 ) -> anyhow::Result<bool> {
@@ -180,7 +164,6 @@ fn handle_event_seek(
 #[expect(clippy::unnecessary_wraps)]
 fn handle_event_goto(
     editor: &mut Editor,
-    _terminal: &mut TerminalGuard,
     _areas: Areas,
     event: TerminalEvent,
 ) -> anyhow::Result<bool> {
@@ -200,19 +183,10 @@ fn handle_event_goto(
     Ok(handled)
 }
 
-fn handle_event_insert(
-    editor: &mut Editor,
-    terminal: &mut TerminalGuard,
-    _areas: Areas,
-    event: TerminalEvent,
-) -> anyhow::Result<bool> {
+fn handle_event_insert(editor: &mut Editor, _areas: Areas, event: TerminalEvent) -> bool {
     let mut handled = true;
 
     match event {
-        TerminalEvent::Key(key_event) => match (key_event.modifiers, key_event.code) {
-            (KeyModifiers::CONTROL, KeyCode::Char('l')) => terminal.clear()?,
-            _ => handled = false,
-        },
         // TODO: Add mouse events to core, so it can handle this internally.
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
             (KeyModifiers::NONE, MouseEventKind::ScrollUp) => scroll_up(editor),
@@ -223,13 +197,12 @@ fn handle_event_insert(
         _ => handled = false,
     }
 
-    Ok(handled)
+    handled
 }
 
 #[expect(clippy::unnecessary_wraps)]
 fn handle_event_command(
     editor: &mut Editor,
-    _terminal: &mut TerminalGuard,
     _areas: Areas,
     event: TerminalEvent,
 ) -> anyhow::Result<bool> {
@@ -246,7 +219,6 @@ fn handle_event_command(
 #[expect(clippy::unnecessary_wraps)]
 fn handle_event_prompt(
     editor: &mut Editor,
-    _terminal: &mut TerminalGuard,
     _areas: Areas,
     event: TerminalEvent,
 ) -> anyhow::Result<bool> {
