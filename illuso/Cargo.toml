@@ -5,7 +5,6 @@ members = ["crates/*"]
 [workspace.dependencies]
 anyhow = "1.0.102"
 bitflags = "2.11.0"
-bon = "3.9.1"
 illuso-llm = { path = "crates/illuso-llm/" }
 illuso-term = { path = "crates/illuso-term/" }
 illuso-tui = { path = "crates/illuso-tui/" }

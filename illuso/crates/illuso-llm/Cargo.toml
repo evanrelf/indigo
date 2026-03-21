@@ -4,7 +4,6 @@ edition = "2024"
 
 [dependencies]
 anyhow = { workspace = true }
-bon = { workspace = true }
 jiff = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }

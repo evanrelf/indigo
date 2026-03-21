@@ -127,7 +127,7 @@ pub enum ToolResultContent {
     Blocks(Vec<ContentBlock>),
 }
 
-#[derive(bon::Builder, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct MessageParam {
     pub role: Role,
     pub content: Content,
@@ -195,7 +195,7 @@ pub enum SystemBlock {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(bon::Builder, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct MessageCreateParams {
     pub model: String,
     pub max_tokens: usize,
@@ -219,7 +219,7 @@ pub enum ThinkingConfig {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(bon::Builder, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct OutputConfig {
     pub effort: Option<Effort>,
     pub format: Option<OutputFormat>,
@@ -242,7 +242,7 @@ pub enum OutputFormat {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(bon::Builder, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct Tool {
     pub name: String,
     pub description: Option<String>,
