@@ -1,6 +1,14 @@
+# cargo
 target/
+
+# cargo-mutants
 mutants.out/
 mutants.out.old/
-*.log
+
+# samply
 profile.json
 profile.json.gz
+
+# nix
+result
+result-*
