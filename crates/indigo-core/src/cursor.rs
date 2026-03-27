@@ -112,10 +112,31 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         }
     }
 
+    pub fn line_index(&self, bias: Bias) -> Option<usize> {
+        let byte_index = self.byte_index(bias).ok()?;
+        let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
+        Some(line_index)
+    }
+
     #[must_use]
     pub fn display_column(&self, bias: Bias) -> Option<usize> {
         let byte_index = self.byte_index(bias).ok()?;
         Some(self.text.display_column(byte_index))
+    }
+
+    #[must_use]
+    pub fn line_number(&self, bias: Bias) -> usize {
+        self.line_index(bias).map_or(1, |n| n + 1)
+    }
+
+    #[must_use]
+    pub fn column_number(&self, bias: Bias) -> usize {
+        let Ok(byte_index) = self.byte_index(bias) else {
+            return 1;
+        };
+        let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
+        let line_byte_index = self.text.line_to_byte_idx(line_index, LINE_TYPE);
+        (byte_index - line_byte_index) + 1
     }
 
     #[must_use]
@@ -128,8 +149,7 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
 
     #[must_use]
     pub fn line(&self, bias: Bias) -> Option<RopeSlice<'_>> {
-        let byte_index = self.byte_index(bias).ok()?;
-        let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
+        let line_index = self.line_index(bias)?;
         self.text.get_line(line_index, LINE_TYPE)
     }
 

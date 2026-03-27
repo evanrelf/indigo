@@ -154,6 +154,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     render_scroll_bar(editor, areas.scroll_bar, surface);
 }
 
+#[expect(clippy::too_many_lines)]
 fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
     // TODO: Make background color `flexoki::light::UI`
     if let Mode::Command(ref command_mode) = editor.mode {
@@ -252,6 +253,16 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
 
         let window = editor.window();
         let selection = window.buffer().selection();
+
+        let (line, column) = {
+            let range = selection.get_primary();
+            let bias = range.head_bias();
+            let cursor = range.head();
+            let line = cursor.line_number(bias);
+            let column = cursor.column_number(bias);
+            (line, column)
+        };
+
         let state = selection.state();
         let ranges = state.ranges.len();
         let primary = &state.ranges[state.primary_range];
@@ -266,7 +277,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         };
 
         Line::raw(format!(
-            "{path} · {mode} · ranges={ranges} tail={tail} head={head} goal={goal}{count}"
+            "{path} {line}:{column} · {mode} · ranges={ranges} tail={tail} head={head} goal={goal}{count}"
         ))
         .bg(THEME.status_bar_bg)
         .render(area, surface);
