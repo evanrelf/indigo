@@ -4,8 +4,9 @@ use etcetera::app_strategy::{AppStrategy as _, Xdg};
 use indigo::{
     areas::{Areas, byte_index_to_area, line_index_to_area},
     event::{handle_event, should_skip_event},
-    flexoki, terminal,
+    terminal,
     terminal::TerminalGuard,
+    theme::THEME,
 };
 use indigo_core::{
     fs::RealFs,
@@ -175,7 +176,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         ) {
             surface.set_style(
                 rect,
-                Style::default().fg(flexoki::PAPER).bg(flexoki::light::BLUE),
+                Style::default().fg(THEME.cursor_fg).bg(THEME.cursor_bg),
             );
         }
 
@@ -201,7 +202,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         ) {
             surface.set_style(
                 rect,
-                Style::default().fg(flexoki::PAPER).bg(flexoki::light::BLUE),
+                Style::default().fg(THEME.cursor_fg).bg(THEME.cursor_bg),
             );
         }
 
@@ -210,10 +211,10 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
 
     if let Some(message) = &editor.message {
         match message {
-            Ok(message) => Line::raw(message).render(area, surface),
-            Err(message) => Line::raw(message)
-                .bg(flexoki::RED_100)
+            Ok(message) => Line::raw(message)
+                .bg(THEME.status_bar_bg)
                 .render(area, surface),
+            Err(message) => Line::raw(message).bg(THEME.error_bg).render(area, surface),
         }
     } else {
         let mode = match &editor.mode {
@@ -267,7 +268,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         Line::raw(format!(
             "{path} · {mode} · ranges={ranges} tail={tail} head={head} goal={goal}{count}"
         ))
-        .bg(flexoki::light::UI)
+        .bg(THEME.status_bar_bg)
         .render(area, surface);
     }
 }
@@ -287,7 +288,7 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
         }
 
         Line::raw(format!("{line_number} "))
-            .fg(flexoki::light::TX_3)
+            .fg(THEME.line_numbers_fg)
             .right_aligned()
             .render(row, surface);
     }
@@ -302,8 +303,8 @@ fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         return;
     }
 
-    let track_color = flexoki::light::BG;
-    let thumb_color = flexoki::light::UI;
+    let track_color = THEME.scroll_bar_track;
+    let thumb_color = THEME.scroll_bar_thumb;
 
     let window = editor.window();
     let buffer = window.buffer();
@@ -395,7 +396,7 @@ fn render_dots(editor: &Editor, area: Rect, surface: &mut Surface) {
                 continue;
             }
 
-            "⢀".fg(flexoki::light::UI).render(cell, surface);
+            "⢀".fg(THEME.dots).render(cell, surface);
         }
     }
 }
@@ -413,8 +414,8 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     'line: for (line, mut rect) in lines.zip(rows) {
         'grapheme: for grapheme in line.graphemes() {
             let span = match grapheme.get_char(0) {
-                Ok('\t') => Span::styled("→       ", flexoki::light::UI),
-                Ok('\n') => Span::styled("¬", flexoki::light::UI),
+                Ok('\t') => Span::styled("→       ", THEME.whitespace_fg),
+                Ok('\n') => Span::styled("¬", THEME.whitespace_fg),
                 _ => Span::raw(grapheme),
             };
 
@@ -462,7 +463,9 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
             if let Some(rect) = grapheme_area(range.head().byte_offset()) {
                 surface.set_style(
                     rect,
-                    Style::default().fg(flexoki::PAPER).bg(flexoki::light::RED),
+                    Style::default()
+                        .fg(THEME.empty_range_fg)
+                        .bg(THEME.empty_range_bg),
                 );
             }
             return;
@@ -491,7 +494,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
                     line_rect.width -= delta;
                 }
             }
-            surface.set_style(line_rect, Style::default().bg(flexoki::BLUE_100));
+            surface.set_style(line_rect, Style::default().bg(THEME.range_bg));
         }
 
         #[expect(clippy::collapsible_else_if)]
@@ -499,14 +502,14 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
             if let Some(rect) = grapheme_area(range.head().byte_offset()) {
                 surface.set_style(
                     rect,
-                    Style::default().fg(flexoki::PAPER).bg(flexoki::light::BLUE),
+                    Style::default().fg(THEME.cursor_fg).bg(THEME.cursor_bg),
                 );
             }
         } else {
             if let Some(rect) = grapheme_area(range.head().byte_offset().saturating_sub(1)) {
                 surface.set_style(
                     rect,
-                    Style::default().fg(flexoki::PAPER).bg(flexoki::light::BLUE),
+                    Style::default().fg(THEME.cursor_fg).bg(THEME.cursor_bg),
                 );
             }
         }

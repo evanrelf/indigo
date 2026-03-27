@@ -137,6 +137,22 @@ pub mod light {
     #![allow(clippy::wildcard_imports)]
 
     use super::*;
+    use crate::theme::Theme;
+
+    pub const THEME: Theme = Theme {
+        status_bar_bg: UI,
+        line_numbers_fg: TX_3,
+        dots: UI,
+        scroll_bar_track: BG,
+        scroll_bar_thumb: UI,
+        cursor_fg: PAPER,
+        cursor_bg: BLUE,
+        range_bg: BLUE_100,
+        empty_range_fg: PAPER,
+        empty_range_bg: RED,
+        error_bg: RED_100,
+        whitespace_fg: UI,
+    };
 
     pub const TX: Color = BLACK;
     pub const TX_2: Color = BASE_600;
