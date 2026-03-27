@@ -4,7 +4,7 @@ use etcetera::app_strategy::{AppStrategy as _, Xdg};
 use indigo::{
     areas::{Areas, byte_index_to_area, line_index_to_area},
     event::{handle_event, should_skip_event},
-    terminal,
+    flexoki, terminal,
     terminal::TerminalGuard,
 };
 use indigo_core::{
@@ -140,11 +140,6 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
     Ok(exit_code)
 }
 
-pub const LIGHT_YELLOW: Color = Color::from_u32(0x00_fff5b1);
-pub const DARK_YELLOW: Color = Color::from_u32(0x00_ffd33d);
-pub const LIGHT_RED: Color = Color::from_u32(0x00_ffdce0);
-pub const RED: Color = Color::from_u32(0x00_d73a4a);
-
 pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     if area.is_empty() {
         return;
@@ -159,6 +154,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
+    // TODO: Make background color `flexoki::light::UI`
     if let Mode::Command(ref command_mode) = editor.mode {
         if let Some(cell) = surface.cell_mut(area.as_position()) {
             cell.set_char(':');
@@ -177,12 +173,16 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
             0,
             area,
         ) {
-            surface.set_style(rect, Style::default().bg(DARK_YELLOW));
+            surface.set_style(
+                rect,
+                Style::default().fg(flexoki::PAPER).bg(flexoki::light::BLUE),
+            );
         }
 
         return;
     }
 
+    // TODO: Make background color `flexoki::light::UI`
     if let Mode::Prompt(ref prompt_mode) = editor.mode {
         format!("{}:", prompt_mode.prompt()).render(area, surface);
 
@@ -199,7 +199,10 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
             0,
             area,
         ) {
-            surface.set_style(rect, Style::default().bg(DARK_YELLOW));
+            surface.set_style(
+                rect,
+                Style::default().fg(flexoki::PAPER).bg(flexoki::light::BLUE),
+            );
         }
 
         return;
@@ -208,7 +211,9 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
     if let Some(message) = &editor.message {
         match message {
             Ok(message) => Line::raw(message).render(area, surface),
-            Err(message) => Line::raw(message).bg(LIGHT_RED).render(area, surface),
+            Err(message) => Line::raw(message)
+                .bg(flexoki::RED_100)
+                .render(area, surface),
         }
     } else {
         let mode = match &editor.mode {
@@ -262,6 +267,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         Line::raw(format!(
             "{path} · {mode} · ranges={ranges} tail={tail} head={head} goal={goal}{count}"
         ))
+        .bg(flexoki::light::UI)
         .render(area, surface);
     }
 }
@@ -281,7 +287,7 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
         }
 
         Line::raw(format!("{line_number} "))
-            .fg(Color::from_u32(0x00_cccccc))
+            .fg(flexoki::light::TX_3)
             .right_aligned()
             .render(row, surface);
     }
@@ -296,8 +302,8 @@ fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         return;
     }
 
-    let gutter_color = Color::from_u32(0x00_cccccc);
-    let bar_color = Color::Black;
+    let gutter_color = flexoki::light::BG;
+    let bar_color = flexoki::light::UI;
 
     let window = editor.window();
     let buffer = window.buffer();
@@ -389,7 +395,7 @@ fn render_dots(editor: &Editor, area: Rect, surface: &mut Surface) {
                 continue;
             }
 
-            "⢀".fg(Color::from_u32(0x00_dddddd)).render(cell, surface);
+            "⢀".fg(flexoki::light::UI).render(cell, surface);
         }
     }
 }
@@ -407,8 +413,8 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     'line: for (line, mut rect) in lines.zip(rows) {
         'grapheme: for grapheme in line.graphemes() {
             let span = match grapheme.get_char(0) {
-                Ok('\t') => Span::styled("→       ", Color::from_u32(0x00_eeeeee)),
-                Ok('\n') => Span::styled("¬", Color::from_u32(0x0_eeeeee)),
+                Ok('\t') => Span::styled("→       ", flexoki::light::UI),
+                Ok('\n') => Span::styled("¬", flexoki::light::UI),
                 _ => Span::raw(grapheme),
             };
 
@@ -454,7 +460,10 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
 
         if range.is_empty() {
             if let Some(rect) = grapheme_area(range.head().byte_offset()) {
-                surface.set_style(rect, Style::default().bg(RED));
+                surface.set_style(
+                    rect,
+                    Style::default().fg(flexoki::PAPER).bg(flexoki::light::RED),
+                );
             }
             return;
         }
@@ -482,17 +491,23 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
                     line_rect.width -= delta;
                 }
             }
-            surface.set_style(line_rect, Style::default().bg(LIGHT_YELLOW));
+            surface.set_style(line_rect, Style::default().bg(flexoki::BLUE_100));
         }
 
         #[expect(clippy::collapsible_else_if)]
         if range.is_backward() {
             if let Some(rect) = grapheme_area(range.head().byte_offset()) {
-                surface.set_style(rect, Style::default().bg(DARK_YELLOW));
+                surface.set_style(
+                    rect,
+                    Style::default().fg(flexoki::PAPER).bg(flexoki::light::BLUE),
+                );
             }
         } else {
             if let Some(rect) = grapheme_area(range.head().byte_offset().saturating_sub(1)) {
-                surface.set_style(rect, Style::default().bg(DARK_YELLOW));
+                surface.set_style(
+                    rect,
+                    Style::default().fg(flexoki::PAPER).bg(flexoki::light::BLUE),
+                );
             }
         }
     });
