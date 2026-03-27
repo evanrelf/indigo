@@ -302,8 +302,8 @@ fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         return;
     }
 
-    let gutter_color = flexoki::light::BG;
-    let bar_color = flexoki::light::UI;
+    let track_color = flexoki::light::BG;
+    let thumb_color = flexoki::light::UI;
 
     let window = editor.window();
     let buffer = window.buffer();
@@ -311,48 +311,48 @@ fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let text_lines = buffer.rope().len_lines_indigo();
     let window_lines = usize::from(window.height());
     let scroll_lines = text_lines.saturating_add(window_lines.saturating_sub(1));
-    let gutter_cells = usize::from(area.height);
-    let gutter_units = gutter_cells * UNITS_PER_CELL;
+    let track_cells = usize::from(area.height);
+    let track_units = track_cells * UNITS_PER_CELL;
 
-    if gutter_units == 0 || scroll_lines == 0 {
+    if track_units == 0 || scroll_lines == 0 {
         return;
     }
 
-    let bar_units = ((gutter_units * window_lines) / scroll_lines).clamp(MIN_UNITS, gutter_units);
+    let thumb_units = ((track_units * window_lines) / scroll_lines).clamp(MIN_UNITS, track_units);
 
     let current_scroll = window.vertical_scroll();
     let max_scroll = text_lines.saturating_sub(1);
 
-    let bar_start_units = if max_scroll == 0 || gutter_units == bar_units {
+    let thumb_start_units = if max_scroll == 0 || track_units == thumb_units {
         0
     } else {
-        ((gutter_units - bar_units) * current_scroll) / max_scroll
+        ((track_units - thumb_units) * current_scroll) / max_scroll
     };
-    let bar_end_units = bar_start_units + bar_units;
+    let thumb_end_units = thumb_start_units + thumb_units;
 
     for (i, row) in area.rows().enumerate() {
         let cell_top = i * UNITS_PER_CELL;
         let cell_bottom = cell_top + UNITS_PER_CELL;
 
-        let overlap_start = max(cell_top, bar_start_units);
-        let overlap_end = min(cell_bottom, bar_end_units);
+        let overlap_start = max(cell_top, thumb_start_units);
+        let overlap_end = min(cell_bottom, thumb_end_units);
         let overlap_units = overlap_end.saturating_sub(overlap_start);
 
         if overlap_units == 0 {
-            " ".bg(gutter_color).render(row, surface);
+            " ".bg(track_color).render(row, surface);
             continue;
         }
 
         if overlap_units == UNITS_PER_CELL {
-            " ".bg(bar_color).render(row, surface);
+            " ".bg(thumb_color).render(row, surface);
             continue;
         }
 
         if overlap_end == cell_bottom && overlap_start > cell_top {
             let h = overlap_units;
             LOWER_BLOCKS[h]
-                .fg(bar_color)
-                .bg(gutter_color)
+                .fg(thumb_color)
+                .bg(track_color)
                 .render(row, surface);
             continue;
         }
@@ -360,8 +360,8 @@ fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         if overlap_start == cell_top && overlap_end < cell_bottom {
             let empty = UNITS_PER_CELL - overlap_units;
             LOWER_BLOCKS[empty]
-                .fg(gutter_color)
-                .bg(bar_color)
+                .fg(track_color)
+                .bg(thumb_color)
                 .render(row, surface);
             continue;
         }
