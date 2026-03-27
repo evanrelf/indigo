@@ -76,7 +76,7 @@ fn init_tracing(args: &Args, xdg: &Xdg) -> anyhow::Result<()> {
     use tracing_subscriber::{EnvFilter, Registry, fmt, prelude::*};
 
     let log_path = xdg
-        .in_state_dir("tui.log")
+        .in_state_dir("log")
         .expect("Always returns a path for the XDG strategy");
 
     fs::create_dir_all(log_path.parent().expect("Log file exists in a directory"))?;
