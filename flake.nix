@@ -20,7 +20,7 @@
 
             commonArgs = {
               pname = "indigo";
-              version = inputs.self.shortRev or inputs.self.dirtyShortRev;
+              version = "0.0.0";
               src = crane.cleanCargoSource ./.;
               strictDeps = true;
             };
