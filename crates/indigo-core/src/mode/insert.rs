@@ -41,6 +41,7 @@ pub fn enter_insert_mode(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.reduce());
+    editor.window_mut().scroll_to_selection();
     editor.mode = Mode::Insert(InsertMode::default());
 }
 
@@ -52,6 +53,7 @@ fn delete_before(editor: &mut Editor) {
         .for_each_mut(|mut range| {
             range.delete_before();
         });
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -63,6 +65,7 @@ fn delete_after(editor: &mut Editor) {
         .for_each_mut(|mut range| {
             range.delete_after();
         });
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -74,6 +77,7 @@ fn insert_char(editor: &mut Editor, char: char) {
         .for_each_mut(|mut range| {
             range.insert_char(char);
         });
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -85,5 +89,6 @@ pub fn paste(editor: &mut Editor, text: &str) {
         .for_each_mut(|mut range| {
             range.insert(text);
         });
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }

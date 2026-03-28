@@ -62,6 +62,10 @@ impl<W: WrapMut> WindowView<'_, W> {
         self.state.prev_vertical_scroll = min(line, last_line);
     }
 
+    // TODO: There's a bug where the cursor can move one line above the viewport without this
+    // function scrolling it into view. Try moving up line-by-line in a long file like `Cargo.lock`
+    // and watch it pop in and out from the top of the viewport. Moving down works correctly: the
+    // cursor never disappears below the bottom of the viewport.
     pub fn scroll_to_selection(&mut self) {
         let selection = self.buffer.selection();
         let state = selection.state();

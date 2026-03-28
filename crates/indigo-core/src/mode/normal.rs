@@ -106,6 +106,7 @@ fn extend_left(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.extend_left(count));
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -116,6 +117,7 @@ fn move_left(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.move_left(count));
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -126,6 +128,7 @@ fn extend_right(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.extend_right(count));
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -136,6 +139,7 @@ fn move_right(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.move_right(count));
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -146,6 +150,7 @@ fn extend_up(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.extend_up(count));
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -156,6 +161,7 @@ fn move_up(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.move_up(count));
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -166,6 +172,7 @@ fn extend_down(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.extend_down(count));
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -176,6 +183,7 @@ fn move_down(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.move_down(count));
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -185,6 +193,7 @@ fn flip(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.flip());
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -194,6 +203,7 @@ fn flip_forward(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.flip_forward());
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -203,6 +213,7 @@ fn keep_primary(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .keep_primary();
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -212,6 +223,7 @@ fn reduce(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.reduce());
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -228,6 +240,7 @@ fn delete(editor: &mut Editor) {
         .for_each_mut(|mut range| {
             range.delete();
         });
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -243,6 +256,7 @@ fn undo(editor: &mut Editor) {
             break;
         }
     }
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -258,6 +272,7 @@ fn redo(editor: &mut Editor) {
             break;
         }
     }
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -267,6 +282,7 @@ fn select_all(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .select_all();
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -300,6 +316,7 @@ fn insert_after_head(editor: &mut Editor) {
         .for_each_mut(|mut range| {
             range.move_right(1);
         });
+    editor.window_mut().scroll_to_selection();
     editor.mode = Mode::Insert(InsertMode::default());
 }
 
@@ -316,6 +333,7 @@ fn insert_at_line_non_blank_start(editor: &mut Editor) {
             range.flip_backward();
             range.move_to_line_non_blank_start();
         });
+    editor.window_mut().scroll_to_selection();
     editor.mode = Mode::Insert(InsertMode::default());
 }
 
@@ -331,6 +349,7 @@ fn insert_at_line_end(editor: &mut Editor) {
         .for_each_mut(|mut range| {
             range.move_onto_line_end();
         });
+    editor.window_mut().scroll_to_selection();
     editor.mode = Mode::Insert(InsertMode::default());
 }
 
@@ -351,5 +370,6 @@ fn goto_line(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.move_to(byte_offset));
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }

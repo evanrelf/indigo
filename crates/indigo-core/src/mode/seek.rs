@@ -112,5 +112,6 @@ fn seek(editor: &mut Editor, byte: u8) {
             (Extend, Onto, Next) => range.extend_onto_next_byte(byte, count),
         });
 
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }

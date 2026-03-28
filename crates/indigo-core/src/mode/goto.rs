@@ -44,6 +44,7 @@ fn extend_to_start(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.extend_to_start());
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -53,6 +54,7 @@ fn move_to_start(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.move_to_start());
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -62,6 +64,7 @@ fn extend_to_bottom(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.extend_to_bottom());
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
@@ -71,6 +74,7 @@ fn move_to_bottom(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.move_to_bottom());
+    editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
