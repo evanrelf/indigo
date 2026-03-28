@@ -11,7 +11,7 @@ run_samply() {
 }
 
 run() {
-  cargo run --profile profile --bin indigo -- --log-filter info,indigo_core=debug,indigo=debug "$@"
+  cargo run --bin indigo -- --log-filter info,indigo_core=debug,indigo=debug "$@"
 }
 
 print_log() {
