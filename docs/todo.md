@@ -11,7 +11,6 @@
 - No `C` or `<a-C>`
 - No detection of file changing from underneath it (e.g. when I move to another
   change with `jj new` it doesn't warn that the working copy has changed)
-- `gi` doesn't work correctly when run before or on the last initial whitespace
 
 ## Keys
 

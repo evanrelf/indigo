@@ -484,6 +484,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn move_to_line_non_blank_start(&mut self) {
         self.extend_to_line_non_blank_start();
+        self.state.tail.byte_offset = self.state.head.byte_offset;
         self.reduce();
         self.update_goal_column();
     }
@@ -753,5 +754,23 @@ mod tests {
         assert_eq!(first_tail_offset, second_tail_offset);
         assert_eq!(first_head_offset, second_head_offset);
         assert_eq!(&range.slice().to_string(), "x");
+    }
+
+    #[test]
+    fn move_to_line_non_blank_start_symmetric() {
+        let mut text = Text::from("");
+        let mut state = RangeState::default();
+        let mut range = RangeMut::new(&mut text, &mut state).unwrap();
+        range.insert("    foo");
+
+        range.move_to_line_start();
+        range.move_to_line_non_blank_start();
+        let from_start = range.head().byte_offset();
+
+        range.move_until_line_end();
+        range.move_to_line_non_blank_start();
+        let from_end = range.head().byte_offset();
+
+        assert_eq!(from_start, from_end);
     }
 }
