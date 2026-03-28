@@ -458,6 +458,9 @@ impl<W: WrapMut> RangeView<'_, W> {
     pub fn extend_to_bottom(&mut self) {
         let bias = self.head_bias();
         self.head_mut().move_to_bottom(bias);
+        if self.is_forward() {
+            self.head_mut().move_right(1);
+        }
     }
 
     pub fn move_to_bottom(&mut self) {
