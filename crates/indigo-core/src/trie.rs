@@ -9,10 +9,7 @@ impl<K, V> Trie<K, V> {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            root: Arc::new(Node::Branch {
-                keys: Vec::new(),
-                children: Vec::new(),
-            }),
+            root: Arc::new(Node::default()),
         }
     }
 
@@ -25,16 +22,14 @@ impl<K, V> Trie<K, V> {
         root.insert(key, value)
     }
 
-    /*
     pub fn remove(&mut self, key: &[K]) -> Option<V>
     where
-        K: Clone,
+        K: Clone + Ord,
         V: Clone,
     {
         let root = Arc::make_mut(&mut self.root);
         root.remove(key)
     }
-    */
 
     #[must_use]
     pub fn get(&self, key: &[K]) -> TrieResult<&V>
@@ -80,50 +75,70 @@ impl<K, V> Node<K, V> {
     {
         match self {
             Self::Branch { keys, children } => {
-                if let Some((head, tail)) = key.split_first() {
-                    match keys.binary_search(head) {
-                        Ok(index) => {
-                            let child = Arc::make_mut(&mut children[index]);
-                            child.insert(tail, value)
-                        }
-                        Err(index) => {
-                            keys.insert(index, head.clone());
-                            let child = if tail.is_empty() {
-                                Arc::new(Self::Leaf { value })
-                            } else {
-                                let mut branch = Self::Branch {
-                                    keys: Vec::new(),
-                                    children: Vec::new(),
-                                };
-                                branch.insert(tail, value);
-                                Arc::new(branch)
-                            };
-                            children.insert(index, child);
-                            None
-                        }
-                    }
-                } else {
+                let Some((head, tail)) = key.split_first() else {
                     panic!("Overlapping keys are forbidden")
+                };
+                match keys.binary_search(head) {
+                    Ok(index) => {
+                        let child = Arc::make_mut(&mut children[index]);
+                        child.insert(tail, value)
+                    }
+                    Err(index) => {
+                        keys.insert(index, head.clone());
+                        let child = if tail.is_empty() {
+                            Arc::new(Self::Leaf { value })
+                        } else {
+                            let mut branch = Self::default();
+                            branch.insert(tail, value);
+                            Arc::new(branch)
+                        };
+                        children.insert(index, child);
+                        None
+                    }
                 }
             }
             Self::Leaf { value: leaf_value } => {
-                if key.is_empty() {
-                    Some(std::mem::replace(leaf_value, value))
-                } else {
-                    panic!("Overlapping keys are forbidden")
-                }
+                assert!(key.is_empty(), "Overlapping keys are forbidden");
+                Some(std::mem::replace(leaf_value, value))
             }
         }
     }
 
-    /*
-    fn remove(&mut self, key: &[K]) -> Option<V> {
+    fn is_empty(&self) -> bool {
         match self {
-            Self::Branch { keys, children } => todo!(),
-            Self::Leaf { value } => todo!(),
+            Self::Branch { keys, .. } => keys.is_empty(),
+            Self::Leaf { .. } => false,
         }
     }
-    */
+
+    fn remove(&mut self, key: &[K]) -> Option<V>
+    where
+        K: Clone + Ord,
+        V: Clone,
+    {
+        match self {
+            Self::Branch { keys, children } => {
+                let (head, tail) = key.split_first()?;
+                let index = keys.binary_search(head).ok()?;
+                let child = Arc::make_mut(&mut children[index]);
+                let result = child.remove(tail);
+                if child.is_empty() {
+                    keys.remove(index);
+                    children.remove(index);
+                }
+                result
+            }
+            Self::Leaf { .. } => {
+                if !key.is_empty() {
+                    return None;
+                }
+                match std::mem::take(self) {
+                    Self::Leaf { value } => Some(value),
+                    Self::Branch { .. } => unreachable!(),
+                }
+            }
+        }
+    }
 
     #[must_use]
     fn get(&self, key: &[K]) -> TrieResult<&V>
@@ -182,6 +197,15 @@ impl<K, V> Node<K, V> {
     }
 }
 
+impl<K, V> Default for Node<K, V> {
+    fn default() -> Self {
+        Self::Branch {
+            keys: Vec::new(),
+            children: Vec::new(),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum TrieResult<T> {
     Missing,
@@ -196,14 +220,30 @@ mod tests {
     #[test]
     fn works() {
         let mut trie: Trie<&str, &str> = Trie::new();
+
         trie.insert(&["1", "+", "2"], "3");
         trie.insert(&["1", "+", "9"], "10");
+
         assert_eq!(trie.get(&["1"]), TrieResult::Partial);
         assert_eq!(trie.get(&["1", "+"]), TrieResult::Partial);
         assert_eq!(trie.get(&["1", "+", "2"]), TrieResult::Found(&"3"));
         assert_eq!(trie.get(&["1", "+", "9"]), TrieResult::Found(&"10"));
         assert_eq!(trie.get(&["1", "+", "5"]), TrieResult::Missing);
         assert_eq!(trie.get(&["1", "+", "2", "+", "3"]), TrieResult::Missing);
+
+        // remove returns the value, missing keys return None
+        assert_eq!(trie.remove(&["1", "+", "5"]), None);
+        assert_eq!(trie.remove(&["1"]), None);
+        assert_eq!(trie.remove(&["1", "+", "2"]), Some("3"));
+
+        // after removal: exact key is gone, sibling and its parent are intact
+        assert_eq!(trie.get(&["1", "+", "2"]), TrieResult::Missing);
+        assert_eq!(trie.get(&["1", "+", "9"]), TrieResult::Found(&"10"));
+        assert_eq!(trie.get(&["1"]), TrieResult::Partial);
+
+        // removing the last entry prunes empty branches
+        assert_eq!(trie.remove(&["1", "+", "9"]), Some("10"));
+        assert_eq!(trie.get(&["1"]), TrieResult::Missing);
     }
 
     #[test]
