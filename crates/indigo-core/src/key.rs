@@ -55,7 +55,7 @@ fn keys(input: &mut &str) -> ModalResult<Keys> {
 }
 
 #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Key {
     pub modifiers: KeyModifiers,
     pub code: KeyCode,
@@ -119,7 +119,7 @@ fn key_bare_unmodified(input: &mut &str) -> ModalResult<Key> {
 
 bitflags! {
     #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
-    #[derive(Clone, Copy, Debug, PartialEq)]
+    #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
     pub struct KeyModifiers: u8 {
         const CONTROL = 1 << 0;
         const ALT = 1 << 1;
@@ -171,7 +171,7 @@ fn key_modifiers(input: &mut &str) -> ModalResult<KeyModifiers> {
     Ok(modifiers)
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum KeyCode {
     Backspace,
     Delete,
