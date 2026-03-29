@@ -57,6 +57,7 @@ clippy.missing_panics_doc = "allow"
 clippy.pedantic = { level = "warn", priority = -1 }
 clippy.redundant_closure = "allow"
 clippy.redundant_closure_for_method_calls = "allow"
+clippy.should_panic_without_expect = "allow"
 clippy.use_self = "warn"
 rust.unsafe_code = "deny"
 

@@ -194,7 +194,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test() {
+    fn works() {
         let mut trie: Trie<&str, &str> = Trie::new();
         trie.insert(&["1", "+", "2"], "3");
         trie.insert(&["1", "+", "9"], "10");
@@ -204,5 +204,13 @@ mod tests {
         assert_eq!(trie.get(&["1", "+", "9"]), TrieResult::Found(&"10"));
         assert_eq!(trie.get(&["1", "+", "5"]), TrieResult::Missing);
         assert_eq!(trie.get(&["1", "+", "2", "+", "3"]), TrieResult::Missing);
+    }
+
+    #[test]
+    #[should_panic]
+    fn forbids_overlap() {
+        let mut trie: Trie<&str, ()> = Trie::new();
+        trie.insert(&["1"], ());
+        trie.insert(&["1", "2"], ());
     }
 }
