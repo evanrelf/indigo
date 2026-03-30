@@ -19,6 +19,8 @@ pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "K") => extend_to_start(editor),
             _ if is(key, "j") => move_to_bottom(editor),
             _ if is(key, "J") => extend_to_bottom(editor),
+            _ if is(key, "e") => move_to_end(editor),
+            _ if is(key, "E") => extend_to_end(editor),
             _ if is(key, "h") => move_to_line_start(editor),
             _ if is(key, "H") => extend_to_line_start(editor),
             _ if is(key, "i") => move_to_line_non_blank_start(editor),
@@ -74,6 +76,26 @@ fn move_to_bottom(editor: &mut Editor) {
         .buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.move_to_bottom());
+    editor.window_mut().scroll_to_selection();
+    editor.mode.set_count(None);
+}
+
+fn extend_to_end(editor: &mut Editor) {
+    editor
+        .window_mut()
+        .buffer_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| range.extend_to_end());
+    editor.window_mut().scroll_to_selection();
+    editor.mode.set_count(None);
+}
+
+fn move_to_end(editor: &mut Editor) {
+    editor
+        .window_mut()
+        .buffer_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| range.move_to_end());
     editor.window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }

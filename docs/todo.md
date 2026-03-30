@@ -130,8 +130,6 @@ See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 - [ ] `X` (extend to full lines)
 - [ ] `<a-x>` (trim to full lines)
 - [x] `%` (select whole buffer)
-- [ ] `<a-h>` (select to line begin)
-- [ ] `<a-l>` (select to line end)
 - [x] `<c-u>` (scroll half page up)
 - [x] `<c-d>` (scroll half page down)
 - [x] `<c-b>` (scroll page up)
@@ -159,8 +157,7 @@ See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 - [x] `L` (extend to line end)
 - [x] `i` (go to first non-blank)
 - [x] `I` (extend to first non-blank)
-- [ ] `g` (go to buffer top)
-- [ ] `e` (go to last char of buffer)
+- [x] `e` (go to last char of buffer)
 - [ ] `t` (go to first displayed line)
 - [ ] `c` (go to middle displayed line)
 - [ ] `b` (go to last displayed line)
@@ -188,7 +185,7 @@ See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 
 ### Multiple selections
 
-- [ ] `s` (select regex matches within)
+- [x] `s` (select regex matches within)
 - [ ] `S` (split on regex)
 - [ ] `<a-s>` (split on line boundaries)
 - [ ] `<a-S>` (select first and last chars)
