@@ -5,7 +5,7 @@ use crate::{
 
 pub struct Keymap<V> {
     mappings: Trie<Key, V>,
-    fallback: fn(&Self, &[Key]) -> KeymapResult<V>,
+    fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<&'a V>,
 }
 
 impl<V> Keymap<V> {
@@ -17,10 +17,7 @@ impl<V> Keymap<V> {
         }
     }
 
-    pub fn insert(&mut self, keys: &str, value: V)
-    where
-        V: Clone,
-    {
+    pub fn insert(&mut self, keys: &str, value: V) {
         let mut keys: Keys = keys.parse().unwrap();
         for key in &mut keys.0 {
             key.normalize();
@@ -28,15 +25,12 @@ impl<V> Keymap<V> {
         self.mappings.insert(&keys.0, value);
     }
 
-    pub fn set_fallback(&mut self, fallback: fn(&Self, &[Key]) -> KeymapResult<V>) {
+    pub fn set_fallback(&mut self, fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<&'a V>) {
         self.fallback = fallback;
     }
 
     #[must_use]
-    pub fn get(&self, keys: &str) -> KeymapResult<V>
-    where
-        V: Clone,
-    {
+    pub fn get(&self, keys: &str) -> KeymapResult<&V> {
         let mut keys: Keys = keys.parse().unwrap();
         for key in &mut keys.0 {
             key.normalize();
@@ -44,7 +38,7 @@ impl<V> Keymap<V> {
         match self.mappings.get(&keys.0) {
             TrieResult::Missing => (self.fallback)(self, &keys.0),
             TrieResult::Partial => KeymapResult::Pending,
-            TrieResult::Found(value) => KeymapResult::Mapped(value.clone()),
+            TrieResult::Found(value) => KeymapResult::Mapped(value),
         }
     }
 }
