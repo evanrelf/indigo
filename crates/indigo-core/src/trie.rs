@@ -1,15 +1,13 @@
-use std::sync::Arc;
-
 #[derive(Clone)]
 pub struct Trie<K, V> {
-    root: Arc<Node<K, V>>,
+    root: Node<K, V>,
 }
 
 impl<K, V> Trie<K, V> {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            root: Arc::new(Node::default()),
+            root: Node::default(),
         }
     }
 
@@ -18,8 +16,7 @@ impl<K, V> Trie<K, V> {
         K: Clone + Ord,
         V: Clone,
     {
-        let root = Arc::make_mut(&mut self.root);
-        root.insert(key, value)
+        self.root.insert(key, value)
     }
 
     pub fn remove(&mut self, key: &[K]) -> Option<V>
@@ -27,8 +24,7 @@ impl<K, V> Trie<K, V> {
         K: Clone + Ord,
         V: Clone,
     {
-        let root = Arc::make_mut(&mut self.root);
-        root.remove(key)
+        self.root.remove(key)
     }
 
     #[must_use]
@@ -45,8 +41,7 @@ impl<K, V> Trie<K, V> {
         K: Clone + Ord,
         V: Clone,
     {
-        let root = Arc::make_mut(&mut self.root);
-        root.get_mut(key)
+        self.root.get_mut(key)
     }
 }
 
@@ -60,7 +55,7 @@ impl<K, V> Default for Trie<K, V> {
 enum Node<K, V> {
     Branch {
         keys: Vec<K>,
-        children: Vec<Arc<Self>>,
+        children: Vec<Box<Self>>,
     },
     Leaf {
         value: V,
@@ -79,18 +74,15 @@ impl<K, V> Node<K, V> {
                     panic!("Overlapping keys are forbidden")
                 };
                 match keys.binary_search(head) {
-                    Ok(index) => {
-                        let child = Arc::make_mut(&mut children[index]);
-                        child.insert(tail, value)
-                    }
+                    Ok(index) => children[index].insert(tail, value),
                     Err(index) => {
                         keys.insert(index, head.clone());
                         let child = if tail.is_empty() {
-                            Arc::new(Self::Leaf { value })
+                            Box::new(Self::Leaf { value })
                         } else {
                             let mut branch = Self::default();
                             branch.insert(tail, value);
-                            Arc::new(branch)
+                            Box::new(branch)
                         };
                         children.insert(index, child);
                         None
@@ -120,9 +112,8 @@ impl<K, V> Node<K, V> {
             Self::Branch { keys, children } => {
                 let (head, tail) = key.split_first()?;
                 let index = keys.binary_search(head).ok()?;
-                let child = Arc::make_mut(&mut children[index]);
-                let result = child.remove(tail);
-                if child.is_empty() {
+                let result = children[index].remove(tail);
+                if children[index].is_empty() {
                     keys.remove(index);
                     children.remove(index);
                 }
@@ -177,8 +168,7 @@ impl<K, V> Node<K, V> {
             Self::Branch { keys, children } => {
                 if let Some((head, tail)) = key.split_first() {
                     if let Ok(index) = keys.binary_search(head) {
-                        let child = Arc::make_mut(&mut children[index]);
-                        child.get_mut(tail)
+                        children[index].get_mut(tail)
                     } else {
                         TrieResult::Missing
                     }
