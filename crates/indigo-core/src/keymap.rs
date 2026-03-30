@@ -55,21 +55,19 @@ impl<V> Default for Keymap<V> {
     }
 }
 
-#[macro_export]
 macro_rules! keymap {
-    ($($keys:literal => $value:expr,)+ $fallback_arg:ident => $fallback_body:block $(,)?) => {{
+    ($($keys:literal => $value:expr,)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
         let mut keymap = Keymap::new();
-        $(keymap.insert($keys, $value);)+
+        $(keymap.insert($keys, $value);)*
         keymap.set_fallback(|$fallback_arg| $fallback_body);
         keymap
     }};
-    ($($keys:literal => $value:expr),+ $(,)?) => {{
+    ($($keys:literal => $value:expr),* $(,)?) => {{
         let mut keymap = Keymap::new();
-        $(keymap.insert($keys, $value);)+
+        $(keymap.insert($keys, $value);)*
         keymap
     }};
 }
-
 
 #[derive(Debug, PartialEq)]
 pub enum KeymapResult<V> {
@@ -87,13 +85,13 @@ mod tests {
     pub struct Action(pub &'static str);
 
     macro_rules! keymap_actions {
-        ($($keys:literal => [$($actions:expr),+],)+ $fallback_arg:ident => $fallback_body:block $(,)?) => {{
+        ($($keys:literal => [$($actions:expr),*],)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
             let mut keymap: Keymap<Vector<Action>> = Keymap::new();
             $(keymap.insert($keys, Vector::from([$($actions),+]));)+
             keymap.set_fallback(|$fallback_arg| $fallback_body);
             keymap
         }};
-        ($($keys:literal => [$($actions:expr),+]),+ $(,)?) => {{
+        ($($keys:literal => [$($actions:expr),*]),* $(,)?) => {{
             let mut keymap: Keymap<Vector<Action>> = Keymap::new();
             $(keymap.insert($keys, Vector::from([$($actions),+]));)+
             keymap
