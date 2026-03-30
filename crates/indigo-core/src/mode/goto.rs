@@ -1,7 +1,7 @@
 use crate::{
     editor::Editor,
     event::{Event, KeyEvent},
-    key::is,
+    keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal::enter_normal_mode},
 };
 
@@ -13,21 +13,26 @@ pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {
         panic!("Not in goto mode")
     };
 
+    let keymap = keymap! { fn(&mut Editor);
+        "k" => |editor| move_to_start(editor),
+        "K" => |editor| extend_to_start(editor),
+        "j" => |editor| move_to_bottom(editor),
+        "J" => |editor| extend_to_bottom(editor),
+        "e" => |editor| move_to_end(editor),
+        "E" => |editor| extend_to_end(editor),
+        "h" => |editor| move_to_line_start(editor),
+        "H" => |editor| extend_to_line_start(editor),
+        "i" => |editor| move_to_line_non_blank_start(editor),
+        "I" => |editor| extend_to_line_non_blank_start(editor),
+        "l" => |editor| move_until_line_end(editor),
+        "L" => |editor| extend_until_line_end(editor),
+    };
+
     match event {
-        Event::Key(KeyEvent { key, .. }) => match (key.modifiers, key.code) {
-            _ if is(key, "k") => move_to_start(editor),
-            _ if is(key, "K") => extend_to_start(editor),
-            _ if is(key, "j") => move_to_bottom(editor),
-            _ if is(key, "J") => extend_to_bottom(editor),
-            _ if is(key, "e") => move_to_end(editor),
-            _ if is(key, "E") => extend_to_end(editor),
-            _ if is(key, "h") => move_to_line_start(editor),
-            _ if is(key, "H") => extend_to_line_start(editor),
-            _ if is(key, "i") => move_to_line_non_blank_start(editor),
-            _ if is(key, "I") => extend_to_line_non_blank_start(editor),
-            _ if is(key, "l") => move_until_line_end(editor),
-            _ if is(key, "L") => extend_until_line_end(editor),
-            _ => {}
+        Event::Key(KeyEvent { key, .. }) => match keymap.get_keys(&[*key]) {
+            KeymapResult::Mapped(f) => f(editor),
+            KeymapResult::Fallback(f) => f(editor),
+            KeymapResult::Unmapped | KeymapResult::Pending => {}
         },
     }
 

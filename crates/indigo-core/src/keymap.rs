@@ -41,6 +41,15 @@ impl<V> Keymap<V> {
             TrieResult::Found(value) => KeymapResult::Mapped(value),
         }
     }
+
+    #[must_use]
+    pub fn get_keys(&self, keys: &[Key]) -> KeymapResult<'_, V> {
+        match self.mappings.get(keys) {
+            TrieResult::Missing => (self.fallback)(self, keys),
+            TrieResult::Partial => KeymapResult::Pending,
+            TrieResult::Found(value) => KeymapResult::Mapped(value),
+        }
+    }
 }
 
 impl<V> Default for Keymap<V> {
@@ -50,18 +59,26 @@ impl<V> Default for Keymap<V> {
 }
 
 macro_rules! keymap {
+    ($value_ty:ty; $($keys:literal => $value:expr,)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
+        let mut keymap $(: Keymap<$value_ty>)? = Keymap::new();
+        $(keymap.insert($keys, $value);)*
+        keymap.set_fallback(|_self, $fallback_arg| $fallback_body);
+        keymap
+    }};
     ($($keys:literal => $value:expr,)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
         let mut keymap = Keymap::new();
         $(keymap.insert($keys, $value);)*
         keymap.set_fallback(|_self, $fallback_arg| $fallback_body);
         keymap
     }};
-    ($($keys:literal => $value:expr),* $(,)?) => {{
-        let mut keymap = Keymap::new();
+    ($($value_ty:ty;)? $($keys:literal => $value:expr),* $(,)?) => {{
+        let mut keymap $(: Keymap<$value_ty>)? = Keymap::new();
         $(keymap.insert($keys, $value);)*
         keymap
     }};
 }
+
+pub(crate) use keymap;
 
 #[derive(Debug, PartialEq)]
 pub enum KeymapResult<'a, V> {
