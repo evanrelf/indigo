@@ -2,17 +2,13 @@ use crate::{
     key::{Key, Keys},
     trie::{Trie, TrieResult},
 };
-use imbl::Vector;
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct Action(pub &'static str);
-
-pub struct Keymap {
-    mappings: Trie<Key, Vector<Action>>,
-    fallback: fn(&[Key]) -> KeymapResult,
+pub struct Keymap<V> {
+    mappings: Trie<Key, V>,
+    fallback: fn(&[Key]) -> KeymapResult<V>,
 }
 
-impl Keymap {
+impl<V> Keymap<V> {
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -21,20 +17,26 @@ impl Keymap {
         }
     }
 
-    pub fn insert(&mut self, keys: &str, actions: Vector<Action>) {
+    pub fn insert(&mut self, keys: &str, value: V)
+    where
+        V: Clone,
+    {
         let mut keys: Keys = keys.parse().unwrap();
         for key in &mut keys.0 {
             key.normalize();
         }
-        self.mappings.insert(&keys.0, actions);
+        self.mappings.insert(&keys.0, value);
     }
 
-    pub fn set_fallback(&mut self, fallback: fn(&[Key]) -> KeymapResult) {
+    pub fn set_fallback(&mut self, fallback: fn(&[Key]) -> KeymapResult<V>) {
         self.fallback = fallback;
     }
 
     #[must_use]
-    pub fn get(&self, keys: &str) -> KeymapResult {
+    pub fn get(&self, keys: &str) -> KeymapResult<V>
+    where
+        V: Clone,
+    {
         let mut keys: Keys = keys.parse().unwrap();
         for key in &mut keys.0 {
             key.normalize();
@@ -42,12 +44,12 @@ impl Keymap {
         match self.mappings.get(&keys.0) {
             TrieResult::Missing => (self.fallback)(&keys.0),
             TrieResult::Partial => KeymapResult::Pending,
-            TrieResult::Found(actions) => KeymapResult::Mapped(actions.clone()),
+            TrieResult::Found(value) => KeymapResult::Mapped(value.clone()),
         }
     }
 }
 
-impl Default for Keymap {
+impl<V> Default for Keymap<V> {
     fn default() -> Self {
         Self::new()
     }
@@ -55,33 +57,52 @@ impl Default for Keymap {
 
 #[macro_export]
 macro_rules! keymap {
-    ($($keys:literal => [$($actions:expr),+],)+ $fallback_arg:ident => $fallback_body:block $(,)?) => {{
+    ($($keys:literal => $value:expr,)+ $fallback_arg:ident => $fallback_body:block $(,)?) => {{
         let mut keymap = Keymap::new();
-        $(keymap.insert($keys, Vector::from([$($actions),+]));)+
+        $(keymap.insert($keys, $value);)+
         keymap.set_fallback(|$fallback_arg| $fallback_body);
         keymap
     }};
-    ($($keys:literal => [$($actions:expr),+]),+ $(,)?) => {{
+    ($($keys:literal => $value:expr),+ $(,)?) => {{
         let mut keymap = Keymap::new();
-        $(keymap.insert($keys, Vector::from([$($actions),+]));)+
+        $(keymap.insert($keys, $value);)+
         keymap
     }};
 }
 
+
 #[derive(Debug, PartialEq)]
-pub enum KeymapResult {
+pub enum KeymapResult<V> {
     Unmapped,
     Pending,
-    Mapped(Vector<Action>),
+    Mapped(V),
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use imbl::Vector;
+
+    #[derive(Clone, Debug, PartialEq)]
+    pub struct Action(pub &'static str);
+
+    macro_rules! keymap_actions {
+        ($($keys:literal => [$($actions:expr),+],)+ $fallback_arg:ident => $fallback_body:block $(,)?) => {{
+            let mut keymap: Keymap<Vector<Action>> = Keymap::new();
+            $(keymap.insert($keys, Vector::from([$($actions),+]));)+
+            keymap.set_fallback(|$fallback_arg| $fallback_body);
+            keymap
+        }};
+        ($($keys:literal => [$($actions:expr),+]),+ $(,)?) => {{
+            let mut keymap: Keymap<Vector<Action>> = Keymap::new();
+            $(keymap.insert($keys, Vector::from([$($actions),+]));)+
+            keymap
+        }};
+    }
 
     #[test]
     fn basic() {
-        let keymap = keymap! {
+        let keymap = keymap_actions! {
             "gj" => [Action("move to bottom")],
         };
         assert_eq!(keymap.get("x"), KeymapResult::Unmapped);
@@ -94,7 +115,7 @@ mod tests {
 
     #[test]
     fn fallback() {
-        let keymap = keymap! {
+        let keymap = keymap_actions! {
             "gj" => [Action("move to bottom")],
             keys => {
                 if keys.len() == 4 {
@@ -118,7 +139,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn forbids_overlap() {
-        let _keymap = keymap! {
+        let _keymap = keymap_actions! {
             "g" => [Action("enter goto mode")],
             "gj" => [Action("move to bottom")],
         };
