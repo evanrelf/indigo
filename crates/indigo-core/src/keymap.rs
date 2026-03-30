@@ -5,7 +5,7 @@ use crate::{
 
 pub struct Keymap<V> {
     mappings: Trie<Key, V>,
-    fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<&'a V>,
+    fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<'a, V>,
 }
 
 impl<V> Keymap<V> {
@@ -25,12 +25,12 @@ impl<V> Keymap<V> {
         self.mappings.insert(&keys.0, value);
     }
 
-    pub fn set_fallback(&mut self, fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<&'a V>) {
+    pub fn set_fallback(&mut self, fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<'a, V>) {
         self.fallback = fallback;
     }
 
     #[must_use]
-    pub fn get(&self, keys: &str) -> KeymapResult<&V> {
+    pub fn get(&self, keys: &str) -> KeymapResult<'_, V> {
         let mut keys: Keys = keys.parse().unwrap();
         for key in &mut keys.0 {
             key.normalize();
@@ -64,10 +64,11 @@ macro_rules! keymap {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum KeymapResult<V> {
+pub enum KeymapResult<'a, V> {
     Unmapped,
     Pending,
-    Mapped(V),
+    Mapped(&'a V),
+    Fallback(V),
 }
 
 #[cfg(test)]
@@ -101,7 +102,7 @@ mod tests {
         assert_eq!(keymap.get("g"), KeymapResult::Pending);
         assert_eq!(
             keymap.get("gj"),
-            KeymapResult::Mapped(Vector::from([Action("move to bottom")]))
+            KeymapResult::Mapped(&Vector::from([Action("move to bottom")]))
         );
     }
 
@@ -111,7 +112,7 @@ mod tests {
             "gj" => [Action("move to bottom")],
             keys => {
                 if keys.len() == 4 {
-                    KeymapResult::Mapped(Vector::from([Action("yay 4")]))
+                    KeymapResult::Fallback(Vector::from([Action("yay 4")]))
                 } else {
                     KeymapResult::Unmapped
                 }
@@ -119,12 +120,12 @@ mod tests {
         };
         assert_eq!(
             keymap.get("gj"),
-            KeymapResult::Mapped(Vector::from([Action("move to bottom")]))
+            KeymapResult::Mapped(&Vector::from([Action("move to bottom")]))
         );
         assert_eq!(keymap.get("123"), KeymapResult::Unmapped);
         assert_eq!(
             keymap.get("1234"),
-            KeymapResult::Mapped(Vector::from([Action("yay 4")]))
+            KeymapResult::Fallback(Vector::from([Action("yay 4")]))
         );
     }
 
