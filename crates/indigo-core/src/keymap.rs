@@ -5,7 +5,7 @@ use crate::{
 
 pub struct Keymap<V> {
     mappings: Trie<Key, V>,
-    fallback: fn(&[Key]) -> KeymapResult<V>,
+    fallback: fn(&Self, &[Key]) -> KeymapResult<V>,
 }
 
 impl<V> Keymap<V> {
@@ -13,7 +13,7 @@ impl<V> Keymap<V> {
     pub fn new() -> Self {
         Self {
             mappings: Trie::new(),
-            fallback: |_| KeymapResult::Unmapped,
+            fallback: |_, _| KeymapResult::Unmapped,
         }
     }
 
@@ -28,7 +28,7 @@ impl<V> Keymap<V> {
         self.mappings.insert(&keys.0, value);
     }
 
-    pub fn set_fallback(&mut self, fallback: fn(&[Key]) -> KeymapResult<V>) {
+    pub fn set_fallback(&mut self, fallback: fn(&Self, &[Key]) -> KeymapResult<V>) {
         self.fallback = fallback;
     }
 
@@ -42,7 +42,7 @@ impl<V> Keymap<V> {
             key.normalize();
         }
         match self.mappings.get(&keys.0) {
-            TrieResult::Missing => (self.fallback)(&keys.0),
+            TrieResult::Missing => (self.fallback)(self, &keys.0),
             TrieResult::Partial => KeymapResult::Pending,
             TrieResult::Found(value) => KeymapResult::Mapped(value.clone()),
         }
@@ -59,7 +59,7 @@ macro_rules! keymap {
     ($($keys:literal => $value:expr,)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
         let mut keymap = Keymap::new();
         $(keymap.insert($keys, $value);)*
-        keymap.set_fallback(|$fallback_arg| $fallback_body);
+        keymap.set_fallback(|_self, $fallback_arg| $fallback_body);
         keymap
     }};
     ($($keys:literal => $value:expr),* $(,)?) => {{
@@ -88,7 +88,7 @@ mod tests {
         ($($keys:literal => [$($actions:expr),*],)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
             let mut keymap: Keymap<Vector<Action>> = Keymap::new();
             $(keymap.insert($keys, Vector::from([$($actions),+]));)+
-            keymap.set_fallback(|$fallback_arg| $fallback_body);
+            keymap.set_fallback(|_self, $fallback_arg| $fallback_body);
             keymap
         }};
         ($($keys:literal => [$($actions:expr),*]),* $(,)?) => {{
