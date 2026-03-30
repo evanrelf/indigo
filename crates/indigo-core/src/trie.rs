@@ -1,4 +1,3 @@
-#[derive(Clone)]
 pub struct Trie<K, V> {
     root: Node<K, V>,
 }
@@ -14,15 +13,13 @@ impl<K, V> Trie<K, V> {
     pub fn insert(&mut self, key: &[K], value: V) -> Option<V>
     where
         K: Clone + Ord,
-        V: Clone,
     {
         self.root.insert(key, value)
     }
 
     pub fn remove(&mut self, key: &[K]) -> Option<V>
     where
-        K: Clone + Ord,
-        V: Clone,
+        K: Ord,
     {
         self.root.remove(key)
     }
@@ -38,8 +35,7 @@ impl<K, V> Trie<K, V> {
     #[must_use]
     pub fn get_mut(&mut self, key: &[K]) -> TrieResult<&mut V>
     where
-        K: Clone + Ord,
-        V: Clone,
+        K: Ord,
     {
         self.root.get_mut(key)
     }
@@ -51,7 +47,6 @@ impl<K, V> Default for Trie<K, V> {
     }
 }
 
-#[derive(Clone)]
 enum Node<K, V> {
     Branch {
         keys: Vec<K>,
@@ -66,7 +61,6 @@ impl<K, V> Node<K, V> {
     fn insert(&mut self, key: &[K], value: V) -> Option<V>
     where
         K: Clone + Ord,
-        V: Clone,
     {
         match self {
             Self::Branch { keys, children } => {
@@ -105,8 +99,7 @@ impl<K, V> Node<K, V> {
 
     fn remove(&mut self, key: &[K]) -> Option<V>
     where
-        K: Clone + Ord,
-        V: Clone,
+        K: Ord,
     {
         match self {
             Self::Branch { keys, children } => {
@@ -161,8 +154,7 @@ impl<K, V> Node<K, V> {
     #[must_use]
     fn get_mut(&mut self, key: &[K]) -> TrieResult<&mut V>
     where
-        K: Clone + Ord,
-        V: Clone,
+        K: Ord,
     {
         match self {
             Self::Branch { keys, children } => {
