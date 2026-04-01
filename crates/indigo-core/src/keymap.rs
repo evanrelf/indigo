@@ -60,19 +60,19 @@ impl<V> Default for Keymap<V> {
 
 macro_rules! keymap {
     ($value_ty:ty; $($keys:literal => $value:expr,)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
-        let mut keymap $(: Keymap<$value_ty>)? = Keymap::new();
+        let mut keymap $(: crate::keymap::Keymap<$value_ty>)? = crate::keymap::Keymap::new();
         $(keymap.insert($keys, $value);)*
         keymap.set_fallback(|_self, $fallback_arg| $fallback_body);
         keymap
     }};
     ($($keys:literal => $value:expr,)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
-        let mut keymap = Keymap::new();
+        let mut keymap = crate::keymap::Keymap::new();
         $(keymap.insert($keys, $value);)*
         keymap.set_fallback(|_self, $fallback_arg| $fallback_body);
         keymap
     }};
     ($($value_ty:ty;)? $($keys:literal => $value:expr),* $(,)?) => {{
-        let mut keymap $(: Keymap<$value_ty>)? = Keymap::new();
+        let mut keymap $(: crate::keymap::Keymap<$value_ty>)? = crate::keymap::Keymap::new();
         $(keymap.insert($keys, $value);)*
         keymap
     }};
@@ -98,14 +98,14 @@ mod tests {
 
     macro_rules! keymap_actions {
         ($($keys:literal => [$($actions:expr),*],)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
-            let mut keymap: Keymap<Vector<Action>> = Keymap::new();
-            $(keymap.insert($keys, Vector::from([$($actions),+]));)+
+            let mut keymap: crate::keymap::Keymap<::imbl::Vector<Action>> = crate::keymap::Keymap::new();
+            $(keymap.insert($keys, ::imbl::Vector::from([$($actions),+]));)+
             keymap.set_fallback(|_self, $fallback_arg| $fallback_body);
             keymap
         }};
         ($($keys:literal => [$($actions:expr),*]),* $(,)?) => {{
-            let mut keymap: Keymap<Vector<Action>> = Keymap::new();
-            $(keymap.insert($keys, Vector::from([$($actions),+]));)+
+            let mut keymap: crate::keymap::Keymap<::imbl::Vector<Action>> = crate::keymap::Keymap::new();
+            $(keymap.insert($keys, ::imbl::Vector::from([$($actions),+]));)+
             keymap
         }};
     }

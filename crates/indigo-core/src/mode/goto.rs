@@ -1,7 +1,7 @@
 use crate::{
     editor::Editor,
     event::{Event, KeyEvent},
-    keymap::{Keymap, KeymapResult, keymap},
+    keymap::{KeymapResult, keymap},
     mode::{Mode, normal::enter_normal_mode},
 };
 
