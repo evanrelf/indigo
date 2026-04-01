@@ -3,41 +3,17 @@ use crate::{
     trie::{Trie, TrieResult},
 };
 
-pub trait KeymapFallbackFn<V> {
-    fn keymap_fallback<'a, 'b>(
-        &self,
-        keymap: &'a Keymap<V>,
-        keys: &'b [Key],
-    ) -> KeymapResult<'a, V>;
-}
-
-impl<V, F> KeymapFallbackFn<V> for F
-where
-    F: for<'a, 'b> Fn(&'a Keymap<V>, &'b [Key]) -> KeymapResult<'a, V>,
-{
-    fn keymap_fallback<'a>(&self, keymap: &'a Keymap<V>, keys: &[Key]) -> KeymapResult<'a, V> {
-        self(keymap, keys)
-    }
-}
-
-pub struct Keymap<V>
-where
-    V: 'static,
-{
+pub struct Keymap<V> {
     mappings: Trie<Key, V>,
-    fallback: Box<dyn KeymapFallbackFn<V>>,
+    fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<'a, V>,
 }
 
 impl<V> Keymap<V> {
     #[must_use]
     pub fn new() -> Self {
-        fn fallback<'a, 'b, V>(_keymap: &'a Keymap<V>, _keys: &'b [Key]) -> KeymapResult<'a, V> {
-            KeymapResult::Unmapped
-        }
-
         Self {
             mappings: Trie::new(),
-            fallback: Box::new(fallback),
+            fallback: |_, _| KeymapResult::Unmapped,
         }
     }
 
@@ -49,11 +25,8 @@ impl<V> Keymap<V> {
         self.mappings.insert(&keys.0, value);
     }
 
-    pub fn set_fallback<F>(&mut self, fallback: F)
-    where
-        F: for<'a, 'b> Fn(&'a Keymap<V>, &'b [Key]) -> KeymapResult<'a, V> + 'static,
-    {
-        self.fallback = Box::new(fallback);
+    pub fn set_fallback(&mut self, fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<'a, V>) {
+        self.fallback = fallback;
     }
 
     #[must_use]
@@ -63,7 +36,7 @@ impl<V> Keymap<V> {
             key.normalize();
         }
         match self.mappings.get(&keys.0) {
-            TrieResult::Missing => self.fallback.keymap_fallback(self, &keys.0),
+            TrieResult::Missing => (self.fallback)(self, &keys.0),
             TrieResult::Partial => KeymapResult::Pending,
             TrieResult::Found(value) => KeymapResult::Mapped(value),
         }
@@ -72,7 +45,7 @@ impl<V> Keymap<V> {
     #[must_use]
     pub fn get_keys(&self, keys: &[Key]) -> KeymapResult<'_, V> {
         match self.mappings.get(keys) {
-            TrieResult::Missing => self.fallback.keymap_fallback(self, keys),
+            TrieResult::Missing => (self.fallback)(self, keys),
             TrieResult::Partial => KeymapResult::Pending,
             TrieResult::Found(value) => KeymapResult::Mapped(value),
         }
