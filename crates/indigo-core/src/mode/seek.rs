@@ -25,7 +25,7 @@ pub enum SeekDirection {
 }
 
 #[derive(Clone)]
-pub struct SeekMode {
+pub struct State {
     pub count: Option<NonZeroUsize>,
     /// Move and create a new selection, or extend the current one?
     pub select: SeekSelect,
@@ -71,7 +71,7 @@ pub fn enter_seek_mode(
     include: SeekInclude,
     direction: SeekDirection,
 ) {
-    editor.mode = Mode::Seek(SeekMode {
+    editor.mode = Mode::Seek(State {
         count: editor.mode.count(),
         select,
         include,

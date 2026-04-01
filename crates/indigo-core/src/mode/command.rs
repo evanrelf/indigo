@@ -6,7 +6,7 @@ use crate::{
     key::{KeyCode, is},
     mode::{
         Mode,
-        normal::{NormalMode, enter_normal_mode},
+        normal::{self, enter_normal_mode},
     },
     text::Text,
 };
@@ -15,12 +15,12 @@ use ropey::Rope;
 use std::{borrow::Cow, sync::Arc};
 
 #[derive(Clone, Default)]
-pub struct CommandMode {
+pub struct State {
     text: Text,
     cursor: CursorState,
 }
 
-impl CommandMode {
+impl State {
     #[must_use]
     pub fn rope(&self) -> &Rope {
         self.text.rope()
@@ -62,7 +62,7 @@ pub fn handle_event_command(editor: &mut Editor, event: &Event) -> anyhow::Resul
 }
 
 pub fn enter_command_mode(editor: &mut Editor) {
-    editor.mode = Mode::Command(CommandMode::default());
+    editor.mode = Mode::Command(State::default());
 }
 
 fn insert_char(editor: &mut Editor, char: char) {
@@ -99,7 +99,7 @@ fn exec_command(editor: &mut Editor) {
         Ok(command) => command,
         Err(error) => {
             editor.message = Some(Err(error.to_string()));
-            editor.mode = Mode::Normal(NormalMode::default());
+            editor.mode = Mode::Normal(normal::State::default());
             return;
         }
     };
@@ -169,7 +169,7 @@ fn exec_command(editor: &mut Editor) {
         Command::Panic => panic!(),
     }
 
-    editor.mode = Mode::Normal(NormalMode::default());
+    editor.mode = Mode::Normal(normal::State::default());
 }
 
 enum Command {

@@ -3,8 +3,12 @@ use crate::{
     event::{Event, KeyEvent},
     key::{KeyCode, is},
     mode::{
-        Mode, command::enter_command_mode, goto::enter_goto_mode, insert::InsertMode,
-        insert::enter_insert_mode, prompt::enter_prompt_mode, seek::enter_seek_mode,
+        Mode,
+        command::enter_command_mode,
+        goto::enter_goto_mode,
+        insert::{self, enter_insert_mode},
+        prompt::enter_prompt_mode,
+        seek::enter_seek_mode,
     },
     rope::{LINE_TYPE, RopeExt as _},
     window::{
@@ -15,7 +19,7 @@ use regex_cursor::engines::meta::Regex;
 use std::{cmp::min, num::NonZeroUsize};
 
 #[derive(Clone, Default)]
-pub struct NormalMode {
+pub struct State {
     pub count: Option<NonZeroUsize>,
 }
 
@@ -92,7 +96,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
 
 pub fn enter_normal_mode(editor: &mut Editor) {
     editor.window_mut().buffer_mut().commit();
-    editor.mode = Mode::Normal(NormalMode::default());
+    editor.mode = Mode::Normal(State::default());
 }
 
 fn set_count(editor: &mut Editor, count: Option<NonZeroUsize>) {
@@ -317,7 +321,7 @@ fn insert_after_head(editor: &mut Editor) {
             range.move_right(1);
         });
     editor.window_mut().scroll_to_selection();
-    editor.mode = Mode::Insert(InsertMode::default());
+    editor.mode = Mode::Insert(insert::State::default());
 }
 
 fn insert_at_line_non_blank_start(editor: &mut Editor) {
@@ -334,7 +338,7 @@ fn insert_at_line_non_blank_start(editor: &mut Editor) {
             range.move_to_line_non_blank_start();
         });
     editor.window_mut().scroll_to_selection();
-    editor.mode = Mode::Insert(InsertMode::default());
+    editor.mode = Mode::Insert(insert::State::default());
 }
 
 fn insert_at_line_end(editor: &mut Editor) {
@@ -350,7 +354,7 @@ fn insert_at_line_end(editor: &mut Editor) {
             range.move_onto_line_end();
         });
     editor.window_mut().scroll_to_selection();
-    editor.mode = Mode::Insert(InsertMode::default());
+    editor.mode = Mode::Insert(insert::State::default());
 }
 
 fn goto_line(editor: &mut Editor) {

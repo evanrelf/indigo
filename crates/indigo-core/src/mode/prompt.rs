@@ -10,7 +10,7 @@ use ropey::Rope;
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
-pub struct PromptMode {
+pub struct State {
     prompt: &'static str,
     text: Text,
     cursor: CursorState,
@@ -20,7 +20,7 @@ pub struct PromptMode {
     handler: Option<Arc<Mutex<dyn FnMut(&mut Editor, &str) + Send>>>,
 }
 
-impl PromptMode {
+impl State {
     #[must_use]
     pub fn new(
         prompt: &'static str,
@@ -84,7 +84,7 @@ pub fn enter_prompt_mode(
     prompt: &'static str,
     handler: impl FnMut(&mut Editor, &str) + Send + 'static,
 ) {
-    editor.mode = Mode::Prompt(PromptMode::new(prompt, handler));
+    editor.mode = Mode::Prompt(State::new(prompt, handler));
 }
 
 fn insert_char(editor: &mut Editor, char: char) {

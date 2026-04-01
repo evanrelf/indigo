@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[derive(Clone, Default)]
-pub struct GotoMode {}
+pub struct State {}
 
 pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {
     let Mode::Goto(_goto_mode) = &editor.mode else {
@@ -42,7 +42,7 @@ pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {
 }
 
 pub fn enter_goto_mode(editor: &mut Editor) {
-    editor.mode = Mode::Goto(GotoMode::default());
+    editor.mode = Mode::Goto(State::default());
 }
 
 fn extend_to_start(editor: &mut Editor) {

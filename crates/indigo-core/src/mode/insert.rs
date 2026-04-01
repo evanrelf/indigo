@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[derive(Clone, Default)]
-pub struct InsertMode {}
+pub struct State {}
 
 pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
     let Mode::Insert(_insert_mode) = &editor.mode else {
@@ -42,7 +42,7 @@ pub fn enter_insert_mode(editor: &mut Editor) {
         .selection_mut()
         .for_each_mut(|mut range| range.reduce());
     editor.window_mut().scroll_to_selection();
-    editor.mode = Mode::Insert(InsertMode::default());
+    editor.mode = Mode::Insert(State::default());
 }
 
 fn delete_before(editor: &mut Editor) {

@@ -5,22 +5,18 @@ pub mod normal;
 pub mod prompt;
 pub mod seek;
 
-use crate::mode::{
-    command::CommandMode, goto::GotoMode, insert::InsertMode, normal::NormalMode,
-    prompt::PromptMode, seek::SeekMode,
-};
 use std::num::NonZeroUsize;
 
 // TODO: Mode stack so that seek mode can look at normal mode's count instead of keeping a copy?
 
 #[derive(Clone)]
 pub enum Mode {
-    Normal(NormalMode),
-    Seek(SeekMode),
-    Goto(GotoMode),
-    Insert(InsertMode),
-    Command(CommandMode),
-    Prompt(PromptMode),
+    Normal(normal::State),
+    Seek(seek::State),
+    Goto(goto::State),
+    Insert(insert::State),
+    Command(command::State),
+    Prompt(prompt::State),
 }
 
 impl Mode {
@@ -44,6 +40,6 @@ impl Mode {
 
 impl Default for Mode {
     fn default() -> Self {
-        Self::Normal(NormalMode::default())
+        Self::Normal(normal::State::default())
     }
 }
