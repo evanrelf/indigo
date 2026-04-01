@@ -59,23 +59,34 @@ impl<V> Default for Keymap<V> {
 }
 
 macro_rules! keymap {
+    // [x] type [x] fallback (base case)
     ($value_ty:ty; $($keys:literal => $value:expr,)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
-        let mut keymap $(: crate::keymap::Keymap<$value_ty>)? = crate::keymap::Keymap::new();
+        let mut keymap: $crate::keymap::Keymap<$value_ty> = $crate::keymap::Keymap::new();
         $(keymap.insert($keys, $value);)*
         keymap.set_fallback(|_self, $fallback_arg| $fallback_body);
         keymap
     }};
-    ($($keys:literal => $value:expr,)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
-        let mut keymap = crate::keymap::Keymap::new();
-        $(keymap.insert($keys, $value);)*
-        keymap.set_fallback(|_self, $fallback_arg| $fallback_body);
-        keymap
-    }};
-    ($($value_ty:ty;)? $($keys:literal => $value:expr),* $(,)?) => {{
-        let mut keymap $(: crate::keymap::Keymap<$value_ty>)? = crate::keymap::Keymap::new();
-        $(keymap.insert($keys, $value);)*
-        keymap
-    }};
+    // [x] type [ ] fallback
+    ($value_ty:ty; $($keys:literal => $value:expr),* $(,)?) => {
+        $crate::keymap::keymap! { $value_ty;
+            $($keys => $value,)*
+            __keys => { $crate::keymap::KeymapResult::Unmapped },
+        }
+    };
+    // [ ] type [x] fallback
+    ($($keys:literal => $value:expr,)* $fallback_arg:ident => $fallback_body:block $(,)?) => {
+        $crate::keymap::keymap! { _;
+            $($keys => $value,)*
+            $fallback_arg => $fallback_body,
+        }
+    };
+    // [ ] type [ ] fallback
+    ($($keys:literal => $value:expr),* $(,)?) => {
+        $crate::keymap::keymap! { _;
+            $($keys => $value,)*
+            __keys => { $crate::keymap::KeymapResult::Unmapped },
+        }
+    };
 }
 
 pub(crate) use keymap;
