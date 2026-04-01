@@ -96,24 +96,10 @@ mod tests {
     #[derive(Clone, Debug, PartialEq)]
     pub struct Action(pub &'static str);
 
-    macro_rules! keymap_actions {
-        ($($keys:literal => [$($actions:expr),*],)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
-            let mut keymap: crate::keymap::Keymap<::imbl::Vector<Action>> = crate::keymap::Keymap::new();
-            $(keymap.insert($keys, ::imbl::Vector::from([$($actions),+]));)+
-            keymap.set_fallback(|_self, $fallback_arg| $fallback_body);
-            keymap
-        }};
-        ($($keys:literal => [$($actions:expr),*]),* $(,)?) => {{
-            let mut keymap: crate::keymap::Keymap<::imbl::Vector<Action>> = crate::keymap::Keymap::new();
-            $(keymap.insert($keys, ::imbl::Vector::from([$($actions),+]));)+
-            keymap
-        }};
-    }
-
     #[test]
     fn basic() {
-        let keymap = keymap_actions! {
-            "gj" => [Action("move to bottom")],
+        let keymap = keymap! {
+            "gj" => Vector::from([Action("move to bottom")]),
         };
         assert_eq!(keymap.get("x"), KeymapResult::Unmapped);
         assert_eq!(keymap.get("g"), KeymapResult::Pending);
@@ -125,8 +111,8 @@ mod tests {
 
     #[test]
     fn fallback() {
-        let keymap = keymap_actions! {
-            "gj" => [Action("move to bottom")],
+        let keymap = keymap! {
+            "gj" => Vector::from([Action("move to bottom")]),
             keys => {
                 if keys.len() == 4 {
                     KeymapResult::Fallback(Vector::from([Action("yay 4")]))
@@ -149,9 +135,9 @@ mod tests {
     #[test]
     #[should_panic]
     fn forbids_overlap() {
-        let _keymap = keymap_actions! {
-            "g" => [Action("enter goto mode")],
-            "gj" => [Action("move to bottom")],
+        let _keymap = keymap! {
+            "g" => Vector::from([Action("enter goto mode")]),
+            "gj" => Vector::from([Action("move to bottom")]),
         };
     }
 }
