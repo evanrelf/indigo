@@ -12,10 +12,11 @@ use std::num::NonZeroUsize;
 #[derive(Clone)]
 pub enum Mode {
     Normal(normal::State),
-    Seek(seek::State),
-    Goto(goto::State),
     Insert(insert::State),
     Prompt(prompt::State),
+    // TODO: Replace these with multi-key mappings in normal mode
+    Seek(seek::State),
+    Goto(goto::State),
 }
 
 impl Mode {
