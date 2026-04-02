@@ -1,19 +1,16 @@
 use crate::{
     editor::Editor,
     event::{Event, KeyEvent},
-    keymap::{KeymapResult, keymap},
+    keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal::enter_normal_mode},
 };
+use std::sync::LazyLock;
 
 #[derive(Clone, Default)]
 pub struct State {}
 
-pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {
-    let Mode::Goto(_goto_mode) = &editor.mode else {
-        panic!("Not in goto mode")
-    };
-
-    let keymap = keymap! { fn(&mut Editor);
+pub static KEYMAP: LazyLock<Keymap<fn(&mut Editor)>> = LazyLock::new(|| {
+    keymap! { fn(&mut Editor);
         "k" => |editor| move_to_start(editor),
         "K" => |editor| extend_to_start(editor),
         "j" => |editor| move_to_bottom(editor),
@@ -26,10 +23,16 @@ pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {
         "I" => |editor| extend_to_line_non_blank_start(editor),
         "l" => |editor| move_until_line_end(editor),
         "L" => |editor| extend_until_line_end(editor),
+    }
+});
+
+pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {
+    let Mode::Goto(_goto_mode) = &editor.mode else {
+        panic!("Not in goto mode")
     };
 
     match event {
-        Event::Key(KeyEvent { key, .. }) => match keymap.get_keys(&[*key]) {
+        Event::Key(KeyEvent { key, .. }) => match KEYMAP.get_keys(&[*key]) {
             KeymapResult::Mapped(f) => f(editor),
             KeymapResult::Fallback(f) => f(editor),
             KeymapResult::Unmapped | KeymapResult::Pending => {}
