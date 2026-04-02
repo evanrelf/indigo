@@ -2,7 +2,6 @@
 pub use crate::{
     buffer::{Buffer, BufferKind},
     cursor::{Bias, Cursor, CursorMut},
-    display_width::DisplayWidth,
     editor::Editor,
     event::{Event, KeyEvent, KeyEventKind},
     key::{Key, KeyCode, KeyModifiers, Keys},
@@ -11,6 +10,7 @@ pub use crate::{
     range::{Range, RangeMut},
     rope::RopeExt,
     text::Text,
+    unicode::DisplayWidth,
     window::{Window, WindowMut},
 };
 

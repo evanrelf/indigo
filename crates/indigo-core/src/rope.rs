@@ -1,7 +1,4 @@
-use crate::{
-    display_width::DisplayWidth as _,
-    unicode::{self, Graphemes},
-};
+use crate::unicode::{self, DisplayWidth as _, Graphemes};
 use regex_cursor::{Cursor, IntoCursor};
 use ropey::{LineType, Rope, RopeSlice};
 use std::ops::{Bound, RangeBounds};
