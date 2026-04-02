@@ -49,7 +49,6 @@ impl Buffer {
 
     pub fn open(fs: &impl Fs, path: impl AsRef<Utf8Path>) -> anyhow::Result<Self> {
         let path = path.as_ref();
-        // TODO: Canonicalize path.
         let exists = fs.exists(path)?;
         let rope = if exists {
             let bytes = fs.read(path)?;
