@@ -6,6 +6,10 @@ use crate::{
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::cmp::min;
 
+slotmap::new_key_type! {
+    pub struct WindowKey;
+}
+
 #[derive(Clone)]
 pub struct WindowState {
     pub buffer: BufferKey,

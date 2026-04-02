@@ -2,7 +2,7 @@ use crate::{
     buffer::{Buffer, BufferKey},
     fs::{Fs, NoFs},
     mode::Mode,
-    window::{Window, WindowMut, WindowState},
+    window::{Window, WindowKey, WindowMut, WindowState},
 };
 use camino::Utf8PathBuf;
 use slotmap::SlotMap;
@@ -18,8 +18,9 @@ pub enum Error {
 #[derive(Clone)]
 pub struct Editor {
     pub fs: Arc<dyn Fs + Send + Sync>,
-    buffers: SlotMap<BufferKey, Buffer>,
-    window: WindowState,
+    buffers: SlotMap<BufferKey, Buffer>, // TODO: Rename `Buffer` to `BufferState`?
+    windows: SlotMap<WindowKey, WindowState>,
+    focused_window: WindowKey,
     pub mode: Mode,
     pub pwd: Option<Utf8PathBuf>,
     pub message: Option<Result<String, String>>,
@@ -33,21 +34,30 @@ impl Editor {
     }
 
     pub fn window(&self) -> Window<'_> {
+        let window = self
+            .windows
+            .get(self.focused_window)
+            .expect("Window state is always kept valid");
         let buffer = self
             .buffers
-            .get(self.window.buffer)
+            .get(window.buffer)
             .expect("Window state is always kept valid");
-        Window::new(buffer, &self.window)
+        Window::new(buffer, window)
     }
 
     pub fn window_mut(&mut self) -> WindowMut<'_> {
+        let window = self
+            .windows
+            .get_mut(self.focused_window)
+            .expect("Window state is always kept valid");
         let buffer = self
             .buffers
-            .get_mut(self.window.buffer)
+            .get_mut(window.buffer)
             .expect("Window state is always kept valid");
-        WindowMut::new(buffer, &mut self.window)
+        WindowMut::new(buffer, window)
     }
 
+    // TODO: Add `get_window`, `get_focused_window`, all the windows iterator, etc
     // TODO: Add `get_buffer`, `get_focused_buffer`, all the buffers iterator, etc
 
     #[must_use]
@@ -73,11 +83,16 @@ impl Default for Editor {
     fn default() -> Self {
         let mut buffers = SlotMap::default();
         let buffer_key = buffers.insert(Buffer::default());
+
         let window = WindowState::new(buffer_key);
+        let mut windows = SlotMap::default();
+        let window_key = windows.insert(window);
+
         Self {
             fs: Arc::new(NoFs),
             buffers,
-            window,
+            windows,
+            focused_window: window_key,
             mode: Mode::default(),
             pwd: None,
             message: None,
@@ -90,10 +105,15 @@ impl From<Buffer> for Editor {
     fn from(buffer: Buffer) -> Self {
         let mut buffers = SlotMap::default();
         let buffer_key = buffers.insert(buffer);
+
         let window = WindowState::new(buffer_key);
+        let mut windows = SlotMap::default();
+        let window_key = windows.insert(window);
+
         Self {
             buffers,
-            window,
+            windows,
+            focused_window: window_key,
             ..Self::default()
         }
     }
