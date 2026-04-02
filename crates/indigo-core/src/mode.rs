@@ -15,7 +15,6 @@ pub enum Mode {
     Seek(seek::State),
     Goto(goto::State),
     Insert(insert::State),
-    Command(command::State),
     Prompt(prompt::State),
 }
 

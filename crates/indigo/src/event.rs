@@ -4,7 +4,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use indigo_core::{
-    mode::{command, insert, normal::enter_normal_mode, prompt},
+    mode::{insert, normal::enter_normal_mode, prompt},
     prelude::*,
     window::{scroll_down, scroll_up},
 };
@@ -61,7 +61,6 @@ pub fn handle_event(editor: &mut Editor, areas: Areas, event: TerminalEvent) -> 
         Mode::Seek(_) => handle_event_seek(editor, areas, event)?,
         Mode::Goto(_) => handle_event_goto(editor, areas, event)?,
         Mode::Insert(_) => handle_event_insert(editor, areas, event),
-        Mode::Command(_) => handle_event_command(editor, areas, event)?,
         Mode::Prompt(_) => handle_event_prompt(editor, areas, event)?,
     };
 
@@ -198,22 +197,6 @@ fn handle_event_insert(editor: &mut Editor, _areas: Areas, event: TerminalEvent)
     }
 
     handled
-}
-
-#[expect(clippy::unnecessary_wraps)]
-fn handle_event_command(
-    editor: &mut Editor,
-    _areas: Areas,
-    event: TerminalEvent,
-) -> anyhow::Result<bool> {
-    let mut handled = true;
-
-    match event {
-        TerminalEvent::Paste(text) => command::paste(editor, &text),
-        _ => handled = false,
-    }
-
-    Ok(handled)
 }
 
 #[expect(clippy::unnecessary_wraps)]

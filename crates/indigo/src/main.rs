@@ -153,37 +153,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     render_scroll_bar(editor, areas.scroll_bar, surface);
 }
 
-#[expect(clippy::too_many_lines)]
 fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
-    if let Mode::Command(ref command_mode) = editor.mode {
-        surface.set_style(area, Style::new().bg(THEME.status_bar_bg));
-
-        if let Some(cell) = surface.cell_mut(area.as_position()) {
-            cell.set_char(':');
-        } else {
-            unreachable!();
-        }
-
-        area.x += 1;
-        area.width -= 1;
-
-        Line::raw(command_mode.rope()).render(area, surface);
-
-        if let Some(rect) = byte_index_to_area(
-            command_mode.cursor().byte_offset(),
-            command_mode.rope(),
-            0,
-            area,
-        ) {
-            surface.set_style(
-                rect,
-                Style::default().fg(THEME.cursor_fg).bg(THEME.cursor_bg),
-            );
-        }
-
-        return;
-    }
-
     if let Mode::Prompt(ref prompt_mode) = editor.mode {
         surface.set_style(area, Style::new().bg(THEME.status_bar_bg));
 
@@ -240,7 +210,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
             }
             Mode::Goto(_) => "goto",
             Mode::Insert(_) => "insert",
-            Mode::Command(_) | Mode::Prompt(_) => unreachable!(),
+            Mode::Prompt(_) => unreachable!(),
         };
 
         let path = match (&editor.pwd, &editor.window().buffer().kind()) {
