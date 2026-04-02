@@ -1,7 +1,202 @@
-use crate::{
-    key::{Key, Keys},
-    trie::{Trie, TrieResult},
-};
+use crate::key::{Key, Keys};
+
+struct Trie<K, V> {
+    root: Node<K, V>,
+}
+
+#[expect(unused)]
+impl<K, V> Trie<K, V> {
+    #[must_use]
+    fn new() -> Self {
+        Self {
+            root: Node::default(),
+        }
+    }
+
+    fn insert(&mut self, key: &[K], value: V) -> Option<V>
+    where
+        K: Clone + Ord,
+    {
+        self.root.insert(key, value)
+    }
+
+    fn remove(&mut self, key: &[K]) -> Option<V>
+    where
+        K: Ord,
+    {
+        self.root.remove(key)
+    }
+
+    #[must_use]
+    fn get(&self, key: &[K]) -> TrieResult<&V>
+    where
+        K: Ord,
+    {
+        self.root.get(key)
+    }
+
+    #[must_use]
+    fn get_mut(&mut self, key: &[K]) -> TrieResult<&mut V>
+    where
+        K: Ord,
+    {
+        self.root.get_mut(key)
+    }
+}
+
+impl<K, V> Default for Trie<K, V> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+enum Node<K, V> {
+    Branch {
+        keys: Vec<K>,
+        children: Vec<Box<Self>>,
+    },
+    Leaf {
+        value: V,
+    },
+}
+
+impl<K, V> Node<K, V> {
+    fn insert(&mut self, key: &[K], value: V) -> Option<V>
+    where
+        K: Clone + Ord,
+    {
+        match self {
+            Self::Branch { keys, children } => {
+                let Some((head, tail)) = key.split_first() else {
+                    panic!("Overlapping keys are forbidden")
+                };
+                match keys.binary_search(head) {
+                    Ok(index) => children[index].insert(tail, value),
+                    Err(index) => {
+                        keys.insert(index, head.clone());
+                        let child = if tail.is_empty() {
+                            Box::new(Self::Leaf { value })
+                        } else {
+                            let mut branch = Self::default();
+                            branch.insert(tail, value);
+                            Box::new(branch)
+                        };
+                        children.insert(index, child);
+                        None
+                    }
+                }
+            }
+            Self::Leaf { value: leaf_value } => {
+                assert!(key.is_empty(), "Overlapping keys are forbidden");
+                Some(std::mem::replace(leaf_value, value))
+            }
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        match self {
+            Self::Branch { keys, .. } => keys.is_empty(),
+            Self::Leaf { .. } => false,
+        }
+    }
+
+    fn remove(&mut self, key: &[K]) -> Option<V>
+    where
+        K: Ord,
+    {
+        match self {
+            Self::Branch { keys, children } => {
+                let (head, tail) = key.split_first()?;
+                let index = keys.binary_search(head).ok()?;
+                let result = children[index].remove(tail);
+                if children[index].is_empty() {
+                    keys.remove(index);
+                    children.remove(index);
+                }
+                result
+            }
+            Self::Leaf { .. } => {
+                if !key.is_empty() {
+                    return None;
+                }
+                match std::mem::take(self) {
+                    Self::Leaf { value } => Some(value),
+                    Self::Branch { .. } => unreachable!(),
+                }
+            }
+        }
+    }
+
+    #[must_use]
+    fn get(&self, key: &[K]) -> TrieResult<&V>
+    where
+        K: Ord,
+    {
+        match self {
+            Self::Branch { keys, children } => {
+                if let Some((head, tail)) = key.split_first() {
+                    if let Ok(index) = keys.binary_search(head) {
+                        children[index].get(tail)
+                    } else {
+                        TrieResult::Missing
+                    }
+                } else {
+                    TrieResult::Partial
+                }
+            }
+            Self::Leaf { value } => {
+                if key.is_empty() {
+                    TrieResult::Found(value)
+                } else {
+                    TrieResult::Missing
+                }
+            }
+        }
+    }
+
+    #[must_use]
+    fn get_mut(&mut self, key: &[K]) -> TrieResult<&mut V>
+    where
+        K: Ord,
+    {
+        match self {
+            Self::Branch { keys, children } => {
+                if let Some((head, tail)) = key.split_first() {
+                    if let Ok(index) = keys.binary_search(head) {
+                        children[index].get_mut(tail)
+                    } else {
+                        TrieResult::Missing
+                    }
+                } else {
+                    TrieResult::Partial
+                }
+            }
+            Self::Leaf { value } => {
+                if key.is_empty() {
+                    TrieResult::Found(value)
+                } else {
+                    TrieResult::Missing
+                }
+            }
+        }
+    }
+}
+
+impl<K, V> Default for Node<K, V> {
+    fn default() -> Self {
+        Self::Branch {
+            keys: Vec::new(),
+            children: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+enum TrieResult<T> {
+    Missing,
+    Partial,
+    Found(T),
+}
 
 pub struct Keymap<V> {
     mappings: Trie<Key, V>,
@@ -105,10 +300,47 @@ mod tests {
     use imbl::Vector;
 
     #[derive(Clone, Debug, PartialEq)]
-    pub struct Action(pub &'static str);
+    struct Action(&'static str);
 
     #[test]
-    fn basic() {
+    fn trie_works() {
+        let mut trie: Trie<&str, &str> = Trie::new();
+
+        trie.insert(&["1", "+", "2"], "3");
+        trie.insert(&["1", "+", "9"], "10");
+
+        assert_eq!(trie.get(&["1"]), TrieResult::Partial);
+        assert_eq!(trie.get(&["1", "+"]), TrieResult::Partial);
+        assert_eq!(trie.get(&["1", "+", "2"]), TrieResult::Found(&"3"));
+        assert_eq!(trie.get(&["1", "+", "9"]), TrieResult::Found(&"10"));
+        assert_eq!(trie.get(&["1", "+", "5"]), TrieResult::Missing);
+        assert_eq!(trie.get(&["1", "+", "2", "+", "3"]), TrieResult::Missing);
+
+        // remove returns the value, missing keys return None
+        assert_eq!(trie.remove(&["1", "+", "5"]), None);
+        assert_eq!(trie.remove(&["1"]), None);
+        assert_eq!(trie.remove(&["1", "+", "2"]), Some("3"));
+
+        // after removal: exact key is gone, sibling and its parent are intact
+        assert_eq!(trie.get(&["1", "+", "2"]), TrieResult::Missing);
+        assert_eq!(trie.get(&["1", "+", "9"]), TrieResult::Found(&"10"));
+        assert_eq!(trie.get(&["1"]), TrieResult::Partial);
+
+        // removing the last entry prunes empty branches
+        assert_eq!(trie.remove(&["1", "+", "9"]), Some("10"));
+        assert_eq!(trie.get(&["1"]), TrieResult::Missing);
+    }
+
+    #[test]
+    #[should_panic]
+    fn trie_forbids_overlap() {
+        let mut trie: Trie<&str, ()> = Trie::new();
+        trie.insert(&["1"], ());
+        trie.insert(&["1", "2"], ());
+    }
+
+    #[test]
+    fn keymap_basic() {
         let keymap = keymap! {
             "gj" => Vector::from([Action("move to bottom")]),
         };
@@ -121,7 +353,7 @@ mod tests {
     }
 
     #[test]
-    fn fallback() {
+    fn keymap_fallback() {
         let keymap = keymap! {
             "gj" => Vector::from([Action("move to bottom")]),
             keys => {
@@ -145,7 +377,7 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn forbids_overlap() {
+    fn keymap_forbids_overlap() {
         let _keymap = keymap! {
             "g" => Vector::from([Action("enter goto mode")]),
             "gj" => Vector::from([Action("move to bottom")]),
