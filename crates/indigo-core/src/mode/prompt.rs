@@ -65,10 +65,15 @@ pub fn handle_event_prompt(editor: &mut Editor, event: &Event) -> bool {
 
     let mut handled = true;
 
-    // TODO: Add mappings for cursor movement.
     match event {
         Event::Key(KeyEvent { key, .. }) => match (key.modifiers, key.code) {
             _ if is(key, "<esc>") => enter_normal_mode(editor),
+            _ if is(key, "<c-b>") => move_left(editor),
+            _ if is(key, "<c-f>") => move_right(editor),
+            _ if is(key, "<c-a>") => move_to_start(editor),
+            _ if is(key, "<c-e>") => move_to_end(editor),
+            _ if is(key, "<c-u>") => delete_to_start(editor),
+            _ if is(key, "<c-k>") => delete_to_end(editor),
             _ if is(key, "<bs>") => delete_before(editor),
             _ if is(key, "<ret>") => exec(editor),
             (m, KeyCode::Char(c)) if m.is_empty() => insert_char(editor, char::from(c)),
@@ -85,6 +90,54 @@ pub fn enter_prompt_mode(
     handler: impl FnMut(&mut Editor, &str) + Send + 'static,
 ) {
     editor.mode = Mode::Prompt(State::new(prompt, handler));
+}
+
+fn move_left(editor: &mut Editor) {
+    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+        panic!("Not in prompt mode")
+    };
+    prompt_mode.cursor_mut().move_left(1);
+}
+
+fn move_right(editor: &mut Editor) {
+    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+        panic!("Not in prompt mode")
+    };
+    prompt_mode.cursor_mut().move_right(1);
+}
+
+fn move_to_start(editor: &mut Editor) {
+    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+        panic!("Not in prompt mode")
+    };
+    prompt_mode.cursor_mut().move_to_start();
+}
+
+fn move_to_end(editor: &mut Editor) {
+    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+        panic!("Not in prompt mode")
+    };
+    prompt_mode.cursor_mut().move_to_end();
+}
+
+fn delete_to_start(editor: &mut Editor) {
+    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+        panic!("Not in prompt mode")
+    };
+    let mut cursor = prompt_mode.cursor_mut();
+    while !cursor.is_at_start() {
+        cursor.delete_before();
+    }
+}
+
+fn delete_to_end(editor: &mut Editor) {
+    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+        panic!("Not in prompt mode")
+    };
+    let mut cursor = prompt_mode.cursor_mut();
+    while !cursor.is_at_end() {
+        cursor.delete_after();
+    }
 }
 
 fn insert_char(editor: &mut Editor, char: char) {
