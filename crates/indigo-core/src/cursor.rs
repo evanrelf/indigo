@@ -27,6 +27,12 @@ pub enum Bias {
     After,
 }
 
+#[derive(Clone, Copy)]
+pub enum Direction {
+    Backward,
+    Forward,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct CursorState {
     pub byte_offset: usize,
@@ -221,47 +227,20 @@ impl<W: WrapMut> CursorView<'_, W> {
     }
 
     pub fn move_up(&mut self, goal_column: usize, bias: Bias, count: usize) -> bool {
-        if self.text.len() == 0 {
-            return false;
-        }
-        for _ in 0..count {
-            #[expect(clippy::manual_let_else)]
-            let current_byte_index = match self.byte_index(bias) {
-                Ok(n) | Err(Some(n)) => n,
-                Err(None) => unreachable!("Already checked rope length"),
-            };
-            let current_line_index = self.text.byte_to_line_idx(current_byte_index, LINE_TYPE);
-            if current_line_index == 0 {
-                return false;
-            }
-            let target_line_index = current_line_index - 1;
-            let target_line_byte_index = self.text.line_to_byte_idx(target_line_index, LINE_TYPE);
-            let target_line_slice = self.text.line(target_line_index, LINE_TYPE);
-            let mut target_line_prefix = 0;
-            let mut target_byte_index = target_line_byte_index;
-            for grapheme in target_line_slice.graphemes() {
-                if grapheme.chars().any(|c| c == '\n' || c == '\r') {
-                    break;
-                }
-                let grapheme_width = grapheme.display_width();
-                if target_line_prefix + grapheme_width > goal_column {
-                    break;
-                }
-                target_line_prefix += grapheme_width;
-                target_byte_index += grapheme.len();
-            }
-            self.state.byte_offset = match bias {
-                Bias::After => target_byte_index,
-                Bias::Before => self
-                    .text
-                    .next_grapheme_boundary(target_byte_index)
-                    .expect("TODO"),
-            };
-        }
-        count > 0
+        self.move_vertical(Direction::Backward, goal_column, bias, count)
     }
 
     pub fn move_down(&mut self, goal_column: usize, bias: Bias, count: usize) -> bool {
+        self.move_vertical(Direction::Forward, goal_column, bias, count)
+    }
+
+    fn move_vertical(
+        &mut self,
+        direction: Direction,
+        goal_column: usize,
+        bias: Bias,
+        count: usize,
+    ) -> bool {
         if self.text.len() == 0 {
             return false;
         }
@@ -272,13 +251,24 @@ impl<W: WrapMut> CursorView<'_, W> {
                 Err(None) => unreachable!("Already checked rope length"),
             };
             let current_line_index = self.text.byte_to_line_idx(current_byte_index, LINE_TYPE);
-            let target_line_index = current_line_index + 1;
-            if self.state.byte_offset == self.text.len() {
-                return false;
-            }
-            if target_line_index >= self.text.len_lines_indigo() {
-                return false;
-            }
+            let target_line_index = match direction {
+                Direction::Backward => {
+                    if current_line_index == 0 {
+                        return false;
+                    }
+                    current_line_index - 1
+                }
+                Direction::Forward => {
+                    if self.state.byte_offset == self.text.len() {
+                        return false;
+                    }
+                    let target = current_line_index + 1;
+                    if target >= self.text.len_lines_indigo() {
+                        return false;
+                    }
+                    target
+                }
+            };
             let target_line_byte_index = self.text.line_to_byte_idx(target_line_index, LINE_TYPE);
             let target_line_slice = self.text.line(target_line_index, LINE_TYPE);
             let mut target_line_prefix = 0;
