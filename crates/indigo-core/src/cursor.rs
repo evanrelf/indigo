@@ -1,8 +1,7 @@
 use crate::{
     ot::OperationSeq,
-    rope::{LINE_TYPE, RopeExt as _},
+    rope::{DisplayWidth as _, LINE_TYPE, RopeExt as _},
     text::{Anchor, Text},
-    unicode::DisplayWidth as _,
 };
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};

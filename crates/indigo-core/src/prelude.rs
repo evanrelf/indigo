@@ -8,9 +8,8 @@ pub use crate::{
     mode::Mode,
     ot::OperationSeq,
     range::{Range, RangeMut},
-    rope::RopeExt,
+    rope::{DisplayWidth, RopeExt},
     text::Text,
-    unicode::DisplayWidth,
     window::{Window, WindowMut},
 };
 
