@@ -155,8 +155,9 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 
 #[expect(clippy::too_many_lines)]
 fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
-    // TODO: Make background color `flexoki::light::UI`
     if let Mode::Command(ref command_mode) = editor.mode {
+        surface.set_style(area, Style::new().bg(THEME.status_bar_bg));
+
         if let Some(cell) = surface.cell_mut(area.as_position()) {
             cell.set_char(':');
         } else {
@@ -183,8 +184,9 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         return;
     }
 
-    // TODO: Make background color `flexoki::light::UI`
     if let Mode::Prompt(ref prompt_mode) = editor.mode {
+        surface.set_style(area, Style::new().bg(THEME.status_bar_bg));
+
         format!("{}:", prompt_mode.prompt()).render(area, surface);
 
         area.x += u16::try_from(prompt_mode.prompt().display_width())
