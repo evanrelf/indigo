@@ -33,7 +33,61 @@ impl Editor {
         Self::default()
     }
 
-    pub fn window(&self) -> Window<'_> {
+    #[must_use]
+    pub fn get_buffer(&self, buffer_key: BufferKey) -> Option<&Buffer> {
+        self.buffers.get(buffer_key)
+    }
+
+    #[must_use]
+    pub fn get_buffer_mut(&mut self, buffer_key: BufferKey) -> Option<&mut Buffer> {
+        self.buffers.get_mut(buffer_key)
+    }
+
+    #[must_use]
+    pub fn focused_buffer(&self) -> &Buffer {
+        let window = self
+            .windows
+            .get(self.focused_window)
+            .expect("Window state is always kept valid");
+        self.buffers
+            .get(window.buffer)
+            .expect("Window state is always kept valid")
+    }
+
+    #[must_use]
+    pub fn focused_buffer_mut(&mut self) -> &mut Buffer {
+        let window = self
+            .windows
+            .get_mut(self.focused_window)
+            .expect("Window state is always kept valid");
+        self.buffers
+            .get_mut(window.buffer)
+            .expect("Window state is always kept valid")
+    }
+
+    // TODO: Add buffers iterator
+
+    #[must_use]
+    pub fn get_window(&self, window_key: WindowKey) -> Option<Window<'_>> {
+        let window = self.windows.get(window_key)?;
+        let buffer = self
+            .buffers
+            .get(window.buffer)
+            .expect("Window state is always kept valid");
+        Some(Window::new(buffer, window))
+    }
+
+    #[must_use]
+    pub fn get_window_mut(&mut self, window_key: WindowKey) -> Option<WindowMut<'_>> {
+        let window = self.windows.get_mut(window_key)?;
+        let buffer = self
+            .buffers
+            .get_mut(window.buffer)
+            .expect("Window state is always kept valid");
+        Some(WindowMut::new(buffer, window))
+    }
+
+    pub fn focused_window(&self) -> Window<'_> {
         let window = self
             .windows
             .get(self.focused_window)
@@ -45,7 +99,7 @@ impl Editor {
         Window::new(buffer, window)
     }
 
-    pub fn window_mut(&mut self) -> WindowMut<'_> {
+    pub fn focused_window_mut(&mut self) -> WindowMut<'_> {
         let window = self
             .windows
             .get_mut(self.focused_window)
@@ -57,8 +111,17 @@ impl Editor {
         WindowMut::new(buffer, window)
     }
 
-    // TODO: Add `get_window`, `get_focused_window`, all the windows iterator, etc
-    // TODO: Add `get_buffer`, `get_focused_buffer`, all the buffers iterator, etc
+    // TODO: Add windows iterator
+
+    #[deprecated]
+    pub fn window(&self) -> Window<'_> {
+        self.focused_window()
+    }
+
+    #[deprecated]
+    pub fn window_mut(&mut self) -> WindowMut<'_> {
+        self.focused_window_mut()
+    }
 
     #[must_use]
     pub fn exit_code(&self) -> Option<ExitCode> {
