@@ -88,7 +88,7 @@ impl RangeState {
     #[must_use]
     pub fn is_touching(&self, other: &Self) -> bool {
         let self_start = self.start().byte_offset;
-        let self_end = self.start().byte_offset;
+        let self_end = self.end().byte_offset;
         let other_start = other.start().byte_offset;
         let other_end = other.end().byte_offset;
         self_end == other_start || other_end == self_start
@@ -97,7 +97,7 @@ impl RangeState {
     #[must_use]
     pub fn is_overlapping(&self, other: &Self) -> bool {
         let self_start = self.start().byte_offset;
-        let self_end = self.start().byte_offset;
+        let self_end = self.end().byte_offset;
         let other_start = other.start().byte_offset;
         let other_end = other.end().byte_offset;
         (self_start < other_start && other_start < self_end)
