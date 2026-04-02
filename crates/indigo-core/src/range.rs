@@ -100,8 +100,7 @@ impl RangeState {
         let self_end = self.end().byte_offset;
         let other_start = other.start().byte_offset;
         let other_end = other.end().byte_offset;
-        (self_start < other_start && other_start < self_end)
-            || (other_start < self_start && self_start < other_end)
+        self_start < other_end && other_start < self_end
     }
 }
 
