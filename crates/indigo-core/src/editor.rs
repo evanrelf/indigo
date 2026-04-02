@@ -65,7 +65,13 @@ impl Editor {
             .expect("Window state is always kept valid")
     }
 
-    // TODO: Add buffers iterator
+    pub fn buffers(&self) -> impl Iterator<Item = (BufferKey, &Buffer)> {
+        self.buffers.iter()
+    }
+
+    pub fn buffers_mut(&mut self) -> impl Iterator<Item = (BufferKey, &mut Buffer)> {
+        self.buffers.iter_mut()
+    }
 
     #[must_use]
     pub fn get_window(&self, window_key: WindowKey) -> Option<Window<'_>> {
