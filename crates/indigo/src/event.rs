@@ -87,15 +87,14 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
                 };
                 if let Some(byte_offset) = position_to_byte_offset(
                     position,
-                    editor.window().buffer().rope(),
-                    editor.window().vertical_scroll(),
+                    editor.focused_buffer().rope(),
+                    editor.focused_window().vertical_scroll(),
                     areas.text,
                 )
                 .byte_offset()
                 {
                     editor
-                        .window_mut()
-                        .buffer_mut()
+                        .focused_buffer_mut()
                         .selection_mut()
                         .for_each_mut(|mut range| range.move_to(byte_offset));
                 } else {
@@ -113,15 +112,14 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
                 };
                 if let Some(byte_offset) = position_to_byte_offset(
                     position,
-                    editor.window().buffer().rope(),
-                    editor.window().vertical_scroll(),
+                    editor.focused_buffer().rope(),
+                    editor.focused_window().vertical_scroll(),
                     areas.text,
                 )
                 .byte_offset()
                 {
                     editor
-                        .window_mut()
-                        .buffer_mut()
+                        .focused_buffer_mut()
                         .selection_mut()
                         .for_each_mut(|mut range| range.extend_to(byte_offset));
                 } else {

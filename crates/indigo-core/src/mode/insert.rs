@@ -32,63 +32,58 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
 }
 
 pub fn enter_insert_mode(editor: &mut Editor) {
-    if editor.window().buffer().is_readonly() {
+    if editor.focused_buffer().is_readonly() {
         editor.message = Some(Err(String::from("Buffer is readonly")));
         return;
     }
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.reduce());
-    editor.window_mut().scroll_to_selection();
+    editor.focused_window_mut().scroll_to_selection();
     editor.mode = Mode::Insert(State::default());
 }
 
 fn delete_before(editor: &mut Editor) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| {
             range.delete_before();
         });
-    editor.window_mut().scroll_to_selection();
+    editor.focused_window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
 fn delete_after(editor: &mut Editor) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| {
             range.delete_after();
         });
-    editor.window_mut().scroll_to_selection();
+    editor.focused_window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
 fn insert_char(editor: &mut Editor, char: char) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| {
             range.insert_char(char);
         });
-    editor.window_mut().scroll_to_selection();
+    editor.focused_window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
 pub fn paste(editor: &mut Editor, text: &str) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| {
             range.insert(text);
         });
-    editor.window_mut().scroll_to_selection();
+    editor.focused_window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }

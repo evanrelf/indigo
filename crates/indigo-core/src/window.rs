@@ -106,13 +106,13 @@ impl<W: WrapMut> WindowView<'_, W> {
 }
 
 pub fn scroll_up(editor: &mut Editor) {
-    let mut window = editor.window_mut();
+    let mut window = editor.focused_window_mut();
     let line = window.vertical_scroll().saturating_sub(3);
     window.scroll_to_line(line);
 }
 
 pub fn scroll_down(editor: &mut Editor) {
-    let mut window = editor.window_mut();
+    let mut window = editor.focused_window_mut();
     let line = window.vertical_scroll() + 3;
     window.scroll_to_line(line);
 }
@@ -120,7 +120,7 @@ pub fn scroll_down(editor: &mut Editor) {
 // TODO(horizontal_scroll)
 
 pub fn scroll_half_page_up(editor: &mut Editor) {
-    let mut window = editor.window_mut();
+    let mut window = editor.focused_window_mut();
     let line = window
         .vertical_scroll()
         .saturating_sub(usize::from(window.height()) / 2);
@@ -128,13 +128,13 @@ pub fn scroll_half_page_up(editor: &mut Editor) {
 }
 
 pub fn scroll_half_page_down(editor: &mut Editor) {
-    let mut window = editor.window_mut();
+    let mut window = editor.focused_window_mut();
     let line = window.vertical_scroll() + usize::from(window.height()) / 2;
     window.scroll_to_line(line);
 }
 
 pub fn scroll_full_page_up(editor: &mut Editor) {
-    let mut window = editor.window_mut();
+    let mut window = editor.focused_window_mut();
     let line = window
         .vertical_scroll()
         .saturating_sub(usize::from(window.height()));
@@ -142,7 +142,7 @@ pub fn scroll_full_page_up(editor: &mut Editor) {
 }
 
 pub fn scroll_full_page_down(editor: &mut Editor) {
-    let mut window = editor.window_mut();
+    let mut window = editor.focused_window_mut();
     let line = window.vertical_scroll() + usize::from(window.height());
     window.scroll_to_line(line);
 }

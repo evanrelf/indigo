@@ -112,17 +112,17 @@ fn handle_command(editor: &mut Editor, command: Command) {
             }
         }
         Command::Edit { path } => {
-            if editor.window().buffer().is_modified().unwrap_or(false) {
+            if editor.focused_buffer().is_modified().unwrap_or(false) {
                 editor.message = Some(Err(String::from("Unsaved changes")));
             } else if let Ok(buffer) = Buffer::open(&editor.fs, &path) {
-                *editor.window_mut().buffer_mut() = buffer;
+                *editor.focused_buffer_mut() = buffer;
             } else {
                 editor.message = Some(Err(format!("Failed to open {path}")));
             }
         }
         Command::EditForce { path } => {
             if let Ok(buffer) = Buffer::open(&editor.fs, &path) {
-                *editor.window_mut().buffer_mut() = buffer;
+                *editor.focused_buffer_mut() = buffer;
             } else {
                 editor.message = Some(Err(format!("Failed to open {path}")));
             }
@@ -130,16 +130,16 @@ fn handle_command(editor: &mut Editor, command: Command) {
         Command::Write { path } => {
             let fs = Arc::clone(&editor.fs);
             let result = if let Some(path) = path {
-                editor.window_mut().buffer_mut().save_as(&fs, path)
+                editor.focused_buffer_mut().save_as(&fs, path)
             } else {
-                editor.window_mut().buffer_mut().save(&fs)
+                editor.focused_buffer_mut().save(&fs)
             };
             if result.is_err() {
                 editor.message = Some(Err(String::from("Failed to save")));
             }
         }
         Command::Quit { exit_code } => {
-            if editor.window().buffer().is_modified().unwrap_or(false) {
+            if editor.focused_buffer().is_modified().unwrap_or(false) {
                 editor.message = Some(Err(String::from("Unsaved changes")));
             } else {
                 editor.exit(exit_code.unwrap_or(0));
@@ -150,15 +150,15 @@ fn handle_command(editor: &mut Editor, command: Command) {
         }
         Command::WriteQuit { exit_code } => {
             let fs = Arc::clone(&editor.fs);
-            if editor.window_mut().buffer_mut().save(&fs).is_ok() {
+            if editor.focused_buffer_mut().save(&fs).is_ok() {
                 editor.exit(exit_code.unwrap_or(0));
             } else {
                 editor.message = Some(Err(String::from("Failed to save")));
             }
         }
         Command::Readonly => {
-            let new_readonly = !editor.window().buffer().is_readonly();
-            editor.window_mut().buffer_mut().set_readonly(new_readonly);
+            let new_readonly = !editor.focused_buffer().is_readonly();
+            editor.focused_buffer_mut().set_readonly(new_readonly);
             if new_readonly {
                 editor.message = Some(Ok(String::from("Buffer is now readonly")));
             } else {

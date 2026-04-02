@@ -50,68 +50,61 @@ pub fn enter_goto_mode(editor: &mut Editor) {
 
 fn extend_to_start(editor: &mut Editor) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.extend_to_start());
-    editor.window_mut().scroll_to_selection();
+    editor.focused_window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
 fn move_to_start(editor: &mut Editor) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.move_to_start());
-    editor.window_mut().scroll_to_selection();
+    editor.focused_window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
 fn extend_to_bottom(editor: &mut Editor) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.extend_to_bottom());
-    editor.window_mut().scroll_to_selection();
+    editor.focused_window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
 fn move_to_bottom(editor: &mut Editor) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.move_to_bottom());
-    editor.window_mut().scroll_to_selection();
+    editor.focused_window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
 fn extend_to_end(editor: &mut Editor) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.extend_to_end());
-    editor.window_mut().scroll_to_selection();
+    editor.focused_window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
 fn move_to_end(editor: &mut Editor) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.move_to_end());
-    editor.window_mut().scroll_to_selection();
+    editor.focused_window_mut().scroll_to_selection();
     editor.mode.set_count(None);
 }
 
 fn extend_to_line_start(editor: &mut Editor) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.extend_to_line_start());
     editor.mode.set_count(None);
@@ -119,8 +112,7 @@ fn extend_to_line_start(editor: &mut Editor) {
 
 fn move_to_line_start(editor: &mut Editor) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.move_to_line_start());
     editor.mode.set_count(None);
@@ -128,8 +120,7 @@ fn move_to_line_start(editor: &mut Editor) {
 
 fn extend_to_line_non_blank_start(editor: &mut Editor) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.extend_to_line_non_blank_start());
     editor.mode.set_count(None);
@@ -137,8 +128,7 @@ fn extend_to_line_non_blank_start(editor: &mut Editor) {
 
 fn move_to_line_non_blank_start(editor: &mut Editor) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.move_to_line_non_blank_start());
     editor.mode.set_count(None);
@@ -146,8 +136,7 @@ fn move_to_line_non_blank_start(editor: &mut Editor) {
 
 fn extend_until_line_end(editor: &mut Editor) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.extend_until_line_end());
     editor.mode.set_count(None);
@@ -155,8 +144,7 @@ fn extend_until_line_end(editor: &mut Editor) {
 
 fn move_until_line_end(editor: &mut Editor) {
     editor
-        .window_mut()
-        .buffer_mut()
+        .focused_buffer_mut()
         .selection_mut()
         .for_each_mut(|mut range| range.move_until_line_end());
     editor.mode.set_count(None);

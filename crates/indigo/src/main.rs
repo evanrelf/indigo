@@ -116,7 +116,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
             let area = frame.area();
             let surface = frame.buffer_mut();
             areas = Areas::new(&editor, area);
-            editor.window_mut().set_height(areas.text.height);
+            editor.focused_window_mut().set_height(areas.text.height);
             render(&editor, area, surface);
         })?;
 
@@ -213,7 +213,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
             Mode::Prompt(_) => unreachable!(),
         };
 
-        let path = match (&editor.pwd, &editor.window().buffer().kind()) {
+        let path = match (&editor.pwd, &editor.focused_buffer().kind()) {
             (_, BufferKind::Scratch) => String::from("*scratch*"),
             (None, BufferKind::File { path, .. }) => path.to_string(),
             (Some(pwd), BufferKind::File { path, .. }) => match diff_utf8_paths(path, pwd) {
@@ -222,7 +222,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
             },
         };
 
-        let window = editor.window();
+        let window = editor.focused_window();
         let selection = window.buffer().selection();
 
         let (line, column) = {
@@ -256,7 +256,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
 }
 
 fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let window = editor.window();
+    let window = editor.focused_window();
 
     let buffer = window.buffer();
 
@@ -288,7 +288,7 @@ fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let track_color = THEME.scroll_bar_track;
     let thumb_color = THEME.scroll_bar_thumb;
 
-    let window = editor.window();
+    let window = editor.focused_window();
     let buffer = window.buffer();
 
     let text_lines = buffer.rope().len_lines_indigo();
@@ -354,7 +354,7 @@ fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_dots(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let window = editor.window();
+    let window = editor.focused_window();
 
     let buffer = window.buffer();
 
@@ -384,7 +384,7 @@ fn render_dots(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let window = editor.window();
+    let window = editor.focused_window();
 
     let buffer = window.buffer();
 
@@ -422,7 +422,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let window = editor.window();
+    let window = editor.focused_window();
 
     let buffer = window.buffer();
 

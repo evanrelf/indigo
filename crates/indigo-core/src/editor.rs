@@ -113,16 +113,6 @@ impl Editor {
 
     // TODO: Add windows iterator
 
-    #[deprecated]
-    pub fn window(&self) -> Window<'_> {
-        self.focused_window()
-    }
-
-    #[deprecated]
-    pub fn window_mut(&mut self) -> WindowMut<'_> {
-        self.focused_window_mut()
-    }
-
     #[must_use]
     pub fn exit_code(&self) -> Option<ExitCode> {
         self.exit_code
