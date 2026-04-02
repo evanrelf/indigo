@@ -75,7 +75,7 @@ impl<W: WrapMut> WindowView<'_, W> {
             .rope()
             .byte_to_line_idx(head_byte_offset, LINE_TYPE);
         let top = self.vertical_scroll();
-        let bottom = (top + usize::from(self.state.height)) - 1;
+        let bottom = top + usize::from(self.state.height).saturating_sub(1);
         if line < top {
             self.state.prev_vertical_scroll = line;
         } else if line > bottom {
