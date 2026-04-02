@@ -18,7 +18,7 @@ pub enum Error {
 #[derive(Clone)]
 pub struct Editor {
     pub fs: Arc<dyn Fs + Send + Sync>,
-    buffers: SlotMap<BufferKey, Buffer>, // TODO: Rename `Buffer` to `BufferState`?
+    buffers: SlotMap<BufferKey, Buffer>,
     windows: SlotMap<WindowKey, WindowState>,
     focused_window: WindowKey,
     pub mode: Mode,
