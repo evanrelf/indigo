@@ -19,7 +19,6 @@ use ratatui::{
     prelude::{Buffer as Surface, *},
 };
 use std::{
-    borrow::Cow,
     cmp::{max, min},
     env, fs,
     process::ExitCode,
@@ -167,7 +166,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         area.x += 1;
         area.width -= 1;
 
-        Line::raw(Cow::<str>::from(command_mode.rope())).render(area, surface);
+        Line::raw(command_mode.rope()).render(area, surface);
 
         if let Some(rect) = byte_index_to_area(
             command_mode.cursor().byte_offset(),
@@ -193,7 +192,7 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
             + 1;
         area.width -= 1;
 
-        Line::raw(Cow::<str>::from(prompt_mode.rope())).render(area, surface);
+        Line::raw(prompt_mode.rope()).render(area, surface);
 
         if let Some(rect) = byte_index_to_area(
             prompt_mode.cursor().byte_offset(),
