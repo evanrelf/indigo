@@ -10,6 +10,10 @@ use ropey::Rope;
 use std::sync::Arc;
 use thiserror::Error;
 
+slotmap::new_key_type! {
+    pub struct BufferKey;
+}
+
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Error from selection")]

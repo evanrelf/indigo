@@ -1,10 +1,11 @@
 use crate::{
-    buffer::Buffer,
+    buffer::{Buffer, BufferKey},
     fs::{Fs, NoFs},
     mode::Mode,
     window::{Window, WindowMut, WindowState},
 };
 use camino::Utf8PathBuf;
+use slotmap::SlotMap;
 use std::{process::ExitCode, sync::Arc};
 use thiserror::Error;
 
@@ -17,7 +18,7 @@ pub enum Error {
 #[derive(Clone)]
 pub struct Editor {
     pub fs: Arc<dyn Fs + Send + Sync>,
-    buffer: Buffer,
+    buffers: SlotMap<BufferKey, Buffer>,
     window: WindowState,
     pub mode: Mode,
     pub pwd: Option<Utf8PathBuf>,
@@ -32,12 +33,22 @@ impl Editor {
     }
 
     pub fn window(&self) -> Window<'_> {
-        Window::new(&self.buffer, &self.window)
+        let buffer = self
+            .buffers
+            .get(self.window.buffer)
+            .expect("Window state is always kept valid");
+        Window::new(buffer, &self.window)
     }
 
     pub fn window_mut(&mut self) -> WindowMut<'_> {
-        WindowMut::new(&mut self.buffer, &mut self.window)
+        let buffer = self
+            .buffers
+            .get_mut(self.window.buffer)
+            .expect("Window state is always kept valid");
+        WindowMut::new(buffer, &mut self.window)
     }
+
+    // TODO: Add `get_buffer`, `get_focused_buffer`, all the buffers iterator, etc
 
     #[must_use]
     pub fn exit_code(&self) -> Option<ExitCode> {
@@ -51,17 +62,22 @@ impl Editor {
 
     #[expect(dead_code)]
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
-        self.buffer.assert_invariants().map_err(Error::Buffer)?;
+        for buffer in self.buffers.values() {
+            buffer.assert_invariants().map_err(Error::Buffer)?;
+        }
         Ok(())
     }
 }
 
 impl Default for Editor {
     fn default() -> Self {
+        let mut buffers = SlotMap::default();
+        let buffer_key = buffers.insert(Buffer::default());
+        let window = WindowState::new(buffer_key);
         Self {
             fs: Arc::new(NoFs),
-            buffer: Buffer::default(),
-            window: WindowState::default(),
+            buffers,
+            window,
             mode: Mode::default(),
             pwd: None,
             message: None,
@@ -72,8 +88,12 @@ impl Default for Editor {
 
 impl From<Buffer> for Editor {
     fn from(buffer: Buffer) -> Self {
+        let mut buffers = SlotMap::default();
+        let buffer_key = buffers.insert(buffer);
+        let window = WindowState::new(buffer_key);
         Self {
-            buffer,
+            buffers,
+            window,
             ..Self::default()
         }
     }

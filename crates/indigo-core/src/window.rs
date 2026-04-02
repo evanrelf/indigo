@@ -1,16 +1,28 @@
 use crate::{
-    buffer::Buffer,
+    buffer::{Buffer, BufferKey},
     editor::Editor,
     rope::{LINE_TYPE, RopeExt as _},
 };
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::cmp::min;
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct WindowState {
+    pub buffer: BufferKey,
     pub height: u16,
     pub prev_vertical_scroll: usize,
     // TODO(horizontal_scroll)
+}
+
+impl WindowState {
+    #[must_use]
+    pub fn new(buffer: BufferKey) -> Self {
+        Self {
+            buffer,
+            height: 0,
+            prev_vertical_scroll: 0,
+        }
+    }
 }
 
 #[must_use]
