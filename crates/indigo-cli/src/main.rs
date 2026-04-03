@@ -43,7 +43,7 @@ fn main() -> anyhow::Result<ExitCode> {
     let mut editor = Editor::from(Buffer::from(rope));
 
     let mut debug_keys = vec![];
-    let mut debug_rope = editor.focused_buffer().rope().clone();
+    let mut debug_rope = editor.focused_buffer().text.rope().clone();
 
     for key in args.keys.0 {
         if args.debug {
@@ -63,7 +63,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
         if args.debug && is(&key, "<c-l>") {
             let left = debug_rope.to_string();
-            let right = editor.focused_buffer().rope().to_string();
+            let right = editor.focused_buffer().text.rope().to_string();
             eprint!("keys: ");
             for key in &debug_keys {
                 if !is(key, "<c-l>") {
@@ -88,14 +88,14 @@ fn main() -> anyhow::Result<ExitCode> {
             }
             eprintln!("```");
             debug_keys.clear();
-            debug_rope = editor.focused_window().buffer().rope().clone();
+            debug_rope = editor.focused_window().buffer().text.rope().clone();
         }
     }
 
     let _result = editor
         .focused_window()
         .buffer()
-        .rope()
+        .text.rope()
         .write_to(io::LineWriter::new(io::stdout()));
 
     let exit_code = editor.exit_code().unwrap_or(ExitCode::SUCCESS);

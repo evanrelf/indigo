@@ -159,8 +159,8 @@ fn handle_command(editor: &mut Editor, command: Command) {
             }
         }
         Command::Readonly => {
-            let new_readonly = !editor.focused_buffer().is_readonly();
-            editor.focused_buffer_mut().set_readonly(new_readonly);
+            let new_readonly = !editor.focused_buffer().text.readonly;
+            editor.focused_buffer_mut().text.readonly = new_readonly;
             if new_readonly {
                 editor.message = Some(Ok(String::from("Buffer is now readonly")));
             } else {

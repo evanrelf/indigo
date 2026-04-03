@@ -28,7 +28,7 @@ impl WindowState {
     pub fn new(buffer_key: BufferKey, buffer: &Buffer) -> Self {
         let selection = SelectionState {
             ranges: Vector::from([
-                RangeState::default().snapped_to_grapheme_boundaries(buffer.rope())
+                RangeState::default().snapped_to_grapheme_boundaries(buffer.text.rope())
             ]),
             primary_range: 0,
         };
@@ -68,7 +68,7 @@ impl<'a, W: WrapRef> WindowView<'a, W> {
 
     #[must_use]
     pub fn vertical_scroll(&self) -> usize {
-        let last_line = self.buffer.rope().len_lines_indigo().saturating_sub(1);
+        let last_line = self.buffer.text.rope().len_lines_indigo().saturating_sub(1);
         min(self.state.prev_vertical_scroll, last_line)
     }
 
@@ -80,7 +80,7 @@ impl<'a, W: WrapRef> WindowView<'a, W> {
     }
 
     pub fn selection(&self) -> Selection<'_> {
-        Selection::new(self.buffer.text(), &self.state.selection)
+        Selection::new(&self.buffer.text, &self.state.selection)
             .expect("Window text and selection state are always kept valid")
     }
 }
@@ -91,7 +91,7 @@ impl<W: WrapMut> WindowView<'_, W> {
     }
 
     pub fn scroll_to_line(&mut self, line: usize) {
-        let last_line = self.buffer.rope().len_lines_indigo().saturating_sub(1);
+        let last_line = self.buffer.text.rope().len_lines_indigo().saturating_sub(1);
         self.state.prev_vertical_scroll = min(line, last_line);
     }
 
@@ -104,6 +104,7 @@ impl<W: WrapMut> WindowView<'_, W> {
         let head_byte_offset = state.ranges[state.primary_range].head.byte_offset;
         let line = self
             .buffer
+            .text
             .rope()
             .byte_to_line_idx(head_byte_offset, LINE_TYPE);
         let top = self.vertical_scroll();
@@ -121,16 +122,16 @@ impl<W: WrapMut> WindowView<'_, W> {
     }
 
     pub fn selection_mut(&mut self) -> SelectionMut<'_> {
-        SelectionMut::new(self.buffer.text_mut(), &mut self.state.selection)
+        SelectionMut::new(&mut self.buffer.text, &mut self.state.selection)
             .expect("Window text and selection state are always kept valid")
             .on_drop(|selection| selection.assert_invariants().unwrap())
     }
 
     #[tracing::instrument(skip_all)]
     pub fn undo(&mut self) -> anyhow::Result<bool> {
-        let version = self.buffer.text().version();
-        if self.buffer.undo()? {
-            if let Some(opss) = self.buffer.text().ops_since(version) {
+        let version = self.buffer.text.version();
+        if self.buffer.text.undo()? {
+            if let Some(opss) = self.buffer.text.ops_since(version) {
                 for ops in opss {
                     self.state.selection.transform(ops);
                 }
@@ -148,9 +149,9 @@ impl<W: WrapMut> WindowView<'_, W> {
 
     #[tracing::instrument(skip_all)]
     pub fn redo(&mut self) -> anyhow::Result<bool> {
-        let version = self.buffer.text().version();
-        if self.buffer.redo()? {
-            if let Some(opss) = self.buffer.text().ops_since(version) {
+        let version = self.buffer.text.version();
+        if self.buffer.text.redo()? {
+            if let Some(opss) = self.buffer.text.ops_since(version) {
                 for ops in opss {
                     self.state.selection.transform(ops);
                 }

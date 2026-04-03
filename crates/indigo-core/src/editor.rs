@@ -161,7 +161,7 @@ impl Editor {
                 .get(window.buffer)
                 .expect("Window state is always kept valid");
             let _selection =
-                Selection::new(buffer.text(), &window.selection).map_err(Error::Buffer)?;
+                Selection::new(&buffer.text, &window.selection).map_err(Error::Buffer)?;
         }
         Ok(())
     }

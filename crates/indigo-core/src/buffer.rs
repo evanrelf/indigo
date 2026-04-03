@@ -23,8 +23,8 @@ pub enum BufferKind {
 
 #[derive(Clone, Default)]
 pub struct Buffer {
-    kind: BufferKind,
-    text: Text,
+    pub kind: BufferKind,
+    pub text: Text,
 }
 
 impl Buffer {
@@ -74,11 +74,6 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn kind(&self) -> &BufferKind {
-        &self.kind
-    }
-
-    #[must_use]
     pub fn path(&self) -> Option<&Utf8Path> {
         if let BufferKind::File { path, .. } = &self.kind {
             Some(path)
@@ -88,48 +83,12 @@ impl Buffer {
     }
 
     #[must_use]
-    pub fn rope(&self) -> &Rope {
-        self.text.rope()
-    }
-
-    #[must_use]
     pub fn is_modified(&self) -> Option<bool> {
         if let BufferKind::File { on_disk, .. } = &self.kind {
             Some(self.text.rope() != on_disk)
         } else {
             None
         }
-    }
-
-    #[must_use]
-    pub fn is_readonly(&self) -> bool {
-        self.text.readonly
-    }
-
-    pub fn set_readonly(&mut self, readonly: bool) {
-        self.text.readonly = readonly;
-    }
-
-    // TODO: Ditch `pub(crate)`?
-    pub(crate) fn text(&self) -> &Text {
-        &self.text
-    }
-
-    // TODO: Ditch `pub(crate)`?
-    pub(crate) fn text_mut(&mut self) -> &mut Text {
-        &mut self.text
-    }
-
-    pub fn commit(&mut self) {
-        self.text.commit();
-    }
-
-    pub fn undo(&mut self) -> anyhow::Result<bool> {
-        self.text.undo()
-    }
-
-    pub fn redo(&mut self) -> anyhow::Result<bool> {
-        self.text.redo()
     }
 }
 

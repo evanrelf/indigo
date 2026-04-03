@@ -181,7 +181,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         Mode::Prompt(_) => "prompt",
     };
 
-    let path = match (&editor.pwd, &editor.focused_buffer().kind()) {
+    let path = match (&editor.pwd, &editor.focused_buffer().kind) {
         (_, BufferKind::Scratch) => String::from("*scratch*"),
         (None, BufferKind::File { path, .. }) => path.to_string(),
         (Some(pwd), BufferKind::File { path, .. }) => match diff_utf8_paths(path, pwd) {
@@ -255,7 +255,7 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let buffer = window.buffer();
 
-    let total_lines = buffer.rope().len_lines_indigo();
+    let total_lines = buffer.text.rope().len_lines_indigo();
 
     for (i, row) in area.rows().enumerate() {
         let line_number = i + window.vertical_scroll() + 1;
@@ -286,7 +286,7 @@ fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let window = editor.focused_window();
     let buffer = window.buffer();
 
-    let text_lines = buffer.rope().len_lines_indigo();
+    let text_lines = buffer.text.rope().len_lines_indigo();
     let window_lines = usize::from(window.height());
     let scroll_lines = text_lines.saturating_add(window_lines.saturating_sub(1));
     let track_cells = usize::from(area.height);
@@ -353,7 +353,7 @@ fn render_dots(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let buffer = window.buffer();
 
-    let total_lines = buffer.rope().len_lines_indigo();
+    let total_lines = buffer.text.rope().len_lines_indigo();
 
     let grid_scale = 1;
 
@@ -412,7 +412,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let buffer = window.buffer();
 
-    let lines = buffer.rope().lines_at(window.vertical_scroll(), LINE_TYPE);
+    let lines = buffer.text.rope().lines_at(window.vertical_scroll(), LINE_TYPE);
 
     let rows = area.rows();
 
@@ -450,7 +450,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let buffer = window.buffer();
 
-    let rope = buffer.rope();
+    let rope = buffer.text.rope();
 
     let vertical_scroll = window.vertical_scroll();
 

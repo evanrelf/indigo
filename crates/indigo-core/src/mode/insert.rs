@@ -32,7 +32,7 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
 }
 
 pub fn enter_insert_mode(editor: &mut Editor) {
-    if editor.focused_buffer().is_readonly() {
+    if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
         return;
     }

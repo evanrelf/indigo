@@ -95,7 +95,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
 }
 
 pub fn enter_normal_mode(editor: &mut Editor) {
-    editor.focused_buffer_mut().commit();
+    editor.focused_buffer_mut().text.commit();
     editor.mode = Mode::Normal(State::default());
 }
 
@@ -218,7 +218,7 @@ fn reduce(editor: &mut Editor) {
 }
 
 fn delete(editor: &mut Editor) {
-    if editor.focused_buffer().is_readonly() {
+    if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
         editor.mode.set_count(None);
         return;
@@ -232,7 +232,7 @@ fn delete(editor: &mut Editor) {
 }
 
 fn undo(editor: &mut Editor) {
-    if editor.focused_buffer().is_readonly() {
+    if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
         editor.mode.set_count(None);
         return;
@@ -249,7 +249,7 @@ fn undo(editor: &mut Editor) {
 }
 
 fn redo(editor: &mut Editor) {
-    if editor.focused_buffer().is_readonly() {
+    if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
         editor.mode.set_count(None);
         return;
@@ -290,7 +290,7 @@ fn select_regex(editor: &mut Editor) {
 }
 
 fn insert_after_head(editor: &mut Editor) {
-    if editor.focused_buffer().is_readonly() {
+    if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
         return;
     }
@@ -303,7 +303,7 @@ fn insert_after_head(editor: &mut Editor) {
 }
 
 fn insert_at_line_non_blank_start(editor: &mut Editor) {
-    if editor.focused_buffer().is_readonly() {
+    if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
         return;
     }
@@ -317,7 +317,7 @@ fn insert_at_line_non_blank_start(editor: &mut Editor) {
 }
 
 fn insert_at_line_end(editor: &mut Editor) {
-    if editor.focused_buffer().is_readonly() {
+    if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
         return;
     }
@@ -332,7 +332,7 @@ fn insert_at_line_end(editor: &mut Editor) {
 fn goto_line(editor: &mut Editor) {
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
-    let rope = window.buffer().rope().clone();
+    let rope = window.buffer().text.rope().clone();
     let len_lines = rope.len_lines_indigo();
     if len_lines == 0 {
         editor.mode.set_count(None);

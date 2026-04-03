@@ -87,7 +87,7 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
                 };
                 if let Some(byte_offset) = position_to_byte_offset(
                     position,
-                    editor.focused_buffer().rope(),
+                    editor.focused_buffer().text.rope(),
                     editor.focused_window().vertical_scroll(),
                     areas.text,
                 )
@@ -112,7 +112,7 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
                 };
                 if let Some(byte_offset) = position_to_byte_offset(
                     position,
-                    editor.focused_buffer().rope(),
+                    editor.focused_buffer().text.rope(),
                     editor.focused_window().vertical_scroll(),
                     areas.text,
                 )
