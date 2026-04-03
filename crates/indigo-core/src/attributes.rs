@@ -7,7 +7,9 @@ use std::{
     ops::{RangeBounds, RangeInclusive},
 };
 
-pub struct Attributes<A>(BTreeMap<A, RoaringBitmap>);
+pub struct Attributes<A> {
+    pub inner: BTreeMap<A, RoaringBitmap>,
+}
 
 impl<A> Attributes<A> {
     #[must_use]
@@ -20,7 +22,7 @@ impl<A> Attributes<A> {
         R: RangeBounds<u32>,
         A: Ord,
     {
-        self.0.entry(attribute).or_default().insert_range(range);
+        self.inner.entry(attribute).or_default().insert_range(range);
     }
 
     pub fn remove<R, Q>(&mut self, range: R, attribute: &Q)
@@ -30,10 +32,10 @@ impl<A> Attributes<A> {
         Q: Ord + ?Sized,
     {
         let attribute = attribute.borrow();
-        if let Some(ranges) = self.0.get_mut(attribute) {
+        if let Some(ranges) = self.inner.get_mut(attribute) {
             ranges.remove_range(range);
             if ranges.is_empty() {
-                self.0.remove(attribute);
+                self.inner.remove(attribute);
             }
         }
     }
@@ -45,7 +47,7 @@ impl<A> Attributes<A> {
         A: Borrow<Q> + Ord,
         Q: Ord + ?Sized,
     {
-        match self.0.get(attribute.borrow()) {
+        match self.inner.get(attribute.borrow()) {
             Some(ranges) => ranges.contains_range(range),
             None => false,
         }
@@ -57,7 +59,7 @@ impl<A> Attributes<A> {
         A: Borrow<Q> + Ord,
         Q: Ord + ?Sized,
     {
-        self.0.get(attribute.borrow()).map(|ranges| Ranges {
+        self.inner.get(attribute.borrow()).map(|ranges| Ranges {
             iter: ranges.iter(),
         })
     }
@@ -66,21 +68,12 @@ impl<A> Attributes<A> {
     where
         R: RangeBounds<u32> + Clone,
     {
-        iter::zip(self.0.iter(), iter::repeat(range))
+        iter::zip(self.inner.iter(), iter::repeat(range))
             .filter_map(|((attr, ranges), range)| ranges.contains_range(range).then_some(attr))
     }
 
-    pub fn attr_range<Q, R>(&self, range: R) -> impl Iterator<Item = (&A, &RoaringBitmap)>
-    where
-        A: Borrow<Q> + Ord,
-        Q: Ord + ?Sized,
-        R: RangeBounds<Q>,
-    {
-        self.0.range(range)
-    }
-
     pub fn transform(&mut self, ops: &OperationSeq) {
-        for old_ranges in self.0.values_mut() {
+        for old_ranges in self.inner.values_mut() {
             let mut new_ranges = RoaringBitmap::new();
             let mut iter = old_ranges.iter();
             while let Some(range) = iter.next_range() {
@@ -101,7 +94,9 @@ impl<A> Attributes<A> {
 
 impl<A> Default for Attributes<A> {
     fn default() -> Self {
-        Self(BTreeMap::default())
+        Self {
+            inner: BTreeMap::default(),
+        }
     }
 }
 
@@ -142,27 +137,43 @@ mod tests {
     }
 
     #[test]
-    fn attr_range() {
+    fn inner() {
         let mut attrs = Attributes::new();
         attrs.insert(0..=10, String::from("color=red"));
         attrs.insert(5..=15, String::from("color=green"));
         attrs.insert(10..=20, String::from("color=blue"));
         attrs.insert(0..=5, String::from("font=bold"));
         attrs.insert(15..=25, String::from("font=italic"));
+
+        // Get all colors
         let color_attrs: Vec<_> = attrs
-            .attr_range(String::from("color=")..String::from("color=\u{10ffff}"))
+            .inner
+            .range(String::from("color=")..String::from("color=\u{10ffff}"))
             .map(|(attr, _)| attr.as_str())
             .collect();
         assert_eq!(color_attrs, vec!["color=blue", "color=green", "color=red"]);
-        let font_attrs: Vec<_> = attrs
-            .attr_range(String::from("font=")..String::from("font=\u{10ffff}"))
-            .map(|(attr, _)| attr.as_str())
-            .collect();
-        assert_eq!(font_attrs, vec!["font=bold", "font=italic"]);
+
+        // Get specific colors
         let specific_colors: Vec<_> = attrs
-            .attr_range(String::from("color=blue")..=String::from("color=green"))
+            .inner
+            .range(String::from("color=blue")..=String::from("color=green"))
             .map(|(attr, _)| attr.as_str())
             .collect();
         assert_eq!(specific_colors, vec!["color=blue", "color=green"]);
+
+        // Get all fonts
+        let font_attrs: Vec<_> = attrs
+            .inner
+            .range(String::from("font=")..String::from("font=\u{10ffff}"))
+            .map(|(attr, _)| attr.as_str())
+            .collect();
+        assert_eq!(font_attrs, vec!["font=bold", "font=italic"]);
+
+        // Remove colors
+        attrs.inner.retain(|attr, _| !attr.starts_with("color="));
+
+        // Only fonts remain
+        let remaining_attrs: Vec<_> = attrs.inner.keys().collect();
+        assert_eq!(remaining_attrs, vec!["font=bold", "font=italic"]);
     }
 }
