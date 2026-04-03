@@ -1,4 +1,4 @@
-use crate::{buffer::Buffer, editor::Editor, mode::prompt::enter_prompt_mode};
+use crate::{buffer::Buffer, editor::Editor, mode::prompt::enter_prompt_mode, window::WindowState};
 use camino::Utf8PathBuf;
 use std::sync::Arc;
 
@@ -12,8 +12,6 @@ pub fn enter_command_mode(editor: &mut Editor) {
 enum Command {
     Echo { error: bool, message: Vec<String> },
     Edit { path: Utf8PathBuf },
-    // TODO: Delete `edit!` once multiple buffers are supported.
-    EditForce { path: Utf8PathBuf },
     Write { path: Option<Utf8PathBuf> },
     Quit { exit_code: Option<u8> },
     QuitForce { exit_code: Option<u8> },
@@ -55,14 +53,6 @@ fn parse_command(command: &str) -> anyhow::Result<Command> {
                 .string()?
                 .into();
             Ok(Command::Edit { path })
-        }
-        "edit!" | "e!" => {
-            let path: Utf8PathBuf = parser
-                .value()
-                .map_err(|_| anyhow::anyhow!("Missing path"))?
-                .string()?
-                .into();
-            Ok(Command::EditForce { path })
         }
         "write" | "w" => {
             let path = match parser.next()? {
@@ -112,17 +102,17 @@ fn handle_command(editor: &mut Editor, command: Command) {
             }
         }
         Command::Edit { path } => {
-            if editor.focused_buffer().is_modified().unwrap_or(false) {
-                editor.message = Some(Err(String::from("Unsaved changes")));
-            } else if let Ok(buffer) = Buffer::open(&editor.fs, &path) {
-                *editor.focused_buffer_mut() = buffer;
-            } else {
-                editor.message = Some(Err(format!("Failed to open {path}")));
-            }
-        }
-        Command::EditForce { path } => {
+            // TODO: Edit existing buffer for path if one exists.
             if let Ok(buffer) = Buffer::open(&editor.fs, &path) {
-                *editor.focused_buffer_mut() = buffer;
+                // In Kakoune, windows are inextricably linked to buffers, so changing buffer means
+                // changing window, creating a new one if necessary.
+                // https://github.com/mawww/kakoune/blob/afc035ac0e17a6280edec511dfe8da1c0dd565ab/doc/pages/scopes.asciidoc?plain=1#L29-L30
+                let buffer_key = editor.insert_buffer(buffer);
+                let window_state = WindowState::new(buffer_key);
+                let window_key = editor.insert_window(window_state);
+                assert!(editor.focus_window(window_key));
+                // TODO: Delete previous window. It's no longer focused, so (at the time of writing)
+                // that means it's not displayed, it's just hanging out unused in memory.
             } else {
                 editor.message = Some(Err(format!("Failed to open {path}")));
             }

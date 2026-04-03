@@ -33,6 +33,11 @@ impl Editor {
         Self::default()
     }
 
+    // TODO: Figure out a safer/better way to add and remove buffers
+    pub(crate) fn insert_buffer(&mut self, buffer: Buffer) -> BufferKey {
+        self.buffers.insert(buffer)
+    }
+
     #[must_use]
     pub fn get_buffer(&self, buffer_key: BufferKey) -> Option<&Buffer> {
         self.buffers.get(buffer_key)
@@ -71,6 +76,24 @@ impl Editor {
 
     pub fn buffers_mut(&mut self) -> impl Iterator<Item = (BufferKey, &mut Buffer)> {
         self.buffers.iter_mut()
+    }
+
+    // TODO: Figure out a safer/better way to add and remove windows
+    pub(crate) fn insert_window(&mut self, window: WindowState) -> WindowKey {
+        assert!(
+            self.buffers.contains_key(window.buffer),
+            "Window has invalid buffer key"
+        );
+        self.windows.insert(window)
+    }
+
+    pub fn focus_window(&mut self, window_key: WindowKey) -> bool {
+        if self.windows.contains_key(window_key) {
+            self.focused_window = window_key;
+            true
+        } else {
+            false
+        }
     }
 
     #[must_use]
