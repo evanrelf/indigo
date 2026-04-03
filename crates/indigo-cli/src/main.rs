@@ -70,8 +70,8 @@ fn main() -> anyhow::Result<ExitCode> {
                     eprint!("{key}");
                 }
             }
-            let buffer = editor.focused_buffer();
-            let selection = buffer.selection();
+            let window = editor.focused_window();
+            let selection = window.selection();
             let range = selection.get_primary();
             eprintln!(
                 "\nprimary range: tail={} head={}",

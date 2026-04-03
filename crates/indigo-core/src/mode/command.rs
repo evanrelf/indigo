@@ -108,7 +108,8 @@ fn handle_command(editor: &mut Editor, command: Command) {
                 // changing window, creating a new one if necessary.
                 // https://github.com/mawww/kakoune/blob/afc035ac0e17a6280edec511dfe8da1c0dd565ab/doc/pages/scopes.asciidoc?plain=1#L29-L30
                 let buffer_key = editor.insert_buffer(buffer);
-                let window_state = WindowState::new(buffer_key);
+                let window_state =
+                    WindowState::new(buffer_key, editor.get_buffer(buffer_key).unwrap());
                 let window_key = editor.insert_window(window_state);
                 assert!(editor.focus_window(window_key));
                 // TODO: Delete previous window. It's no longer focused, so (at the time of writing)

@@ -1,8 +1,11 @@
 use crate::{
     buffer::{Buffer, BufferKey},
     editor::Editor,
+    range::RangeState,
     rope::{LINE_TYPE, RopeExt as _},
+    selection::{Selection, SelectionMut, SelectionState},
 };
+use imbl::Vector;
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::cmp::min;
 
@@ -14,6 +17,7 @@ slotmap::new_key_type! {
 #[derive(Clone)]
 pub struct WindowState {
     pub buffer: BufferKey,
+    pub selection: SelectionState,
     pub height: u16,
     pub prev_vertical_scroll: usize,
     // TODO(horizontal_scroll)
@@ -21,9 +25,16 @@ pub struct WindowState {
 
 impl WindowState {
     #[must_use]
-    pub fn new(buffer: BufferKey) -> Self {
+    pub fn new(buffer_key: BufferKey, buffer: &Buffer) -> Self {
+        let selection = SelectionState {
+            ranges: Vector::from([
+                RangeState::default().snapped_to_grapheme_boundaries(buffer.rope())
+            ]),
+            primary_range: 0,
+        };
         Self {
-            buffer,
+            buffer: buffer_key,
+            selection,
             height: 0,
             prev_vertical_scroll: 0,
         }
@@ -67,6 +78,11 @@ impl<'a, W: WrapRef> WindowView<'a, W> {
     pub fn buffer(&self) -> &Buffer {
         &self.buffer
     }
+
+    pub fn selection(&self) -> Selection<'_> {
+        Selection::new(self.buffer.text(), &self.state.selection)
+            .expect("Window text and selection state are always kept valid")
+    }
 }
 
 impl<W: WrapMut> WindowView<'_, W> {
@@ -84,8 +100,7 @@ impl<W: WrapMut> WindowView<'_, W> {
     // and watch it pop in and out from the top of the viewport. Moving down works correctly: the
     // cursor never disappears below the bottom of the viewport.
     pub fn scroll_to_selection(&mut self) {
-        let selection = self.buffer.selection();
-        let state = selection.state();
+        let state = &self.state.selection;
         let head_byte_offset = state.ranges[state.primary_range].head.byte_offset;
         let line = self
             .buffer
@@ -103,6 +118,52 @@ impl<W: WrapMut> WindowView<'_, W> {
     #[must_use]
     pub fn buffer_mut(&mut self) -> &mut Buffer {
         &mut self.buffer
+    }
+
+    pub fn selection_mut(&mut self) -> SelectionMut<'_> {
+        SelectionMut::new(self.buffer.text_mut(), &mut self.state.selection)
+            .expect("Window text and selection state are always kept valid")
+            .on_drop(|selection| selection.assert_invariants().unwrap())
+    }
+
+    #[tracing::instrument(skip_all)]
+    pub fn undo(&mut self) -> anyhow::Result<bool> {
+        let version = self.buffer.text().version();
+        if self.buffer.undo()? {
+            if let Some(opss) = self.buffer.text().ops_since(version) {
+                for ops in opss {
+                    self.state.selection.transform(ops);
+                }
+            }
+            self.selection_mut().for_each_mut(|mut range| {
+                if range.snap_to_grapheme_boundaries() {
+                    tracing::warn!("wasn't on grapheme boundary after");
+                }
+            });
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    #[tracing::instrument(skip_all)]
+    pub fn redo(&mut self) -> anyhow::Result<bool> {
+        let version = self.buffer.text().version();
+        if self.buffer.redo()? {
+            if let Some(opss) = self.buffer.text().ops_since(version) {
+                for ops in opss {
+                    self.state.selection.transform(ops);
+                }
+            }
+            self.selection_mut().for_each_mut(|mut range| {
+                if range.snap_to_grapheme_boundaries() {
+                    tracing::warn!("wasn't on grapheme boundary after");
+                }
+            });
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 }
 

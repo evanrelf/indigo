@@ -94,7 +94,7 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
                 .byte_offset()
                 {
                     editor
-                        .focused_buffer_mut()
+                        .focused_window_mut()
                         .selection_mut()
                         .for_each_mut(|mut range| range.move_to(byte_offset));
                 } else {
@@ -119,7 +119,7 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
                 .byte_offset()
                 {
                     editor
-                        .focused_buffer_mut()
+                        .focused_window_mut()
                         .selection_mut()
                         .for_each_mut(|mut range| range.extend_to(byte_offset));
                 } else {

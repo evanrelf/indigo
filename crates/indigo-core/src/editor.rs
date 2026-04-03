@@ -2,6 +2,7 @@ use crate::{
     buffer::{Buffer, BufferKey},
     fs::{Fs, NoFs},
     mode::Mode,
+    selection::Selection,
     window::{Window, WindowKey, WindowMut, WindowState},
 };
 use camino::Utf8PathBuf;
@@ -154,8 +155,13 @@ impl Editor {
 
     #[expect(dead_code)]
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
-        for buffer in self.buffers.values() {
-            buffer.assert_invariants().map_err(Error::Buffer)?;
+        for (_, window) in &self.windows {
+            let buffer = self
+                .buffers
+                .get(window.buffer)
+                .expect("Window state is always kept valid");
+            let _selection =
+                Selection::new(buffer.text(), &window.selection).map_err(Error::Buffer)?;
         }
         Ok(())
     }
@@ -164,9 +170,10 @@ impl Editor {
 impl Default for Editor {
     fn default() -> Self {
         let mut buffers = SlotMap::default();
-        let buffer_key = buffers.insert(Buffer::default());
+        let buffer = Buffer::default();
+        let buffer_key = buffers.insert(buffer);
 
-        let window = WindowState::new(buffer_key);
+        let window = WindowState::new(buffer_key, &buffers[buffer_key]);
         let mut windows = SlotMap::default();
         let window_key = windows.insert(window);
 
@@ -188,7 +195,7 @@ impl From<Buffer> for Editor {
         let mut buffers = SlotMap::default();
         let buffer_key = buffers.insert(buffer);
 
-        let window = WindowState::new(buffer_key);
+        let window = WindowState::new(buffer_key, &buffers[buffer_key]);
         let mut windows = SlotMap::default();
         let window_key = windows.insert(window);
 

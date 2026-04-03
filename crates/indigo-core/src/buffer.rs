@@ -1,24 +1,11 @@
-use crate::{
-    fs::Fs,
-    range::RangeState,
-    selection::{Selection, SelectionMut, SelectionState},
-    text::Text,
-};
+use crate::{fs::Fs, text::Text};
 use camino::Utf8Path;
-use imbl::Vector;
 use ropey::Rope;
 use std::sync::Arc;
-use thiserror::Error;
 
 slotmap::new_key_type! {
     #[must_use]
     pub struct BufferKey;
-}
-
-#[derive(Debug, Error)]
-pub enum Error {
-    #[error("Error from selection")]
-    Selection(#[source] anyhow::Error),
 }
 
 #[derive(Clone, Default)]
@@ -38,8 +25,6 @@ pub enum BufferKind {
 pub struct Buffer {
     kind: BufferKind,
     text: Text,
-    // TODO: Track history of selection state
-    selection: SelectionState,
 }
 
 impl Buffer {
@@ -125,97 +110,39 @@ impl Buffer {
         self.text.readonly = readonly;
     }
 
-    pub fn selection(&self) -> Selection<'_> {
-        Selection::new(&self.text, &self.selection)
-            .expect("Buffer text and selection state are always kept valid")
+    // TODO: Ditch `pub(crate)`?
+    pub(crate) fn text(&self) -> &Text {
+        &self.text
     }
 
-    pub fn selection_mut(&mut self) -> SelectionMut<'_> {
-        SelectionMut::new(&mut self.text, &mut self.selection)
-            .expect("Buffer text and selection state are always kept valid")
-            .on_drop(|selection| selection.assert_invariants().unwrap())
+    // TODO: Ditch `pub(crate)`?
+    pub(crate) fn text_mut(&mut self) -> &mut Text {
+        &mut self.text
     }
 
     pub fn commit(&mut self) {
         self.text.commit();
     }
 
-    #[tracing::instrument(skip_all)]
     pub fn undo(&mut self) -> anyhow::Result<bool> {
-        let version = self.text.version();
-        if self.text.undo()? {
-            if let Some(opss) = self.text.ops_since(version) {
-                for ops in opss {
-                    self.selection.transform(ops);
-                }
-            }
-            self.selection_mut().for_each_mut(|mut range| {
-                if range.snap_to_grapheme_boundaries() {
-                    tracing::warn!("wasn't on grapheme boundary after");
-                }
-            });
-            Ok(true)
-        } else {
-            Ok(false)
-        }
+        self.text.undo()
     }
 
-    #[tracing::instrument(skip_all)]
     pub fn redo(&mut self) -> anyhow::Result<bool> {
-        let version = self.text.version();
-        if self.text.redo()? {
-            if let Some(opss) = self.text.ops_since(version) {
-                for ops in opss {
-                    self.selection.transform(ops);
-                }
-            }
-            self.selection_mut().for_each_mut(|mut range| {
-                if range.snap_to_grapheme_boundaries() {
-                    tracing::warn!("wasn't on grapheme boundary after");
-                }
-            });
-            Ok(true)
-        } else {
-            Ok(false)
-        }
-    }
-
-    pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
-        self.selection()
-            .assert_invariants()
-            .map_err(Error::Selection)?;
-        Ok(())
+        self.text.redo()
     }
 }
 
 impl From<Rope> for Buffer {
     fn from(rope: Rope) -> Self {
-        let text = Text::from(rope);
-        let selection = SelectionState {
-            ranges: Vector::from([
-                RangeState::default().snapped_to_grapheme_boundaries(text.rope())
-            ]),
-            primary_range: 0,
-        };
-        Self {
-            text,
-            selection,
-            ..Self::default()
-        }
+        Self::from(Text::from(rope))
     }
 }
 
 impl From<Text> for Buffer {
     fn from(text: Text) -> Self {
-        let selection = SelectionState {
-            ranges: Vector::from([
-                RangeState::default().snapped_to_grapheme_boundaries(text.rope())
-            ]),
-            primary_range: 0,
-        };
         Self {
             text,
-            selection,
             ..Self::default()
         }
     }

@@ -36,54 +36,46 @@ pub fn enter_insert_mode(editor: &mut Editor) {
         editor.message = Some(Err(String::from("Buffer is readonly")));
         return;
     }
-    editor
-        .focused_buffer_mut()
+    let mut window = editor.focused_window_mut();
+    window
         .selection_mut()
         .for_each_mut(|mut range| range.reduce());
-    editor.focused_window_mut().scroll_to_selection();
+    window.scroll_to_selection();
     editor.mode = Mode::Insert(State::default());
 }
 
 fn delete_before(editor: &mut Editor) {
-    editor
-        .focused_buffer_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| {
-            range.delete_before();
-        });
-    editor.focused_window_mut().scroll_to_selection();
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        range.delete_before();
+    });
+    window.scroll_to_selection();
     editor.mode.set_count(None);
 }
 
 fn delete_after(editor: &mut Editor) {
-    editor
-        .focused_buffer_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| {
-            range.delete_after();
-        });
-    editor.focused_window_mut().scroll_to_selection();
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        range.delete_after();
+    });
+    window.scroll_to_selection();
     editor.mode.set_count(None);
 }
 
 fn insert_char(editor: &mut Editor, char: char) {
-    editor
-        .focused_buffer_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| {
-            range.insert_char(char);
-        });
-    editor.focused_window_mut().scroll_to_selection();
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        range.insert_char(char);
+    });
+    window.scroll_to_selection();
     editor.mode.set_count(None);
 }
 
 pub fn paste(editor: &mut Editor, text: &str) {
-    editor
-        .focused_buffer_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| {
-            range.insert(text);
-        });
-    editor.focused_window_mut().scroll_to_selection();
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        range.insert(text);
+    });
+    window.scroll_to_selection();
     editor.mode.set_count(None);
 }

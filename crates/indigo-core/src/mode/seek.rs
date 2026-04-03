@@ -97,8 +97,9 @@ fn seek(editor: &mut Editor, byte: u8) {
         )
     };
 
-    editor
-        .focused_buffer_mut()
+    let mut window = editor.focused_window_mut();
+
+    window
         .selection_mut()
         .for_each_mut(|mut range| match (select, include, direction) {
             (Move, Until, Prev) => range.move_until_prev_byte(byte, count),
@@ -111,6 +112,6 @@ fn seek(editor: &mut Editor, byte: u8) {
             (Extend, Onto, Next) => range.extend_onto_next_byte(byte, count),
         });
 
-    editor.focused_window_mut().scroll_to_selection();
+    window.scroll_to_selection();
     editor.mode.set_count(None);
 }

@@ -191,7 +191,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     };
 
     let window = editor.focused_window();
-    let selection = window.buffer().selection();
+    let selection = window.selection();
 
     let (line, column) = {
         let range = selection.get_primary();
@@ -379,8 +379,8 @@ fn render_dots(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_debug_info(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let buffer = editor.focused_buffer();
-    let selection = buffer.selection();
+    let window = editor.focused_window();
+    let selection = window.selection();
     let state = selection.state();
     let ranges = state.ranges.len();
     let primary = &state.ranges[state.primary_range];
@@ -454,7 +454,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let vertical_scroll = window.vertical_scroll();
 
-    buffer.selection().for_each(|range| {
+    window.selection().for_each(|range| {
         let start_line = rope.byte_to_line_idx(range.start().byte_offset(), LINE_TYPE);
 
         let end_byte = range.end().byte_offset().saturating_sub(1);
