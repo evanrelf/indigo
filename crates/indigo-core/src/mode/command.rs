@@ -139,8 +139,19 @@ fn handle_command(editor: &mut Editor, command: Command) {
             }
         }
         Command::Quit { exit_code } => {
-            if editor.focused_buffer().is_modified().unwrap_or(false) {
-                editor.message = Some(Err(String::from("Unsaved changes")));
+            let mut modified = None;
+            for (_, buffer) in editor.buffers() {
+                if buffer.is_modified().unwrap_or(false) {
+                    modified = Some(
+                        buffer
+                            .path()
+                            .map_or("a scratch buffer", |path| path.as_str()),
+                    );
+                    break;
+                }
+            }
+            if let Some(modified) = modified {
+                editor.message = Some(Err(format!("Unsaved changes in {modified}")));
             } else {
                 editor.exit(exit_code.unwrap_or(0));
             }
