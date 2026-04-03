@@ -11,6 +11,7 @@ use std::sync::Arc;
 use thiserror::Error;
 
 slotmap::new_key_type! {
+    #[must_use]
     pub struct BufferKey;
 }
 

@@ -7,6 +7,7 @@ use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::cmp::min;
 
 slotmap::new_key_type! {
+    #[must_use]
     pub struct WindowKey;
 }
 
