@@ -12,7 +12,7 @@ The codebase already has:
 
 2. **`Text::apply()`** (`crates/indigo-core/src/text.rs`): The chokepoint where all text mutations flow through. Currently has a simple `readonly: bool` check.
 
-3. **`OperationSeq`** (`crates/indigo-core/src/ot.rs`): Operations are sequences of `Retain(n)`, `Insert(String)`, and `Delete(n)`.
+3. **`OperationSeq`** (`crates/indigo-core/src/ot.rs`): Operations are sequences of `Retain(n)`, `Insert(Arc<str>)`, and `Delete(n)`.
 
 ### Terminology
 
@@ -42,7 +42,7 @@ pub struct Text {
     rope: Rope,
     history: History<BidiOperationSeq, BidiOperationSeq>,
     log: Vec<OperationSeq>,
-    readonly: bool,  // existing binary flag
+    pub readonly: bool,  // existing binary flag
     attributes: Attributes<&'static str>,  // general-purpose attributes
 }
 ```
@@ -55,7 +55,7 @@ The `"readonly"` attribute is one of potentially many attributes stored here.
 
 **File**: `crates/indigo-core/src/ot.rs`
 
-Add a method to check if an `OperationSeq` touches any byte indexes in a bitmap:
+Add a method to check if an `OperationSeq` touches any byte indexes in a bitmap. Note: `OperationSeq` supports iteration via `iter()` and `IntoIterator` impls, exposing `Operation::{Retain, Delete, Insert}` variants (where `Insert` wraps `Arc<str>`).
 
 ```rust
 impl OperationSeq {
@@ -65,7 +65,7 @@ impl OperationSeq {
         // Walk operations, tracking byte offset in source text
         // - Retain(n): advance offset by n
         // - Delete(n): check if byte indexes [offset, offset+n) intersect, advance by n
-        // - Insert: check if offset is strictly inside a range (not at boundary)
+        // - Insert(s): check if offset is strictly inside a range (not at boundary)
     }
 }
 ```
@@ -77,28 +77,25 @@ For the "strictly inside" check on inserts: an insert at byte offset `o` is insi
 **File**: `crates/indigo-core/src/text.rs`
 
 - Add `attributes: Attributes<&'static str>` field (default empty)
-- Add methods:
-  - `add_attribute(range: Range<usize>, attr: &'static str)`
-  - `remove_attribute(range: Range<usize>, attr: &'static str)`
-  - `has_attribute(range: Range<usize>, attr: &'static str) -> bool`
-  - `attribute_ranges(attr: &'static str) -> Option<impl Iterator<Item = RangeInclusive<u32>>>`
+- Add delegation methods matching the existing `Attributes` API naming:
+  - `insert_attribute(range: impl RangeBounds<u32>, attr: &'static str)` — delegates to `Attributes::insert`
+  - `remove_attribute(range: impl RangeBounds<u32>, attr: &str)` — delegates to `Attributes::remove`
+  - `contains_attribute(range: impl RangeBounds<u32>, attr: &str) -> bool` — delegates to `Attributes::contains`
+  - `attribute_ranges(attr: &str) -> Option<impl Iterator<Item = RangeInclusive<u32>>>` — delegates to `Attributes::ranges`
 
 ### Step 3: Enforce readonly in Text::apply()
 
 **File**: `crates/indigo-core/src/text.rs`
 
-Before applying operations, check if they touch readonly byte indexes:
+Before applying operations, check if they touch readonly byte indexes. Consider adding a `bitmap` method to `Attributes` that returns the underlying `&RoaringBitmap` for a given attribute, to avoid reconstructing it from the ranges iterator:
 
 ```rust
 pub fn apply(&mut self, ops: &OperationSeq) -> anyhow::Result<()> {
     anyhow::ensure!(!self.readonly, "Cannot modify readonly text");
 
-    if let Some(readonly_ranges) = self.attributes.ranges("readonly") {
-        let indexes: RoaringBitmap = readonly_ranges
-            .flat_map(|r| *r.start()..=*r.end())
-            .collect();
+    if let Some(bitmap) = self.attributes.bitmap("readonly") {
         anyhow::ensure!(
-            !ops.touches_indexes(&indexes),
+            !ops.touches_indexes(bitmap),
             "Cannot modify readonly range"
         );
     }
