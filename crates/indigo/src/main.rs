@@ -146,6 +146,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
     let areas = Areas::new(editor, area);
     render_status_bar(editor, areas.status_bar, surface);
+    render_prompt(editor, areas.status_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
     render_dots(editor, areas.dots, surface);
     #[cfg(debug_assertions)]
@@ -155,7 +156,65 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     render_scroll_bar(editor, areas.scroll_bar, surface);
 }
 
-fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
+fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
+    let mode = match &editor.mode {
+        Mode::Normal(_) => "normal",
+        Mode::Seek(seek_mode) => {
+            use indigo_core::mode::seek::{
+                SeekDirection::{Next, Prev},
+                SeekInclude::{Onto, Until},
+                SeekSelect::{Extend, Move},
+            };
+            match (&seek_mode.select, &seek_mode.include, &seek_mode.direction) {
+                (Move, Until, Prev) => "move until prev",
+                (Extend, Until, Prev) => "extend until prev",
+                (Move, Until, Next) => "move until next",
+                (Extend, Until, Next) => "extend until next",
+                (Move, Onto, Prev) => "move onto prev",
+                (Extend, Onto, Prev) => "extend onto prev",
+                (Move, Onto, Next) => "move onto next",
+                (Extend, Onto, Next) => "extend onto next",
+            }
+        }
+        Mode::Goto(_) => "goto",
+        Mode::Insert(_) => "insert",
+        Mode::Prompt(_) => "prompt",
+    };
+
+    let path = match (&editor.pwd, &editor.focused_buffer().kind()) {
+        (_, BufferKind::Scratch) => String::from("*scratch*"),
+        (None, BufferKind::File { path, .. }) => path.to_string(),
+        (Some(pwd), BufferKind::File { path, .. }) => match diff_utf8_paths(path, pwd) {
+            None => path.to_string(),
+            Some(path) => path.to_string(),
+        },
+    };
+
+    let window = editor.focused_window();
+    let selection = window.buffer().selection();
+
+    let (line, column) = {
+        let range = selection.get_primary();
+        let bias = range.head_bias();
+        let cursor = range.head();
+        let line = cursor.line_number(bias);
+        let column = cursor.column_number(bias);
+        (line, column)
+    };
+
+    let count = match editor.mode.count() {
+        Some(count) if count.get() == usize::MAX => &String::from(" count=∞"),
+        Some(count) => &format!(" count={count}"),
+        None => "",
+    };
+
+    Line::raw(format!("{path} {line}:{column} {mode}{count}"))
+        .right_aligned()
+        .bg(THEME.status_bar_bg)
+        .render(area, surface);
+}
+
+fn render_prompt(editor: &Editor, mut area: Rect, surface: &mut Surface) {
     if let Mode::Prompt(ref prompt_mode) = editor.mode {
         surface.set_style(area, Style::new().bg(THEME.status_bar_bg));
 
@@ -168,6 +227,8 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
 
         Line::raw(prompt_mode.rope()).render(area, surface);
 
+        // TODO: Color one or two cells after cursor gray to mark the boundary between prompt text
+        // and status bar text.
         if let Some(rect) = byte_index_to_area(
             prompt_mode.cursor().byte_offset(),
             prompt_mode.rope(),
@@ -179,73 +240,13 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
                 Style::default().fg(THEME.cursor_fg).bg(THEME.cursor_bg),
             );
         }
-
-        return;
-    }
-
-    if let Some(message) = &editor.message {
+    } else if let Some(message) = &editor.message {
         match message {
             Ok(message) => Line::raw(message)
                 .bg(THEME.status_bar_bg)
                 .render(area, surface),
             Err(message) => Line::raw(message).bg(THEME.error_bg).render(area, surface),
         }
-    } else {
-        let mode = match &editor.mode {
-            Mode::Normal(_) => "normal",
-            Mode::Seek(seek_mode) => {
-                use indigo_core::mode::seek::{
-                    SeekDirection::{Next, Prev},
-                    SeekInclude::{Onto, Until},
-                    SeekSelect::{Extend, Move},
-                };
-                match (&seek_mode.select, &seek_mode.include, &seek_mode.direction) {
-                    (Move, Until, Prev) => "move until prev",
-                    (Extend, Until, Prev) => "extend until prev",
-                    (Move, Until, Next) => "move until next",
-                    (Extend, Until, Next) => "extend until next",
-                    (Move, Onto, Prev) => "move onto prev",
-                    (Extend, Onto, Prev) => "extend onto prev",
-                    (Move, Onto, Next) => "move onto next",
-                    (Extend, Onto, Next) => "extend onto next",
-                }
-            }
-            Mode::Goto(_) => "goto",
-            Mode::Insert(_) => "insert",
-            Mode::Prompt(_) => unreachable!(),
-        };
-
-        let path = match (&editor.pwd, &editor.focused_buffer().kind()) {
-            (_, BufferKind::Scratch) => String::from("*scratch*"),
-            (None, BufferKind::File { path, .. }) => path.to_string(),
-            (Some(pwd), BufferKind::File { path, .. }) => match diff_utf8_paths(path, pwd) {
-                None => path.to_string(),
-                Some(path) => path.to_string(),
-            },
-        };
-
-        let window = editor.focused_window();
-        let selection = window.buffer().selection();
-
-        let (line, column) = {
-            let range = selection.get_primary();
-            let bias = range.head_bias();
-            let cursor = range.head();
-            let line = cursor.line_number(bias);
-            let column = cursor.column_number(bias);
-            (line, column)
-        };
-
-        let count = match editor.mode.count() {
-            Some(count) if count.get() == usize::MAX => &String::from(" count=∞"),
-            Some(count) => &format!(" count={count}"),
-            None => "",
-        };
-
-        Line::raw(format!("{path} {line}:{column} {mode}{count}"))
-            .right_aligned()
-            .bg(THEME.status_bar_bg)
-            .render(area, surface);
     }
 }
 
