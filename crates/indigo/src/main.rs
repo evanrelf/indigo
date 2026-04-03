@@ -10,13 +10,13 @@ use indigo::{
 };
 use indigo_core::{
     fs::RealFs,
-    prelude::{Buffer, *},
+    prelude::{Buffer, BufferKind, DisplayWidth as _, Editor, Mode, RopeExt as _},
     rope::LINE_TYPE,
 };
 use pathdiff::diff_utf8_paths;
 use ratatui::{
     crossterm,
-    prelude::{Buffer as Surface, *},
+    prelude::{Buffer as Surface, Line, Rect, Span, Style, Stylize as _, Text, Widget as _},
 };
 use std::{
     cmp::{max, min},
@@ -148,6 +148,8 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     render_status_bar(editor, areas.status_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
     render_dots(editor, areas.dots, surface);
+    #[cfg(debug_assertions)]
+    render_debug_info(editor, areas.text, surface);
     render_text(editor, areas.text, surface);
     render_selection(editor, areas.text, surface);
     render_scroll_bar(editor, areas.scroll_bar, surface);
@@ -234,24 +236,16 @@ fn render_status_bar(editor: &Editor, mut area: Rect, surface: &mut Surface) {
             (line, column)
         };
 
-        let state = selection.state();
-        let ranges = state.ranges.len();
-        let primary = &state.ranges[state.primary_range];
-        let tail = primary.tail.byte_offset;
-        let head = primary.head.byte_offset;
-        let goal = primary.goal_column;
-
         let count = match editor.mode.count() {
             Some(count) if count.get() == usize::MAX => &String::from(" count=∞"),
             Some(count) => &format!(" count={count}"),
             None => "",
         };
 
-        Line::raw(format!(
-            "{path} {line}:{column} · {mode} · ranges={ranges} tail={tail} head={head} goal={goal}{count}"
-        ))
-        .bg(THEME.status_bar_bg)
-        .render(area, surface);
+        Line::raw(format!("{path} {line}:{column} {mode}{count}"))
+            .right_aligned()
+            .bg(THEME.status_bar_bg)
+            .render(area, surface);
     }
 }
 
@@ -383,6 +377,35 @@ fn render_dots(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
+fn render_debug_info(editor: &Editor, area: Rect, surface: &mut Surface) {
+    let buffer = editor.focused_buffer();
+    let selection = buffer.selection();
+    let state = selection.state();
+    let ranges = state.ranges.len();
+    let primary = &state.ranges[state.primary_range];
+    let tail = primary.tail.byte_offset;
+    let head = primary.head.byte_offset;
+    let goal = primary.goal_column;
+
+    let lines = vec![
+        Line::from(Span::raw("DEBUG").style(Style::reset().fg(THEME.dots))),
+        Line::from(Span::raw(format!("ranges: {ranges}")).style(Style::reset().fg(THEME.dots))),
+        Line::from(Span::raw(format!("tail: {tail}")).style(Style::reset().fg(THEME.dots))),
+        Line::from(Span::raw(format!("head: {head}")).style(Style::reset().fg(THEME.dots))),
+        Line::from(Span::raw(format!("goal: {goal}")).style(Style::reset().fg(THEME.dots))),
+    ];
+
+    let height = u16::try_from(lines.len()).unwrap();
+
+    let area = Rect {
+        y: area.height - height,
+        height,
+        ..area
+    };
+
+    Text::from(lines).right_aligned().render(area, surface);
+}
+
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     let window = editor.focused_window();
 
@@ -398,7 +421,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
             let span = match grapheme.get_char(0) {
                 Ok('\t') => Span::styled("→       ", THEME.whitespace_fg),
                 Ok('\n') => Span::styled("¬", THEME.whitespace_fg),
-                _ => Span::raw(grapheme),
+                _ => Span::styled(grapheme, Style::reset()),
             };
 
             let width_usize = grapheme.display_width();
