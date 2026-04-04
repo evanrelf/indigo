@@ -619,11 +619,9 @@ impl<W: WrapMut> RangeView<'_, W> {
             self.grapheme_length() <= 1,
             "Range reduced before entering insert mode"
         );
-        let tail = self.state.tail.byte_offset;
-        let head = self.state.head.byte_offset;
+        let snapshot = self.state.save(&self.text);
         let ops = self.start_mut().insert(text);
-        self.state.tail.byte_offset = ops.transform_byte_offset(tail);
-        self.state.head.byte_offset = ops.transform_byte_offset(head);
+        *self.state = snapshot.restore(&self.text).unwrap();
         if self.snap_to_grapheme_boundaries() {
             tracing::warn!("wasn't on grapheme boundary after");
         }
@@ -640,11 +638,9 @@ impl<W: WrapMut> RangeView<'_, W> {
             self.grapheme_length() <= 1,
             "Range reduced before entering insert mode"
         );
-        let tail = self.state.tail.byte_offset;
-        let head = self.state.head.byte_offset;
+        let snapshot = self.state.save(&self.text);
         let ops = self.start_mut().delete_before()?;
-        self.state.tail.byte_offset = ops.transform_byte_offset(tail);
-        self.state.head.byte_offset = ops.transform_byte_offset(head);
+        *self.state = snapshot.restore(&self.text).unwrap();
         if self.snap_to_grapheme_boundaries() {
             tracing::warn!("wasn't on grapheme boundary after");
         }
@@ -680,11 +676,9 @@ impl<W: WrapMut> RangeView<'_, W> {
             self.grapheme_length() <= 1,
             "Range reduced before entering insert mode"
         );
-        let tail = self.state.tail.byte_offset;
-        let head = self.state.head.byte_offset;
+        let snapshot = self.state.save(&self.text);
         let ops = self.end_mut().delete_after()?;
-        self.state.tail.byte_offset = ops.transform_byte_offset(tail);
-        self.state.head.byte_offset = ops.transform_byte_offset(head);
+        *self.state = snapshot.restore(&self.text).unwrap();
         if self.snap_to_grapheme_boundaries() {
             tracing::warn!("wasn't on grapheme boundary after");
         }
