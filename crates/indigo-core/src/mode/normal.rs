@@ -81,6 +81,8 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
                 delete(editor);
                 enter_insert_mode(editor);
             }
+            _ if is(key, "<a-O>") => add_line_above(editor),
+            _ if is(key, "<a-o>") => add_line_below(editor),
             _ if is(key, "u") => undo(editor),
             _ if is(key, "U") => redo(editor),
             _ if is(key, "<c-u>") => scroll_half_page_up(editor),
@@ -327,6 +329,44 @@ fn insert_at_line_end(editor: &mut Editor) {
     });
     window.scroll_to_selection();
     editor.mode = Mode::Insert(insert::State::default());
+}
+
+fn add_line_above(editor: &mut Editor) {
+    if editor.focused_buffer().text.readonly {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        return;
+    }
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        let snapshot = range.save();
+        range.move_to_line_start();
+        for _ in 0..count {
+            range.insert_char('\n');
+        }
+        assert!(range.restore(&snapshot));
+    });
+    window.scroll_to_selection();
+    editor.mode.set_count(None);
+}
+
+fn add_line_below(editor: &mut Editor) {
+    if editor.focused_buffer().text.readonly {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        return;
+    }
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        let snapshot = range.save();
+        range.move_onto_line_end();
+        for _ in 0..count {
+            range.insert_char('\n');
+        }
+        assert!(range.restore(&snapshot));
+    });
+    window.scroll_to_selection();
+    editor.mode.set_count(None);
 }
 
 fn goto_line(editor: &mut Editor) {
