@@ -16,7 +16,6 @@
 ## Friction in use
 
 - No `/` search
-- No `o` or `O`
 - No auto-scroll to keep primary range in view
 - No `C` or `<a-C>`
 - No detection of file changing from underneath it (e.g. when I move to another
@@ -96,8 +95,8 @@ See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 - [ ] `r` (replace each char)
 - [ ] `R` (replace with yanked)
 - [ ] `<a-R>` (replace with every yanked)
-- [ ] `o` (open line below)
-- [ ] `O` (open line above)
+- [x] `o` (open line below)
+- [x] `O` (open line above)
 - [x] `<a-o>` (add empty line below)
 - [x] `<a-O>` (add empty line above)
 - [ ] `<a-j>` (join lines)

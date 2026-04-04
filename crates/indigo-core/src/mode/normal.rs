@@ -81,6 +81,8 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
                 delete(editor);
                 enter_insert_mode(editor);
             }
+            _ if is(key, "O") => insert_line_above(editor),
+            _ if is(key, "o") => insert_line_below(editor),
             _ if is(key, "<a-O>") => add_line_above(editor),
             _ if is(key, "<a-o>") => add_line_below(editor),
             _ if is(key, "u") => undo(editor),
@@ -326,6 +328,43 @@ fn insert_at_line_end(editor: &mut Editor) {
     let mut window = editor.focused_window_mut();
     window.selection_mut().for_each_mut(|mut range| {
         range.move_onto_line_end();
+    });
+    window.scroll_to_selection();
+    editor.mode = Mode::Insert(insert::State::default());
+}
+
+fn insert_line_above(editor: &mut Editor) {
+    if editor.focused_buffer().text.readonly {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        return;
+    }
+    // TODO: Insert multiple cursors (like Kakoune) when count > 1
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        range.move_to_line_start();
+        for _ in 0..count {
+            range.insert_char('\n');
+        }
+        range.move_left(1);
+    });
+    window.scroll_to_selection();
+    editor.mode = Mode::Insert(insert::State::default());
+}
+
+fn insert_line_below(editor: &mut Editor) {
+    if editor.focused_buffer().text.readonly {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        return;
+    }
+    // TODO: Insert multiple cursors (like Kakoune) when count > 1
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        range.move_onto_line_end();
+        for _ in 0..count {
+            range.insert_char('\n');
+        }
     });
     window.scroll_to_selection();
     editor.mode = Mode::Insert(insert::State::default());
