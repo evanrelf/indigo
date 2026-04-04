@@ -23,6 +23,7 @@ use std::{cmp::min, num::NonZeroUsize};
 #[derive(Clone, Default)]
 pub struct State {
     pub count: Option<NonZeroUsize>,
+    pub pending_replace: bool,
 }
 
 pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
@@ -33,6 +34,26 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
     };
 
     let mut handled = true;
+
+    // Handle pending replace: next char replaces each char in selection
+    if let Mode::Normal(state) = &editor.mode
+        && state.pending_replace
+    {
+        let Event::Key(KeyEvent { key, .. }) = event;
+        if is(key, "<esc>") {
+            // Cancel replace
+            if let Mode::Normal(state) = &mut editor.mode {
+                state.pending_replace = false;
+            }
+        } else if let KeyCode::Char(c) = key.code
+            && key.modifiers.is_empty()
+        {
+            replace_with_char(editor, char::from(c));
+        } else if is(key, "<ret>") {
+            replace_with_char(editor, '\n');
+        }
+        return true;
+    }
 
     let count = |c: u8| {
         let digit = usize::from(c - b'0');
@@ -83,6 +104,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "`") => to_lowercase(editor),
             _ if is(key, "~") => to_uppercase(editor),
             _ if is(key, "<a-`>") => swap_case(editor),
+            _ if is(key, "r") => enter_replace(editor),
             _ if is(key, "d") => delete(editor),
             _ if is(key, "c") => {
                 delete(editor);
@@ -226,6 +248,32 @@ fn reduce(editor: &mut Editor) {
         .for_each_mut(|mut range| range.reduce());
     window.scroll_to_selection();
     editor.mode.set_count(None);
+}
+
+fn enter_replace(editor: &mut Editor) {
+    if editor.focused_buffer().text.readonly {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.mode.set_count(None);
+        return;
+    }
+    if let Mode::Normal(state) = &mut editor.mode {
+        state.pending_replace = true;
+    }
+}
+
+fn replace_with_char(editor: &mut Editor, replacement: char) {
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        let len = range.grapheme_length();
+        let replacement_text: String = std::iter::repeat_n(replacement, len).collect();
+        range.delete();
+        range.insert(&replacement_text);
+    });
+    window.scroll_to_selection();
+    if let Mode::Normal(state) = &mut editor.mode {
+        state.pending_replace = false;
+        state.count = None;
+    }
 }
 
 fn to_lowercase(editor: &mut Editor) {
