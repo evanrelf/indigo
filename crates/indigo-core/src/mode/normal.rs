@@ -503,22 +503,32 @@ fn extend_lines(editor: &mut Editor) {
     editor.mode.set_count(None);
 }
 
-/// Determine the tail line, head line, and direction of a range.
+/// Determine the tail (anchor) line, head (cursor) line, and direction.
+/// For the "far end" of the range, uses byte-1 to handle end-of-line boundaries.
 fn line_range_info(range: &RangeMut<'_>, rope: &Rope) -> (usize, usize, bool) {
     let forward = range.is_forward();
     let tail_byte = range.tail().byte_offset();
     let head_byte = range.head().byte_offset();
 
-    let tail_line = rope.byte_to_line_idx(tail_byte, LINE_TYPE);
-    let head_line = if head_byte > 0 && (forward && head_byte > tail_byte || !forward && head_byte < tail_byte) {
-        // For the "far end" of the range, use byte-1 to stay on the correct line
-        // (since the end offset points past the last char)
-        rope.byte_to_line_idx(head_byte.saturating_sub(1), LINE_TYPE)
+    if forward {
+        // Forward: tail is start (near), head is end (far)
+        let tail_line = rope.byte_to_line_idx(tail_byte, LINE_TYPE);
+        let head_line = if head_byte > tail_byte {
+            rope.byte_to_line_idx(head_byte.saturating_sub(1), LINE_TYPE)
+        } else {
+            rope.byte_to_line_idx(head_byte, LINE_TYPE)
+        };
+        (tail_line, head_line, true)
     } else {
-        rope.byte_to_line_idx(head_byte, LINE_TYPE)
-    };
-
-    (tail_line, head_line, forward)
+        // Backward: tail is end (far), head is start (near)
+        let tail_line = if tail_byte > head_byte {
+            rope.byte_to_line_idx(tail_byte.saturating_sub(1), LINE_TYPE)
+        } else {
+            rope.byte_to_line_idx(tail_byte, LINE_TYPE)
+        };
+        let head_line = rope.byte_to_line_idx(head_byte, LINE_TYPE);
+        (tail_line, head_line, false)
+    }
 }
 
 /// Check if a range is already snapped to line boundaries.
@@ -550,21 +560,24 @@ fn line_end_byte(line: usize, rope: &Rope) -> usize {
 /// Set a range to cover from `tail_line` to `head_line` (both line-aligned).
 /// Handles forward, backward, and same-line cases.
 fn set_line_range(range: &mut RangeMut<'_>, tail_line: usize, head_line: usize, rope: &Rope) {
-    if head_line >= tail_line {
-        // Forward: tail at line start, head at line end
-        let tail_byte = rope.line_to_byte_idx(tail_line, LINE_TYPE);
-        let head_end = line_end_byte(head_line, rope);
-        range.move_to(tail_byte);
-        if head_end > tail_byte + 1 {
-            range.extend_to(head_end.saturating_sub(1));
-        }
+    let (start_line, end_line) = if tail_line <= head_line {
+        (tail_line, head_line)
     } else {
-        // Backward: tail at end of tail_line, head at start of head_line
-        let tail_end = line_end_byte(tail_line, rope);
-        let head_start = rope.line_to_byte_idx(head_line, LINE_TYPE);
-        // Position at tail end first, then extend backward to head start
-        range.move_to(tail_end.saturating_sub(1));
-        range.extend_to(head_start);
+        (head_line, tail_line)
+    };
+
+    let start_byte = rope.line_to_byte_idx(start_line, LINE_TYPE);
+    let end_byte = line_end_byte(end_line, rope);
+
+    // Build forward range first
+    range.move_to(start_byte);
+    if end_byte > start_byte + 1 {
+        range.extend_to(end_byte.saturating_sub(1));
+    }
+
+    // Flip to backward if head should be before tail
+    if head_line < tail_line {
+        range.flip();
     }
 }
 
@@ -646,4 +659,154 @@ fn goto_line(editor: &mut Editor) {
         .for_each_mut(|mut range| range.move_to(byte_offset));
     window.scroll_to_selection();
     editor.mode.set_count(None);
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        buffer::Buffer,
+        editor::Editor,
+        event::{Event, KeyEvent, KeyEventKind, handle_event},
+        key::Keys,
+    };
+    use ropey::Rope;
+
+    /// Helper: create an editor with the given text, execute keys, return (tail, head) of primary.
+    fn run_keys(text: &str, keys_str: &str) -> (usize, usize) {
+        let rope = Rope::from_str(text);
+        let mut editor = Editor::from(Buffer::from(rope));
+        let keys: Keys = keys_str.parse().unwrap();
+        for key in keys.0 {
+            let event = Event::Key(KeyEvent {
+                key,
+                kind: KeyEventKind::Press,
+            });
+            handle_event(&mut editor, event).unwrap();
+        }
+        let window = editor.focused_window();
+        let selection = window.selection();
+        let range = selection.get_primary();
+        (range.tail().byte_offset(), range.head().byte_offset())
+    }
+
+    /// Helper: create an editor, execute keys, return the text content.
+    fn run_keys_text(text: &str, keys_str: &str) -> String {
+        let rope = Rope::from_str(text);
+        let mut editor = Editor::from(Buffer::from(rope));
+        let keys: Keys = keys_str.parse().unwrap();
+        for key in keys.0 {
+            let event = Event::Key(KeyEvent {
+                key,
+                kind: KeyEventKind::Press,
+            });
+            handle_event(&mut editor, event).unwrap();
+        }
+        editor.focused_buffer().text.rope().to_string()
+    }
+
+    // --- x (select lines / drag cursor down) ---
+
+    #[test]
+    fn x_selects_current_line() {
+        let (tail, head) = run_keys("hello\nworld\n", "x");
+        assert_eq!(tail, 0);
+        assert_eq!(head, 6); // "hello\n"
+    }
+
+    #[test]
+    fn x_repeated_extends_down() {
+        let (tail, head) = run_keys("hello\nworld\nfoo\n", "xx");
+        assert_eq!(tail, 0);
+        assert_eq!(head, 12); // "hello\nworld\n"
+    }
+
+    #[test]
+    fn x_three_times_extends_further() {
+        let (tail, head) = run_keys("hello\nworld\nfoo\nbar\n", "xxx");
+        assert_eq!(tail, 0);
+        assert_eq!(head, 16); // "hello\nworld\nfoo\n"
+    }
+
+    #[test]
+    fn x_from_middle_of_line() {
+        let (tail, head) = run_keys("hello\nworld\n", "llx");
+        assert_eq!(tail, 0);
+        assert_eq!(head, 6);
+    }
+
+    #[test]
+    fn x_from_second_line() {
+        let (tail, head) = run_keys("hello\nworld\nfoo\n", "jx");
+        assert_eq!(tail, 6);
+        assert_eq!(head, 12); // "world\n"
+    }
+
+    #[test]
+    fn x_stops_at_last_line() {
+        let (tail, head) = run_keys("hello\nworld\n", "xxxx");
+        assert_eq!(tail, 0);
+        assert_eq!(head, 12); // Entire buffer
+    }
+
+    #[test]
+    fn x_on_last_line_no_trailing_newline() {
+        let (tail, head) = run_keys("hello", "x");
+        assert_eq!(tail, 0);
+        assert_eq!(head, 5); // "hello"
+    }
+
+    #[test]
+    fn x_then_delete_removes_line() {
+        let text = run_keys_text("hello\nworld\nfoo\n", "xd");
+        assert_eq!(text, "world\nfoo\n");
+    }
+
+    // --- X (drag cursor up) ---
+
+    #[test]
+    fn big_x_selects_current_line() {
+        let (tail, head) = run_keys("hello\nworld\nfoo\n", "jjX");
+        assert_eq!(tail, 12);
+        assert_eq!(head, 16); // "foo\n"
+    }
+
+    #[test]
+    fn big_x_repeated_extends_up() {
+        let (tail, head) = run_keys("hello\nworld\nfoo\n", "jjXX");
+        // tail at end of line 2 (anchor), head at start of line 1 (cursor)
+        assert_eq!(tail, 16);
+        assert_eq!(head, 6);
+    }
+
+    #[test]
+    fn big_x_three_times() {
+        let (tail, head) = run_keys("hello\nworld\nfoo\n", "jjXXX");
+        assert_eq!(tail, 16);
+        assert_eq!(head, 0);
+    }
+
+    #[test]
+    fn big_x_stops_at_first_line() {
+        let (tail, head) = run_keys("hello\nworld\n", "jXXXX");
+        assert_eq!(tail, 12);
+        assert_eq!(head, 0);
+    }
+
+    // --- x and X interaction ---
+
+    #[test]
+    fn x_then_big_x_contracts() {
+        let (tail, head) = run_keys("hello\nworld\nfoo\n", "xxX");
+        assert_eq!(tail, 0);
+        assert_eq!(head, 6); // Back to just "hello\n"
+    }
+
+    #[test]
+    fn big_x_then_x_contracts() {
+        let (tail, head) = run_keys("hello\nworld\nfoo\n", "jjXXx");
+        // After XX: backward (16, 6) covering world+foo
+        // After x: contracts to just foo, forward (12, 16)
+        assert_eq!(tail, 12);
+        assert_eq!(head, 16);
+    }
 }
