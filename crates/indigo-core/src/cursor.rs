@@ -448,7 +448,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         ops.insert(text);
         ops.retain_rest(&self.text);
         self.text.apply(&ops).expect("Operations are well formed");
-        self.state.byte_offset = ops.transform_byte_offset(self.state.byte_offset);
+        self.state.transform(&ops);
         if self.snap_to_grapheme_boundary() {
             tracing::warn!("wasn't on grapheme boundary after");
         }
@@ -472,7 +472,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         ops.delete(self.state.byte_offset - byte_offset);
         ops.retain_rest(&self.text);
         self.text.apply(&ops).expect("Operations are well formed");
-        self.state.byte_offset = ops.transform_byte_offset(self.state.byte_offset);
+        self.state.transform(&ops);
         if self.snap_to_grapheme_boundary() {
             tracing::warn!("wasn't on grapheme boundary after");
         }
@@ -496,7 +496,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         ops.delete(byte_offset - self.state.byte_offset);
         ops.retain_rest(&self.text);
         self.text.apply(&ops).expect("Operations are well formed");
-        self.state.byte_offset = ops.transform_byte_offset(self.state.byte_offset);
+        self.state.transform(&ops);
         if self.snap_to_grapheme_boundary() {
             tracing::warn!("wasn't on grapheme boundary after");
         }

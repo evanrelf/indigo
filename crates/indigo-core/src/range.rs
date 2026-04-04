@@ -630,8 +630,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         ops.delete(self.byte_length());
         ops.retain_rest(&self.text);
         self.text.apply(&ops).expect("Operations are well formed");
-        self.state.tail.byte_offset = ops.transform_byte_offset(self.state.tail.byte_offset);
-        self.state.head.byte_offset = ops.transform_byte_offset(self.state.head.byte_offset);
+        self.state.transform(&ops);
         debug_assert_eq!(self.state.tail.byte_offset, self.state.head.byte_offset);
         if self.snap_to_grapheme_boundaries() {
             tracing::warn!("wasn't on grapheme boundary after");
