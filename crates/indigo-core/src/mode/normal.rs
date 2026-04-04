@@ -10,11 +10,13 @@ use crate::{
         prompt::enter_prompt_mode,
         seek::enter_seek_mode,
     },
+    range::RangeMut,
     rope::{LINE_TYPE, RopeExt as _},
     window::{
         scroll_full_page_down, scroll_full_page_up, scroll_half_page_down, scroll_half_page_up,
     },
 };
+use ropey::Rope;
 use regex_cursor::engines::meta::Regex;
 use std::{cmp::min, num::NonZeroUsize};
 
@@ -76,6 +78,8 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "<a-:>") => flip_forward(editor),
             _ if is(key, "%") => select_all(editor),
             _ if is(key, "s") => select_regex(editor),
+            _ if is(key, "x") => select_lines(editor),
+            _ if is(key, "X") => extend_lines(editor),
             _ if is(key, "`") => to_lowercase(editor),
             _ if is(key, "~") => to_uppercase(editor),
             _ if is(key, "<a-`>") => swap_case(editor),
@@ -392,6 +396,128 @@ fn insert_at_line_end(editor: &mut Editor) {
     });
     window.scroll_to_selection();
     editor.mode = Mode::Insert(insert::State::default());
+}
+
+/// `x`: Snap to line boundaries, then drag cursor (head) down.
+/// First press on a non-aligned selection just aligns. If already aligned, extends down.
+/// Follows byline.kak behavior.
+fn select_lines(editor: &mut Editor) {
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        let rope = range.text().rope().clone();
+        let len_lines = rope.len_lines_indigo();
+        if len_lines == 0 {
+            return;
+        }
+
+        // Determine current tail/head lines
+        let (tail_line, head_line, _forward) = line_range_info(&range, &rope);
+
+        // Check if already line-aligned
+        let tail_byte = range.tail().byte_offset();
+        let head_byte = range.head().byte_offset();
+        let aligned = is_line_aligned(tail_byte, head_byte, tail_line, head_line, &rope);
+
+        // Drag head down by count (or just snap if not aligned)
+        let steps = if aligned { count } else { count.saturating_sub(1) };
+        let new_head_line = min(head_line + steps, len_lines.saturating_sub(1));
+
+        set_line_range(&mut range, tail_line, new_head_line, &rope);
+    });
+    window.scroll_to_selection();
+    editor.mode.set_count(None);
+}
+
+/// `X`: Snap to line boundaries, then drag cursor (head) up.
+/// Follows byline.kak behavior.
+fn extend_lines(editor: &mut Editor) {
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        let rope = range.text().rope().clone();
+        let len_lines = rope.len_lines_indigo();
+        if len_lines == 0 {
+            return;
+        }
+
+        let (tail_line, head_line, _forward) = line_range_info(&range, &rope);
+        let tail_byte = range.tail().byte_offset();
+        let head_byte = range.head().byte_offset();
+        let aligned = is_line_aligned(tail_byte, head_byte, tail_line, head_line, &rope);
+
+        let steps = if aligned { count } else { count.saturating_sub(1) };
+        let new_head_line = head_line.saturating_sub(steps);
+
+        set_line_range(&mut range, tail_line, new_head_line, &rope);
+    });
+    window.scroll_to_selection();
+    editor.mode.set_count(None);
+}
+
+/// Determine the tail line, head line, and direction of a range.
+fn line_range_info(range: &RangeMut<'_>, rope: &Rope) -> (usize, usize, bool) {
+    let forward = range.is_forward();
+    let tail_byte = range.tail().byte_offset();
+    let head_byte = range.head().byte_offset();
+
+    let tail_line = rope.byte_to_line_idx(tail_byte, LINE_TYPE);
+    let head_line = if head_byte > 0 && (forward && head_byte > tail_byte || !forward && head_byte < tail_byte) {
+        // For the "far end" of the range, use byte-1 to stay on the correct line
+        // (since the end offset points past the last char)
+        rope.byte_to_line_idx(head_byte.saturating_sub(1), LINE_TYPE)
+    } else {
+        rope.byte_to_line_idx(head_byte, LINE_TYPE)
+    };
+
+    (tail_line, head_line, forward)
+}
+
+/// Check if a range is already snapped to line boundaries.
+fn is_line_aligned(tail_byte: usize, head_byte: usize, tail_line: usize, head_line: usize, rope: &Rope) -> bool {
+    let (start_line, end_line) = if tail_line <= head_line {
+        (tail_line, head_line)
+    } else {
+        (head_line, tail_line)
+    };
+    let start_byte = min(tail_byte, head_byte);
+    let end_byte = tail_byte.max(head_byte);
+
+    let expected_start = rope.line_to_byte_idx(start_line, LINE_TYPE);
+    let expected_end = line_end_byte(end_line, rope);
+
+    start_byte == expected_start && end_byte == expected_end
+}
+
+/// Get the byte offset for the end of a line (start of next line, or rope length).
+fn line_end_byte(line: usize, rope: &Rope) -> usize {
+    let len_lines = rope.len_lines_indigo();
+    if line + 1 < len_lines {
+        rope.line_to_byte_idx(line + 1, LINE_TYPE)
+    } else {
+        rope.len()
+    }
+}
+
+/// Set a range to cover from `tail_line` to `head_line` (both line-aligned).
+/// Handles forward, backward, and same-line cases.
+fn set_line_range(range: &mut RangeMut<'_>, tail_line: usize, head_line: usize, rope: &Rope) {
+    if head_line >= tail_line {
+        // Forward: tail at line start, head at line end
+        let tail_byte = rope.line_to_byte_idx(tail_line, LINE_TYPE);
+        let head_end = line_end_byte(head_line, rope);
+        range.move_to(tail_byte);
+        if head_end > tail_byte + 1 {
+            range.extend_to(head_end.saturating_sub(1));
+        }
+    } else {
+        // Backward: tail at end of tail_line, head at start of head_line
+        let tail_end = line_end_byte(tail_line, rope);
+        let head_start = rope.line_to_byte_idx(head_line, LINE_TYPE);
+        // Position at tail end first, then extend backward to head start
+        range.move_to(tail_end.saturating_sub(1));
+        range.extend_to(head_start);
+    }
 }
 
 fn open_line_below(editor: &mut Editor) {
