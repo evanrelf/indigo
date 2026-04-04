@@ -104,6 +104,8 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "`") => to_lowercase(editor),
             _ if is(key, "~") => to_uppercase(editor),
             _ if is(key, "<a-`>") => swap_case(editor),
+            _ if is(key, "\\>") => indent(editor),
+            _ if is(key, "\\<") => unindent(editor),
             _ if is(key, "<a-j>") => join_lines(editor),
             _ if is(key, "r") => enter_replace(editor),
             _ if is(key, "d") => delete(editor),
@@ -247,6 +249,109 @@ fn reduce(editor: &mut Editor) {
     window
         .selection_mut()
         .for_each_mut(|mut range| range.reduce());
+    window.scroll_to_selection();
+    editor.mode.set_count(None);
+}
+
+const INDENT_WIDTH: usize = 2;
+
+fn indent(editor: &mut Editor) {
+    if editor.focused_buffer().text.readonly {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.mode.set_count(None);
+        return;
+    }
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    let indent_str: String = " ".repeat(INDENT_WIDTH * count);
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        let rope = range.text().rope().clone();
+        let saved_tail = range.tail().byte_offset();
+        let saved_head = range.head().byte_offset();
+        let start_byte = range.start().byte_offset();
+        let end_byte = range.end().byte_offset();
+        let start_line = rope.byte_to_line_idx(start_byte, LINE_TYPE);
+        let end_line = if end_byte > start_byte {
+            rope.byte_to_line_idx(end_byte.saturating_sub(1), LINE_TYPE)
+        } else {
+            start_line
+        };
+        let mut all_ops = Vec::new();
+        for line in (start_line..=end_line).rev() {
+            let line_start = rope.line_to_byte_idx(line, LINE_TYPE);
+            range.move_to(line_start);
+            let ops = range.insert(&indent_str);
+            all_ops.push(ops);
+        }
+        // Restore selection, adjusted for all insertions
+        let mut restored_tail = saved_tail;
+        let mut restored_head = saved_head;
+        for ops in all_ops.iter().rev() {
+            restored_tail = ops.transform_byte_offset(restored_tail);
+            restored_head = ops.transform_byte_offset(restored_head);
+        }
+        range.move_to(restored_tail);
+        range.extend_to(restored_head);
+    });
+    window.scroll_to_selection();
+    editor.mode.set_count(None);
+}
+
+fn unindent(editor: &mut Editor) {
+    if editor.focused_buffer().text.readonly {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.mode.set_count(None);
+        return;
+    }
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    let remove_count = INDENT_WIDTH * count;
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        let rope = range.text().rope().clone();
+        let saved_tail = range.tail().byte_offset();
+        let saved_head = range.head().byte_offset();
+        let start_byte = range.start().byte_offset();
+        let end_byte = range.end().byte_offset();
+        let start_line = rope.byte_to_line_idx(start_byte, LINE_TYPE);
+        let end_line = if end_byte > start_byte {
+            rope.byte_to_line_idx(end_byte.saturating_sub(1), LINE_TYPE)
+        } else {
+            start_line
+        };
+        let mut all_ops = Vec::new();
+        for line in (start_line..=end_line).rev() {
+            let line_start = rope.line_to_byte_idx(line, LINE_TYPE);
+            let Some(line_slice) = rope.get_line(line, LINE_TYPE) else {
+                continue;
+            };
+            let mut to_remove = 0;
+            for ch in line_slice.chars() {
+                if to_remove >= remove_count {
+                    break;
+                }
+                if ch == ' ' || ch == '\t' {
+                    to_remove += 1;
+                } else {
+                    break;
+                }
+            }
+            if to_remove > 0 {
+                range.move_to(line_start);
+                range.extend_to(line_start + to_remove - 1);
+                if let Some(ops) = range.delete() {
+                    all_ops.push(ops);
+                }
+            }
+        }
+        let mut restored_tail = saved_tail;
+        let mut restored_head = saved_head;
+        for ops in all_ops.iter().rev() {
+            restored_tail = ops.transform_byte_offset(restored_tail);
+            restored_head = ops.transform_byte_offset(restored_head);
+        }
+        range.move_to(restored_tail);
+        range.extend_to(restored_head);
+    });
     window.scroll_to_selection();
     editor.mode.set_count(None);
 }
