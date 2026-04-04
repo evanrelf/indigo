@@ -104,6 +104,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "`") => to_lowercase(editor),
             _ if is(key, "~") => to_uppercase(editor),
             _ if is(key, "<a-`>") => swap_case(editor),
+            _ if is(key, "<a-j>") => join_lines(editor),
             _ if is(key, "r") => enter_replace(editor),
             _ if is(key, "d") => delete(editor),
             _ if is(key, "c") => {
@@ -246,6 +247,46 @@ fn reduce(editor: &mut Editor) {
     window
         .selection_mut()
         .for_each_mut(|mut range| range.reduce());
+    window.scroll_to_selection();
+    editor.mode.set_count(None);
+}
+
+fn join_lines(editor: &mut Editor) {
+    if editor.focused_buffer().text.readonly {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.mode.set_count(None);
+        return;
+    }
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        let text = range.slice().to_string();
+        let trailing_newline = text.ends_with('\n') || text.ends_with("\r\n");
+        // Replace each newline (with optional surrounding whitespace) with a single space
+        let mut result = String::with_capacity(text.len());
+        let mut chars = text.chars().peekable();
+        while let Some(c) = chars.next() {
+            if c == '\n' || c == '\r' {
+                if c == '\r' && chars.peek() == Some(&'\n') {
+                    chars.next();
+                }
+                // Skip leading whitespace on the next line
+                while chars.peek().is_some_and(|&c| c == ' ' || c == '\t') {
+                    chars.next();
+                }
+                if chars.peek().is_some() {
+                    result.push(' ');
+                }
+            } else {
+                result.push(c);
+            }
+        }
+        // Preserve the trailing newline of the selection
+        if trailing_newline {
+            result.push('\n');
+        }
+        range.delete();
+        range.insert(&result);
+    });
     window.scroll_to_selection();
     editor.mode.set_count(None);
 }
