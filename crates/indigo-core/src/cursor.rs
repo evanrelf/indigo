@@ -186,6 +186,11 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         self.state.byte_offset == self.text.len()
     }
 
+    #[must_use]
+    pub fn save(&self) -> CursorSnapshot {
+        self.state.save(&self.text)
+    }
+
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
         if self.state.byte_offset > self.text.len() {
             anyhow::bail!(Error::ExceedsEnd {
@@ -514,6 +519,15 @@ impl<W: WrapMut> CursorView<'_, W> {
             tracing::warn!("wasn't on grapheme boundary after");
         }
         Some(ops)
+    }
+
+    pub fn restore(&mut self, snapshot: &CursorSnapshot) -> bool {
+        if let Some(state) = snapshot.restore(&self.text) {
+            *self.state = state;
+            true
+        } else {
+            false
+        }
     }
 }
 

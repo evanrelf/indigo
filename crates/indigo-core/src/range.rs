@@ -290,6 +290,11 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         self.state.is_overlapping(&other.state)
     }
 
+    #[must_use]
+    pub fn save(&self) -> RangeSnapshot {
+        self.state.save(&self.text)
+    }
+
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
         self.tail().assert_invariants().map_err(Error::Tail)?;
         self.head().assert_invariants().map_err(Error::Head)?;
@@ -684,6 +689,15 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
         self.update_goal_column();
         Some(ops)
+    }
+
+    pub fn restore(&mut self, snapshot: &RangeSnapshot) -> bool {
+        if let Some(state) = snapshot.restore(&self.text) {
+            *self.state = state;
+            true
+        } else {
+            false
+        }
     }
 }
 
