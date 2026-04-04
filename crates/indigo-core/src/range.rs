@@ -1,8 +1,8 @@
 use crate::{
-    cursor::{Bias, Cursor, CursorMut, CursorState},
+    cursor::{Bias, Cursor, CursorMut, CursorSnapshot, CursorState},
     ot::OperationSeq,
     rope::RopeExt as _,
-    text::Text,
+    text::{Anchor, Text},
 };
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
@@ -101,6 +101,38 @@ impl RangeState {
         let other_start = other.start().byte_offset;
         let other_end = other.end().byte_offset;
         self_start < other_end && other_start < self_end
+    }
+
+    #[must_use]
+    pub fn save(&self, text: &Text) -> RangeSnapshot {
+        let tail = self.tail.save(text);
+        let head = self.head.save(text);
+        let goal_column = text.create_anchor(self.goal_column);
+        RangeSnapshot {
+            tail,
+            head,
+            goal_column,
+        }
+    }
+}
+
+pub struct RangeSnapshot {
+    pub tail: CursorSnapshot,
+    pub head: CursorSnapshot,
+    pub goal_column: Anchor,
+}
+
+impl RangeSnapshot {
+    #[must_use]
+    pub fn restore(&self, text: &Text) -> Option<RangeState> {
+        let tail = self.tail.restore(text)?;
+        let head = self.head.restore(text)?;
+        let goal_column = text.resolve_anchor(&self.goal_column)?;
+        Some(RangeState {
+            tail,
+            head,
+            goal_column,
+        })
     }
 }
 

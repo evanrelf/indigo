@@ -54,6 +54,24 @@ impl CursorState {
     pub fn transform(&mut self, ops: &OperationSeq) {
         self.byte_offset = ops.transform_byte_offset(self.byte_offset);
     }
+
+    #[must_use]
+    pub fn save(&self, text: &Text) -> CursorSnapshot {
+        let byte_offset = text.create_anchor(self.byte_offset);
+        CursorSnapshot { byte_offset }
+    }
+}
+
+pub struct CursorSnapshot {
+    pub byte_offset: Anchor,
+}
+
+impl CursorSnapshot {
+    #[must_use]
+    pub fn restore(&self, text: &Text) -> Option<CursorState> {
+        let byte_offset = text.resolve_anchor(&self.byte_offset)?;
+        Some(CursorState { byte_offset })
+    }
 }
 
 #[must_use]
@@ -166,11 +184,6 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     #[must_use]
     pub fn is_at_end(&self) -> bool {
         self.state.byte_offset == self.text.len()
-    }
-
-    #[must_use]
-    pub fn anchor(&self) -> Anchor {
-        self.text.create_anchor(self.state.byte_offset)
     }
 
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
