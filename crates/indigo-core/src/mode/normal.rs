@@ -76,6 +76,9 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
             _ if is(key, "<a-:>") => flip_forward(editor),
             _ if is(key, "%") => select_all(editor),
             _ if is(key, "s") => select_regex(editor),
+            _ if is(key, "`") => to_lowercase(editor),
+            _ if is(key, "~") => to_uppercase(editor),
+            _ if is(key, "<a-`>") => swap_case(editor),
             _ if is(key, "d") => delete(editor),
             _ if is(key, "c") => {
                 delete(editor);
@@ -217,6 +220,64 @@ fn reduce(editor: &mut Editor) {
     window
         .selection_mut()
         .for_each_mut(|mut range| range.reduce());
+    window.scroll_to_selection();
+    editor.mode.set_count(None);
+}
+
+fn to_lowercase(editor: &mut Editor) {
+    if editor.focused_buffer().text.readonly {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.mode.set_count(None);
+        return;
+    }
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        let text = range.slice().to_string().to_lowercase();
+        range.delete();
+        range.insert(&text);
+    });
+    window.scroll_to_selection();
+    editor.mode.set_count(None);
+}
+
+fn to_uppercase(editor: &mut Editor) {
+    if editor.focused_buffer().text.readonly {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.mode.set_count(None);
+        return;
+    }
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        let text = range.slice().to_string().to_uppercase();
+        range.delete();
+        range.insert(&text);
+    });
+    window.scroll_to_selection();
+    editor.mode.set_count(None);
+}
+
+fn swap_case(editor: &mut Editor) {
+    if editor.focused_buffer().text.readonly {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.mode.set_count(None);
+        return;
+    }
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().for_each_mut(|mut range| {
+        let text: String = range
+            .slice()
+            .chars()
+            .flat_map(|c| {
+                if c.is_uppercase() {
+                    c.to_lowercase().collect::<Vec<_>>()
+                } else {
+                    c.to_uppercase().collect::<Vec<_>>()
+                }
+            })
+            .collect();
+        range.delete();
+        range.insert(&text);
+    });
     window.scroll_to_selection();
     editor.mode.set_count(None);
 }
