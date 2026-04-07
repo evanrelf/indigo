@@ -21,7 +21,7 @@ enum Command {
 }
 
 fn parse_command(command: &str) -> anyhow::Result<Command> {
-    use lexopt::prelude::*;
+    use lexopt::{Error::MissingValue, prelude::*};
 
     let Ok(args) = shell_words::split(command) else {
         anyhow::bail!("Invalid command");
@@ -47,11 +47,14 @@ fn parse_command(command: &str) -> anyhow::Result<Command> {
             Ok(Command::Echo { error, message })
         }
         "edit" | "e" => {
-            let path: Utf8PathBuf = parser
-                .value()
-                .map_err(|_| anyhow::anyhow!("Missing path"))?
-                .string()?
-                .into();
+            let path = match parser.next()? {
+                Some(Value(val)) => val.string()?.into(),
+                Some(arg) => return Err(arg.unexpected().into()),
+                None => return Err(MissingValue { option: None }.into()),
+            };
+            if let Some(arg) = parser.next()? {
+                return Err(arg.unexpected().into());
+            }
             Ok(Command::Edit { path })
         }
         "write" | "w" => {
@@ -60,6 +63,9 @@ fn parse_command(command: &str) -> anyhow::Result<Command> {
                 Some(arg) => return Err(arg.unexpected().into()),
                 None => None,
             };
+            if let Some(arg) = parser.next()? {
+                return Err(arg.unexpected().into());
+            }
             Ok(Command::Write { path })
         }
         "quit" | "q" => {
@@ -68,26 +74,45 @@ fn parse_command(command: &str) -> anyhow::Result<Command> {
                 Some(arg) => return Err(arg.unexpected().into()),
                 None => None,
             };
+            if let Some(arg) = parser.next()? {
+                return Err(arg.unexpected().into());
+            }
             Ok(Command::Quit { exit_code })
         }
         "quit!" | "q!" => {
             let exit_code = match parser.next()? {
                 Some(Value(val)) => Some(val.parse()?),
-                None => None,
                 Some(arg) => return Err(arg.unexpected().into()),
+                None => None,
             };
+            if let Some(arg) = parser.next()? {
+                return Err(arg.unexpected().into());
+            }
             Ok(Command::QuitForce { exit_code })
         }
         "writequit" | "wq" => {
             let exit_code = match parser.next()? {
                 Some(Value(val)) => Some(val.parse()?),
-                None => None,
                 Some(arg) => return Err(arg.unexpected().into()),
+                None => None,
             };
+            if let Some(arg) = parser.next()? {
+                return Err(arg.unexpected().into());
+            }
             Ok(Command::WriteQuit { exit_code })
         }
-        "readonly" | "ro" => Ok(Command::Readonly),
-        "panic" => Ok(Command::Panic),
+        "readonly" | "ro" => {
+            if let Some(arg) = parser.next()? {
+                return Err(arg.unexpected().into());
+            }
+            Ok(Command::Readonly)
+        }
+        "panic" => {
+            if let Some(arg) = parser.next()? {
+                return Err(arg.unexpected().into());
+            }
+            Ok(Command::Panic)
+        }
         _ => anyhow::bail!("Unknown command: {subcommand}"),
     }
 }
