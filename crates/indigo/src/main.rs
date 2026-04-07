@@ -412,7 +412,10 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let buffer = window.buffer();
 
-    let lines = buffer.text.rope().lines_at(window.vertical_scroll(), LINE_TYPE);
+    let lines = buffer
+        .text
+        .rope()
+        .lines_at(window.vertical_scroll(), LINE_TYPE);
 
     let rows = area.rows();
 

@@ -95,7 +95,8 @@ fn main() -> anyhow::Result<ExitCode> {
     let _result = editor
         .focused_window()
         .buffer()
-        .text.rope()
+        .text
+        .rope()
         .write_to(io::LineWriter::new(io::stdout()));
 
     let exit_code = editor.exit_code().unwrap_or(ExitCode::SUCCESS);
