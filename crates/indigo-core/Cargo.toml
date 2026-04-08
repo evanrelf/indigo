@@ -8,6 +8,7 @@ arbitrary = ["dep:arbitrary"]
 [dependencies]
 anyhow = { workspace = true }
 arbitrary = { workspace = true, optional = true }
+arrayvec = { workspace = true }
 bitflags = { workspace = true }
 camino = { workspace = true }
 imbl = { workspace = true }
