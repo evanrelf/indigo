@@ -10,6 +10,7 @@ pub struct BTreeMap<K, V> {
 
 impl<K, V> BTreeMap<K, V> {
     /// Create a new, empty map
+    #[must_use]
     pub fn new() -> Self {
         Self {
             root: Arc::new(Node::Leaf(NodeLeaf {
@@ -71,7 +72,7 @@ impl<K, V> BTreeMap<K, V> {
 
     /// Remove an entry, returning the existing value if present
     ///
-    /// We follow the advice of the ["Deletion without rebalancing in multiway search trees"][1]
+    /// We follow the advice of the [Deletion without rebalancing in multiway search trees][1]
     /// paper, which suggests "rebalancing on deletion not only is unnecessary but may be harmful."
     ///
     /// [1]: https://doi.org/10.1145/2540068
@@ -116,11 +117,13 @@ impl<K, V> BTreeMap<K, V> {
     }
 
     /// Return the number of entries in the map
+    #[must_use]
     pub fn len(&self) -> usize {
         self.length
     }
 
     /// Check whether the map has any entries
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -188,8 +191,8 @@ impl<K, V> Node<K, V> {
         V: Clone,
     {
         match self {
-            Node::Branch(branch) => branch.insert(key, value),
-            Node::Leaf(leaf) => leaf.insert(key, value),
+            Self::Branch(branch) => branch.insert(key, value),
+            Self::Leaf(leaf) => leaf.insert(key, value),
         }
     }
 
@@ -199,8 +202,8 @@ impl<K, V> Node<K, V> {
         V: Clone,
     {
         match self {
-            Node::Branch(branch) => branch.remove(key),
-            Node::Leaf(leaf) => leaf.remove(key),
+            Self::Branch(branch) => branch.remove(key),
+            Self::Leaf(leaf) => leaf.remove(key),
         }
     }
 
@@ -209,8 +212,8 @@ impl<K, V> Node<K, V> {
         K: Ord,
     {
         match self {
-            Node::Branch(branch) => branch.get(key),
-            Node::Leaf(leaf) => leaf.get(key),
+            Self::Branch(branch) => branch.get(key),
+            Self::Leaf(leaf) => leaf.get(key),
         }
     }
 
@@ -220,8 +223,8 @@ impl<K, V> Node<K, V> {
         V: Clone,
     {
         match self {
-            Node::Branch(branch) => branch.get_mut(key),
-            Node::Leaf(leaf) => leaf.get_mut(key),
+            Self::Branch(branch) => branch.get_mut(key),
+            Self::Leaf(leaf) => leaf.get_mut(key),
         }
     }
 
@@ -230,25 +233,25 @@ impl<K, V> Node<K, V> {
         K: Ord,
     {
         match self {
-            Node::Branch(branch) => branch.contains_key(key),
-            Node::Leaf(leaf) => leaf.contains_key(key),
+            Self::Branch(branch) => branch.contains_key(key),
+            Self::Leaf(leaf) => leaf.contains_key(key),
         }
     }
 
     fn keys(&self) -> &[K] {
         match self {
-            Node::Branch(branch) => branch.keys.as_slice(),
-            Node::Leaf(leaf) => leaf.keys.as_slice(),
+            Self::Branch(branch) => branch.keys.as_slice(),
+            Self::Leaf(leaf) => leaf.keys.as_slice(),
         }
     }
 
     fn is_branch(&self) -> bool {
-        matches!(self, Node::Branch(_))
+        matches!(self, Self::Branch(_))
     }
 
     #[cfg_attr(not(test), expect(dead_code))]
     fn is_leaf(&self) -> bool {
-        matches!(self, Node::Leaf(_))
+        matches!(self, Self::Leaf(_))
     }
 
     fn assert_invariants(&self, path: &str, depth: u8)
@@ -256,8 +259,8 @@ impl<K, V> Node<K, V> {
         K: Ord,
     {
         match self {
-            Node::Branch(branch) => branch.assert_invariants(path, depth),
-            Node::Leaf(leaf) => leaf.assert_invariants(path, depth),
+            Self::Branch(branch) => branch.assert_invariants(path, depth),
+            Self::Leaf(leaf) => leaf.assert_invariants(path, depth),
         }
     }
 }
@@ -470,7 +473,7 @@ impl<K, V> NodeLeaf<K, V> {
                 let value = self.values.remove(index);
                 Some(value)
             }
-            _ => None,
+            LeafSearchResult::Missing(_) => None,
         }
     }
 
@@ -480,7 +483,7 @@ impl<K, V> NodeLeaf<K, V> {
     {
         match self.search(key) {
             LeafSearchResult::Found(index) => Some(&self.values[index]),
-            _ => None,
+            LeafSearchResult::Missing(_) => None,
         }
     }
 
@@ -490,7 +493,7 @@ impl<K, V> NodeLeaf<K, V> {
     {
         match self.search(key) {
             LeafSearchResult::Found(index) => Some(&mut self.values[index]),
-            _ => None,
+            LeafSearchResult::Missing(_) => None,
         }
     }
 
