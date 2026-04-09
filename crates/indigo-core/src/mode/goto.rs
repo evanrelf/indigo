@@ -62,96 +62,76 @@ pub fn handle_actions_goto(editor: &mut Editor, actions: &[Action]) {
 }
 
 pub fn handle_action_goto(editor: &mut Editor, action: &Action) {
+    let mut window = editor.focused_window_mut();
+
     match action {
         Action::MoveToStart => {
-            let mut window = editor.focused_window_mut();
             window
                 .selection_mut()
                 .for_each_mut(|mut range| range.move_to_start());
             window.scroll_to_selection();
-            editor.mode.set_count(None);
         }
         Action::ExtendToStart => {
-            let mut window = editor.focused_window_mut();
             window
                 .selection_mut()
                 .for_each_mut(|mut range| range.extend_to_start());
             window.scroll_to_selection();
-            editor.mode.set_count(None);
         }
         Action::MoveToBottom => {
-            let mut window = editor.focused_window_mut();
             window
                 .selection_mut()
                 .for_each_mut(|mut range| range.move_to_bottom());
             window.scroll_to_selection();
-            editor.mode.set_count(None);
         }
         Action::ExtendToBottom => {
-            let mut window = editor.focused_window_mut();
             window
                 .selection_mut()
                 .for_each_mut(|mut range| range.extend_to_bottom());
             window.scroll_to_selection();
-            editor.mode.set_count(None);
         }
         Action::MoveToEnd => {
-            let mut window = editor.focused_window_mut();
             window
                 .selection_mut()
                 .for_each_mut(|mut range| range.move_to_end());
             window.scroll_to_selection();
-            editor.mode.set_count(None);
         }
         Action::ExtendToEnd => {
-            let mut window = editor.focused_window_mut();
             window
                 .selection_mut()
                 .for_each_mut(|mut range| range.extend_to_end());
             window.scroll_to_selection();
-            editor.mode.set_count(None);
         }
         Action::MoveToLineStart => {
-            editor
-                .focused_window_mut()
+            window
                 .selection_mut()
                 .for_each_mut(|mut range| range.move_to_line_start());
-            editor.mode.set_count(None);
         }
         Action::ExtendToLineStart => {
-            editor
-                .focused_window_mut()
+            window
                 .selection_mut()
                 .for_each_mut(|mut range| range.extend_to_line_start());
-            editor.mode.set_count(None);
         }
         Action::MoveToLineNonBlankStart => {
-            editor
-                .focused_window_mut()
+            window
                 .selection_mut()
                 .for_each_mut(|mut range| range.move_to_line_non_blank_start());
-            editor.mode.set_count(None);
         }
         Action::ExtendToLineNonBlankStart => {
-            editor
-                .focused_window_mut()
+            window
                 .selection_mut()
                 .for_each_mut(|mut range| range.extend_to_line_non_blank_start());
-            editor.mode.set_count(None);
         }
         Action::MoveUntilLineEnd => {
-            editor
-                .focused_window_mut()
+            window
                 .selection_mut()
                 .for_each_mut(|mut range| range.move_until_line_end());
-            editor.mode.set_count(None);
         }
         Action::ExtendUntilLineEnd => {
-            editor
-                .focused_window_mut()
+            window
                 .selection_mut()
                 .for_each_mut(|mut range| range.extend_until_line_end());
-            editor.mode.set_count(None);
         }
     }
+
+    editor.mode.set_count(None);
 }
