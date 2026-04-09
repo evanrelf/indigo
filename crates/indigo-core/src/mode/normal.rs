@@ -5,7 +5,6 @@ use crate::{
     mode::{
         Mode,
         command::enter_command_mode,
-        goto::enter_goto_mode,
         insert::{self, enter_insert_mode},
         prompt::enter_prompt_mode,
         seek::enter_seek_mode,
@@ -67,7 +66,7 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
                 if editor.mode.count().is_some() {
                     goto_line(editor);
                 } else {
-                    enter_goto_mode(editor);
+                    editor.mode = Mode::Goto;
                 }
             }
             _ if is(key, ",") => keep_primary(editor),

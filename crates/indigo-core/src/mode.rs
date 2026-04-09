@@ -16,7 +16,7 @@ pub enum Mode {
     Prompt(prompt::State),
     // TODO: Replace these with multi-key mappings in normal mode
     Seek(seek::State),
-    Goto(goto::State),
+    Goto,
 }
 
 impl Mode {
