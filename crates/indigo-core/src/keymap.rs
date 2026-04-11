@@ -245,12 +245,12 @@ impl<V> Keymap<V> {
         }
     }
 
-    pub fn insert(&mut self, keys: &str, value: V) {
+    pub fn insert(&mut self, keys: &str, value: V) -> Option<V> {
         let mut keys: Keys = keys.parse().unwrap();
         for key in &mut keys.0 {
             key.normalize();
         }
-        self.mappings.insert(&keys.0, value);
+        self.mappings.insert(&keys.0, value)
     }
 
     pub fn set_fallback(&mut self, fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<'a, V>) {
