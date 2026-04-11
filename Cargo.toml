@@ -22,7 +22,6 @@ indigo-term = { path = "crates/indigo-term/" }
 indigo-tui = { path = "crates/indigo-tui/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }
 jiff = { version = "0.2.23", features = ["serde"] }
-lexopt = "0.3.1"
 memchr = "2.7.6"
 pathdiff = { version = "0.2.3", features = ["camino"] }
 ratatui = "0.30.0"

@@ -4,7 +4,7 @@ use camino::Utf8PathBuf;
 use std::sync::Arc;
 
 pub fn enter_command_mode(editor: &mut Editor) {
-    enter_prompt_mode(editor, "", |editor, input| match parse_command2(input) {
+    enter_prompt_mode(editor, "", |editor, input| match parse_command(input) {
         Ok(command) => handle_command(editor, command),
         Err(error) => editor.message = Some(Err(error.to_string())),
     });
@@ -23,103 +23,6 @@ enum Command {
 }
 
 fn parse_command(command: &str) -> anyhow::Result<Command> {
-    use lexopt::{Error::MissingValue, prelude::*};
-
-    let Ok(args) = shell_words::split(command) else {
-        anyhow::bail!("Invalid command");
-    };
-
-    let Some(subcommand) = args.first() else {
-        anyhow::bail!("Empty command");
-    };
-
-    let mut parser = lexopt::Parser::from_args(args[1..].iter().map(|s| s.as_str()));
-
-    match subcommand.as_str() {
-        "echo" => {
-            let mut error = false;
-            let mut message = Vec::new();
-            while let Some(arg) = parser.next()? {
-                match arg {
-                    Long("error") => error = true,
-                    Value(val) => message.push(val.string()?),
-                    _ => return Err(arg.unexpected().into()),
-                }
-            }
-            Ok(Command::Echo { error, message })
-        }
-        "edit" | "e" => {
-            let path = match parser.next()? {
-                Some(Value(val)) => val.string()?.into(),
-                Some(arg) => return Err(arg.unexpected().into()),
-                None => return Err(MissingValue { option: None }.into()),
-            };
-            if let Some(arg) = parser.next()? {
-                return Err(arg.unexpected().into());
-            }
-            Ok(Command::Edit { path })
-        }
-        "write" | "w" => {
-            let path = match parser.next()? {
-                Some(Value(val)) => Some(val.string()?.into()),
-                Some(arg) => return Err(arg.unexpected().into()),
-                None => None,
-            };
-            if let Some(arg) = parser.next()? {
-                return Err(arg.unexpected().into());
-            }
-            Ok(Command::Write { path })
-        }
-        "quit" | "q" => {
-            let exit_code = match parser.next()? {
-                Some(Value(val)) => Some(val.parse()?),
-                Some(arg) => return Err(arg.unexpected().into()),
-                None => None,
-            };
-            if let Some(arg) = parser.next()? {
-                return Err(arg.unexpected().into());
-            }
-            Ok(Command::Quit { exit_code })
-        }
-        "quit!" | "q!" => {
-            let exit_code = match parser.next()? {
-                Some(Value(val)) => Some(val.parse()?),
-                Some(arg) => return Err(arg.unexpected().into()),
-                None => None,
-            };
-            if let Some(arg) = parser.next()? {
-                return Err(arg.unexpected().into());
-            }
-            Ok(Command::QuitForce { exit_code })
-        }
-        "writequit" | "wq" => {
-            let exit_code = match parser.next()? {
-                Some(Value(val)) => Some(val.parse()?),
-                Some(arg) => return Err(arg.unexpected().into()),
-                None => None,
-            };
-            if let Some(arg) = parser.next()? {
-                return Err(arg.unexpected().into());
-            }
-            Ok(Command::WriteQuit { exit_code })
-        }
-        "readonly" | "ro" => {
-            if let Some(arg) = parser.next()? {
-                return Err(arg.unexpected().into());
-            }
-            Ok(Command::Readonly)
-        }
-        "panic" => {
-            if let Some(arg) = parser.next()? {
-                return Err(arg.unexpected().into());
-            }
-            Ok(Command::Panic)
-        }
-        _ => anyhow::bail!("Unknown command: {subcommand}"),
-    }
-}
-
-fn parse_command2(command: &str) -> anyhow::Result<Command> {
     use bpaf::{ParseFailure, Parser, construct, long, positional, pure};
 
     let echo = {
