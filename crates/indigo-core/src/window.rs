@@ -5,7 +5,6 @@ use crate::{
     rope::{LINE_TYPE, RopeExt as _},
     selection::{Selection, SelectionMut, SelectionState},
 };
-use imbl::Vector;
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::cmp::min;
 
@@ -27,9 +26,7 @@ impl WindowState {
     #[must_use]
     pub fn new(buffer_key: BufferKey, buffer: &Buffer) -> Self {
         let selection = SelectionState {
-            ranges: Vector::from([
-                RangeState::default().snapped_to_grapheme_boundaries(buffer.text.rope())
-            ]),
+            ranges: vec![RangeState::default().snapped_to_grapheme_boundaries(buffer.text.rope())],
             primary_range: 0,
         };
         Self {

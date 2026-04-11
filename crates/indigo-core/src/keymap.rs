@@ -354,7 +354,6 @@ pub enum KeymapResult<'a, V> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use imbl::Vector;
 
     #[derive(Clone, Debug, PartialEq)]
     struct Action(&'static str);
@@ -399,35 +398,32 @@ mod tests {
     #[test]
     fn keymap_get() {
         let keymap = keymap! {
-            "gj" => Vector::from([Action("move to bottom")]),
+            "gj" => vec![Action("move to bottom")],
         };
         assert_eq!(keymap.get("x"), KeymapResult::Unmapped);
         assert_eq!(keymap.get("g"), KeymapResult::Pending);
         assert_eq!(
             keymap.get("gj"),
-            KeymapResult::Mapped(&Vector::from([Action("move to bottom")]))
+            KeymapResult::Mapped(&vec![Action("move to bottom")])
         );
     }
 
     #[test]
     fn keymap_remove() {
         let mut keymap = keymap! {
-            "gj" => Vector::from([Action("move to bottom")]),
-            "gk" => Vector::from([Action("move to top")]),
+            "gj" => vec![Action("move to bottom")],
+            "gk" => vec![Action("move to top")],
         };
         assert_eq!(
             keymap.get("gj"),
-            KeymapResult::Mapped(&Vector::from([Action("move to bottom")]))
+            KeymapResult::Mapped(&vec![Action("move to bottom")])
         );
-        assert_eq!(
-            keymap.remove("gj"),
-            Some(Vector::from([Action("move to bottom")]))
-        );
+        assert_eq!(keymap.remove("gj"), Some(vec![Action("move to bottom")]));
         assert_eq!(keymap.get("gj"), KeymapResult::Unmapped);
         // sibling still present
         assert_eq!(
             keymap.get("gk"),
-            KeymapResult::Mapped(&Vector::from([Action("move to top")]))
+            KeymapResult::Mapped(&vec![Action("move to top")])
         );
         // missing key returns None
         assert_eq!(keymap.remove("x"), None);
@@ -436,10 +432,10 @@ mod tests {
     #[test]
     fn keymap_fallback() {
         let keymap = keymap! {
-            "gj" => Vector::from([Action("move to bottom")]),
+            "gj" => vec![Action("move to bottom")],
             keys => {
                 if keys.len() == 4 {
-                    KeymapResult::Fallback(Vector::from([Action("yay 4")]))
+                    KeymapResult::Fallback(vec![Action("yay 4")])
                 } else {
                     KeymapResult::Unmapped
                 }
@@ -447,12 +443,12 @@ mod tests {
         };
         assert_eq!(
             keymap.get("gj"),
-            KeymapResult::Mapped(&Vector::from([Action("move to bottom")]))
+            KeymapResult::Mapped(&vec![Action("move to bottom")])
         );
         assert_eq!(keymap.get("123"), KeymapResult::Unmapped);
         assert_eq!(
             keymap.get("1234"),
-            KeymapResult::Fallback(Vector::from([Action("yay 4")]))
+            KeymapResult::Fallback(vec![Action("yay 4")])
         );
     }
 
@@ -460,21 +456,21 @@ mod tests {
     #[should_panic]
     fn keymap_forbids_overlap() {
         let _keymap = keymap! {
-            "g" => Vector::from([Action("enter goto mode")]),
-            "gj" => Vector::from([Action("move to bottom")]),
+            "g" => vec![Action("enter goto mode")],
+            "gj" => vec![Action("move to bottom")],
         };
     }
 
     #[test]
     fn keymap_iter() {
         let keymap = keymap! {
-            "gj" => Vector::from([Action("move to bottom")]),
-            "gk" => Vector::from([Action("move to top")]),
+            "gj" => vec![Action("move to bottom")],
+            "gk" => vec![Action("move to top")],
         };
         let mut pairs: Vec<_> = keymap.iter().collect();
         pairs.sort_by_key(|(keys, _)| keys.clone());
         assert_eq!(pairs.len(), 2);
-        assert_eq!(pairs[0].1, &Vector::from([Action("move to bottom")]));
-        assert_eq!(pairs[1].1, &Vector::from([Action("move to top")]));
+        assert_eq!(pairs[0].1, &vec![Action("move to bottom")]);
+        assert_eq!(pairs[1].1, &vec![Action("move to top")]);
     }
 }

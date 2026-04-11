@@ -2,7 +2,6 @@
 //!
 //! <https://en.wikipedia.org/wiki/Operational_transformation>
 
-use imbl::Vector;
 use ropey::Rope;
 use std::{cmp::min, sync::Arc};
 use thiserror::Error;
@@ -30,7 +29,7 @@ pub enum Error {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct OperationSeq {
-    ops: Vector<Operation>,
+    ops: Vec<Operation>,
     source_bytes: usize,
     target_bytes: usize,
 }
@@ -54,10 +53,10 @@ impl OperationSeq {
         self.source_bytes += byte_length;
         self.target_bytes += byte_length;
 
-        if let Some(Operation::Retain(n)) = self.ops.back_mut() {
+        if let Some(Operation::Retain(n)) = self.ops.last_mut() {
             *n += byte_length;
         } else {
-            self.ops.push_back(Operation::Retain(byte_length));
+            self.ops.push(Operation::Retain(byte_length));
         }
     }
 
@@ -75,10 +74,10 @@ impl OperationSeq {
 
         self.source_bytes += byte_length;
 
-        if let Some(Operation::Delete(n)) = self.ops.back_mut() {
+        if let Some(Operation::Delete(n)) = self.ops.last_mut() {
             *n += byte_length;
         } else {
-            self.ops.push_back(Operation::Delete(byte_length));
+            self.ops.push(Operation::Delete(byte_length));
         }
     }
 
@@ -89,13 +88,13 @@ impl OperationSeq {
 
         self.target_bytes += text.len();
 
-        if let Some(Operation::Insert(last)) = self.ops.back_mut() {
+        if let Some(Operation::Insert(last)) = self.ops.last_mut() {
             let mut s = String::with_capacity(last.len() + text.len());
             s.push_str(last);
             s.push_str(text);
             *last = Arc::from(s);
         } else {
-            self.ops.push_back(Operation::Insert(Arc::from(text)));
+            self.ops.push(Operation::Insert(Arc::from(text)));
         }
     }
 
@@ -318,7 +317,7 @@ impl OperationSeq {
 impl IntoIterator for OperationSeq {
     type Item = Operation;
 
-    type IntoIter = imbl::vector::ConsumingIter<Self::Item, imbl::shared_ptr::DefaultSharedPtr>;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.ops.into_iter()
@@ -328,7 +327,7 @@ impl IntoIterator for OperationSeq {
 impl<'a> IntoIterator for &'a OperationSeq {
     type Item = &'a Operation;
 
-    type IntoIter = imbl::vector::Iter<'a, Operation, imbl::shared_ptr::DefaultSharedPtr>;
+    type IntoIter = std::slice::Iter<'a, Operation>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.ops.iter()

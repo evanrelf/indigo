@@ -12,7 +12,6 @@ arrayvec = { workspace = true }
 bitflags = { workspace = true }
 bpaf = { workspace = true }
 camino = { workspace = true }
-imbl = { workspace = true }
 indigo-wrap = { workspace = true }
 memchr = { workspace = true }
 regex-cursor = { workspace = true }
