@@ -1,4 +1,6 @@
 use crate::key::{Key, Keys};
+use arrayvec::ArrayVec;
+use std::iter;
 
 struct Trie<K, V> {
     root: Node<K, V>,
@@ -41,6 +43,16 @@ impl<K, V> Trie<K, V> {
         K: Ord,
     {
         self.root.get_mut(key)
+    }
+
+    fn iter<const N: usize>(&self) -> impl Iterator<Item = (ArrayVec<K, N>, &V)>
+    where
+        K: Clone,
+    {
+        let mut pairs = Vec::new();
+        self.root
+            .collect_pairs::<N>(&mut ArrayVec::new(), &mut pairs);
+        pairs.into_iter()
     }
 }
 
@@ -180,6 +192,27 @@ impl<K, V> Node<K, V> {
             }
         }
     }
+
+    fn collect_pairs<'a, const N: usize>(
+        &'a self,
+        prefix: &mut ArrayVec<K, N>,
+        pairs: &mut Vec<(ArrayVec<K, N>, &'a V)>,
+    ) where
+        K: Clone,
+    {
+        match self {
+            Self::Branch { keys, children } => {
+                for (key, child) in iter::zip(keys, children) {
+                    prefix.push(key.clone());
+                    child.collect_pairs(prefix, pairs);
+                    prefix.pop();
+                }
+            }
+            Self::Leaf { value } => {
+                pairs.push((prefix.clone(), value));
+            }
+        }
+    }
 }
 
 impl<K, V> Default for Node<K, V> {
@@ -244,6 +277,22 @@ impl<V> Keymap<V> {
             TrieResult::Partial => KeymapResult::Pending,
             TrieResult::Found(value) => KeymapResult::Mapped(value),
         }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (ArrayVec<Key, 3>, &V)> + '_ {
+        self.mappings.iter::<3>()
+    }
+}
+
+impl<'a, V> IntoIterator for &'a Keymap<V> {
+    type Item = (ArrayVec<Key, 3>, &'a V);
+    type IntoIter = std::vec::IntoIter<(ArrayVec<Key, 3>, &'a V)>;
+    fn into_iter(self) -> Self::IntoIter {
+        let mut pairs = Vec::new();
+        self.mappings
+            .root
+            .collect_pairs::<3>(&mut ArrayVec::new(), &mut pairs);
+        pairs.into_iter()
     }
 }
 
@@ -382,5 +431,18 @@ mod tests {
             "g" => Vector::from([Action("enter goto mode")]),
             "gj" => Vector::from([Action("move to bottom")]),
         };
+    }
+
+    #[test]
+    fn keymap_iter() {
+        let keymap = keymap! {
+            "gj" => Vector::from([Action("move to bottom")]),
+            "gk" => Vector::from([Action("move to top")]),
+        };
+        let mut pairs: Vec<_> = keymap.iter().collect();
+        pairs.sort_by_key(|(keys, _)| keys.clone());
+        assert_eq!(pairs.len(), 2);
+        assert_eq!(pairs[0].1, &Vector::from([Action("move to bottom")]));
+        assert_eq!(pairs[1].1, &Vector::from([Action("move to top")]));
     }
 }
