@@ -253,6 +253,14 @@ impl<V> Keymap<V> {
         self.mappings.insert(&keys.0, value)
     }
 
+    pub fn remove(&mut self, keys: &str) -> Option<V> {
+        let mut keys: Keys = keys.parse().unwrap();
+        for key in &mut keys.0 {
+            key.normalize();
+        }
+        self.mappings.remove(&keys.0)
+    }
+
     pub fn set_fallback(&mut self, fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<'a, V>) {
         self.fallback = fallback;
     }
@@ -389,7 +397,7 @@ mod tests {
     }
 
     #[test]
-    fn keymap_basic() {
+    fn keymap_get() {
         let keymap = keymap! {
             "gj" => Vector::from([Action("move to bottom")]),
         };
@@ -399,6 +407,30 @@ mod tests {
             keymap.get("gj"),
             KeymapResult::Mapped(&Vector::from([Action("move to bottom")]))
         );
+    }
+
+    #[test]
+    fn keymap_remove() {
+        let mut keymap = keymap! {
+            "gj" => Vector::from([Action("move to bottom")]),
+            "gk" => Vector::from([Action("move to top")]),
+        };
+        assert_eq!(
+            keymap.get("gj"),
+            KeymapResult::Mapped(&Vector::from([Action("move to bottom")]))
+        );
+        assert_eq!(
+            keymap.remove("gj"),
+            Some(Vector::from([Action("move to bottom")]))
+        );
+        assert_eq!(keymap.get("gj"), KeymapResult::Unmapped);
+        // sibling still present
+        assert_eq!(
+            keymap.get("gk"),
+            KeymapResult::Mapped(&Vector::from([Action("move to top")]))
+        );
+        // missing key returns None
+        assert_eq!(keymap.remove("x"), None);
     }
 
     #[test]
