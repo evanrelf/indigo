@@ -13,6 +13,28 @@
 - range: Select word for mouse double click
 - range: Select line for mouse triple click
 
+- Multiple cursor performance is abysmal compared to Kakoune which handles 100k+
+  effortlessly. For example, placing cursors on every character, and inserting
+  the letter "h" (as of 2026-04-10 on `8749be`):
+
+  ```
+  $ time kak -e 'exec \%s.<ret>ih<esc>:q!<ret>' -ui dummy < Cargo.lock
+
+  ________________________________________________________
+  Executed in  175.40 millis    fish           external
+     usr time   67.31 millis    0.23 millis   67.08 millis
+     sys time   98.32 millis    1.54 millis   96.77 millis
+  ```
+
+  ```
+  $ time ./target/profile/indigo-cli '%s.<ret>ih<esc>:q!<ret>' < Cargo.lock >/dev/null
+
+  ________________________________________________________
+  Executed in  261.58 secs    fish           external
+     usr time  242.54 secs  175.00 micros  242.54 secs
+     sys time   18.37 secs  920.00 micros   18.37 secs
+  ```
+
 ## Friction in use
 
 - No `/` search
