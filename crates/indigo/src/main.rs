@@ -3,14 +3,14 @@ use clap::Parser as _;
 use etcetera::app_strategy::{AppStrategy as _, Xdg};
 use indigo::{
     areas::{Areas, byte_index_to_area, line_index_to_area},
-    event::{handle_event, should_skip_event},
+    event::{IndigoEvent, handle_event, should_skip_event},
     terminal,
     terminal::TerminalGuard,
     theme::THEME,
 };
 use indigo_core::{
     fs::RealFs,
-    prelude::{Buffer, BufferKind, DisplayWidth as _, Editor, Mode, RopeExt as _},
+    prelude::{Buffer, BufferKind, DisplayWidth as _, Editor, Keys, Mode, RopeExt as _},
     rope::LINE_TYPE,
 };
 use pathdiff::diff_utf8_paths;
@@ -28,6 +28,9 @@ use std::{
 #[derive(Debug, clap::Parser)]
 struct Args {
     file: Option<Utf8PathBuf>,
+
+    #[clap(long, name = "KEYS")]
+    exec: Option<Keys>,
 
     #[clap(long, env = "INDIGO_LOG", default_value_t)]
     log_filter: String,
@@ -108,6 +111,19 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
 
     editor.fs = Arc::new(RealFs);
     editor.pwd = Some(Utf8PathBuf::try_from(env::current_dir()?)?);
+
+    if let Some(keys) = &args.exec {
+        for key in &keys.0 {
+            let event = IndigoEvent::Key(indigo_core::event::KeyEvent {
+                key: *key,
+                kind: indigo_core::event::KeyEventKind::Press,
+            });
+            indigo_core::event::handle_event(&mut editor, event)?;
+        }
+        if let Some(exit_code) = editor.exit_code() {
+            return Ok(exit_code);
+        }
+    }
 
     let mut areas = Areas::default();
 
