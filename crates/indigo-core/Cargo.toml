@@ -10,6 +10,7 @@ anyhow = { workspace = true }
 arbitrary = { workspace = true, optional = true }
 arrayvec = { workspace = true }
 bitflags = { workspace = true }
+bpaf = { workspace = true }
 camino = { workspace = true }
 imbl = { workspace = true }
 indigo-wrap = { workspace = true }

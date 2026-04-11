@@ -8,6 +8,7 @@ arbitrary = { version = "1.4.2", features = ["derive"] }
 arbtest = "0.3.2"
 arrayvec = "0.7.6"
 bitflags = { version = "2.10.0", features = ["arbitrary", "std"] }
+bpaf = "0.9.24"
 camino = "1.2.2"
 clap = { version = "4.5.54", features = ["derive", "env"] }
 diff = "0.1.13"

@@ -197,6 +197,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "bpaf"
+version = "0.9.24"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2435ff2f08be8436bdcd06a3de2bd7696fd10e45eb630ecfc09af7fbfa3e69a"
+
+[[package]]
 name = "bumpalo"
 version = "3.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1072,6 +1078,7 @@ dependencies = [
  "arbtest",
  "arrayvec",
  "bitflags 2.10.0",
+ "bpaf",
  "camino",
  "imbl",
  "indigo-wrap",

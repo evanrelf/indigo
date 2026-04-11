@@ -1,14 +1,16 @@
 use crate::{buffer::Buffer, editor::Editor, mode::prompt::enter_prompt_mode, window::WindowState};
+use anyhow::anyhow;
 use camino::Utf8PathBuf;
 use std::sync::Arc;
 
 pub fn enter_command_mode(editor: &mut Editor) {
-    enter_prompt_mode(editor, "", |editor, input| match parse_command(input) {
+    enter_prompt_mode(editor, "", |editor, input| match parse_command2(input) {
         Ok(command) => handle_command(editor, command),
         Err(error) => editor.message = Some(Err(error.to_string())),
     });
 }
 
+#[derive(Clone)]
 enum Command {
     Echo { error: bool, message: Vec<String> },
     Edit { path: Utf8PathBuf },
@@ -115,6 +117,83 @@ fn parse_command(command: &str) -> anyhow::Result<Command> {
         }
         _ => anyhow::bail!("Unknown command: {subcommand}"),
     }
+}
+
+fn parse_command2(command: &str) -> anyhow::Result<Command> {
+    use bpaf::{ParseFailure, Parser, construct, long, positional, pure};
+
+    let echo = {
+        let error = long("error").switch();
+        let message = positional("MESSAGE").many();
+        construct!(Command::Echo { error, message })
+            .to_options()
+            .command("echo")
+    };
+
+    let edit = {
+        let path = positional("PATH");
+        construct!(Command::Edit { path })
+            .to_options()
+            .command("edit")
+            .long("e")
+    };
+
+    let write = {
+        let path = positional("PATH").optional();
+        construct!(Command::Write { path })
+            .to_options()
+            .command("write")
+            .long("w")
+    };
+
+    let quit = {
+        let exit_code = positional("EXIT_CODE").optional();
+        construct!(Command::Quit { exit_code })
+            .to_options()
+            .command("quit")
+            .long("q")
+    };
+
+    let quit_force = {
+        let exit_code = positional("EXIT_CODE").optional();
+        construct!(Command::QuitForce { exit_code })
+            .to_options()
+            .command("quit!")
+            .long("q!")
+    };
+
+    let write_quit = {
+        let exit_code = positional("EXIT_CODE").optional();
+        construct!(Command::WriteQuit { exit_code })
+            .to_options()
+            .command("writequit")
+            .long("wq")
+    };
+
+    let readonly = pure(Command::Readonly)
+        .to_options()
+        .command("readonly")
+        .long("ro");
+
+    let panic = pure(Command::Panic).to_options().command("panic");
+
+    let parser = construct!([
+        echo, edit, write, quit, quit_force, write_quit, readonly, panic
+    ])
+    .to_options();
+
+    let Ok(args) = shell_words::split(command) else {
+        anyhow::bail!("Invalid command");
+    };
+
+    parser.run_inner(args.as_slice()).map_err(|failure| {
+        let message = match failure {
+            ParseFailure::Stderr(doc) => doc.monochrome(true),
+            ParseFailure::Stdout(doc, full) => doc.monochrome(full),
+            ParseFailure::Completion(s) => s,
+        };
+        anyhow!("{message}")
+    })
 }
 
 fn handle_command(editor: &mut Editor, command: Command) {
