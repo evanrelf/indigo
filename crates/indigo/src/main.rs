@@ -394,6 +394,7 @@ fn render_dots(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
+#[cfg_attr(not(debug_assertions), expect(dead_code))]
 fn render_debug_info(editor: &Editor, area: Rect, surface: &mut Surface) {
     let window = editor.focused_window();
     let selection = window.selection();
