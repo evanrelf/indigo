@@ -100,8 +100,30 @@ fn init_tracing(args: &Args, xdg: &Xdg) -> anyhow::Result<()> {
     Ok(())
 }
 
+fn parse_file_line(raw: &Utf8PathBuf) -> (Utf8PathBuf, Option<usize>) {
+    let s = raw.as_str();
+    if let Some(colon) = s.rfind(':')
+        && let Ok(line) = s[colon + 1..].parse::<usize>()
+        && line > 0
+    {
+        let path = Utf8PathBuf::from(&s[..colon]);
+        // If the split path exists, or the original doesn't exist as-is, use the split
+        if path.exists() || !raw.exists() {
+            return (path, Some(line));
+        }
+    }
+    (raw.clone(), None)
+}
+
 fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
-    let buffer = if let Some(path) = &args.file {
+    let (file, goto_line) = if let Some(raw) = &args.file {
+        let (path, line) = parse_file_line(raw);
+        (Some(path), line)
+    } else {
+        (None, None)
+    };
+
+    let buffer = if let Some(path) = &file {
         Buffer::open(&RealFs, path)?
     } else {
         Buffer::new()
@@ -111,6 +133,22 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
 
     editor.fs = Arc::new(RealFs);
     editor.pwd = Some(Utf8PathBuf::try_from(env::current_dir()?)?);
+
+    // Centering scroll deferred until height is known
+    let mut pending_center = false;
+    if let Some(line_number) = goto_line {
+        let mut window = editor.focused_window_mut();
+        let rope = window.buffer().text.rope();
+        let len_lines = rope.len_lines_indigo();
+        if len_lines > 0 {
+            let line_index = min(line_number - 1, len_lines - 1);
+            let byte_offset = rope.line_to_byte_idx(line_index, LINE_TYPE);
+            window
+                .selection_mut()
+                .for_each_mut(|mut range| range.move_to(byte_offset));
+            pending_center = true;
+        }
+    }
 
     if let Some(keys) = &args.exec {
         for key in &keys.0 {
@@ -133,6 +171,10 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
             let surface = frame.buffer_mut();
             areas = Areas::new(&editor, area);
             editor.focused_window_mut().set_height(areas.text.height);
+            if pending_center {
+                editor.focused_window_mut().scroll_center_selection();
+                pending_center = false;
+            }
             render(&editor, area, surface);
         })?;
 

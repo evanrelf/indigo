@@ -113,6 +113,18 @@ impl<W: WrapMut> WindowView<'_, W> {
         }
     }
 
+    pub fn scroll_center_selection(&mut self) {
+        let state = &self.state.selection;
+        let head_byte_offset = state.ranges[state.primary_range].head.byte_offset;
+        let line = self
+            .buffer
+            .text
+            .rope()
+            .byte_to_line_idx(head_byte_offset, LINE_TYPE);
+        let half_height = usize::from(self.state.height) / 2;
+        self.state.prev_vertical_scroll = line.saturating_sub(half_height);
+    }
+
     #[must_use]
     pub fn buffer_mut(&mut self) -> &mut Buffer {
         &mut self.buffer
