@@ -1018,7 +1018,6 @@ dependencies = [
  "clap",
  "diff",
  "indigo-core",
- "tracing",
  "tracing-subscriber",
 ]
 

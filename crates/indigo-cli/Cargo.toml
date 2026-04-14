@@ -7,7 +7,6 @@ anyhow = { workspace = true }
 clap = { workspace = true }
 diff = { workspace = true }
 indigo-core = { workspace = true }
-tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 
 [lints]
