@@ -1,6 +1,6 @@
+use anyhow::Context as _;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
-use etcetera::app_strategy::{AppStrategy as _, Xdg};
 use indigo::{
     areas::{Areas, byte_index_to_area, line_index_to_area},
     event::{IndigoEvent, handle_event, should_skip_event},
@@ -52,9 +52,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let args = Args::parse();
 
-    let xdg = init_xdg()?;
-
-    init_tracing(&args, &xdg)?;
+    init_tracing(&args)?;
 
     let mut terminal = terminal::init()?;
 
@@ -65,22 +63,12 @@ fn main() -> anyhow::Result<ExitCode> {
     result
 }
 
-fn init_xdg() -> anyhow::Result<Xdg> {
-    use etcetera::app_strategy::AppStrategyArgs;
-
-    Ok(Xdg::new(AppStrategyArgs {
-        top_level_domain: String::from("com"),
-        author: String::from("Evan Relf"),
-        app_name: String::from("Indigo"),
-    })?)
-}
-
-fn init_tracing(args: &Args, xdg: &Xdg) -> anyhow::Result<()> {
+fn init_tracing(args: &Args) -> anyhow::Result<()> {
     use tracing_subscriber::{EnvFilter, Registry, fmt, prelude::*};
 
-    let log_path = xdg
-        .in_state_dir("log")
-        .expect("Always returns a path for the XDG strategy");
+    let home = Utf8PathBuf::try_from(env::home_dir().context("Failed to get home directory")?)?;
+
+    let log_path = home.join(".local/state/indigo/log");
 
     fs::create_dir_all(log_path.parent().expect("Log file exists in a directory"))?;
 
