@@ -23,7 +23,7 @@ fn main() -> io::Result<()> {
         thread::sleep(Duration::from_secs(1));
     }
 
-    write!(&mut tty, "{}{}{}", CLEAR_LINE, CursorColumn(1), CURSOR_SHOW,)?;
+    write!(&mut tty, "{}{}{}", CLEAR_LINE, CursorColumn(1), CURSOR_SHOW)?;
     tty.flush()?;
 
     Ok(())
