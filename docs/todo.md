@@ -28,12 +28,16 @@
   ```
 
   ```
-  $ time ./target/profile/indigo-cli '%s.<ret>ih<esc>:q!<ret>' < Cargo.lock >/dev/null
+  $ cargo build --profile profile && time ./target/profile/indigo-cli '%s.<ret>ih<esc>:q!<ret>' < Cargo.lock >/dev/null
+     Compiling indigo-core v0.0.0 (/Users/evanrelf/Code/evanrelf/indigo/crates/indigo-core)
+     Compiling indigo v0.0.0 (/Users/evanrelf/Code/evanrelf/indigo/crates/indigo)
+     Compiling indigo-cli v0.0.0 (/Users/evanrelf/Code/evanrelf/indigo/crates/indigo-cli)
+      Finished `profile` profile [optimized + debuginfo] target(s) in 3.87s
 
   ________________________________________________________
-  Executed in  261.58 secs    fish           external
-     usr time  242.54 secs  175.00 micros  242.54 secs
-     sys time   18.37 secs  920.00 micros   18.37 secs
+  Executed in   13.54 secs    fish           external
+     usr time   13.48 secs  143.00 micros   13.48 secs
+     sys time    0.06 secs  620.00 micros    0.06 secs
   ```
 
 ## Friction in use

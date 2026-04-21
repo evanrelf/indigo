@@ -64,18 +64,14 @@ fn delete_after(editor: &mut Editor) {
 
 fn insert_char(editor: &mut Editor, char: char) {
     let mut window = editor.focused_window_mut();
-    window.selection_mut().for_each_mut(|mut range| {
-        range.insert_char(char);
-    });
+    window.selection_mut().insert_char(char);
     window.scroll_to_selection();
     editor.mode.set_count(None);
 }
 
 pub fn paste(editor: &mut Editor, text: &str) {
     let mut window = editor.focused_window_mut();
-    window.selection_mut().for_each_mut(|mut range| {
-        range.insert(text);
-    });
+    window.selection_mut().insert(text);
     window.scroll_to_selection();
     editor.mode.set_count(None);
 }

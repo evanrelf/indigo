@@ -226,6 +226,35 @@ impl<W: WrapMut> SelectionView<'_, W> {
     pub fn snap_to_grapheme_boundaries(&mut self) -> bool {
         self.state.snap_to_grapheme_boundaries(self.text.rope())
     }
+
+    pub fn insert_char(&mut self, char: char) -> OperationSeq {
+        self.insert(&char.to_string())
+    }
+
+    pub fn insert(&mut self, text: &str) -> OperationSeq {
+        debug_assert!(
+            self.state
+                .ranges
+                .is_sorted_by_key(|range| range.start().byte_offset),
+            "this function relies on selection ranges' starts being sorted",
+            // ...prior to it becoming a type-level invariant
+        );
+        let mut ops = OperationSeq::new();
+        let mut previous = 0;
+        for range in &self.state.ranges {
+            // TODO: Assert grapheme length is 1 (i.e. reduced)
+            ops.retain(range.start().byte_offset - previous);
+            ops.insert(text);
+            previous = range.start().byte_offset;
+        }
+        ops.retain_rest(&self.text);
+        self.text.apply(&ops).expect("Operations are well formed");
+        self.state.transform(&ops); // TODO: This is what's taking forever.
+        if self.snap_to_grapheme_boundaries() {
+            tracing::warn!("wasn't on grapheme boundary after");
+        }
+        ops
+    }
 }
 
 impl<W: Wrap> Drop for SelectionView<'_, W> {
