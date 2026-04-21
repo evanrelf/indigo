@@ -7,6 +7,7 @@ use crate::{
 };
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use regex_cursor::engines::meta::Regex;
+use ropey::Rope;
 use std::{
     cmp::{max, min},
     thread,
@@ -30,6 +31,14 @@ impl SelectionState {
         for range in &mut self.ranges {
             range.transform(ops);
         }
+    }
+
+    pub fn snap_to_grapheme_boundaries(&mut self, text: &Rope) -> bool {
+        let mut snapped = false;
+        for range in &mut self.ranges {
+            snapped |= range.snap_to_grapheme_boundaries(text);
+        }
+        snapped
     }
 
     #[must_use]
@@ -212,6 +221,10 @@ impl<W: WrapMut> SelectionView<'_, W> {
         range.head.byte_offset = self.text.len();
         self.state.ranges = vec![range];
         self.state.primary_range = 0;
+    }
+
+    pub fn snap_to_grapheme_boundaries(&mut self) -> bool {
+        self.state.snap_to_grapheme_boundaries(self.text.rope())
     }
 }
 
