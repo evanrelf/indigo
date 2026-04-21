@@ -1,7 +1,7 @@
 use crate::{
     cursor::CursorState,
     ot::OperationSeq,
-    range::{Range, RangeMut, RangeState},
+    range::{Range, RangeMut, RangeSnapshot, RangeState},
     rope::RegexCursorInput,
     text::Text,
 };
@@ -31,6 +31,16 @@ impl SelectionState {
             range.transform(ops);
         }
     }
+
+    #[must_use]
+    pub fn save(&self, text: &Text) -> SelectionSnapshot {
+        let ranges = self.ranges.iter().map(|range| range.save(text)).collect();
+        let primary_range = self.primary_range;
+        SelectionSnapshot {
+            ranges,
+            primary_range,
+        }
+    }
 }
 
 impl Default for SelectionState {
@@ -39,6 +49,29 @@ impl Default for SelectionState {
             ranges: vec![RangeState::default()],
             primary_range: 0,
         }
+    }
+}
+
+pub struct SelectionSnapshot {
+    pub ranges: Vec<RangeSnapshot>,
+    pub primary_range: usize,
+}
+
+impl SelectionSnapshot {
+    #[must_use]
+    pub fn restore(&self, text: &Text) -> Option<SelectionState> {
+        let ranges = self.ranges.iter().try_fold(
+            Vec::with_capacity(self.ranges.len()),
+            |mut ranges, range| {
+                ranges.push(range.restore(text)?);
+                Some(ranges)
+            },
+        )?;
+        let primary_range = self.primary_range;
+        Some(SelectionState {
+            ranges,
+            primary_range,
+        })
     }
 }
 
