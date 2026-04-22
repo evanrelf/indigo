@@ -2,15 +2,10 @@
 name = "indigo"
 edition = "2024"
 
-[features]
-dhat-heap = ["dep:dhat"]
-dhat-ad-hoc = ["dep:dhat"]
-
 [dependencies]
 anyhow = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
-dhat = { workspace = true, optional = true }
 indigo-core = { workspace = true }
 pathdiff = { workspace = true }
 ratatui = { workspace = true }

@@ -25,10 +25,6 @@ use std::{
     sync::Arc,
 };
 
-#[cfg(feature = "dhat-heap")]
-#[global_allocator]
-static ALLOC: dhat::Alloc = dhat::Alloc;
-
 #[derive(Debug, clap::Parser)]
 struct Args {
     file: Option<Utf8PathBuf>,
@@ -53,13 +49,6 @@ fn main() -> anyhow::Result<ExitCode> {
             std::env::set_var("RUST_BACKTRACE", "1");
         }
     }
-
-    #[cfg(feature = "dhat-heap")]
-    let _profiler = dhat::Profiler::new_heap();
-
-    // NOTE: At the time of writing (2026-04-22) no ad-hoc events are being emitted.
-    #[cfg(feature = "dhat-ad-hoc")]
-    let _profiler = dhat::Profiler::new_ad_hoc();
 
     let args = Args::parse();
 
