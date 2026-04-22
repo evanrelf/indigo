@@ -5,10 +5,14 @@ target/
 mutants.out/
 mutants.out.old/
 
-# samply
-profile.json
-profile.json.gz
+# dhat
+dhat-heap.json
+dhat-ad-hoc.json
 
 # nix
 result
 result-*
+
+# samply
+profile.json
+profile.json.gz
