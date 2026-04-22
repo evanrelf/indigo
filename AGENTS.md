@@ -22,8 +22,8 @@ Indigo is written in Rust, across multiple crates in a Cargo workspace.
 
 ## Checking your work
 
-- Always run `cargo clippy` to check if code compiles. Never run `cargo check`
-  or `cargo build`.
+- Always run `cargo clippy --all-targets` to check if code compiles. Never run
+  `cargo check` or `cargo build`.
 
 - Never run `indigo`; you cannot control it. Always check runtime behavior by
   writing tests or executables at `crates/<crate>/src/bin/<name>.rs`. Always run
