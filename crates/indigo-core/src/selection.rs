@@ -266,6 +266,34 @@ impl<W: WrapMut> SelectionView<'_, W> {
         }
         ops
     }
+
+    pub fn delete(&mut self) -> OperationSeq {
+        debug_assert!(
+            self.state
+                .ranges
+                .is_sorted_by_key(|range| range.start().byte_offset),
+            "this function relies on selection ranges' starts being sorted",
+            // ...prior to it becoming a type-level invariant
+        );
+        let mut ops = OperationSeq::new();
+        let mut previous = 0;
+        for range in &self.state.ranges {
+            ops.retain(range.start().byte_offset - previous);
+            ops.delete(range.byte_length());
+            previous = range.end().byte_offset;
+        }
+        ops.retain_rest(&self.text);
+        self.text.apply(&ops).expect("Operations are well formed");
+        self.state.transform(&ops);
+        if self.snap_to_grapheme_boundaries() {
+            tracing::warn!("wasn't on grapheme boundary after");
+        }
+        for i in 0..self.state.ranges.len() {
+            let mut range = self.unchecked_get_mut(i).unwrap();
+            range.update_goal_column();
+        }
+        ops
+    }
 }
 
 impl<W: Wrap> Drop for SelectionView<'_, W> {

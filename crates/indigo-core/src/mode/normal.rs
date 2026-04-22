@@ -227,9 +227,7 @@ fn delete(editor: &mut Editor) {
         return;
     }
     let mut window = editor.focused_window_mut();
-    window.selection_mut().for_each_mut(|mut range| {
-        range.delete();
-    });
+    window.selection_mut().delete();
     window.scroll_to_selection();
     editor.mode.set_count(None);
 }
