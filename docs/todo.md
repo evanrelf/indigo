@@ -32,12 +32,12 @@
      Compiling indigo-core v0.0.0 (/Users/evanrelf/Code/evanrelf/indigo/crates/indigo-core)
      Compiling indigo v0.0.0 (/Users/evanrelf/Code/evanrelf/indigo/crates/indigo)
      Compiling indigo-cli v0.0.0 (/Users/evanrelf/Code/evanrelf/indigo/crates/indigo-cli)
-      Finished `profile` profile [optimized + debuginfo] target(s) in 3.87s
+      Finished `profile` profile [optimized + debuginfo] target(s) in 4.10s
 
   ________________________________________________________
-  Executed in   13.54 secs    fish           external
-     usr time   13.48 secs  143.00 micros   13.48 secs
-     sys time    0.06 secs  620.00 micros    0.06 secs
+  Executed in    7.90 secs    fish           external
+     usr time    7.86 secs  146.00 micros    7.86 secs
+     sys time    0.03 secs  815.00 micros    0.03 secs
   ```
 
 ## Friction in use

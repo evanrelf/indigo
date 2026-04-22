@@ -242,19 +242,18 @@ impl OperationSeq {
         let mut position = 0;
 
         for op in &self.ops {
+            if position > byte_offset {
+                break;
+            }
             match op {
                 Operation::Retain(n) => {
                     position += n;
                 }
                 Operation::Delete(n) => {
-                    if position < byte_offset {
-                        byte_offset -= min(*n, byte_offset - position);
-                    }
+                    byte_offset -= min(*n, byte_offset - position);
                 }
                 Operation::Insert(s) => {
-                    if position <= byte_offset {
-                        byte_offset += s.len();
-                    }
+                    byte_offset += s.len();
                     position += s.len();
                 }
             }
