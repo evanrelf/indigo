@@ -29,8 +29,17 @@ pub struct SelectionState {
 
 impl SelectionState {
     pub fn transform(&mut self, ops: &OperationSeq) {
-        for range in &mut self.ranges {
-            range.transform(ops);
+        let mut offsets: Vec<usize> = self
+            .ranges
+            .iter()
+            .flat_map(|range| [range.tail.byte_offset, range.head.byte_offset])
+            .collect();
+
+        ops.transform_byte_offsets_unsorted(&mut offsets);
+
+        for (i, range) in self.ranges.iter_mut().enumerate() {
+            range.tail.byte_offset = offsets[i * 2];
+            range.head.byte_offset = offsets[i * 2 + 1];
         }
     }
 
@@ -251,7 +260,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
         }
         ops.retain_rest(&self.text);
         self.text.apply(&ops).expect("Operations are well formed");
-        self.state.transform(&ops); // TODO: This is what's taking forever.
+        self.state.transform(&ops);
         if self.snap_to_grapheme_boundaries() {
             tracing::warn!("wasn't on grapheme boundary after");
         }

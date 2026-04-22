@@ -240,28 +240,71 @@ impl OperationSeq {
     }
 
     #[must_use]
-    pub fn transform_byte_offset(&self, mut byte_offset: usize) -> usize {
-        let mut position = 0;
+    pub fn transform_byte_offset(&self, byte_offset: usize) -> usize {
+        let mut offsets = [byte_offset];
+        self.transform_byte_offsets_sorted(&mut offsets);
+        offsets[0]
+    }
+
+    pub fn transform_byte_offsets_unsorted(&self, byte_offsets: &mut [usize]) {
+        // Pair each offset with its original index so we can scatter results back
+        // after transforming in sorted order.
+        let mut indexed: Vec<(usize, usize)> = byte_offsets.iter().copied().enumerate().collect();
+        indexed.sort_by_key(|&(_, offset)| offset);
+
+        let mut sorted_offsets: Vec<usize> = indexed.iter().map(|&(_, offset)| offset).collect();
+        self.transform_byte_offsets_sorted(&mut sorted_offsets);
+
+        for (sorted_idx, &(orig_idx, _)) in indexed.iter().enumerate() {
+            byte_offsets[orig_idx] = sorted_offsets[sorted_idx];
+        }
+    }
+
+    pub fn transform_byte_offsets_sorted(&self, byte_offsets: &mut [usize]) {
+        fn apply_delta(base: usize, delta: isize) -> usize {
+            if delta >= 0 {
+                base + delta.unsigned_abs()
+            } else {
+                base - delta.unsigned_abs()
+            }
+        }
+
+        debug_assert!(byte_offsets.is_sorted());
+
+        let mut position: usize = 0;
+        let mut delta: isize = 0;
+        let mut index = 0;
 
         for op in &self.ops {
-            if position > byte_offset {
+            if index >= byte_offsets.len() {
                 break;
             }
             match op {
                 Operation::Retain(n) => {
+                    while index < byte_offsets.len() && byte_offsets[index] < position + n {
+                        byte_offsets[index] = apply_delta(byte_offsets[index], delta);
+                        index += 1;
+                    }
                     position += n;
                 }
-                Operation::Delete(n) => {
-                    byte_offset -= min(*n, byte_offset - position);
-                }
                 Operation::Insert(s) => {
-                    byte_offset += s.len();
-                    position += s.len();
+                    delta += s.len().cast_signed();
+                }
+                Operation::Delete(n) => {
+                    while index < byte_offsets.len() && byte_offsets[index] < position + n {
+                        byte_offsets[index] = apply_delta(position, delta);
+                        index += 1;
+                    }
+                    position += n;
+                    delta -= (*n).cast_signed();
                 }
             }
         }
 
-        byte_offset
+        while index < byte_offsets.len() {
+            byte_offsets[index] = apply_delta(byte_offsets[index], delta);
+            index += 1;
+        }
     }
 
     pub fn invert(&self, rope: &Rope) -> anyhow::Result<Self> {

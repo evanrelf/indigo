@@ -74,17 +74,20 @@ impl<A> Attributes<A> {
 
     pub fn transform(&mut self, ops: &OperationSeq) {
         for old_ranges in self.inner.values_mut() {
-            let mut new_ranges = RoaringBitmap::new();
             let mut iter = old_ranges.iter();
-            while let Some(range) = iter.next_range() {
-                let start = u32::try_from(ops.transform_byte_offset(
-                    usize::try_from(*range.start()).expect("Machine has 64-bit pointers"),
-                ))
-                .expect("Byte offset does not exceed u32::MAX");
-                let end = u32::try_from(ops.transform_byte_offset(
-                    usize::try_from(*range.end()).expect("Machine has 64-bit pointers"),
-                ))
-                .expect("Byte offset does not exceed u32::MAX");
+            let mut offsets: Vec<usize> = iter::from_fn(|| iter.next_range())
+                .flat_map(|range| {
+                    let start =
+                        usize::try_from(*range.start()).expect("Machine has 64-bit pointers");
+                    let end = usize::try_from(*range.end()).expect("Machine has 64-bit pointers");
+                    [start, end]
+                })
+                .collect();
+            ops.transform_byte_offsets_sorted(&mut offsets);
+            let mut new_ranges = RoaringBitmap::new();
+            for pair in offsets.chunks_exact(2) {
+                let start = u32::try_from(pair[0]).expect("Byte offset does not exceed u32::MAX");
+                let end = u32::try_from(pair[1]).expect("Byte offset does not exceed u32::MAX");
                 new_ranges.insert_range(start..=end);
             }
             *old_ranges = new_ranges;
