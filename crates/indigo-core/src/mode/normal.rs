@@ -340,6 +340,7 @@ fn insert_line_above(editor: &mut Editor) {
     // TODO: Insert multiple cursors (like Kakoune) when count > 1
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
+    // TODO: Switch to selection-level insert
     window.selection_mut().for_each_mut(|mut range| {
         range.move_to_line_start();
         for _ in 0..count {
@@ -359,6 +360,7 @@ fn insert_line_below(editor: &mut Editor) {
     // TODO: Insert multiple cursors (like Kakoune) when count > 1
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
+    // TODO: Switch to selection-level insert
     window.selection_mut().for_each_mut(|mut range| {
         range.move_onto_line_end();
         for _ in 0..count {
@@ -376,6 +378,7 @@ fn add_line_above(editor: &mut Editor) {
     }
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
+    // TODO: Switch to selection-level insert
     window.selection_mut().for_each_mut(|mut range| {
         let snapshot = range.save();
         range.move_to_line_start();
@@ -395,6 +398,7 @@ fn add_line_below(editor: &mut Editor) {
     }
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
+    // TODO: Switch to selection-level insert
     window.selection_mut().for_each_mut(|mut range| {
         let snapshot = range.save();
         range.move_onto_line_end();
