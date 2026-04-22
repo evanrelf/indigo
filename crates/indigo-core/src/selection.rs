@@ -147,11 +147,11 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
             .expect("Primary range index is always kept valid")
     }
 
-    pub fn for_each(&self, mut f: impl FnMut(Range<'_>)) {
-        for range_state in &self.state.ranges {
+    pub fn for_each(&self, mut f: impl FnMut(usize, Range<'_>)) {
+        for (i, range_state) in self.state.ranges.iter().enumerate() {
             let range = Range::new(&self.text, range_state)
                 .expect("Selection text and range state are always kept valid");
-            f(range);
+            f(i, range);
         }
     }
 

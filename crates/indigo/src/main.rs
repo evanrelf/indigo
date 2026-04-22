@@ -283,7 +283,9 @@ fn render_prompt(editor: &Editor, mut area: Rect, surface: &mut Surface) {
         ) {
             surface.set_style(
                 rect,
-                Style::default().fg(THEME.cursor_fg).bg(THEME.cursor_bg),
+                Style::default()
+                    .fg(THEME.primary_cursor_fg)
+                    .bg(THEME.primary_cursor_bg),
             );
         }
     } else if let Some(message) = &editor.message {
@@ -495,6 +497,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
+#[expect(clippy::similar_names)]
 fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
     let window = editor.focused_window();
 
@@ -504,7 +507,21 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let vertical_scroll = window.vertical_scroll();
 
-    window.selection().for_each(|range| {
+    window.selection().for_each(|i, range| {
+        let (range_bg, cursor_fg, cursor_bg) = if i == window.selection().state().primary_range {
+            (
+                THEME.primary_range_bg,
+                THEME.primary_cursor_fg,
+                THEME.primary_cursor_bg,
+            )
+        } else {
+            (
+                THEME.secondary_range_bg,
+                THEME.secondary_cursor_fg,
+                THEME.secondary_cursor_bg,
+            )
+        };
+
         let start_line = rope.byte_to_line_idx(range.start().byte_offset(), LINE_TYPE);
 
         let end_byte = range.end().byte_offset().saturating_sub(1);
@@ -550,23 +567,17 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
                     line_rect.width -= delta;
                 }
             }
-            surface.set_style(line_rect, Style::default().bg(THEME.range_bg));
+            surface.set_style(line_rect, Style::default().bg(range_bg));
         }
 
         #[expect(clippy::collapsible_else_if)]
         if range.is_backward() {
             if let Some(rect) = grapheme_area(range.head().byte_offset()) {
-                surface.set_style(
-                    rect,
-                    Style::default().fg(THEME.cursor_fg).bg(THEME.cursor_bg),
-                );
+                surface.set_style(rect, Style::default().fg(cursor_fg).bg(cursor_bg));
             }
         } else {
             if let Some(rect) = grapheme_area(range.head().byte_offset().saturating_sub(1)) {
-                surface.set_style(
-                    rect,
-                    Style::default().fg(THEME.cursor_fg).bg(THEME.cursor_bg),
-                );
+                surface.set_style(rect, Style::default().fg(cursor_fg).bg(cursor_bg));
             }
         }
     });
