@@ -10,6 +10,7 @@ use regex_cursor::engines::meta::Regex;
 use ropey::Rope;
 use std::{
     cmp::{max, min},
+    sync::Arc,
     thread,
 };
 use thiserror::Error;
@@ -239,12 +240,13 @@ impl<W: WrapMut> SelectionView<'_, W> {
             "this function relies on selection ranges' starts being sorted",
             // ...prior to it becoming a type-level invariant
         );
+        let text: Arc<str> = Arc::from(text);
         let mut ops = OperationSeq::new();
         let mut previous = 0;
         for range in &self.state.ranges {
             // TODO: Assert grapheme length is 1 (i.e. reduced)
             ops.retain(range.start().byte_offset - previous);
-            ops.insert(text);
+            ops.insert(Arc::clone(&text));
             previous = range.start().byte_offset;
         }
         ops.retain_rest(&self.text);

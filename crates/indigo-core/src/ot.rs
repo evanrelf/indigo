@@ -81,7 +81,9 @@ impl OperationSeq {
         }
     }
 
-    pub fn insert(&mut self, text: &str) {
+    pub fn insert(&mut self, text: impl Into<Arc<str>>) {
+        let text: Arc<str> = text.into();
+
         if text.is_empty() {
             return;
         }
@@ -91,10 +93,10 @@ impl OperationSeq {
         if let Some(Operation::Insert(last)) = self.ops.last_mut() {
             let mut s = String::with_capacity(last.len() + text.len());
             s.push_str(last);
-            s.push_str(text);
+            s.push_str(&text);
             *last = Arc::from(s);
         } else {
-            self.ops.push(Operation::Insert(Arc::from(text)));
+            self.ops.push(Operation::Insert(text));
         }
     }
 
@@ -102,7 +104,7 @@ impl OperationSeq {
         match op {
             Operation::Retain(n) => self.retain(n),
             Operation::Delete(n) => self.delete(n),
-            Operation::Insert(s) => self.insert(&s),
+            Operation::Insert(s) => self.insert(s),
         }
     }
 
@@ -132,7 +134,7 @@ impl OperationSeq {
 
                 // Insert from second: pass through, doesn't consume from first
                 (_, Some(Operation::Insert(s))) => {
-                    result.insert(s);
+                    result.insert(Arc::clone(s));
                     op2 = iter2.next();
                 }
 
@@ -171,13 +173,13 @@ impl OperationSeq {
 
                     if n == len1 {
                         // Second retains all of first's insert
-                        result.insert(s1);
+                        result.insert(Arc::clone(s1));
                         op1 = iter1.next();
                     } else {
                         // Second retains only part: split the insert
                         let before = Arc::from(&s1[..n]);
                         let after = Arc::from(&s1[n..]);
-                        result.insert(&before);
+                        result.insert(before);
                         *s1 = after;
                     }
 
@@ -281,7 +283,7 @@ impl OperationSeq {
                     let start = inverted.target_bytes;
                     let end = start + n;
                     let s = rope.slice(start..end).to_string();
-                    inverted.insert(&s);
+                    inverted.insert(s.as_str());
                 }
                 Operation::Insert(s) => inverted.delete(s.len()),
             }
@@ -656,7 +658,7 @@ mod tests {
                     let s: String = (0..len)
                         .map(|_| u.int_in_range(b'a'..=b'z').map(|b| char::from(b)))
                         .collect::<arbitrary::Result<_>>()?;
-                    ops.insert(&s);
+                    ops.insert(s.as_str());
 
                     // If we've consumed all source chars, we can stop
                     if remaining == 0 {
