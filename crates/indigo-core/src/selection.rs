@@ -2,7 +2,7 @@ use crate::{
     cursor::CursorState,
     ot::OperationSeq,
     range::{Range, RangeMut, RangeSnapshot, RangeState},
-    rope::RegexCursorInput,
+    rope::{RegexCursorInput, RopeExt as _},
     text::Text,
 };
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
@@ -276,6 +276,39 @@ impl<W: WrapMut> SelectionView<'_, W> {
         ops
     }
 
+    pub fn delete_before(&mut self) -> OperationSeq {
+        debug_assert!(
+            self.state
+                .ranges
+                .is_sorted_by_key(|range| range.start().byte_offset),
+            "this function relies on selection ranges' starts being sorted",
+            // ...prior to it becoming a type-level invariant
+        );
+        let mut ops = OperationSeq::new();
+        let mut previous = 0;
+        for range in &self.state.ranges {
+            let start = range.start().byte_offset;
+            if let Some(prev_boundary) = self.text.prev_grapheme_boundary(start)
+                && prev_boundary != start
+            {
+                ops.retain(prev_boundary - previous);
+                ops.delete(start - prev_boundary);
+                previous = start;
+            }
+        }
+        ops.retain_rest(&self.text);
+        self.text.apply(&ops).expect("Operations are well formed");
+        self.state.transform(&ops);
+        if self.snap_to_grapheme_boundaries() {
+            tracing::warn!("wasn't on grapheme boundary after");
+        }
+        for i in 0..self.state.ranges.len() {
+            let mut range = self.unchecked_get_mut(i).unwrap();
+            range.update_goal_column();
+        }
+        ops
+    }
+
     pub fn delete(&mut self) -> OperationSeq {
         debug_assert!(
             self.state
@@ -290,6 +323,39 @@ impl<W: WrapMut> SelectionView<'_, W> {
             ops.retain(range.start().byte_offset - previous);
             ops.delete(range.byte_length());
             previous = range.end().byte_offset;
+        }
+        ops.retain_rest(&self.text);
+        self.text.apply(&ops).expect("Operations are well formed");
+        self.state.transform(&ops);
+        if self.snap_to_grapheme_boundaries() {
+            tracing::warn!("wasn't on grapheme boundary after");
+        }
+        for i in 0..self.state.ranges.len() {
+            let mut range = self.unchecked_get_mut(i).unwrap();
+            range.update_goal_column();
+        }
+        ops
+    }
+
+    pub fn delete_after(&mut self) -> OperationSeq {
+        debug_assert!(
+            self.state
+                .ranges
+                .is_sorted_by_key(|range| range.start().byte_offset),
+            "this function relies on selection ranges' starts being sorted",
+            // ...prior to it becoming a type-level invariant
+        );
+        let mut ops = OperationSeq::new();
+        let mut previous = 0;
+        for range in &self.state.ranges {
+            let end = range.end().byte_offset;
+            if let Some(next_boundary) = self.text.next_grapheme_boundary(end)
+                && next_boundary != end
+            {
+                ops.retain(end - previous);
+                ops.delete(next_boundary - end);
+                previous = next_boundary;
+            }
         }
         ops.retain_rest(&self.text);
         self.text.apply(&ops).expect("Operations are well formed");

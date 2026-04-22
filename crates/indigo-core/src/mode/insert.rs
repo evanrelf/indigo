@@ -46,18 +46,14 @@ pub fn enter_insert_mode(editor: &mut Editor) {
 
 fn delete_before(editor: &mut Editor) {
     let mut window = editor.focused_window_mut();
-    window.selection_mut().for_each_mut(|mut range| {
-        range.delete_before();
-    });
+    window.selection_mut().delete_before();
     window.scroll_to_selection();
     editor.mode.set_count(None);
 }
 
 fn delete_after(editor: &mut Editor) {
     let mut window = editor.focused_window_mut();
-    window.selection_mut().for_each_mut(|mut range| {
-        range.delete_after();
-    });
+    window.selection_mut().delete_after();
     window.scroll_to_selection();
     editor.mode.set_count(None);
 }
