@@ -86,6 +86,13 @@ impl RangeState {
     }
 
     #[must_use]
+    pub fn byte_length(&self) -> usize {
+        let start = self.start().byte_offset;
+        let end = self.end().byte_offset;
+        end - start
+    }
+
+    #[must_use]
     pub fn is_touching(&self, other: &Self) -> bool {
         let self_start = self.start().byte_offset;
         let self_end = self.end().byte_offset;
@@ -250,9 +257,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 
     pub fn byte_length(&self) -> usize {
-        let start = self.start().byte_offset();
-        let end = self.end().byte_offset();
-        end - start
+        self.state.byte_length()
     }
 
     pub fn grapheme_length(&self) -> usize {
