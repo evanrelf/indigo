@@ -70,6 +70,8 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
                 }
             }
             _ if is(key, ",") => keep_primary(editor),
+            _ if is(key, "(") => rotate_primary_backward(editor),
+            _ if is(key, ")") => rotate_primary_forward(editor),
             _ if is(key, ";") => reduce(editor),
             _ if is(key, "<a-;>") => flip(editor),
             _ if is(key, "<a-:>") => flip_forward(editor),
@@ -207,6 +209,22 @@ fn flip_forward(editor: &mut Editor) {
 fn keep_primary(editor: &mut Editor) {
     let mut window = editor.focused_window_mut();
     window.selection_mut().keep_primary();
+    window.scroll_to_selection();
+    editor.mode.set_count(None);
+}
+
+fn rotate_primary_backward(editor: &mut Editor) {
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().rotate_primary_backward(count);
+    window.scroll_to_selection();
+    editor.mode.set_count(None);
+}
+
+fn rotate_primary_forward(editor: &mut Editor) {
+    let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().rotate_primary_forward(count);
     window.scroll_to_selection();
     editor.mode.set_count(None);
 }

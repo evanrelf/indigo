@@ -192,8 +192,8 @@ See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 - [ ] `<a-C>` (duplicate selections up)
 - [ ] `<a-k>` (keep matching selections)
 - [ ] `<a-K>` (clear matching selections)
-- [ ] `)` (rotate main selection forward)
-- [ ] `(` (rotate main selection backward)
+- [x] `)` (rotate main selection forward)
+- [x] `(` (rotate main selection backward)
 
 ### Object selection
 

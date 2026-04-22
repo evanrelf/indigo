@@ -198,6 +198,15 @@ impl<W: WrapMut> SelectionView<'_, W> {
         self.state.ranges.truncate(1);
     }
 
+    pub fn rotate_primary_forward(&mut self, count: usize) {
+        self.state.primary_range = (self.state.primary_range + count) % self.state.ranges.len();
+    }
+
+    pub fn rotate_primary_backward(&mut self, count: usize) {
+        let length = self.state.ranges.len();
+        self.state.primary_range = (self.state.primary_range + length - (count % length)) % length;
+    }
+
     pub fn select_regex(&mut self, regex: &Regex) -> bool {
         let mut ranges = Vec::new();
         for range in &self.state.ranges {
