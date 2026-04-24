@@ -2,7 +2,6 @@
 
 use crate::{
     editor::Editor,
-    event::{Event, KeyEvent},
     keymap::{Keymap, KeymapResult, keymap},
     mode::normal::enter_normal_mode,
 };
@@ -41,16 +40,24 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     }
 });
 
-pub fn handle_event_goto(editor: &mut Editor, event: &Event) -> bool {
-    match event {
-        Event::Key(KeyEvent { key, .. }) => match KEYMAP.get_keys(&[*key]) {
-            KeymapResult::Mapped(actions) => handle_actions_goto(editor, actions),
-            KeymapResult::Fallback(actions) => handle_actions_goto(editor, &actions),
-            KeymapResult::Unmapped | KeymapResult::Pending => {}
-        },
+pub fn handle_event_goto(editor: &mut Editor) -> bool {
+    match KEYMAP.get_keys(&editor.pending_keys) {
+        KeymapResult::Mapped(actions) => {
+            editor.pending_keys.clear();
+            handle_actions_goto(editor, actions);
+            enter_normal_mode(editor);
+        }
+        KeymapResult::Fallback(actions) => {
+            editor.pending_keys.clear();
+            handle_actions_goto(editor, &actions);
+            enter_normal_mode(editor);
+        }
+        KeymapResult::Unmapped => {
+            editor.pending_keys.clear();
+            enter_normal_mode(editor);
+        }
+        KeymapResult::Pending => {}
     }
-
-    enter_normal_mode(editor);
 
     true
 }

@@ -81,6 +81,8 @@ pub fn handle_event_prompt(editor: &mut Editor, event: &Event) -> bool {
         },
     }
 
+    editor.pending_keys.clear();
+
     handled
 }
 

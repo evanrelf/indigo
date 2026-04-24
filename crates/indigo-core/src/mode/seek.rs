@@ -62,6 +62,8 @@ pub fn handle_event_seek(editor: &mut Editor, event: &Event) -> bool {
 
     enter_normal_mode(editor);
 
+    editor.pending_keys.clear();
+
     true
 }
 

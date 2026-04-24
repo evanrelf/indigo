@@ -96,6 +96,8 @@ pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
         },
     }
 
+    editor.pending_keys.clear();
+
     handled
 }
 

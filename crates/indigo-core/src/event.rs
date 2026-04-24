@@ -35,12 +35,13 @@ pub fn handle_event(editor: &mut Editor, mut event: Event) -> anyhow::Result<boo
     #[expect(irrefutable_let_patterns)]
     if let Event::Key(KeyEvent { key, .. }) = &mut event {
         key.normalize();
+        editor.pending_keys.push(*key);
     }
 
     let handled = match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, &event),
         Mode::Seek(_) => handle_event_seek(editor, &event),
-        Mode::Goto => handle_event_goto(editor, &event),
+        Mode::Goto => handle_event_goto(editor),
         Mode::Insert(_) => handle_event_insert(editor, &event),
         Mode::Prompt(_) => handle_event_prompt(editor, &event),
     };

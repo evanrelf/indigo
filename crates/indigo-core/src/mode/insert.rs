@@ -28,6 +28,8 @@ pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
         },
     }
 
+    editor.pending_keys.clear();
+
     handled
 }
 

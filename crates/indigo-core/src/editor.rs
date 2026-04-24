@@ -1,6 +1,7 @@
 use crate::{
     buffer::{Buffer, BufferKey},
     fs::{Fs, NoFs},
+    key::Key,
     mode::Mode,
     selection::Selection,
     window::{Window, WindowKey, WindowMut, WindowState},
@@ -23,6 +24,7 @@ pub struct Editor {
     windows: SlotMap<WindowKey, WindowState>,
     focused_window: WindowKey,
     pub mode: Mode,
+    pub pending_keys: Vec<Key>,
     pub pwd: Option<Utf8PathBuf>,
     pub message: Option<Result<String, String>>,
     exit_code: Option<ExitCode>,
@@ -183,6 +185,7 @@ impl Default for Editor {
             windows,
             focused_window: window_key,
             mode: Mode::default(),
+            pending_keys: Vec::new(),
             pwd: None,
             message: None,
             exit_code: None,
