@@ -40,7 +40,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     }
 });
 
-pub fn handle_event(editor: &mut Editor) -> bool {
+pub fn handle_keys(editor: &mut Editor) -> bool {
     match KEYMAP.get_keys(&editor.pending_keys) {
         KeymapResult::Mapped(actions) => {
             editor.pending_keys.clear();

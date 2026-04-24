@@ -3,7 +3,6 @@
 use crate::{
     cursor::{Cursor, CursorMut, CursorState},
     editor::Editor,
-    event::Event,
     key::KeyCode,
     keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal},
@@ -99,7 +98,7 @@ impl State {
     }
 }
 
-pub fn handle_event(editor: &mut Editor, _event: &Event) -> bool {
+pub fn handle_keys(editor: &mut Editor) -> bool {
     match KEYMAP.get_keys(&editor.pending_keys) {
         KeymapResult::Mapped(actions) => {
             editor.pending_keys.clear();

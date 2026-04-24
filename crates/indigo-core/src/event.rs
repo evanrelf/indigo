@@ -35,12 +35,14 @@ pub fn handle_event(editor: &mut Editor, mut event: Event) -> anyhow::Result<boo
         editor.pending_keys.push(*key);
     }
 
-    let handled = match editor.mode {
-        Mode::Normal(_) => normal::handle_event(editor, &event),
-        Mode::Seek(_) => seek::handle_event(editor, &event),
-        Mode::Goto => goto::handle_event(editor),
-        Mode::Insert(_) => insert::handle_event(editor, &event),
-        Mode::Prompt(_) => prompt::handle_event(editor, &event),
+    let handled = match event {
+        Event::Key(_) => match editor.mode {
+            Mode::Normal(_) => normal::handle_keys(editor),
+            Mode::Seek(_) => seek::handle_keys(editor),
+            Mode::Goto => goto::handle_keys(editor),
+            Mode::Insert(_) => insert::handle_keys(editor),
+            Mode::Prompt(_) => prompt::handle_keys(editor),
+        },
     };
 
     Ok(handled)
