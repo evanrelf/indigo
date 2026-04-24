@@ -5,7 +5,7 @@ use crate::{
     event::Event,
     key::KeyCode,
     keymap::{Keymap, KeymapResult, keymap},
-    mode::{Mode, normal::enter_normal_mode},
+    mode::{Mode, normal},
 };
 use std::{num::NonZeroUsize, sync::LazyLock};
 
@@ -60,21 +60,21 @@ pub struct State {
     pub direction: SeekDirection,
 }
 
-pub fn handle_event_seek(editor: &mut Editor, _event: &Event) -> bool {
+pub fn handle_event(editor: &mut Editor, _event: &Event) -> bool {
     match KEYMAP.get_keys(&editor.pending_keys) {
         KeymapResult::Mapped(actions) => {
             editor.pending_keys.clear();
-            handle_actions_seek(editor, actions);
-            enter_normal_mode(editor);
+            handle_actions(editor, actions);
+            normal::enter(editor);
         }
         KeymapResult::Fallback(actions) => {
             editor.pending_keys.clear();
-            handle_actions_seek(editor, &actions);
-            enter_normal_mode(editor);
+            handle_actions(editor, &actions);
+            normal::enter(editor);
         }
         KeymapResult::Unmapped => {
             editor.pending_keys.clear();
-            enter_normal_mode(editor);
+            normal::enter(editor);
         }
         KeymapResult::Pending => {}
     }
@@ -82,7 +82,7 @@ pub fn handle_event_seek(editor: &mut Editor, _event: &Event) -> bool {
     true
 }
 
-pub fn enter_seek_mode(
+pub fn enter(
     editor: &mut Editor,
     select: SeekSelect,
     include: SeekInclude,
@@ -133,13 +133,13 @@ fn seek(editor: &mut Editor, byte: u8) {
     editor.mode.set_count(None);
 }
 
-pub fn handle_actions_seek(editor: &mut Editor, actions: &[Action]) {
+pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
     for action in actions {
-        handle_action_seek(editor, action);
+        handle_action(editor, action);
     }
 }
 
-pub fn handle_action_seek(editor: &mut Editor, action: &Action) {
+pub fn handle_action(editor: &mut Editor, action: &Action) {
     match action {
         Action::Seek(byte) => seek(editor, *byte),
     }

@@ -4,7 +4,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use indigo_core::{
-    mode::{insert, normal::enter_normal_mode, prompt},
+    mode::{insert, normal, prompt},
     prelude::*,
     window::{scroll_down, scroll_up},
 };
@@ -147,7 +147,7 @@ fn handle_event_seek(
         // TODO: Add mouse events to core, so it can handle this internally.
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
             (KeyModifiers::NONE, _) => {
-                enter_normal_mode(editor);
+                normal::enter(editor);
             }
             _ => handled = false,
         },
@@ -170,7 +170,7 @@ fn handle_event_goto(
         // TODO: Add mouse events to core, so it can handle this internally.
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
             (KeyModifiers::NONE, _) => {
-                enter_normal_mode(editor);
+                normal::enter(editor);
             }
             _ => handled = false,
         },

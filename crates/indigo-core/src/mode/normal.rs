@@ -7,9 +7,8 @@ use crate::{
     mode::{
         Mode,
         command::enter_command_mode,
-        insert::{self, enter_insert_mode},
-        prompt::enter_prompt_mode,
-        seek::{SeekDirection, SeekInclude, SeekSelect, enter_seek_mode},
+        insert, prompt,
+        seek::{self, SeekDirection, SeekInclude, SeekSelect},
     },
     rope::{LINE_TYPE, RopeExt as _},
     window::{
@@ -131,16 +130,16 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     }
 });
 
-pub fn handle_event_normal(editor: &mut Editor, _event: &Event) -> bool {
+pub fn handle_event(editor: &mut Editor, _event: &Event) -> bool {
     match KEYMAP.get_keys(&editor.pending_keys) {
         KeymapResult::Mapped(actions) => {
             editor.pending_keys.clear();
-            handle_actions_normal(editor, actions);
+            handle_actions(editor, actions);
             true
         }
         KeymapResult::Fallback(actions) => {
             editor.pending_keys.clear();
-            handle_actions_normal(editor, &actions);
+            handle_actions(editor, &actions);
             true
         }
         KeymapResult::Unmapped => {
@@ -151,7 +150,7 @@ pub fn handle_event_normal(editor: &mut Editor, _event: &Event) -> bool {
     }
 }
 
-pub fn enter_normal_mode(editor: &mut Editor) {
+pub fn enter(editor: &mut Editor) {
     editor.focused_buffer_mut().text.commit();
     editor.mode = Mode::Normal(State::default());
 }
@@ -344,7 +343,7 @@ fn select_all(editor: &mut Editor) {
 }
 
 fn select_regex(editor: &mut Editor) {
-    enter_prompt_mode(editor, "select", |editor, regex_str| {
+    prompt::enter(editor, "select", |editor, regex_str| {
         if let Ok(regex) = Regex::new(regex_str) {
             let matched = editor
                 .focused_window_mut()
@@ -497,13 +496,13 @@ fn goto_line(editor: &mut Editor) {
     editor.mode.set_count(None);
 }
 
-pub fn handle_actions_normal(editor: &mut Editor, actions: &[Action]) {
+pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
     for action in actions {
-        handle_action_normal(editor, action);
+        handle_action(editor, action);
     }
 }
 
-pub fn handle_action_normal(editor: &mut Editor, action: &Action) {
+pub fn handle_action(editor: &mut Editor, action: &Action) {
     match action {
         Action::AppendCountDigit(digit) => {
             let digit = usize::from(*digit);
@@ -511,16 +510,16 @@ pub fn handle_action_normal(editor: &mut Editor, action: &Action) {
             let new_count = NonZeroUsize::new(current.saturating_mul(10).saturating_add(digit));
             set_count(editor, new_count);
         }
-        Action::EnterNormalMode => enter_normal_mode(editor),
+        Action::EnterNormalMode => enter(editor),
         Action::EnterCommandMode => enter_command_mode(editor),
-        Action::EnterInsertMode => enter_insert_mode(editor),
+        Action::EnterInsertMode => insert::enter(editor),
         Action::EnterGotoMode => editor.mode = Mode::Goto,
         Action::EnterSeekMode {
             select,
             include,
             direction,
         } => {
-            enter_seek_mode(editor, *select, *include, *direction);
+            seek::enter(editor, *select, *include, *direction);
         }
         Action::InsertAfterHead => insert_after_head(editor),
         Action::InsertAtLineNonBlankStart => insert_at_line_non_blank_start(editor),

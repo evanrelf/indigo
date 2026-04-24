@@ -1,22 +1,22 @@
-use crate::{buffer::Buffer, editor::Editor, mode::prompt::enter_prompt_mode, window::WindowState};
+use crate::{buffer::Buffer, editor::Editor, mode::prompt, window::WindowState};
 use anyhow::anyhow;
 use camino::Utf8PathBuf;
 use std::sync::Arc;
 
 pub type Action = Command;
 
-pub fn handle_actions_command(editor: &mut Editor, actions: &[Action]) {
+pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
     for action in actions {
-        handle_action_command(editor, action);
+        handle_action(editor, action);
     }
 }
 
-pub fn handle_action_command(editor: &mut Editor, action: &Action) {
+pub fn handle_action(editor: &mut Editor, action: &Action) {
     handle_command(editor, action.clone());
 }
 
 pub fn enter_command_mode(editor: &mut Editor) {
-    enter_prompt_mode(editor, "", |editor, input| match parse_command(input) {
+    prompt::enter(editor, "", |editor, input| match parse_command(input) {
         Ok(command) => handle_command(editor, command),
         Err(error) => editor.message = Some(Err(error.to_string())),
     });

@@ -3,7 +3,7 @@
 use crate::{
     editor::Editor,
     keymap::{Keymap, KeymapResult, keymap},
-    mode::normal::enter_normal_mode,
+    mode::normal,
 };
 use std::sync::LazyLock;
 
@@ -40,21 +40,21 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     }
 });
 
-pub fn handle_event_goto(editor: &mut Editor) -> bool {
+pub fn handle_event(editor: &mut Editor) -> bool {
     match KEYMAP.get_keys(&editor.pending_keys) {
         KeymapResult::Mapped(actions) => {
             editor.pending_keys.clear();
-            handle_actions_goto(editor, actions);
-            enter_normal_mode(editor);
+            handle_actions(editor, actions);
+            normal::enter(editor);
         }
         KeymapResult::Fallback(actions) => {
             editor.pending_keys.clear();
-            handle_actions_goto(editor, &actions);
-            enter_normal_mode(editor);
+            handle_actions(editor, &actions);
+            normal::enter(editor);
         }
         KeymapResult::Unmapped => {
             editor.pending_keys.clear();
-            enter_normal_mode(editor);
+            normal::enter(editor);
         }
         KeymapResult::Pending => {}
     }
@@ -62,13 +62,13 @@ pub fn handle_event_goto(editor: &mut Editor) -> bool {
     true
 }
 
-pub fn handle_actions_goto(editor: &mut Editor, actions: &[Action]) {
+pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
     for action in actions {
-        handle_action_goto(editor, action);
+        handle_action(editor, action);
     }
 }
 
-pub fn handle_action_goto(editor: &mut Editor, action: &Action) {
+pub fn handle_action(editor: &mut Editor, action: &Action) {
     let mut window = editor.focused_window_mut();
 
     match action {

@@ -5,7 +5,7 @@ use crate::{
     event::Event,
     key::KeyCode,
     keymap::{Keymap, KeymapResult, keymap},
-    mode::{Mode, normal::enter_normal_mode},
+    mode::{Mode, normal},
 };
 use std::sync::LazyLock;
 
@@ -41,16 +41,16 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     }
 });
 
-pub fn handle_event_insert(editor: &mut Editor, _event: &Event) -> bool {
+pub fn handle_event(editor: &mut Editor, _event: &Event) -> bool {
     match KEYMAP.get_keys(&editor.pending_keys) {
         KeymapResult::Mapped(actions) => {
             editor.pending_keys.clear();
-            handle_actions_insert(editor, actions);
+            handle_actions(editor, actions);
             true
         }
         KeymapResult::Fallback(actions) => {
             editor.pending_keys.clear();
-            handle_actions_insert(editor, &actions);
+            handle_actions(editor, &actions);
             true
         }
         KeymapResult::Unmapped => {
@@ -61,7 +61,7 @@ pub fn handle_event_insert(editor: &mut Editor, _event: &Event) -> bool {
     }
 }
 
-pub fn enter_insert_mode(editor: &mut Editor) {
+pub fn enter(editor: &mut Editor) {
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
         return;
@@ -102,15 +102,15 @@ pub fn paste(editor: &mut Editor, text: &str) {
     editor.mode.set_count(None);
 }
 
-pub fn handle_actions_insert(editor: &mut Editor, actions: &[Action]) {
+pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
     for action in actions {
-        handle_action_insert(editor, action);
+        handle_action(editor, action);
     }
 }
 
-pub fn handle_action_insert(editor: &mut Editor, action: &Action) {
+pub fn handle_action(editor: &mut Editor, action: &Action) {
     match action {
-        Action::EnterNormalMode => enter_normal_mode(editor),
+        Action::EnterNormalMode => normal::enter(editor),
         Action::DeleteBefore => delete_before(editor),
         Action::DeleteAfter => delete_after(editor),
         Action::InsertChar(c) => insert_char(editor, *c),

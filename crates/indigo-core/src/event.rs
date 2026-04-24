@@ -1,10 +1,7 @@
 use crate::{
     editor::Editor,
     key::Key,
-    mode::{
-        Mode, goto::handle_event_goto, insert::handle_event_insert, normal::handle_event_normal,
-        prompt::handle_event_prompt, seek::handle_event_seek,
-    },
+    mode::{Mode, goto, insert, normal, prompt, seek},
 };
 
 #[cfg(any(feature = "arbitrary", test))]
@@ -39,11 +36,11 @@ pub fn handle_event(editor: &mut Editor, mut event: Event) -> anyhow::Result<boo
     }
 
     let handled = match editor.mode {
-        Mode::Normal(_) => handle_event_normal(editor, &event),
-        Mode::Seek(_) => handle_event_seek(editor, &event),
-        Mode::Goto => handle_event_goto(editor),
-        Mode::Insert(_) => handle_event_insert(editor, &event),
-        Mode::Prompt(_) => handle_event_prompt(editor, &event),
+        Mode::Normal(_) => normal::handle_event(editor, &event),
+        Mode::Seek(_) => seek::handle_event(editor, &event),
+        Mode::Goto => goto::handle_event(editor),
+        Mode::Insert(_) => insert::handle_event(editor, &event),
+        Mode::Prompt(_) => prompt::handle_event(editor, &event),
     };
 
     Ok(handled)

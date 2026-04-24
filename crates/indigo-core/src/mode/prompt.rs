@@ -6,7 +6,7 @@ use crate::{
     event::Event,
     key::KeyCode,
     keymap::{Keymap, KeymapResult, keymap},
-    mode::{Mode, normal::enter_normal_mode},
+    mode::{Mode, normal},
     text::Text,
 };
 use ropey::Rope;
@@ -99,16 +99,16 @@ impl State {
     }
 }
 
-pub fn handle_event_prompt(editor: &mut Editor, _event: &Event) -> bool {
+pub fn handle_event(editor: &mut Editor, _event: &Event) -> bool {
     match KEYMAP.get_keys(&editor.pending_keys) {
         KeymapResult::Mapped(actions) => {
             editor.pending_keys.clear();
-            handle_actions_prompt(editor, actions);
+            handle_actions(editor, actions);
             true
         }
         KeymapResult::Fallback(actions) => {
             editor.pending_keys.clear();
-            handle_actions_prompt(editor, &actions);
+            handle_actions(editor, &actions);
             true
         }
         KeymapResult::Unmapped => {
@@ -119,7 +119,7 @@ pub fn handle_event_prompt(editor: &mut Editor, _event: &Event) -> bool {
     }
 }
 
-pub fn enter_prompt_mode(
+pub fn enter(
     editor: &mut Editor,
     prompt: &'static str,
     handler: impl FnMut(&mut Editor, &str) + Send + 'static,
@@ -194,7 +194,7 @@ fn delete_before(editor: &mut Editor) {
         panic!("Not in prompt mode")
     };
     if prompt_mode.cursor().is_at_start() {
-        enter_normal_mode(editor);
+        normal::enter(editor);
     } else {
         prompt_mode.cursor_mut().delete_before();
     }
@@ -210,18 +210,18 @@ fn exec(editor: &mut Editor) {
         .take()
         .expect("Handler is always present");
     handler.lock().unwrap()(editor, &text);
-    enter_normal_mode(editor);
+    normal::enter(editor);
 }
 
-pub fn handle_actions_prompt(editor: &mut Editor, actions: &[Action]) {
+pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
     for action in actions {
-        handle_action_prompt(editor, action);
+        handle_action(editor, action);
     }
 }
 
-pub fn handle_action_prompt(editor: &mut Editor, action: &Action) {
+pub fn handle_action(editor: &mut Editor, action: &Action) {
     match action {
-        Action::EnterNormalMode => enter_normal_mode(editor),
+        Action::EnterNormalMode => normal::enter(editor),
         Action::MoveLeft => move_left(editor),
         Action::MoveRight => move_right(editor),
         Action::MoveToStart => move_to_start(editor),
