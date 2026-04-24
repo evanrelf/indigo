@@ -9,6 +9,19 @@ use crate::{
 use ropey::Rope;
 use std::sync::{Arc, Mutex};
 
+pub enum Action {
+    EnterNormalMode,
+    MoveLeft,
+    MoveRight,
+    MoveToStart,
+    MoveToEnd,
+    DeleteToStart,
+    DeleteToEnd,
+    DeleteBefore,
+    InsertChar(char),
+    Exec,
+}
+
 #[derive(Clone)]
 pub struct State {
     prompt: &'static str,

@@ -7,7 +7,7 @@ use crate::{
         command::enter_command_mode,
         insert::{self, enter_insert_mode},
         prompt::enter_prompt_mode,
-        seek::enter_seek_mode,
+        seek::{SeekDirection, SeekInclude, SeekSelect, enter_seek_mode},
     },
     rope::{LINE_TYPE, RopeExt as _},
     window::{
@@ -20,6 +20,50 @@ use std::{cmp::min, num::NonZeroUsize};
 #[derive(Clone, Default)]
 pub struct State {
     pub count: Option<NonZeroUsize>,
+}
+
+pub enum Action {
+    AppendCountDigit(u8),
+    EnterNormalMode,
+    EnterCommandMode,
+    EnterInsertMode,
+    EnterGotoMode,
+    EnterSeekMode {
+        select: SeekSelect,
+        include: SeekInclude,
+        direction: SeekDirection,
+    },
+    InsertAfterHead,
+    InsertAtLineNonBlankStart,
+    InsertAtLineEnd,
+    InsertLineAbove,
+    InsertLineBelow,
+    AddLineAbove,
+    AddLineBelow,
+    MoveLeft,
+    MoveRight,
+    MoveUp,
+    MoveDown,
+    ExtendLeft,
+    ExtendRight,
+    ExtendUp,
+    ExtendDown,
+    GotoLine,
+    KeepPrimary,
+    RotatePrimaryBackward,
+    RotatePrimaryForward,
+    Reduce,
+    Flip,
+    FlipForward,
+    SelectAll,
+    SelectRegex,
+    Delete,
+    Undo,
+    Redo,
+    ScrollHalfPageUp,
+    ScrollHalfPageDown,
+    ScrollFullPageUp,
+    ScrollFullPageDown,
 }
 
 pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {

@@ -6,6 +6,10 @@ use crate::{
 };
 use std::num::NonZeroUsize;
 
+pub enum Action {
+    Seek(u8),
+}
+
 #[derive(Clone, Copy)]
 pub enum SeekSelect {
     Move,

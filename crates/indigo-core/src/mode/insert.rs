@@ -8,6 +8,13 @@ use crate::{
 #[derive(Clone, Default)]
 pub struct State {}
 
+pub enum Action {
+    EnterNormalMode,
+    DeleteBefore,
+    DeleteAfter,
+    InsertChar(char),
+}
+
 pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
     let Mode::Insert(_insert_mode) = &editor.mode else {
         panic!("Not in insert mode")

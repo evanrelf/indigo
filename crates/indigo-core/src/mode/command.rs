@@ -3,6 +3,8 @@ use anyhow::anyhow;
 use camino::Utf8PathBuf;
 use std::sync::Arc;
 
+pub type Action = Command;
+
 pub fn enter_command_mode(editor: &mut Editor) {
     enter_prompt_mode(editor, "", |editor, input| match parse_command(input) {
         Ok(command) => handle_command(editor, command),
@@ -11,7 +13,7 @@ pub fn enter_command_mode(editor: &mut Editor) {
 }
 
 #[derive(Clone)]
-enum Command {
+pub enum Command {
     Echo { error: bool, message: Vec<String> },
     Edit { path: Utf8PathBuf },
     Write { path: Option<Utf8PathBuf> },
