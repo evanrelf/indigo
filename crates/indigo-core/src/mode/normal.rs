@@ -17,11 +17,16 @@ use crate::{
 use regex_cursor::engines::meta::Regex;
 use std::{cmp::min, num::NonZeroUsize, sync::LazyLock};
 
+#[cfg(any(feature = "arbitrary", test))]
+use arbitrary::Arbitrary;
+
 #[derive(Clone, Default)]
 pub struct State {
     pub count: Option<NonZeroUsize>,
 }
 
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[derive(Debug)]
 pub enum Action {
     AppendCountDigit(u8),
     EnterNormalMode,

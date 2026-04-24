@@ -11,6 +11,9 @@ use crate::{
 use ropey::Rope;
 use std::sync::{Arc, LazyLock, Mutex};
 
+#[cfg(any(feature = "arbitrary", test))]
+use arbitrary::Arbitrary;
+
 #[derive(Clone)]
 pub struct State {
     prompt: &'static str,
@@ -60,6 +63,8 @@ impl State {
     }
 }
 
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[derive(Debug)]
 pub enum Action {
     EnterNormalMode,
     MoveLeft,

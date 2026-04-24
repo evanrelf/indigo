@@ -3,10 +3,14 @@ use anyhow::anyhow;
 use camino::Utf8PathBuf;
 use std::sync::Arc;
 
+#[cfg(any(feature = "arbitrary", test))]
+use arbitrary::Arbitrary;
+
 pub type Action = Command;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Command {
+    Nop,
     Echo { error: bool, message: Vec<String> },
     Edit { path: Utf8PathBuf },
     Write { path: Option<Utf8PathBuf> },
@@ -15,6 +19,14 @@ pub enum Command {
     WriteQuit { exit_code: Option<u8> },
     Readonly,
     Panic,
+}
+
+#[cfg(any(feature = "arbitrary", test))]
+impl<'a> Arbitrary<'a> for Command {
+    fn arbitrary(_u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        // TODO: Uhhh I don't know what's most useful here
+        Ok(Self::Nop)
+    }
 }
 
 pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
@@ -113,6 +125,7 @@ fn parse_command(command: &str) -> anyhow::Result<Command> {
 
 fn handle_command(editor: &mut Editor, command: Command) {
     match command {
+        Command::Nop => {}
         Command::Echo { error, message } => {
             if error {
                 editor.message = Some(Err(message.join(" ")));

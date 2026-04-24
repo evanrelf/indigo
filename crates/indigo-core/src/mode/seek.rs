@@ -8,19 +8,25 @@ use crate::{
 };
 use std::{num::NonZeroUsize, sync::LazyLock};
 
-#[derive(Clone, Copy)]
+#[cfg(any(feature = "arbitrary", test))]
+use arbitrary::Arbitrary;
+
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[derive(Clone, Copy, Debug)]
 pub enum SeekSelect {
     Move,
     Extend,
 }
 
-#[derive(Clone, Copy)]
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[derive(Clone, Copy, Debug)]
 pub enum SeekInclude {
     Until,
     Onto,
 }
 
-#[derive(Clone, Copy)]
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[derive(Clone, Copy, Debug)]
 pub enum SeekDirection {
     Prev,
     Next,
@@ -37,6 +43,8 @@ pub struct State {
     pub direction: SeekDirection,
 }
 
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[derive(Debug)]
 pub enum Action {
     Seek(u8),
 }
