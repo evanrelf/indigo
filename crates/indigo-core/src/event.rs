@@ -1,7 +1,7 @@
 use crate::{
     editor::Editor,
     key::Key,
-    mode::{Mode, goto, insert, normal, prompt, seek},
+    mode::{Mode, insert, normal, prompt, seek},
 };
 
 #[cfg(any(feature = "arbitrary", test))]
@@ -39,7 +39,6 @@ pub fn handle_event(editor: &mut Editor, mut event: Event) -> anyhow::Result<boo
         Event::Key(_) => match editor.mode {
             Mode::Normal(_) => normal::handle_keys(editor),
             Mode::Seek(_) => seek::handle_keys(editor),
-            Mode::Goto => goto::handle_keys(editor),
             Mode::Insert(_) => insert::handle_keys(editor),
             Mode::Prompt(_) => prompt::handle_keys(editor),
         },

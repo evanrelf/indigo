@@ -59,7 +59,6 @@ pub fn handle_event(editor: &mut Editor, areas: Areas, event: TerminalEvent) -> 
     let _handled = match editor.mode {
         Mode::Normal(_) => handle_event_normal(editor, areas, event),
         Mode::Seek(_) => handle_event_seek(editor, areas, event)?,
-        Mode::Goto => handle_event_goto(editor, areas, event)?,
         Mode::Insert(_) => handle_event_insert(editor, areas, event),
         Mode::Prompt(_) => handle_event_prompt(editor, areas, event)?,
     };
@@ -137,29 +136,6 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
 #[expect(clippy::needless_pass_by_value)]
 #[expect(clippy::unnecessary_wraps)]
 fn handle_event_seek(
-    editor: &mut Editor,
-    _areas: Areas,
-    event: TerminalEvent,
-) -> anyhow::Result<bool> {
-    let mut handled = true;
-
-    match event {
-        // TODO: Add mouse events to core, so it can handle this internally.
-        TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, _) => {
-                normal::enter(editor);
-            }
-            _ => handled = false,
-        },
-        _ => handled = false,
-    }
-
-    Ok(handled)
-}
-
-#[expect(clippy::needless_pass_by_value)]
-#[expect(clippy::unnecessary_wraps)]
-fn handle_event_goto(
     editor: &mut Editor,
     _areas: Areas,
     event: TerminalEvent,

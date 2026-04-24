@@ -222,7 +222,6 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
                 (Extend, Onto, Next) => "extend onto next",
             }
         }
-        Mode::Goto => "goto",
         Mode::Insert(_) => "insert",
         Mode::Prompt(_) => "prompt",
     };

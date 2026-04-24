@@ -27,7 +27,6 @@ pub enum Action {
     EnterNormalMode,
     EnterCommandMode,
     EnterInsertMode,
-    EnterGotoMode,
     EnterSeekMode {
         select: SeekSelect,
         include: SeekInclude,
@@ -48,7 +47,19 @@ pub enum Action {
     ExtendRight,
     ExtendUp,
     ExtendDown,
-    GotoLine,
+    GotoMoveToLine,
+    GotoMoveToStart,
+    GotoExtendToStart,
+    GotoMoveToBottom,
+    GotoExtendToBottom,
+    GotoMoveToEnd,
+    GotoExtendToEnd,
+    GotoMoveToLineStart,
+    GotoExtendToLineStart,
+    GotoMoveToLineNonBlankStart,
+    GotoExtendToLineNonBlankStart,
+    GotoMoveUntilLineEnd,
+    GotoExtendUntilLineEnd,
     KeepPrimary,
     RotatePrimaryBackward,
     RotatePrimaryForward,
@@ -105,7 +116,18 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "f" => vec![EnterSeekMode { select: Move, include: Onto, direction: Next }],
         "F" => vec![EnterSeekMode { select: Extend, include: Onto, direction: Next }],
         // TODO: With a count, `g` runs `GotoLine` instead of entering goto mode.
-        "g" => vec![EnterGotoMode],
+        "gk" => vec![GotoMoveToStart],
+        "gK" => vec![GotoExtendToStart],
+        "gj" => vec![GotoMoveToBottom],
+        "gJ" => vec![GotoExtendToBottom],
+        "ge" => vec![GotoMoveToEnd],
+        "gE" => vec![GotoExtendToEnd],
+        "gh" => vec![GotoMoveToLineStart],
+        "gH" => vec![GotoExtendToLineStart],
+        "gi" => vec![GotoMoveToLineNonBlankStart],
+        "gI" => vec![GotoExtendToLineNonBlankStart],
+        "gl" => vec![GotoMoveUntilLineEnd],
+        "gL" => vec![GotoExtendUntilLineEnd],
         "," => vec![KeepPrimary],
         "(" => vec![RotatePrimaryBackward],
         ")" => vec![RotatePrimaryForward],
@@ -477,7 +499,7 @@ fn add_line_below(editor: &mut Editor) {
     editor.mode.set_count(None);
 }
 
-fn goto_line(editor: &mut Editor) {
+fn goto_move_to_line(editor: &mut Editor) {
     let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     let rope = window.buffer().text.rope().clone();
@@ -492,6 +514,102 @@ fn goto_line(editor: &mut Editor) {
         .selection_mut()
         .for_each_mut(|mut range| range.move_to(byte_offset));
     window.scroll_to_selection();
+    editor.mode.set_count(None);
+}
+
+fn goto_move_to_start(editor: &mut Editor) {
+    editor
+        .focused_window_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| range.move_to_start());
+    editor.focused_window_mut().scroll_to_selection();
+}
+
+fn goto_extend_to_start(editor: &mut Editor) {
+    editor
+        .focused_window_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| range.extend_to_start());
+    editor.focused_window_mut().scroll_to_selection();
+}
+
+fn goto_move_to_bottom(editor: &mut Editor) {
+    editor
+        .focused_window_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| range.move_to_bottom());
+    editor.focused_window_mut().scroll_to_selection();
+}
+
+fn goto_extend_to_bottom(editor: &mut Editor) {
+    editor
+        .focused_window_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| range.extend_to_bottom());
+    editor.focused_window_mut().scroll_to_selection();
+}
+
+fn goto_move_to_end(editor: &mut Editor) {
+    editor
+        .focused_window_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| range.move_to_end());
+    editor.focused_window_mut().scroll_to_selection();
+}
+
+fn goto_extend_to_end(editor: &mut Editor) {
+    editor
+        .focused_window_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| range.extend_to_end());
+    editor.focused_window_mut().scroll_to_selection();
+}
+
+fn goto_move_to_line_start(editor: &mut Editor) {
+    editor
+        .focused_window_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| range.move_to_line_start());
+    editor.mode.set_count(None);
+}
+
+fn goto_extend_to_line_start(editor: &mut Editor) {
+    editor
+        .focused_window_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| range.extend_to_line_start());
+    editor.mode.set_count(None);
+}
+
+fn goto_move_to_line_non_blank_start(editor: &mut Editor) {
+    editor
+        .focused_window_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| range.move_to_line_non_blank_start());
+    editor.mode.set_count(None);
+}
+
+fn goto_extend_to_line_non_blank_start(editor: &mut Editor) {
+    editor
+        .focused_window_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| range.extend_to_line_non_blank_start());
+    editor.mode.set_count(None);
+}
+
+fn goto_move_until_line_end(editor: &mut Editor) {
+    editor
+        .focused_window_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| range.move_until_line_end());
+    editor.mode.set_count(None);
+}
+
+fn goto_extend_until_line_end(editor: &mut Editor) {
+    editor
+        .focused_window_mut()
+        .selection_mut()
+        .for_each_mut(|mut range| range.extend_until_line_end());
     editor.mode.set_count(None);
 }
 
@@ -512,7 +630,6 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
         Action::EnterNormalMode => enter(editor),
         Action::EnterCommandMode => enter_command_mode(editor),
         Action::EnterInsertMode => insert::enter(editor),
-        Action::EnterGotoMode => editor.mode = Mode::Goto,
         Action::EnterSeekMode {
             select,
             include,
@@ -535,7 +652,19 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
         Action::ExtendRight => extend_right(editor),
         Action::ExtendUp => extend_up(editor),
         Action::ExtendDown => extend_down(editor),
-        Action::GotoLine => goto_line(editor),
+        Action::GotoMoveToLine => goto_move_to_line(editor),
+        Action::GotoMoveToStart => goto_move_to_start(editor),
+        Action::GotoExtendToStart => goto_extend_to_start(editor),
+        Action::GotoMoveToBottom => goto_move_to_bottom(editor),
+        Action::GotoExtendToBottom => goto_extend_to_bottom(editor),
+        Action::GotoMoveToEnd => goto_move_to_end(editor),
+        Action::GotoExtendToEnd => goto_extend_to_end(editor),
+        Action::GotoMoveToLineStart => goto_move_to_line_start(editor),
+        Action::GotoExtendToLineStart => goto_extend_to_line_start(editor),
+        Action::GotoMoveToLineNonBlankStart => goto_move_to_line_non_blank_start(editor),
+        Action::GotoExtendToLineNonBlankStart => goto_extend_to_line_non_blank_start(editor),
+        Action::GotoMoveUntilLineEnd => goto_move_until_line_end(editor),
+        Action::GotoExtendUntilLineEnd => goto_extend_until_line_end(editor),
         Action::KeepPrimary => keep_primary(editor),
         Action::RotatePrimaryBackward => rotate_primary_backward(editor),
         Action::RotatePrimaryForward => rotate_primary_forward(editor),

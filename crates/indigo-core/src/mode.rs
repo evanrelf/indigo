@@ -1,5 +1,4 @@
 pub mod command;
-pub mod goto;
 pub mod insert;
 pub mod normal;
 pub mod prompt;
@@ -16,7 +15,6 @@ pub enum Mode {
     Prompt(prompt::State),
     // TODO: Replace these with multi-key mappings in normal mode
     Seek(seek::State),
-    Goto,
 }
 
 impl Mode {
