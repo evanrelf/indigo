@@ -1,8 +1,5 @@
 # Todo
 
-- Turn action functions into `Action` enum (actions as data)
-- Use `Keymap` (keymap as data)
-- Store pending keys in `Editor`
 - Create `Mode` (mode as data)
 - Get rid of goto, seek, and prompt modes (keep only normal and insert) in favor
   of multi-key mappings
