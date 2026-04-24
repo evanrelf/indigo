@@ -5,6 +5,18 @@ use std::sync::Arc;
 
 pub type Action = Command;
 
+#[derive(Clone)]
+pub enum Command {
+    Echo { error: bool, message: Vec<String> },
+    Edit { path: Utf8PathBuf },
+    Write { path: Option<Utf8PathBuf> },
+    Quit { exit_code: Option<u8> },
+    QuitForce { exit_code: Option<u8> },
+    WriteQuit { exit_code: Option<u8> },
+    Readonly,
+    Panic,
+}
+
 pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
     for action in actions {
         handle_action(editor, action);
@@ -20,18 +32,6 @@ pub fn enter_command_mode(editor: &mut Editor) {
         Ok(command) => handle_command(editor, command),
         Err(error) => editor.message = Some(Err(error.to_string())),
     });
-}
-
-#[derive(Clone)]
-pub enum Command {
-    Echo { error: bool, message: Vec<String> },
-    Edit { path: Utf8PathBuf },
-    Write { path: Option<Utf8PathBuf> },
-    Quit { exit_code: Option<u8> },
-    QuitForce { exit_code: Option<u8> },
-    WriteQuit { exit_code: Option<u8> },
-    Readonly,
-    Panic,
 }
 
 fn parse_command(command: &str) -> anyhow::Result<Command> {

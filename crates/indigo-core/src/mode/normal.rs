@@ -151,6 +151,76 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     }
 });
 
+pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
+    for action in actions {
+        handle_action(editor, action);
+    }
+}
+
+pub fn handle_action(editor: &mut Editor, action: &Action) {
+    match action {
+        Action::AppendCountDigit(digit) => {
+            let digit = usize::from(*digit);
+            let current = editor.mode.count().map_or(0, |count| usize::from(count));
+            let new_count = NonZeroUsize::new(current.saturating_mul(10).saturating_add(digit));
+            set_count(editor, new_count);
+        }
+        Action::EnterNormalMode => enter(editor),
+        Action::EnterCommandMode => enter_command_mode(editor),
+        Action::EnterInsertMode => insert::enter(editor),
+        Action::EnterSeekMode {
+            select,
+            include,
+            direction,
+        } => {
+            seek::enter(editor, *select, *include, *direction);
+        }
+        Action::InsertAfterHead => insert_after_head(editor),
+        Action::InsertAtLineNonBlankStart => insert_at_line_non_blank_start(editor),
+        Action::InsertAtLineEnd => insert_at_line_end(editor),
+        Action::InsertLineAbove => insert_line_above(editor),
+        Action::InsertLineBelow => insert_line_below(editor),
+        Action::AddLineAbove => add_line_above(editor),
+        Action::AddLineBelow => add_line_below(editor),
+        Action::MoveLeft => move_left(editor),
+        Action::MoveRight => move_right(editor),
+        Action::MoveUp => move_up(editor),
+        Action::MoveDown => move_down(editor),
+        Action::ExtendLeft => extend_left(editor),
+        Action::ExtendRight => extend_right(editor),
+        Action::ExtendUp => extend_up(editor),
+        Action::ExtendDown => extend_down(editor),
+        Action::GotoMoveToLine => goto_move_to_line(editor),
+        Action::GotoMoveToStart => goto_move_to_start(editor),
+        Action::GotoExtendToStart => goto_extend_to_start(editor),
+        Action::GotoMoveToBottom => goto_move_to_bottom(editor),
+        Action::GotoExtendToBottom => goto_extend_to_bottom(editor),
+        Action::GotoMoveToEnd => goto_move_to_end(editor),
+        Action::GotoExtendToEnd => goto_extend_to_end(editor),
+        Action::GotoMoveToLineStart => goto_move_to_line_start(editor),
+        Action::GotoExtendToLineStart => goto_extend_to_line_start(editor),
+        Action::GotoMoveToLineNonBlankStart => goto_move_to_line_non_blank_start(editor),
+        Action::GotoExtendToLineNonBlankStart => goto_extend_to_line_non_blank_start(editor),
+        Action::GotoMoveUntilLineEnd => goto_move_until_line_end(editor),
+        Action::GotoExtendUntilLineEnd => goto_extend_until_line_end(editor),
+        Action::KeepPrimary => keep_primary(editor),
+        Action::RotatePrimaryBackward => rotate_primary_backward(editor),
+        Action::RotatePrimaryForward => rotate_primary_forward(editor),
+        Action::Reduce => reduce(editor),
+        Action::Flip => flip(editor),
+        Action::FlipForward => flip_forward(editor),
+        Action::SelectAll => select_all(editor),
+        Action::SelectRegex => select_regex(editor),
+        Action::Delete => delete(editor),
+        Action::Undo => undo(editor),
+        Action::Redo => redo(editor),
+        Action::ScrollHalfPageUp => scroll_half_page_up(editor),
+        Action::ScrollHalfPageDown => scroll_half_page_down(editor),
+        Action::ScrollFullPageUp => scroll_full_page_up(editor),
+        Action::ScrollFullPageDown => scroll_full_page_down(editor),
+    }
+}
+
 pub fn handle_keys(editor: &mut Editor) -> bool {
     match KEYMAP.get_keys(&editor.pending_keys) {
         KeymapResult::Mapped(actions) => {
@@ -611,74 +681,4 @@ fn goto_extend_until_line_end(editor: &mut Editor) {
         .selection_mut()
         .for_each_mut(|mut range| range.extend_until_line_end());
     editor.mode.set_count(None);
-}
-
-pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
-    for action in actions {
-        handle_action(editor, action);
-    }
-}
-
-pub fn handle_action(editor: &mut Editor, action: &Action) {
-    match action {
-        Action::AppendCountDigit(digit) => {
-            let digit = usize::from(*digit);
-            let current = editor.mode.count().map_or(0, |count| usize::from(count));
-            let new_count = NonZeroUsize::new(current.saturating_mul(10).saturating_add(digit));
-            set_count(editor, new_count);
-        }
-        Action::EnterNormalMode => enter(editor),
-        Action::EnterCommandMode => enter_command_mode(editor),
-        Action::EnterInsertMode => insert::enter(editor),
-        Action::EnterSeekMode {
-            select,
-            include,
-            direction,
-        } => {
-            seek::enter(editor, *select, *include, *direction);
-        }
-        Action::InsertAfterHead => insert_after_head(editor),
-        Action::InsertAtLineNonBlankStart => insert_at_line_non_blank_start(editor),
-        Action::InsertAtLineEnd => insert_at_line_end(editor),
-        Action::InsertLineAbove => insert_line_above(editor),
-        Action::InsertLineBelow => insert_line_below(editor),
-        Action::AddLineAbove => add_line_above(editor),
-        Action::AddLineBelow => add_line_below(editor),
-        Action::MoveLeft => move_left(editor),
-        Action::MoveRight => move_right(editor),
-        Action::MoveUp => move_up(editor),
-        Action::MoveDown => move_down(editor),
-        Action::ExtendLeft => extend_left(editor),
-        Action::ExtendRight => extend_right(editor),
-        Action::ExtendUp => extend_up(editor),
-        Action::ExtendDown => extend_down(editor),
-        Action::GotoMoveToLine => goto_move_to_line(editor),
-        Action::GotoMoveToStart => goto_move_to_start(editor),
-        Action::GotoExtendToStart => goto_extend_to_start(editor),
-        Action::GotoMoveToBottom => goto_move_to_bottom(editor),
-        Action::GotoExtendToBottom => goto_extend_to_bottom(editor),
-        Action::GotoMoveToEnd => goto_move_to_end(editor),
-        Action::GotoExtendToEnd => goto_extend_to_end(editor),
-        Action::GotoMoveToLineStart => goto_move_to_line_start(editor),
-        Action::GotoExtendToLineStart => goto_extend_to_line_start(editor),
-        Action::GotoMoveToLineNonBlankStart => goto_move_to_line_non_blank_start(editor),
-        Action::GotoExtendToLineNonBlankStart => goto_extend_to_line_non_blank_start(editor),
-        Action::GotoMoveUntilLineEnd => goto_move_until_line_end(editor),
-        Action::GotoExtendUntilLineEnd => goto_extend_until_line_end(editor),
-        Action::KeepPrimary => keep_primary(editor),
-        Action::RotatePrimaryBackward => rotate_primary_backward(editor),
-        Action::RotatePrimaryForward => rotate_primary_forward(editor),
-        Action::Reduce => reduce(editor),
-        Action::Flip => flip(editor),
-        Action::FlipForward => flip_forward(editor),
-        Action::SelectAll => select_all(editor),
-        Action::SelectRegex => select_regex(editor),
-        Action::Delete => delete(editor),
-        Action::Undo => undo(editor),
-        Action::Redo => redo(editor),
-        Action::ScrollHalfPageUp => scroll_half_page_up(editor),
-        Action::ScrollHalfPageDown => scroll_half_page_down(editor),
-        Action::ScrollFullPageUp => scroll_full_page_up(editor),
-        Action::ScrollFullPageDown => scroll_full_page_down(editor),
-    }
 }

@@ -40,6 +40,21 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     }
 });
 
+pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
+    for action in actions {
+        handle_action(editor, action);
+    }
+}
+
+pub fn handle_action(editor: &mut Editor, action: &Action) {
+    match action {
+        Action::EnterNormalMode => normal::enter(editor),
+        Action::DeleteBefore => delete_before(editor),
+        Action::DeleteAfter => delete_after(editor),
+        Action::InsertChar(c) => insert_char(editor, *c),
+    }
+}
+
 pub fn handle_keys(editor: &mut Editor) -> bool {
     match KEYMAP.get_keys(&editor.pending_keys) {
         KeymapResult::Mapped(actions) => {
@@ -99,19 +114,4 @@ pub fn paste(editor: &mut Editor, text: &str) {
     window.selection_mut().insert(text);
     window.scroll_to_selection();
     editor.mode.set_count(None);
-}
-
-pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
-    for action in actions {
-        handle_action(editor, action);
-    }
-}
-
-pub fn handle_action(editor: &mut Editor, action: &Action) {
-    match action {
-        Action::EnterNormalMode => normal::enter(editor),
-        Action::DeleteBefore => delete_before(editor),
-        Action::DeleteAfter => delete_after(editor),
-        Action::InsertChar(c) => insert_char(editor, *c),
-    }
 }

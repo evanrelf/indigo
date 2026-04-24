@@ -8,28 +8,6 @@ use crate::{
 };
 use std::{num::NonZeroUsize, sync::LazyLock};
 
-pub enum Action {
-    Seek(u8),
-}
-
-pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
-    use Action::*;
-    keymap! { Vec<Action>;
-        "<ret>" => vec![Seek(b'\n')],
-        "<tab>" => vec![Seek(b'\t')],
-        keys => {
-            if let [key] = keys
-                && key.modifiers.is_empty()
-                && let KeyCode::Char(c) = key.code
-            {
-                KeymapResult::Fallback(vec![Seek(c)])
-            } else {
-                KeymapResult::Unmapped
-            }
-        }
-    }
-});
-
 #[derive(Clone, Copy)]
 pub enum SeekSelect {
     Move,
@@ -57,6 +35,40 @@ pub struct State {
     pub include: SeekInclude,
     /// Seek forward or backward?
     pub direction: SeekDirection,
+}
+
+pub enum Action {
+    Seek(u8),
+}
+
+pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
+    use Action::*;
+    keymap! { Vec<Action>;
+        "<ret>" => vec![Seek(b'\n')],
+        "<tab>" => vec![Seek(b'\t')],
+        keys => {
+            if let [key] = keys
+                && key.modifiers.is_empty()
+                && let KeyCode::Char(c) = key.code
+            {
+                KeymapResult::Fallback(vec![Seek(c)])
+            } else {
+                KeymapResult::Unmapped
+            }
+        }
+    }
+});
+
+pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
+    for action in actions {
+        handle_action(editor, action);
+    }
+}
+
+pub fn handle_action(editor: &mut Editor, action: &Action) {
+    match action {
+        Action::Seek(byte) => seek(editor, *byte),
+    }
 }
 
 pub fn handle_keys(editor: &mut Editor) -> bool {
@@ -130,16 +142,4 @@ fn seek(editor: &mut Editor, byte: u8) {
 
     window.scroll_to_selection();
     editor.mode.set_count(None);
-}
-
-pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
-    for action in actions {
-        handle_action(editor, action);
-    }
-}
-
-pub fn handle_action(editor: &mut Editor, action: &Action) {
-    match action {
-        Action::Seek(byte) => seek(editor, *byte),
-    }
 }

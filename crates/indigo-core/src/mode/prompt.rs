@@ -11,44 +11,6 @@ use crate::{
 use ropey::Rope;
 use std::sync::{Arc, LazyLock, Mutex};
 
-pub enum Action {
-    EnterNormalMode,
-    MoveLeft,
-    MoveRight,
-    MoveToStart,
-    MoveToEnd,
-    DeleteToStart,
-    DeleteToEnd,
-    DeleteBefore,
-    InsertChar(char),
-    Exec,
-}
-
-pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
-    use Action::*;
-    keymap! { Vec<Action>;
-        "<esc>" => vec![EnterNormalMode],
-        "<c-b>" => vec![MoveLeft],
-        "<c-f>" => vec![MoveRight],
-        "<c-a>" => vec![MoveToStart],
-        "<c-e>" => vec![MoveToEnd],
-        "<c-u>" => vec![DeleteToStart],
-        "<c-k>" => vec![DeleteToEnd],
-        "<bs>" => vec![DeleteBefore],
-        "<ret>" => vec![Exec],
-        keys => {
-            if let [key] = keys
-                && key.modifiers.is_empty()
-                && let KeyCode::Char(c) = key.code
-            {
-                KeymapResult::Fallback(vec![InsertChar(char::from(c))])
-            } else {
-                KeymapResult::Unmapped
-            }
-        }
-    }
-});
-
 #[derive(Clone)]
 pub struct State {
     prompt: &'static str,
@@ -95,6 +57,65 @@ impl State {
         CursorMut::new(&mut self.text, &mut self.cursor)
             .expect("Command mode text and cursor state are always kept valid")
             .on_drop(|cursor| cursor.assert_invariants().unwrap())
+    }
+}
+
+pub enum Action {
+    EnterNormalMode,
+    MoveLeft,
+    MoveRight,
+    MoveToStart,
+    MoveToEnd,
+    DeleteToStart,
+    DeleteToEnd,
+    DeleteBefore,
+    InsertChar(char),
+    Exec,
+}
+
+pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
+    use Action::*;
+    keymap! { Vec<Action>;
+        "<esc>" => vec![EnterNormalMode],
+        "<c-b>" => vec![MoveLeft],
+        "<c-f>" => vec![MoveRight],
+        "<c-a>" => vec![MoveToStart],
+        "<c-e>" => vec![MoveToEnd],
+        "<c-u>" => vec![DeleteToStart],
+        "<c-k>" => vec![DeleteToEnd],
+        "<bs>" => vec![DeleteBefore],
+        "<ret>" => vec![Exec],
+        keys => {
+            if let [key] = keys
+                && key.modifiers.is_empty()
+                && let KeyCode::Char(c) = key.code
+            {
+                KeymapResult::Fallback(vec![InsertChar(char::from(c))])
+            } else {
+                KeymapResult::Unmapped
+            }
+        }
+    }
+});
+
+pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
+    for action in actions {
+        handle_action(editor, action);
+    }
+}
+
+pub fn handle_action(editor: &mut Editor, action: &Action) {
+    match action {
+        Action::EnterNormalMode => normal::enter(editor),
+        Action::MoveLeft => move_left(editor),
+        Action::MoveRight => move_right(editor),
+        Action::MoveToStart => move_to_start(editor),
+        Action::MoveToEnd => move_to_end(editor),
+        Action::DeleteToStart => delete_to_start(editor),
+        Action::DeleteToEnd => delete_to_end(editor),
+        Action::DeleteBefore => delete_before(editor),
+        Action::InsertChar(c) => insert_char(editor, *c),
+        Action::Exec => exec(editor),
     }
 }
 
@@ -210,25 +231,4 @@ fn exec(editor: &mut Editor) {
         .expect("Handler is always present");
     handler.lock().unwrap()(editor, &text);
     normal::enter(editor);
-}
-
-pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
-    for action in actions {
-        handle_action(editor, action);
-    }
-}
-
-pub fn handle_action(editor: &mut Editor, action: &Action) {
-    match action {
-        Action::EnterNormalMode => normal::enter(editor),
-        Action::MoveLeft => move_left(editor),
-        Action::MoveRight => move_right(editor),
-        Action::MoveToStart => move_to_start(editor),
-        Action::MoveToEnd => move_to_end(editor),
-        Action::DeleteToStart => delete_to_start(editor),
-        Action::DeleteToEnd => delete_to_end(editor),
-        Action::DeleteBefore => delete_before(editor),
-        Action::InsertChar(c) => insert_char(editor, *c),
-        Action::Exec => exec(editor),
-    }
 }
