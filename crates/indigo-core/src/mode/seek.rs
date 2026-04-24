@@ -2,7 +2,7 @@
 
 use crate::{
     editor::Editor,
-    event::{Event, KeyEvent},
+    event::Event,
     key::KeyCode,
     keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal::enter_normal_mode},
@@ -60,34 +60,24 @@ pub struct State {
     pub direction: SeekDirection,
 }
 
-pub fn handle_event_seek(editor: &mut Editor, event: &Event) -> bool {
-    let Mode::Seek(_seek_mode) = &editor.mode else {
-        panic!("Not in seek mode")
-    };
-
-    let Event::Key(KeyEvent { key, .. }) = event;
-
-    let mut key = *key;
-    key.normalize();
-
-    if let KeyCode::Char(c) = key.code
-        && key.modifiers.is_empty()
-    {
-        seek(editor, c);
-    } else if let KeyCode::Return = key.code
-        && key.modifiers.is_empty()
-    {
-        // TODO: Handle Windows line endings?
-        seek(editor, b'\n');
-    } else if let KeyCode::Tab = key.code
-        && key.modifiers.is_empty()
-    {
-        seek(editor, b'\t');
+pub fn handle_event_seek(editor: &mut Editor, _event: &Event) -> bool {
+    match KEYMAP.get_keys(&editor.pending_keys) {
+        KeymapResult::Mapped(actions) => {
+            editor.pending_keys.clear();
+            handle_actions_seek(editor, actions);
+            enter_normal_mode(editor);
+        }
+        KeymapResult::Fallback(actions) => {
+            editor.pending_keys.clear();
+            handle_actions_seek(editor, &actions);
+            enter_normal_mode(editor);
+        }
+        KeymapResult::Unmapped => {
+            editor.pending_keys.clear();
+            enter_normal_mode(editor);
+        }
+        KeymapResult::Pending => {}
     }
-
-    enter_normal_mode(editor);
-
-    editor.pending_keys.clear();
 
     true
 }

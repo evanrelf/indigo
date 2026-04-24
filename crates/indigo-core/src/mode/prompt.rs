@@ -3,8 +3,8 @@
 use crate::{
     cursor::{Cursor, CursorMut, CursorState},
     editor::Editor,
-    event::{Event, KeyEvent},
-    key::{KeyCode, is},
+    event::Event,
+    key::KeyCode,
     keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal::enter_normal_mode},
     text::Text,
@@ -99,32 +99,24 @@ impl State {
     }
 }
 
-pub fn handle_event_prompt(editor: &mut Editor, event: &Event) -> bool {
-    let Mode::Prompt(_prompt_mode) = &editor.mode else {
-        panic!("Not in prompt mode")
-    };
-
-    let mut handled = true;
-
-    match event {
-        Event::Key(KeyEvent { key, .. }) => match (key.modifiers, key.code) {
-            _ if is(key, "<esc>") => enter_normal_mode(editor),
-            _ if is(key, "<c-b>") => move_left(editor),
-            _ if is(key, "<c-f>") => move_right(editor),
-            _ if is(key, "<c-a>") => move_to_start(editor),
-            _ if is(key, "<c-e>") => move_to_end(editor),
-            _ if is(key, "<c-u>") => delete_to_start(editor),
-            _ if is(key, "<c-k>") => delete_to_end(editor),
-            _ if is(key, "<bs>") => delete_before(editor),
-            _ if is(key, "<ret>") => exec(editor),
-            (m, KeyCode::Char(c)) if m.is_empty() => insert_char(editor, char::from(c)),
-            _ => handled = false,
-        },
+pub fn handle_event_prompt(editor: &mut Editor, _event: &Event) -> bool {
+    match KEYMAP.get_keys(&editor.pending_keys) {
+        KeymapResult::Mapped(actions) => {
+            editor.pending_keys.clear();
+            handle_actions_prompt(editor, actions);
+            true
+        }
+        KeymapResult::Fallback(actions) => {
+            editor.pending_keys.clear();
+            handle_actions_prompt(editor, &actions);
+            true
+        }
+        KeymapResult::Unmapped => {
+            editor.pending_keys.clear();
+            false
+        }
+        KeymapResult::Pending => true,
     }
-
-    editor.pending_keys.clear();
-
-    handled
 }
 
 pub fn enter_prompt_mode(

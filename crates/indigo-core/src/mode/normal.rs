@@ -2,9 +2,8 @@
 
 use crate::{
     editor::Editor,
-    event::{Event, KeyEvent},
-    key::{KeyCode, is},
-    keymap::{Keymap, keymap},
+    event::Event,
+    keymap::{Keymap, KeymapResult, keymap},
     mode::{
         Mode,
         command::enter_command_mode,
@@ -132,83 +131,24 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     }
 });
 
-pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
-    use crate::mode::seek::{
-        SeekDirection::{Next, Prev},
-        SeekInclude::{Onto, Until},
-        SeekSelect::{Extend, Move},
-    };
-
-    let mut handled = true;
-
-    let count = |c: u8| {
-        let digit = usize::from(c - b'0');
-        let current = editor.mode.count().map_or(0, |count| usize::from(count));
-        NonZeroUsize::new(current.saturating_mul(10).saturating_add(digit))
-    };
-
-    match event {
-        Event::Key(KeyEvent { key, .. }) => match (key.modifiers, key.code) {
-            (m, KeyCode::Char(c @ b'0'..=b'9')) if m.is_empty() => set_count(editor, count(c)),
-            _ if is(key, "<esc>") => enter_normal_mode(editor),
-            _ if is(key, ":") => enter_command_mode(editor),
-            _ if is(key, "i") => enter_insert_mode(editor),
-            _ if is(key, "I") => insert_at_line_non_blank_start(editor),
-            _ if is(key, "a") => insert_after_head(editor),
-            _ if is(key, "A") => insert_at_line_end(editor),
-            _ if is(key, "h") => move_left(editor),
-            _ if is(key, "l") => move_right(editor),
-            _ if is(key, "k") => move_up(editor),
-            _ if is(key, "j") => move_down(editor),
-            _ if is(key, "H") => extend_left(editor),
-            _ if is(key, "L") => extend_right(editor),
-            _ if is(key, "K") => extend_up(editor),
-            _ if is(key, "J") => extend_down(editor),
-            _ if is(key, "<a-t>") => enter_seek_mode(editor, Move, Until, Prev),
-            _ if is(key, "<a-T>") => enter_seek_mode(editor, Extend, Until, Prev),
-            _ if is(key, "t") => enter_seek_mode(editor, Move, Until, Next),
-            _ if is(key, "T") => enter_seek_mode(editor, Extend, Until, Next),
-            _ if is(key, "<a-f>") => enter_seek_mode(editor, Move, Onto, Prev),
-            _ if is(key, "<a-F>") => enter_seek_mode(editor, Extend, Onto, Prev),
-            _ if is(key, "f") => enter_seek_mode(editor, Move, Onto, Next),
-            _ if is(key, "F") => enter_seek_mode(editor, Extend, Onto, Next),
-            _ if is(key, "g") => {
-                if editor.mode.count().is_some() {
-                    goto_line(editor);
-                } else {
-                    editor.mode = Mode::Goto;
-                }
-            }
-            _ if is(key, ",") => keep_primary(editor),
-            _ if is(key, "(") => rotate_primary_backward(editor),
-            _ if is(key, ")") => rotate_primary_forward(editor),
-            _ if is(key, ";") => reduce(editor),
-            _ if is(key, "<a-;>") => flip(editor),
-            _ if is(key, "<a-:>") => flip_forward(editor),
-            _ if is(key, "%") => select_all(editor),
-            _ if is(key, "s") => select_regex(editor),
-            _ if is(key, "d") => delete(editor),
-            _ if is(key, "c") => {
-                delete(editor);
-                enter_insert_mode(editor);
-            }
-            _ if is(key, "O") => insert_line_above(editor),
-            _ if is(key, "o") => insert_line_below(editor),
-            _ if is(key, "<a-O>") => add_line_above(editor),
-            _ if is(key, "<a-o>") => add_line_below(editor),
-            _ if is(key, "u") => undo(editor),
-            _ if is(key, "U") => redo(editor),
-            _ if is(key, "<c-u>") => scroll_half_page_up(editor),
-            _ if is(key, "<c-d>") => scroll_half_page_down(editor),
-            _ if is(key, "<c-b>") => scroll_full_page_up(editor),
-            _ if is(key, "<c-f>") => scroll_full_page_down(editor),
-            _ => handled = false,
-        },
+pub fn handle_event_normal(editor: &mut Editor, _event: &Event) -> bool {
+    match KEYMAP.get_keys(&editor.pending_keys) {
+        KeymapResult::Mapped(actions) => {
+            editor.pending_keys.clear();
+            handle_actions_normal(editor, actions);
+            true
+        }
+        KeymapResult::Fallback(actions) => {
+            editor.pending_keys.clear();
+            handle_actions_normal(editor, &actions);
+            true
+        }
+        KeymapResult::Unmapped => {
+            editor.pending_keys.clear();
+            false
+        }
+        KeymapResult::Pending => true,
     }
-
-    editor.pending_keys.clear();
-
-    handled
 }
 
 pub fn enter_normal_mode(editor: &mut Editor) {
