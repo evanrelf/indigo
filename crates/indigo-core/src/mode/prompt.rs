@@ -1,13 +1,16 @@
+#![allow(clippy::enum_glob_use)]
+
 use crate::{
     cursor::{Cursor, CursorMut, CursorState},
     editor::Editor,
     event::{Event, KeyEvent},
     key::{KeyCode, is},
+    keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal::enter_normal_mode},
     text::Text,
 };
 use ropey::Rope;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 
 pub enum Action {
     EnterNormalMode,
@@ -21,6 +24,31 @@ pub enum Action {
     InsertChar(char),
     Exec,
 }
+
+pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
+    use Action::*;
+    keymap! { Vec<Action>;
+        "<esc>" => vec![EnterNormalMode],
+        "<c-b>" => vec![MoveLeft],
+        "<c-f>" => vec![MoveRight],
+        "<c-a>" => vec![MoveToStart],
+        "<c-e>" => vec![MoveToEnd],
+        "<c-u>" => vec![DeleteToStart],
+        "<c-k>" => vec![DeleteToEnd],
+        "<bs>" => vec![DeleteBefore],
+        "<ret>" => vec![Exec],
+        keys => {
+            if let [key] = keys
+                && key.modifiers.is_empty()
+                && let KeyCode::Char(c) = key.code
+            {
+                KeymapResult::Fallback(vec![InsertChar(char::from(c))])
+            } else {
+                KeymapResult::Unmapped
+            }
+        }
+    }
+});
 
 #[derive(Clone)]
 pub struct State {

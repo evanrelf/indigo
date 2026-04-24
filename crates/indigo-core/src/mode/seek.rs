@@ -1,14 +1,35 @@
+#![allow(clippy::enum_glob_use)]
+
 use crate::{
     editor::Editor,
     event::{Event, KeyEvent},
     key::KeyCode,
+    keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal::enter_normal_mode},
 };
-use std::num::NonZeroUsize;
+use std::{num::NonZeroUsize, sync::LazyLock};
 
 pub enum Action {
     Seek(u8),
 }
+
+pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
+    use Action::*;
+    keymap! { Vec<Action>;
+        "<ret>" => vec![Seek(b'\n')],
+        "<tab>" => vec![Seek(b'\t')],
+        keys => {
+            if let [key] = keys
+                && key.modifiers.is_empty()
+                && let KeyCode::Char(c) = key.code
+            {
+                KeymapResult::Fallback(vec![Seek(c)])
+            } else {
+                KeymapResult::Unmapped
+            }
+        }
+    }
+});
 
 #[derive(Clone, Copy)]
 pub enum SeekSelect {

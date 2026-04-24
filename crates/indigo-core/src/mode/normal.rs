@@ -1,7 +1,10 @@
+#![allow(clippy::enum_glob_use)]
+
 use crate::{
     editor::Editor,
     event::{Event, KeyEvent},
     key::{KeyCode, is},
+    keymap::{Keymap, keymap},
     mode::{
         Mode,
         command::enter_command_mode,
@@ -15,7 +18,7 @@ use crate::{
     },
 };
 use regex_cursor::engines::meta::Regex;
-use std::{cmp::min, num::NonZeroUsize};
+use std::{cmp::min, num::NonZeroUsize, sync::LazyLock};
 
 #[derive(Clone, Default)]
 pub struct State {
@@ -65,6 +68,69 @@ pub enum Action {
     ScrollFullPageUp,
     ScrollFullPageDown,
 }
+
+pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
+    use Action::*;
+    use SeekDirection::{Next, Prev};
+    use SeekInclude::{Onto, Until};
+    use SeekSelect::{Extend, Move};
+    keymap! { Vec<Action>;
+        "0" => vec![AppendCountDigit(0)],
+        "1" => vec![AppendCountDigit(1)],
+        "2" => vec![AppendCountDigit(2)],
+        "3" => vec![AppendCountDigit(3)],
+        "4" => vec![AppendCountDigit(4)],
+        "5" => vec![AppendCountDigit(5)],
+        "6" => vec![AppendCountDigit(6)],
+        "7" => vec![AppendCountDigit(7)],
+        "8" => vec![AppendCountDigit(8)],
+        "9" => vec![AppendCountDigit(9)],
+        "<esc>" => vec![EnterNormalMode],
+        ":" => vec![EnterCommandMode],
+        "i" => vec![EnterInsertMode],
+        "I" => vec![InsertAtLineNonBlankStart],
+        "a" => vec![InsertAfterHead],
+        "A" => vec![InsertAtLineEnd],
+        "h" => vec![MoveLeft],
+        "l" => vec![MoveRight],
+        "k" => vec![MoveUp],
+        "j" => vec![MoveDown],
+        "H" => vec![ExtendLeft],
+        "L" => vec![ExtendRight],
+        "K" => vec![ExtendUp],
+        "J" => vec![ExtendDown],
+        "<a-t>" => vec![EnterSeekMode { select: Move, include: Until, direction: Prev }],
+        "<a-T>" => vec![EnterSeekMode { select: Extend, include: Until, direction: Prev }],
+        "t" => vec![EnterSeekMode { select: Move, include: Until, direction: Next }],
+        "T" => vec![EnterSeekMode { select: Extend, include: Until, direction: Next }],
+        "<a-f>" => vec![EnterSeekMode { select: Move, include: Onto, direction: Prev }],
+        "<a-F>" => vec![EnterSeekMode { select: Extend, include: Onto, direction: Prev }],
+        "f" => vec![EnterSeekMode { select: Move, include: Onto, direction: Next }],
+        "F" => vec![EnterSeekMode { select: Extend, include: Onto, direction: Next }],
+        // TODO: With a count, `g` runs `GotoLine` instead of entering goto mode.
+        "g" => vec![EnterGotoMode],
+        "," => vec![KeepPrimary],
+        "(" => vec![RotatePrimaryBackward],
+        ")" => vec![RotatePrimaryForward],
+        ";" => vec![Reduce],
+        "<a-;>" => vec![Flip],
+        "<a-:>" => vec![FlipForward],
+        "%" => vec![SelectAll],
+        "s" => vec![SelectRegex],
+        "d" => vec![Delete],
+        "c" => vec![Delete, EnterInsertMode],
+        "O" => vec![InsertLineAbove],
+        "o" => vec![InsertLineBelow],
+        "<a-O>" => vec![AddLineAbove],
+        "<a-o>" => vec![AddLineBelow],
+        "u" => vec![Undo],
+        "U" => vec![Redo],
+        "<c-u>" => vec![ScrollHalfPageUp],
+        "<c-d>" => vec![ScrollHalfPageDown],
+        "<c-b>" => vec![ScrollFullPageUp],
+        "<c-f>" => vec![ScrollFullPageDown],
+    }
+});
 
 pub fn handle_event_normal(editor: &mut Editor, event: &Event) -> bool {
     use crate::mode::seek::{

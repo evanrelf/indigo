@@ -1,9 +1,13 @@
+#![allow(clippy::enum_glob_use)]
+
 use crate::{
     editor::Editor,
     event::{Event, KeyEvent},
     key::{KeyCode, is},
+    keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal::enter_normal_mode},
 };
+use std::sync::LazyLock;
 
 #[derive(Clone, Default)]
 pub struct State {}
@@ -14,6 +18,28 @@ pub enum Action {
     DeleteAfter,
     InsertChar(char),
 }
+
+pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
+    use Action::*;
+    keymap! { Vec<Action>;
+        "<esc>" => vec![EnterNormalMode],
+        "<bs>" => vec![DeleteBefore],
+        "<del>" => vec![DeleteAfter],
+        "<s-\\ >" => vec![InsertChar(' ')],
+        "<ret>" => vec![InsertChar('\n')],
+        "<tab>" => vec![InsertChar('\t')],
+        keys => {
+            if let [key] = keys
+                && key.modifiers.is_empty()
+                && let KeyCode::Char(c) = key.code
+            {
+                KeymapResult::Fallback(vec![InsertChar(char::from(c))])
+            } else {
+                KeymapResult::Unmapped
+            }
+        }
+    }
+});
 
 pub fn handle_event_insert(editor: &mut Editor, event: &Event) -> bool {
     let Mode::Insert(_insert_mode) = &editor.mode else {
