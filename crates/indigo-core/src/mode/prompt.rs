@@ -220,3 +220,24 @@ fn exec(editor: &mut Editor) {
     handler.lock().unwrap()(editor, &text);
     enter_normal_mode(editor);
 }
+
+pub fn handle_actions_prompt(editor: &mut Editor, actions: &[Action]) {
+    for action in actions {
+        handle_action_prompt(editor, action);
+    }
+}
+
+pub fn handle_action_prompt(editor: &mut Editor, action: &Action) {
+    match action {
+        Action::EnterNormalMode => enter_normal_mode(editor),
+        Action::MoveLeft => move_left(editor),
+        Action::MoveRight => move_right(editor),
+        Action::MoveToStart => move_to_start(editor),
+        Action::MoveToEnd => move_to_end(editor),
+        Action::DeleteToStart => delete_to_start(editor),
+        Action::DeleteToEnd => delete_to_end(editor),
+        Action::DeleteBefore => delete_before(editor),
+        Action::InsertChar(c) => insert_char(editor, *c),
+        Action::Exec => exec(editor),
+    }
+}

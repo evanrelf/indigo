@@ -106,3 +106,18 @@ pub fn paste(editor: &mut Editor, text: &str) {
     window.scroll_to_selection();
     editor.mode.set_count(None);
 }
+
+pub fn handle_actions_insert(editor: &mut Editor, actions: &[Action]) {
+    for action in actions {
+        handle_action_insert(editor, action);
+    }
+}
+
+pub fn handle_action_insert(editor: &mut Editor, action: &Action) {
+    match action {
+        Action::EnterNormalMode => enter_normal_mode(editor),
+        Action::DeleteBefore => delete_before(editor),
+        Action::DeleteAfter => delete_after(editor),
+        Action::InsertChar(c) => insert_char(editor, *c),
+    }
+}

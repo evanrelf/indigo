@@ -5,6 +5,16 @@ use std::sync::Arc;
 
 pub type Action = Command;
 
+pub fn handle_actions_command(editor: &mut Editor, actions: &[Action]) {
+    for action in actions {
+        handle_action_command(editor, action);
+    }
+}
+
+pub fn handle_action_command(editor: &mut Editor, action: &Action) {
+    handle_command(editor, action.clone());
+}
+
 pub fn enter_command_mode(editor: &mut Editor) {
     enter_prompt_mode(editor, "", |editor, input| match parse_command(input) {
         Ok(command) => handle_command(editor, command),

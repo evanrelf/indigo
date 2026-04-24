@@ -142,3 +142,15 @@ fn seek(editor: &mut Editor, byte: u8) {
     window.scroll_to_selection();
     editor.mode.set_count(None);
 }
+
+pub fn handle_actions_seek(editor: &mut Editor, actions: &[Action]) {
+    for action in actions {
+        handle_action_seek(editor, action);
+    }
+}
+
+pub fn handle_action_seek(editor: &mut Editor, action: &Action) {
+    match action {
+        Action::Seek(byte) => seek(editor, *byte),
+    }
+}
