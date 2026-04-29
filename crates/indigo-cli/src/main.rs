@@ -72,12 +72,24 @@ fn main() -> anyhow::Result<ExitCode> {
             }
             let window = editor.focused_window();
             let selection = window.selection();
-            let range = selection.get_primary();
-            eprintln!(
-                "\nprimary range: tail={} head={}",
-                range.tail().byte_offset(),
-                range.head().byte_offset()
-            );
+            eprintln!("\nranges:");
+            let primary_range = selection.state().primary_range;
+            selection.for_each(|index, range| {
+                let tail = range.tail().byte_offset();
+                let head = range.head().byte_offset();
+                let start = range.start().byte_offset();
+                let end = range.end().byte_offset();
+                let direction = if range.is_forward() {
+                    "forward"
+                } else {
+                    "backward"
+                };
+                let primary = if index == primary_range { " primary" } else { "" };
+                let preview = escaped_preview(&range.slice().to_string());
+                eprintln!(
+                    "  {index}: tail={tail} head={head} start={start} end={end} direction={direction}{primary} text=\"{preview}\""
+                );
+            });
             eprintln!("text:\n```diff");
             for diff in diff::lines(&left, &right) {
                 match diff {
@@ -107,3 +119,16 @@ fn main() -> anyhow::Result<ExitCode> {
 const RED: &str = "\x1b[0;31m";
 const GREEN: &str = "\x1b[0;32m";
 const RESET: &str = "\x1b[0m";
+
+fn escaped_preview(text: &str) -> String {
+    const LIMIT: usize = 80;
+    let mut preview = String::new();
+    for (index, char) in text.chars().enumerate() {
+        if index == LIMIT {
+            preview.push_str("...");
+            break;
+        }
+        preview.extend(char.escape_default());
+    }
+    preview
+}
