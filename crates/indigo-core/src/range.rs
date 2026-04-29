@@ -99,6 +99,23 @@ impl RangeState {
     }
 
     #[must_use]
+    pub fn with_bounds(&self, start: usize, end: usize) -> Self {
+        if self.is_forward() {
+            Self {
+                tail: CursorState { byte_offset: start },
+                head: CursorState { byte_offset: end },
+                goal_column: self.goal_column,
+            }
+        } else {
+            Self {
+                tail: CursorState { byte_offset: end },
+                head: CursorState { byte_offset: start },
+                goal_column: self.goal_column,
+            }
+        }
+    }
+
+    #[must_use]
     pub fn is_touching(&self, other: &Self) -> bool {
         let self_start = self.start().byte_offset;
         let self_end = self.end().byte_offset;

@@ -2,7 +2,7 @@ use crate::{
     cursor::CursorState,
     ot::OperationSeq,
     range::{Range, RangeMut, RangeSnapshot, RangeState},
-    rope::{RegexCursorInput, RopeExt as _},
+    rope::{LINE_TYPE, RegexCursorInput, RopeExt as _},
     text::Text,
 };
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
@@ -242,6 +242,65 @@ impl<W: WrapMut> SelectionView<'_, W> {
         self.state.primary_range = 0;
     }
 
+    pub fn split_into_lines(&mut self) {
+        self.split_at(|range| {
+            let start = range.start().byte_offset();
+            let end = range.end().byte_offset();
+
+            if start == end {
+                return Vec::new();
+            }
+
+            let start_line = range.text().byte_to_line_idx(start, LINE_TYPE);
+            let end_line = range.text().byte_to_line_idx(end - 1, LINE_TYPE);
+
+            ((start_line + 1)..=end_line)
+                .map(|line| range.text().line_to_byte_idx(line, LINE_TYPE))
+                .collect()
+        });
+    }
+
+    fn split_at(&mut self, mut f: impl FnMut(Range<'_>) -> Vec<usize>) {
+        let old_primary_range = self.state.primary_range;
+        let old_primary_head = self.state.ranges[old_primary_range].head.byte_offset;
+        let mut primary_range = 0;
+        let mut ranges = Vec::new();
+
+        for range_state in &self.state.ranges {
+            let range = Range::new(&self.text, range_state)
+                .expect("Selection text and range state are always kept valid");
+
+            let start = range.start().byte_offset();
+            let end = range.end().byte_offset();
+            let initial_range_count = ranges.len();
+
+            let mut boundaries = f(range);
+            boundaries.sort_unstable();
+            boundaries.dedup();
+            boundaries.retain(|boundary| start < *boundary && *boundary < end);
+
+            let mut segment_start = start;
+            for segment_end in boundaries.into_iter().chain([end]) {
+                ranges.push(range_state.with_bounds(segment_start, segment_end));
+                segment_start = segment_end;
+            }
+
+            if ranges.len() == initial_range_count {
+                ranges.push(range_state.clone());
+            }
+        }
+
+        for (i, range) in ranges.iter().enumerate() {
+            if range.head.byte_offset == old_primary_head {
+                primary_range = i;
+                break;
+            }
+        }
+
+        self.state.ranges = ranges;
+        self.state.primary_range = primary_range;
+    }
+
     pub fn snap_to_grapheme_boundaries(&mut self) -> bool {
         self.state.snap_to_grapheme_boundaries(self.text.rope())
     }
@@ -378,5 +437,72 @@ impl<W: Wrap> Drop for SelectionView<'_, W> {
         {
             f(self);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn range(tail: usize, head: usize) -> RangeState {
+        RangeState {
+            tail: CursorState { byte_offset: tail },
+            head: CursorState { byte_offset: head },
+            goal_column: 0,
+        }
+    }
+
+    fn split_ranges(text: &str, ranges: Vec<RangeState>) -> SelectionState {
+        let mut text = Text::from(text);
+        let mut state = SelectionState {
+            ranges,
+            primary_range: 0,
+        };
+        SelectionMut::new(&mut text, &mut state)
+            .unwrap()
+            .split_into_lines();
+        state
+    }
+
+    #[test]
+    fn split_into_lines_keeps_partial_endpoints() {
+        let state = split_ranges("abcdef\nghijkl\nmnopqr\n", vec![range(1, 16)]);
+
+        assert_eq!(state.primary_range, 2);
+        assert_eq!(state.ranges.len(), 3);
+        assert_eq!(state.ranges[0].tail.byte_offset, 1);
+        assert_eq!(state.ranges[0].head.byte_offset, 7);
+        assert_eq!(state.ranges[1].tail.byte_offset, 7);
+        assert_eq!(state.ranges[1].head.byte_offset, 14);
+        assert_eq!(state.ranges[2].tail.byte_offset, 14);
+        assert_eq!(state.ranges[2].head.byte_offset, 16);
+    }
+
+    #[test]
+    fn split_into_lines_preserves_backward_direction() {
+        let state = split_ranges("abcdef\nghijkl\nmnopqr\n", vec![range(16, 1)]);
+
+        assert_eq!(state.primary_range, 0);
+        assert_eq!(state.ranges.len(), 3);
+        assert_eq!(state.ranges[0].tail.byte_offset, 7);
+        assert_eq!(state.ranges[0].head.byte_offset, 1);
+        assert_eq!(state.ranges[1].tail.byte_offset, 14);
+        assert_eq!(state.ranges[1].head.byte_offset, 7);
+        assert_eq!(state.ranges[2].tail.byte_offset, 16);
+        assert_eq!(state.ranges[2].head.byte_offset, 14);
+    }
+
+    #[test]
+    fn split_into_lines_ignores_trailing_phantom_line() {
+        let state = split_ranges("a\nb\nc\n", vec![range(0, 6)]);
+
+        assert_eq!(state.primary_range, 2);
+        assert_eq!(state.ranges.len(), 3);
+        assert_eq!(state.ranges[0].tail.byte_offset, 0);
+        assert_eq!(state.ranges[0].head.byte_offset, 2);
+        assert_eq!(state.ranges[1].tail.byte_offset, 2);
+        assert_eq!(state.ranges[1].head.byte_offset, 4);
+        assert_eq!(state.ranges[2].tail.byte_offset, 4);
+        assert_eq!(state.ranges[2].head.byte_offset, 6);
     }
 }

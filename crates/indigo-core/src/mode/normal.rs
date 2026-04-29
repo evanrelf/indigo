@@ -68,6 +68,7 @@ pub enum Action {
     FlipForward,
     SelectAll,
     ExpandToFullLines,
+    SplitIntoLines,
     SelectRegex,
     Delete,
     Undo,
@@ -138,6 +139,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "%" => vec![SelectAll],
         "x" => vec![ExpandToFullLines],
         "s" => vec![SelectRegex],
+        "<a-s>" => vec![SplitIntoLines],
         "d" => vec![Delete],
         "c" => vec![Delete, EnterInsertMode],
         "O" => vec![InsertLineAbove],
@@ -213,6 +215,7 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
         Action::FlipForward => flip_forward(editor),
         Action::SelectAll => select_all(editor),
         Action::ExpandToFullLines => expand_to_full_lines(editor),
+        Action::SplitIntoLines => split_into_lines(editor),
         Action::SelectRegex => select_regex(editor),
         Action::Delete => delete(editor),
         Action::Undo => undo(editor),
@@ -442,6 +445,13 @@ fn expand_to_full_lines(editor: &mut Editor) {
     window
         .selection_mut()
         .for_each_mut(|mut range| range.expand_to_full_lines());
+    window.scroll_to_selection();
+    editor.count = None;
+}
+
+fn split_into_lines(editor: &mut Editor) {
+    let mut window = editor.focused_window_mut();
+    window.selection_mut().split_into_lines();
     window.scroll_to_selection();
     editor.count = None;
 }
