@@ -247,7 +247,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         (line, column)
     };
 
-    let count = match editor.mode.count() {
+    let count = match editor.count {
         Some(count) if count.get() == usize::MAX => &String::from(" count=∞"),
         Some(count) => &format!(" count={count}"),
         None => "",

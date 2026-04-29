@@ -8,7 +8,7 @@ use crate::{
 };
 use camino::Utf8PathBuf;
 use slotmap::SlotMap;
-use std::{process::ExitCode, sync::Arc};
+use std::{num::NonZeroUsize, process::ExitCode, sync::Arc};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -24,6 +24,7 @@ pub struct Editor {
     windows: SlotMap<WindowKey, WindowState>,
     focused_window: WindowKey,
     pub mode: Mode,
+    pub count: Option<NonZeroUsize>,
     pub pending_keys: Vec<Key>,
     pub pwd: Option<Utf8PathBuf>,
     pub message: Option<Result<String, String>>,
@@ -185,6 +186,7 @@ impl Default for Editor {
             windows,
             focused_window: window_key,
             mode: Mode::default(),
+            count: None,
             pending_keys: Vec::new(),
             pwd: None,
             message: None,

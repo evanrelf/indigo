@@ -34,7 +34,6 @@ pub enum SeekDirection {
 
 #[derive(Clone)]
 pub struct State {
-    pub count: Option<NonZeroUsize>,
     /// Move and create a new selection, or extend the current one?
     pub select: SeekSelect,
     /// Include seek target in selection, or stop just short?
@@ -108,7 +107,6 @@ pub fn enter(
     direction: SeekDirection,
 ) {
     editor.mode = Mode::Seek(State {
-        count: editor.mode.count(),
         select,
         include,
         direction,
@@ -124,7 +122,7 @@ fn seek(editor: &mut Editor, byte: u8) {
         let Mode::Seek(seek_mode) = &editor.mode else {
             panic!("Not in seek mode")
         };
-        let count = editor.mode.count().unwrap_or(NonZeroUsize::MIN).get();
+        let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
         (
             seek_mode.select,
             seek_mode.include,
@@ -149,5 +147,5 @@ fn seek(editor: &mut Editor, byte: u8) {
         });
 
     window.scroll_to_selection();
-    editor.mode.set_count(None);
+    editor.count = None;
 }

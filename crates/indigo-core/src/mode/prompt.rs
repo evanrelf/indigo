@@ -150,6 +150,7 @@ pub fn enter(
     handler: impl FnMut(&mut Editor, &str) + Send + 'static,
 ) {
     editor.mode = Mode::Prompt(State::new(prompt, handler));
+    editor.count = None;
 }
 
 fn move_left(editor: &mut Editor) {
