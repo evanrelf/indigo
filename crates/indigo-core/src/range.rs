@@ -557,6 +557,19 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.update_goal_column();
     }
 
+    pub fn expand_to_full_lines(&mut self) {
+        if self.text.len() == 0 {
+            return;
+        }
+
+        self.start_mut().move_to_line_start(Bias::After);
+        if self.end_mut().move_to_line_end(Bias::Before) {
+            self.end_mut().move_right(1);
+        }
+
+        self.update_goal_column();
+    }
+
     pub fn flip(&mut self) {
         if self.is_forward() && self.grapheme_length() == 1 {
             return;
