@@ -1,38 +1,35 @@
 # Guidance for coding agents
 
-## About
-
-[Indigo] is a work-in-progress, terminal-native modal code editor, inspired by
-[Kakoune].
-
-[Indigo]: https://github.com/evanrelf/indigo
-[Kakoune]: https://github.com/mawww/kakoune
-
 ## Project structure
 
-Indigo is written in Rust, across multiple crates in a Cargo workspace.
+Indigo is written in Rust, across multiple crates in a Cargo workspace. The
+primary crates are the core, and the two frontends (interactive TUI and headless
+CLI):
 
-@crates/indigo-core/README.md
-@crates/indigo-llm/README.md
-@crates/indigo-cli/README.md
-@crates/indigo-term/README.md
-@crates/indigo-tui/README.md
-@crates/indigo/README.md
-@crates/indigo-wrap/README.md
+- [indigo-core](crates/indigo-core/README.md): the functional core, making up
+  the majority of code.
+- [indigo](crates/indigo/README.md): interactive TUI, the main application that
+  hooks up the core to an event loop (user input -> core -> render to terminal).
+- [indigo-cli](crates/indigo-cli/README.md): headless CLI, currently used for
+  debugging. Read the readme for instructions on how to use it (it's basically
+  an agent skill).
+
+And then there are supporting crates that are either currently unused,
+infrequently changed, or feature complete:
+
+- [indigo-llm](crates/indigo-llm/README.md): talk to 3rd party LLM APIs,
+  currently unused.
+- [indigo-term](crates/indigo-term/README.md): low-level terminal manipulation
+  library, currently unused.
+- [indigo-tui](crates/indigo-tui/README.md): high-level terminal UI library,
+  currently unused.
+- [indigo-wrap](crates/indigo-wrap/README.md): higher-kinded types, mutability
+  generics, feature complete, powers `{Cursor,Range,Selection,Window}View` types
+  found in the core.
 
 ## Checking your work
 
 - Always run `cargo clippy --all-targets` to check if code compiles. Never run
   `cargo check` or `cargo build`.
-
-- Never run `indigo`; you cannot control it. Always check runtime behavior by
-  writing tests or executables at `crates/<crate>/src/bin/<name>.rs`. Always run
-  these ad-hoc executables with `cargo run --bin <name>`, never with `rustc` (no
-  dependencies outside of Cargo workspace).
-
-- Run `indigo-cli` to test editor behavior. With the `--debug` flag, the `<c-l>`
-  key prints information and a diff. Try running this command as an example:
-
-  ```
-  $ echo -ne "hello\nworld\n" | ./bin/run-cli --debug 'fod<c-l>iHELLO<c-l><esc>jgla!<c-l>'
-  ```
+- Never run `indigo`; you cannot control it. Run `indigo-cli` instead to test
+  editor behavior.

@@ -33,7 +33,6 @@ Key mappings are defined per mode in these files:
 
 - Normal mode: `crates/indigo-core/src/mode/normal.rs`
 - Insert mode: `crates/indigo-core/src/mode/insert.rs`
-- Goto mode: `crates/indigo-core/src/mode/goto.rs`
 - Seek mode: `crates/indigo-core/src/mode/seek.rs`
 - Prompt mode: `crates/indigo-core/src/mode/prompt.rs`
 - Command mode: `crates/indigo-core/src/mode/command.rs` (discouraged with CLI)

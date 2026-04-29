@@ -8,8 +8,9 @@ functional core).
   text with.
 - `range`: Combines two cursors to select text (i.e. a single selection).
 - `selection`: Holds many ranges (i.e. multiple selections).
-- `unicode`: Identify and move between character and grapheme boundaries.
-- `rope`: Extensions to the `ropey` crate's [rope](https://en.wikipedia.org/wiki/Rope_(data_structure)).
+- `rope`: Extensions to the `ropey` crate's [rope](https://en.wikipedia.org/wiki/Rope_(data_structure)),
+  including identifying and moving between character and grapheme boundaries,
+  and computing the width of text when displayed in a terminal.
 - `ot`: Operational transformation implementation. Today it's used to reconcile
   concurrent edits from multiple cursors and track editing history for
   undo/redo. In the future it could be used to apply changes from other editor
@@ -23,20 +24,20 @@ functional core).
 - `window`: A viewport into a buffer, currently only tracking scroll position.
 - `editor`: Top-level editor state, owns everything.
 - `mode`: Modal editing, like Vim/Kakoune/Helix.
-  - `command`: Command prompt for Vim-style commands like `:wq` and such.
-  - `goto`: Jump around to the start/end of the line, buffer, etc while
-    optionally dragging your selection.
-  - `insert`: Inserts the keys you type into the text.
   - `normal`: Vim-style normal mode where keys are commands that move you
     around, perform high-level editing operations, etc.
+  - `insert`: Inserts the keys you type into the text.
+  - `command`: Command prompt for Vim-style commands like `:wq` and such.
   - `prompt`: Prompt for input, currently used for narrowing a selection to a
-    regex.
+    regex and running commands.
   - `seek`: `f`- and `t`-style one-dimensional movement.
-- `display_width`: The width of text when displayed in a terminal, in terms of
-  cells.
+- `action`: Top-level `Action` enum aggregating modes' actions. Represents
+  things you can do in the editor as data.
 - `key`: Types representing keys, and parsers from a textual representation.
   Currently the types are used for input events, and the parsers are used by the
   CLI.
+- `keymap`: Trie-based mapping from key sequences to values, for multi-key
+  bindings.
 - `event`: Things that have happened. Currently just represents keyboard input
   events, provided by frontends (either by parsing strings or converting
   `crossterm` types).
@@ -45,6 +46,7 @@ functional core).
 - `attributes`: Work in progress. Arbitrary annotations for ranges inspired by
   Emacs. Plan is to use this for syntax highlighting and other stuff (tags?
   read-only text? who knows).
+- `btree`: Copy-on-write B+ tree-backed ordered map.
 
 ## Terminology
 
