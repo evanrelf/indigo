@@ -325,9 +325,11 @@ impl<W: WrapMut> CursorView<'_, W> {
     }
 
     pub fn move_to_next_byte(&mut self, byte: u8, count: usize) -> bool {
+        let mut start = self.state.byte_offset;
         for _ in 0..count {
-            if let Some(byte_offset) = self.text.find_next_byte(self.state.byte_offset.., &[byte]) {
+            if let Some(byte_offset) = self.text.find_next_byte(start.., &[byte]) {
                 self.state.byte_offset = byte_offset;
+                start = byte_offset + 1;
             } else {
                 return false;
             }
@@ -350,9 +352,11 @@ impl<W: WrapMut> CursorView<'_, W> {
 
     pub fn move_to_next_blank(&mut self, count: usize) -> bool {
         const BYTES: &[u8] = b" \t\n\r";
+        let mut start = self.state.byte_offset;
         for _ in 0..count {
-            if let Some(byte_offset) = self.text.find_next_byte(self.state.byte_offset.., BYTES) {
+            if let Some(byte_offset) = self.text.find_next_byte(start.., BYTES) {
                 self.state.byte_offset = byte_offset;
+                start = byte_offset + 1;
             } else {
                 return false;
             }
@@ -689,6 +693,38 @@ mod tests {
             cursor.move_to_line_end(bias);
             assert_eq!(cursor.byte_offset(), byte_offset, "with bias={bias:?}");
         }
+    }
+
+    #[test]
+    fn move_to_next_byte_count_skips_previous_matches() {
+        let mut cursor = CursorView::try_from(("hello world\n", 0)).unwrap();
+
+        assert!(cursor.move_to_next_byte(b'l', 1));
+        assert_eq!(cursor.byte_offset(), 2);
+
+        let mut cursor = CursorView::try_from(("hello world\n", 0)).unwrap();
+        assert!(cursor.move_to_next_byte(b'l', 2));
+        assert_eq!(cursor.byte_offset(), 3);
+
+        let mut cursor = CursorView::try_from(("hello world\n", 0)).unwrap();
+        assert!(cursor.move_to_next_byte(b'l', 3));
+        assert_eq!(cursor.byte_offset(), 9);
+    }
+
+    #[test]
+    fn move_to_next_blank_count_skips_previous_matches() {
+        let mut cursor = CursorView::try_from(("a b\tc\n", 0)).unwrap();
+
+        assert!(cursor.move_to_next_blank(1));
+        assert_eq!(cursor.byte_offset(), 1);
+
+        let mut cursor = CursorView::try_from(("a b\tc\n", 0)).unwrap();
+        assert!(cursor.move_to_next_blank(2));
+        assert_eq!(cursor.byte_offset(), 3);
+
+        let mut cursor = CursorView::try_from(("a b\tc\n", 0)).unwrap();
+        assert!(cursor.move_to_next_blank(3));
+        assert_eq!(cursor.byte_offset(), 5);
     }
 
     #[test]
