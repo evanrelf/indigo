@@ -11,9 +11,6 @@ use std::sync::LazyLock;
 #[cfg(any(feature = "arbitrary", test))]
 use arbitrary::Arbitrary;
 
-#[derive(Clone, Default)]
-pub struct State {}
-
 #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
@@ -90,7 +87,7 @@ pub fn enter(editor: &mut Editor) {
         .selection_mut()
         .for_each_mut(|mut range| range.reduce());
     window.scroll_to_selection();
-    editor.mode = Mode::Insert(State::default());
+    editor.mode = Mode::Insert;
     editor.count = None;
 }
 

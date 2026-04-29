@@ -204,7 +204,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let mode = match &editor.mode {
-        Mode::Normal(_) => "normal",
+        Mode::Normal => "normal",
         Mode::Seek(seek_mode) => {
             use indigo_core::mode::seek::{
                 SeekDirection::{Next, Prev},
@@ -222,7 +222,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
                 (Extend, Onto, Next) => "extend onto next",
             }
         }
-        Mode::Insert(_) => "insert",
+        Mode::Insert => "insert",
         Mode::Prompt(_) => "prompt",
     };
 

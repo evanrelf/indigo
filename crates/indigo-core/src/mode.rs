@@ -4,17 +4,12 @@ pub mod normal;
 pub mod prompt;
 pub mod seek;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub enum Mode {
-    Normal(normal::State),
-    Insert(insert::State),
+    #[default]
+    Normal,
+    Insert,
     Prompt(prompt::State),
     // TODO: Replace this with multi-key mappings in normal mode
     Seek(seek::State),
-}
-
-impl Default for Mode {
-    fn default() -> Self {
-        Self::Normal(normal::State::default())
-    }
 }
