@@ -92,6 +92,12 @@ impl RangeState {
         end - start
     }
 
+    /// An empty range is considered forward.
+    #[must_use]
+    pub fn is_forward(&self) -> bool {
+        self.tail.byte_offset <= self.head.byte_offset
+    }
+
     #[must_use]
     pub fn is_touching(&self, other: &Self) -> bool {
         let self_start = self.start().byte_offset;
@@ -274,7 +280,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
 
     /// An empty range is considered forward.
     pub fn is_forward(&self) -> bool {
-        self.state.tail.byte_offset <= self.state.head.byte_offset
+        self.state.is_forward()
     }
 
     pub fn is_backward(&self) -> bool {
