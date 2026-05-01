@@ -23,7 +23,7 @@ pub struct Editor {
     buffers: SlotMap<BufferKey, Buffer>,
     windows: SlotMap<WindowKey, WindowState>,
     focused_window: WindowKey,
-    mode: Mode,
+    mode_stack: Vec<Mode>,
     pub count: Option<NonZeroUsize>,
     pub pending_keys: Vec<Key>,
     pub pwd: Option<Utf8PathBuf>,
@@ -39,12 +39,14 @@ impl Editor {
 
     #[must_use]
     pub fn mode(&self) -> &Mode {
-        &self.mode
+        self.mode_stack.last().expect("Mode stack is never empty")
     }
 
     #[must_use]
     pub fn mode_mut(&mut self) -> &mut Mode {
-        &mut self.mode
+        self.mode_stack
+            .last_mut()
+            .expect("Mode stack is never empty")
     }
 
     // TODO: Figure out a safer/better way to add and remove buffers
@@ -168,6 +170,10 @@ impl Editor {
 
     #[expect(dead_code)]
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            !self.mode_stack.is_empty(),
+            "Mode stack must never be empty"
+        );
         for (_, window) in &self.windows {
             let buffer = self
                 .buffers
@@ -195,7 +201,7 @@ impl Default for Editor {
             buffers,
             windows,
             focused_window: window_key,
-            mode: Mode::default(),
+            mode_stack: vec![Mode::default()],
             count: None,
             pending_keys: Vec::new(),
             pwd: None,
