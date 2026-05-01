@@ -4,7 +4,6 @@ use crate::{
     editor::Editor,
     key::KeyCode,
     keymap::{Keymap, KeymapResult, keymap},
-    mode::{Mode, normal},
 };
 use std::sync::LazyLock;
 
@@ -50,7 +49,7 @@ pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
 
 pub fn handle_action(editor: &mut Editor, action: &Action) {
     match action {
-        Action::EnterNormalMode => normal::enter(editor),
+        Action::EnterNormalMode => _ = editor.pop_mode(),
         Action::DeleteBefore => delete_before(editor),
         Action::DeleteAfter => delete_after(editor),
         Action::InsertChar(c) => insert_char(editor, *c),
@@ -77,19 +76,15 @@ pub fn handle_keys(editor: &mut Editor) -> bool {
     }
 }
 
-pub fn enter(editor: &mut Editor) {
-    if editor.focused_buffer().text.readonly {
-        editor.message = Some(Err(String::from("Buffer is readonly")));
-        return;
-    }
-    let mut window = editor.focused_window_mut();
-    window
-        .selection_mut()
-        .for_each_mut(|mut range| range.reduce());
-    window.scroll_to_selection();
-    editor.push_mode(Mode::Insert);
-    editor.count = None;
+pub fn on_create(_editor: &mut Editor) {}
+
+pub fn on_destroy(editor: &mut Editor) {
+    editor.focused_buffer_mut().text.commit();
 }
+
+pub fn on_focus(_editor: &mut Editor) {}
+
+pub fn on_blur(_editor: &mut Editor) {}
 
 fn delete_before(editor: &mut Editor) {
     let mut window = editor.focused_window_mut();

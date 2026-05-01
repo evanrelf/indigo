@@ -4,7 +4,7 @@ use crate::{
     editor::Editor,
     key::KeyCode,
     keymap::{Keymap, KeymapResult, keymap},
-    mode::{Mode, normal},
+    mode::Mode,
 };
 use std::{num::NonZeroUsize, sync::LazyLock};
 
@@ -83,16 +83,16 @@ pub fn handle_keys(editor: &mut Editor) -> bool {
         KeymapResult::Mapped(actions) => {
             editor.pending_keys.clear();
             handle_actions(editor, actions);
-            normal::enter(editor);
+            editor.pop_mode();
         }
         KeymapResult::Fallback(actions) => {
             editor.pending_keys.clear();
             handle_actions(editor, &actions);
-            normal::enter(editor);
+            editor.pop_mode();
         }
         KeymapResult::Unmapped => {
             editor.pending_keys.clear();
-            normal::enter(editor);
+            editor.pop_mode();
         }
         KeymapResult::Pending => {}
     }
@@ -100,18 +100,13 @@ pub fn handle_keys(editor: &mut Editor) -> bool {
     true
 }
 
-pub fn enter(
-    editor: &mut Editor,
-    select: SeekSelect,
-    include: SeekInclude,
-    direction: SeekDirection,
-) {
-    editor.push_mode(Mode::Seek(State {
-        select,
-        include,
-        direction,
-    }));
-}
+pub fn on_create(_editor: &mut Editor) {}
+
+pub fn on_destroy(_editor: &mut Editor) {}
+
+pub fn on_focus(_editor: &mut Editor) {}
+
+pub fn on_blur(_editor: &mut Editor) {}
 
 fn seek(editor: &mut Editor, byte: u8) {
     use SeekDirection::{Next, Prev};

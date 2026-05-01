@@ -4,7 +4,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use indigo_core::{
-    mode::{insert, normal, prompt},
+    mode::{insert, prompt},
     prelude::*,
     window::{scroll_down, scroll_up},
 };
@@ -146,7 +146,7 @@ fn handle_event_seek(
         // TODO: Add mouse events to core, so it can handle this internally.
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
             (KeyModifiers::NONE, _) => {
-                normal::enter(editor);
+                editor.pop_mode();
             }
             _ => handled = false,
         },

@@ -2,7 +2,7 @@ use crate::{
     buffer::{Buffer, BufferKey},
     fs::{Fs, NoFs},
     key::Key,
-    mode::Mode,
+    mode::{Mode, ModeKind, insert, normal, prompt, seek},
     selection::Selection,
     window::{Window, WindowKey, WindowMut, WindowState},
 };
@@ -50,15 +50,28 @@ impl Editor {
     }
 
     pub fn push_mode(&mut self, mode: Mode) {
+        let old_kind = self.mode().kind();
+        mode_on_blur(old_kind, self);
         self.mode_stack.push(mode);
+        let new_kind = self.mode().kind();
+        mode_on_create(new_kind, self);
+        mode_on_focus(new_kind, self);
     }
 
     pub fn pop_mode(&mut self) -> Option<Mode> {
-        if self.mode_stack.len() > 1 {
-            self.mode_stack.pop()
-        } else {
-            None
+        if self.mode_stack.len() <= 1 {
+            return None;
         }
+        let popped = self
+            .mode_stack
+            .pop()
+            .expect("Mode stack has more than one mode");
+        let popped_kind = popped.kind();
+        mode_on_blur(popped_kind, self);
+        mode_on_destroy(popped_kind, self);
+        let new_top_kind = self.mode().kind();
+        mode_on_focus(new_top_kind, self);
+        Some(popped)
     }
 
     // TODO: Figure out a safer/better way to add and remove buffers
@@ -238,5 +251,41 @@ impl From<Buffer> for Editor {
             focused_window: window_key,
             ..Self::default()
         }
+    }
+}
+
+fn mode_on_create(kind: ModeKind, editor: &mut Editor) {
+    match kind {
+        ModeKind::Normal => normal::on_create(editor),
+        ModeKind::Insert => insert::on_create(editor),
+        ModeKind::Prompt => prompt::on_create(editor),
+        ModeKind::Seek => seek::on_create(editor),
+    }
+}
+
+fn mode_on_destroy(kind: ModeKind, editor: &mut Editor) {
+    match kind {
+        ModeKind::Normal => normal::on_destroy(editor),
+        ModeKind::Insert => insert::on_destroy(editor),
+        ModeKind::Prompt => prompt::on_destroy(editor),
+        ModeKind::Seek => seek::on_destroy(editor),
+    }
+}
+
+fn mode_on_focus(kind: ModeKind, editor: &mut Editor) {
+    match kind {
+        ModeKind::Normal => normal::on_focus(editor),
+        ModeKind::Insert => insert::on_focus(editor),
+        ModeKind::Prompt => prompt::on_focus(editor),
+        ModeKind::Seek => seek::on_focus(editor),
+    }
+}
+
+fn mode_on_blur(kind: ModeKind, editor: &mut Editor) {
+    match kind {
+        ModeKind::Normal => normal::on_blur(editor),
+        ModeKind::Insert => insert::on_blur(editor),
+        ModeKind::Prompt => prompt::on_blur(editor),
+        ModeKind::Seek => seek::on_blur(editor),
     }
 }

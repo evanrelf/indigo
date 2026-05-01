@@ -5,7 +5,7 @@ use crate::{
     editor::Editor,
     key::KeyCode,
     keymap::{Keymap, KeymapResult, keymap},
-    mode::{Mode, normal},
+    mode::Mode,
     text::Text,
 };
 use ropey::Rope;
@@ -111,7 +111,9 @@ pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
 
 pub fn handle_action(editor: &mut Editor, action: &Action) {
     match action {
-        Action::EnterNormalMode => normal::enter(editor),
+        Action::EnterNormalMode => {
+            editor.pop_mode();
+        }
         Action::MoveLeft => move_left(editor),
         Action::MoveRight => move_right(editor),
         Action::MoveToStart => move_to_start(editor),
@@ -144,14 +146,13 @@ pub fn handle_keys(editor: &mut Editor) -> bool {
     }
 }
 
-pub fn enter(
-    editor: &mut Editor,
-    prompt: &'static str,
-    handler: impl FnMut(&mut Editor, &str) + Send + 'static,
-) {
-    editor.push_mode(Mode::Prompt(State::new(prompt, handler)));
-    editor.count = None;
-}
+pub fn on_create(_editor: &mut Editor) {}
+
+pub fn on_destroy(_editor: &mut Editor) {}
+
+pub fn on_focus(_editor: &mut Editor) {}
+
+pub fn on_blur(_editor: &mut Editor) {}
 
 fn move_left(editor: &mut Editor) {
     let Mode::Prompt(prompt_mode) = editor.mode_mut() else {
@@ -220,7 +221,7 @@ fn delete_before(editor: &mut Editor) {
         panic!("Not in prompt mode")
     };
     if prompt_mode.cursor().is_at_start() {
-        normal::enter(editor);
+        editor.pop_mode();
     } else {
         prompt_mode.cursor_mut().delete_before();
     }
@@ -236,5 +237,5 @@ fn exec(editor: &mut Editor) {
         .take()
         .expect("Handler is always present");
     handler.lock().unwrap()(editor, &text);
-    normal::enter(editor);
+    editor.pop_mode();
 }

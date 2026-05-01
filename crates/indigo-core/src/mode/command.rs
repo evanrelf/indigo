@@ -1,4 +1,9 @@
-use crate::{buffer::Buffer, editor::Editor, mode::prompt, window::WindowState};
+use crate::{
+    buffer::Buffer,
+    editor::Editor,
+    mode::{Mode, prompt},
+    window::WindowState,
+};
 use anyhow::anyhow;
 use camino::Utf8PathBuf;
 use std::sync::Arc;
@@ -40,10 +45,13 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
 }
 
 pub fn enter_command_mode(editor: &mut Editor) {
-    prompt::enter(editor, "", |editor, input| match parse_command(input) {
-        Ok(command) => handle_command(editor, command),
-        Err(error) => editor.message = Some(Err(error.to_string())),
-    });
+    editor.push_mode(Mode::Prompt(prompt::State::new(
+        "",
+        |editor, input| match parse_command(input) {
+            Ok(command) => handle_command(editor, command),
+            Err(error) => editor.message = Some(Err(error.to_string())),
+        },
+    )));
 }
 
 fn parse_command(command: &str) -> anyhow::Result<Command> {

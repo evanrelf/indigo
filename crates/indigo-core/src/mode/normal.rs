@@ -6,7 +6,7 @@ use crate::{
     mode::{
         Mode,
         command::enter_command_mode,
-        insert, prompt,
+        prompt,
         seek::{self, SeekDirection, SeekInclude, SeekSelect},
     },
     rope::{LINE_TYPE, RopeExt as _},
@@ -169,15 +169,19 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
             let new_count = NonZeroUsize::new(current.saturating_mul(10).saturating_add(digit));
             set_count(editor, new_count);
         }
-        Action::EnterNormalMode => enter(editor),
+        Action::EnterNormalMode => editor.count = None,
         Action::EnterCommandMode => enter_command_mode(editor),
-        Action::EnterInsertMode => insert::enter(editor),
+        Action::EnterInsertMode => enter_insert_mode(editor),
         Action::EnterSeekMode {
             select,
             include,
             direction,
         } => {
-            seek::enter(editor, *select, *include, *direction);
+            editor.push_mode(Mode::Seek(seek::State {
+                select: *select,
+                include: *include,
+                direction: *direction,
+            }));
         }
         Action::InsertAfterHead => insert_after_head(editor),
         Action::InsertAtLineNonBlankStart => insert_at_line_non_blank_start(editor),
@@ -247,10 +251,27 @@ pub fn handle_keys(editor: &mut Editor) -> bool {
     }
 }
 
-pub fn enter(editor: &mut Editor) {
-    editor.focused_buffer_mut().text.commit();
-    editor.pop_mode();
+pub fn on_create(_editor: &mut Editor) {}
+
+pub fn on_destroy(_editor: &mut Editor) {}
+
+pub fn on_focus(_editor: &mut Editor) {}
+
+pub fn on_blur(editor: &mut Editor) {
     editor.count = None;
+}
+
+fn enter_insert_mode(editor: &mut Editor) {
+    if editor.focused_buffer().text.readonly {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        return;
+    }
+    let mut window = editor.focused_window_mut();
+    window
+        .selection_mut()
+        .for_each_mut(|mut range| range.reduce());
+    window.scroll_to_selection();
+    editor.push_mode(Mode::Insert);
 }
 
 fn set_count(editor: &mut Editor, count: Option<NonZeroUsize>) {
@@ -457,20 +478,23 @@ fn split_into_lines(editor: &mut Editor) {
 }
 
 fn select_regex(editor: &mut Editor) {
-    prompt::enter(editor, "select", |editor, regex_str| {
-        if let Ok(regex) = Regex::new(regex_str) {
-            let matched = editor
-                .focused_window_mut()
-                .selection_mut()
-                .select_regex(&regex);
-            if !matched {
-                editor.message = Some(Err(String::from("Nothing selected")));
+    editor.push_mode(Mode::Prompt(prompt::State::new(
+        "select",
+        |editor, regex_str| {
+            if let Ok(regex) = Regex::new(regex_str) {
+                let matched = editor
+                    .focused_window_mut()
+                    .selection_mut()
+                    .select_regex(&regex);
+                if !matched {
+                    editor.message = Some(Err(String::from("Nothing selected")));
+                }
+            } else {
+                editor.message = Some(Err(String::from("Invalid regex")));
             }
-        } else {
-            editor.message = Some(Err(String::from("Invalid regex")));
-        }
-        editor.count = None;
-    });
+            editor.count = None;
+        },
+    )));
 }
 
 fn insert_after_head(editor: &mut Editor) {
