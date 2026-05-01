@@ -13,3 +13,23 @@ pub enum Mode {
     // TODO: Replace this with multi-key mappings in normal mode
     Seek(seek::State),
 }
+
+impl Mode {
+    #[must_use]
+    pub fn kind(&self) -> ModeKind {
+        match self {
+            Self::Normal => ModeKind::Normal,
+            Self::Insert => ModeKind::Insert,
+            Self::Prompt(_) => ModeKind::Prompt,
+            Self::Seek(_) => ModeKind::Seek,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub enum ModeKind {
+    Normal,
+    Insert,
+    Prompt,
+    Seek,
+}
