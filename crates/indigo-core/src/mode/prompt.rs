@@ -149,7 +149,7 @@ pub fn enter(
     prompt: &'static str,
     handler: impl FnMut(&mut Editor, &str) + Send + 'static,
 ) {
-    *editor.mode_mut() = Mode::Prompt(State::new(prompt, handler));
+    editor.push_mode(Mode::Prompt(State::new(prompt, handler)));
     editor.count = None;
 }
 

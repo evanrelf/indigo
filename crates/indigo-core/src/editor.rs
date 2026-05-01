@@ -49,6 +49,18 @@ impl Editor {
             .expect("Mode stack is never empty")
     }
 
+    pub fn push_mode(&mut self, mode: Mode) {
+        self.mode_stack.push(mode);
+    }
+
+    pub fn pop_mode(&mut self) -> Option<Mode> {
+        if self.mode_stack.len() > 1 {
+            self.mode_stack.pop()
+        } else {
+            None
+        }
+    }
+
     // TODO: Figure out a safer/better way to add and remove buffers
     pub(crate) fn insert_buffer(&mut self, buffer: Buffer) -> BufferKey {
         self.buffers.insert(buffer)

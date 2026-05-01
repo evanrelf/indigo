@@ -106,11 +106,11 @@ pub fn enter(
     include: SeekInclude,
     direction: SeekDirection,
 ) {
-    *editor.mode_mut() = Mode::Seek(State {
+    editor.push_mode(Mode::Seek(State {
         select,
         include,
         direction,
-    });
+    }));
 }
 
 fn seek(editor: &mut Editor, byte: u8) {
