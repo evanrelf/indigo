@@ -149,40 +149,40 @@ pub fn enter(
     prompt: &'static str,
     handler: impl FnMut(&mut Editor, &str) + Send + 'static,
 ) {
-    editor.mode = Mode::Prompt(State::new(prompt, handler));
+    *editor.mode_mut() = Mode::Prompt(State::new(prompt, handler));
     editor.count = None;
 }
 
 fn move_left(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+    let Mode::Prompt(prompt_mode) = editor.mode_mut() else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_mut().move_left(1);
 }
 
 fn move_right(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+    let Mode::Prompt(prompt_mode) = editor.mode_mut() else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_mut().move_right(1);
 }
 
 fn move_to_start(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+    let Mode::Prompt(prompt_mode) = editor.mode_mut() else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_mut().move_to_start();
 }
 
 fn move_to_end(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+    let Mode::Prompt(prompt_mode) = editor.mode_mut() else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_mut().move_to_end();
 }
 
 fn delete_to_start(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+    let Mode::Prompt(prompt_mode) = editor.mode_mut() else {
         panic!("Not in prompt mode")
     };
     let mut cursor = prompt_mode.cursor_mut();
@@ -192,7 +192,7 @@ fn delete_to_start(editor: &mut Editor) {
 }
 
 fn delete_to_end(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+    let Mode::Prompt(prompt_mode) = editor.mode_mut() else {
         panic!("Not in prompt mode")
     };
     let mut cursor = prompt_mode.cursor_mut();
@@ -202,21 +202,21 @@ fn delete_to_end(editor: &mut Editor) {
 }
 
 fn insert_char(editor: &mut Editor, char: char) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+    let Mode::Prompt(prompt_mode) = editor.mode_mut() else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_mut().insert_char(char);
 }
 
 pub fn paste(editor: &mut Editor, text: &str) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+    let Mode::Prompt(prompt_mode) = editor.mode_mut() else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_mut().insert(text);
 }
 
 fn delete_before(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+    let Mode::Prompt(prompt_mode) = editor.mode_mut() else {
         panic!("Not in prompt mode")
     };
     if prompt_mode.cursor().is_at_start() {
@@ -227,7 +227,7 @@ fn delete_before(editor: &mut Editor) {
 }
 
 fn exec(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+    let Mode::Prompt(prompt_mode) = editor.mode_mut() else {
         panic!("Not in prompt mode")
     };
     let text = prompt_mode.rope().to_string();

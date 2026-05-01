@@ -23,7 +23,7 @@ pub struct Editor {
     buffers: SlotMap<BufferKey, Buffer>,
     windows: SlotMap<WindowKey, WindowState>,
     focused_window: WindowKey,
-    pub mode: Mode,
+    mode: Mode,
     pub count: Option<NonZeroUsize>,
     pub pending_keys: Vec<Key>,
     pub pwd: Option<Utf8PathBuf>,
@@ -35,6 +35,16 @@ impl Editor {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    #[must_use]
+    pub fn mode(&self) -> &Mode {
+        &self.mode
+    }
+
+    #[must_use]
+    pub fn mode_mut(&mut self) -> &mut Mode {
+        &mut self.mode
     }
 
     // TODO: Figure out a safer/better way to add and remove buffers

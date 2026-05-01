@@ -56,7 +56,7 @@ pub fn handle_event(editor: &mut Editor, areas: Areas, event: TerminalEvent) -> 
         }
     }
 
-    let _handled = match editor.mode {
+    let _handled = match editor.mode() {
         Mode::Normal => handle_event_normal(editor, areas, event),
         Mode::Seek(_) => handle_event_seek(editor, areas, event)?,
         Mode::Insert => handle_event_insert(editor, areas, event),

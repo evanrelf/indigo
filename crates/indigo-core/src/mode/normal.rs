@@ -249,7 +249,7 @@ pub fn handle_keys(editor: &mut Editor) -> bool {
 
 pub fn enter(editor: &mut Editor) {
     editor.focused_buffer_mut().text.commit();
-    editor.mode = Mode::Normal;
+    *editor.mode_mut() = Mode::Normal;
     editor.count = None;
 }
 
@@ -483,7 +483,7 @@ fn insert_after_head(editor: &mut Editor) {
         range.move_right(1);
     });
     window.scroll_to_selection();
-    editor.mode = Mode::Insert;
+    *editor.mode_mut() = Mode::Insert;
     editor.count = None;
 }
 
@@ -498,7 +498,7 @@ fn insert_at_line_non_blank_start(editor: &mut Editor) {
         range.move_to_line_non_blank_start();
     });
     window.scroll_to_selection();
-    editor.mode = Mode::Insert;
+    *editor.mode_mut() = Mode::Insert;
     editor.count = None;
 }
 
@@ -512,7 +512,7 @@ fn insert_at_line_end(editor: &mut Editor) {
         range.move_onto_line_end();
     });
     window.scroll_to_selection();
-    editor.mode = Mode::Insert;
+    *editor.mode_mut() = Mode::Insert;
     editor.count = None;
 }
 
@@ -533,7 +533,7 @@ fn insert_line_above(editor: &mut Editor) {
         range.move_left(1);
     });
     window.scroll_to_selection();
-    editor.mode = Mode::Insert;
+    *editor.mode_mut() = Mode::Insert;
     editor.count = None;
 }
 
@@ -553,7 +553,7 @@ fn insert_line_below(editor: &mut Editor) {
         }
     });
     window.scroll_to_selection();
-    editor.mode = Mode::Insert;
+    *editor.mode_mut() = Mode::Insert;
     editor.count = None;
 }
 

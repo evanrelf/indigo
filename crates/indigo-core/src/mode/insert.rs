@@ -87,7 +87,7 @@ pub fn enter(editor: &mut Editor) {
         .selection_mut()
         .for_each_mut(|mut range| range.reduce());
     window.scroll_to_selection();
-    editor.mode = Mode::Insert;
+    *editor.mode_mut() = Mode::Insert;
     editor.count = None;
 }
 

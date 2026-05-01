@@ -36,7 +36,7 @@ pub fn handle_event(editor: &mut Editor, mut event: Event) -> anyhow::Result<boo
     }
 
     let handled = match event {
-        Event::Key(_) => match editor.mode {
+        Event::Key(_) => match editor.mode() {
             Mode::Normal => normal::handle_keys(editor),
             Mode::Seek(_) => seek::handle_keys(editor),
             Mode::Insert => insert::handle_keys(editor),

@@ -106,7 +106,7 @@ pub fn enter(
     include: SeekInclude,
     direction: SeekDirection,
 ) {
-    editor.mode = Mode::Seek(State {
+    *editor.mode_mut() = Mode::Seek(State {
         select,
         include,
         direction,
@@ -119,7 +119,7 @@ fn seek(editor: &mut Editor, byte: u8) {
     use SeekSelect::{Extend, Move};
 
     let (select, include, direction, count) = {
-        let Mode::Seek(seek_mode) = &editor.mode else {
+        let Mode::Seek(seek_mode) = editor.mode() else {
             panic!("Not in seek mode")
         };
         let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();

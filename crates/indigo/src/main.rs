@@ -203,7 +203,7 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let mode = match &editor.mode {
+    let mode = match editor.mode() {
         Mode::Normal => "normal",
         Mode::Seek(seek_mode) => {
             use indigo_core::mode::seek::{
@@ -260,7 +260,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 fn render_prompt(editor: &Editor, mut area: Rect, surface: &mut Surface) {
-    if let Mode::Prompt(ref prompt_mode) = editor.mode {
+    if let Mode::Prompt(prompt_mode) = editor.mode() {
         surface.set_style(area, Style::new().bg(THEME.status_bar_bg));
 
         format!("{}:", prompt_mode.prompt()).render(area, surface);
