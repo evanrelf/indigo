@@ -1047,6 +1047,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "indigo-fuzz"
+version = "0.0.0"
+dependencies = [
+ "indigo",
+ "libfuzzer-sys",
+]
+
+[[package]]
 name = "indigo-llm"
 version = "0.0.0"
 dependencies = [
@@ -1252,6 +1260,16 @@ name = "libc"
 version = "0.2.183"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5b646652bf6661599e1da8901b3b9522896f01e736bad5f723fe7a3a27f899d"
+
+[[package]]
+name = "libfuzzer-sys"
+version = "0.4.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f12a681b7dd8ce12bff52488013ba614b869148d54dd79836ab85aafdd53f08d"
+dependencies = [
+ "arbitrary",
+ "cc",
+]
 
 [[package]]
 name = "line-clipping"
