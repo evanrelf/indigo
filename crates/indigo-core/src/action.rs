@@ -1,4 +1,7 @@
-use crate::mode::{command, insert, normal, prompt, seek};
+use crate::{
+    editor::Editor,
+    mode::{command, insert, normal, prompt, seek},
+};
 
 #[cfg(any(feature = "arbitrary", test))]
 use arbitrary::Arbitrary;
@@ -12,4 +15,14 @@ pub enum Action {
     Command(command::Action),
     // TODO: Replace this with multi-key mappings in normal mode
     Seek(seek::Action),
+}
+
+pub fn handle_action(editor: &mut Editor, action: &Action) {
+    match action {
+        Action::Normal(action) => normal::handle_action(editor, action),
+        Action::Insert(action) => insert::handle_action(editor, action),
+        Action::Prompt(action) => prompt::handle_action(editor, action),
+        Action::Command(action) => command::handle_action(editor, action),
+        Action::Seek(action) => seek::handle_action(editor, action),
+    }
 }

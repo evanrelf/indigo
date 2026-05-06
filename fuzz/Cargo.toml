@@ -6,12 +6,20 @@ edition = "2024"
 cargo-fuzz = true
 
 [dependencies]
+indigo-core = { workspace = true, features = ["arbitrary"] }
 libfuzzer-sys = "0.4.12"
-indigo-core = { workspace = true }
+ropey = { workspace = true }
 
 [[bin]]
-name = "fuzz_target_1"
-path = "fuzz_targets/fuzz_target_1.rs"
+name = "actions"
+path = "fuzz_targets/actions.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "events"
+path = "fuzz_targets/events.rs"
 test = false
 doc = false
 bench = false
