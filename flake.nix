@@ -13,25 +13,39 @@
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       systems = import inputs.systems;
 
-      perSystem = { pkgs, system, ... }: {
-        packages.default =
-          let
-            crane = inputs.crane.mkLib pkgs;
+      perSystem = { config, pkgs, system, ... }:
+        let
+          crane = inputs.crane.mkLib pkgs;
 
-            commonArgs = {
-              pname = "indigo";
-              version = "0.0.0";
-              src = crane.cleanCargoSource ./.;
-              strictDeps = true;
+          commonArgs = {
+            pname = "indigo";
+            version = "0.0.0";
+            src = crane.cleanCargoSource ./.;
+            strictDeps = true;
+          };
+
+          cargoArtifacts = crane.buildDepsOnly commonArgs;
+        in
+        {
+          packages.default =
+            crane.buildPackage (commonArgs // {
+              inherit cargoArtifacts;
+              cargoExtraArgs = "--bin indigo";
+            });
+
+          checks.clippy =
+            crane.cargoClippy (commonArgs // { inherit cargoArtifacts; });
+
+          checks.doc =
+            crane.cargoDoc (commonArgs // { inherit cargoArtifacts; });
+
+          checks.test =
+            crane.cargoTest (commonArgs // { inherit cargoArtifacts; });
+
+          devShells.default =
+            crane.devShell {
+              checks = config.checks;
             };
-
-            cargoArtifacts = crane.buildDepsOnly commonArgs;
-
-          in
-          crane.buildPackage (commonArgs // {
-            inherit cargoArtifacts;
-            cargoExtraArgs = "--bin indigo";
-          });
-      };
+        };
     };
 }
