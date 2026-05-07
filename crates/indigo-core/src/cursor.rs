@@ -371,8 +371,8 @@ impl<W: WrapMut> CursorView<'_, W> {
         let mut start = self.state.byte_offset;
         for _ in 0..count {
             if let Some(byte_offset) = self.text.find_next_byte(start.., &[byte]) {
-                self.state.byte_offset = byte_offset;
-                start = byte_offset + 1;
+                self.state.byte_offset = self.text.ceil_grapheme_boundary(byte_offset);
+                start = self.text.ceil_grapheme_boundary(byte_offset + 1);
             } else {
                 return false;
             }
@@ -398,8 +398,8 @@ impl<W: WrapMut> CursorView<'_, W> {
         let mut start = self.state.byte_offset;
         for _ in 0..count {
             if let Some(byte_offset) = self.text.find_next_byte(start.., BYTES) {
-                self.state.byte_offset = byte_offset;
-                start = byte_offset + 1;
+                self.state.byte_offset = self.text.ceil_grapheme_boundary(byte_offset);
+                start = self.text.ceil_grapheme_boundary(byte_offset + 1);
             } else {
                 return false;
             }
@@ -698,6 +698,24 @@ mod tests {
         cursor.move_to_line_non_blank_start(Bias::Before);
         cursor.move_down(usize::MAX, Bias::Before, 1);
         assert_eq!(cursor.byte_offset(), 2);
+        cursor.assert_invariants().unwrap();
+    }
+
+    #[test]
+    fn move_to_next_byte_repeated_after_multibyte_match() {
+        let mut cursor = CursorView::try_from(("\nۉ", 3)).unwrap();
+        cursor.move_to_line_non_blank_start(Bias::Before);
+        cursor.move_to_next_byte(219, 2);
+        cursor.assert_invariants().unwrap();
+    }
+
+    #[test]
+    fn move_to_next_blank_repeated_after_crlf_match() {
+        let mut cursor = CursorView::try_from(("\r", 1)).unwrap();
+        cursor.insert("\n");
+        cursor.move_left(27);
+        cursor.move_to_next_blank(10);
+        cursor.delete_after();
         cursor.assert_invariants().unwrap();
     }
 
