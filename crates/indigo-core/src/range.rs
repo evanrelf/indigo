@@ -383,7 +383,7 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_to(&mut self, byte_offset: usize) {
-        self.head_mut().move_to(byte_offset);
+        self.head_mut().unchecked_move_to(byte_offset);
         if self.is_forward() {
             self.head_mut().move_right(1);
         }

@@ -34,7 +34,7 @@ pub enum Bias {
 #[derive(Debug)]
 pub enum Action {
     SnapToGraphemeBoundary,
-    MoveTo(usize),
+    UncheckedMoveTo(usize),
     MoveLeft(u8),
     MoveRight(u8),
     MoveUp {
@@ -255,7 +255,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.snap_to_grapheme_boundary(&self.text)
     }
 
-    pub fn move_to(&mut self, byte_offset: usize) {
+    pub fn unchecked_move_to(&mut self, byte_offset: usize) {
         assert!(self.text.is_grapheme_boundary(byte_offset));
         self.state.byte_offset = byte_offset;
     }
@@ -583,9 +583,10 @@ pub fn handle_action<W: WrapMut>(cursor: &mut CursorView<'_, W>, action: &Action
         Action::SnapToGraphemeBoundary => {
             cursor.snap_to_grapheme_boundary();
         }
-        Action::MoveTo(byte_offset) => {
+        Action::UncheckedMoveTo(byte_offset) => {
+            // Snapping to grapheme boundary because `unchecked_move_to` is otherwise unsafe.
             let byte_offset = cursor.text.ceil_grapheme_boundary(*byte_offset);
-            cursor.move_to(byte_offset);
+            cursor.unchecked_move_to(byte_offset);
         }
         Action::MoveLeft(count) => {
             cursor.move_left(usize::from(*count));
