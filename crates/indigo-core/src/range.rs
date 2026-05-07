@@ -9,6 +9,9 @@ use ropey::{Rope, RopeSlice};
 use std::{mem, thread};
 use thiserror::Error;
 
+#[cfg(any(feature = "arbitrary", test))]
+use arbitrary::Arbitrary;
+
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Empty but not at end of text (tail={tail}, head={head})")]
@@ -22,6 +25,55 @@ pub enum Error {
 
     #[error("Error from head")]
     Head(#[source] anyhow::Error),
+}
+
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[derive(Debug)]
+pub enum Action {
+    SnapToGraphemeBoundaries,
+    UpdateGoalColumn,
+    ExtendTo(usize),
+    MoveTo(usize),
+    ExtendLeft(u8),
+    MoveLeft(u8),
+    ExtendRight(u8),
+    MoveRight(u8),
+    ExtendUp(u8),
+    MoveUp(u8),
+    ExtendDown(u8),
+    MoveDown(u8),
+    ExtendUntilPrevByte { byte: u8, count: u8 },
+    MoveUntilPrevByte { byte: u8, count: u8 },
+    ExtendOntoPrevByte { byte: u8, count: u8 },
+    MoveOntoPrevByte { byte: u8, count: u8 },
+    ExtendUntilNextByte { byte: u8, count: u8 },
+    MoveUntilNextByte { byte: u8, count: u8 },
+    ExtendOntoNextByte { byte: u8, count: u8 },
+    MoveOntoNextByte { byte: u8, count: u8 },
+    ExtendToStart,
+    MoveToStart,
+    ExtendToEnd,
+    MoveToEnd,
+    ExtendToBottom,
+    MoveToBottom,
+    ExtendToLineStart,
+    MoveToLineStart,
+    ExtendToLineNonBlankStart,
+    MoveToLineNonBlankStart,
+    ExtendUntilLineEnd,
+    MoveUntilLineEnd,
+    ExtendOntoLineEnd,
+    MoveOntoLineEnd,
+    ExpandToFullLines,
+    Flip,
+    FlipForward,
+    FlipBackward,
+    Reduce,
+    InsertChar(char),
+    Insert(String),
+    DeleteBefore,
+    Delete,
+    DeleteAfter,
 }
 
 #[derive(Clone, Default)]
@@ -738,6 +790,150 @@ impl<W: WrapMut> RangeView<'_, W> {
             true
         } else {
             false
+        }
+    }
+}
+
+#[expect(clippy::too_many_lines)]
+pub fn handle_action<W: WrapMut>(range: &mut RangeView<'_, W>, action: &Action) {
+    match action {
+        Action::SnapToGraphemeBoundaries => {
+            range.snap_to_grapheme_boundaries();
+        }
+        Action::UpdateGoalColumn => {
+            range.update_goal_column();
+        }
+        Action::ExtendTo(byte_offset) => {
+            let byte_offset = range.text.ceil_grapheme_boundary(*byte_offset);
+            range.extend_to(byte_offset);
+        }
+        Action::MoveTo(byte_offset) => {
+            let byte_offset = range.text.ceil_grapheme_boundary(*byte_offset);
+            range.move_to(byte_offset);
+        }
+        Action::ExtendLeft(count) => {
+            range.extend_left(usize::from(*count));
+        }
+        Action::MoveLeft(count) => {
+            range.move_left(usize::from(*count));
+        }
+        Action::ExtendRight(count) => {
+            range.extend_right(usize::from(*count));
+        }
+        Action::MoveRight(count) => {
+            range.move_right(usize::from(*count));
+        }
+        Action::ExtendUp(count) => {
+            range.extend_up(usize::from(*count));
+        }
+        Action::MoveUp(count) => {
+            range.move_up(usize::from(*count));
+        }
+        Action::ExtendDown(count) => {
+            range.extend_down(usize::from(*count));
+        }
+        Action::MoveDown(count) => {
+            range.move_down(usize::from(*count));
+        }
+        Action::ExtendUntilPrevByte { byte, count } => {
+            range.extend_until_prev_byte(*byte, usize::from(*count));
+        }
+        Action::MoveUntilPrevByte { byte, count } => {
+            range.move_until_prev_byte(*byte, usize::from(*count));
+        }
+        Action::ExtendOntoPrevByte { byte, count } => {
+            range.extend_onto_prev_byte(*byte, usize::from(*count));
+        }
+        Action::MoveOntoPrevByte { byte, count } => {
+            range.move_onto_prev_byte(*byte, usize::from(*count));
+        }
+        Action::ExtendUntilNextByte { byte, count } => {
+            range.extend_until_next_byte(*byte, usize::from(*count));
+        }
+        Action::MoveUntilNextByte { byte, count } => {
+            range.move_until_next_byte(*byte, usize::from(*count));
+        }
+        Action::ExtendOntoNextByte { byte, count } => {
+            range.extend_onto_next_byte(*byte, usize::from(*count));
+        }
+        Action::MoveOntoNextByte { byte, count } => {
+            range.move_onto_next_byte(*byte, usize::from(*count));
+        }
+        Action::ExtendToStart => {
+            range.extend_to_start();
+        }
+        Action::MoveToStart => {
+            range.move_to_start();
+        }
+        Action::ExtendToEnd => {
+            range.extend_to_end();
+        }
+        Action::MoveToEnd => {
+            range.move_to_end();
+        }
+        Action::ExtendToBottom => {
+            range.extend_to_bottom();
+        }
+        Action::MoveToBottom => {
+            range.move_to_bottom();
+        }
+        Action::ExtendToLineStart => {
+            range.extend_to_line_start();
+        }
+        Action::MoveToLineStart => {
+            range.move_to_line_start();
+        }
+        Action::ExtendToLineNonBlankStart => {
+            range.extend_to_line_non_blank_start();
+        }
+        Action::MoveToLineNonBlankStart => {
+            range.move_to_line_non_blank_start();
+        }
+        Action::ExtendUntilLineEnd => {
+            range.extend_until_line_end();
+        }
+        Action::MoveUntilLineEnd => {
+            range.move_until_line_end();
+        }
+        Action::ExtendOntoLineEnd => {
+            range.extend_onto_line_end();
+        }
+        Action::MoveOntoLineEnd => {
+            range.move_onto_line_end();
+        }
+        Action::ExpandToFullLines => {
+            range.expand_to_full_lines();
+        }
+        Action::Flip => {
+            range.flip();
+        }
+        Action::FlipForward => {
+            range.flip_forward();
+        }
+        Action::FlipBackward => {
+            range.flip_backward();
+        }
+        Action::Reduce => {
+            range.reduce();
+        }
+        Action::InsertChar(c) => {
+            range.reduce();
+            range.insert_char(*c);
+        }
+        Action::Insert(text) => {
+            range.reduce();
+            range.insert(text);
+        }
+        Action::DeleteBefore => {
+            range.reduce();
+            range.delete_before();
+        }
+        Action::Delete => {
+            range.delete();
+        }
+        Action::DeleteAfter => {
+            range.reduce();
+            range.delete_after();
         }
     }
 }
