@@ -415,6 +415,9 @@ pub fn is_grapheme_boundary(rope: &RopeSlice, byte_index: usize) -> bool {
     if byte_index > rope.len() {
         return false;
     }
+    if !is_char_boundary(rope, byte_index) {
+        return false;
+    }
     let (chunk, chunk_byte_index) = rope.chunk(byte_index);
     let mut cursor = GraphemeCursor::new(byte_index, rope.len(), true);
     loop {
@@ -783,6 +786,12 @@ mod tests {
             assert!(is_grapheme_boundary(&slice, floor));
             assert!(is_grapheme_boundary(&slice, ceil));
         }
+    }
+
+    #[test]
+    fn grapheme_boundary_rejects_non_char_boundary() {
+        let rope = Rope::from_str("5\u{e}Չ");
+        assert!(!is_grapheme_boundary(&rope.slice(..), 3));
     }
 
     #[test]
