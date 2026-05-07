@@ -376,8 +376,8 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
-        self.tail().assert_invariants().map_err(Error::Tail)?;
-        self.head().assert_invariants().map_err(Error::Head)?;
+        let _ = Cursor::new(&self.text, &self.state.tail).map_err(Error::Tail)?;
+        let _ = Cursor::new(&self.text, &self.state.head).map_err(Error::Head)?;
         // TODO: Restore invariants once positioning is rock solid.
         // if self.is_empty() && !self.head().is_at_end() {
         //     return Err(Error::EmptyAndNotEnd {
@@ -980,6 +980,12 @@ mod tests {
         let mut range = RangeMut::new(&mut text, &mut state).unwrap();
         range.insert("e");
         range.assert_invariants().unwrap();
+    }
+
+    #[test]
+    fn invalid_range_constructor_returns_error() {
+        let range = RangeView::try_from(("~", usize::MAX, 0));
+        assert!(range.is_err());
     }
 
     #[test]
