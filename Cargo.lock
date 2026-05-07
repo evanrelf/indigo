@@ -1050,6 +1050,7 @@ dependencies = [
 name = "indigo-fuzz"
 version = "0.0.0"
 dependencies = [
+ "arbitrary",
  "indigo-core",
  "libfuzzer-sys",
  "ropey",

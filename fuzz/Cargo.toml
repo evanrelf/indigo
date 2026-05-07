@@ -6,6 +6,7 @@ edition = "2024"
 cargo-fuzz = true
 
 [dependencies]
+arbitrary = { workspace = true }
 indigo-core = { workspace = true, features = ["arbitrary"] }
 libfuzzer-sys = "0.4.12"
 ropey = { workspace = true }
