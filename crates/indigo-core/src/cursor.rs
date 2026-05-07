@@ -349,7 +349,7 @@ impl<W: WrapMut> CursorView<'_, W> {
                 Bias::Before => self
                     .text
                     .next_grapheme_boundary(target_byte_index)
-                    .expect("TODO"),
+                    .unwrap_or(target_byte_index),
             };
         }
         count > 0
@@ -689,6 +689,15 @@ mod tests {
         // combining acute accent (´)
         let mut cursor = CursorView::try_from(("\u{0301}", 0)).unwrap();
         cursor.insert("e");
+        cursor.assert_invariants().unwrap();
+    }
+
+    #[test]
+    fn move_down_before_to_unterminated_final_line_end() {
+        let mut cursor = CursorView::try_from(("\nx", 2)).unwrap();
+        cursor.move_to_line_non_blank_start(Bias::Before);
+        cursor.move_down(usize::MAX, Bias::Before, 1);
+        assert_eq!(cursor.byte_offset(), 2);
         cursor.assert_invariants().unwrap();
     }
 
