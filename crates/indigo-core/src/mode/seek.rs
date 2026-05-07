@@ -9,7 +9,7 @@ use crate::{
 use std::{num::NonZeroUsize, sync::LazyLock};
 
 #[cfg(any(feature = "arbitrary", test))]
-use arbitrary::Arbitrary;
+use arbitrary::{Arbitrary, Unstructured};
 
 #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 #[derive(Clone, Copy, Debug)]
@@ -42,10 +42,17 @@ pub struct State {
     pub direction: SeekDirection,
 }
 
-#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
     Seek(u8),
+}
+
+#[cfg(any(feature = "arbitrary", test))]
+impl<'a> Arbitrary<'a> for Action {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        let byte = u.int_in_range(b' '..=b'~')?;
+        Ok(Self::Seek(byte))
+    }
 }
 
 pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
