@@ -18,6 +18,13 @@ doc = false
 bench = false
 
 [[bin]]
+name = "cursor"
+path = "fuzz_targets/cursor.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "events"
 path = "fuzz_targets/events.rs"
 test = false

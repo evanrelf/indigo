@@ -8,6 +8,9 @@ use ropey::{Rope, RopeSlice};
 use std::thread;
 use thiserror::Error;
 
+#[cfg(any(feature = "arbitrary", test))]
+use arbitrary::Arbitrary;
+
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Byte offset {byte_offset} exceeds end of text at {end_offset}")]
@@ -20,10 +23,50 @@ pub enum Error {
     NotOnGraphemeBoundary { byte_offset: usize },
 }
 
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Bias {
     Before,
     After,
+}
+
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[derive(Debug)]
+pub enum Action {
+    SnapToGraphemeBoundary,
+    MoveTo(usize),
+    MoveLeft(u8),
+    MoveRight(u8),
+    MoveUp {
+        goal_column: u16,
+        bias: Bias,
+        count: u8,
+    },
+    MoveDown {
+        goal_column: u16,
+        bias: Bias,
+        count: u8,
+    },
+    MoveToPrevByte {
+        byte: u8,
+        count: u8,
+    },
+    MoveToNextByte {
+        byte: u8,
+        count: u8,
+    },
+    MoveToPrevBlank(u8),
+    MoveToNextBlank(u8),
+    MoveToStart,
+    MoveToEnd,
+    MoveToBottom(Bias),
+    MoveToLineStart(Bias),
+    MoveToLineNonBlankStart(Bias),
+    MoveToLineEnd(Bias),
+    InsertChar(char),
+    Insert(String),
+    DeleteBefore,
+    DeleteAfter,
 }
 
 #[derive(Clone, Copy)]
@@ -531,6 +574,70 @@ impl<W: WrapMut> CursorView<'_, W> {
             true
         } else {
             false
+        }
+    }
+}
+
+pub fn handle_action<W: WrapMut>(cursor: &mut CursorView<'_, W>, action: &Action) {
+    match action {
+        Action::SnapToGraphemeBoundary => {
+            cursor.snap_to_grapheme_boundary();
+        }
+        Action::MoveTo(byte_offset) => {
+            let byte_offset = cursor.text.ceil_grapheme_boundary(*byte_offset);
+            cursor.move_to(byte_offset);
+        }
+        Action::MoveLeft(count) => {
+            cursor.move_left(usize::from(*count));
+        }
+        Action::MoveRight(count) => {
+            cursor.move_right(usize::from(*count));
+        }
+        Action::MoveUp {
+            goal_column,
+            bias,
+            count,
+        } => {
+            cursor.move_up(usize::from(*goal_column), *bias, usize::from(*count));
+        }
+        Action::MoveDown {
+            goal_column,
+            bias,
+            count,
+        } => {
+            cursor.move_down(usize::from(*goal_column), *bias, usize::from(*count));
+        }
+        Action::MoveToPrevByte { byte, count } => {
+            cursor.move_to_prev_byte(*byte, usize::from(*count));
+        }
+        Action::MoveToNextByte { byte, count } => {
+            cursor.move_to_next_byte(*byte, usize::from(*count));
+        }
+        Action::MoveToPrevBlank(count) => {
+            cursor.move_to_prev_blank(usize::from(*count));
+        }
+        Action::MoveToNextBlank(count) => {
+            cursor.move_to_next_blank(usize::from(*count));
+        }
+        Action::MoveToStart => cursor.move_to_start(),
+        Action::MoveToEnd => cursor.move_to_end(),
+        Action::MoveToBottom(bias) => cursor.move_to_bottom(*bias),
+        Action::MoveToLineStart(bias) => cursor.move_to_line_start(*bias),
+        Action::MoveToLineNonBlankStart(bias) => cursor.move_to_line_non_blank_start(*bias),
+        Action::MoveToLineEnd(bias) => {
+            cursor.move_to_line_end(*bias);
+        }
+        Action::InsertChar(c) => {
+            cursor.insert_char(*c);
+        }
+        Action::Insert(text) => {
+            cursor.insert(text);
+        }
+        Action::DeleteBefore => {
+            cursor.delete_before();
+        }
+        Action::DeleteAfter => {
+            cursor.delete_after();
         }
     }
 }
