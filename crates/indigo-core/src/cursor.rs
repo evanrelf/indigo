@@ -112,7 +112,7 @@ pub struct CursorSnapshot {
 impl CursorSnapshot {
     #[must_use]
     pub fn restore(&self, text: &Text) -> Option<CursorState> {
-        let byte_offset = text.resolve_anchor(&self.byte_offset)?;
+        let byte_offset = text.ceil_grapheme_boundary(text.resolve_anchor(&self.byte_offset)?);
         Some(CursorState { byte_offset })
     }
 }
@@ -717,6 +717,15 @@ mod tests {
         cursor.move_left(27);
         cursor.move_to_next_blank(10);
         cursor.delete_after();
+        cursor.assert_invariants().unwrap();
+    }
+
+    #[test]
+    fn restore_snaps_to_grapheme_boundary_after_insert() {
+        let mut cursor = CursorView::try_from(("\u{0301}", 0)).unwrap();
+        let snapshot = cursor.save();
+        cursor.insert("e");
+        assert!(cursor.restore(&snapshot));
         cursor.assert_invariants().unwrap();
     }
 
