@@ -926,12 +926,12 @@ mod tests {
                     2 => {
                         let count = max(1, u.choose_index(99)?);
                         cursor.move_up(cursor.display_column(bias).unwrap_or(0), bias, count);
-                        tx.send(format!("move_left() x{count}")).unwrap();
+                        tx.send(format!("move_up() x{count}")).unwrap();
                     }
                     3 => {
                         let count = max(1, u.choose_index(99)?);
                         cursor.move_down(cursor.display_column(bias).unwrap_or(0), bias, count);
-                        tx.send(format!("move_right() x{count}")).unwrap();
+                        tx.send(format!("move_down() x{count}")).unwrap();
                     }
                     4 => {
                         let text = u.arbitrary()?;
