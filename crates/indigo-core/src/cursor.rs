@@ -234,7 +234,7 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         self.state.save(&self.text)
     }
 
-    pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
+    pub fn assert_invariants(&self) -> anyhow::Result<()> {
         if self.state.byte_offset > self.text.len() {
             anyhow::bail!(Error::ExceedsEnd {
                 byte_offset: self.state.byte_offset,

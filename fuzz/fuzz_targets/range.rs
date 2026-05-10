@@ -1,7 +1,7 @@
 #![no_main]
 
 use indigo_core::{
-    range::{self, Action, Range, RangeSnapshot, RangeView},
+    range::{self, Action, RangeSnapshot, RangeView},
     rope::RopeExt as _,
     text::Text,
 };
@@ -42,7 +42,7 @@ fuzz_target!(|input: (&str, usize, usize, Vec<FuzzAction>)| {
             }
         }
 
-        let range = Range::new(range.text(), range.state()).unwrap();
+        range.assert_invariants().unwrap();
         assert_eq!(range.byte_length(), range.slice().len());
         assert_eq!(range.is_backward(), !range.is_forward());
         assert!(range.start().byte_offset() <= range.end().byte_offset());

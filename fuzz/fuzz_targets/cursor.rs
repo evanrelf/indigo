@@ -1,7 +1,7 @@
 #![no_main]
 
 use indigo_core::{
-    cursor::{self, Action, Cursor, CursorSnapshot, CursorView},
+    cursor::{self, Action, CursorSnapshot, CursorView},
     rope::RopeExt as _,
     text::Text,
 };
@@ -39,6 +39,6 @@ fuzz_target!(|input: (&str, usize, Vec<FuzzAction>)| {
                 }
             }
         }
-        let _ = Cursor::new(cursor.text(), cursor.state()).unwrap();
+        cursor.assert_invariants().unwrap();
     }
 });

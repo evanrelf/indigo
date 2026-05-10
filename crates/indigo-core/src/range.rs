@@ -375,7 +375,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         self.state.save(&self.text)
     }
 
-    pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
+    pub fn assert_invariants(&self) -> anyhow::Result<()> {
         let _ = Cursor::new(&self.text, &self.state.tail).map_err(Error::Tail)?;
         let _ = Cursor::new(&self.text, &self.state.head).map_err(Error::Head)?;
         // TODO: Restore invariants once positioning is rock solid.
