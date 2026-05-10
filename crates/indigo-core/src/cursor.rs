@@ -255,35 +255,49 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.state.snap_to_grapheme_boundary(&self.text)
     }
 
+    // TODO: Drop `unchecked_` prefix? Or change to something else? Since there are assertions.
     pub fn unchecked_move_to(&mut self, byte_offset: usize) {
-        assert!(self.text.is_grapheme_boundary(byte_offset));
+        debug_assert!(byte_offset <= self.text.len());
+        debug_assert!(self.text.is_grapheme_boundary(byte_offset));
         self.state.byte_offset = byte_offset;
     }
 
     pub fn move_left(&mut self, count: usize) -> bool {
+        if count == 0 {
+            return false;
+        }
+        let pre = self.state.byte_offset;
         for _ in 0..count {
             if let Some(prev) = self.text.prev_grapheme_boundary(self.state.byte_offset)
                 && self.state.byte_offset != prev
             {
                 self.state.byte_offset = prev;
             } else {
+                debug_assert!(self.state.byte_offset <= pre);
                 return false;
             }
         }
-        count > 0
+        debug_assert!(self.state.byte_offset < pre);
+        true
     }
 
     pub fn move_right(&mut self, count: usize) -> bool {
+        if count == 0 {
+            return false;
+        }
+        let pre = self.state.byte_offset;
         for _ in 0..count {
             if let Some(next) = self.text.next_grapheme_boundary(self.state.byte_offset)
                 && self.state.byte_offset != next
             {
                 self.state.byte_offset = next;
             } else {
+                debug_assert!(self.state.byte_offset >= pre);
                 return false;
             }
         }
-        count > 0
+        debug_assert!(self.state.byte_offset > pre);
+        true
     }
 
     pub fn move_up(&mut self, goal_column: usize, bias: Bias, count: usize) -> bool {
@@ -301,7 +315,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         bias: Bias,
         count: usize,
     ) -> bool {
-        if self.text.len() == 0 {
+        if count == 0 || self.text.len() == 0 {
             return false;
         }
         for _ in 0..count {
@@ -352,59 +366,83 @@ impl<W: WrapMut> CursorView<'_, W> {
                     .unwrap_or(target_byte_index),
             };
         }
-        count > 0
+        true
     }
 
     pub fn move_to_prev_byte(&mut self, byte: u8, count: usize) -> bool {
+        if count == 0 {
+            return false;
+        }
+        let pre = self.state.byte_offset;
         for _ in 0..count {
             if let Some(byte_offset) = self.text.find_prev_byte(..self.state.byte_offset, &[byte]) {
                 self.state.byte_offset = byte_offset;
                 self.move_right(1);
             } else {
+                debug_assert!(self.state.byte_offset <= pre);
                 return false;
             }
         }
-        count > 0
+        debug_assert!(self.state.byte_offset <= pre);
+        true
     }
 
     pub fn move_to_next_byte(&mut self, byte: u8, count: usize) -> bool {
+        if count == 0 {
+            return false;
+        }
+        let pre = self.state.byte_offset;
         let mut start = self.state.byte_offset;
         for _ in 0..count {
             if let Some(byte_offset) = self.text.find_next_byte(start.., &[byte]) {
                 self.state.byte_offset = self.text.ceil_grapheme_boundary(byte_offset);
                 start = self.text.ceil_grapheme_boundary(byte_offset + 1);
             } else {
+                debug_assert!(self.state.byte_offset >= pre);
                 return false;
             }
         }
-        count > 0
+        debug_assert!(self.state.byte_offset >= pre);
+        true
     }
 
     pub fn move_to_prev_blank(&mut self, count: usize) -> bool {
         const BYTES: &[u8] = b" \t\n\r";
+        if count == 0 {
+            return false;
+        }
+        let pre = self.state.byte_offset;
         for _ in 0..count {
             if let Some(byte_offset) = self.text.find_prev_byte(..self.state.byte_offset, BYTES) {
                 self.state.byte_offset = byte_offset;
                 self.move_right(1);
             } else {
+                debug_assert!(self.state.byte_offset <= pre);
                 return false;
             }
         }
-        count > 0
+        debug_assert!(self.state.byte_offset <= pre);
+        true
     }
 
     pub fn move_to_next_blank(&mut self, count: usize) -> bool {
         const BYTES: &[u8] = b" \t\n\r";
+        if count == 0 {
+            return false;
+        }
+        let pre = self.state.byte_offset;
         let mut start = self.state.byte_offset;
         for _ in 0..count {
             if let Some(byte_offset) = self.text.find_next_byte(start.., BYTES) {
                 self.state.byte_offset = self.text.ceil_grapheme_boundary(byte_offset);
                 start = self.text.ceil_grapheme_boundary(byte_offset + 1);
             } else {
+                debug_assert!(self.state.byte_offset >= pre);
                 return false;
             }
         }
-        count > 0
+        debug_assert!(self.state.byte_offset >= pre);
+        true
     }
 
     pub fn move_to_start(&mut self) {
@@ -425,6 +463,8 @@ impl<W: WrapMut> CursorView<'_, W> {
             return;
         }
 
+        let pre = self.state.byte_offset;
+
         #[expect(clippy::manual_let_else)]
         let byte_index = match self.byte_index(bias) {
             Ok(n) | Err(Some(n)) => n,
@@ -434,6 +474,7 @@ impl<W: WrapMut> CursorView<'_, W> {
         let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
         let line_start_byte_offset = self.text.line_to_byte_idx(line_index, LINE_TYPE);
         self.state.byte_offset = line_start_byte_offset;
+        debug_assert!(self.state.byte_offset <= pre);
     }
 
     pub fn move_to_line_non_blank_start(&mut self, bias: Bias) {
@@ -469,6 +510,8 @@ impl<W: WrapMut> CursorView<'_, W> {
             return false;
         }
 
+        let pre = self.state.byte_offset;
+
         #[expect(clippy::manual_let_else)]
         let byte_index = match self.byte_index(bias) {
             Ok(n) | Err(Some(n)) => n,
@@ -498,6 +541,7 @@ impl<W: WrapMut> CursorView<'_, W> {
             byte_offset += grapheme.len();
         }
         self.state.byte_offset = byte_offset;
+        debug_assert!(self.state.byte_offset >= pre);
         true
     }
 
@@ -507,7 +551,8 @@ impl<W: WrapMut> CursorView<'_, W> {
 
     #[tracing::instrument(skip_all)]
     pub fn insert(&mut self, text: &str) -> OperationSeq {
-        self.assert_invariants().unwrap();
+        let pre_offset = self.state.byte_offset;
+        let pre_text_len = self.text.len();
         let mut ops = OperationSeq::new();
         ops.retain(self.state.byte_offset);
         ops.insert(text);
@@ -517,13 +562,16 @@ impl<W: WrapMut> CursorView<'_, W> {
         if self.snap_to_grapheme_boundary() {
             tracing::warn!("wasn't on grapheme boundary after");
         }
+        debug_assert_eq!(self.text.len(), pre_text_len + text.len());
+        debug_assert!(self.state.byte_offset >= pre_offset + text.len());
         ops
     }
 
     // Behavior traditionally associated with the Backspace key.
     #[tracing::instrument(skip_all)]
     pub fn delete_before(&mut self) -> Option<OperationSeq> {
-        self.assert_invariants().unwrap();
+        let pre_offset = self.state.byte_offset;
+        let pre_text_len = self.text.len();
         let mut byte_offset = self.state.byte_offset;
         if let Some(prev) = self.text.prev_grapheme_boundary(byte_offset)
             && byte_offset != prev
@@ -541,13 +589,20 @@ impl<W: WrapMut> CursorView<'_, W> {
         if self.snap_to_grapheme_boundary() {
             tracing::warn!("wasn't on grapheme boundary after");
         }
+        debug_assert_eq!(self.text.len(), pre_text_len - (pre_offset - byte_offset));
+        // Cursor lands at `byte_offset` after the transform; `snap_to_grapheme_boundary`
+        // can ceil forward but never backward. It can ceil past `pre_offset` if the
+        // deletion merges graphemes (e.g. removing a Control between a base and an
+        // Extend), so we can only assert the lower bound.
+        debug_assert!(self.state.byte_offset >= byte_offset);
         Some(ops)
     }
 
     // Behavior traditionally associated with the Delete key.
     #[tracing::instrument(skip_all)]
     pub fn delete_after(&mut self) -> Option<OperationSeq> {
-        self.assert_invariants().unwrap();
+        let pre_offset = self.state.byte_offset;
+        let pre_text_len = self.text.len();
         let mut byte_offset = self.state.byte_offset;
         if let Some(next) = self.text.next_grapheme_boundary(byte_offset)
             && byte_offset != next
@@ -565,6 +620,8 @@ impl<W: WrapMut> CursorView<'_, W> {
         if self.snap_to_grapheme_boundary() {
             tracing::warn!("wasn't on grapheme boundary after");
         }
+        debug_assert_eq!(self.text.len(), pre_text_len - (byte_offset - pre_offset));
+        debug_assert!(self.state.byte_offset >= pre_offset);
         Some(ops)
     }
 
@@ -683,6 +740,21 @@ mod tests {
                 Defer($f)
             };
         };
+    }
+
+    #[test]
+    fn delete_before_can_merge_graphemes_past_cursor() {
+        // Cursor sits between a Control (SUB, U+001A) and a combining mark
+        // (U+036B). Deleting the Control causes '@' and the combining mark to
+        // merge into a single grapheme cluster, so the cursor's post-transform
+        // position is no longer on a boundary, and snap ceils it forward past
+        // the original `pre_offset`.
+        let mut cursor = CursorView::try_from(("@\u{1a}\u{36b}", 2)).unwrap();
+        cursor.delete_before();
+        cursor.assert_invariants().unwrap();
+        // pre_offset was 2; cursor ends at 3 because '@' merged with the
+        // combining mark into "@\u{36b}" (one 3-byte grapheme).
+        assert_eq!(cursor.byte_offset(), 3);
     }
 
     #[test]
