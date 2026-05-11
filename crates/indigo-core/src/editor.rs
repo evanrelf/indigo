@@ -2,7 +2,7 @@ use crate::{
     buffer::{Buffer, BufferKey},
     fs::{Fs, NoFs},
     key::Key,
-    mode::{Mode, insert, normal, prompt, seek},
+    mode::{Mode, command, insert, normal, prompt, seek},
     selection::Selection,
     window::{Window, WindowKey, WindowMut, WindowState},
 };
@@ -178,6 +178,16 @@ impl Editor {
         Ok(handled)
     }
 
+    pub fn handle_action(&mut self, action: &Action) {
+        match action {
+            Action::Normal(action) => normal::handle_action(self, action),
+            Action::Insert(action) => insert::handle_action(self, action),
+            Action::Prompt(action) => prompt::handle_action(self, action),
+            Action::Command(action) => command::handle_action(self, action),
+            Action::Seek(action) => seek::handle_action(self, action),
+        }
+    }
+
     #[expect(dead_code)]
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
         for (_, window) in &self.windows {
@@ -254,4 +264,15 @@ pub enum KeyEventKind {
     Press,
     Repeat,
     Release,
+}
+
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[derive(Debug)]
+pub enum Action {
+    Normal(normal::Action),
+    Insert(insert::Action),
+    Prompt(prompt::Action),
+    Command(command::Action),
+    // TODO: Replace this with multi-key mappings in normal mode
+    Seek(seek::Action),
 }

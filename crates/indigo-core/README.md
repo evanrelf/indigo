@@ -31,8 +31,6 @@ functional core).
   - `prompt`: Prompt for input, currently used for narrowing a selection to a
     regex and running commands.
   - `seek`: `f`- and `t`-style one-dimensional movement.
-- `action`: Top-level `Action` enum aggregating modes' actions. Represents
-  things you can do in the editor as data.
 - `key`: Types representing keys, and parsers from a textual representation.
   Currently the types are used for input events, and the parsers are used by the
   CLI.
