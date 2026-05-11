@@ -1,5 +1,5 @@
 use clap::Parser as _;
-use indigo_core::{event::handle_event, key::is, prelude::*};
+use indigo_core::{key::is, prelude::*};
 use std::{io, process::ExitCode, sync::Arc};
 use tracing_subscriber::EnvFilter;
 
@@ -55,7 +55,7 @@ fn main() -> anyhow::Result<ExitCode> {
             kind: KeyEventKind::Press,
         });
 
-        let handled = handle_event(&mut editor, event)?;
+        let handled = editor.handle_event(event)?;
 
         if args.debug && !handled && !is(&key, "<c-l>") {
             eprintln!("unhandled key: {key}");

@@ -14,7 +14,7 @@ use ratatui::crossterm::{
 };
 use ratatui::layout::Position;
 
-pub type IndigoEvent = indigo_core::event::Event;
+pub type IndigoEvent = indigo_core::editor::Event;
 
 pub type TerminalEvent = crossterm::event::Event;
 
@@ -50,7 +50,7 @@ pub fn handle_event(editor: &mut Editor, areas: Areas, event: TerminalEvent) -> 
     }
 
     if let Ok(event) = event_t2i(&event) {
-        let handled = indigo_core::event::handle_event(editor, event)?;
+        let handled = editor.handle_event(event)?;
         if handled {
             return Ok(());
         }

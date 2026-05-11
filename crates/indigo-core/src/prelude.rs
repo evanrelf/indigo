@@ -2,8 +2,7 @@
 pub use crate::{
     buffer::{Buffer, BufferKind},
     cursor::{Bias, Cursor, CursorMut},
-    editor::Editor,
-    event::{Event, KeyEvent, KeyEventKind},
+    editor::{Editor, Event, KeyEvent, KeyEventKind},
     key::{Key, KeyCode, KeyModifiers, Keys},
     mode::Mode,
     ot::OperationSeq,

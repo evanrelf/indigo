@@ -2,7 +2,7 @@ use crate::{
     buffer::{Buffer, BufferKey},
     fs::{Fs, NoFs},
     key::Key,
-    mode::Mode,
+    mode::{Mode, insert, normal, prompt, seek},
     selection::Selection,
     window::{Window, WindowKey, WindowMut, WindowState},
 };
@@ -10,6 +10,9 @@ use camino::Utf8PathBuf;
 use slotmap::SlotMap;
 use std::{num::NonZeroUsize, process::ExitCode, sync::Arc};
 use thiserror::Error;
+
+#[cfg(any(feature = "arbitrary", test))]
+use arbitrary::Arbitrary;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -156,6 +159,25 @@ impl Editor {
         self.exit_code = Some(ExitCode::from(exit_code));
     }
 
+    pub fn handle_event(&mut self, mut event: Event) -> anyhow::Result<bool> {
+        #[expect(irrefutable_let_patterns)]
+        if let Event::Key(KeyEvent { key, .. }) = &mut event {
+            key.normalize();
+            self.pending_keys.push(*key);
+        }
+
+        let handled = match event {
+            Event::Key(_) => match self.mode {
+                Mode::Normal => normal::handle_keys(self),
+                Mode::Seek(_) => seek::handle_keys(self),
+                Mode::Insert => insert::handle_keys(self),
+                Mode::Prompt(_) => prompt::handle_keys(self),
+            },
+        };
+
+        Ok(handled)
+    }
+
     #[expect(dead_code)]
     pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
         for (_, window) in &self.windows {
@@ -211,4 +233,25 @@ impl From<Buffer> for Editor {
             ..Self::default()
         }
     }
+}
+
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[derive(Debug)]
+pub enum Event {
+    Key(KeyEvent),
+}
+
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[derive(Debug, PartialEq)]
+pub struct KeyEvent {
+    pub key: Key,
+    pub kind: KeyEventKind,
+}
+
+#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[derive(Debug, PartialEq)]
+pub enum KeyEventKind {
+    Press,
+    Repeat,
+    Release,
 }

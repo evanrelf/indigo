@@ -4,7 +4,6 @@ pub mod btree;
 pub mod buffer;
 pub mod cursor;
 pub mod editor;
-pub mod event;
 pub mod fs;
 pub mod history;
 pub mod key;

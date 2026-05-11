@@ -7,7 +7,7 @@ mod t {
 }
 
 mod i {
-    pub use indigo_core::event::{KeyEvent, KeyEventKind};
+    pub use indigo_core::editor::{KeyEvent, KeyEventKind};
     pub use indigo_core::key::{Key, KeyCode, KeyModifiers};
 }
 

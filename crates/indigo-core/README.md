@@ -38,9 +38,6 @@ functional core).
   CLI.
 - `keymap`: Trie-based mapping from key sequences to values, for multi-key
   bindings.
-- `event`: Things that have happened. Currently just represents keyboard input
-  events, provided by frontends (either by parsing strings or converting
-  `crossterm` types).
 - `fs`: Abstract filesystem interface. Keeps the core morally pure, and allows
   swapping out the implementation for testing.
 - `attributes`: Work in progress. Arbitrary annotations for ranges inspired by

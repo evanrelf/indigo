@@ -140,11 +140,11 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
 
     if let Some(keys) = &args.exec {
         for key in &keys.0 {
-            let event = IndigoEvent::Key(indigo_core::event::KeyEvent {
+            let event = IndigoEvent::Key(indigo_core::editor::KeyEvent {
                 key: *key,
-                kind: indigo_core::event::KeyEventKind::Press,
+                kind: indigo_core::editor::KeyEventKind::Press,
             });
-            indigo_core::event::handle_event(&mut editor, event)?;
+            editor.handle_event(event)?;
         }
         if let Some(exit_code) = editor.exit_code() {
             return Ok(exit_code);
