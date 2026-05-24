@@ -38,34 +38,34 @@ pub enum Action {
         byte_offset: usize,
     },
     MoveLeft {
-        count: usize,
+        count: u8,
     },
     MoveRight {
-        count: usize,
+        count: u8,
     },
     MoveUp {
         goal_column: u16,
         bias: Bias,
-        count: usize,
+        count: u8,
     },
     MoveDown {
         goal_column: u16,
         bias: Bias,
-        count: usize,
+        count: u8,
     },
     MoveToPrevByte {
         byte: u8,
-        count: usize,
+        count: u8,
     },
     MoveToNextByte {
         byte: u8,
-        count: usize,
+        count: u8,
     },
     MoveToPrevBlank {
-        count: usize,
+        count: u8,
     },
     MoveToNextBlank {
-        count: usize,
+        count: u8,
     },
     MoveToStart,
     MoveToEnd,
@@ -668,36 +668,36 @@ pub fn handle_action<W: WrapMut>(cursor: &mut CursorView<'_, W>, action: &Action
             cursor.unchecked_move_to(byte_offset);
         }
         Action::MoveLeft { count } => {
-            cursor.move_left(*count);
+            cursor.move_left(usize::from(*count));
         }
         Action::MoveRight { count } => {
-            cursor.move_right(*count);
+            cursor.move_right(usize::from(*count));
         }
         Action::MoveUp {
             goal_column,
             bias,
             count,
         } => {
-            cursor.move_up(usize::from(*goal_column), *bias, *count);
+            cursor.move_up(usize::from(*goal_column), *bias, usize::from(*count));
         }
         Action::MoveDown {
             goal_column,
             bias,
             count,
         } => {
-            cursor.move_down(usize::from(*goal_column), *bias, *count);
+            cursor.move_down(usize::from(*goal_column), *bias, usize::from(*count));
         }
         Action::MoveToPrevByte { byte, count } => {
-            cursor.move_to_prev_byte(*byte, *count);
+            cursor.move_to_prev_byte(*byte, usize::from(*count));
         }
         Action::MoveToNextByte { byte, count } => {
-            cursor.move_to_next_byte(*byte, *count);
+            cursor.move_to_next_byte(*byte, usize::from(*count));
         }
         Action::MoveToPrevBlank { count } => {
-            cursor.move_to_prev_blank(*count);
+            cursor.move_to_prev_blank(usize::from(*count));
         }
         Action::MoveToNextBlank { count } => {
-            cursor.move_to_next_blank(*count);
+            cursor.move_to_next_blank(usize::from(*count));
         }
         Action::MoveToStart => cursor.move_to_start(),
         Action::MoveToEnd => cursor.move_to_end(),
