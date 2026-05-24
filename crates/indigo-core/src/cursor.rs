@@ -34,9 +34,15 @@ pub enum Bias {
 #[derive(Debug)]
 pub enum Action {
     SnapToGraphemeBoundary,
-    UncheckedMoveTo(usize),
-    MoveLeft(u8),
-    MoveRight(u8),
+    UncheckedMoveTo {
+        byte_offset: usize,
+    },
+    MoveLeft {
+        count: u8,
+    },
+    MoveRight {
+        count: u8,
+    },
     MoveUp {
         goal_column: u16,
         bias: Bias,
@@ -55,16 +61,32 @@ pub enum Action {
         byte: u8,
         count: u8,
     },
-    MoveToPrevBlank(u8),
-    MoveToNextBlank(u8),
+    MoveToPrevBlank {
+        count: u8,
+    },
+    MoveToNextBlank {
+        count: u8,
+    },
     MoveToStart,
     MoveToEnd,
-    MoveToBottom(Bias),
-    MoveToLineStart(Bias),
-    MoveToLineNonBlankStart(Bias),
-    MoveToLineEnd(Bias),
-    InsertChar(char),
-    Insert(String),
+    MoveToBottom {
+        bias: Bias,
+    },
+    MoveToLineStart {
+        bias: Bias,
+    },
+    MoveToLineNonBlankStart {
+        bias: Bias,
+    },
+    MoveToLineEnd {
+        bias: Bias,
+    },
+    InsertChar {
+        char: char,
+    },
+    Insert {
+        text: String,
+    },
     DeleteBefore,
     DeleteAfter,
 }
@@ -640,15 +662,15 @@ pub fn handle_action<W: WrapMut>(cursor: &mut CursorView<'_, W>, action: &Action
         Action::SnapToGraphemeBoundary => {
             cursor.snap_to_grapheme_boundary();
         }
-        Action::UncheckedMoveTo(byte_offset) => {
+        Action::UncheckedMoveTo { byte_offset } => {
             // Snapping to grapheme boundary because `unchecked_move_to` is otherwise unsafe.
             let byte_offset = cursor.text.ceil_grapheme_boundary(*byte_offset);
             cursor.unchecked_move_to(byte_offset);
         }
-        Action::MoveLeft(count) => {
+        Action::MoveLeft { count } => {
             cursor.move_left(usize::from(*count));
         }
-        Action::MoveRight(count) => {
+        Action::MoveRight { count } => {
             cursor.move_right(usize::from(*count));
         }
         Action::MoveUp {
@@ -671,24 +693,24 @@ pub fn handle_action<W: WrapMut>(cursor: &mut CursorView<'_, W>, action: &Action
         Action::MoveToNextByte { byte, count } => {
             cursor.move_to_next_byte(*byte, usize::from(*count));
         }
-        Action::MoveToPrevBlank(count) => {
+        Action::MoveToPrevBlank { count } => {
             cursor.move_to_prev_blank(usize::from(*count));
         }
-        Action::MoveToNextBlank(count) => {
+        Action::MoveToNextBlank { count } => {
             cursor.move_to_next_blank(usize::from(*count));
         }
         Action::MoveToStart => cursor.move_to_start(),
         Action::MoveToEnd => cursor.move_to_end(),
-        Action::MoveToBottom(bias) => cursor.move_to_bottom(*bias),
-        Action::MoveToLineStart(bias) => cursor.move_to_line_start(*bias),
-        Action::MoveToLineNonBlankStart(bias) => cursor.move_to_line_non_blank_start(*bias),
-        Action::MoveToLineEnd(bias) => {
+        Action::MoveToBottom { bias } => cursor.move_to_bottom(*bias),
+        Action::MoveToLineStart { bias } => cursor.move_to_line_start(*bias),
+        Action::MoveToLineNonBlankStart { bias } => cursor.move_to_line_non_blank_start(*bias),
+        Action::MoveToLineEnd { bias } => {
             cursor.move_to_line_end(*bias);
         }
-        Action::InsertChar(c) => {
-            cursor.insert_char(*c);
+        Action::InsertChar { char } => {
+            cursor.insert_char(*char);
         }
-        Action::Insert(text) => {
+        Action::Insert { text } => {
             cursor.insert(text);
         }
         Action::DeleteBefore => {
