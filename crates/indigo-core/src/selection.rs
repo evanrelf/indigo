@@ -332,6 +332,10 @@ impl<W: WrapMut> SelectionView<'_, W> {
         if self.snap_to_grapheme_boundaries() {
             tracing::warn!("wasn't on grapheme boundary after");
         }
+        for i in 0..self.state.ranges.len() {
+            let mut range = self.unchecked_get_mut(i).unwrap();
+            range.update_goal_column();
+        }
         ops
     }
 
