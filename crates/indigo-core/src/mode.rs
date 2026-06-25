@@ -2,6 +2,7 @@ pub mod command;
 pub mod insert;
 pub mod normal;
 pub mod prompt;
+pub mod replace;
 pub mod seek;
 
 #[derive(Clone, Default)]
@@ -12,6 +13,7 @@ pub enum Mode {
     Prompt(prompt::State),
     // TODO: Replace this with multi-key mappings in normal mode
     Seek(seek::State),
+    Replace,
 }
 
 impl Mode {
@@ -22,6 +24,7 @@ impl Mode {
             Self::Insert => ModeKind::Insert,
             Self::Prompt(_) => ModeKind::Prompt,
             Self::Seek(_) => ModeKind::Seek,
+            Self::Replace => ModeKind::Replace,
         }
     }
 }
@@ -33,4 +36,5 @@ pub enum ModeKind {
     Prompt,
     // TODO: `Command`?
     Seek,
+    Replace,
 }

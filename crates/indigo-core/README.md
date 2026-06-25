@@ -31,6 +31,7 @@ functional core).
   - `prompt`: Prompt for input, currently used for narrowing a selection to a
     regex and running commands.
   - `seek`: `f`- and `t`-style one-dimensional movement.
+  - `replace`: Replace graphemes in selection with `r`.
 - `key`: Types representing keys, and parsers from a textual representation.
   Currently the types are used for input events, and the parsers are used by the
   CLI.

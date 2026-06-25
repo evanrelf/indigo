@@ -6,7 +6,7 @@ use crate::{
     mode::{
         Mode,
         command::enter_command_mode,
-        insert, prompt,
+        insert, prompt, replace,
         seek::{self, SeekDirection, SeekInclude, SeekSelect},
     },
     rope::{LINE_TYPE, RopeExt as _},
@@ -33,6 +33,7 @@ pub enum Action {
         include: SeekInclude,
         direction: SeekDirection,
     },
+    EnterReplaceMode,
     InsertAfterHead,
     InsertAtLineNonBlankStart,
     InsertAtLineEnd,
@@ -118,6 +119,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<a-F>" => vec![EnterSeekMode { select: Extend, include: Onto, direction: Prev }],
         "f" => vec![EnterSeekMode { select: Move, include: Onto, direction: Next }],
         "F" => vec![EnterSeekMode { select: Extend, include: Onto, direction: Next }],
+        "r" => vec![EnterReplaceMode],
         // TODO: With a count, `g` runs `GotoLine` instead of entering goto mode.
         "gk" => vec![GotoMoveToStart],
         "gK" => vec![GotoExtendToStart],
@@ -184,6 +186,7 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
         } => {
             seek::enter(editor, *select, *include, *direction);
         }
+        Action::EnterReplaceMode => replace::enter(editor),
         Action::InsertAfterHead => insert_after_head(editor),
         Action::InsertAtLineNonBlankStart => insert_at_line_non_blank_start(editor),
         Action::InsertAtLineEnd => insert_at_line_end(editor),

@@ -2,7 +2,7 @@ use crate::{
     buffer::{Buffer, BufferKey},
     fs::{Fs, NoFs},
     key::Key,
-    mode::{Mode, command, insert, normal, prompt, seek},
+    mode::{Mode, command, insert, normal, prompt, replace, seek},
     selection::Selection,
     window::{Window, WindowKey, WindowMut, WindowState},
 };
@@ -172,6 +172,7 @@ impl Editor {
                 Mode::Seek(_) => seek::handle_keys(self),
                 Mode::Insert => insert::handle_keys(self),
                 Mode::Prompt(_) => prompt::handle_keys(self),
+                Mode::Replace => replace::handle_keys(self),
             },
         };
 
