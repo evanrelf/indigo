@@ -165,9 +165,9 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
     match action {
         Action::AppendCountDigit(digit) => {
             let digit = usize::from(*digit);
-            let current = editor.count.map_or(0, |count| usize::from(count));
-            let new_count = NonZeroUsize::new(current.saturating_mul(10).saturating_add(digit));
-            set_count(editor, new_count);
+            let old_count = editor.count.map_or(0, |count| usize::from(count));
+            let new_count = NonZeroUsize::new(old_count.saturating_mul(10).saturating_add(digit));
+            editor.count = new_count;
         }
         Action::EnterNormalMode => enter(editor),
         Action::EnterCommandMode => enter_command_mode(editor),
@@ -251,10 +251,6 @@ pub fn enter(editor: &mut Editor) {
     editor.focused_buffer_mut().text.commit();
     editor.mode = Mode::Normal;
     editor.count = None;
-}
-
-fn set_count(editor: &mut Editor, count: Option<NonZeroUsize>) {
-    editor.count = count;
 }
 
 fn extend_left(editor: &mut Editor) {
