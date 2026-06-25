@@ -24,6 +24,7 @@ use arbitrary::Arbitrary;
 #[derive(Debug)]
 pub enum Action {
     AppendCountDigit(u8),
+    ClearCount,
     EnterNormalMode,
     EnterCommandMode,
     EnterInsertMode,
@@ -152,6 +153,9 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<c-d>" => vec![ScrollHalfPageDown],
         "<c-b>" => vec![ScrollFullPageUp],
         "<c-f>" => vec![ScrollFullPageDown],
+        _keys => {
+            KeymapResult::Fallback(vec![ClearCount])
+        },
     }
 });
 
@@ -169,6 +173,7 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
             let new_count = NonZeroUsize::new(old_count.saturating_mul(10).saturating_add(digit));
             editor.count = new_count;
         }
+        Action::ClearCount => editor.count = None,
         Action::EnterNormalMode => enter(editor),
         Action::EnterCommandMode => enter_command_mode(editor),
         Action::EnterInsertMode => insert::enter(editor),
