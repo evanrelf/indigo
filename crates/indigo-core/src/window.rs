@@ -25,8 +25,13 @@ pub struct WindowState {
 impl WindowState {
     #[must_use]
     pub fn new(buffer_key: BufferKey, buffer: &Buffer) -> Self {
+        let rope = buffer.text.rope();
+        let mut range = RangeState::default();
+        // Select the first grapheme instead of starting with an empty selection. On an empty
+        // buffer this leaves the range empty at the end of the text, which is valid.
+        range.head.byte_offset = rope.next_grapheme_boundary(0).unwrap_or(0);
         let selection = SelectionState {
-            ranges: vec![RangeState::default().snapped_to_grapheme_boundaries(buffer.text.rope())],
+            ranges: vec![range.snapped_to_grapheme_boundaries(rope)],
             primary_range: 0,
         };
         Self {
