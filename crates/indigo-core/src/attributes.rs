@@ -85,11 +85,13 @@ impl<A> Attributes<A> {
                 .collect();
             ops.transform_byte_offsets_sorted(&mut offsets);
             let mut new_ranges = RoaringBitmap::new();
-            for pair in offsets.chunks_exact(2) {
+            let mut chunks = offsets.chunks_exact(2);
+            for pair in &mut chunks {
                 let start = u32::try_from(pair[0]).expect("Byte offset does not exceed u32::MAX");
                 let end = u32::try_from(pair[1]).expect("Byte offset does not exceed u32::MAX");
                 new_ranges.insert_range(start..=end);
             }
+            assert!(chunks.remainder().is_empty());
             *old_ranges = new_ranges;
         }
     }
