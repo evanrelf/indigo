@@ -17,8 +17,6 @@ CLI):
 And then there are supporting crates that are either currently unused,
 infrequently changed, or feature complete:
 
-- [indigo-llm](crates/indigo-llm/README.md): talk to 3rd party LLM APIs,
-  currently unused.
 - [indigo-term](crates/indigo-term/README.md): low-level terminal manipulation
   library, currently unused.
 - [indigo-tui](crates/indigo-tui/README.md): high-level terminal UI library,
