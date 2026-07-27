@@ -8,7 +8,7 @@ cargo-fuzz = true
 [dependencies]
 arbitrary = { workspace = true }
 indigo-core = { workspace = true, features = ["arbitrary"] }
-libfuzzer-sys = "0.4.12"
+libfuzzer-sys = "0.4.13"
 ropey = { workspace = true }
 
 [[bin]]
