@@ -11,7 +11,7 @@ use slotmap::SlotMap;
 use std::{num::NonZeroUsize, process::ExitCode, sync::Arc};
 use thiserror::Error;
 
-#[cfg(any(feature = "arbitrary", test))]
+#[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
 
 #[derive(Debug, Error)]
@@ -246,20 +246,20 @@ impl From<Buffer> for Editor {
     }
 }
 
-#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Event {
     Key(KeyEvent),
 }
 
-#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug, PartialEq)]
 pub struct KeyEvent {
     pub key: Key,
     pub kind: KeyEventKind,
 }
 
-#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug, PartialEq)]
 pub enum KeyEventKind {
     Press,
@@ -267,7 +267,7 @@ pub enum KeyEventKind {
     Release,
 }
 
-#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
     Normal(normal::Action),

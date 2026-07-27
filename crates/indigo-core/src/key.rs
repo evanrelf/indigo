@@ -12,10 +12,10 @@ use winnow::{
     token::one_of,
 };
 
-#[cfg(any(feature = "arbitrary", test))]
+#[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
 
-#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Clone, Debug)]
 pub struct Keys(pub Vec<Key>);
 
@@ -54,7 +54,7 @@ fn keys(input: &mut &str) -> ModalResult<Keys> {
         .parse_next(input)
 }
 
-#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Key {
     pub modifiers: KeyModifiers,
@@ -118,7 +118,7 @@ fn key_bare_unmodified(input: &mut &str) -> ModalResult<Key> {
 }
 
 bitflags! {
-    #[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+    #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
     #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
     pub struct KeyModifiers: u8 {
         const CONTROL = 1 << 0;
@@ -187,7 +187,7 @@ pub enum KeyCode {
     Char(u8),
 }
 
-#[cfg(any(feature = "arbitrary", test))]
+#[cfg(feature = "arbitrary")]
 impl<'a> Arbitrary<'a> for KeyCode {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
         if u.ratio(8, 10)? {
@@ -304,7 +304,41 @@ pub fn is(x: &Key, y: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use arbtest::arbtest;
+    use hegel::{Generator, TestCase, generators as gs};
+
+    fn gen_key_modifiers() -> impl Generator<KeyModifiers> {
+        gs::integers::<u8>()
+            .min_value(0)
+            .max_value(KeyModifiers::all().bits())
+            .map(KeyModifiers::from_bits_truncate)
+    }
+
+    fn gen_key_code() -> impl Generator<KeyCode> {
+        let mut codes: Vec<KeyCode> = (b' '..=b'~')
+            .filter(|c| !b" #<>\\".contains(c))
+            .map(KeyCode::Char)
+            .collect();
+        codes.extend([
+            KeyCode::Backspace,
+            KeyCode::Delete,
+            KeyCode::Return,
+            KeyCode::Left,
+            KeyCode::Right,
+            KeyCode::Up,
+            KeyCode::Down,
+            KeyCode::Tab,
+            KeyCode::Escape,
+        ]);
+        gs::sampled_from(codes)
+    }
+
+    #[hegel::composite]
+    fn gen_key(tc: TestCase) -> Key {
+        Key {
+            modifiers: tc.draw(gen_key_modifiers()),
+            code: tc.draw(gen_key_code()),
+        }
+    }
 
     #[test]
     fn random() {
@@ -356,16 +390,13 @@ mod tests {
         assert!("<s-c-a-c-a>".parse::<Key>().is_err());
     }
 
-    #[test]
-    fn key_roundtrip() {
-        arbtest(|u| {
-            let key = u.arbitrary::<Key>()?;
-            match key.to_string().parse::<Key>() {
-                Ok(parsed_key) => assert_eq!(key, parsed_key),
-                Err(e) => panic!("Failed to parse `{key:?}` printed as `{key}`:\n{e}"),
-            }
-            Ok(())
-        });
+    #[hegel::test(test_cases = 1000)]
+    fn key_roundtrip(tc: TestCase) {
+        let key = tc.draw(gen_key());
+        match key.to_string().parse::<Key>() {
+            Ok(parsed_key) => assert_eq!(key, parsed_key),
+            Err(e) => panic!("Failed to parse `{key:?}` printed as `{key}`:\n{e}"),
+        }
     }
 
     #[test]

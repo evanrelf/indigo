@@ -1,14 +1,22 @@
 # cargo
 target/
 
+# cargo-fuzz
+fuzz/artifacts/
+fuzz/corpus/
+fuzz/coverage/
+
 # cargo-mutants
 mutants.out/
 mutants.out.old/
 
-# samply
-profile.json
-profile.json.gz
+# hegel
+.hegel/
 
 # nix
 result
 result-*
+
+# samply
+profile.json
+profile.json.gz

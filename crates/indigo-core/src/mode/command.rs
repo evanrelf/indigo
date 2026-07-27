@@ -3,7 +3,7 @@ use anyhow::anyhow;
 use camino::Utf8PathBuf;
 use std::sync::Arc;
 
-#[cfg(any(feature = "arbitrary", test))]
+#[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
 
 pub type Action = Command;
@@ -21,7 +21,7 @@ pub enum Command {
     Panic,
 }
 
-#[cfg(any(feature = "arbitrary", test))]
+#[cfg(feature = "arbitrary")]
 impl<'a> Arbitrary<'a> for Command {
     fn arbitrary(_u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
         // TODO: Uhhh I don't know what's most useful here

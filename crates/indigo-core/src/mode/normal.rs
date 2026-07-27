@@ -17,10 +17,10 @@ use crate::{
 use regex_cursor::engines::meta::Regex;
 use std::{cmp::min, num::NonZeroUsize, sync::LazyLock};
 
-#[cfg(any(feature = "arbitrary", test))]
+#[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
 
-#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
     AppendCountDigit(u8),

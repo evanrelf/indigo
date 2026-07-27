@@ -8,7 +8,7 @@ use ropey::{Rope, RopeSlice};
 use std::thread;
 use thiserror::Error;
 
-#[cfg(any(feature = "arbitrary", test))]
+#[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
 
 #[derive(Debug, Error)]
@@ -23,14 +23,14 @@ pub enum Error {
     NotOnGraphemeBoundary { byte_offset: usize },
 }
 
-#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Bias {
     Before,
     After,
 }
 
-#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
     SnapToGraphemeBoundary,
@@ -747,22 +747,7 @@ impl<W: Wrap> Drop for CursorView<'_, W> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use arbtest::arbtest;
-    use std::{cmp::max, sync::mpsc, thread};
-
-    macro_rules! defer {
-        ($f:expr) => {
-            let __defer = {
-                struct Defer<F: FnMut()>(F);
-                impl<F: FnMut()> Drop for Defer<F> {
-                    fn drop(&mut self) {
-                        (self.0)();
-                    }
-                }
-                Defer($f)
-            };
-        };
-    }
+    use hegel::{TestCase, generators as gs};
 
     #[test]
     fn delete_before_can_merge_graphemes_past_cursor() {
@@ -984,73 +969,62 @@ mod tests {
         assert_eq!(cursor.byte_index(Bias::After), Err(None));
     }
 
-    #[test]
-    fn fuzz() {
-        arbtest(|u| {
-            let text = Text::new();
-            let byte_offset = if u.arbitrary::<bool>()? {
-                text.floor_grapheme_boundary(u.arbitrary::<usize>()?)
-            } else {
-                text.ceil_grapheme_boundary(u.arbitrary::<usize>()?)
-            };
-            let bias = Bias::After;
-            let mut cursor = CursorView::try_from((text, byte_offset)).unwrap();
-            let (tx, rx) = mpsc::channel();
-            defer!(|| {
-                if thread::panicking() {
-                    let actions: Vec<String> = rx.try_iter().collect();
-                    if !actions.is_empty() {
-                        eprintln!("Actions:\n  {}", actions.join("\n  "));
-                    }
-                }
-            });
-            for _ in 0..u.choose_index(100)? {
-                match u.choose_index(7)? {
-                    0 => {
-                        let count = max(1, u.choose_index(99)?);
-                        cursor.move_left(count);
-                        tx.send(format!("move_left() x{count}")).unwrap();
-                    }
-                    1 => {
-                        let count = max(1, u.choose_index(99)?);
-                        cursor.move_right(count);
-                        tx.send(format!("move_right() x{count}")).unwrap();
-                    }
+    #[hegel::test(test_cases = 1000)]
+    fn fuzz(tc: TestCase) {
+        let text = Text::new();
+        let byte_offset = if tc.draw(gs::booleans()) {
+            text.floor_grapheme_boundary(tc.draw(gs::integers::<usize>()))
+        } else {
+            text.ceil_grapheme_boundary(tc.draw(gs::integers::<usize>()))
+        };
+        let bias = Bias::After;
+        let mut cursor = CursorView::try_from((text, byte_offset)).unwrap();
 
-                    2 => {
-                        let count = max(1, u.choose_index(99)?);
-                        cursor.move_up(cursor.display_column(bias).unwrap_or(0), bias, count);
-                        tx.send(format!("move_up() x{count}")).unwrap();
-                    }
-                    3 => {
-                        let count = max(1, u.choose_index(99)?);
-                        cursor.move_down(cursor.display_column(bias).unwrap_or(0), bias, count);
-                        tx.send(format!("move_down() x{count}")).unwrap();
-                    }
-                    4 => {
-                        let text = u.arbitrary()?;
-                        cursor.insert(text);
-                        tx.send(format!("insert({text:?})")).unwrap();
-                    }
-                    5 => {
-                        let count = max(1, u.choose_index(99)?);
-                        for _ in 1..=count {
-                            cursor.delete_before();
-                        }
-                        tx.send(format!("delete_before() x{count}")).unwrap();
-                    }
-                    6 => {
-                        let count = max(1, u.choose_index(99)?);
-                        for _ in 1..=count {
-                            cursor.delete_after();
-                        }
-                        tx.send(format!("delete_after() x{count}")).unwrap();
-                    }
-                    _ => unreachable!(),
+        let steps = tc.draw(gs::integers::<usize>().min_value(0).max_value(99));
+        for _ in 0..steps {
+            match tc.draw(gs::integers::<u8>().min_value(0).max_value(6)) {
+                0 => {
+                    let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                    cursor.move_left(count);
+                    tc.note(&format!("move_left() x{count}"));
                 }
-                cursor.assert_invariants().unwrap();
+                1 => {
+                    let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                    cursor.move_right(count);
+                    tc.note(&format!("move_right() x{count}"));
+                }
+                2 => {
+                    let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                    cursor.move_up(cursor.display_column(bias).unwrap_or(0), bias, count);
+                    tc.note(&format!("move_up() x{count}"));
+                }
+                3 => {
+                    let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                    cursor.move_down(cursor.display_column(bias).unwrap_or(0), bias, count);
+                    tc.note(&format!("move_down() x{count}"));
+                }
+                4 => {
+                    let text = tc.draw(gs::text());
+                    cursor.insert(&text);
+                    tc.note(&format!("insert({text:?})"));
+                }
+                5 => {
+                    let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                    for _ in 1..=count {
+                        cursor.delete_before();
+                    }
+                    tc.note(&format!("delete_before() x{count}"));
+                }
+                6 => {
+                    let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                    for _ in 1..=count {
+                        cursor.delete_after();
+                    }
+                    tc.note(&format!("delete_after() x{count}"));
+                }
+                _ => unreachable!(),
             }
-            Ok(())
-        });
+            cursor.assert_invariants().unwrap();
+        }
     }
 }

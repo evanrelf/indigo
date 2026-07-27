@@ -11,7 +11,7 @@ use crate::{
 use ropey::Rope;
 use std::sync::{Arc, LazyLock, Mutex};
 
-#[cfg(any(feature = "arbitrary", test))]
+#[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
 
 #[derive(Clone)]
@@ -63,7 +63,7 @@ impl State {
     }
 }
 
-#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
     EnterNormalMode,

@@ -424,6 +424,7 @@ impl Operation {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hegel::{TestCase, generators as gs};
 
     #[test]
     fn operation_seq_push() {
@@ -672,35 +673,38 @@ mod tests {
         assert!(ops_a.compose(&ops_b).is_err());
     }
 
-    fn gen_operation_seq(
-        u: &mut arbitrary::Unstructured<'_>,
-        source_bytes: usize,
-    ) -> arbitrary::Result<OperationSeq> {
+    // Generate an operation sequence valid for a source rope of `source_bytes`
+    // bytes: retains and deletes consume the source exactly, inserts add
+    // lowercase ASCII.
+    #[hegel::composite]
+    fn gen_operation_seq(tc: TestCase, source_bytes: usize) -> OperationSeq {
         let mut ops = OperationSeq::new();
         let mut remaining = source_bytes;
 
-        while remaining > 0 || u.arbitrary::<bool>()? {
-            let op_type = u.int_in_range(0..=2)?;
+        while remaining > 0 || tc.draw(gs::booleans()) {
+            let op_type = tc.draw(gs::integers::<u8>().min_value(0).max_value(2));
 
             match op_type {
                 // Retain
                 0 if remaining > 0 => {
-                    let n = u.int_in_range(1..=remaining)?;
+                    let n = tc.draw(gs::integers::<usize>().min_value(1).max_value(remaining));
                     ops.retain(n);
                     remaining -= n;
                 }
                 // Delete
                 1 if remaining > 0 => {
-                    let n = u.int_in_range(1..=remaining)?;
+                    let n = tc.draw(gs::integers::<usize>().min_value(1).max_value(remaining));
                     ops.delete(n);
                     remaining -= n;
                 }
                 // Insert
                 2 => {
-                    let len = u.int_in_range(1..=10)?;
-                    let s: String = (0..len)
-                        .map(|_| u.int_in_range(b'a'..=b'z').map(|b| char::from(b)))
-                        .collect::<arbitrary::Result<_>>()?;
+                    let s = tc.draw(
+                        gs::text()
+                            .alphabet("abcdefghijklmnopqrstuvwxyz")
+                            .min_size(1)
+                            .max_size(10),
+                    );
                     ops.insert(s.as_str());
 
                     // If we've consumed all source chars, we can stop
@@ -718,7 +722,7 @@ mod tests {
             }
 
             // Sometimes stop early to avoid making sequences too long
-            if remaining == 0 && u.int_in_range(0..=2)? == 0 {
+            if remaining == 0 && tc.draw(gs::integers::<u8>().min_value(0).max_value(2)) == 0 {
                 break;
             }
         }
@@ -728,59 +732,44 @@ mod tests {
             ops.retain(remaining);
         }
 
-        Ok(ops)
+        ops
     }
 
-    #[test]
-    fn prop_compose() {
-        arbtest::arbtest(|u| {
-            // Generate a random initial rope
-            let s_len = u.int_in_range(0..=50)?;
-            let s: String = (0..s_len)
-                .map(|_| u.int_in_range(b'a'..=b'z').map(|b| char::from(b)))
-                .collect::<arbitrary::Result<_>>()?;
-            let rope = Rope::from(s.as_str());
+    #[hegel::test(test_cases = 1000)]
+    fn prop_compose(tc: TestCase) {
+        // Generate a random initial rope
+        let s = tc.draw(
+            gs::text()
+                .alphabet("abcdefghijklmnopqrstuvwxyz")
+                .max_size(50),
+        );
+        let rope = Rope::from(s.as_str());
 
-            // Generate operation sequence A that's valid for the rope
-            let ops_a = gen_operation_seq(u, rope.len())?;
+        // Generate operation sequence A that's valid for the rope
+        let ops_a = tc.draw(gen_operation_seq(rope.len()));
 
-            // Apply A to get intermediate rope
-            let mut rope1 = rope.clone();
-            ops_a.apply(&mut rope1).expect("ops_a.apply failed");
+        // Apply A to get intermediate rope
+        let mut rope1 = rope.clone();
+        ops_a.apply(&mut rope1).expect("ops_a.apply failed");
 
-            // Generate operation sequence B that's valid for the intermediate rope
-            let ops_b = gen_operation_seq(u, rope1.len())?;
+        // Generate operation sequence B that's valid for the intermediate rope
+        let ops_b = tc.draw(gen_operation_seq(rope1.len()));
 
-            // Test property: apply(apply(S, A), B) = apply(S, compose(A, B))
-            let mut rope_sequential = rope.clone();
-            ops_a
-                .apply(&mut rope_sequential)
-                .expect("sequential: ops_a.apply failed");
-            ops_b
-                .apply(&mut rope_sequential)
-                .expect("sequential: ops_b.apply failed");
+        // Test property: apply(apply(S, A), B) = apply(S, compose(A, B))
+        let mut rope_sequential = rope.clone();
+        ops_a
+            .apply(&mut rope_sequential)
+            .expect("sequential: ops_a.apply failed");
+        ops_b
+            .apply(&mut rope_sequential)
+            .expect("sequential: ops_b.apply failed");
 
-            let composed = ops_a.compose(&ops_b).expect("compose failed");
-            let mut rope_composed = rope.clone();
-            composed
-                .apply(&mut rope_composed)
-                .expect("composed: apply failed");
+        let composed = ops_a.compose(&ops_b).expect("compose failed");
+        let mut rope_composed = rope.clone();
+        composed
+            .apply(&mut rope_composed)
+            .expect("composed: apply failed");
 
-            assert_eq!(
-                rope_sequential,
-                rope_composed,
-                "Property violation: apply(apply(S, A), B) != apply(S, compose(A, B))\n\
-                 S = {:?}\n\
-                 A = source:{} target:{}\n\
-                 B = source:{} target:{}",
-                rope.to_string(),
-                ops_a.source_bytes,
-                ops_a.target_bytes,
-                ops_b.source_bytes,
-                ops_b.target_bytes,
-            );
-
-            Ok(())
-        });
+        assert_eq!(rope_sequential, rope_composed);
     }
 }

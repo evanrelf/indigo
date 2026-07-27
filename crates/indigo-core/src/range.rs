@@ -9,7 +9,7 @@ use ropey::{Rope, RopeSlice};
 use std::{mem, thread};
 use thiserror::Error;
 
-#[cfg(any(feature = "arbitrary", test))]
+#[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
 
 #[derive(Debug, Error)]
@@ -27,7 +27,7 @@ pub enum Error {
     Head(#[source] anyhow::Error),
 }
 
-#[cfg_attr(any(feature = "arbitrary", test), derive(Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
     SnapToGraphemeBoundaries,
