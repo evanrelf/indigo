@@ -30,6 +30,10 @@ impl Tty {
     }
 
     pub fn enable_raw_mode(&mut self) -> io::Result<()> {
+        if self.original_termios.is_some() {
+            return Ok(());
+        }
+
         self.original_termios = Some(enable_raw_mode(self.reader.as_raw_fd())?);
 
         Ok(())
