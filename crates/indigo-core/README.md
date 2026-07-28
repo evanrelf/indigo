@@ -42,7 +42,6 @@ functional core).
 - `attributes`: Work in progress. Arbitrary annotations for ranges inspired by
   Emacs. Plan is to use this for syntax highlighting and other stuff (tags?
   read-only text? who knows).
-- `btree`: Copy-on-write B+ tree-backed ordered map.
 
 ## Terminology
 

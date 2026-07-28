@@ -1,5 +1,4 @@
 pub mod attributes;
-pub mod btree;
 pub mod buffer;
 pub mod cursor;
 pub mod editor;
