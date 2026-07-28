@@ -814,7 +814,7 @@ name = "indigo-term"
 version = "0.0.0"
 dependencies = [
  "bitflags 2.13.1",
- "rustix",
+ "libc",
  "tinyvec",
  "tracing",
  "winnow",
