@@ -5,8 +5,8 @@ edition = "2024"
 [dependencies]
 bitflags = { workspace = true }
 libc = { workspace = true }
+log = { workspace = true }
 tinyvec = { workspace = true }
-tracing = { workspace = true }
 winnow = { workspace = true }
 
 [lints]

@@ -198,14 +198,14 @@ fn unknown_csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     "\x1b[".void().parse_next(input)?;
     let MyTinyVec(parameter_bytes) = repeat(0.., one_of(0x30..=0x3F)).parse_next(input)?;
     if parameter_bytes.is_heap() {
-        tracing::debug!(
+        log::debug!(
             "got {} csi parameter bytes, overflowing to heap",
             parameter_bytes.len()
         );
     }
     let MyTinyVec(intermediate_bytes) = repeat(0.., one_of(0x20..=0x2F)).parse_next(input)?;
     if intermediate_bytes.is_heap() {
-        tracing::debug!(
+        log::debug!(
             "got {} csi intermediate bytes, overflowing to heap",
             intermediate_bytes.len()
         );
@@ -227,7 +227,7 @@ fn unknown_osc(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     "\x1b]".void().parse_next(input)?;
     let MyTinyVec(data_bytes) = repeat(0.., one_of(0x20..=0xFF)).parse_next(input)?;
     if data_bytes.is_heap() {
-        tracing::debug!(
+        log::debug!(
             "found {} osc intermediate bytes, overflowing to heap",
             data_bytes.len()
         );

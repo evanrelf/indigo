@@ -815,8 +815,8 @@ version = "0.0.0"
 dependencies = [
  "bitflags 2.13.1",
  "libc",
+ "log",
  "tinyvec",
- "tracing",
  "winnow",
 ]
 

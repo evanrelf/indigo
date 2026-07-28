@@ -19,6 +19,7 @@ indigo-term = { path = "crates/indigo-term/" }
 indigo-tui = { path = "crates/indigo-tui/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }
 libc = "0.2.189"
+log = "0.4.33"
 memchr = "2.8.3"
 pathdiff = { version = "0.2.3", features = ["camino"] }
 ratatui = "0.30.2"
