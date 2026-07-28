@@ -971,60 +971,154 @@ mod tests {
 
     #[hegel::test(test_cases = 1000)]
     fn fuzz(tc: TestCase) {
-        let text = Text::new();
-        let byte_offset = if tc.draw(gs::booleans()) {
-            text.floor_grapheme_boundary(tc.draw(gs::integers::<usize>()))
-        } else {
-            text.ceil_grapheme_boundary(tc.draw(gs::integers::<usize>()))
-        };
-        let bias = Bias::After;
-        let mut cursor = CursorView::try_from((text, byte_offset)).unwrap();
-
-        let steps = tc.draw(gs::integers::<usize>().min_value(0).max_value(99));
-        for _ in 0..steps {
-            match tc.draw(gs::integers::<u8>().min_value(0).max_value(6)) {
-                0 => {
-                    let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
-                    cursor.move_left(count);
-                    tc.note(&format!("move_left() x{count}"));
-                }
-                1 => {
-                    let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
-                    cursor.move_right(count);
-                    tc.note(&format!("move_right() x{count}"));
-                }
-                2 => {
-                    let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
-                    cursor.move_up(cursor.display_column(bias).unwrap_or(0), bias, count);
-                    tc.note(&format!("move_up() x{count}"));
-                }
-                3 => {
-                    let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
-                    cursor.move_down(cursor.display_column(bias).unwrap_or(0), bias, count);
-                    tc.note(&format!("move_down() x{count}"));
-                }
-                4 => {
-                    let text = tc.draw(gs::text());
-                    cursor.insert(&text);
-                    tc.note(&format!("insert({text:?})"));
-                }
-                5 => {
-                    let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
-                    for _ in 1..=count {
-                        cursor.delete_before();
-                    }
-                    tc.note(&format!("delete_before() x{count}"));
-                }
-                6 => {
-                    let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
-                    for _ in 1..=count {
-                        cursor.delete_after();
-                    }
-                    tc.note(&format!("delete_after() x{count}"));
-                }
-                _ => unreachable!(),
-            }
-            cursor.assert_invariants().unwrap();
+        const BIAS: Bias = Bias::After;
+        struct StateMachine {
+            text: Text,
+            state: CursorState,
         }
+        #[hegel::state_machine]
+        #[expect(clippy::needless_pass_by_value)]
+        impl StateMachine {
+            fn cursor(&mut self) -> CursorMut<'_> {
+                CursorMut::new(&mut self.text, &mut self.state).expect("Cursor state kept valid")
+            }
+            #[rule]
+            fn snap_to_grapheme_boundary(&mut self, _: TestCase) {
+                self.cursor().snap_to_grapheme_boundary();
+            }
+            #[rule]
+            fn unchecked_move_to(&mut self, tc: TestCase) {
+                let byte_offset = tc.draw(gs::integers::<usize>().max_value(self.text.len()));
+                let byte_offset = self.text.ceil_grapheme_boundary(byte_offset);
+                self.cursor().unchecked_move_to(byte_offset);
+            }
+            #[rule]
+            fn move_left(&mut self, tc: TestCase) {
+                let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                self.cursor().move_left(count);
+            }
+            #[rule]
+            fn move_right(&mut self, tc: TestCase) {
+                let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                self.cursor().move_right(count);
+            }
+            #[rule]
+            fn move_up(&mut self, tc: TestCase) {
+                let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                let mut cursor = self.cursor();
+                let goal_column = cursor.display_column(BIAS).unwrap_or(0);
+                cursor.move_up(goal_column, BIAS, count);
+            }
+            #[rule]
+            fn move_down(&mut self, tc: TestCase) {
+                let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                let mut cursor = self.cursor();
+                let goal_column = cursor.display_column(BIAS).unwrap_or(0);
+                cursor.move_down(goal_column, BIAS, count);
+            }
+            #[rule]
+            fn move_to_prev_byte(&mut self, tc: TestCase) {
+                let byte = tc.draw(gs::integers::<u8>());
+                let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                self.cursor().move_to_prev_byte(byte, count);
+            }
+            #[rule]
+            fn move_to_next_byte(&mut self, tc: TestCase) {
+                let byte = tc.draw(gs::integers::<u8>());
+                let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                self.cursor().move_to_next_byte(byte, count);
+            }
+            #[rule]
+            fn move_to_prev_blank(&mut self, tc: TestCase) {
+                let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                self.cursor().move_to_prev_blank(count);
+            }
+            #[rule]
+            fn move_to_next_blank(&mut self, tc: TestCase) {
+                let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                self.cursor().move_to_next_blank(count);
+            }
+            #[rule]
+            fn move_to_start(&mut self, _: TestCase) {
+                self.cursor().move_to_start();
+            }
+            #[rule]
+            fn move_to_end(&mut self, _: TestCase) {
+                self.cursor().move_to_end();
+            }
+            #[rule]
+            fn move_to_bottom(&mut self, tc: TestCase) {
+                let bias = if tc.draw(gs::booleans()) {
+                    Bias::Before
+                } else {
+                    Bias::After
+                };
+                self.cursor().move_to_bottom(bias);
+            }
+            #[rule]
+            fn move_to_line_start(&mut self, tc: TestCase) {
+                let bias = if tc.draw(gs::booleans()) {
+                    Bias::Before
+                } else {
+                    Bias::After
+                };
+                self.cursor().move_to_line_start(bias);
+            }
+            #[rule]
+            fn move_to_line_non_blank_start(&mut self, tc: TestCase) {
+                let bias = if tc.draw(gs::booleans()) {
+                    Bias::Before
+                } else {
+                    Bias::After
+                };
+                self.cursor().move_to_line_non_blank_start(bias);
+            }
+            #[rule]
+            fn move_to_line_end(&mut self, tc: TestCase) {
+                let bias = if tc.draw(gs::booleans()) {
+                    Bias::Before
+                } else {
+                    Bias::After
+                };
+                self.cursor().move_to_line_end(bias);
+            }
+            #[rule]
+            fn insert_char(&mut self, tc: TestCase) {
+                let text = tc.draw(gs::text().min_size(1));
+                let c = text.chars().next().expect("min_size(1) yields a char");
+                self.cursor().insert_char(c);
+            }
+            #[rule]
+            fn insert(&mut self, tc: TestCase) {
+                let text = tc.draw(gs::text());
+                self.cursor().insert(&text);
+            }
+            #[rule]
+            fn delete_before(&mut self, tc: TestCase) {
+                let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                let mut cursor = self.cursor();
+                for _ in 0..count {
+                    cursor.delete_before();
+                }
+            }
+            #[rule]
+            fn delete_after(&mut self, tc: TestCase) {
+                let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+                let mut cursor = self.cursor();
+                for _ in 0..count {
+                    cursor.delete_after();
+                }
+            }
+            #[invariant]
+            fn invariants(&self, _: TestCase) {
+                let _ = Cursor::new(&self.text, &self.state)
+                    .expect("Cursor remains valid after every operation");
+            }
+        }
+        let machine = StateMachine {
+            text: Text::new(),
+            state: CursorState::default(),
+        };
+        hegel::stateful::run(machine, tc);
     }
 }
