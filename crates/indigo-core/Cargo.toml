@@ -3,7 +3,7 @@ name = "indigo-core"
 edition = "2024"
 
 [features]
-arbitrary = ["dep:arbitrary"]
+arbitrary = ["dep:arbitrary", "bitflags/arbitrary"]
 
 [dependencies]
 anyhow = { workspace = true }

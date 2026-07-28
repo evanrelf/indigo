@@ -6,7 +6,7 @@ members = ["crates/*", "fuzz"]
 anyhow = "1.0.104"
 arbitrary = { version = "1.4.2", features = ["derive"] }
 arrayvec = "0.7.8"
-bitflags = { version = "2.13.1", features = ["arbitrary", "std"] }
+bitflags = { version = "2.13.1", features = ["std"] }
 bpaf = "0.9.26"
 camino = "1.2.4"
 clap = { version = "4.6.4", features = ["derive", "env"] }
