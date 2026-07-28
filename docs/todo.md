@@ -6,6 +6,7 @@
 - Figure out what to do with mode state, try to make actions
   mode-agnostic/stateless (such that modes simply become a feature of the UI)
 - Store modes as stack (i.e. `Vec<Mode>`) in `Editor` (mode stack as data)
+- Consider ditching `cargo-fuzz` in favor of `hegel`
 
 - range: Select word for mouse double click
 - range: Select line for mouse triple click
