@@ -18,8 +18,8 @@ enum FuzzAction {
 fuzz_target!(|input: (&str, usize, usize, Vec<FuzzAction>)| {
     let (text, tail, head, actions) = input;
     let text = Text::from(text);
-    let valid_tail = tail <= text.len() && text.is_grapheme_boundary(tail);
-    let valid_head = head <= text.len() && text.is_grapheme_boundary(head);
+    let valid_tail = text.is_grapheme_start(tail);
+    let valid_head = text.is_grapheme_start(head);
     let Ok(mut range) = RangeView::try_from((text, tail, head)) else {
         assert!(!valid_tail || !valid_head);
         return;
@@ -45,6 +45,6 @@ fuzz_target!(|input: (&str, usize, usize, Vec<FuzzAction>)| {
         range.assert_invariants().unwrap();
         assert_eq!(range.byte_length(), range.slice().len());
         assert_eq!(range.is_backward(), !range.is_forward());
-        assert!(range.start().byte_offset() <= range.end().byte_offset());
+        assert!(range.start().byte_index() <= range.end().byte_index());
     }
 });

@@ -75,10 +75,10 @@ fn main() -> anyhow::Result<ExitCode> {
             eprintln!("\nranges:");
             let primary_range = selection.state().primary_range;
             selection.for_each(|index, range| {
-                let tail = range.tail().byte_offset();
-                let head = range.head().byte_offset();
-                let start = range.start().byte_offset();
-                let end = range.end().byte_offset();
+                let tail = range.tail().byte_index();
+                let head = range.head().byte_index();
+                let start = range.start().byte_index();
+                let end = range.end().byte_index();
                 let direction = if range.is_forward() {
                     "forward"
                 } else {

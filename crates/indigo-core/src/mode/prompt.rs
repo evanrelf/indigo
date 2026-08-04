@@ -8,7 +8,7 @@ use crate::{
     mode::{Mode, normal},
     text::Text,
 };
-use ropey::Rope;
+use ropey::{Rope, RopeSlice};
 use std::sync::{Arc, LazyLock, Mutex};
 
 #[cfg(feature = "arbitrary")]
@@ -47,6 +47,18 @@ impl State {
     #[must_use]
     pub fn rope(&self) -> &Rope {
         self.text.rope()
+    }
+
+    /// The prompt's content, without the `Text` invariant's trailing newline.
+    #[must_use]
+    pub fn content(&self) -> RopeSlice<'_> {
+        let rope = self.text.rope();
+        assert_eq!(
+            rope.byte(rope.len() - 1),
+            b'\n',
+            "Prompt text keeps its trailing newline"
+        );
+        rope.slice(..rope.len() - 1)
     }
 
     pub fn cursor(&self) -> Cursor<'_> {
@@ -186,9 +198,7 @@ fn delete_to_start(editor: &mut Editor) {
         panic!("Not in prompt mode")
     };
     let mut cursor = prompt_mode.cursor_mut();
-    while !cursor.is_at_start() {
-        cursor.delete_before();
-    }
+    while cursor.delete_before().is_some() {}
 }
 
 fn delete_to_end(editor: &mut Editor) {
@@ -196,9 +206,7 @@ fn delete_to_end(editor: &mut Editor) {
         panic!("Not in prompt mode")
     };
     let mut cursor = prompt_mode.cursor_mut();
-    while !cursor.is_at_end() {
-        cursor.delete_after();
-    }
+    while cursor.delete_after().is_some() {}
 }
 
 fn insert_char(editor: &mut Editor, char: char) {
@@ -230,11 +238,41 @@ fn exec(editor: &mut Editor) {
     let Mode::Prompt(prompt_mode) = &mut editor.mode else {
         panic!("Not in prompt mode")
     };
-    let text = prompt_mode.rope().to_string();
+    let text = prompt_mode.content().to_string();
     let handler = prompt_mode
         .handler
         .take()
         .expect("Handler is always present");
     handler.lock().unwrap()(editor, &text);
     normal::enter(editor);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn content_strips_trailing_newline() {
+        let mut state = State::new("test", |_, _| {});
+        // The empty prompt is "\n" internally, but its content is empty.
+        assert_eq!(state.content().to_string(), "");
+        assert!(state.cursor().is_at_end());
+
+        state.cursor_mut().insert("abc");
+        assert_eq!(state.rope().to_string(), "abc\n");
+        assert_eq!(state.content().to_string(), "abc");
+
+        // Typing at the "end" inserts before the invariant newline.
+        state.cursor_mut().move_to_end();
+        assert!(state.cursor().is_at_end());
+        state.cursor_mut().insert_char('!');
+        assert_eq!(state.content().to_string(), "abc!");
+
+        // Kill-to-end deletes everything after the cursor except the invariant newline.
+        state.cursor_mut().move_to_start();
+        let mut cursor = state.cursor_mut();
+        while cursor.delete_after().is_some() {}
+        drop(cursor);
+        assert_eq!(state.content().to_string(), "");
+    }
 }

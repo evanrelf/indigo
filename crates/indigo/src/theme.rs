@@ -14,8 +14,6 @@ pub struct Theme {
     pub secondary_cursor_fg: Color,
     pub secondary_cursor_bg: Color,
     pub secondary_range_bg: Color,
-    pub empty_range_fg: Color,
-    pub empty_range_bg: Color,
     pub error_bg: Color,
     pub whitespace_fg: Color,
 }

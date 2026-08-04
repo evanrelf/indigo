@@ -209,7 +209,7 @@ impl Default for Editor {
         let buffer = Buffer::default();
         let buffer_key = buffers.insert(buffer);
 
-        let window = WindowState::new(buffer_key, &buffers[buffer_key]);
+        let window = WindowState::new(buffer_key);
         let mut windows = SlotMap::default();
         let window_key = windows.insert(window);
 
@@ -233,7 +233,7 @@ impl From<Buffer> for Editor {
         let mut buffers = SlotMap::default();
         let buffer_key = buffers.insert(buffer);
 
-        let window = WindowState::new(buffer_key, &buffers[buffer_key]);
+        let window = WindowState::new(buffer_key);
         let mut windows = SlotMap::default();
         let window_key = windows.insert(window);
 

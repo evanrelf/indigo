@@ -13,80 +13,34 @@ use arbitrary::Arbitrary;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Byte offset {byte_offset} exceeds end of text at {end_offset}")]
-    ExceedsEnd {
-        byte_offset: usize,
-        end_offset: usize,
-    },
+    #[error("Byte index {byte_index} is not within text of length {length}")]
+    OutOfRange { byte_index: usize, length: usize },
 
-    #[error("Byte offset {byte_offset} does not lie on grapheme boundary")]
-    NotOnGraphemeBoundary { byte_offset: usize },
-}
-
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Bias {
-    Before,
-    After,
+    #[error("Byte index {byte_index} is not the start of a grapheme")]
+    NotOnGrapheme { byte_index: usize },
 }
 
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
-    SnapToGraphemeBoundary,
-    UncheckedMoveTo {
-        byte_offset: usize,
-    },
-    MoveLeft {
-        count: u8,
-    },
-    MoveRight {
-        count: u8,
-    },
-    MoveUp {
-        goal_column: u16,
-        bias: Bias,
-        count: u8,
-    },
-    MoveDown {
-        goal_column: u16,
-        bias: Bias,
-        count: u8,
-    },
-    MoveToPrevByte {
-        byte: u8,
-        count: u8,
-    },
-    MoveToNextByte {
-        byte: u8,
-        count: u8,
-    },
-    MoveToPrevBlank {
-        count: u8,
-    },
-    MoveToNextBlank {
-        count: u8,
-    },
+    MoveTo { byte_index: usize },
+    MoveLeft { count: u8 },
+    MoveRight { count: u8 },
+    MoveUp { goal_column: u16, count: u8 },
+    MoveDown { goal_column: u16, count: u8 },
+    MoveToPrevByte { byte: u8, count: u8 },
+    MoveToNextByte { byte: u8, count: u8 },
+    MoveToPrevBlank { count: u8 },
+    MoveToNextBlank { count: u8 },
     MoveToStart,
     MoveToEnd,
-    MoveToBottom {
-        bias: Bias,
-    },
-    MoveToLineStart {
-        bias: Bias,
-    },
-    MoveToLineNonBlankStart {
-        bias: Bias,
-    },
-    MoveToLineEnd {
-        bias: Bias,
-    },
-    InsertChar {
-        char: char,
-    },
-    Insert {
-        text: String,
-    },
+    MoveToBottom,
+    MoveToLineStart,
+    MoveToLineNonBlankStart,
+    MoveToLineEnd,
+    MoveUntilLineEnd,
+    InsertChar { char: char },
+    Insert { text: String },
     DeleteBefore,
     DeleteAfter,
 }
@@ -99,43 +53,35 @@ pub enum Direction {
 
 #[derive(Clone, Debug, Default)]
 pub struct CursorState {
-    pub byte_offset: usize,
+    pub byte_index: usize,
 }
 
 impl CursorState {
-    /// Snap to nearest grapheme boundary. This is a no-op if the cursor is already valid.
-    pub fn snap_to_grapheme_boundary(&mut self, text: &Rope) -> bool {
-        let prev_byte_offset = self.byte_offset;
-        self.byte_offset = text.ceil_grapheme_boundary(self.byte_offset);
-        self.byte_offset != prev_byte_offset
-    }
-
-    #[must_use]
-    pub fn snapped_to_grapheme_boundary(mut self, text: &Rope) -> Self {
-        self.snap_to_grapheme_boundary(text);
-        self
-    }
-
-    pub fn transform(&mut self, ops: &OperationSeq) {
-        self.byte_offset = ops.transform_byte_offset(self.byte_offset);
+    pub fn transform(&mut self, ops: &OperationSeq, text: &Rope) {
+        let byte_index = ops.transform_byte_offset(self.byte_index);
+        self.byte_index = text
+            .snap_to_grapheme_start(byte_index)
+            .expect("Text is never empty");
     }
 
     #[must_use]
     pub fn save(&self, text: &Text) -> CursorSnapshot {
-        let byte_offset = text.create_anchor(self.byte_offset);
-        CursorSnapshot { byte_offset }
+        let byte_index = text.create_anchor(self.byte_index);
+        CursorSnapshot { byte_index }
     }
 }
 
 pub struct CursorSnapshot {
-    pub byte_offset: Anchor,
+    pub byte_index: Anchor,
 }
 
 impl CursorSnapshot {
     #[must_use]
     pub fn restore(&self, text: &Text) -> Option<CursorState> {
-        let byte_offset = text.ceil_grapheme_boundary(text.resolve_anchor(&self.byte_offset)?);
-        Some(CursorState { byte_offset })
+        let byte_index = text
+            .snap_to_grapheme_start(text.resolve_anchor(&self.byte_index)?)
+            .expect("Text is never empty");
+        Some(CursorState { byte_index })
     }
 }
 
@@ -181,74 +127,55 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     }
 
     #[must_use]
-    pub fn byte_offset(&self) -> usize {
-        self.state.byte_offset
-    }
-
-    pub fn byte_index(&self, bias: Bias) -> Result<usize, Option<usize>> {
-        let prev = || {
-            self.text
-                .prev_grapheme_boundary(self.state.byte_offset)
-                .expect("Not at start so previous grapheme boundary exists")
-        };
-        match bias {
-            _ if self.text.len() == 0 => Err(None),
-            Bias::Before if self.is_at_start() => Err(Some(self.state.byte_offset)),
-            Bias::After if self.is_at_end() => Err(Some(prev())),
-            Bias::Before => Ok(prev()),
-            Bias::After => Ok(self.state.byte_offset),
-        }
-    }
-
-    pub fn line_index(&self, bias: Bias) -> Option<usize> {
-        let byte_index = self.byte_index(bias).ok()?;
-        let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
-        Some(line_index)
+    pub fn byte_index(&self) -> usize {
+        self.state.byte_index
     }
 
     #[must_use]
-    pub fn display_column(&self, bias: Bias) -> Option<usize> {
-        let byte_index = self.byte_index(bias).ok()?;
-        Some(self.text.display_column(byte_index))
+    pub fn line_index(&self) -> usize {
+        self.text.byte_to_line_idx(self.state.byte_index, LINE_TYPE)
     }
 
     #[must_use]
-    pub fn line_number(&self, bias: Bias) -> usize {
-        self.line_index(bias).map_or(1, |n| n + 1)
+    pub fn line_number(&self) -> usize {
+        self.line_index() + 1
     }
 
     #[must_use]
-    pub fn column_number(&self, bias: Bias) -> usize {
-        let Ok(byte_index) = self.byte_index(bias) else {
-            return 1;
-        };
-        let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
-        let line_byte_index = self.text.line_to_byte_idx(line_index, LINE_TYPE);
-        (byte_index - line_byte_index) + 1
+    pub fn column_number(&self) -> usize {
+        let line_byte_index = self.text.line_to_byte_idx(self.line_index(), LINE_TYPE);
+        (self.state.byte_index - line_byte_index) + 1
     }
 
     #[must_use]
-    pub fn grapheme(&self, bias: Bias) -> Option<RopeSlice<'_>> {
-        let byte_index = self.byte_index(bias).ok()?;
-        let start = byte_index;
-        let end = self.text.next_grapheme_boundary(start)?;
-        Some(self.text.slice(start..end))
+    pub fn display_column(&self) -> usize {
+        self.text.display_column(self.state.byte_index)
     }
 
     #[must_use]
-    pub fn line(&self, bias: Bias) -> Option<RopeSlice<'_>> {
-        let line_index = self.line_index(bias)?;
-        self.text.get_line(line_index, LINE_TYPE)
+    pub fn grapheme(&self) -> RopeSlice<'_> {
+        self.text.grapheme(self.state.byte_index)
+    }
+
+    #[must_use]
+    pub fn line(&self) -> RopeSlice<'_> {
+        self.text
+            .get_line(self.line_index(), LINE_TYPE)
+            .expect("Cursor's line always exists")
     }
 
     #[must_use]
     pub fn is_at_start(&self) -> bool {
-        self.state.byte_offset == 0
+        self.state.byte_index == 0
     }
 
     #[must_use]
     pub fn is_at_end(&self) -> bool {
-        self.state.byte_offset == self.text.len()
+        let end_offset = self
+            .text
+            .next_grapheme_boundary(self.state.byte_index)
+            .expect("Cursor is always on a grapheme");
+        end_offset == self.text.len()
     }
 
     #[must_use]
@@ -257,15 +184,15 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     }
 
     pub fn assert_invariants(&self) -> anyhow::Result<()> {
-        if self.state.byte_offset > self.text.len() {
-            anyhow::bail!(Error::ExceedsEnd {
-                byte_offset: self.state.byte_offset,
-                end_offset: self.text.len(),
+        if self.state.byte_index >= self.text.len() {
+            anyhow::bail!(Error::OutOfRange {
+                byte_index: self.state.byte_index,
+                length: self.text.len(),
             });
         }
-        if !self.text.is_grapheme_boundary(self.state.byte_offset) {
-            anyhow::bail!(Error::NotOnGraphemeBoundary {
-                byte_offset: self.state.byte_offset,
+        if !self.text.is_grapheme_start(self.state.byte_index) {
+            anyhow::bail!(Error::NotOnGrapheme {
+                byte_index: self.state.byte_index,
             });
         }
         Ok(())
@@ -273,33 +200,25 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
 }
 
 impl<W: WrapMut> CursorView<'_, W> {
-    pub fn snap_to_grapheme_boundary(&mut self) -> bool {
-        self.state.snap_to_grapheme_boundary(&self.text)
-    }
-
-    // TODO: Drop `unchecked_` prefix? Or change to something else? Since there are assertions.
-    pub fn unchecked_move_to(&mut self, byte_offset: usize) {
-        debug_assert!(byte_offset <= self.text.len());
-        debug_assert!(self.text.is_grapheme_boundary(byte_offset));
-        self.state.byte_offset = byte_offset;
+    pub fn move_to(&mut self, byte_index: usize) {
+        let byte_index = self
+            .text
+            .snap_to_grapheme_start(byte_index)
+            .expect("Text is never empty");
+        self.state.byte_index = byte_index;
     }
 
     pub fn move_left(&mut self, count: usize) -> bool {
         if count == 0 {
             return false;
         }
-        let pre = self.state.byte_offset;
         for _ in 0..count {
-            if let Some(prev) = self.text.prev_grapheme_boundary(self.state.byte_offset)
-                && self.state.byte_offset != prev
-            {
-                self.state.byte_offset = prev;
+            if let Some(prev) = self.text.prev_grapheme_boundary(self.state.byte_index) {
+                self.state.byte_index = prev;
             } else {
-                debug_assert!(self.state.byte_offset <= pre);
                 return false;
             }
         }
-        debug_assert!(self.state.byte_offset < pre);
         true
     }
 
@@ -307,46 +226,29 @@ impl<W: WrapMut> CursorView<'_, W> {
         if count == 0 {
             return false;
         }
-        let pre = self.state.byte_offset;
         for _ in 0..count {
-            if let Some(next) = self.text.next_grapheme_boundary(self.state.byte_offset)
-                && self.state.byte_offset != next
-            {
-                self.state.byte_offset = next;
-            } else {
-                debug_assert!(self.state.byte_offset >= pre);
-                return false;
+            match self.text.next_grapheme_boundary(self.state.byte_index) {
+                Some(next) if next < self.text.len() => self.state.byte_index = next,
+                _ => return false,
             }
         }
-        debug_assert!(self.state.byte_offset > pre);
         true
     }
 
-    pub fn move_up(&mut self, goal_column: usize, bias: Bias, count: usize) -> bool {
-        self.move_vertical(Direction::Backward, goal_column, bias, count)
+    pub fn move_up(&mut self, goal_column: usize, count: usize) -> bool {
+        self.move_vertical(Direction::Backward, goal_column, count)
     }
 
-    pub fn move_down(&mut self, goal_column: usize, bias: Bias, count: usize) -> bool {
-        self.move_vertical(Direction::Forward, goal_column, bias, count)
+    pub fn move_down(&mut self, goal_column: usize, count: usize) -> bool {
+        self.move_vertical(Direction::Forward, goal_column, count)
     }
 
-    fn move_vertical(
-        &mut self,
-        direction: Direction,
-        goal_column: usize,
-        bias: Bias,
-        count: usize,
-    ) -> bool {
-        if count == 0 || self.text.len() == 0 {
+    fn move_vertical(&mut self, direction: Direction, goal_column: usize, count: usize) -> bool {
+        if count == 0 {
             return false;
         }
         for _ in 0..count {
-            #[expect(clippy::manual_let_else)]
-            let current_byte_index = match self.byte_index(bias) {
-                Ok(n) | Err(Some(n)) => n,
-                Err(None) => unreachable!("Already checked rope length"),
-            };
-            let current_line_index = self.text.byte_to_line_idx(current_byte_index, LINE_TYPE);
+            let current_line_index = self.text.byte_to_line_idx(self.state.byte_index, LINE_TYPE);
             let target_line_index = match direction {
                 Direction::Backward => {
                     if current_line_index == 0 {
@@ -355,9 +257,6 @@ impl<W: WrapMut> CursorView<'_, W> {
                     current_line_index - 1
                 }
                 Direction::Forward => {
-                    if self.state.byte_offset == self.text.len() {
-                        return false;
-                    }
                     let target = current_line_index + 1;
                     if target >= self.text.len_lines_indigo() {
                         return false;
@@ -380,13 +279,7 @@ impl<W: WrapMut> CursorView<'_, W> {
                 target_line_prefix += grapheme_width;
                 target_byte_index += grapheme.len();
             }
-            self.state.byte_offset = match bias {
-                Bias::After => target_byte_index,
-                Bias::Before => self
-                    .text
-                    .next_grapheme_boundary(target_byte_index)
-                    .unwrap_or(target_byte_index),
-            };
+            self.state.byte_index = target_byte_index;
         }
         true
     }
@@ -395,37 +288,18 @@ impl<W: WrapMut> CursorView<'_, W> {
         if count == 0 {
             return false;
         }
-        let pre = self.state.byte_offset;
         for _ in 0..count {
-            if let Some(byte_offset) = self.text.find_prev_byte(..self.state.byte_offset, &[byte]) {
-                self.state.byte_offset = byte_offset;
-                self.move_right(1);
+            if let Some(found) = self.text.find_prev_byte(..self.state.byte_index, &[byte]) {
+                self.state.byte_index = self.text.floor_grapheme_boundary(found);
             } else {
-                debug_assert!(self.state.byte_offset <= pre);
                 return false;
             }
         }
-        debug_assert!(self.state.byte_offset <= pre);
         true
     }
 
     pub fn move_to_next_byte(&mut self, byte: u8, count: usize) -> bool {
-        if count == 0 {
-            return false;
-        }
-        let pre = self.state.byte_offset;
-        let mut start = self.state.byte_offset;
-        for _ in 0..count {
-            if let Some(byte_offset) = self.text.find_next_byte(start.., &[byte]) {
-                self.state.byte_offset = self.text.ceil_grapheme_boundary(byte_offset);
-                start = self.text.ceil_grapheme_boundary(byte_offset + 1);
-            } else {
-                debug_assert!(self.state.byte_offset >= pre);
-                return false;
-            }
-        }
-        debug_assert!(self.state.byte_offset >= pre);
-        true
+        self.seek_next(&[byte], count)
     }
 
     pub fn move_to_prev_blank(&mut self, count: usize) -> bool {
@@ -433,217 +307,165 @@ impl<W: WrapMut> CursorView<'_, W> {
         if count == 0 {
             return false;
         }
-        let pre = self.state.byte_offset;
         for _ in 0..count {
-            if let Some(byte_offset) = self.text.find_prev_byte(..self.state.byte_offset, BYTES) {
-                self.state.byte_offset = byte_offset;
-                self.move_right(1);
+            if let Some(found) = self.text.find_prev_byte(..self.state.byte_index, BYTES) {
+                self.state.byte_index = self.text.floor_grapheme_boundary(found);
             } else {
-                debug_assert!(self.state.byte_offset <= pre);
                 return false;
             }
         }
-        debug_assert!(self.state.byte_offset <= pre);
         true
     }
 
     pub fn move_to_next_blank(&mut self, count: usize) -> bool {
         const BYTES: &[u8] = b" \t\n\r";
+        self.seek_next(BYTES, count)
+    }
+
+    /// Land on the grapheme containing the next matching byte, searching strictly after the
+    /// grapheme the cursor occupies.
+    fn seek_next(&mut self, bytes: &[u8], count: usize) -> bool {
         if count == 0 {
             return false;
         }
-        let pre = self.state.byte_offset;
-        let mut start = self.state.byte_offset;
+        let mut start = self
+            .text
+            .next_grapheme_boundary(self.state.byte_index)
+            .expect("Cursor is always on a grapheme");
         for _ in 0..count {
-            if let Some(byte_offset) = self.text.find_next_byte(start.., BYTES) {
-                self.state.byte_offset = self.text.ceil_grapheme_boundary(byte_offset);
-                start = self.text.ceil_grapheme_boundary(byte_offset + 1);
+            if let Some(found) = self.text.find_next_byte(start.., bytes) {
+                let byte_index = self.text.floor_grapheme_boundary(found);
+                self.state.byte_index = byte_index;
+                start = self
+                    .text
+                    .next_grapheme_boundary(byte_index)
+                    .expect("Found byte is within the text");
             } else {
-                debug_assert!(self.state.byte_offset >= pre);
                 return false;
             }
         }
-        debug_assert!(self.state.byte_offset >= pre);
         true
     }
 
     pub fn move_to_start(&mut self) {
-        self.state.byte_offset = 0;
+        self.state.byte_index = 0;
     }
 
     pub fn move_to_end(&mut self) {
-        self.state.byte_offset = self.text.len();
+        self.state.byte_index = self
+            .text
+            .last_grapheme_start()
+            .expect("Text is never empty");
     }
 
-    pub fn move_to_bottom(&mut self, bias: Bias) {
+    pub fn move_to_bottom(&mut self) {
         self.move_to_end();
-        self.move_to_line_start(bias);
+        self.move_to_line_start();
     }
 
-    pub fn move_to_line_start(&mut self, bias: Bias) {
-        if self.text.len() == 0 {
-            return;
-        }
-
-        let pre = self.state.byte_offset;
-
-        #[expect(clippy::manual_let_else)]
-        let byte_index = match self.byte_index(bias) {
-            Ok(n) | Err(Some(n)) => n,
-            Err(None) => unreachable!("Already checked rope length"),
-        };
-
-        let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
-        let line_start_byte_offset = self.text.line_to_byte_idx(line_index, LINE_TYPE);
-        self.state.byte_offset = line_start_byte_offset;
-        debug_assert!(self.state.byte_offset <= pre);
+    pub fn move_to_line_start(&mut self) {
+        let line_index = self.text.byte_to_line_idx(self.state.byte_index, LINE_TYPE);
+        self.state.byte_index = self.text.line_to_byte_idx(line_index, LINE_TYPE);
     }
 
-    pub fn move_to_line_non_blank_start(&mut self, bias: Bias) {
-        if self.text.len() == 0 {
-            return;
-        }
-
-        #[expect(clippy::manual_let_else)]
-        let byte_index = match self.byte_index(bias) {
-            Ok(n) | Err(Some(n)) => n,
-            Err(None) => unreachable!("Already checked rope length"),
-        };
-
-        let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
-        let line_start_byte_offset = self.text.line_to_byte_idx(line_index, LINE_TYPE);
+    pub fn move_to_line_non_blank_start(&mut self) {
+        let line_index = self.text.byte_to_line_idx(self.state.byte_index, LINE_TYPE);
+        let line_start_byte_index = self.text.line_to_byte_idx(line_index, LINE_TYPE);
         let line_slice = self.text.line(line_index, LINE_TYPE);
-        let mut byte_offset = line_start_byte_offset;
+        let mut byte_index = line_start_byte_index;
         for grapheme in line_slice.graphemes() {
             if grapheme.chars().any(|c| c == '\n' || c == '\r') {
                 break;
             }
-            if !grapheme.chars().all(|c| c.is_whitespace()) {
-                self.state.byte_offset = byte_offset;
-                return;
+            if !grapheme.chars().all(char::is_whitespace) {
+                break;
             }
-            byte_offset += grapheme.len();
+            byte_index += grapheme.len();
         }
-        self.state.byte_offset = byte_offset;
+        self.state.byte_index = byte_index;
     }
 
-    pub fn move_to_line_end(&mut self, bias: Bias) -> bool {
-        if self.text.len() == 0 || self.is_at_end() {
-            return false;
+    /// Move onto the line's end: its `'\n'` (or `"\r\n"`) grapheme. Always succeeds because
+    /// every line is terminated.
+    pub fn move_to_line_end(&mut self) {
+        let line_index = self.text.byte_to_line_idx(self.state.byte_index, LINE_TYPE);
+        let line_start_byte_index = self.text.line_to_byte_idx(line_index, LINE_TYPE);
+        let line_slice = self.text.line(line_index, LINE_TYPE);
+        let mut byte_index = line_start_byte_index;
+        for grapheme in line_slice.graphemes() {
+            if grapheme.chars().any(|c| c == '\n' || c == '\r') {
+                break;
+            }
+            byte_index += grapheme.len();
         }
+        self.state.byte_index = byte_index;
+    }
 
-        let pre = self.state.byte_offset;
-
-        #[expect(clippy::manual_let_else)]
-        let byte_index = match self.byte_index(bias) {
-            Ok(n) | Err(Some(n)) => n,
-            Err(None) => unreachable!("Already checked rope length"),
-        };
-
-        let line_index = self.text.byte_to_line_idx(byte_index, LINE_TYPE);
-
-        if bias == Bias::Before
-            && self
+    /// Move onto the last grapheme before the line's end. Stays on the line end grapheme when
+    /// the line is empty.
+    pub fn move_until_line_end(&mut self) {
+        self.move_to_line_end();
+        let line_index = self.text.byte_to_line_idx(self.state.byte_index, LINE_TYPE);
+        let line_start_byte_index = self.text.line_to_byte_idx(line_index, LINE_TYPE);
+        if self.state.byte_index > line_start_byte_index {
+            self.state.byte_index = self
                 .text
-                .byte_to_line_idx(self.state.byte_offset, LINE_TYPE)
-                != line_index
-        {
-            // Already past the newline of the line we have bias for
-            return false;
+                .prev_grapheme_boundary(self.state.byte_index)
+                .expect("Not at start of text");
         }
-
-        // Find last character before line ending
-        let line_start_byte_offset = self.text.line_to_byte_idx(line_index, LINE_TYPE);
-        let line_slice = self.text.line(line_index, LINE_TYPE);
-        let mut byte_offset = line_start_byte_offset;
-        for grapheme in line_slice.graphemes() {
-            if grapheme.chars().any(|c| c == '\n' || c == '\r') {
-                break;
-            }
-            byte_offset += grapheme.len();
-        }
-        self.state.byte_offset = byte_offset;
-        debug_assert!(self.state.byte_offset >= pre);
-        true
     }
 
     pub fn insert_char(&mut self, char: char) -> OperationSeq {
         self.insert(&char.to_string())
     }
 
+    /// Insert before the grapheme the cursor occupies. The cursor stays on its grapheme (i.e.
+    /// ends up after the inserted text).
     #[tracing::instrument(skip_all)]
     pub fn insert(&mut self, text: &str) -> OperationSeq {
-        let pre_offset = self.state.byte_offset;
         let pre_text_len = self.text.len();
         let mut ops = OperationSeq::new();
-        ops.retain(self.state.byte_offset);
+        ops.retain(self.state.byte_index);
         ops.insert(text);
         ops.retain_rest(&self.text);
         self.text.apply(&ops).expect("Operations are well formed");
-        self.state.transform(&ops);
-        if self.snap_to_grapheme_boundary() {
-            tracing::warn!("wasn't on grapheme boundary after");
-        }
+        self.state.transform(&ops, &self.text);
         debug_assert_eq!(self.text.len(), pre_text_len + text.len());
-        debug_assert!(self.state.byte_offset >= pre_offset + text.len());
         ops
     }
 
-    // Behavior traditionally associated with the Backspace key.
+    /// Delete the grapheme before the cursor. Behavior traditionally associated with the
+    /// Backspace key.
     #[tracing::instrument(skip_all)]
     pub fn delete_before(&mut self) -> Option<OperationSeq> {
-        let pre_offset = self.state.byte_offset;
-        let pre_text_len = self.text.len();
-        let mut byte_offset = self.state.byte_offset;
-        if let Some(prev) = self.text.prev_grapheme_boundary(byte_offset)
-            && byte_offset != prev
-        {
-            byte_offset = prev;
-        } else {
-            return None;
-        }
+        let start = self.text.prev_grapheme_boundary(self.state.byte_index)?;
         let mut ops = OperationSeq::new();
-        ops.retain(byte_offset);
-        ops.delete(self.state.byte_offset - byte_offset);
+        ops.retain(start);
+        ops.delete(self.state.byte_index - start);
         ops.retain_rest(&self.text);
         self.text.apply(&ops).expect("Operations are well formed");
-        self.state.transform(&ops);
-        if self.snap_to_grapheme_boundary() {
-            tracing::warn!("wasn't on grapheme boundary after");
-        }
-        debug_assert_eq!(self.text.len(), pre_text_len - (pre_offset - byte_offset));
-        // Cursor lands at `byte_offset` after the transform; `snap_to_grapheme_boundary`
-        // can ceil forward but never backward. It can ceil past `pre_offset` if the
-        // deletion merges graphemes (e.g. removing a Control between a base and an
-        // Extend), so we can only assert the lower bound.
-        debug_assert!(self.state.byte_offset >= byte_offset);
+        self.state.transform(&ops, &self.text);
         Some(ops)
     }
 
-    // Behavior traditionally associated with the Delete key.
+    /// Delete the grapheme the cursor occupies, unless it is the text's final newline. Behavior
+    /// traditionally associated with the Delete key.
     #[tracing::instrument(skip_all)]
     pub fn delete_after(&mut self) -> Option<OperationSeq> {
-        let pre_offset = self.state.byte_offset;
-        let pre_text_len = self.text.len();
-        let mut byte_offset = self.state.byte_offset;
-        if let Some(next) = self.text.next_grapheme_boundary(byte_offset)
-            && byte_offset != next
-        {
-            byte_offset = next;
-        } else {
+        let end = self
+            .text
+            .next_grapheme_boundary(self.state.byte_index)
+            .expect("Cursor is always on a grapheme");
+        if end == self.text.len() {
+            // Deleting the final newline would break the `Text` invariant.
             return None;
         }
         let mut ops = OperationSeq::new();
-        ops.retain(self.state.byte_offset);
-        ops.delete(byte_offset - self.state.byte_offset);
+        ops.retain(self.state.byte_index);
+        ops.delete(end - self.state.byte_index);
         ops.retain_rest(&self.text);
         self.text.apply(&ops).expect("Operations are well formed");
-        self.state.transform(&ops);
-        if self.snap_to_grapheme_boundary() {
-            tracing::warn!("wasn't on grapheme boundary after");
-        }
-        debug_assert_eq!(self.text.len(), pre_text_len - (byte_offset - pre_offset));
-        debug_assert!(self.state.byte_offset >= pre_offset);
+        self.state.transform(&ops, &self.text);
         Some(ops)
     }
 
@@ -659,13 +481,8 @@ impl<W: WrapMut> CursorView<'_, W> {
 
 pub fn handle_action<W: WrapMut>(cursor: &mut CursorView<'_, W>, action: &Action) {
     match action {
-        Action::SnapToGraphemeBoundary => {
-            cursor.snap_to_grapheme_boundary();
-        }
-        Action::UncheckedMoveTo { byte_offset } => {
-            // Snapping to grapheme boundary because `unchecked_move_to` is otherwise unsafe.
-            let byte_offset = cursor.text.ceil_grapheme_boundary(*byte_offset);
-            cursor.unchecked_move_to(byte_offset);
+        Action::MoveTo { byte_index } => {
+            cursor.move_to(*byte_index);
         }
         Action::MoveLeft { count } => {
             cursor.move_left(usize::from(*count));
@@ -673,19 +490,11 @@ pub fn handle_action<W: WrapMut>(cursor: &mut CursorView<'_, W>, action: &Action
         Action::MoveRight { count } => {
             cursor.move_right(usize::from(*count));
         }
-        Action::MoveUp {
-            goal_column,
-            bias,
-            count,
-        } => {
-            cursor.move_up(usize::from(*goal_column), *bias, usize::from(*count));
+        Action::MoveUp { goal_column, count } => {
+            cursor.move_up(usize::from(*goal_column), usize::from(*count));
         }
-        Action::MoveDown {
-            goal_column,
-            bias,
-            count,
-        } => {
-            cursor.move_down(usize::from(*goal_column), *bias, usize::from(*count));
+        Action::MoveDown { goal_column, count } => {
+            cursor.move_down(usize::from(*goal_column), usize::from(*count));
         }
         Action::MoveToPrevByte { byte, count } => {
             cursor.move_to_prev_byte(*byte, usize::from(*count));
@@ -701,12 +510,11 @@ pub fn handle_action<W: WrapMut>(cursor: &mut CursorView<'_, W>, action: &Action
         }
         Action::MoveToStart => cursor.move_to_start(),
         Action::MoveToEnd => cursor.move_to_end(),
-        Action::MoveToBottom { bias } => cursor.move_to_bottom(*bias),
-        Action::MoveToLineStart { bias } => cursor.move_to_line_start(*bias),
-        Action::MoveToLineNonBlankStart { bias } => cursor.move_to_line_non_blank_start(*bias),
-        Action::MoveToLineEnd { bias } => {
-            cursor.move_to_line_end(*bias);
-        }
+        Action::MoveToBottom => cursor.move_to_bottom(),
+        Action::MoveToLineStart => cursor.move_to_line_start(),
+        Action::MoveToLineNonBlankStart => cursor.move_to_line_non_blank_start(),
+        Action::MoveToLineEnd => cursor.move_to_line_end(),
+        Action::MoveUntilLineEnd => cursor.move_until_line_end(),
         Action::InsertChar { char } => {
             cursor.insert_char(*char);
         }
@@ -727,9 +535,9 @@ where
     R: Into<Text>,
 {
     type Error = anyhow::Error;
-    fn try_from((text, byte_offset): (R, usize)) -> anyhow::Result<Self> {
+    fn try_from((text, byte_index): (R, usize)) -> anyhow::Result<Self> {
         let text = Box::new(text.into());
-        let state = Box::new(CursorState { byte_offset });
+        let state = Box::new(CursorState { byte_index });
         Self::new(text, state)
     }
 }
@@ -748,20 +556,20 @@ impl<W: Wrap> Drop for CursorView<'_, W> {
 mod tests {
     use super::*;
     use hegel::{TestCase, generators as gs};
+    use ropey::Rope;
 
     #[test]
     fn delete_before_can_merge_graphemes_past_cursor() {
-        // Cursor sits between a Control (SUB, U+001A) and a combining mark
-        // (U+036B). Deleting the Control causes '@' and the combining mark to
-        // merge into a single grapheme cluster, so the cursor's post-transform
-        // position is no longer on a boundary, and snap ceils it forward past
-        // the original `pre_offset`.
+        // Cursor sits on a combining mark (U+036B) preceded by a Control (SUB, U+001A).
+        // Deleting the Control causes '@' and the combining mark to merge into a single
+        // grapheme cluster, so the cursor's post-transform position is no longer a grapheme
+        // start, and the snap floors it onto the merged grapheme.
         let mut cursor = CursorView::try_from(("@\u{1a}\u{36b}", 2)).unwrap();
         cursor.delete_before();
         cursor.assert_invariants().unwrap();
-        // pre_offset was 2; cursor ends at 3 because '@' merged with the
-        // combining mark into "@\u{36b}" (one 3-byte grapheme).
-        assert_eq!(cursor.byte_offset(), 3);
+        // '@' merged with the combining mark into "@\u{36b}" (one grapheme starting at 0).
+        assert_eq!(cursor.byte_index(), 0);
+        assert_eq!(**cursor.text, "@\u{36b}\n");
     }
 
     #[test]
@@ -773,25 +581,17 @@ mod tests {
     }
 
     #[test]
-    fn move_down_before_to_unterminated_final_line_end() {
-        let mut cursor = CursorView::try_from(("\nx", 2)).unwrap();
-        cursor.move_to_line_non_blank_start(Bias::Before);
-        cursor.move_down(usize::MAX, Bias::Before, 1);
-        assert_eq!(cursor.byte_offset(), 2);
-        cursor.assert_invariants().unwrap();
-    }
-
-    #[test]
     fn move_to_next_byte_repeated_after_multibyte_match() {
         let mut cursor = CursorView::try_from(("\nۉ", 3)).unwrap();
-        cursor.move_to_line_non_blank_start(Bias::Before);
+        cursor.move_to_line_non_blank_start();
         cursor.move_to_next_byte(219, 2);
         cursor.assert_invariants().unwrap();
     }
 
     #[test]
     fn move_to_next_blank_repeated_after_crlf_match() {
-        let mut cursor = CursorView::try_from(("\r", 1)).unwrap();
+        // `Text::from("\r")` normalizes to "\r\n", a single CRLF grapheme.
+        let mut cursor = CursorView::try_from(("\r", 0)).unwrap();
         cursor.insert("\n");
         cursor.move_left(27);
         cursor.move_to_next_blank(10);
@@ -800,7 +600,7 @@ mod tests {
     }
 
     #[test]
-    fn restore_snaps_to_grapheme_boundary_after_insert() {
+    fn restore_snaps_to_grapheme_start_after_insert() {
         let mut cursor = CursorView::try_from(("\u{0301}", 0)).unwrap();
         let snapshot = cursor.save();
         cursor.insert("e");
@@ -809,113 +609,109 @@ mod tests {
     }
 
     #[test]
+    fn delete_after_preserves_final_newline() {
+        let mut cursor = CursorView::try_from(("x", 1)).unwrap();
+        assert_eq!(cursor.grapheme(), Rope::from("\n").slice(..));
+        assert_eq!(cursor.delete_after(), None);
+        assert_eq!(**cursor.text, "x\n");
+    }
+
+    #[test]
     fn expected_behavior_left_right() {
         let mut cursor = CursorView::try_from(("", 0)).unwrap();
         cursor.assert_invariants().unwrap();
 
         cursor.insert("hello");
-        assert_eq!(**cursor.text, "hello");
-        assert_eq!(cursor.byte_offset(), 5);
+        assert_eq!(**cursor.text, "hello\n");
+        assert_eq!(cursor.byte_index(), 5);
 
         cursor.delete_before();
         cursor.delete_before();
-        assert_eq!(**cursor.text, "hel");
-        assert_eq!(cursor.byte_offset(), 3);
+        assert_eq!(**cursor.text, "hel\n");
+        assert_eq!(cursor.byte_index(), 3);
 
         cursor.move_left(2);
-        assert_eq!(cursor.byte_offset(), 1);
+        assert_eq!(cursor.byte_index(), 1);
 
         cursor.delete_after();
-        assert_eq!(cursor.byte_offset(), 1);
-        assert_eq!(**cursor.text, "hl");
+        assert_eq!(cursor.byte_index(), 1);
+        assert_eq!(**cursor.text, "hl\n");
 
         cursor.move_right(1);
-        assert_eq!(cursor.byte_offset(), 2);
+        assert_eq!(cursor.byte_index(), 2);
+        // The trailing newline is the last grapheme; can't move past it.
         cursor.move_right(1);
-        assert_eq!(cursor.byte_offset(), 2);
+        assert_eq!(cursor.byte_index(), 2);
 
+        // Deleting the grapheme under the cursor would delete the final newline; refused.
         cursor.delete_after();
-        assert_eq!(**cursor.text, "hl");
-        assert_eq!(cursor.byte_offset(), 2);
+        assert_eq!(**cursor.text, "hl\n");
+        assert_eq!(cursor.byte_index(), 2);
 
         cursor.delete_before();
         cursor.delete_before();
-        assert_eq!(**cursor.text, "");
-        assert_eq!(cursor.byte_offset(), 0);
+        assert_eq!(**cursor.text, "\n");
+        assert_eq!(cursor.byte_index(), 0);
 
         cursor.delete_before();
-        assert_eq!(**cursor.text, "");
-        assert_eq!(cursor.byte_offset(), 0);
+        assert_eq!(**cursor.text, "\n");
+        assert_eq!(cursor.byte_index(), 0);
     }
 
     #[test]
     fn expected_behavior_up_down() {
-        let bias = Bias::After;
-
         let mut cursor = CursorView::try_from(("", 0)).unwrap();
         cursor.assert_invariants().unwrap();
 
         let text = "0\n234\n6789AB\n";
         cursor.insert(text);
-        // At end of text.
-        assert_eq!(cursor.grapheme(bias), None);
-        assert_eq!(cursor.line(Bias::After), None);
-        assert_eq!(
-            cursor.line(Bias::Before).map(|rope| rope.to_string()),
-            Some(String::from("6789AB\n"))
-        );
-        assert_eq!(cursor.byte_offset(), 13);
-        assert_eq!(cursor.byte_offset(), text.len());
-        assert_eq!(cursor.display_column(Bias::Before), Some(6));
+        // On the invariant trailing newline (the empty final line the insert pushed down).
+        assert_eq!(cursor.grapheme(), Rope::from("\n").slice(..));
+        assert_eq!(cursor.line().to_string(), "\n");
+        assert_eq!(cursor.byte_index(), 13);
+        assert_eq!(cursor.display_column(), 0);
 
         cursor.move_left(1);
-        // At final newline on line 2.
-        assert_eq!(cursor.grapheme(bias), Some(Rope::from("\n").slice(..)));
-        assert_eq!(cursor.byte_offset(), 12);
-        assert_eq!(cursor.display_column(Bias::After), Some(6));
+        // On the newline terminating line 2.
+        assert_eq!(cursor.grapheme(), Rope::from("\n").slice(..));
+        assert_eq!(cursor.byte_index(), 12);
+        assert_eq!(cursor.display_column(), 6);
 
-        cursor.move_up(cursor.display_column(bias).unwrap_or(0), bias, 1);
-        // At second newline on line 1, which is shorter than the goal column.
-        assert_eq!(cursor.grapheme(bias), Some(Rope::from("\n").slice(..)));
-        assert_eq!(cursor.byte_offset(), 5);
-        // Goal column should remain the same through vertical movement.
-        assert_eq!(cursor.display_column(Bias::After), Some(3));
+        cursor.move_up(cursor.display_column(), 1);
+        // On the newline terminating line 1, which is shorter than the goal column.
+        assert_eq!(cursor.grapheme(), Rope::from("\n").slice(..));
+        assert_eq!(cursor.byte_index(), 5);
+        assert_eq!(cursor.display_column(), 3);
 
         cursor.move_left(1);
-        // At "4" on line 1.
-        assert_eq!(cursor.grapheme(bias), Some(Rope::from("4").slice(..)));
-        assert_eq!(
-            cursor.line(Bias::After).map(|rope| rope.to_string()),
-            Some(String::from("234\n"))
-        );
-        assert_eq!(
-            cursor.line(Bias::Before).map(|rope| rope.to_string()),
-            Some(String::from("234\n"))
-        );
-        assert_eq!(cursor.byte_offset(), 4);
-        // Goal column should change through horizontal movement.
-        assert_eq!(cursor.display_column(Bias::After), Some(2));
+        // On "4" in line 1.
+        assert_eq!(cursor.grapheme(), Rope::from("4").slice(..));
+        assert_eq!(cursor.line().to_string(), "234\n");
+        assert_eq!(cursor.byte_index(), 4);
+        assert_eq!(cursor.display_column(), 2);
     }
 
     #[test]
     fn move_to_line_end() {
-        let cases = [
-            // When bias is for `\n` before cursor offset, should remain in place because it's
-            // considered already at the end of line 1.
-            (Bias::Before, 2),
-            // When bias is for `y` after cursor offset, should move right to before following
-            // newline, because it's considered at the start of line 2.
-            (Bias::After, 3),
-        ];
-        for (bias, byte_offset) in cases {
-            let mut cursor = CursorView::try_from(("x\ny\n", 0)).unwrap();
-            assert_eq!(cursor.byte_offset(), 0);
-            cursor.move_to_next_byte(b'\n', 1);
-            cursor.move_right(1);
-            assert_eq!(cursor.byte_offset(), 2);
-            cursor.move_to_line_end(bias);
-            assert_eq!(cursor.byte_offset(), byte_offset, "with bias={bias:?}");
-        }
+        let mut cursor = CursorView::try_from(("x\ny\n", 2)).unwrap();
+        assert_eq!(cursor.grapheme(), Rope::from("y").slice(..));
+
+        cursor.move_to_line_end();
+        assert_eq!(cursor.byte_index(), 3);
+        assert_eq!(cursor.grapheme(), Rope::from("\n").slice(..));
+
+        // Idempotent: already on the line end.
+        cursor.move_to_line_end();
+        assert_eq!(cursor.byte_index(), 3);
+
+        cursor.move_until_line_end();
+        assert_eq!(cursor.byte_index(), 2);
+        assert_eq!(cursor.grapheme(), Rope::from("y").slice(..));
+
+        // On an empty line, `move_until_line_end` stays on the line end.
+        let mut cursor = CursorView::try_from(("\nx\n", 0)).unwrap();
+        cursor.move_until_line_end();
+        assert_eq!(cursor.byte_index(), 0);
     }
 
     #[test]
@@ -923,15 +719,23 @@ mod tests {
         let mut cursor = CursorView::try_from(("hello world\n", 0)).unwrap();
 
         assert!(cursor.move_to_next_byte(b'l', 1));
-        assert_eq!(cursor.byte_offset(), 2);
+        assert_eq!(cursor.byte_index(), 2);
 
         let mut cursor = CursorView::try_from(("hello world\n", 0)).unwrap();
         assert!(cursor.move_to_next_byte(b'l', 2));
-        assert_eq!(cursor.byte_offset(), 3);
+        assert_eq!(cursor.byte_index(), 3);
 
         let mut cursor = CursorView::try_from(("hello world\n", 0)).unwrap();
         assert!(cursor.move_to_next_byte(b'l', 3));
-        assert_eq!(cursor.byte_offset(), 9);
+        assert_eq!(cursor.byte_index(), 9);
+    }
+
+    #[test]
+    fn move_to_next_byte_skips_match_under_cursor() {
+        // Like Kakoune's `f`, the search starts after the grapheme the cursor occupies.
+        let mut cursor = CursorView::try_from(("ll\n", 0)).unwrap();
+        assert!(cursor.move_to_next_byte(b'l', 1));
+        assert_eq!(cursor.byte_index(), 1);
     }
 
     #[test]
@@ -939,39 +743,19 @@ mod tests {
         let mut cursor = CursorView::try_from(("a b\tc\n", 0)).unwrap();
 
         assert!(cursor.move_to_next_blank(1));
-        assert_eq!(cursor.byte_offset(), 1);
+        assert_eq!(cursor.byte_index(), 1);
 
         let mut cursor = CursorView::try_from(("a b\tc\n", 0)).unwrap();
         assert!(cursor.move_to_next_blank(2));
-        assert_eq!(cursor.byte_offset(), 3);
+        assert_eq!(cursor.byte_index(), 3);
 
         let mut cursor = CursorView::try_from(("a b\tc\n", 0)).unwrap();
         assert!(cursor.move_to_next_blank(3));
-        assert_eq!(cursor.byte_offset(), 5);
-    }
-
-    #[test]
-    fn byte_index() {
-        let cursor = CursorView::try_from(("xy", 1)).unwrap();
-        assert_eq!(cursor.byte_index(Bias::Before), Ok(0));
-        assert_eq!(cursor.byte_index(Bias::After), Ok(1));
-        assert_eq!(cursor.text().char(0), 'x');
-        assert_eq!(cursor.text().char(1), 'y');
-
-        let cursor = CursorView::try_from(("x", 0)).unwrap();
-        assert_eq!(cursor.byte_index(Bias::Before), Err(Some(0)));
-
-        let cursor = CursorView::try_from(("x", 1)).unwrap();
-        assert_eq!(cursor.byte_index(Bias::After), Err(Some(0)));
-
-        let cursor = CursorView::try_from(("", 0)).unwrap();
-        assert_eq!(cursor.byte_index(Bias::Before), Err(None));
-        assert_eq!(cursor.byte_index(Bias::After), Err(None));
+        assert_eq!(cursor.byte_index(), 5);
     }
 
     #[hegel::test(test_cases = 1000)]
     fn fuzz(tc: TestCase) {
-        const BIAS: Bias = Bias::After;
         struct StateMachine {
             text: Text,
             state: CursorState,
@@ -983,14 +767,9 @@ mod tests {
                 CursorMut::new(&mut self.text, &mut self.state).expect("Cursor state kept valid")
             }
             #[rule]
-            fn snap_to_grapheme_boundary(&mut self, _: TestCase) {
-                self.cursor().snap_to_grapheme_boundary();
-            }
-            #[rule]
-            fn unchecked_move_to(&mut self, tc: TestCase) {
-                let byte_offset = tc.draw(gs::integers::<usize>().max_value(self.text.len()));
-                let byte_offset = self.text.ceil_grapheme_boundary(byte_offset);
-                self.cursor().unchecked_move_to(byte_offset);
+            fn move_to(&mut self, tc: TestCase) {
+                let byte_index = tc.draw(gs::integers::<usize>().max_value(self.text.len()));
+                self.cursor().move_to(byte_index);
             }
             #[rule]
             fn move_left(&mut self, tc: TestCase) {
@@ -1006,15 +785,15 @@ mod tests {
             fn move_up(&mut self, tc: TestCase) {
                 let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
                 let mut cursor = self.cursor();
-                let goal_column = cursor.display_column(BIAS).unwrap_or(0);
-                cursor.move_up(goal_column, BIAS, count);
+                let goal_column = cursor.display_column();
+                cursor.move_up(goal_column, count);
             }
             #[rule]
             fn move_down(&mut self, tc: TestCase) {
                 let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
                 let mut cursor = self.cursor();
-                let goal_column = cursor.display_column(BIAS).unwrap_or(0);
-                cursor.move_down(goal_column, BIAS, count);
+                let goal_column = cursor.display_column();
+                cursor.move_down(goal_column, count);
             }
             #[rule]
             fn move_to_prev_byte(&mut self, tc: TestCase) {
@@ -1047,40 +826,24 @@ mod tests {
                 self.cursor().move_to_end();
             }
             #[rule]
-            fn move_to_bottom(&mut self, tc: TestCase) {
-                let bias = if tc.draw(gs::booleans()) {
-                    Bias::Before
-                } else {
-                    Bias::After
-                };
-                self.cursor().move_to_bottom(bias);
+            fn move_to_bottom(&mut self, _: TestCase) {
+                self.cursor().move_to_bottom();
             }
             #[rule]
-            fn move_to_line_start(&mut self, tc: TestCase) {
-                let bias = if tc.draw(gs::booleans()) {
-                    Bias::Before
-                } else {
-                    Bias::After
-                };
-                self.cursor().move_to_line_start(bias);
+            fn move_to_line_start(&mut self, _: TestCase) {
+                self.cursor().move_to_line_start();
             }
             #[rule]
-            fn move_to_line_non_blank_start(&mut self, tc: TestCase) {
-                let bias = if tc.draw(gs::booleans()) {
-                    Bias::Before
-                } else {
-                    Bias::After
-                };
-                self.cursor().move_to_line_non_blank_start(bias);
+            fn move_to_line_non_blank_start(&mut self, _: TestCase) {
+                self.cursor().move_to_line_non_blank_start();
             }
             #[rule]
-            fn move_to_line_end(&mut self, tc: TestCase) {
-                let bias = if tc.draw(gs::booleans()) {
-                    Bias::Before
-                } else {
-                    Bias::After
-                };
-                self.cursor().move_to_line_end(bias);
+            fn move_to_line_end(&mut self, _: TestCase) {
+                self.cursor().move_to_line_end();
+            }
+            #[rule]
+            fn move_until_line_end(&mut self, _: TestCase) {
+                self.cursor().move_until_line_end();
             }
             #[rule]
             fn insert_char(&mut self, tc: TestCase) {
@@ -1113,6 +876,11 @@ mod tests {
             fn invariants(&self, _: TestCase) {
                 let _ = Cursor::new(&self.text, &self.state)
                     .expect("Cursor remains valid after every operation");
+                let rope = self.text.rope();
+                assert!(
+                    rope.len() > 0 && rope.byte(rope.len() - 1) == b'\n',
+                    "Text keeps its trailing newline"
+                );
             }
         }
         let machine = StateMachine {

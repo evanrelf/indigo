@@ -16,14 +16,14 @@ enum FuzzAction {
 }
 
 fuzz_target!(|input: (&str, usize, Vec<FuzzAction>)| {
-    let (text, byte_offset, actions) = input;
+    let (text, byte_index, actions) = input;
     let text = Text::from(text);
-    let valid_byte_offset = byte_offset <= text.len() && text.is_grapheme_boundary(byte_offset);
-    let Ok(mut cursor) = CursorView::try_from((text, byte_offset)) else {
-        assert!(!valid_byte_offset);
+    let valid_byte_index = text.is_grapheme_start(byte_index);
+    let Ok(mut cursor) = CursorView::try_from((text, byte_index)) else {
+        assert!(!valid_byte_index);
         return;
     };
-    assert!(valid_byte_offset);
+    assert!(valid_byte_index);
     let mut snapshots: [Option<CursorSnapshot>; 4] = array::from_fn(|_| None);
     for action in actions {
         match action {

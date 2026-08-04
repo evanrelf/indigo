@@ -24,14 +24,9 @@ pub struct WindowState {
 
 impl WindowState {
     #[must_use]
-    pub fn new(buffer_key: BufferKey, buffer: &Buffer) -> Self {
-        let rope = buffer.text.rope();
-        let mut range = RangeState::default();
-        // Select the first grapheme instead of starting with an empty selection. On an empty
-        // buffer this leaves the range empty at the end of the text, which is valid.
-        range.head.byte_offset = rope.next_grapheme_boundary(0).unwrap_or(0);
+    pub fn new(buffer_key: BufferKey) -> Self {
         let selection = SelectionState {
-            ranges: vec![range.snapped_to_grapheme_boundaries(rope)],
+            ranges: vec![RangeState::default()],
             primary_range: 0,
         };
         Self {
@@ -103,12 +98,12 @@ impl<W: WrapMut> WindowView<'_, W> {
     // cursor never disappears below the bottom of the viewport.
     pub fn scroll_to_selection(&mut self) {
         let state = &self.state.selection;
-        let head_byte_offset = state.ranges[state.primary_range].head.byte_offset;
+        let head_byte_index = state.ranges[state.primary_range].head.byte_index;
         let line = self
             .buffer
             .text
             .rope()
-            .byte_to_line_idx(head_byte_offset, LINE_TYPE);
+            .byte_to_line_idx(head_byte_index, LINE_TYPE);
         let top = self.vertical_scroll();
         let bottom = top + usize::from(self.state.height).saturating_sub(1);
         if line < top {
@@ -120,12 +115,12 @@ impl<W: WrapMut> WindowView<'_, W> {
 
     pub fn scroll_center_selection(&mut self) {
         let state = &self.state.selection;
-        let head_byte_offset = state.ranges[state.primary_range].head.byte_offset;
+        let head_byte_index = state.ranges[state.primary_range].head.byte_index;
         let line = self
             .buffer
             .text
             .rope()
-            .byte_to_line_idx(head_byte_offset, LINE_TYPE);
+            .byte_to_line_idx(head_byte_index, LINE_TYPE);
         let half_height = usize::from(self.state.height) / 2;
         self.state.prev_vertical_scroll = line.saturating_sub(half_height);
     }
@@ -147,14 +142,9 @@ impl<W: WrapMut> WindowView<'_, W> {
         if self.buffer.text.undo()? {
             if let Some(opss) = self.buffer.text.ops_since(version) {
                 for ops in opss {
-                    self.state.selection.transform(ops);
+                    self.state.selection.transform(ops, &self.buffer.text);
                 }
             }
-            self.selection_mut().for_each_mut(|mut range| {
-                if range.snap_to_grapheme_boundaries() {
-                    tracing::warn!("wasn't on grapheme boundary after");
-                }
-            });
             Ok(true)
         } else {
             Ok(false)
@@ -167,14 +157,9 @@ impl<W: WrapMut> WindowView<'_, W> {
         if self.buffer.text.redo()? {
             if let Some(opss) = self.buffer.text.ops_since(version) {
                 for ops in opss {
-                    self.state.selection.transform(ops);
+                    self.state.selection.transform(ops, &self.buffer.text);
                 }
             }
-            self.selection_mut().for_each_mut(|mut range| {
-                if range.snap_to_grapheme_boundaries() {
-                    tracing::warn!("wasn't on grapheme boundary after");
-                }
-            });
             Ok(true)
         } else {
             Ok(false)

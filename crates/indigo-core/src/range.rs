@@ -1,8 +1,8 @@
 use crate::{
-    cursor::{Bias, Cursor, CursorMut, CursorSnapshot, CursorState},
+    cursor::{Cursor, CursorMut, CursorSnapshot, CursorState},
     ot::OperationSeq,
     rope::RopeExt as _,
-    text::{Anchor, Text},
+    text::Text,
 };
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
@@ -14,12 +14,6 @@ use arbitrary::Arbitrary;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Empty but not at end of text (tail={tail}, head={head})")]
-    EmptyAndNotEnd { tail: usize, head: usize },
-
-    #[error("Reduced but not facing forward (tail={tail}, head={head})")]
-    ReducedAndBackward { tail: usize, head: usize },
-
     #[error("Error from tail")]
     Tail(#[source] anyhow::Error),
 
@@ -30,7 +24,6 @@ pub enum Error {
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
-    SnapToGraphemeBoundaries,
     UpdateGoalColumn,
     ExtendTo(usize),
     MoveTo(usize),
@@ -80,48 +73,18 @@ pub enum Action {
 pub struct RangeState {
     pub tail: CursorState,
     pub head: CursorState,
-    /// The display column the head _wants_ to be on. Saved to restore horizontal positioning
-    /// through vertical movements. Reset on any non-vertical movement.
     pub goal_column: usize,
 }
 
 impl RangeState {
-    /// Snap tail and head outward to nearest grapheme boundaries. This is a no-op if the range is
-    /// already valid.
-    pub fn snap_to_grapheme_boundaries(&mut self, text: &Rope) -> bool {
-        if self.tail.byte_offset < self.head.byte_offset {
-            let prev_tail = self.tail.byte_offset;
-            self.tail.byte_offset = text.floor_grapheme_boundary(self.tail.byte_offset);
-
-            let prev_head = self.head.byte_offset;
-            self.head.byte_offset = text.ceil_grapheme_boundary(self.head.byte_offset);
-
-            self.tail.byte_offset != prev_tail || self.head.byte_offset != prev_head
-        } else {
-            let prev_head = self.head.byte_offset;
-            self.head.byte_offset = text.floor_grapheme_boundary(self.head.byte_offset);
-
-            let prev_tail = self.tail.byte_offset;
-            self.tail.byte_offset = text.ceil_grapheme_boundary(self.tail.byte_offset);
-
-            self.tail.byte_offset != prev_tail || self.head.byte_offset != prev_head
-        }
-    }
-
-    #[must_use]
-    pub fn snapped_to_grapheme_boundaries(mut self, text: &Rope) -> Self {
-        self.snap_to_grapheme_boundaries(text);
-        self
-    }
-
-    pub fn transform(&mut self, ops: &OperationSeq) {
-        self.tail.transform(ops);
-        self.head.transform(ops);
+    pub fn transform(&mut self, ops: &OperationSeq, text: &Rope) {
+        self.tail.transform(ops, text);
+        self.head.transform(ops, text);
     }
 
     #[must_use]
     pub fn start(&self) -> &CursorState {
-        if self.tail.byte_offset <= self.head.byte_offset {
+        if self.tail.byte_index <= self.head.byte_index {
             &self.tail
         } else {
             &self.head
@@ -130,70 +93,44 @@ impl RangeState {
 
     #[must_use]
     pub fn end(&self) -> &CursorState {
-        if self.tail.byte_offset <= self.head.byte_offset {
+        if self.tail.byte_index <= self.head.byte_index {
             &self.head
         } else {
             &self.tail
         }
     }
 
-    #[must_use]
-    pub fn byte_length(&self) -> usize {
-        let start = self.start().byte_offset;
-        let end = self.end().byte_offset;
-        end - start
-    }
-
-    /// An empty range is considered forward.
+    /// A reduced range is considered forward.
     #[must_use]
     pub fn is_forward(&self) -> bool {
-        self.tail.byte_offset <= self.head.byte_offset
+        self.tail.byte_index <= self.head.byte_index
     }
 
     #[must_use]
     pub fn with_bounds(&self, start: usize, end: usize) -> Self {
         if self.is_forward() {
             Self {
-                tail: CursorState { byte_offset: start },
-                head: CursorState { byte_offset: end },
+                tail: CursorState { byte_index: start },
+                head: CursorState { byte_index: end },
                 goal_column: self.goal_column,
             }
         } else {
             Self {
-                tail: CursorState { byte_offset: end },
-                head: CursorState { byte_offset: start },
+                tail: CursorState { byte_index: end },
+                head: CursorState { byte_index: start },
                 goal_column: self.goal_column,
             }
         }
     }
 
     #[must_use]
-    pub fn is_touching(&self, other: &Self) -> bool {
-        let self_start = self.start().byte_offset;
-        let self_end = self.end().byte_offset;
-        let other_start = other.start().byte_offset;
-        let other_end = other.end().byte_offset;
-        self_end == other_start || other_end == self_start
-    }
-
-    #[must_use]
-    pub fn is_overlapping(&self, other: &Self) -> bool {
-        let self_start = self.start().byte_offset;
-        let self_end = self.end().byte_offset;
-        let other_start = other.start().byte_offset;
-        let other_end = other.end().byte_offset;
-        self_start < other_end && other_start < self_end
-    }
-
-    #[must_use]
     pub fn save(&self, text: &Text) -> RangeSnapshot {
         let tail = self.tail.save(text);
         let head = self.head.save(text);
-        let goal_column = text.create_anchor(self.goal_column);
         RangeSnapshot {
             tail,
             head,
-            goal_column,
+            goal_column: self.goal_column,
         }
     }
 }
@@ -201,7 +138,7 @@ impl RangeState {
 pub struct RangeSnapshot {
     pub tail: CursorSnapshot,
     pub head: CursorSnapshot,
-    pub goal_column: Anchor,
+    pub goal_column: usize,
 }
 
 impl RangeSnapshot {
@@ -209,11 +146,10 @@ impl RangeSnapshot {
     pub fn restore(&self, text: &Text) -> Option<RangeState> {
         let tail = self.tail.restore(text)?;
         let head = self.head.restore(text)?;
-        let goal_column = text.resolve_anchor(&self.goal_column)?;
         Some(RangeState {
             tail,
             head,
-            goal_column,
+            goal_column: self.goal_column,
         })
     }
 }
@@ -259,9 +195,18 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         &self.state
     }
 
+    #[must_use]
+    pub fn byte_offsets(&self) -> (usize, usize) {
+        let start = self.state.start().byte_index;
+        let end = self
+            .text
+            .next_grapheme_boundary(self.state.end().byte_index)
+            .expect("Range end is always on a grapheme");
+        (start, end)
+    }
+
     pub fn slice(&self) -> RopeSlice<'_> {
-        let start = self.start().byte_offset();
-        let end = self.end().byte_offset();
+        let (start, end) = self.byte_offsets();
         self.text.slice(start..end)
     }
 
@@ -276,7 +221,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 
     pub fn start(&self) -> Cursor<'_> {
-        if self.state.tail.byte_offset <= self.state.head.byte_offset {
+        if self.is_forward() {
             self.tail()
         } else {
             self.head()
@@ -284,46 +229,10 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 
     pub fn end(&self) -> Cursor<'_> {
-        if self.state.tail.byte_offset <= self.state.head.byte_offset {
+        if self.is_forward() {
             self.head()
         } else {
             self.tail()
-        }
-    }
-
-    #[must_use]
-    pub fn tail_bias(&self) -> Bias {
-        if self.is_forward() {
-            Bias::After
-        } else {
-            Bias::Before
-        }
-    }
-
-    #[must_use]
-    pub fn head_bias(&self) -> Bias {
-        if self.is_forward() {
-            Bias::Before
-        } else {
-            Bias::After
-        }
-    }
-
-    #[must_use]
-    pub fn start_bias(&self) -> Bias {
-        if self.state.tail.byte_offset <= self.state.head.byte_offset {
-            self.tail_bias()
-        } else {
-            self.head_bias()
-        }
-    }
-
-    #[must_use]
-    pub fn end_bias(&self) -> Bias {
-        if self.state.tail.byte_offset <= self.state.head.byte_offset {
-            self.head_bias()
-        } else {
-            self.tail_bias()
         }
     }
 
@@ -332,22 +241,19 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 
     pub fn byte_length(&self) -> usize {
-        self.state.byte_length()
+        let (start, end) = self.byte_offsets();
+        end - start
     }
 
     pub fn grapheme_length(&self) -> usize {
         match self.byte_length() {
-            0 => 0,
+            0 => unreachable!(),
             1 => 1,
             _ => self.slice().graphemes().count(),
         }
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.state.tail.byte_offset == self.state.head.byte_offset
-    }
-
-    /// An empty range is considered forward.
+    /// A reduced range is considered forward.
     pub fn is_forward(&self) -> bool {
         self.state.is_forward()
     }
@@ -360,14 +266,17 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     where
         W2: WrapRef,
     {
-        self.state.is_touching(&other.state)
+        let (self_start, self_end) = self.byte_offsets();
+        let (other_start, other_end) = other.byte_offsets();
+        self_end == other_start || other_end == self_start
     }
 
     pub fn is_overlapping<W2>(&self, other: &RangeView<'_, W2>) -> bool
     where
         W2: WrapRef,
     {
-        self.state.is_overlapping(&other.state)
+        self.state.start().byte_index <= other.state.end().byte_index
+            && other.state.start().byte_index <= self.state.end().byte_index
     }
 
     #[must_use]
@@ -378,19 +287,6 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     pub fn assert_invariants(&self) -> anyhow::Result<()> {
         let _ = Cursor::new(&self.text, &self.state.tail).map_err(Error::Tail)?;
         let _ = Cursor::new(&self.text, &self.state.head).map_err(Error::Head)?;
-        // TODO: Restore invariants once positioning is rock solid.
-        // if self.is_empty() && !self.head().is_at_end() {
-        //     return Err(Error::EmptyAndNotEnd {
-        //         tail: self.state.tail.byte_offset,
-        //         head: self.state.head.byte_offset,
-        //     });
-        // }
-        // if self.is_backward() && self.grapheme_length() <= 1 {
-        //     return Err(Error::ReducedAndBackward {
-        //         tail: self.state.tail.byte_offset,
-        //         head: self.state.head.byte_offset,
-        //     });
-        // }
         Ok(())
     }
 }
@@ -409,7 +305,7 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     fn start_mut(&mut self) -> CursorMut<'_> {
-        if self.state.tail.byte_offset <= self.state.head.byte_offset {
+        if self.is_forward() {
             self.tail_mut()
         } else {
             self.head_mut()
@@ -417,41 +313,30 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     fn end_mut(&mut self) -> CursorMut<'_> {
-        if self.state.tail.byte_offset <= self.state.head.byte_offset {
+        if self.is_forward() {
             self.head_mut()
         } else {
             self.tail_mut()
         }
     }
 
-    pub fn snap_to_grapheme_boundaries(&mut self) -> bool {
-        self.state.snap_to_grapheme_boundaries(&self.text)
-    }
-
     /// Should be called after performing any non-vertical movement.
     pub fn update_goal_column(&mut self) {
-        let head_column = self.head().display_column(self.head_bias()).unwrap_or(0);
+        let head_column = self.head().display_column();
         self.state.goal_column = head_column;
     }
 
-    pub fn extend_to(&mut self, byte_offset: usize) {
-        self.head_mut().unchecked_move_to(byte_offset);
-        if self.is_forward() {
-            self.head_mut().move_right(1);
-        }
+    pub fn extend_to(&mut self, byte_index: usize) {
+        self.head_mut().move_to(byte_index);
         self.update_goal_column();
     }
 
-    pub fn move_to(&mut self, byte_offset: usize) {
-        self.extend_to(byte_offset);
+    pub fn move_to(&mut self, byte_index: usize) {
+        self.extend_to(byte_index);
         self.reduce();
-        self.update_goal_column();
     }
 
     pub fn extend_left(&mut self, count: usize) {
-        if self.grapheme_length() == 1 {
-            self.unchecked_flip_backward();
-        }
         self.head_mut().move_left(count);
         self.update_goal_column();
     }
@@ -462,9 +347,6 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_right(&mut self, count: usize) {
-        if self.grapheme_length() == 1 {
-            self.flip_forward();
-        }
         self.head_mut().move_right(count);
         self.update_goal_column();
     }
@@ -475,12 +357,8 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_up(&mut self, count: usize) {
-        if self.grapheme_length() == 1 {
-            self.unchecked_flip_backward();
-        }
         let goal_column = self.state.goal_column;
-        let bias = self.head_bias();
-        self.head_mut().move_up(goal_column, bias, count);
+        self.head_mut().move_up(goal_column, count);
     }
 
     pub fn move_up(&mut self, count: usize) {
@@ -490,8 +368,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_down(&mut self, count: usize) {
         let goal_column = self.state.goal_column;
-        let bias = self.head_bias();
-        self.head_mut().move_down(goal_column, bias, count);
+        self.head_mut().move_down(goal_column, count);
     }
 
     pub fn move_down(&mut self, count: usize) {
@@ -500,164 +377,131 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_until_prev_byte(&mut self, byte: u8, count: usize) {
-        self.head_mut().move_to_prev_byte(byte, count);
+        if self.head_mut().move_to_prev_byte(byte, count) {
+            self.head_mut().move_right(1);
+        }
         self.update_goal_column();
     }
 
     pub fn move_until_prev_byte(&mut self, byte: u8, count: usize) {
         self.reduce();
-        self.head_mut().move_to_prev_byte(byte, count);
-        self.update_goal_column();
+        self.extend_until_prev_byte(byte, count);
     }
 
     pub fn extend_onto_prev_byte(&mut self, byte: u8, count: usize) {
-        if self.head_mut().move_to_prev_byte(byte, count) && self.is_backward() {
-            self.extend_left(1);
-        }
+        self.head_mut().move_to_prev_byte(byte, count);
         self.update_goal_column();
     }
 
     pub fn move_onto_prev_byte(&mut self, byte: u8, count: usize) {
         self.reduce();
-        if self.head_mut().move_to_prev_byte(byte, count) {
-            self.extend_left(1);
-        }
-        self.update_goal_column();
+        self.extend_onto_prev_byte(byte, count);
     }
 
     pub fn extend_until_next_byte(&mut self, byte: u8, count: usize) {
-        self.head_mut().move_to_next_byte(byte, count);
+        if self.head_mut().move_to_next_byte(byte, count) {
+            self.head_mut().move_left(1);
+        }
         self.update_goal_column();
     }
 
     pub fn move_until_next_byte(&mut self, byte: u8, count: usize) {
         self.reduce();
-        self.head_mut().move_to_next_byte(byte, count);
-        self.update_goal_column();
+        self.extend_until_next_byte(byte, count);
     }
 
     pub fn extend_onto_next_byte(&mut self, byte: u8, count: usize) {
-        if self.head_mut().move_to_next_byte(byte, count) && self.is_forward() {
-            self.extend_right(1);
-        }
+        self.head_mut().move_to_next_byte(byte, count);
         self.update_goal_column();
     }
 
     pub fn move_onto_next_byte(&mut self, byte: u8, count: usize) {
         self.reduce();
-        if self.head_mut().move_to_next_byte(byte, count) {
-            self.extend_right(1);
-        }
-        self.update_goal_column();
+        self.extend_onto_next_byte(byte, count);
     }
 
     pub fn extend_to_start(&mut self) {
         self.head_mut().move_to_start();
+        self.update_goal_column();
     }
 
     pub fn move_to_start(&mut self) {
         self.extend_to_start();
         self.reduce();
-        self.update_goal_column();
     }
 
     pub fn extend_to_end(&mut self) {
         self.head_mut().move_to_end();
+        self.update_goal_column();
     }
 
     pub fn move_to_end(&mut self) {
         self.extend_to_end();
         self.reduce();
-        self.update_goal_column();
     }
 
     pub fn extend_to_bottom(&mut self) {
-        let bias = self.head_bias();
-        self.head_mut().move_to_bottom(bias);
-        if self.is_forward() {
-            self.head_mut().move_right(1);
-        }
+        self.head_mut().move_to_bottom();
+        self.update_goal_column();
     }
 
     pub fn move_to_bottom(&mut self) {
         self.extend_to_bottom();
         self.reduce();
-        self.update_goal_column();
     }
 
     pub fn extend_to_line_start(&mut self) {
-        let bias = self.head_bias();
-        self.head_mut().move_to_line_start(bias);
+        self.head_mut().move_to_line_start();
+        self.update_goal_column();
     }
 
     pub fn move_to_line_start(&mut self) {
         self.extend_to_line_start();
         self.reduce();
-        self.update_goal_column();
     }
 
     pub fn extend_to_line_non_blank_start(&mut self) {
-        let bias = self.head_bias();
-        self.head_mut().move_to_line_non_blank_start(bias);
+        self.head_mut().move_to_line_non_blank_start();
+        self.update_goal_column();
     }
 
     pub fn move_to_line_non_blank_start(&mut self) {
         self.extend_to_line_non_blank_start();
-        self.state.tail.byte_offset = self.state.head.byte_offset;
         self.reduce();
-        self.update_goal_column();
     }
 
     pub fn extend_until_line_end(&mut self) {
-        let bias = self.head_bias();
-        self.head_mut().move_to_line_end(bias);
+        self.head_mut().move_until_line_end();
+        self.update_goal_column();
     }
 
     pub fn move_until_line_end(&mut self) {
         self.extend_until_line_end();
         self.reduce();
-        self.update_goal_column();
     }
 
     pub fn extend_onto_line_end(&mut self) {
-        let bias = self.head_bias();
-        if self.head_mut().move_to_line_end(bias) {
-            self.head_mut().move_right(1);
-        }
+        self.head_mut().move_to_line_end();
+        self.update_goal_column();
     }
 
     pub fn move_onto_line_end(&mut self) {
         self.extend_onto_line_end();
         self.reduce();
-        self.update_goal_column();
     }
 
     pub fn expand_to_full_lines(&mut self) {
-        if self.text.len() == 0 {
-            return;
-        }
-
-        self.start_mut().move_to_line_start(Bias::After);
-        if self.end_mut().move_to_line_end(Bias::Before) {
-            self.end_mut().move_right(1);
-        }
-
+        self.start_mut().move_to_line_start();
+        self.end_mut().move_to_line_end();
         self.update_goal_column();
     }
 
     pub fn flip(&mut self) {
-        if self.is_forward() && self.grapheme_length() == 1 {
-            return;
-        }
-        self.unchecked_flip();
-    }
-
-    fn unchecked_flip(&mut self) {
         fn both(state: &mut RangeState) -> (&mut CursorState, &mut CursorState) {
             (&mut state.tail, &mut state.head)
         }
-        let (tail, cursor) = both(&mut self.state);
-        mem::swap(&mut tail.byte_offset, &mut cursor.byte_offset);
+        let (tail, head) = both(&mut self.state);
+        mem::swap(tail, head);
     }
 
     pub fn flip_forward(&mut self) {
@@ -672,38 +516,35 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
-    fn unchecked_flip_backward(&mut self) {
-        if self.is_forward() {
-            self.unchecked_flip();
-        }
+    pub fn reduce(&mut self) {
+        self.state.tail = self.state.head.clone();
     }
 
-    pub fn reduce(&mut self) {
-        if self.is_empty() {
-            // Too small -> expand
-            if self.head().is_at_end() {
-                // Expand from end
-                self.tail_mut().move_left(1);
-            } else {
-                // Expand from start or middle
-                self.head_mut().move_right(1);
-            }
-            return;
-        }
-
-        if self.grapheme_length() == 1 {
-            // Just right
-            self.flip_forward();
-            return;
-        }
-
-        // Too big -> contract
-        if self.is_backward() {
-            self.state.tail.byte_offset = self.state.head.byte_offset;
-            self.head_mut().move_right(1);
+    /// Reshape for appending (Kakoune's `a`): reduce to the head, then move onto the following
+    /// grapheme so insertion lands after the original head. On the text's last grapheme there is
+    /// no following grapheme, so a newline is appended first (as Kakoune does) and the cursor
+    /// lands on it.
+    pub fn prepare_append(&mut self) -> Option<OperationSeq> {
+        self.reduce();
+        if self.head().is_at_end() {
+            let mut ops = OperationSeq::new();
+            ops.retain(self.text.len());
+            ops.insert("\n");
+            self.text.apply(&ops).expect("Operations are well formed");
+            self.state.transform(&ops, &self.text);
+            let last = self
+                .text
+                .last_grapheme_start()
+                .expect("Text is never empty");
+            self.state.tail.byte_index = last;
+            self.state.head.byte_index = last;
+            self.update_goal_column();
+            Some(ops)
         } else {
-            self.state.tail.byte_offset = self.state.head.byte_offset;
-            self.tail_mut().move_left(1);
+            self.head_mut().move_right(1);
+            self.reduce();
+            self.update_goal_column();
+            None
         }
     }
 
@@ -711,75 +552,83 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.insert(&char.to_string())
     }
 
+    /// Insert before the range's first grapheme. Both endpoints stay on their graphemes (i.e.
+    /// end up after the inserted text).
     #[tracing::instrument(skip_all)]
     pub fn insert(&mut self, text: &str) -> OperationSeq {
         debug_assert!(
             self.grapheme_length() <= 1,
             "Range reduced before entering insert mode"
         );
-        let snapshot = self.state.save(&self.text);
-        let ops = self.start_mut().insert(text);
-        *self.state = snapshot.restore(&self.text).unwrap();
-        if self.snap_to_grapheme_boundaries() {
-            tracing::warn!("wasn't on grapheme boundary after");
-        }
+        let mut ops = OperationSeq::new();
+        ops.retain(self.state.start().byte_index);
+        ops.insert(text);
+        ops.retain_rest(&self.text);
+        self.text.apply(&ops).expect("Operations are well formed");
+        self.state.transform(&ops, &self.text);
         self.update_goal_column();
         ops
     }
 
+    /// Delete the grapheme before the range's start.
     #[tracing::instrument(skip_all)]
     pub fn delete_before(&mut self) -> Option<OperationSeq> {
-        if self.start().is_at_start() {
-            return None;
-        }
         debug_assert!(
             self.grapheme_length() <= 1,
             "Range reduced before entering insert mode"
         );
-        let snapshot = self.state.save(&self.text);
-        let ops = self.start_mut().delete_before()?;
-        *self.state = snapshot.restore(&self.text).unwrap();
-        if self.snap_to_grapheme_boundaries() {
-            tracing::warn!("wasn't on grapheme boundary after");
-        }
+        let start = self.state.start().byte_index;
+        let delete_start = self.text.prev_grapheme_boundary(start)?;
+        let mut ops = OperationSeq::new();
+        ops.retain(delete_start);
+        ops.delete(start - delete_start);
+        ops.retain_rest(&self.text);
+        self.text.apply(&ops).expect("Operations are well formed");
+        self.state.transform(&ops, &self.text);
         self.update_goal_column();
         Some(ops)
     }
 
+    /// Delete the selected graphemes. Deleting through the end of the text re-inserts the
+    /// invariant trailing newline.
     #[tracing::instrument(skip_all)]
-    pub fn delete(&mut self) -> Option<OperationSeq> {
-        if self.is_empty() {
+    pub fn delete(&mut self) -> OperationSeq {
+        let (start, end) = self.byte_offsets();
+        let mut ops = OperationSeq::new();
+        ops.retain(start);
+        ops.delete(end - start);
+        if end == self.text.len() && (start == 0 || self.text.byte(start - 1) != b'\n') {
+            ops.insert("\n");
+        }
+        ops.retain_rest(&self.text);
+        self.text.apply(&ops).expect("Operations are well formed");
+        self.state.transform(&ops, &self.text);
+        self.update_goal_column();
+        ops
+    }
+
+    /// Delete the grapheme under the range's end cursor, unless it is the text's final newline.
+    #[tracing::instrument(skip_all)]
+    pub fn delete_after(&mut self) -> Option<OperationSeq> {
+        debug_assert!(
+            self.grapheme_length() <= 1,
+            "Range reduced before entering insert mode"
+        );
+        let end = self.state.end().byte_index;
+        let delete_end = self
+            .text
+            .next_grapheme_boundary(end)
+            .expect("Range end is always on a grapheme");
+        if delete_end == self.text.len() {
+            // Deleting the final newline would break the `Text` invariant.
             return None;
         }
         let mut ops = OperationSeq::new();
-        ops.retain(self.start().byte_offset());
-        ops.delete(self.byte_length());
+        ops.retain(end);
+        ops.delete(delete_end - end);
         ops.retain_rest(&self.text);
         self.text.apply(&ops).expect("Operations are well formed");
-        self.state.transform(&ops);
-        debug_assert_eq!(self.state.tail.byte_offset, self.state.head.byte_offset);
-        if self.snap_to_grapheme_boundaries() {
-            tracing::warn!("wasn't on grapheme boundary after");
-        }
-        self.update_goal_column();
-        Some(ops)
-    }
-
-    #[tracing::instrument(skip_all)]
-    pub fn delete_after(&mut self) -> Option<OperationSeq> {
-        if self.end().is_at_end() {
-            return None;
-        }
-        debug_assert!(
-            self.grapheme_length() <= 1,
-            "Range reduced before entering insert mode"
-        );
-        let snapshot = self.state.save(&self.text);
-        let ops = self.end_mut().delete_after()?;
-        *self.state = snapshot.restore(&self.text).unwrap();
-        if self.snap_to_grapheme_boundaries() {
-            tracing::warn!("wasn't on grapheme boundary after");
-        }
+        self.state.transform(&ops, &self.text);
         self.update_goal_column();
         Some(ops)
     }
@@ -797,19 +646,14 @@ impl<W: WrapMut> RangeView<'_, W> {
 #[expect(clippy::too_many_lines)]
 pub fn handle_action<W: WrapMut>(range: &mut RangeView<'_, W>, action: &Action) {
     match action {
-        Action::SnapToGraphemeBoundaries => {
-            range.snap_to_grapheme_boundaries();
-        }
         Action::UpdateGoalColumn => {
             range.update_goal_column();
         }
-        Action::ExtendTo(byte_offset) => {
-            let byte_offset = range.text.ceil_grapheme_boundary(*byte_offset);
-            range.extend_to(byte_offset);
+        Action::ExtendTo(byte_index) => {
+            range.extend_to(*byte_index);
         }
-        Action::MoveTo(byte_offset) => {
-            let byte_offset = range.text.ceil_grapheme_boundary(*byte_offset);
-            range.move_to(byte_offset);
+        Action::MoveTo(byte_index) => {
+            range.move_to(*byte_index);
         }
         Action::ExtendLeft(count) => {
             range.extend_left(usize::from(*count));
@@ -945,11 +789,10 @@ where
     type Error = anyhow::Error;
     fn try_from((text, tail, head): (R, usize, usize)) -> anyhow::Result<Self> {
         let text = Box::new(text.into());
-        let head = CursorState { byte_offset: head };
         let state = Box::new(RangeState {
-            tail: CursorState { byte_offset: tail },
+            tail: CursorState { byte_index: tail },
+            head: CursorState { byte_index: head },
             goal_column: 0,
-            head,
         });
         Self::new(text, state).map(|mut range| {
             range.update_goal_column();
@@ -989,6 +832,68 @@ mod tests {
     }
 
     #[test]
+    fn one_grapheme_range_is_minimum() {
+        let range = RangeView::try_from(("xy\n", 1, 1)).unwrap();
+        assert_eq!(range.grapheme_length(), 1);
+        assert_eq!(range.byte_length(), 1);
+        assert_eq!(&range.slice().to_string(), "y");
+        assert!(range.is_forward());
+    }
+
+    #[test]
+    fn flip_is_direction_swap() {
+        let mut range = RangeView::try_from(("abc\n", 0, 2)).unwrap();
+        assert!(range.is_forward());
+        range.flip();
+        assert!(range.is_backward());
+        assert_eq!(range.tail().byte_index(), 2);
+        assert_eq!(range.head().byte_index(), 0);
+        range.reduce();
+        assert!(range.is_forward());
+    }
+
+    #[test]
+    fn delete_one_grapheme_range_deletes_a_character() {
+        let mut range = RangeView::try_from(("abc\n", 1, 1)).unwrap();
+        range.delete();
+        assert_eq!(&range.text().to_string(), "ac\n");
+        assert_eq!(range.head().byte_index(), 1);
+    }
+
+    #[test]
+    fn delete_through_end_keeps_trailing_newline() {
+        // Select "bc\n" (inclusive of the final newline) and delete.
+        let mut range = RangeView::try_from(("abc\n", 1, 3)).unwrap();
+        range.delete();
+        assert_eq!(&range.text().to_string(), "a\n");
+        range.assert_invariants().unwrap();
+
+        // Deleting everything leaves the empty text "\n".
+        let mut range = RangeView::try_from(("abc\n", 0, 3)).unwrap();
+        range.delete();
+        assert_eq!(&range.text().to_string(), "\n");
+        assert_eq!(range.head().byte_index(), 0);
+    }
+
+    #[test]
+    fn prepare_append_at_end_materializes_newline() {
+        // Cursor on the final newline: Kakoune appends a real newline so the insertion point
+        // exists, and the cursor lands on it.
+        let mut range = RangeView::try_from(("ab\n", 2, 2)).unwrap();
+        range.prepare_append();
+        assert_eq!(&range.text().to_string(), "ab\n\n");
+        assert_eq!(range.head().byte_index(), 3);
+        range.insert("x");
+        assert_eq!(&range.text().to_string(), "ab\nx\n");
+
+        // Mid-text `a` just moves onto the next grapheme.
+        let mut range = RangeView::try_from(("ab\n", 0, 0)).unwrap();
+        range.prepare_append();
+        assert_eq!(&range.text().to_string(), "ab\n");
+        assert_eq!(range.head().byte_index(), 1);
+    }
+
+    #[test]
     fn move_to_line_start_from_newline() {
         let mut text = Text::from("hello world\n");
         let mut state = RangeState::default();
@@ -1008,15 +913,15 @@ mod tests {
         range.insert("x\ny");
 
         range.move_to_line_start();
-        let first_tail_offset = range.tail().byte_offset();
-        let first_head_offset = range.head().byte_offset();
+        let first_tail_index = range.tail().byte_index();
+        let first_head_index = range.head().byte_index();
         assert_eq!(&range.slice().to_string(), "y");
 
         range.move_to_line_start();
-        let second_tail_offset = range.tail().byte_offset();
-        let second_head_offset = range.head().byte_offset();
-        assert_eq!(first_tail_offset, second_tail_offset);
-        assert_eq!(first_head_offset, second_head_offset);
+        let second_tail_index = range.tail().byte_index();
+        let second_head_index = range.head().byte_index();
+        assert_eq!(first_tail_index, second_tail_index);
+        assert_eq!(first_head_index, second_head_index);
         assert_eq!(&range.slice().to_string(), "y");
     }
 
@@ -1028,15 +933,15 @@ mod tests {
         range.insert(" x");
 
         range.move_to_line_non_blank_start();
-        let first_tail_offset = range.tail().byte_offset();
-        let first_head_offset = range.head().byte_offset();
+        let first_tail_index = range.tail().byte_index();
+        let first_head_index = range.head().byte_index();
         assert_eq!(&range.slice().to_string(), "x");
 
         range.move_to_line_non_blank_start();
-        let second_tail_offset = range.tail().byte_offset();
-        let second_head_offset = range.head().byte_offset();
-        assert_eq!(first_tail_offset, second_tail_offset);
-        assert_eq!(first_head_offset, second_head_offset);
+        let second_tail_index = range.tail().byte_index();
+        let second_head_index = range.head().byte_index();
+        assert_eq!(first_tail_index, second_tail_index);
+        assert_eq!(first_head_index, second_head_index);
         assert_eq!(&range.slice().to_string(), "x");
     }
 
@@ -1049,12 +954,185 @@ mod tests {
 
         range.move_to_line_start();
         range.move_to_line_non_blank_start();
-        let from_start = range.head().byte_offset();
+        let from_start = range.head().byte_index();
 
         range.move_until_line_end();
         range.move_to_line_non_blank_start();
-        let from_end = range.head().byte_offset();
+        let from_end = range.head().byte_index();
 
         assert_eq!(from_start, from_end);
+    }
+
+    #[hegel::test(test_cases = 1000)]
+    fn fuzz(tc: hegel::TestCase) {
+        use hegel::{TestCase, generators as gs};
+
+        struct StateMachine {
+            text: Text,
+            state: RangeState,
+        }
+        #[hegel::state_machine]
+        #[expect(clippy::needless_pass_by_value)]
+        impl StateMachine {
+            fn range(&mut self) -> RangeMut<'_> {
+                RangeMut::new(&mut self.text, &mut self.state).expect("Range state kept valid")
+            }
+            fn count(tc: &TestCase) -> usize {
+                tc.draw(gs::integers::<usize>().min_value(1).max_value(100))
+            }
+            #[rule]
+            fn extend_to(&mut self, tc: TestCase) {
+                let byte_index = tc.draw(gs::integers::<usize>().max_value(self.text.len()));
+                self.range().extend_to(byte_index);
+            }
+            #[rule]
+            fn move_to(&mut self, tc: TestCase) {
+                let byte_index = tc.draw(gs::integers::<usize>().max_value(self.text.len()));
+                self.range().move_to(byte_index);
+            }
+            #[rule]
+            fn extend_left(&mut self, tc: TestCase) {
+                let count = Self::count(&tc);
+                self.range().extend_left(count);
+            }
+            #[rule]
+            fn move_left(&mut self, tc: TestCase) {
+                let count = Self::count(&tc);
+                self.range().move_left(count);
+            }
+            #[rule]
+            fn extend_right(&mut self, tc: TestCase) {
+                let count = Self::count(&tc);
+                self.range().extend_right(count);
+            }
+            #[rule]
+            fn move_right(&mut self, tc: TestCase) {
+                let count = Self::count(&tc);
+                self.range().move_right(count);
+            }
+            #[rule]
+            fn extend_up(&mut self, tc: TestCase) {
+                let count = Self::count(&tc);
+                self.range().extend_up(count);
+            }
+            #[rule]
+            fn move_down(&mut self, tc: TestCase) {
+                let count = Self::count(&tc);
+                self.range().move_down(count);
+            }
+            #[rule]
+            fn seek(&mut self, tc: TestCase) {
+                let byte = tc.draw(gs::integers::<u8>());
+                let count = Self::count(&tc);
+                let mut range = self.range();
+                match tc.draw(gs::integers::<u8>().max_value(7)) {
+                    0 => range.extend_until_prev_byte(byte, count),
+                    1 => range.move_until_prev_byte(byte, count),
+                    2 => range.extend_onto_prev_byte(byte, count),
+                    3 => range.move_onto_prev_byte(byte, count),
+                    4 => range.extend_until_next_byte(byte, count),
+                    5 => range.move_until_next_byte(byte, count),
+                    6 => range.extend_onto_next_byte(byte, count),
+                    _ => range.move_onto_next_byte(byte, count),
+                }
+            }
+            #[rule]
+            fn line_ops(&mut self, tc: TestCase) {
+                let mut range = self.range();
+                match tc.draw(gs::integers::<u8>().max_value(7)) {
+                    0 => range.extend_to_line_start(),
+                    1 => range.move_to_line_start(),
+                    2 => range.extend_to_line_non_blank_start(),
+                    3 => range.move_to_line_non_blank_start(),
+                    4 => range.extend_until_line_end(),
+                    5 => range.move_until_line_end(),
+                    6 => range.extend_onto_line_end(),
+                    _ => range.move_onto_line_end(),
+                }
+            }
+            #[rule]
+            fn extremes(&mut self, tc: TestCase) {
+                let mut range = self.range();
+                match tc.draw(gs::integers::<u8>().max_value(5)) {
+                    0 => range.extend_to_start(),
+                    1 => range.move_to_start(),
+                    2 => range.extend_to_end(),
+                    3 => range.move_to_end(),
+                    4 => range.extend_to_bottom(),
+                    _ => range.move_to_bottom(),
+                }
+            }
+            #[rule]
+            fn expand_to_full_lines(&mut self, _: TestCase) {
+                self.range().expand_to_full_lines();
+            }
+            #[rule]
+            fn flip(&mut self, tc: TestCase) {
+                let mut range = self.range();
+                match tc.draw(gs::integers::<u8>().max_value(2)) {
+                    0 => range.flip(),
+                    1 => range.flip_forward(),
+                    _ => range.flip_backward(),
+                }
+            }
+            #[rule]
+            fn reduce(&mut self, _: TestCase) {
+                self.range().reduce();
+            }
+            #[rule]
+            fn prepare_append(&mut self, _: TestCase) {
+                self.range().prepare_append();
+            }
+            #[rule]
+            fn insert(&mut self, tc: TestCase) {
+                let string = tc.draw(gs::text());
+                let mut range = self.range();
+                range.reduce();
+                range.insert(&string);
+            }
+            #[rule]
+            fn delete_before(&mut self, _: TestCase) {
+                let mut range = self.range();
+                range.reduce();
+                range.delete_before();
+            }
+            #[rule]
+            fn delete(&mut self, _: TestCase) {
+                self.range().delete();
+            }
+            #[rule]
+            fn delete_after(&mut self, _: TestCase) {
+                let mut range = self.range();
+                range.reduce();
+                range.delete_after();
+            }
+            #[rule]
+            fn save_restore_roundtrip(&mut self, tc: TestCase) {
+                let string = tc.draw(gs::text());
+                let mut range = self.range();
+                let snapshot = range.save();
+                range.reduce();
+                range.insert(&string);
+                assert!(range.restore(&snapshot));
+            }
+            #[invariant]
+            fn invariants(&self, _: TestCase) {
+                let range =
+                    Range::new(&self.text, &self.state).expect("Range valid after every operation");
+                assert!(range.grapheme_length() >= 1, "Range is never empty");
+                assert_eq!(range.byte_length(), range.slice().len());
+                assert!(range.state().start().byte_index <= range.state().end().byte_index);
+                let rope = self.text.rope();
+                assert!(
+                    rope.len() > 0 && rope.byte(rope.len() - 1) == b'\n',
+                    "Text keeps its trailing newline"
+                );
+            }
+        }
+        let machine = StateMachine {
+            text: Text::new(),
+            state: RangeState::default(),
+        };
+        hegel::stateful::run(machine, tc);
     }
 }

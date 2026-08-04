@@ -26,12 +26,23 @@ impl Extend<Self> for BidiOperationSeq {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct Text {
     rope: Rope,
     history: History<BidiOperationSeq, BidiOperationSeq>,
     log: Vec<OperationSeq>,
     pub readonly: bool,
+}
+
+impl Default for Text {
+    fn default() -> Self {
+        Self {
+            rope: Rope::from("\n"),
+            history: History::default(),
+            log: Vec::new(),
+            readonly: false,
+        }
+    }
 }
 
 impl Text {
@@ -58,6 +69,11 @@ impl Text {
         let mut ops = OperationSeq::new();
         ops.retain(range.start);
         ops.delete(range.end - range.start);
+        if range.end == self.rope.len()
+            && (range.start == 0 || self.rope.byte(range.start - 1) != b'\n')
+        {
+            ops.insert("\n");
+        }
         ops.retain_rest(&self.rope);
         self.apply(&ops)?;
         Ok(())
@@ -132,16 +148,15 @@ impl Deref for Text {
 
 impl<'a> From<&'a str> for Text {
     fn from(str: &'a str) -> Self {
-        let rope = Rope::from(str);
-        Self {
-            rope,
-            ..Self::default()
-        }
+        Self::from(Rope::from(str))
     }
 }
 
 impl From<Rope> for Text {
-    fn from(rope: Rope) -> Self {
+    fn from(mut rope: Rope) -> Self {
+        if rope.len() == 0 || rope.byte(rope.len() - 1) != b'\n' {
+            rope.insert(rope.len(), "\n");
+        }
         Self {
             rope,
             ..Self::default()
@@ -170,5 +185,114 @@ impl Anchor {
             byte_offset = ops.transform_byte_offset(byte_offset);
         }
         Some(byte_offset)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cmp::{max, min};
+
+    fn has_trailing_newline(text: &Text) -> bool {
+        let rope = text.rope();
+        rope.len() > 0 && rope.byte(rope.len() - 1) == b'\n'
+    }
+
+    #[test]
+    fn constructors_normalize() {
+        assert_eq!(Text::new().to_string(), "\n");
+        assert_eq!(Text::default().to_string(), "\n");
+        assert_eq!(Text::from("").to_string(), "\n");
+        assert_eq!(Text::from("x").to_string(), "x\n");
+        assert_eq!(Text::from("x\n").to_string(), "x\n");
+        assert_eq!(Text::from(Rope::from("x")).to_string(), "x\n");
+        // A bare final `'\r'` gains a `'\n'`, forming a single CRLF grapheme.
+        assert_eq!(Text::from("x\r").to_string(), "x\r\n");
+    }
+
+    #[test]
+    fn delete_to_end_keeps_trailing_newline() {
+        let mut text = Text::from("ab\n");
+        text.delete(1..3).unwrap();
+        assert_eq!(text.to_string(), "a\n");
+
+        // Delete everything.
+        let mut text = Text::from("ab\n");
+        text.delete(0..3).unwrap();
+        assert_eq!(text.to_string(), "\n");
+
+        // Deleting a final line whose predecessor is already terminated adds nothing.
+        let mut text = Text::from("a\nb\n");
+        text.delete(2..4).unwrap();
+        assert_eq!(text.to_string(), "a\n");
+    }
+
+    #[test]
+    fn undo_redo_keep_trailing_newline() {
+        let mut text = Text::from("ab\n");
+        text.delete(0..3).unwrap();
+        text.commit();
+        assert_eq!(text.to_string(), "\n");
+        assert!(text.undo().unwrap());
+        assert_eq!(text.to_string(), "ab\n");
+        assert!(has_trailing_newline(&text));
+        assert!(text.redo().unwrap());
+        assert_eq!(text.to_string(), "\n");
+        assert!(has_trailing_newline(&text));
+    }
+
+    #[hegel::test(test_cases = 500)]
+    fn fuzz(tc: hegel::TestCase) {
+        use crate::rope::RopeExt as _;
+        use hegel::generators as gs;
+
+        struct StateMachine {
+            text: Text,
+        }
+        #[hegel::state_machine]
+        #[expect(clippy::needless_pass_by_value)]
+        impl StateMachine {
+            #[rule]
+            fn insert(&mut self, tc: hegel::TestCase) {
+                // Inserting at the very end is only invariant-safe when the inserted text ends
+                // with a newline (e.g. `prepare_append`), so draw positions before the final
+                // grapheme.
+                let byte_offset = tc.draw(gs::integers::<usize>().max_value(self.text.len()));
+                let byte_offset = self
+                    .text
+                    .snap_to_grapheme_start(byte_offset)
+                    .expect("Text is never empty");
+                let string = tc.draw(gs::text());
+                self.text.insert(byte_offset, &string).unwrap();
+            }
+            #[rule]
+            fn delete(&mut self, tc: hegel::TestCase) {
+                let a = tc.draw(gs::integers::<usize>().max_value(self.text.len()));
+                let b = tc.draw(gs::integers::<usize>().max_value(self.text.len()));
+                let start = self.text.floor_grapheme_boundary(min(a, b));
+                let end = self.text.floor_grapheme_boundary(max(a, b));
+                self.text.delete(start..end).unwrap();
+            }
+            #[rule]
+            fn commit(&mut self, _: hegel::TestCase) {
+                self.text.commit();
+            }
+            #[rule]
+            fn undo(&mut self, _: hegel::TestCase) {
+                self.text.undo().unwrap();
+            }
+            #[rule]
+            fn redo(&mut self, _: hegel::TestCase) {
+                self.text.redo().unwrap();
+            }
+            #[invariant]
+            fn invariants(&self, _: hegel::TestCase) {
+                assert!(
+                    has_trailing_newline(&self.text),
+                    "Text keeps its trailing newline"
+                );
+            }
+        }
+        hegel::stateful::run(StateMachine { text: Text::new() }, tc);
     }
 }

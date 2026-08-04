@@ -43,10 +43,12 @@ impl Buffer {
         } else {
             Rope::new()
         };
-        let mut buffer = Self::from(rope.clone());
+        let mut buffer = Self::from(rope);
+        // Using the normalized rope (with trailing newline appended if missing) instead of the
+        // original so it doesn't appear already modified.
         buffer.kind = BufferKind::File {
             path: Arc::from(path),
-            on_disk: rope,
+            on_disk: buffer.text.rope().clone(),
         };
         Ok(buffer)
     }
@@ -117,13 +119,15 @@ mod tests {
         let fs = TestFs::default();
         fs.write("main.rs".into(), b"fn main() {}")?;
         let mut buffer = Buffer::open(&fs, "main.rs")?;
-        assert_eq!(&buffer.text.to_string(), "fn main() {}");
+        // Text normalization appends the missing trailing newline on open.
+        assert_eq!(&buffer.text.to_string(), "fn main() {}\n");
+        assert_eq!(buffer.is_modified(), Some(false));
         let BufferKind::File { path, .. } = &mut buffer.kind else {
             unreachable!();
         };
         *path = Arc::from(Utf8Path::new("main2.rs"));
         buffer.save(&fs)?;
-        assert_eq!(fs.read("main2.rs".into())?, b"fn main() {}");
+        assert_eq!(fs.read("main2.rs".into())?, b"fn main() {}\n");
         Ok(())
     }
 }

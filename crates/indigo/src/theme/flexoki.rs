@@ -151,8 +151,6 @@ pub mod light {
         secondary_cursor_fg: PAPER,
         secondary_cursor_bg: YELLOW,
         secondary_range_bg: YELLOW_100,
-        empty_range_fg: PAPER,
-        empty_range_bg: RED,
         error_bg: RED_100,
         whitespace_fg: UI,
     };

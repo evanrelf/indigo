@@ -127,15 +127,12 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
     if let Some(line_number) = goto_line {
         let mut window = editor.focused_window_mut();
         let rope = window.buffer().text.rope();
-        let len_lines = rope.len_lines_indigo();
-        if len_lines > 0 {
-            let line_index = min(line_number - 1, len_lines - 1);
-            let byte_offset = rope.line_to_byte_idx(line_index, LINE_TYPE);
-            window
-                .selection_mut()
-                .for_each_mut(|mut range| range.move_to(byte_offset));
-            pending_center = true;
-        }
+        let line_index = min(line_number - 1, rope.len_lines_indigo() - 1);
+        let byte_index = rope.line_to_byte_idx(line_index, LINE_TYPE);
+        window
+            .selection_mut()
+            .for_each_mut(|mut range| range.move_to(byte_index));
+        pending_center = true;
     }
 
     if let Some(keys) = &args.exec {
@@ -241,10 +238,9 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let (line, column) = {
         let range = selection.get_primary();
-        let bias = range.head_bias();
         let cursor = range.head();
-        let line = cursor.line_number(bias);
-        let column = cursor.column_number(bias);
+        let line = cursor.line_number();
+        let column = cursor.column_number();
         (line, column)
     };
 
@@ -271,12 +267,12 @@ fn render_prompt(editor: &Editor, mut area: Rect, surface: &mut Surface) {
             + 1;
         area.width -= 1;
 
-        Line::raw(prompt_mode.rope()).render(area, surface);
+        Line::raw(prompt_mode.content()).render(area, surface);
 
         // TODO: Color one or two cells after cursor gray to mark the boundary between prompt text
         // and status bar text.
         if let Some(rect) = byte_index_to_area(
-            prompt_mode.cursor().byte_offset(),
+            prompt_mode.cursor().byte_index(),
             prompt_mode.rope(),
             0,
             area,
@@ -433,8 +429,8 @@ fn render_debug_info(editor: &Editor, area: Rect, surface: &mut Surface) {
     let state = selection.state();
     let ranges = state.ranges.len();
     let primary = &state.ranges[state.primary_range];
-    let tail = primary.tail.byte_offset;
-    let head = primary.head.byte_offset;
+    let tail = primary.tail.byte_index;
+    let head = primary.head.byte_index;
     let goal = primary.goal_column;
 
     let lines = vec![
@@ -522,33 +518,20 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
             )
         };
 
-        let start_line = rope.byte_to_line_idx(range.start().byte_offset(), LINE_TYPE);
+        let start_line = rope.byte_to_line_idx(range.start().byte_index(), LINE_TYPE);
 
-        let end_byte = range.end().byte_offset().saturating_sub(1);
-        let end_line = rope.byte_to_line_idx(end_byte, LINE_TYPE);
+        let end_line = rope.byte_to_line_idx(range.end().byte_index(), LINE_TYPE);
 
         let grapheme_area =
             |byte_index| byte_index_to_area(byte_index, rope, vertical_scroll, area);
 
         let line_area = |line_index| line_index_to_area(line_index, rope, vertical_scroll, area);
 
-        if range.is_empty() {
-            if let Some(rect) = grapheme_area(range.head().byte_offset()) {
-                surface.set_style(
-                    rect,
-                    Style::default()
-                        .fg(THEME.empty_range_fg)
-                        .bg(THEME.empty_range_bg),
-                );
-            }
-            return;
-        }
-
         for (line_index, mut line_rect) in (start_line..=end_line)
             .filter_map(|line_index| line_area(line_index).map(|rect| (line_index, rect)))
         {
             if line_index == start_line {
-                if let Some(start_rect) = grapheme_area(range.start().byte_offset()) {
+                if let Some(start_rect) = grapheme_area(range.start().byte_index()) {
                     let delta = start_rect.x - line_rect.x;
                     line_rect.x += delta;
                     line_rect.width -= delta;
@@ -562,7 +545,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
             }
             #[expect(clippy::collapsible_if)]
             if line_index == end_line {
-                if let Some(end_rect) = grapheme_area(range.end().byte_offset().saturating_sub(1)) {
+                if let Some(end_rect) = grapheme_area(range.end().byte_index()) {
                     let delta = line_rect.right() - end_rect.right();
                     line_rect.width -= delta;
                 }
@@ -570,15 +553,8 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
             surface.set_style(line_rect, Style::default().bg(range_bg));
         }
 
-        #[expect(clippy::collapsible_else_if)]
-        if range.is_backward() {
-            if let Some(rect) = grapheme_area(range.head().byte_offset()) {
-                surface.set_style(rect, Style::default().fg(cursor_fg).bg(cursor_bg));
-            }
-        } else {
-            if let Some(rect) = grapheme_area(range.head().byte_offset().saturating_sub(1)) {
-                surface.set_style(rect, Style::default().fg(cursor_fg).bg(cursor_bg));
-            }
+        if let Some(rect) = grapheme_area(range.head().byte_index()) {
+            surface.set_style(rect, Style::default().fg(cursor_fg).bg(cursor_bg));
         }
     });
 }

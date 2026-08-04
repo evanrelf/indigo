@@ -49,35 +49,35 @@ impl Areas {
     }
 }
 
-pub enum PositionToByteOffset {
+pub enum PositionToByteIndex {
     Valid(usize),
     SnappedToLineStart {
-        byte_offset: usize,
+        byte_index: usize,
         out_of_bounds: bool,
     },
     SnappedToLineEnd {
-        byte_offset: usize,
+        byte_index: usize,
         out_of_bounds: bool,
     },
     SnappedToBufferStart {
         out_of_bounds: bool,
     },
     SnappedToBufferEnd {
-        byte_offset: usize,
+        byte_index: usize,
         out_of_bounds: bool,
     },
     OutOfBounds,
 }
 
-impl PositionToByteOffset {
+impl PositionToByteIndex {
     #[must_use]
-    pub fn byte_offset(&self) -> Option<usize> {
+    pub fn byte_index(&self) -> Option<usize> {
         match self {
             Self::SnappedToBufferStart { .. } => Some(0),
             Self::Valid(offset) => Some(*offset),
-            Self::SnappedToLineStart { byte_offset, .. }
-            | Self::SnappedToLineEnd { byte_offset, .. }
-            | Self::SnappedToBufferEnd { byte_offset, .. } => Some(*byte_offset),
+            Self::SnappedToLineStart { byte_index, .. }
+            | Self::SnappedToLineEnd { byte_index, .. }
+            | Self::SnappedToBufferEnd { byte_index, .. } => Some(*byte_index),
             Self::OutOfBounds => None,
         }
     }
@@ -86,26 +86,26 @@ impl PositionToByteOffset {
 /// Map position on the terminal to a character offset in the rope. Example use is moving a
 /// cursor to where a mouse was clicked.
 #[must_use]
-pub fn position_to_byte_offset(
+pub fn position_to_byte_index(
     position: Position,
     rope: &Rope,
     vertical_scroll: usize,
     // TODO(horizontal_scroll)
     area: Rect,
-) -> PositionToByteOffset {
+) -> PositionToByteIndex {
     // TODO: Move this general purpose (x, y) <-> index logic somewhere else.
 
     if position.y < area.top() {
         // Position is above the area, so we snap to first byte of rope
-        return PositionToByteOffset::SnappedToBufferStart {
+        return PositionToByteIndex::SnappedToBufferStart {
             out_of_bounds: true,
         };
     }
 
     if position.y >= area.bottom() {
-        // Position is below the area, so we snap to last byte of rope
-        return PositionToByteOffset::SnappedToBufferEnd {
-            byte_offset: rope.len(),
+        // Position is below the area, so we snap to the rope's last grapheme
+        return PositionToByteIndex::SnappedToBufferEnd {
+            byte_index: rope.last_grapheme_start().unwrap_or(0),
             out_of_bounds: true,
         };
     }
@@ -113,19 +113,19 @@ pub fn position_to_byte_offset(
     let y = usize::from(position.y - area.y) + vertical_scroll;
 
     let Some(line) = rope.get_line(y, LINE_TYPE) else {
-        // Position goes beyond last line of rope, so we snap to last byte of rope
-        return PositionToByteOffset::SnappedToBufferEnd {
-            byte_offset: rope.len(),
+        // Position goes beyond last line of rope, so we snap to the rope's last grapheme
+        return PositionToByteIndex::SnappedToBufferEnd {
+            byte_index: rope.last_grapheme_start().unwrap_or(0),
             out_of_bounds: false,
         };
     };
 
-    let line_byte_offset = rope.line_to_byte_idx(y, LINE_TYPE);
+    let line_byte_index = rope.line_to_byte_idx(y, LINE_TYPE);
 
     if position.x < area.x {
         // Position is to the left of the area, so we snap to the first byte of the line
-        return PositionToByteOffset::SnappedToLineStart {
-            byte_offset: line_byte_offset,
+        return PositionToByteIndex::SnappedToLineStart {
+            byte_index: line_byte_index,
             out_of_bounds: true,
         };
     }
@@ -134,7 +134,7 @@ pub fn position_to_byte_offset(
     let x = usize::from(position.x - area.x);
 
     let mut line_prefix = 0;
-    let mut byte_offset = line_byte_offset;
+    let mut byte_index = line_byte_index;
 
     for grapheme in line.graphemes() {
         if grapheme.chars().any(|c| c == '\n' || c == '\r') {
@@ -144,15 +144,15 @@ pub fn position_to_byte_offset(
         let grapheme_width = grapheme.display_width();
 
         if line_prefix + grapheme_width > x {
-            return PositionToByteOffset::Valid(byte_offset);
+            return PositionToByteIndex::Valid(byte_index);
         }
 
         line_prefix += grapheme_width;
-        byte_offset += grapheme.len();
+        byte_index += grapheme.len();
     }
 
-    PositionToByteOffset::SnappedToLineEnd {
-        byte_offset,
+    PositionToByteIndex::SnappedToLineEnd {
+        byte_index,
         out_of_bounds: false,
     }
 }
@@ -206,7 +206,7 @@ pub fn byte_index_to_area(
     // TODO(horizontal_scroll)
     area: Rect,
 ) -> Option<Rect> {
-    if byte_index > rope.len() {
+    if byte_index >= rope.len() {
         return None;
     }
 
@@ -239,16 +239,8 @@ pub fn byte_index_to_area(
         return None;
     }
 
-    let width = if rope.len() == byte_index {
-        // Cursor at end of text
-        1
-    } else if let Some(grapheme) = rope.get_grapheme(byte_index) {
-        u16::try_from(grapheme.display_width())
-            .expect("No grapheme exists with a display width > u16::MAX")
-    } else {
-        // We're at end of text, but we already checked for that
-        unreachable!()
-    };
+    let width = u16::try_from(rope.grapheme(byte_index).display_width())
+        .expect("No grapheme exists with a display width > u16::MAX");
 
     Some(Rect {
         x,

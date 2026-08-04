@@ -484,7 +484,7 @@ fn insert_after_head(editor: &mut Editor) {
     }
     let mut window = editor.focused_window_mut();
     window.selection_mut().for_each_mut(|mut range| {
-        range.move_right(1);
+        range.prepare_append();
     });
     window.scroll_to_selection();
     editor.mode = Mode::Insert;
@@ -498,7 +498,6 @@ fn insert_at_line_non_blank_start(editor: &mut Editor) {
     }
     let mut window = editor.focused_window_mut();
     window.selection_mut().for_each_mut(|mut range| {
-        range.flip_backward();
         range.move_to_line_non_blank_start();
     });
     window.scroll_to_selection();
@@ -605,16 +604,11 @@ fn goto_move_to_line(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     let rope = window.buffer().text.rope().clone();
-    let len_lines = rope.len_lines_indigo();
-    if len_lines == 0 {
-        editor.count = None;
-        return;
-    }
-    let line_index = min(count - 1, len_lines - 1);
-    let byte_offset = rope.line_to_byte_idx(line_index, LINE_TYPE);
+    let line_index = min(count - 1, rope.len_lines_indigo() - 1);
+    let byte_index = rope.line_to_byte_idx(line_index, LINE_TYPE);
     window
         .selection_mut()
-        .for_each_mut(|mut range| range.move_to(byte_offset));
+        .for_each_mut(|mut range| range.move_to(byte_index));
     window.scroll_to_selection();
     editor.count = None;
 }

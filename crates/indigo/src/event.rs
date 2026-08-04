@@ -1,5 +1,5 @@
 use crate::{
-    areas::{Areas, position_to_byte_offset},
+    areas::{Areas, position_to_byte_index},
     key::{key_event_i2t, key_event_t2i},
 };
 use anyhow::anyhow;
@@ -85,18 +85,18 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
                     x: mouse_event.column,
                     y: mouse_event.row,
                 };
-                if let Some(byte_offset) = position_to_byte_offset(
+                if let Some(byte_index) = position_to_byte_index(
                     position,
                     editor.focused_buffer().text.rope(),
                     editor.focused_window().vertical_scroll(),
                     areas.text,
                 )
-                .byte_offset()
+                .byte_index()
                 {
                     editor
                         .focused_window_mut()
                         .selection_mut()
-                        .for_each_mut(|mut range| range.move_to(byte_offset));
+                        .for_each_mut(|mut range| range.move_to(byte_index));
                 } else {
                     handled = false;
                 }
@@ -110,18 +110,18 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
                     x: mouse_event.column,
                     y: mouse_event.row,
                 };
-                if let Some(byte_offset) = position_to_byte_offset(
+                if let Some(byte_index) = position_to_byte_index(
                     position,
                     editor.focused_buffer().text.rope(),
                     editor.focused_window().vertical_scroll(),
                     areas.text,
                 )
-                .byte_offset()
+                .byte_index()
                 {
                     editor
                         .focused_window_mut()
                         .selection_mut()
-                        .for_each_mut(|mut range| range.extend_to(byte_offset));
+                        .for_each_mut(|mut range| range.extend_to(byte_index));
                 } else {
                     handled = false;
                 }
