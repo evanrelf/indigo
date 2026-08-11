@@ -8,7 +8,6 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-// Needs to remain dyn compatible.
 pub trait Fs {
     fn read(&self, path: &Utf8Path) -> anyhow::Result<Vec<u8>>;
 
@@ -16,6 +15,8 @@ pub trait Fs {
 
     fn exists(&self, path: &Utf8Path) -> anyhow::Result<bool>;
 }
+
+const _ASSERT_FS_IS_DYN_COMPATIBLE: Option<&dyn Fs> = None;
 
 impl<T: Fs + ?Sized> Fs for Arc<T> {
     fn read(&self, path: &Utf8Path) -> anyhow::Result<Vec<u8>> {
