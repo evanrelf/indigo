@@ -1,17 +1,31 @@
 use ropey::Rope;
-use std::{borrow::Cow, rc::Rc};
+use std::{iter::zip, ops::Range};
 
-enum Operation {
-    Retain(usize),
-    Delete(Rc<str>),
-    Insert(Rc<str>),
+#[derive(Clone, Copy, PartialEq)]
+enum OpKind {
+    Retain,
+    Delete,
+    Insert,
 }
 
-#[derive(Default)]
+impl OpKind {
+    fn invert(self) -> Self {
+        match self {
+            Self::Retain => Self::Retain,
+            Self::Delete => Self::Insert,
+            Self::Insert => Self::Delete,
+        }
+    }
+}
+
+#[derive(Clone, Default)]
 pub struct Edits {
-    ops: Vec<Operation>,
-    len_before: usize,
-    len_after: usize,
+    op_kinds: Vec<OpKind>,
+    op_lengths: Vec<u32>,
+    op_texts: String,
+
+    length_before: usize,
+    length_after: usize,
 }
 
 impl Edits {
@@ -20,30 +34,36 @@ impl Edits {
         Self::default()
     }
 
+    fn push_op(&mut self, kind: OpKind, byte_length: usize) {
+        if self.op_kinds.last() == Some(&kind) {
+            let last = self.op_lengths.last_mut().unwrap();
+            *last = to_u32(to_usize(*last) + byte_length);
+        } else {
+            self.op_kinds.push(kind);
+            self.op_lengths.push(to_u32(byte_length));
+        }
+    }
+
     pub fn retain(&mut self, byte_length: usize) {
         if byte_length == 0 {
             return;
         }
 
-        self.len_before += byte_length;
-        self.len_after += byte_length;
+        self.length_before += byte_length;
+        self.length_after += byte_length;
 
-        if let Some(Operation::Retain(n)) = self.ops.last_mut() {
-            *n += byte_length;
-        } else {
-            self.ops.push(Operation::Retain(byte_length));
-        }
+        self.push_op(OpKind::Retain, byte_length);
     }
 
     pub fn retain_rest(&mut self, rope: &Rope) -> anyhow::Result<()> {
         anyhow::ensure!(
-            self.len_before <= rope.len(),
+            self.length_before <= rope.len(),
             "edit input length {} <= rope length {}",
-            self.len_before,
+            self.length_before,
             rope.len()
         );
 
-        self.retain(rope.len() - self.len_before);
+        self.retain(rope.len() - self.length_before);
 
         Ok(())
     }
@@ -53,16 +73,10 @@ impl Edits {
             return;
         }
 
-        self.len_before += text.len();
+        self.length_before += text.len();
 
-        if let Some(Operation::Delete(last)) = self.ops.last_mut() {
-            let mut s = String::with_capacity(last.len() + text.len());
-            s.push_str(last);
-            s.push_str(text);
-            *last = Rc::from(s);
-        } else {
-            self.ops.push(Operation::Delete(Rc::from(text)));
-        }
+        self.push_op(OpKind::Delete, text.len());
+        self.op_texts.push_str(text);
     }
 
     pub fn insert(&mut self, text: &str) {
@@ -70,16 +84,10 @@ impl Edits {
             return;
         }
 
-        self.len_after += text.len();
+        self.length_after += text.len();
 
-        if let Some(Operation::Insert(last)) = self.ops.last_mut() {
-            let mut s = String::with_capacity(last.len() + text.len());
-            s.push_str(last);
-            s.push_str(text);
-            *last = Rc::from(s);
-        } else {
-            self.ops.push(Operation::Insert(Rc::from(text)));
-        }
+        self.push_op(OpKind::Insert, text.len());
+        self.op_texts.push_str(text);
     }
 
     #[must_use]
@@ -89,17 +97,13 @@ impl Edits {
 
     #[must_use]
     pub fn invert(&self) -> Self {
-        let mut inverted = Self::new();
-
-        for op in &self.ops {
-            match op {
-                Operation::Retain(n) => inverted.retain(*n),
-                Operation::Delete(s) => inverted.insert(s),
-                Operation::Insert(s) => inverted.delete(s),
-            }
+        Self {
+            op_kinds: self.op_kinds.iter().map(|kind| kind.invert()).collect(),
+            op_lengths: self.op_lengths.clone(),
+            op_texts: self.op_texts.clone(),
+            length_before: self.length_after,
+            length_after: self.length_before,
         }
-
-        inverted
     }
 
     #[must_use]
@@ -109,39 +113,63 @@ impl Edits {
         todo!()
     }
 
-    // TODO: Convert panics to errors
     pub fn apply(&self, rope: &mut Rope) -> anyhow::Result<()> {
+        self.apply_impl(rope, false)
+    }
+
+    /// Equivalent to `self.invert().apply(rope)`, but without allocating.
+    pub fn apply_inverse(&self, rope: &mut Rope) -> anyhow::Result<()> {
+        self.apply_impl(rope, true)
+    }
+
+    fn apply_impl(&self, rope: &mut Rope, invert: bool) -> anyhow::Result<()> {
+        let (length_before, length_after) = if invert {
+            (self.length_after, self.length_before)
+        } else {
+            (self.length_before, self.length_after)
+        };
+
         anyhow::ensure!(
-            self.len_before == rope.len(),
+            length_before == rope.len(),
             "edit input length {} != rope length {}",
-            self.len_before,
+            length_before,
             rope.len()
         );
 
-        let mut byte_index = 0;
+        let mut rope_index = 0;
+        let mut op_texts_index = 0;
 
-        for op in &self.ops {
-            match op {
-                Operation::Retain(n) => {
-                    byte_index += n;
+        for (kind, length) in zip(&self.op_kinds, &self.op_lengths) {
+            let kind = if invert { kind.invert() } else { *kind };
+            let length = to_usize(*length);
+            match kind {
+                OpKind::Retain => {
+                    rope_index += length;
                 }
-                Operation::Delete(s) => {
-                    let range = byte_index..byte_index + s.len();
-                    let slice = Cow::<str>::from(rope.slice(range.clone()));
-                    anyhow::ensure!(slice == s.as_ref(), "deleted text `{slice}` not in rope");
+                OpKind::Delete => {
+                    let range = rope_index..rope_index + length;
+                    #[cfg(debug_assertions)]
+                    verify_deleted_text(
+                        rope,
+                        range.clone(),
+                        &self.op_texts[op_texts_index..op_texts_index + length],
+                    )?;
+                    op_texts_index += length;
                     rope.try_remove(range)?;
                 }
-                Operation::Insert(s) => {
-                    rope.try_insert(byte_index, s)?;
-                    byte_index += s.len();
+                OpKind::Insert => {
+                    let text = &self.op_texts[op_texts_index..op_texts_index + length];
+                    op_texts_index += length;
+                    rope.try_insert(rope_index, text)?;
+                    rope_index += length;
                 }
             }
         }
 
         anyhow::ensure!(
-            self.len_after == rope.len() && byte_index == rope.len(),
+            length_after == rope.len() && rope_index == rope.len(),
             "edit output length {} != rope length {}",
-            self.len_after,
+            length_after,
             rope.len()
         );
 
@@ -153,6 +181,25 @@ impl Edits {
 pub enum Bias {
     Backward,
     Forward,
+}
+
+#[cfg(debug_assertions)]
+fn verify_deleted_text(rope: &Rope, range: Range<usize>, text: &str) -> anyhow::Result<()> {
+    let mut remaining = text;
+    for chunk in rope.slice(range).chunks() {
+        let (head, tail) = remaining.split_at(chunk.len());
+        anyhow::ensure!(head == chunk, "deleted text `{text}` not in rope");
+        remaining = tail;
+    }
+    Ok(())
+}
+
+fn to_u32(n: usize) -> u32 {
+    u32::try_from(n).expect("operation length fits in u32")
+}
+
+fn to_usize(n: u32) -> usize {
+    usize::try_from(n).expect("u32 fits in usize")
 }
 
 #[cfg(test)]
@@ -174,6 +221,10 @@ mod tests {
         assert_eq!(rope, Rope::from("Hello, Evan...?"));
 
         edits.invert().apply(&mut rope)?;
+        assert_eq!(rope, Rope::from("Hello, world!"));
+
+        edits.apply(&mut rope)?;
+        edits.apply_inverse(&mut rope)?;
         assert_eq!(rope, Rope::from("Hello, world!"));
 
         let mut rope = Rope::from("Hello, world!");
