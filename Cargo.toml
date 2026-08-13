@@ -15,6 +15,7 @@ hegeltest = "0.28.4"
 indigo = { path = "crates/indigo/" }
 indigo-cli = { path = "crates/indigo-cli/" }
 indigo-core = { path = "crates/indigo-core/" }
+indigo-kernel = { path = "crates/indigo-kernel/" }
 indigo-term = { path = "crates/indigo-term/" }
 indigo-tui = { path = "crates/indigo-tui/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }

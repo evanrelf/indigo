@@ -785,6 +785,7 @@ dependencies = [
  "bpaf",
  "camino",
  "hegeltest",
+ "indigo-kernel",
  "indigo-wrap",
  "memchr",
  "regex-cursor",
