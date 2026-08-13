@@ -1,0 +1,14 @@
+[package]
+name = "indigo-kernel"
+edition = "2024"
+
+[dependencies]
+anyhow = { workspace = true }
+ropey = { workspace = true }
+unicode-segmentation = { workspace = true }
+
+[dev-dependencies]
+hegeltest = { workspace = true }
+
+[lints]
+workspace = true

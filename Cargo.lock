@@ -810,6 +810,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "indigo-kernel"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "hegeltest",
+ "ropey",
+ "unicode-segmentation",
+]
+
+[[package]]
 name = "indigo-term"
 version = "0.0.0"
 dependencies = [
