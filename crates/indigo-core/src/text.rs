@@ -1,4 +1,4 @@
-use crate::{history::History, ot::OperationSeq};
+use crate::{history::History, ot2::OperationSeq};
 use ropey::Rope;
 use std::ops::{Deref, Range};
 
@@ -60,7 +60,7 @@ impl Text {
         let mut ops = OperationSeq::new();
         ops.retain(byte_offset);
         ops.insert(text);
-        ops.retain_rest(&self.rope);
+        ops.retain_rest(&self.rope)?;
         self.apply(&ops)?;
         Ok(())
     }
@@ -68,20 +68,20 @@ impl Text {
     pub fn delete(&mut self, range: Range<usize>) -> anyhow::Result<()> {
         let mut ops = OperationSeq::new();
         ops.retain(range.start);
-        ops.delete(range.end - range.start);
+        ops.delete(&self.rope.slice(range.start..range.end).to_string());
         if range.end == self.rope.len()
             && (range.start == 0 || self.rope.byte(range.start - 1) != b'\n')
         {
             ops.insert("\n");
         }
-        ops.retain_rest(&self.rope);
+        ops.retain_rest(&self.rope)?;
         self.apply(&ops)?;
         Ok(())
     }
 
     pub fn apply(&mut self, ops: &OperationSeq) -> anyhow::Result<()> {
         anyhow::ensure!(!self.readonly, "Cannot modify readonly text");
-        let undo = ops.invert(&self.rope)?;
+        let undo = ops.invert();
         ops.apply(&mut self.rope)?;
         self.history.push(BidiOperationSeq {
             redo: ops.clone(),

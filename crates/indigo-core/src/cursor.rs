@@ -1,5 +1,5 @@
 use crate::{
-    ot::OperationSeq,
+    ot2::OperationSeq,
     rope::{DisplayWidth as _, LINE_TYPE, RopeExt as _},
     text::{Anchor, Text},
 };
@@ -427,7 +427,8 @@ impl<W: WrapMut> CursorView<'_, W> {
         let mut ops = OperationSeq::new();
         ops.retain(self.state.byte_index);
         ops.insert(text);
-        ops.retain_rest(&self.text);
+        ops.retain_rest(&self.text)
+            .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
         debug_assert_eq!(self.text.len(), pre_text_len + text.len());
@@ -441,8 +442,9 @@ impl<W: WrapMut> CursorView<'_, W> {
         let start = self.text.prev_grapheme_boundary(self.state.byte_index)?;
         let mut ops = OperationSeq::new();
         ops.retain(start);
-        ops.delete(self.state.byte_index - start);
-        ops.retain_rest(&self.text);
+        ops.delete(&self.text.slice(start..self.state.byte_index).to_string());
+        ops.retain_rest(&self.text)
+            .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
         Some(ops)
@@ -462,8 +464,9 @@ impl<W: WrapMut> CursorView<'_, W> {
         }
         let mut ops = OperationSeq::new();
         ops.retain(self.state.byte_index);
-        ops.delete(end - self.state.byte_index);
-        ops.retain_rest(&self.text);
+        ops.delete(&self.text.slice(self.state.byte_index..end).to_string());
+        ops.retain_rest(&self.text)
+            .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
         Some(ops)

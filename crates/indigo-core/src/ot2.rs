@@ -1,7 +1,7 @@
 use indigo_kernel::edit::{Bias, Edits};
 use ropey::Rope;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct OperationSeq {
     edits: Edits,
 }

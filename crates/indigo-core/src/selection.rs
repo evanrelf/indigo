@@ -1,6 +1,6 @@
 use crate::{
     cursor::CursorState,
-    ot::OperationSeq,
+    ot2::OperationSeq,
     range::{Range, RangeMut, RangeSnapshot, RangeState},
     rope::{LINE_TYPE, RegexCursorInput, RopeExt as _},
     text::Text,
@@ -8,7 +8,7 @@ use crate::{
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use regex_cursor::engines::meta::Regex;
 use ropey::Rope;
-use std::{sync::Arc, thread};
+use std::thread;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -337,16 +337,16 @@ impl<W: WrapMut> SelectionView<'_, W> {
             "this function relies on selection ranges' starts being sorted",
             // ...prior to it becoming a type-level invariant
         );
-        let text: Arc<str> = Arc::from(text);
         let mut ops = OperationSeq::new();
         let mut previous = 0;
         for range in &self.state.ranges {
             // TODO: Assert grapheme length is 1 (i.e. reduced)
             ops.retain(range.start().byte_index - previous);
-            ops.insert(Arc::clone(&text));
+            ops.insert(text);
             previous = range.start().byte_index;
         }
-        ops.retain_rest(&self.text);
+        ops.retain_rest(&self.text)
+            .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
         self.update_goal_columns();
@@ -363,7 +363,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
             "this function relies on selection ranges' starts being sorted",
             // ...prior to it becoming a type-level invariant
         );
-        let replacement: Arc<str> = Arc::from(char::from(byte).to_string());
+        let replacement = char::from(byte).to_string();
         let mut ops = OperationSeq::new();
         let mut previous = 0;
         for range in &self.state.ranges {
@@ -374,8 +374,8 @@ impl<W: WrapMut> SelectionView<'_, W> {
                 .expect("Range end is always on a grapheme");
             ops.retain(start - previous);
             for grapheme in self.text.rope().slice(start..end_exclusive).graphemes() {
-                ops.delete(grapheme.len());
-                ops.insert(Arc::clone(&replacement));
+                ops.delete(&grapheme.to_string());
+                ops.insert(&replacement);
             }
             if end_exclusive == self.text.len() {
                 // The final newline was replaced; restore the `Text` invariant.
@@ -383,7 +383,8 @@ impl<W: WrapMut> SelectionView<'_, W> {
             }
             previous = end_exclusive;
         }
-        ops.retain_rest(&self.text);
+        ops.retain_rest(&self.text)
+            .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
         self.update_goal_columns();
@@ -407,11 +408,12 @@ impl<W: WrapMut> SelectionView<'_, W> {
                 && prev_boundary >= previous
             {
                 ops.retain(prev_boundary - previous);
-                ops.delete(start - prev_boundary);
+                ops.delete(&self.text.slice(prev_boundary..start).to_string());
                 previous = start;
             }
         }
-        ops.retain_rest(&self.text);
+        ops.retain_rest(&self.text)
+            .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
         self.update_goal_columns();
@@ -436,10 +438,10 @@ impl<W: WrapMut> SelectionView<'_, W> {
             .collect();
         let mut ops = OperationSeq::new();
         let mut previous = 0;
-        for (start, end_exclusive) in &spans {
+        for &(start, end_exclusive) in &spans {
             ops.retain(start - previous);
-            ops.delete(end_exclusive - start);
-            previous = *end_exclusive;
+            ops.delete(&self.text.slice(start..end_exclusive).to_string());
+            previous = end_exclusive;
         }
         // If the deletions reach the end of the text, the last surviving byte must still be a
         // newline; otherwise re-insert one. Walk back through ranges that abut each other to
@@ -459,7 +461,8 @@ impl<W: WrapMut> SelectionView<'_, W> {
                 ops.insert("\n");
             }
         }
-        ops.retain_rest(&self.text);
+        ops.retain_rest(&self.text)
+            .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
         self.update_goal_columns();
@@ -489,11 +492,12 @@ impl<W: WrapMut> SelectionView<'_, W> {
             }
             if end >= previous {
                 ops.retain(end - previous);
-                ops.delete(next_boundary - end);
+                ops.delete(&self.text.slice(end..next_boundary).to_string());
                 previous = next_boundary;
             }
         }
-        ops.retain_rest(&self.text);
+        ops.retain_rest(&self.text)
+            .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
         self.update_goal_columns();

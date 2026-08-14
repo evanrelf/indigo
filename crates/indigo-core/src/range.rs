@@ -1,6 +1,6 @@
 use crate::{
     cursor::{Cursor, CursorMut, CursorSnapshot, CursorState},
-    ot::OperationSeq,
+    ot2::OperationSeq,
     rope::RopeExt as _,
     text::Text,
 };
@@ -563,7 +563,8 @@ impl<W: WrapMut> RangeView<'_, W> {
         let mut ops = OperationSeq::new();
         ops.retain(self.state.start().byte_index);
         ops.insert(text);
-        ops.retain_rest(&self.text);
+        ops.retain_rest(&self.text)
+            .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
         self.update_goal_column();
@@ -581,8 +582,9 @@ impl<W: WrapMut> RangeView<'_, W> {
         let delete_start = self.text.prev_grapheme_boundary(start)?;
         let mut ops = OperationSeq::new();
         ops.retain(delete_start);
-        ops.delete(start - delete_start);
-        ops.retain_rest(&self.text);
+        ops.delete(&self.text.slice(delete_start..start).to_string());
+        ops.retain_rest(&self.text)
+            .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
         self.update_goal_column();
@@ -596,11 +598,12 @@ impl<W: WrapMut> RangeView<'_, W> {
         let (start, end) = self.byte_offsets();
         let mut ops = OperationSeq::new();
         ops.retain(start);
-        ops.delete(end - start);
+        ops.delete(&self.text.slice(start..end).to_string());
         if end == self.text.len() && (start == 0 || self.text.byte(start - 1) != b'\n') {
             ops.insert("\n");
         }
-        ops.retain_rest(&self.text);
+        ops.retain_rest(&self.text)
+            .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
         self.update_goal_column();
@@ -625,8 +628,9 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
         let mut ops = OperationSeq::new();
         ops.retain(end);
-        ops.delete(delete_end - end);
-        ops.retain_rest(&self.text);
+        ops.delete(&self.text.slice(end..delete_end).to_string());
+        ops.retain_rest(&self.text)
+            .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
         self.update_goal_column();
