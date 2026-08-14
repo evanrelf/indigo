@@ -1,5 +1,5 @@
 use ropey::Rope;
-use std::{iter::zip, ops::Range};
+use std::{cmp::min, iter::zip, ops::Range};
 
 #[derive(Clone, Copy, PartialEq)]
 enum OpKind {
@@ -90,9 +90,61 @@ impl Edits {
         self.op_texts.push_str(text);
     }
 
-    #[must_use]
-    pub fn compose(&self, _other: &Self) -> Self {
-        todo!()
+    pub fn compose(&self, other: &Self) -> anyhow::Result<Self> {
+        anyhow::ensure!(
+            self.length_after == other.length_before,
+            "left edit output length {} != right edit input length {}",
+            self.length_after,
+            other.length_before,
+        );
+
+        let mut a = OpCursor {
+            edits: self,
+            op_index: 0,
+            consumed: 0,
+            text_index: 0,
+        };
+        let mut b = OpCursor {
+            edits: other,
+            op_index: 0,
+            consumed: 0,
+            text_index: 0,
+        };
+        let mut result = Self::new();
+
+        loop {
+            match (a.kind(), b.kind()) {
+                // `self` deleted text `other` never saw.
+                (Some(OpKind::Delete), _) => {
+                    let n = a.remaining();
+                    result.delete(a.text(n));
+                    a.advance(n);
+                }
+                // `other` inserted text `self` never saw.
+                (_, Some(OpKind::Insert)) => {
+                    let n = b.remaining();
+                    result.insert(b.text(n));
+                    b.advance(n);
+                }
+                (None, None) => break,
+                (Some(a_kind), Some(b_kind)) => {
+                    let n = min(a.remaining(), b.remaining());
+                    match (a_kind, b_kind) {
+                        (OpKind::Retain, OpKind::Retain) => result.retain(n),
+                        (OpKind::Retain, OpKind::Delete) => result.delete(b.text(n)),
+                        (OpKind::Insert, OpKind::Retain) => result.insert(a.text(n)),
+                        // `other` deleted text `self` inserted; the ops cancel out
+                        (OpKind::Insert, OpKind::Delete) => debug_assert_eq!(a.text(n), b.text(n)),
+                        (OpKind::Delete, _) | (_, OpKind::Insert) => unreachable!(),
+                    }
+                    a.advance(n);
+                    b.advance(n);
+                }
+                (None, Some(_)) | (Some(_), None) => unreachable!(),
+            }
+        }
+
+        Ok(result)
     }
 
     #[must_use]
@@ -177,6 +229,39 @@ impl Edits {
     }
 }
 
+struct OpCursor<'a> {
+    edits: &'a Edits,
+    op_index: usize,
+    consumed: usize,
+    text_index: usize,
+}
+
+impl<'a> OpCursor<'a> {
+    fn kind(&self) -> Option<OpKind> {
+        self.edits.op_kinds.get(self.op_index).copied()
+    }
+
+    fn remaining(&self) -> usize {
+        to_usize(self.edits.op_lengths[self.op_index]) - self.consumed
+    }
+
+    fn text(&self, n: usize) -> &'a str {
+        let start = self.text_index + self.consumed;
+        &self.edits.op_texts[start..start + n]
+    }
+
+    fn advance(&mut self, n: usize) {
+        self.consumed += n;
+        if self.consumed == to_usize(self.edits.op_lengths[self.op_index]) {
+            if self.kind() != Some(OpKind::Retain) {
+                self.text_index += self.consumed;
+            }
+            self.op_index += 1;
+            self.consumed = 0;
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub enum Bias {
     Backward,
@@ -230,6 +315,60 @@ mod tests {
         let mut rope = Rope::from("Hello, world!");
         edits.retain(1);
         assert!(edits.apply(&mut rope).is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_compose() -> anyhow::Result<()> {
+        let rope = Rope::from("Hello, world!");
+
+        let mut a = Edits::new();
+        a.retain(7);
+        a.delete("world");
+        a.insert("Evan");
+        a.retain_rest(&rope)?;
+
+        let mut b = Edits::new();
+        b.retain(7);
+        b.insert("dear ");
+        b.retain(4);
+        b.delete("!");
+        b.insert("?");
+
+        // Composing is equivalent to applying sequentially.
+        let mut sequential = rope.clone();
+        a.apply(&mut sequential)?;
+        b.apply(&mut sequential)?;
+        assert_eq!(sequential, Rope::from("Hello, dear Evan?"));
+
+        let ab = a.compose(&b)?;
+        let mut composed = rope.clone();
+        ab.apply(&mut composed)?;
+        assert_eq!(composed, sequential);
+
+        // A composed edit inverts cleanly.
+        ab.invert().apply(&mut composed)?;
+        assert_eq!(composed, rope);
+
+        // An insert deleted by the next edit cancels out entirely.
+        let mut a = Edits::new();
+        a.retain(5);
+        a.insert("abc");
+        a.retain_rest(&rope)?;
+
+        let mut intermediate = rope.clone();
+        a.apply(&mut intermediate)?;
+
+        let mut b = Edits::new();
+        b.retain(6);
+        b.delete("b");
+        b.retain_rest(&intermediate)?;
+
+        let ab = a.compose(&b)?;
+        let mut composed = rope.clone();
+        ab.apply(&mut composed)?;
+        assert_eq!(composed, Rope::from("Helloac, world!"));
 
         Ok(())
     }
