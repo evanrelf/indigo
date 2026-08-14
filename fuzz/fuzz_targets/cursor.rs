@@ -18,7 +18,7 @@ enum FuzzAction {
 fuzz_target!(|input: (&str, usize, Vec<FuzzAction>)| {
     let (text, byte_index, actions) = input;
     let text = Text::from(text);
-    let valid_byte_index = text.is_grapheme_start(byte_index);
+    let valid_byte_index = byte_index < text.len() && text.is_grapheme_start(byte_index);
     let Ok(mut cursor) = CursorView::try_from((text, byte_index)) else {
         assert!(!valid_byte_index);
         return;
