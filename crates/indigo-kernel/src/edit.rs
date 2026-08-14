@@ -158,11 +158,75 @@ impl Edits {
         }
     }
 
-    #[must_use]
-    pub fn rebase(&self, _over: &Self, _bias: Bias) -> Self {
-        // Requires OT TP1 but not TP2
-        // <https://en.wikipedia.org/wiki/Operational_transformation#Transformation_properties>
-        todo!()
+    pub fn rebase(&self, onto: &Self, bias: Bias) -> anyhow::Result<Self> {
+        anyhow::ensure!(
+            self.length_before == onto.length_before,
+            "self edit input length {} != onto edit input length {}",
+            self.length_before,
+            onto.length_before,
+        );
+
+        let mut a = OpCursor {
+            edits: self,
+            op_index: 0,
+            consumed: 0,
+            text_index: 0,
+        };
+        let mut b = OpCursor {
+            edits: onto,
+            op_index: 0,
+            consumed: 0,
+            text_index: 0,
+        };
+        let mut result = Self::new();
+
+        loop {
+            match (a.kind(), b.kind()) {
+                // Both inserted at the same position; `bias` decides whose text comes first.
+                (Some(OpKind::Insert), Some(OpKind::Insert)) => match bias {
+                    Bias::Backward => {
+                        let n = a.remaining();
+                        result.insert(a.text(n));
+                        a.advance(n);
+                    }
+                    Bias::Forward => {
+                        let n = b.remaining();
+                        result.retain(n);
+                        b.advance(n);
+                    }
+                },
+                // `self` inserted text `onto` never saw.
+                (Some(OpKind::Insert), _) => {
+                    let n = a.remaining();
+                    result.insert(a.text(n));
+                    a.advance(n);
+                }
+                // `onto` inserted text `self` never saw; skip over it.
+                (_, Some(OpKind::Insert)) => {
+                    let n = b.remaining();
+                    result.retain(n);
+                    b.advance(n);
+                }
+                (None, None) => break,
+                (Some(a_kind), Some(b_kind)) => {
+                    let n = min(a.remaining(), b.remaining());
+                    match (a_kind, b_kind) {
+                        (OpKind::Retain, OpKind::Retain) => result.retain(n),
+                        // `onto` deleted this text; there's nothing left to retain
+                        (OpKind::Retain, OpKind::Delete) => {}
+                        (OpKind::Delete, OpKind::Retain) => result.delete(a.text(n)),
+                        // `onto` already deleted this text
+                        (OpKind::Delete, OpKind::Delete) => debug_assert_eq!(a.text(n), b.text(n)),
+                        (OpKind::Insert, _) | (_, OpKind::Insert) => unreachable!(),
+                    }
+                    a.advance(n);
+                    b.advance(n);
+                }
+                (None, Some(_)) | (Some(_), None) => unreachable!(),
+            }
+        }
+
+        Ok(result)
     }
 
     pub fn apply(&self, rope: &mut Rope) -> anyhow::Result<()> {
@@ -369,6 +433,62 @@ mod tests {
         let mut composed = rope.clone();
         ab.apply(&mut composed)?;
         assert_eq!(composed, Rope::from("Helloac, world!"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_rebase() -> anyhow::Result<()> {
+        let rope = Rope::from("Hello, world!");
+
+        // Concurrent inserts at the same position: bias decides whose text comes first.
+        let mut a = Edits::new();
+        a.retain(7);
+        a.insert("brave ");
+        a.retain_rest(&rope)?;
+
+        let mut b = Edits::new();
+        b.retain(7);
+        b.insert("new ");
+        b.retain_rest(&rope)?;
+
+        let mut backward = rope.clone();
+        b.apply(&mut backward)?;
+        a.rebase(&b, Bias::Backward)?.apply(&mut backward)?;
+        assert_eq!(backward, Rope::from("Hello, brave new world!"));
+
+        let mut forward = rope.clone();
+        b.apply(&mut forward)?;
+        a.rebase(&b, Bias::Forward)?.apply(&mut forward)?;
+        assert_eq!(forward, Rope::from("Hello, new brave world!"));
+
+        // TP1 convergence: rebasing with opposite biases converges regardless of which edit is
+        // applied first.
+        let mut converged = rope.clone();
+        a.apply(&mut converged)?;
+        b.rebase(&a, Bias::Forward)?.apply(&mut converged)?;
+        assert_eq!(converged, backward);
+
+        // Overlapping deletes don't delete twice.
+        let mut a = Edits::new();
+        a.retain(7);
+        a.delete("world");
+        a.retain(1);
+
+        let mut b = Edits::new();
+        b.retain(5);
+        b.delete(", world");
+        b.retain(1);
+
+        let mut one = rope.clone();
+        a.apply(&mut one)?;
+        b.rebase(&a, Bias::Backward)?.apply(&mut one)?;
+        assert_eq!(one, Rope::from("Hello!"));
+
+        let mut two = rope.clone();
+        b.apply(&mut two)?;
+        a.rebase(&b, Bias::Forward)?.apply(&mut two)?;
+        assert_eq!(one, two);
 
         Ok(())
     }
