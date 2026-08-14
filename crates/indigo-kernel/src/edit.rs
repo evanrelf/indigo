@@ -229,6 +229,61 @@ impl Edits {
         Ok(result)
     }
 
+    /// Input must be sorted.
+    pub fn transform_byte_indexes(&self, byte_indexes: &mut [usize], bias: Bias) {
+        fn apply_delta(base: usize, delta: isize) -> usize {
+            if delta >= 0 {
+                base + delta.unsigned_abs()
+            } else {
+                base - delta.unsigned_abs()
+            }
+        }
+
+        debug_assert!(byte_indexes.is_sorted());
+
+        let mut position: usize = 0;
+        let mut delta: isize = 0;
+        let mut i = 0;
+
+        for (kind, length) in zip(&self.op_kinds, &self.op_lengths) {
+            if i >= byte_indexes.len() {
+                break;
+            }
+            let length = to_usize(*length);
+            match kind {
+                OpKind::Retain => {
+                    while i < byte_indexes.len() && byte_indexes[i] < position + length {
+                        byte_indexes[i] = apply_delta(byte_indexes[i], delta);
+                        i += 1;
+                    }
+                    position += length;
+                }
+                OpKind::Insert => {
+                    if let Bias::Backward = bias {
+                        while i < byte_indexes.len() && byte_indexes[i] == position {
+                            byte_indexes[i] = apply_delta(position, delta);
+                            i += 1;
+                        }
+                    }
+                    delta += length.cast_signed();
+                }
+                OpKind::Delete => {
+                    while i < byte_indexes.len() && byte_indexes[i] < position + length {
+                        byte_indexes[i] = apply_delta(position, delta);
+                        i += 1;
+                    }
+                    position += length;
+                    delta -= length.cast_signed();
+                }
+            }
+        }
+
+        while i < byte_indexes.len() {
+            byte_indexes[i] = apply_delta(byte_indexes[i], delta);
+            i += 1;
+        }
+    }
+
     pub fn apply(&self, rope: &mut Rope) -> anyhow::Result<()> {
         self.apply_impl(rope, false)
     }
@@ -433,6 +488,42 @@ mod tests {
         let mut composed = rope.clone();
         ab.apply(&mut composed)?;
         assert_eq!(composed, Rope::from("Helloac, world!"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_transform_byte_indexes() -> anyhow::Result<()> {
+        let mut rope = Rope::from("Hello, world!");
+
+        let mut edits = Edits::new();
+        edits.delete("Hello, ");
+        edits.retain(5);
+        edits.insert("!!!");
+        edits.retain(1);
+
+        edits.apply(&mut rope)?;
+        assert_eq!(rope, Rope::from("world!!!!"));
+
+        // "H" and "," collapse to the deletion point; "r" follows the retained "world".
+        let mut indexes = [0, 5, 9];
+        edits.transform_byte_indexes(&mut indexes, Bias::Forward);
+        assert_eq!(indexes, [0, 0, 2]);
+
+        // An index at an insertion point stays before or moves after the inserted text,
+        // depending on bias.
+        let mut edits = Edits::new();
+        edits.retain(5);
+        edits.insert("???");
+        edits.retain_rest(&rope)?;
+
+        let mut indexes = [5];
+        edits.transform_byte_indexes(&mut indexes, Bias::Backward);
+        assert_eq!(indexes, [5]);
+
+        let mut indexes = [5];
+        edits.transform_byte_indexes(&mut indexes, Bias::Forward);
+        assert_eq!(indexes, [8]);
 
         Ok(())
     }
