@@ -8,6 +8,7 @@ pub mod key;
 pub mod keymap;
 pub mod mode;
 pub mod ot;
+pub mod ot2;
 pub mod prelude;
 pub mod range;
 pub mod rope;

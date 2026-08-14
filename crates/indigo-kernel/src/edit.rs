@@ -1,7 +1,7 @@
 use ropey::Rope;
 use std::{cmp::min, iter::zip, ops::Range};
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum OpKind {
     Retain,
     Delete,
@@ -18,7 +18,7 @@ impl OpKind {
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Edits {
     op_kinds: Vec<OpKind>,
     op_lengths: Vec<u32>,
@@ -32,6 +32,11 @@ impl Edits {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.op_kinds.is_empty()
     }
 
     fn push_op(&mut self, kind: OpKind, byte_length: usize) {
