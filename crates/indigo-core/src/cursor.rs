@@ -1,5 +1,5 @@
 use crate::{
-    ot2::OperationSeq,
+    edit::OperationSeq,
     rope::{DisplayWidth as _, LINE_TYPE, RopeExt as _},
     text::{Anchor, Text},
 };

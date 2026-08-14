@@ -1,6 +1,6 @@
 use crate::{
     cursor::{Cursor, CursorMut, CursorSnapshot, CursorState},
-    ot2::OperationSeq,
+    edit::OperationSeq,
     rope::RopeExt as _,
     text::Text,
 };

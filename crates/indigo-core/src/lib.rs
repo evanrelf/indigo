@@ -1,13 +1,13 @@
 pub mod attributes;
 pub mod buffer;
 pub mod cursor;
+pub mod edit;
 pub mod editor;
 pub mod fs;
 pub mod history;
 pub mod key;
 pub mod keymap;
 pub mod mode;
-pub mod ot2;
 pub mod prelude;
 pub mod range;
 pub mod rope;

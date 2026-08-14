@@ -1,6 +1,6 @@
 use crate::{
     cursor::CursorState,
-    ot2::OperationSeq,
+    edit::OperationSeq,
     range::{Range, RangeMut, RangeSnapshot, RangeState},
     rope::{LINE_TYPE, RegexCursorInput, RopeExt as _},
     text::Text,
