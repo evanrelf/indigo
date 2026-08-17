@@ -61,15 +61,38 @@ impl Edit {
 
         self.length_before += byte_length;
 
-        if self.op_kinds.last() == Some(&OpKind::Delete) {
-            let last = self.op_lengths.last_mut().unwrap();
-            *last = to_u32(to_usize(*last) + byte_length);
-        } else {
-            self.op_kinds.push(OpKind::Delete);
-            self.op_lengths.push(to_u32(byte_length));
-        }
+        // Note [Canonical form]
+        let last = self.op_kinds.last().copied();
+        let second_last = self.op_kinds.len().checked_sub(2).map(|i| self.op_kinds[i]);
 
-        self.op_texts.push_str(text);
+        match (second_last, last) {
+            (_, Some(OpKind::Delete)) => {
+                let last = self.op_lengths.last_mut().unwrap();
+                *last = to_u32(to_usize(*last) + byte_length);
+                self.op_texts.push_str(text);
+            }
+            (Some(OpKind::Delete), Some(OpKind::Insert)) => {
+                let insert_length = to_usize(*self.op_lengths.last().unwrap());
+                let delete_index = self.op_lengths.len() - 2;
+                self.op_lengths[delete_index] =
+                    to_u32(to_usize(self.op_lengths[delete_index]) + byte_length);
+                self.op_texts
+                    .insert_str(self.op_texts.len() - insert_length, text);
+            }
+            (_, Some(OpKind::Insert)) => {
+                let insert_length = to_usize(*self.op_lengths.last().unwrap());
+                let insert_index = self.op_kinds.len() - 1;
+                self.op_kinds.insert(insert_index, OpKind::Delete);
+                self.op_lengths.insert(insert_index, to_u32(byte_length));
+                self.op_texts
+                    .insert_str(self.op_texts.len() - insert_length, text);
+            }
+            (_, Some(OpKind::Retain) | None) => {
+                self.op_kinds.push(OpKind::Delete);
+                self.op_lengths.push(to_u32(byte_length));
+                self.op_texts.push_str(text);
+            }
+        }
     }
 
     pub fn insert(&mut self, text: &str) {
@@ -112,29 +135,29 @@ impl Edit {
             consumed: 0,
             text_index: 0,
         };
-        let mut result = Self::new();
+        let mut edit = Self::new();
 
         loop {
             match (a.kind(), b.kind()) {
                 // `self` deleted text `other` never saw.
                 (Some(OpKind::Delete), _) => {
                     let n = a.remaining();
-                    result.delete(a.text(n));
+                    edit.delete(a.text(n));
                     a.advance(n);
                 }
                 // `other` inserted text `self` never saw.
                 (_, Some(OpKind::Insert)) => {
                     let n = b.remaining();
-                    result.insert(b.text(n));
+                    edit.insert(b.text(n));
                     b.advance(n);
                 }
                 (None, None) => break,
                 (Some(a_kind), Some(b_kind)) => {
                     let n = min(a.remaining(), b.remaining());
                     match (a_kind, b_kind) {
-                        (OpKind::Retain, OpKind::Retain) => result.retain(n),
-                        (OpKind::Retain, OpKind::Delete) => result.delete(b.text(n)),
-                        (OpKind::Insert, OpKind::Retain) => result.insert(a.text(n)),
+                        (OpKind::Retain, OpKind::Retain) => edit.retain(n),
+                        (OpKind::Retain, OpKind::Delete) => edit.delete(b.text(n)),
+                        (OpKind::Insert, OpKind::Retain) => edit.insert(a.text(n)),
                         // `other` deleted text `self` inserted; the ops cancel out
                         (OpKind::Insert, OpKind::Delete) => debug_assert_eq!(a.text(n), b.text(n)),
                         (OpKind::Delete, _) | (_, OpKind::Insert) => unreachable!(),
@@ -146,18 +169,37 @@ impl Edit {
             }
         }
 
-        Ok(result)
+        #[cfg(debug_assertions)]
+        edit.assert_is_canonical();
+
+        Ok(edit)
     }
 
     #[must_use]
     pub fn invert(&self) -> Self {
-        Self {
-            op_kinds: self.op_kinds.iter().map(|kind| kind.invert()).collect(),
-            op_lengths: self.op_lengths.clone(),
-            op_texts: self.op_texts.clone(),
-            length_before: self.length_after,
-            length_after: self.length_before,
+        // Note [Canonical form]
+        let mut edit = Self::new();
+        let mut text_index = 0;
+
+        for (kind, length) in zip(&self.op_kinds, &self.op_lengths) {
+            let length = to_usize(*length);
+            match kind {
+                OpKind::Retain => edit.retain(length),
+                OpKind::Delete => {
+                    edit.insert(&self.op_texts[text_index..text_index + length]);
+                    text_index += length;
+                }
+                OpKind::Insert => {
+                    edit.delete(&self.op_texts[text_index..text_index + length]);
+                    text_index += length;
+                }
+            }
         }
+
+        #[cfg(debug_assertions)]
+        edit.assert_is_canonical();
+
+        edit
     }
 
     pub fn rebase(&self, onto: &Self, bias: Bias) -> anyhow::Result<Self> {
@@ -180,7 +222,7 @@ impl Edit {
             consumed: 0,
             text_index: 0,
         };
-        let mut result = Self::new();
+        let mut edit = Self::new();
 
         loop {
             match (a.kind(), b.kind()) {
@@ -188,35 +230,35 @@ impl Edit {
                 (Some(OpKind::Insert), Some(OpKind::Insert)) => match bias {
                     Bias::Backward => {
                         let n = a.remaining();
-                        result.insert(a.text(n));
+                        edit.insert(a.text(n));
                         a.advance(n);
                     }
                     Bias::Forward => {
                         let n = b.remaining();
-                        result.retain(n);
+                        edit.retain(n);
                         b.advance(n);
                     }
                 },
                 // `self` inserted text `onto` never saw.
                 (Some(OpKind::Insert), _) => {
                     let n = a.remaining();
-                    result.insert(a.text(n));
+                    edit.insert(a.text(n));
                     a.advance(n);
                 }
                 // `onto` inserted text `self` never saw; skip over it.
                 (_, Some(OpKind::Insert)) => {
                     let n = b.remaining();
-                    result.retain(n);
+                    edit.retain(n);
                     b.advance(n);
                 }
                 (None, None) => break,
                 (Some(a_kind), Some(b_kind)) => {
                     let n = min(a.remaining(), b.remaining());
                     match (a_kind, b_kind) {
-                        (OpKind::Retain, OpKind::Retain) => result.retain(n),
+                        (OpKind::Retain, OpKind::Retain) => edit.retain(n),
                         // `onto` deleted this text; there's nothing left to retain
                         (OpKind::Retain, OpKind::Delete) => {}
-                        (OpKind::Delete, OpKind::Retain) => result.delete(a.text(n)),
+                        (OpKind::Delete, OpKind::Retain) => edit.delete(a.text(n)),
                         // `onto` already deleted this text
                         (OpKind::Delete, OpKind::Delete) => debug_assert_eq!(a.text(n), b.text(n)),
                         (OpKind::Insert, _) | (_, OpKind::Insert) => unreachable!(),
@@ -228,7 +270,10 @@ impl Edit {
             }
         }
 
-        Ok(result)
+        #[cfg(debug_assertions)]
+        edit.assert_is_canonical();
+
+        Ok(edit)
     }
 
     /// Input must be sorted.
@@ -348,6 +393,46 @@ impl Edit {
 
         Ok(())
     }
+
+    // Note [Canonical form]
+    #[cfg(debug_assertions)]
+    fn assert_is_canonical(&self) {
+        assert_eq!(self.op_kinds.len(), self.op_lengths.len());
+
+        let mut length_before = 0;
+        let mut length_after = 0;
+        let mut text_length = 0;
+
+        for (i, (kind, length)) in zip(&self.op_kinds, &self.op_lengths).enumerate() {
+            let length = to_usize(*length);
+            assert_ne!(length, 0, "zero-length op");
+            if let Some(prev) = i.checked_sub(1).map(|i| self.op_kinds[i]) {
+                assert_ne!(prev, *kind, "adjacent ops of the same kind");
+                assert!(
+                    !(prev == OpKind::Insert && *kind == OpKind::Delete),
+                    "insert before delete at the same position"
+                );
+            }
+            match kind {
+                OpKind::Retain => {
+                    length_before += length;
+                    length_after += length;
+                }
+                OpKind::Delete => {
+                    length_before += length;
+                    text_length += length;
+                }
+                OpKind::Insert => {
+                    length_after += length;
+                    text_length += length;
+                }
+            }
+        }
+
+        assert_eq!(length_before, self.length_before);
+        assert_eq!(length_after, self.length_after);
+        assert_eq!(text_length, self.op_texts.len());
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -424,6 +509,22 @@ fn to_u32(n: usize) -> u32 {
 fn to_usize(n: u32) -> usize {
     usize::try_from(n).expect("u32 fits in usize")
 }
+
+/*
+Note [Canonical form]
+---------------------
+
+Claude: An edit is canonical when it has no zero-length ops, no adjacent ops of the same kind, and,
+at a given position, deletion before insertion. Canonical form makes the representation unique:
+equivalent edits are structurally equal.
+
+Uniqueness is more than tidiness. Deleting "d" and inserting "x" at one position produces the same
+document in either order, but when two concurrent edits are reconciled their ops are matched up
+positionally, and the two orderings interleave concurrent text on opposite sides of the same
+position. If both were representable, equivalent edits could reconcile to different documents
+depending on how they happened to be built. Delete-before-insert is an arbitrary choice; what
+matters is that exactly one order is representable.
+*/
 
 #[cfg(test)]
 mod tests {
@@ -543,6 +644,58 @@ mod tests {
         let mut indexes = [5];
         edit.transform_byte_indexes(&mut indexes, Bias::Forward);
         assert_eq!(indexes, [8]);
+
+        Ok(())
+    }
+
+    // Note [Canonical form]
+    #[test]
+    fn test_canonical_delete_before_insert() -> anyhow::Result<()> {
+        let rope = Rope::from("Hello, world!");
+
+        // Equivalent edits built in either order have the same representation...
+        let mut insert_first = Edit::new();
+        insert_first.retain(7);
+        insert_first.insert("there");
+        insert_first.delete("world");
+        insert_first.retain(1);
+
+        let mut delete_first = Edit::new();
+        delete_first.retain(7);
+        delete_first.delete("world");
+        delete_first.insert("there");
+        delete_first.retain(1);
+
+        assert_eq!(insert_first, delete_first);
+
+        let mut applied = rope.clone();
+        insert_first.apply(&mut applied)?;
+        assert_eq!(applied, Rope::from("Hello, there!"));
+
+        // ...and therefore rebase identically.
+        let mut concurrent = Edit::new();
+        concurrent.retain(7);
+        concurrent.insert("big ");
+        concurrent.retain_rest(&rope)?;
+
+        assert_eq!(
+            insert_first.rebase(&concurrent, Bias::Forward)?,
+            delete_first.rebase(&concurrent, Bias::Forward)?
+        );
+
+        // Deletes merge across an intervening insert, and inverting stays canonical.
+        let mut edit = Edit::new();
+        edit.delete("He");
+        edit.insert("Ye");
+        edit.delete("llo");
+        edit.retain_rest(&rope)?;
+
+        let mut applied = rope.clone();
+        edit.apply(&mut applied)?;
+        assert_eq!(applied, Rope::from("Ye, world!"));
+
+        edit.invert().apply(&mut applied)?;
+        assert_eq!(applied, rope);
 
         Ok(())
     }
