@@ -284,6 +284,9 @@ impl Edit {
             rope.len()
         );
 
+        let out = rope;
+        let mut rope = out.clone();
+
         let mut index = 0;
 
         for op in &self.ops {
@@ -305,6 +308,8 @@ impl Edit {
             self.length_after,
             rope.len()
         );
+
+        *out = rope;
 
         Ok(())
     }
