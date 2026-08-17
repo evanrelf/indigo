@@ -22,16 +22,6 @@ impl Edit {
         self.op_kinds.is_empty()
     }
 
-    fn push_op(&mut self, kind: OpKind, byte_length: usize) {
-        if self.op_kinds.last() == Some(&kind) {
-            let last = self.op_lengths.last_mut().unwrap();
-            *last = to_u32(to_usize(*last) + byte_length);
-        } else {
-            self.op_kinds.push(kind);
-            self.op_lengths.push(to_u32(byte_length));
-        }
-    }
-
     pub fn retain(&mut self, byte_length: usize) {
         if byte_length == 0 {
             return;
@@ -40,7 +30,13 @@ impl Edit {
         self.length_before += byte_length;
         self.length_after += byte_length;
 
-        self.push_op(OpKind::Retain, byte_length);
+        if self.op_kinds.last() == Some(&OpKind::Retain) {
+            let last = self.op_lengths.last_mut().unwrap();
+            *last = to_u32(to_usize(*last) + byte_length);
+        } else {
+            self.op_kinds.push(OpKind::Retain);
+            self.op_lengths.push(to_u32(byte_length));
+        }
     }
 
     pub fn retain_rest(&mut self, rope: &Rope) -> anyhow::Result<()> {
@@ -57,24 +53,42 @@ impl Edit {
     }
 
     pub fn delete(&mut self, text: &str) {
-        if text.is_empty() {
+        let byte_length = text.len();
+
+        if byte_length == 0 {
             return;
         }
 
-        self.length_before += text.len();
+        self.length_before += byte_length;
 
-        self.push_op(OpKind::Delete, text.len());
+        if self.op_kinds.last() == Some(&OpKind::Delete) {
+            let last = self.op_lengths.last_mut().unwrap();
+            *last = to_u32(to_usize(*last) + byte_length);
+        } else {
+            self.op_kinds.push(OpKind::Delete);
+            self.op_lengths.push(to_u32(byte_length));
+        }
+
         self.op_texts.push_str(text);
     }
 
     pub fn insert(&mut self, text: &str) {
-        if text.is_empty() {
+        let byte_length = text.len();
+
+        if byte_length == 0 {
             return;
         }
 
-        self.length_after += text.len();
+        self.length_after += byte_length;
 
-        self.push_op(OpKind::Insert, text.len());
+        if self.op_kinds.last() == Some(&OpKind::Insert) {
+            let last = self.op_lengths.last_mut().unwrap();
+            *last = to_u32(to_usize(*last) + byte_length);
+        } else {
+            self.op_kinds.push(OpKind::Insert);
+            self.op_lengths.push(to_u32(byte_length));
+        }
+
         self.op_texts.push_str(text);
     }
 
