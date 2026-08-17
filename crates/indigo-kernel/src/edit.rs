@@ -276,7 +276,8 @@ impl Edit {
         Ok(edit)
     }
 
-    /// Input must be sorted.
+    /// Maps byte indexes into the document before the edit to byte indexes into the document
+    /// after the edit. Input must be sorted and within the edit's input length.
     pub fn transform_byte_indexes(&self, byte_indexes: &mut [usize], bias: Bias) {
         fn apply_delta(base: usize, delta: isize) -> usize {
             if delta >= 0 {
@@ -287,6 +288,11 @@ impl Edit {
         }
 
         debug_assert!(byte_indexes.is_sorted());
+        debug_assert!(
+            byte_indexes
+                .last()
+                .is_none_or(|last| *last <= self.length_before)
+        );
 
         let mut position: usize = 0;
         let mut delta: isize = 0;
@@ -329,6 +335,13 @@ impl Edit {
             byte_indexes[i] = apply_delta(byte_indexes[i], delta);
             i += 1;
         }
+
+        debug_assert!(byte_indexes.is_sorted());
+        debug_assert!(
+            byte_indexes
+                .last()
+                .is_none_or(|last| *last <= self.length_after)
+        );
     }
 
     pub fn apply(&self, rope: &mut Rope) -> anyhow::Result<()> {
@@ -341,6 +354,10 @@ impl Edit {
     }
 
     fn apply_impl(&self, rope: &mut Rope, invert: bool) -> anyhow::Result<()> {
+        // Note [Canonical form]
+        #[cfg(debug_assertions)]
+        self.assert_is_canonical();
+
         let (length_before, length_after) = if invert {
             (self.length_after, self.length_before)
         } else {
@@ -529,6 +546,7 @@ matters is that exactly one order is representable.
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hegel::generators as gs;
 
     #[test]
     fn test() -> anyhow::Result<()> {
@@ -554,60 +572,6 @@ mod tests {
         let mut rope = Rope::from("Hello, world!");
         edit.retain(1);
         assert!(edit.apply(&mut rope).is_err());
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_compose() -> anyhow::Result<()> {
-        let rope = Rope::from("Hello, world!");
-
-        let mut a = Edit::new();
-        a.retain(7);
-        a.delete("world");
-        a.insert("Evan");
-        a.retain_rest(&rope)?;
-
-        let mut b = Edit::new();
-        b.retain(7);
-        b.insert("dear ");
-        b.retain(4);
-        b.delete("!");
-        b.insert("?");
-
-        // Composing is equivalent to applying sequentially.
-        let mut sequential = rope.clone();
-        a.apply(&mut sequential)?;
-        b.apply(&mut sequential)?;
-        assert_eq!(sequential, Rope::from("Hello, dear Evan?"));
-
-        let ab = a.compose(&b)?;
-        let mut composed = rope.clone();
-        ab.apply(&mut composed)?;
-        assert_eq!(composed, sequential);
-
-        // A composed edit inverts cleanly.
-        ab.invert().apply(&mut composed)?;
-        assert_eq!(composed, rope);
-
-        // An insert deleted by the next edit cancels out entirely.
-        let mut a = Edit::new();
-        a.retain(5);
-        a.insert("abc");
-        a.retain_rest(&rope)?;
-
-        let mut intermediate = rope.clone();
-        a.apply(&mut intermediate)?;
-
-        let mut b = Edit::new();
-        b.retain(6);
-        b.delete("b");
-        b.retain_rest(&intermediate)?;
-
-        let ab = a.compose(&b)?;
-        let mut composed = rope.clone();
-        ab.apply(&mut composed)?;
-        assert_eq!(composed, Rope::from("Helloac, world!"));
 
         Ok(())
     }
@@ -648,58 +612,6 @@ mod tests {
         Ok(())
     }
 
-    // Note [Canonical form]
-    #[test]
-    fn test_canonical_delete_before_insert() -> anyhow::Result<()> {
-        let rope = Rope::from("Hello, world!");
-
-        // Equivalent edits built in either order have the same representation...
-        let mut insert_first = Edit::new();
-        insert_first.retain(7);
-        insert_first.insert("there");
-        insert_first.delete("world");
-        insert_first.retain(1);
-
-        let mut delete_first = Edit::new();
-        delete_first.retain(7);
-        delete_first.delete("world");
-        delete_first.insert("there");
-        delete_first.retain(1);
-
-        assert_eq!(insert_first, delete_first);
-
-        let mut applied = rope.clone();
-        insert_first.apply(&mut applied)?;
-        assert_eq!(applied, Rope::from("Hello, there!"));
-
-        // ...and therefore rebase identically.
-        let mut concurrent = Edit::new();
-        concurrent.retain(7);
-        concurrent.insert("big ");
-        concurrent.retain_rest(&rope)?;
-
-        assert_eq!(
-            insert_first.rebase(&concurrent, Bias::Forward)?,
-            delete_first.rebase(&concurrent, Bias::Forward)?
-        );
-
-        // Deletes merge across an intervening insert, and inverting stays canonical.
-        let mut edit = Edit::new();
-        edit.delete("He");
-        edit.insert("Ye");
-        edit.delete("llo");
-        edit.retain_rest(&rope)?;
-
-        let mut applied = rope.clone();
-        edit.apply(&mut applied)?;
-        assert_eq!(applied, Rope::from("Ye, world!"));
-
-        edit.invert().apply(&mut applied)?;
-        assert_eq!(applied, rope);
-
-        Ok(())
-    }
-
     #[test]
     fn test_rebase() -> anyhow::Result<()> {
         let rope = Rope::from("Hello, world!");
@@ -725,34 +637,244 @@ mod tests {
         a.rebase(&b, Bias::Forward)?.apply(&mut forward)?;
         assert_eq!(forward, Rope::from("Hello, new brave world!"));
 
-        // TP1 convergence: rebasing with opposite biases converges regardless of which edit is
-        // applied first.
-        let mut converged = rope.clone();
-        a.apply(&mut converged)?;
-        b.rebase(&a, Bias::Forward)?.apply(&mut converged)?;
-        assert_eq!(converged, backward);
-
-        // Overlapping deletes don't delete twice.
-        let mut a = Edit::new();
-        a.retain(7);
-        a.delete("world");
-        a.retain(1);
-
-        let mut b = Edit::new();
-        b.retain(5);
-        b.delete(", world");
-        b.retain(1);
-
-        let mut one = rope.clone();
-        a.apply(&mut one)?;
-        b.rebase(&a, Bias::Backward)?.apply(&mut one)?;
-        assert_eq!(one, Rope::from("Hello!"));
-
-        let mut two = rope.clone();
-        b.apply(&mut two)?;
-        a.rebase(&b, Bias::Forward)?.apply(&mut two)?;
-        assert_eq!(one, two);
-
         Ok(())
+    }
+
+    /// Draws a byte index in `(index, doc.len()]` lying on a `char` boundary.
+    fn draw_str_end(tc: &hegel::TestCase, doc: &str, index: usize) -> usize {
+        let length = gs::integers::<usize>()
+            .min_value(1)
+            .max_value(doc.len() - index);
+        let mut end = index + tc.draw(length);
+        while !doc.is_char_boundary(end) {
+            end += 1;
+        }
+        end
+    }
+
+    /// A random canonical edit whose input document is exactly `doc`, paired with the document
+    /// applying it should produce. The expected document is built from the generation choices
+    /// directly, so it's an oracle independent of the `Edit` representation.
+    #[hegel::composite]
+    fn gen_edit_and_text(tc: hegel::TestCase, doc: String) -> (Edit, String) {
+        let mut edit = Edit::new();
+        let mut expected = String::new();
+        let mut index = 0;
+        while index < doc.len() {
+            match tc.draw(gs::integers::<u8>().max_value(2)) {
+                0 => {
+                    let end = draw_str_end(&tc, &doc, index);
+                    edit.retain(end - index);
+                    expected.push_str(&doc[index..end]);
+                    index = end;
+                }
+                1 => {
+                    let end = draw_str_end(&tc, &doc, index);
+                    edit.delete(&doc[index..end]);
+                    index = end;
+                }
+                _ => {
+                    let text: String = tc.draw(gs::text());
+                    edit.insert(&text);
+                    expected.push_str(&text);
+                }
+            }
+        }
+        if tc.draw(gs::booleans()) {
+            let text: String = tc.draw(gs::text());
+            edit.insert(&text);
+            expected.push_str(&text);
+        }
+        (edit, expected)
+    }
+
+    /// The edit from `gen_edit_and_text`, for tests that don't need the expected document.
+    #[hegel::composite]
+    fn gen_edit(tc: hegel::TestCase, doc: String) -> Edit {
+        tc.draw(gen_edit_and_text(doc.clone())).0
+    }
+
+    #[hegel::test(test_cases = 2_000)]
+    fn apply_produces_expected_document(tc: hegel::TestCase) {
+        let doc: String = tc.draw(gs::text());
+        let (edit, expected) = tc.draw(gen_edit_and_text(doc.clone()));
+
+        let mut rope = Rope::from(doc.as_str());
+        edit.apply(&mut rope).unwrap();
+
+        assert_eq!(rope, Rope::from(expected.as_str()));
+    }
+
+    #[hegel::test(test_cases = 2_000)]
+    fn invert_roundtrips(tc: hegel::TestCase) {
+        let doc: String = tc.draw(gs::text());
+        let edit = tc.draw(gen_edit(doc.clone()));
+
+        let before = Rope::from(doc.as_str());
+        let mut after = before.clone();
+        edit.apply(&mut after).unwrap();
+
+        // Applying the inverse undoes the edit...
+        let mut inverted = after.clone();
+        edit.invert().apply(&mut inverted).unwrap();
+        assert_eq!(inverted, before);
+
+        // ...`apply_inverse` agrees with `invert` + `apply`...
+        let mut uninverted = after.clone();
+        edit.apply_inverse(&mut uninverted).unwrap();
+        assert_eq!(uninverted, before);
+
+        // ...and inverting is an involution.
+        assert_eq!(edit.invert().invert(), edit);
+    }
+
+    // Note [Canonical form]
+    #[hegel::test(test_cases = 2_000)]
+    fn canonical_form_is_unique(tc: hegel::TestCase) {
+        /// A `char` boundary near the middle of `s`.
+        fn midpoint(s: &str) -> usize {
+            let mut index = s.len() / 2;
+            while !s.is_char_boundary(index) {
+                index += 1;
+            }
+            index
+        }
+
+        let doc: String = tc.draw(gs::text());
+
+        // Build the same edit two ways: `one` deletes before inserting, in whole ops; `two`
+        // inserts before deleting, in split ops. Canonical form erases the difference.
+        let mut one = Edit::new();
+        let mut two = Edit::new();
+        let mut index = 0;
+        while index < doc.len() {
+            let end = draw_str_end(&tc, &doc, index);
+            if tc.draw(gs::booleans()) {
+                one.retain(end - index);
+                let middle = index + midpoint(&doc[index..end]);
+                two.retain(middle - index);
+                two.retain(end - middle);
+            } else {
+                let deleted = &doc[index..end];
+                let inserted: String = tc.draw(gs::text());
+                one.delete(deleted);
+                one.insert(&inserted);
+                let (delete_head, delete_tail) = deleted.split_at(midpoint(deleted));
+                let (insert_head, insert_tail) = inserted.split_at(midpoint(&inserted));
+                two.insert(insert_head);
+                two.insert(insert_tail);
+                two.delete(delete_head);
+                two.delete(delete_tail);
+            }
+            index = end;
+        }
+
+        assert_eq!(one, two);
+        one.assert_is_canonical();
+    }
+
+    #[hegel::test(test_cases = 2_000)]
+    fn compose_agrees_with_sequential_application(tc: hegel::TestCase) {
+        let doc: String = tc.draw(gs::text());
+        let a = tc.draw(gen_edit(doc.clone()));
+
+        let mut sequential = Rope::from(doc.as_str());
+        a.apply(&mut sequential).unwrap();
+        let b = tc.draw(gen_edit(sequential.to_string()));
+        b.apply(&mut sequential).unwrap();
+
+        let mut composed = Rope::from(doc.as_str());
+        a.compose(&b).unwrap().apply(&mut composed).unwrap();
+
+        assert_eq!(composed, sequential);
+    }
+
+    #[hegel::test(test_cases = 2_000)]
+    fn compose_is_associative(tc: hegel::TestCase) {
+        let doc: String = tc.draw(gs::text());
+        let mut rope = Rope::from(doc.as_str());
+
+        let a = tc.draw(gen_edit(rope.to_string()));
+        a.apply(&mut rope).unwrap();
+        let b = tc.draw(gen_edit(rope.to_string()));
+        b.apply(&mut rope).unwrap();
+        let c = tc.draw(gen_edit(rope.to_string()));
+
+        assert_eq!(
+            a.compose(&b).unwrap().compose(&c).unwrap(),
+            a.compose(&b.compose(&c).unwrap()).unwrap(),
+        );
+    }
+
+    #[hegel::test(test_cases = 2_000)]
+    fn compose_with_identity_is_identity(tc: hegel::TestCase) {
+        let doc: String = tc.draw(gs::text());
+        let edit = tc.draw(gen_edit(doc.clone()));
+
+        let mut before = Edit::new();
+        before.retain(edit.length_before);
+        assert_eq!(before.compose(&edit).unwrap(), edit);
+
+        let mut after = Edit::new();
+        after.retain(edit.length_after);
+        assert_eq!(edit.compose(&after).unwrap(), edit);
+    }
+
+    // TP1 convergence: rebasing with opposite biases converges regardless of which edit is applied
+    // first.
+    #[hegel::test(test_cases = 2_000)]
+    fn rebase_converges(tc: hegel::TestCase) {
+        let doc: String = tc.draw(gs::text());
+        let a = tc.draw(gen_edit(doc.clone()));
+        let b = tc.draw(gen_edit(doc.clone()));
+
+        let mut a_first = Rope::from(doc.as_str());
+        a.apply(&mut a_first).unwrap();
+        b.rebase(&a, Bias::Forward)
+            .unwrap()
+            .apply(&mut a_first)
+            .unwrap();
+
+        let mut b_first = Rope::from(doc.as_str());
+        b.apply(&mut b_first).unwrap();
+        a.rebase(&b, Bias::Backward)
+            .unwrap()
+            .apply(&mut b_first)
+            .unwrap();
+
+        assert_eq!(a_first, b_first);
+    }
+
+    #[hegel::test(test_cases = 2_000)]
+    fn transform_byte_indexes_preserves_order_and_validity(tc: hegel::TestCase) {
+        let doc: String = tc.draw(gs::text());
+        let edit = tc.draw(gen_edit(doc.clone()));
+
+        let mut indexes: Vec<usize> =
+            tc.draw(gs::vecs(gs::integers::<usize>().max_value(doc.len())));
+        for index in &mut indexes {
+            while !doc.is_char_boundary(*index) {
+                *index -= 1;
+            }
+        }
+        indexes.sort_unstable();
+
+        let mut rope = Rope::from(doc.as_str());
+        edit.apply(&mut rope).unwrap();
+        let after = rope.to_string();
+
+        let mut backward = indexes.clone();
+        edit.transform_byte_indexes(&mut backward, Bias::Backward);
+        let mut forward = indexes;
+        edit.transform_byte_indexes(&mut forward, Bias::Forward);
+
+        // Transformed indexes are valid positions in the new document (sortedness and bounds are
+        // debug-asserted inside `transform_byte_indexes` itself), and backward bias never lands
+        // after forward bias.
+        for (backward, forward) in zip(&backward, &forward) {
+            assert!(after.is_char_boundary(*backward));
+            assert!(after.is_char_boundary(*forward));
+            assert!(backward <= forward);
+        }
     }
 }
