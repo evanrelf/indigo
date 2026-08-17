@@ -19,7 +19,7 @@ impl OpKind {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct Edits {
+pub struct Edit {
     op_kinds: Vec<OpKind>,
     op_lengths: Vec<u32>,
     op_texts: String,
@@ -28,7 +28,7 @@ pub struct Edits {
     length_after: usize,
 }
 
-impl Edits {
+impl Edit {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -104,13 +104,13 @@ impl Edits {
         );
 
         let mut a = OpCursor {
-            edits: self,
+            edit: self,
             op_index: 0,
             consumed: 0,
             text_index: 0,
         };
         let mut b = OpCursor {
-            edits: other,
+            edit: other,
             op_index: 0,
             consumed: 0,
             text_index: 0,
@@ -172,13 +172,13 @@ impl Edits {
         );
 
         let mut a = OpCursor {
-            edits: self,
+            edit: self,
             op_index: 0,
             consumed: 0,
             text_index: 0,
         };
         let mut b = OpCursor {
-            edits: onto,
+            edit: onto,
             op_index: 0,
             consumed: 0,
             text_index: 0,
@@ -354,7 +354,7 @@ impl Edits {
 }
 
 struct OpCursor<'a> {
-    edits: &'a Edits,
+    edit: &'a Edit,
     op_index: usize,
     consumed: usize,
     text_index: usize,
@@ -362,21 +362,21 @@ struct OpCursor<'a> {
 
 impl<'a> OpCursor<'a> {
     fn kind(&self) -> Option<OpKind> {
-        self.edits.op_kinds.get(self.op_index).copied()
+        self.edit.op_kinds.get(self.op_index).copied()
     }
 
     fn remaining(&self) -> usize {
-        to_usize(self.edits.op_lengths[self.op_index]) - self.consumed
+        to_usize(self.edit.op_lengths[self.op_index]) - self.consumed
     }
 
     fn text(&self, n: usize) -> &'a str {
         let start = self.text_index + self.consumed;
-        &self.edits.op_texts[start..start + n]
+        &self.edit.op_texts[start..start + n]
     }
 
     fn advance(&mut self, n: usize) {
         self.consumed += n;
-        if self.consumed == to_usize(self.edits.op_lengths[self.op_index]) {
+        if self.consumed == to_usize(self.edit.op_lengths[self.op_index]) {
             if self.kind() != Some(OpKind::Retain) {
                 self.text_index += self.consumed;
             }
@@ -418,27 +418,27 @@ mod tests {
     #[test]
     fn test() -> anyhow::Result<()> {
         let mut rope = Rope::from("Hello, world!");
-        let mut edits = Edits::new();
-        edits.retain(7);
-        edits.delete("world");
-        edits.insert("Evan");
-        edits.delete("!");
-        edits.insert("...");
-        edits.insert("?");
+        let mut edit = Edit::new();
+        edit.retain(7);
+        edit.delete("world");
+        edit.insert("Evan");
+        edit.delete("!");
+        edit.insert("...");
+        edit.insert("?");
 
-        edits.apply(&mut rope)?;
+        edit.apply(&mut rope)?;
         assert_eq!(rope, Rope::from("Hello, Evan...?"));
 
-        edits.invert().apply(&mut rope)?;
+        edit.invert().apply(&mut rope)?;
         assert_eq!(rope, Rope::from("Hello, world!"));
 
-        edits.apply(&mut rope)?;
-        edits.apply_inverse(&mut rope)?;
+        edit.apply(&mut rope)?;
+        edit.apply_inverse(&mut rope)?;
         assert_eq!(rope, Rope::from("Hello, world!"));
 
         let mut rope = Rope::from("Hello, world!");
-        edits.retain(1);
-        assert!(edits.apply(&mut rope).is_err());
+        edit.retain(1);
+        assert!(edit.apply(&mut rope).is_err());
 
         Ok(())
     }
@@ -447,13 +447,13 @@ mod tests {
     fn test_compose() -> anyhow::Result<()> {
         let rope = Rope::from("Hello, world!");
 
-        let mut a = Edits::new();
+        let mut a = Edit::new();
         a.retain(7);
         a.delete("world");
         a.insert("Evan");
         a.retain_rest(&rope)?;
 
-        let mut b = Edits::new();
+        let mut b = Edit::new();
         b.retain(7);
         b.insert("dear ");
         b.retain(4);
@@ -476,7 +476,7 @@ mod tests {
         assert_eq!(composed, rope);
 
         // An insert deleted by the next edit cancels out entirely.
-        let mut a = Edits::new();
+        let mut a = Edit::new();
         a.retain(5);
         a.insert("abc");
         a.retain_rest(&rope)?;
@@ -484,7 +484,7 @@ mod tests {
         let mut intermediate = rope.clone();
         a.apply(&mut intermediate)?;
 
-        let mut b = Edits::new();
+        let mut b = Edit::new();
         b.retain(6);
         b.delete("b");
         b.retain_rest(&intermediate)?;
@@ -501,33 +501,33 @@ mod tests {
     fn test_transform_byte_indexes() -> anyhow::Result<()> {
         let mut rope = Rope::from("Hello, world!");
 
-        let mut edits = Edits::new();
-        edits.delete("Hello, ");
-        edits.retain(5);
-        edits.insert("!!!");
-        edits.retain(1);
+        let mut edit = Edit::new();
+        edit.delete("Hello, ");
+        edit.retain(5);
+        edit.insert("!!!");
+        edit.retain(1);
 
-        edits.apply(&mut rope)?;
+        edit.apply(&mut rope)?;
         assert_eq!(rope, Rope::from("world!!!!"));
 
         // "H" and "," collapse to the deletion point; "r" follows the retained "world".
         let mut indexes = [0, 5, 9];
-        edits.transform_byte_indexes(&mut indexes, Bias::Forward);
+        edit.transform_byte_indexes(&mut indexes, Bias::Forward);
         assert_eq!(indexes, [0, 0, 2]);
 
         // An index at an insertion point stays before or moves after the inserted text,
         // depending on bias.
-        let mut edits = Edits::new();
-        edits.retain(5);
-        edits.insert("???");
-        edits.retain_rest(&rope)?;
+        let mut edit = Edit::new();
+        edit.retain(5);
+        edit.insert("???");
+        edit.retain_rest(&rope)?;
 
         let mut indexes = [5];
-        edits.transform_byte_indexes(&mut indexes, Bias::Backward);
+        edit.transform_byte_indexes(&mut indexes, Bias::Backward);
         assert_eq!(indexes, [5]);
 
         let mut indexes = [5];
-        edits.transform_byte_indexes(&mut indexes, Bias::Forward);
+        edit.transform_byte_indexes(&mut indexes, Bias::Forward);
         assert_eq!(indexes, [8]);
 
         Ok(())
@@ -538,12 +538,12 @@ mod tests {
         let rope = Rope::from("Hello, world!");
 
         // Concurrent inserts at the same position: bias decides whose text comes first.
-        let mut a = Edits::new();
+        let mut a = Edit::new();
         a.retain(7);
         a.insert("brave ");
         a.retain_rest(&rope)?;
 
-        let mut b = Edits::new();
+        let mut b = Edit::new();
         b.retain(7);
         b.insert("new ");
         b.retain_rest(&rope)?;
@@ -566,12 +566,12 @@ mod tests {
         assert_eq!(converged, backward);
 
         // Overlapping deletes don't delete twice.
-        let mut a = Edits::new();
+        let mut a = Edit::new();
         a.retain(7);
         a.delete("world");
         a.retain(1);
 
-        let mut b = Edits::new();
+        let mut b = Edit::new();
         b.retain(5);
         b.delete(", world");
         b.retain(1);
