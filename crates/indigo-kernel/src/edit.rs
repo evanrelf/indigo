@@ -1,23 +1,6 @@
 use ropey::Rope;
 use std::{cmp::min, iter::zip, ops::Range};
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum OpKind {
-    Retain,
-    Delete,
-    Insert,
-}
-
-impl OpKind {
-    fn invert(self) -> Self {
-        match self {
-            Self::Retain => Self::Retain,
-            Self::Delete => Self::Insert,
-            Self::Insert => Self::Delete,
-        }
-    }
-}
-
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Edit {
     op_kinds: Vec<OpKind>,
@@ -353,6 +336,29 @@ impl Edit {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum OpKind {
+    Retain,
+    Delete,
+    Insert,
+}
+
+impl OpKind {
+    fn invert(self) -> Self {
+        match self {
+            Self::Retain => Self::Retain,
+            Self::Delete => Self::Insert,
+            Self::Insert => Self::Delete,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub enum Bias {
+    Backward,
+    Forward,
+}
+
 struct OpCursor<'a> {
     edit: &'a Edit,
     op_index: usize,
@@ -384,12 +390,6 @@ impl<'a> OpCursor<'a> {
             self.consumed = 0;
         }
     }
-}
-
-#[derive(Clone, Copy)]
-pub enum Bias {
-    Backward,
-    Forward,
 }
 
 #[cfg(debug_assertions)]
