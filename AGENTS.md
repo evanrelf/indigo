@@ -13,6 +13,8 @@ CLI):
 - [indigo-cli](crates/indigo-cli/README.md): headless CLI, currently used for
   debugging. Read the readme for instructions on how to use it (it's basically
   an agent skill).
+- [indigo-kernel](crates/indigo-kernel/README.md): transactional substrate for
+  concurrent editing.
 
 And then there are supporting crates that are either currently unused,
 infrequently changed, or feature complete:
@@ -24,6 +26,11 @@ infrequently changed, or feature complete:
 - [indigo-wrap](crates/indigo-wrap/README.md): higher-kinded types, mutability
   generics, feature complete, powers `{Cursor,Range,Selection,Window}View` types
   found in the core.
+
+## Code style
+
+- The `indigo-kernel` crate uses GHC-style note comments. See its `edit` and
+  `grapheme` modules for examples.
 
 ## Checking your work
 
