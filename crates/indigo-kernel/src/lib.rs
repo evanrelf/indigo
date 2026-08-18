@@ -1,2 +1,2 @@
-pub mod edit2;
+pub mod edit;
 pub mod grapheme;
