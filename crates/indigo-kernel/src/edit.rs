@@ -18,6 +18,17 @@ impl Edit {
     }
 
     #[must_use]
+    fn with_capacity(op_count: usize, text_length: usize) -> Self {
+        Self {
+            op_kinds: Vec::with_capacity(op_count),
+            op_lengths: Vec::with_capacity(op_count),
+            op_texts: String::with_capacity(text_length),
+            length_before: 0,
+            length_after: 0,
+        }
+    }
+
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.op_kinds.is_empty()
     }
@@ -135,7 +146,10 @@ impl Edit {
             consumed: 0,
             text_index: 0,
         };
-        let mut edit = Self::new();
+        let mut edit = Self::with_capacity(
+            self.op_kinds.len() + other.op_kinds.len(),
+            self.op_texts.len() + other.op_texts.len(),
+        );
 
         loop {
             match (a.kind(), b.kind()) {
@@ -178,7 +192,7 @@ impl Edit {
     #[must_use]
     pub fn invert(&self) -> Self {
         // Note [Canonical form]
-        let mut edit = Self::new();
+        let mut edit = Self::with_capacity(self.op_kinds.len(), self.op_texts.len());
         let mut text_index = 0;
 
         for (kind, length) in zip(&self.op_kinds, &self.op_lengths) {
@@ -222,7 +236,10 @@ impl Edit {
             consumed: 0,
             text_index: 0,
         };
-        let mut edit = Self::new();
+        let mut edit = Self::with_capacity(
+            self.op_kinds.len() + onto.op_kinds.len(),
+            self.op_texts.len(),
+        );
 
         loop {
             match (a.kind(), b.kind()) {
