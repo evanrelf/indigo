@@ -134,18 +134,8 @@ impl Edit {
             other.length_before,
         );
 
-        let mut a = OpCursor {
-            edit: self,
-            op_index: 0,
-            consumed: 0,
-            text_index: 0,
-        };
-        let mut b = OpCursor {
-            edit: other,
-            op_index: 0,
-            consumed: 0,
-            text_index: 0,
-        };
+        let mut a = OpCursor::new(self);
+        let mut b = OpCursor::new(other);
         let mut edit = Self::with_capacity(
             self.op_kinds.len() + other.op_kinds.len(),
             self.op_texts.len() + other.op_texts.len(),
@@ -224,18 +214,8 @@ impl Edit {
             onto.length_before,
         );
 
-        let mut a = OpCursor {
-            edit: self,
-            op_index: 0,
-            consumed: 0,
-            text_index: 0,
-        };
-        let mut b = OpCursor {
-            edit: onto,
-            op_index: 0,
-            consumed: 0,
-            text_index: 0,
-        };
+        let mut a = OpCursor::new(self);
+        let mut b = OpCursor::new(onto);
         let mut edit = Self::with_capacity(
             self.op_kinds.len() + onto.op_kinds.len(),
             self.op_texts.len(),
@@ -500,6 +480,15 @@ struct OpCursor<'a> {
 }
 
 impl<'a> OpCursor<'a> {
+    fn new(edit: &'a Edit) -> Self {
+        Self {
+            edit,
+            op_index: 0,
+            consumed: 0,
+            text_index: 0,
+        }
+    }
+
     fn kind(&self) -> Option<OpKind> {
         self.edit.op_kinds.get(self.op_index).copied()
     }
