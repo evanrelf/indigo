@@ -5,7 +5,8 @@ use std::{cmp::min, iter::zip, ops::Range};
 pub struct Edit {
     op_kinds: Vec<OpKind>,
     op_lengths: Vec<u32>,
-    op_texts: String,
+    delete_texts: String,
+    insert_texts: String,
 
     length_before: usize,
     length_after: usize,
@@ -18,11 +19,16 @@ impl Edit {
     }
 
     #[must_use]
-    fn with_capacity(op_count: usize, text_length: usize) -> Self {
+    fn with_capacity(
+        op_count: usize,
+        delete_text_length: usize,
+        insert_text_length: usize,
+    ) -> Self {
         Self {
             op_kinds: Vec::with_capacity(op_count),
             op_lengths: Vec::with_capacity(op_count),
-            op_texts: String::with_capacity(text_length),
+            delete_texts: String::with_capacity(delete_text_length),
+            insert_texts: String::with_capacity(insert_text_length),
             length_before: 0,
             length_after: 0,
         }
@@ -71,6 +77,7 @@ impl Edit {
         }
 
         self.length_before += byte_length;
+        self.delete_texts.push_str(text);
 
         // Note [Canonical form]
         let last = self.op_kinds.last().copied();
@@ -80,28 +87,20 @@ impl Edit {
             (_, Some(OpKind::Delete)) => {
                 let last = self.op_lengths.last_mut().unwrap();
                 *last = to_u32(to_usize(*last) + byte_length);
-                self.op_texts.push_str(text);
             }
             (Some(OpKind::Delete), Some(OpKind::Insert)) => {
-                let insert_length = to_usize(*self.op_lengths.last().unwrap());
                 let delete_index = self.op_lengths.len() - 2;
                 self.op_lengths[delete_index] =
                     to_u32(to_usize(self.op_lengths[delete_index]) + byte_length);
-                self.op_texts
-                    .insert_str(self.op_texts.len() - insert_length, text);
             }
             (_, Some(OpKind::Insert)) => {
-                let insert_length = to_usize(*self.op_lengths.last().unwrap());
                 let insert_index = self.op_kinds.len() - 1;
                 self.op_kinds.insert(insert_index, OpKind::Delete);
                 self.op_lengths.insert(insert_index, to_u32(byte_length));
-                self.op_texts
-                    .insert_str(self.op_texts.len() - insert_length, text);
             }
             (_, Some(OpKind::Retain) | None) => {
                 self.op_kinds.push(OpKind::Delete);
                 self.op_lengths.push(to_u32(byte_length));
-                self.op_texts.push_str(text);
             }
         }
     }
@@ -123,7 +122,7 @@ impl Edit {
             self.op_lengths.push(to_u32(byte_length));
         }
 
-        self.op_texts.push_str(text);
+        self.insert_texts.push_str(text);
     }
 
     pub fn compose(&self, other: &Self) -> anyhow::Result<Self> {
@@ -138,7 +137,8 @@ impl Edit {
         let mut b = OpCursor::new(other);
         let mut edit = Self::with_capacity(
             self.op_kinds.len() + other.op_kinds.len(),
-            self.op_texts.len() + other.op_texts.len(),
+            self.delete_texts.len() + other.delete_texts.len(),
+            self.insert_texts.len() + other.insert_texts.len(),
         );
 
         loop {
@@ -182,20 +182,29 @@ impl Edit {
     #[must_use]
     pub fn invert(&self) -> Self {
         // Note [Canonical form]
-        let mut edit = Self::with_capacity(self.op_kinds.len(), self.op_texts.len());
-        let mut text_index = 0;
+        let mut edit = Self::with_capacity(
+            self.op_kinds.len(),
+            self.insert_texts.len(),
+            self.delete_texts.len(),
+        );
+        let mut delete_texts_index = 0;
+        let mut insert_texts_index = 0;
 
         for (kind, length) in zip(&self.op_kinds, &self.op_lengths) {
             let length = to_usize(*length);
             match kind {
                 OpKind::Retain => edit.retain(length),
                 OpKind::Delete => {
-                    edit.insert(&self.op_texts[text_index..text_index + length]);
-                    text_index += length;
+                    edit.insert(
+                        &self.delete_texts[delete_texts_index..delete_texts_index + length],
+                    );
+                    delete_texts_index += length;
                 }
                 OpKind::Insert => {
-                    edit.delete(&self.op_texts[text_index..text_index + length]);
-                    text_index += length;
+                    edit.delete(
+                        &self.insert_texts[insert_texts_index..insert_texts_index + length],
+                    );
+                    insert_texts_index += length;
                 }
             }
         }
@@ -218,7 +227,8 @@ impl Edit {
         let mut b = OpCursor::new(onto);
         let mut edit = Self::with_capacity(
             self.op_kinds.len() + onto.op_kinds.len(),
-            self.op_texts.len(),
+            self.delete_texts.len(),
+            self.insert_texts.len(),
         );
 
         loop {
@@ -355,10 +365,16 @@ impl Edit {
         #[cfg(debug_assertions)]
         self.assert_is_canonical();
 
-        let (length_before, length_after) = if invert {
-            (self.length_after, self.length_before)
+        let (length_before, length_after, insert_texts) = if invert {
+            (self.length_after, self.length_before, &self.delete_texts)
         } else {
-            (self.length_before, self.length_after)
+            (self.length_before, self.length_after, &self.insert_texts)
+        };
+        #[cfg(debug_assertions)]
+        let delete_texts = if invert {
+            &self.insert_texts
+        } else {
+            &self.delete_texts
         };
 
         anyhow::ensure!(
@@ -369,7 +385,9 @@ impl Edit {
         );
 
         let mut rope_index = 0;
-        let mut op_texts_index = 0;
+        let mut insert_texts_index = 0;
+        #[cfg(debug_assertions)]
+        let mut delete_texts_index = 0;
 
         for (kind, length) in zip(&self.op_kinds, &self.op_lengths) {
             let kind = if invert { kind.invert() } else { *kind };
@@ -381,17 +399,19 @@ impl Edit {
                 OpKind::Delete => {
                     let range = rope_index..rope_index + length;
                     #[cfg(debug_assertions)]
-                    verify_deleted_text(
-                        rope,
-                        range.clone(),
-                        &self.op_texts[op_texts_index..op_texts_index + length],
-                    )?;
-                    op_texts_index += length;
+                    {
+                        verify_deleted_text(
+                            rope,
+                            range.clone(),
+                            &delete_texts[delete_texts_index..delete_texts_index + length],
+                        )?;
+                        delete_texts_index += length;
+                    }
                     rope.try_remove(range)?;
                 }
                 OpKind::Insert => {
-                    let text = &self.op_texts[op_texts_index..op_texts_index + length];
-                    op_texts_index += length;
+                    let text = &insert_texts[insert_texts_index..insert_texts_index + length];
+                    insert_texts_index += length;
                     rope.try_insert(rope_index, text)?;
                     rope_index += length;
                 }
@@ -415,7 +435,8 @@ impl Edit {
 
         let mut length_before = 0;
         let mut length_after = 0;
-        let mut text_length = 0;
+        let mut delete_text_length = 0;
+        let mut insert_text_length = 0;
 
         for (i, (kind, length)) in zip(&self.op_kinds, &self.op_lengths).enumerate() {
             let length = to_usize(*length);
@@ -434,18 +455,19 @@ impl Edit {
                 }
                 OpKind::Delete => {
                     length_before += length;
-                    text_length += length;
+                    delete_text_length += length;
                 }
                 OpKind::Insert => {
                     length_after += length;
-                    text_length += length;
+                    insert_text_length += length;
                 }
             }
         }
 
         assert_eq!(length_before, self.length_before);
         assert_eq!(length_after, self.length_after);
-        assert_eq!(text_length, self.op_texts.len());
+        assert_eq!(delete_text_length, self.delete_texts.len());
+        assert_eq!(insert_text_length, self.insert_texts.len());
     }
 }
 
@@ -476,7 +498,8 @@ struct OpCursor<'a> {
     edit: &'a Edit,
     op_index: usize,
     consumed: usize,
-    text_index: usize,
+    delete_text_index: usize,
+    insert_text_index: usize,
 }
 
 impl<'a> OpCursor<'a> {
@@ -485,7 +508,8 @@ impl<'a> OpCursor<'a> {
             edit,
             op_index: 0,
             consumed: 0,
-            text_index: 0,
+            delete_text_index: 0,
+            insert_text_index: 0,
         }
     }
 
@@ -498,15 +522,22 @@ impl<'a> OpCursor<'a> {
     }
 
     fn text(&self, n: usize) -> &'a str {
-        let start = self.text_index + self.consumed;
-        &self.edit.op_texts[start..start + n]
+        let (texts, text_index) = match self.kind() {
+            Some(OpKind::Delete) => (&self.edit.delete_texts, self.delete_text_index),
+            Some(OpKind::Insert) => (&self.edit.insert_texts, self.insert_text_index),
+            Some(OpKind::Retain) | None => unreachable!("text of non-text op"),
+        };
+        let start = text_index + self.consumed;
+        &texts[start..start + n]
     }
 
     fn advance(&mut self, n: usize) {
         self.consumed += n;
         if self.consumed == to_usize(self.edit.op_lengths[self.op_index]) {
-            if self.kind() != Some(OpKind::Retain) {
-                self.text_index += self.consumed;
+            match self.kind() {
+                Some(OpKind::Delete) => self.delete_text_index += self.consumed,
+                Some(OpKind::Insert) => self.insert_text_index += self.consumed,
+                Some(OpKind::Retain) | None => {}
             }
             self.op_index += 1;
             self.consumed = 0;
