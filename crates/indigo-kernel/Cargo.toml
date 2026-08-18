@@ -8,12 +8,7 @@ ropey = { workspace = true }
 unicode-segmentation = { workspace = true }
 
 [dev-dependencies]
-divan = { workspace = true }
 hegeltest = { workspace = true }
 
 [lints]
 workspace = true
-
-[[bench]]
-name = "edit"
-harness = false
