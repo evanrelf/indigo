@@ -72,7 +72,6 @@ impl OperationSeq {
     }
 
     pub fn transform_byte_offsets_sorted(&self, byte_offsets: &mut [usize]) {
-        self.edit
-            .transform_byte_indexes(byte_offsets, Bias::Forward);
+        self.edit.map_positions(byte_offsets, Bias::Forward);
     }
 }

@@ -8,28 +8,6 @@ pub struct Edit {
     length_after: usize,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-enum Op {
-    Retain(usize),
-    Delete(String),
-    Insert(String),
-}
-
-impl Op {
-    fn len(&self) -> usize {
-        match self {
-            Self::Retain(length) => *length,
-            Self::Delete(text) | Self::Insert(text) => text.len(),
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
-pub enum Bias {
-    Backward,
-    Forward,
-}
-
 impl Edit {
     #[must_use]
     pub fn new() -> Self {
@@ -76,8 +54,7 @@ impl Edit {
 
         self.length_before += text.len();
 
-        // See Note [Canonical form] in `edit.rs`: a delete belongs before any insert at the same
-        // position, so set aside a trailing insert while the delete is added.
+        // Note [Canonical form]
         let insert = match self.ops.pop() {
             Some(Op::Insert(insert)) => Some(insert),
             Some(op) => {
@@ -233,9 +210,8 @@ impl Edit {
         Ok(edit)
     }
 
-    /// Maps byte indexes into the document before the edit to byte indexes into the document
-    /// after the edit. Input must be sorted and within the edit's input length.
-    pub fn transform_byte_indexes(&self, byte_indexes: &mut [usize], bias: Bias) {
+    /// Input must be sorted and within the edit's input length.
+    pub fn map_positions(&self, byte_indexes: &mut [usize], bias: Bias) {
         let mut position: usize = 0;
         let mut delta: isize = 0;
         let mut i = 0;
@@ -312,6 +288,28 @@ impl Edit {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum Op {
+    Retain(usize),
+    Delete(String),
+    Insert(String),
+}
+
+impl Op {
+    fn len(&self) -> usize {
+        match self {
+            Self::Retain(length) => *length,
+            Self::Delete(text) | Self::Insert(text) => text.len(),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub enum Bias {
+    Backward,
+    Forward,
+}
+
 struct Cursor<'a> {
     ops: &'a [Op],
     op_index: usize,
@@ -386,7 +384,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transform_byte_indexes() -> anyhow::Result<()> {
+    fn test_map_positions() -> anyhow::Result<()> {
         let mut rope = Rope::from("Hello, world!");
 
         let mut edit = Edit::new();
@@ -400,7 +398,7 @@ mod tests {
 
         // "H" and "," collapse to the deletion point; "r" follows the retained "world".
         let mut indexes = [0, 5, 9];
-        edit.transform_byte_indexes(&mut indexes, Bias::Forward);
+        edit.map_positions(&mut indexes, Bias::Forward);
         assert_eq!(indexes, [0, 0, 2]);
 
         // An index at an insertion point stays before or moves after the inserted text,
@@ -411,11 +409,11 @@ mod tests {
         edit.retain_rest(&rope)?;
 
         let mut indexes = [5];
-        edit.transform_byte_indexes(&mut indexes, Bias::Backward);
+        edit.map_positions(&mut indexes, Bias::Backward);
         assert_eq!(indexes, [5]);
 
         let mut indexes = [5];
-        edit.transform_byte_indexes(&mut indexes, Bias::Forward);
+        edit.map_positions(&mut indexes, Bias::Forward);
         assert_eq!(indexes, [8]);
 
         Ok(())
@@ -425,7 +423,6 @@ mod tests {
     fn test_rebase() -> anyhow::Result<()> {
         let rope = Rope::from("Hello, world!");
 
-        // Concurrent inserts at the same position: bias decides whose text comes first.
         let mut a = Edit::new();
         a.retain(7);
         a.insert("brave ");
@@ -461,9 +458,6 @@ mod tests {
         end
     }
 
-    /// A random canonical edit whose input document is exactly `doc`, paired with the document
-    /// applying it should produce. The expected document is built from the generation choices
-    /// directly, so it's an oracle independent of the `Edit` representation.
     #[hegel::composite]
     fn gen_edit_and_text(tc: hegel::TestCase, doc: String) -> (Edit, String) {
         let mut edit = Edit::new();
@@ -497,7 +491,6 @@ mod tests {
         (edit, expected)
     }
 
-    /// The edit from `gen_edit_and_text`, for tests that don't need the expected document.
     #[hegel::composite]
     fn gen_edit(tc: hegel::TestCase, doc: String) -> Edit {
         tc.draw(gen_edit_and_text(doc.clone())).0
@@ -667,9 +660,9 @@ mod tests {
         let after = rope.to_string();
 
         let mut backward = indexes.clone();
-        edit.transform_byte_indexes(&mut backward, Bias::Backward);
+        edit.map_positions(&mut backward, Bias::Backward);
         let mut forward = indexes;
-        edit.transform_byte_indexes(&mut forward, Bias::Forward);
+        edit.map_positions(&mut forward, Bias::Forward);
 
         // Transformed indexes are valid, ordered positions in the new document, and backward bias
         // never lands after forward bias.
