@@ -1,4 +1,4 @@
-use indigo_kernel::edit::{Bias, Edit};
+use indigo_kernel::edit2::{Bias, Edit};
 use ropey::Rope;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
