@@ -1,5 +1,7 @@
 use ropey::Rope;
-use std::{cmp::min, iter::zip, ops::Range};
+use std::{cmp::min, iter::zip};
+#[cfg(debug_assertions)]
+use std::ops::Range;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Edit {
@@ -807,6 +809,8 @@ mod tests {
         }
 
         assert_eq!(one, two);
+
+        #[cfg(debug_assertions)]
         one.assert_is_canonical();
     }
 
