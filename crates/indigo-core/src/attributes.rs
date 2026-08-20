@@ -1,4 +1,4 @@
-use crate::edit::OperationSeq;
+use indigo_kernel::edit::{self, Edit};
 use roaring::RoaringBitmap;
 use std::{
     borrow::Borrow,
@@ -72,7 +72,7 @@ impl<A> Attributes<A> {
             .filter_map(|((attr, ranges), range)| ranges.contains_range(range).then_some(attr))
     }
 
-    pub fn transform(&mut self, ops: &OperationSeq) {
+    pub fn transform(&mut self, ops: &Edit) {
         for old_ranges in self.inner.values_mut() {
             let mut iter = old_ranges.iter();
             let mut offsets: Vec<usize> = iter::from_fn(|| iter.next_range())
@@ -83,7 +83,7 @@ impl<A> Attributes<A> {
                     [start, end]
                 })
                 .collect();
-            ops.transform_byte_offsets_sorted(&mut offsets);
+            ops.map_positions_sorted(&mut offsets, edit::Bias::Forward);
             let mut new_ranges = RoaringBitmap::new();
             let (chunks, remainder) = offsets.as_chunks::<2>();
             for pair in chunks {

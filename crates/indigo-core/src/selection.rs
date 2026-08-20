@@ -1,10 +1,10 @@
 use crate::{
     cursor::CursorState,
-    edit::OperationSeq,
     range::{Range, RangeMut, RangeSnapshot, RangeState},
     rope::{LINE_TYPE, RegexCursorInput, RopeExt as _},
     text::Text,
 };
+use indigo_kernel::edit::{self, Edit};
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use regex_cursor::engines::meta::Regex;
 use ropey::Rope;
@@ -24,14 +24,14 @@ pub struct SelectionState {
 }
 
 impl SelectionState {
-    pub fn transform(&mut self, ops: &OperationSeq, text: &Rope) {
+    pub fn transform(&mut self, ops: &Edit, text: &Rope) {
         let mut offsets: Vec<usize> = self
             .ranges
             .iter()
             .flat_map(|range| [range.tail.byte_index, range.head.byte_index])
             .collect();
 
-        ops.transform_byte_offsets_unsorted(&mut offsets);
+        ops.map_positions(&mut offsets, edit::Bias::Forward);
 
         for (i, range) in self.ranges.iter_mut().enumerate() {
             range.tail.byte_index = text
@@ -325,11 +325,11 @@ impl<W: WrapMut> SelectionView<'_, W> {
         self.state.primary_range = primary_range;
     }
 
-    pub fn insert_char(&mut self, char: char) -> OperationSeq {
+    pub fn insert_char(&mut self, char: char) -> Edit {
         self.insert(&char.to_string())
     }
 
-    pub fn insert(&mut self, text: &str) -> OperationSeq {
+    pub fn insert(&mut self, text: &str) -> Edit {
         debug_assert!(
             self.state
                 .ranges
@@ -337,7 +337,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
             "this function relies on selection ranges' starts being sorted",
             // ...prior to it becoming a type-level invariant
         );
-        let mut ops = OperationSeq::new();
+        let mut ops = Edit::new();
         let mut previous = 0;
         for range in &self.state.ranges {
             // TODO: Assert grapheme length is 1 (i.e. reduced)
@@ -355,7 +355,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
 
     /// Replace each selected grapheme with the given character. Newlines are replaced too, as in
     /// Kakoune's `r`; replacing the text's final newline re-inserts one after it.
-    pub fn replace_each(&mut self, byte: u8) -> OperationSeq {
+    pub fn replace_each(&mut self, byte: u8) -> Edit {
         debug_assert!(
             self.state
                 .ranges
@@ -364,7 +364,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
             // ...prior to it becoming a type-level invariant
         );
         let replacement = char::from(byte).to_string();
-        let mut ops = OperationSeq::new();
+        let mut ops = Edit::new();
         let mut previous = 0;
         for range in &self.state.ranges {
             let start = range.start().byte_index;
@@ -392,7 +392,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
     }
 
     /// Delete the grapheme before each range's start.
-    pub fn delete_before(&mut self) -> OperationSeq {
+    pub fn delete_before(&mut self) -> Edit {
         debug_assert!(
             self.state
                 .ranges
@@ -400,7 +400,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
             "this function relies on selection ranges' starts being sorted",
             // ...prior to it becoming a type-level invariant
         );
-        let mut ops = OperationSeq::new();
+        let mut ops = Edit::new();
         let mut previous = 0;
         for range in &self.state.ranges {
             let start = range.start().byte_index;
@@ -422,7 +422,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
 
     /// Delete each range's graphemes. Deleting through the end of the text re-inserts the
     /// invariant trailing newline.
-    pub fn delete(&mut self) -> OperationSeq {
+    pub fn delete(&mut self) -> Edit {
         debug_assert!(
             self.state
                 .ranges
@@ -436,7 +436,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
             .iter()
             .map(|range| (range.start().byte_index, self.end_exclusive(range)))
             .collect();
-        let mut ops = OperationSeq::new();
+        let mut ops = Edit::new();
         let mut previous = 0;
         for &(start, end_exclusive) in &spans {
             ops.retain(start - previous);
@@ -470,7 +470,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
     }
 
     /// Delete the grapheme under each range's end cursor, unless it is the text's final newline.
-    pub fn delete_after(&mut self) -> OperationSeq {
+    pub fn delete_after(&mut self) -> Edit {
         debug_assert!(
             self.state
                 .ranges
@@ -478,7 +478,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
             "this function relies on selection ranges' starts being sorted",
             // ...prior to it becoming a type-level invariant
         );
-        let mut ops = OperationSeq::new();
+        let mut ops = Edit::new();
         let mut previous = 0;
         for range in &self.state.ranges {
             let end = range.end().byte_index;

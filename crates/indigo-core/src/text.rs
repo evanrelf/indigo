@@ -1,16 +1,17 @@
-use crate::{edit::OperationSeq, history::History};
+use crate::history::History;
+use indigo_kernel::edit::{self, Edit};
 use ropey::Rope;
 use std::ops::{Deref, Range};
 
 #[derive(Clone, Debug)]
-struct BidiOperationSeq {
+struct BidiEdit {
     /// Inverted operations. Apply to undo the edit.
-    undo: OperationSeq,
+    undo: Edit,
     /// Original operations. Apply to perform the edit.
-    redo: OperationSeq,
+    redo: Edit,
 }
 
-impl Extend<Self> for BidiOperationSeq {
+impl Extend<Self> for BidiEdit {
     fn extend<T>(&mut self, opss: T)
     where
         T: IntoIterator<Item = Self>,
@@ -29,8 +30,8 @@ impl Extend<Self> for BidiOperationSeq {
 #[derive(Clone, Debug)]
 pub struct Text {
     rope: Rope,
-    history: History<BidiOperationSeq, BidiOperationSeq>,
-    log: Vec<OperationSeq>,
+    history: History<BidiEdit, BidiEdit>,
+    log: Vec<Edit>,
     pub readonly: bool,
 }
 
@@ -57,7 +58,7 @@ impl Text {
     }
 
     pub fn insert(&mut self, byte_offset: usize, text: &str) -> anyhow::Result<()> {
-        let mut ops = OperationSeq::new();
+        let mut ops = Edit::new();
         ops.retain(byte_offset);
         ops.insert(text);
         ops.retain_rest(&self.rope)?;
@@ -66,7 +67,7 @@ impl Text {
     }
 
     pub fn delete(&mut self, range: Range<usize>) -> anyhow::Result<()> {
-        let mut ops = OperationSeq::new();
+        let mut ops = Edit::new();
         ops.retain(range.start);
         ops.delete(&self.rope.slice(range.start..range.end).to_string());
         if range.end == self.rope.len()
@@ -79,11 +80,11 @@ impl Text {
         Ok(())
     }
 
-    pub fn apply(&mut self, ops: &OperationSeq) -> anyhow::Result<()> {
+    pub fn apply(&mut self, ops: &Edit) -> anyhow::Result<()> {
         anyhow::ensure!(!self.readonly, "Cannot modify readonly text");
         let undo = ops.invert();
         ops.apply(&mut self.rope)?;
-        self.history.push(BidiOperationSeq {
+        self.history.push(BidiEdit {
             redo: ops.clone(),
             undo,
         });
@@ -133,7 +134,7 @@ impl Text {
     }
 
     #[must_use]
-    pub fn ops_since(&self, version: usize) -> Option<&[OperationSeq]> {
+    pub fn ops_since(&self, version: usize) -> Option<&[Edit]> {
         self.log.get(version..)
     }
 }
@@ -182,7 +183,7 @@ impl Anchor {
     pub fn resolve(&self, text: &Text) -> Option<usize> {
         let mut byte_offset = self.byte_offset;
         for ops in text.ops_since(self.version)? {
-            byte_offset = ops.transform_byte_offset(byte_offset);
+            byte_offset = ops.map_position(byte_offset, edit::Bias::Forward);
         }
         Some(byte_offset)
     }

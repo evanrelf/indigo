@@ -1,9 +1,9 @@
 use crate::{
     cursor::{Cursor, CursorMut, CursorSnapshot, CursorState},
-    edit::OperationSeq,
     rope::RopeExt as _,
     text::Text,
 };
+use indigo_kernel::edit::Edit;
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
 use std::{mem, thread};
@@ -77,7 +77,7 @@ pub struct RangeState {
 }
 
 impl RangeState {
-    pub fn transform(&mut self, ops: &OperationSeq, text: &Rope) {
+    pub fn transform(&mut self, ops: &Edit, text: &Rope) {
         self.tail.transform(ops, text);
         self.head.transform(ops, text);
     }
@@ -524,10 +524,10 @@ impl<W: WrapMut> RangeView<'_, W> {
     /// grapheme so insertion lands after the original head. On the text's last grapheme there is
     /// no following grapheme, so a newline is appended first (as Kakoune does) and the cursor
     /// lands on it.
-    pub fn prepare_append(&mut self) -> Option<OperationSeq> {
+    pub fn prepare_append(&mut self) -> Option<Edit> {
         self.reduce();
         if self.head().is_at_end() {
-            let mut ops = OperationSeq::new();
+            let mut ops = Edit::new();
             ops.retain(self.text.len());
             ops.insert("\n");
             self.text.apply(&ops).expect("Operations are well formed");
@@ -548,19 +548,19 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
-    pub fn insert_char(&mut self, char: char) -> OperationSeq {
+    pub fn insert_char(&mut self, char: char) -> Edit {
         self.insert(&char.to_string())
     }
 
     /// Insert before the range's first grapheme. Both endpoints stay on their graphemes (i.e.
     /// end up after the inserted text).
     #[tracing::instrument(skip_all)]
-    pub fn insert(&mut self, text: &str) -> OperationSeq {
+    pub fn insert(&mut self, text: &str) -> Edit {
         debug_assert!(
             self.grapheme_length() <= 1,
             "Range reduced before entering insert mode"
         );
-        let mut ops = OperationSeq::new();
+        let mut ops = Edit::new();
         ops.retain(self.state.start().byte_index);
         ops.insert(text);
         ops.retain_rest(&self.text)
@@ -573,14 +573,14 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     /// Delete the grapheme before the range's start.
     #[tracing::instrument(skip_all)]
-    pub fn delete_before(&mut self) -> Option<OperationSeq> {
+    pub fn delete_before(&mut self) -> Option<Edit> {
         debug_assert!(
             self.grapheme_length() <= 1,
             "Range reduced before entering insert mode"
         );
         let start = self.state.start().byte_index;
         let delete_start = self.text.prev_grapheme_boundary(start)?;
-        let mut ops = OperationSeq::new();
+        let mut ops = Edit::new();
         ops.retain(delete_start);
         ops.delete(&self.text.slice(delete_start..start).to_string());
         ops.retain_rest(&self.text)
@@ -594,9 +594,9 @@ impl<W: WrapMut> RangeView<'_, W> {
     /// Delete the selected graphemes. Deleting through the end of the text re-inserts the
     /// invariant trailing newline.
     #[tracing::instrument(skip_all)]
-    pub fn delete(&mut self) -> OperationSeq {
+    pub fn delete(&mut self) -> Edit {
         let (start, end) = self.byte_offsets();
-        let mut ops = OperationSeq::new();
+        let mut ops = Edit::new();
         ops.retain(start);
         ops.delete(&self.text.slice(start..end).to_string());
         if end == self.text.len() && (start == 0 || self.text.byte(start - 1) != b'\n') {
@@ -612,7 +612,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     /// Delete the grapheme under the range's end cursor, unless it is the text's final newline.
     #[tracing::instrument(skip_all)]
-    pub fn delete_after(&mut self) -> Option<OperationSeq> {
+    pub fn delete_after(&mut self) -> Option<Edit> {
         debug_assert!(
             self.grapheme_length() <= 1,
             "Range reduced before entering insert mode"
@@ -626,7 +626,7 @@ impl<W: WrapMut> RangeView<'_, W> {
             // Deleting the final newline would break the `Text` invariant.
             return None;
         }
-        let mut ops = OperationSeq::new();
+        let mut ops = Edit::new();
         ops.retain(end);
         ops.delete(&self.text.slice(end..delete_end).to_string());
         ops.retain_rest(&self.text)

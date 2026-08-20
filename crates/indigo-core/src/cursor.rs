@@ -1,8 +1,8 @@
 use crate::{
-    edit::OperationSeq,
     rope::{DisplayWidth as _, LINE_TYPE, RopeExt as _},
     text::{Anchor, Text},
 };
+use indigo_kernel::edit::{self, Edit};
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
 use std::thread;
@@ -57,8 +57,8 @@ pub struct CursorState {
 }
 
 impl CursorState {
-    pub fn transform(&mut self, ops: &OperationSeq, text: &Rope) {
-        let byte_index = ops.transform_byte_offset(self.byte_index);
+    pub fn transform(&mut self, ops: &Edit, text: &Rope) {
+        let byte_index = ops.map_position(self.byte_index, edit::Bias::Forward);
         self.byte_index = text
             .snap_to_grapheme_start(byte_index)
             .expect("Text is never empty");
@@ -415,16 +415,16 @@ impl<W: WrapMut> CursorView<'_, W> {
         }
     }
 
-    pub fn insert_char(&mut self, char: char) -> OperationSeq {
+    pub fn insert_char(&mut self, char: char) -> Edit {
         self.insert(&char.to_string())
     }
 
     /// Insert before the grapheme the cursor occupies. The cursor stays on its grapheme (i.e.
     /// ends up after the inserted text).
     #[tracing::instrument(skip_all)]
-    pub fn insert(&mut self, text: &str) -> OperationSeq {
+    pub fn insert(&mut self, text: &str) -> Edit {
         let pre_text_len = self.text.len();
-        let mut ops = OperationSeq::new();
+        let mut ops = Edit::new();
         ops.retain(self.state.byte_index);
         ops.insert(text);
         ops.retain_rest(&self.text)
@@ -438,9 +438,9 @@ impl<W: WrapMut> CursorView<'_, W> {
     /// Delete the grapheme before the cursor. Behavior traditionally associated with the
     /// Backspace key.
     #[tracing::instrument(skip_all)]
-    pub fn delete_before(&mut self) -> Option<OperationSeq> {
+    pub fn delete_before(&mut self) -> Option<Edit> {
         let start = self.text.prev_grapheme_boundary(self.state.byte_index)?;
-        let mut ops = OperationSeq::new();
+        let mut ops = Edit::new();
         ops.retain(start);
         ops.delete(&self.text.slice(start..self.state.byte_index).to_string());
         ops.retain_rest(&self.text)
@@ -453,7 +453,7 @@ impl<W: WrapMut> CursorView<'_, W> {
     /// Delete the grapheme the cursor occupies, unless it is the text's final newline. Behavior
     /// traditionally associated with the Delete key.
     #[tracing::instrument(skip_all)]
-    pub fn delete_after(&mut self) -> Option<OperationSeq> {
+    pub fn delete_after(&mut self) -> Option<Edit> {
         let end = self
             .text
             .next_grapheme_boundary(self.state.byte_index)
@@ -462,7 +462,7 @@ impl<W: WrapMut> CursorView<'_, W> {
             // Deleting the final newline would break the `Text` invariant.
             return None;
         }
-        let mut ops = OperationSeq::new();
+        let mut ops = Edit::new();
         ops.retain(self.state.byte_index);
         ops.delete(&self.text.slice(self.state.byte_index..end).to_string());
         ops.retain_rest(&self.text)

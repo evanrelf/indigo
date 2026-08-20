@@ -1,8 +1,10 @@
 #[doc(inline)]
+pub use indigo_kernel::edit::Edit;
+
+#[doc(inline)]
 pub use crate::{
     buffer::{Buffer, BufferKind},
     cursor::{Cursor, CursorMut},
-    edit::OperationSeq,
     editor::{Action, Editor, Event, KeyEvent, KeyEventKind},
     key::{Key, KeyCode, KeyModifiers, Keys},
     mode::Mode,
