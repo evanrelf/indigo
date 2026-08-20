@@ -15,6 +15,13 @@ impl Edit {
     }
 
     #[must_use]
+    pub fn identity(rope: &Rope) -> Self {
+        let mut edit = Self::new();
+        edit.retain_rest(rope).unwrap();
+        edit
+    }
+
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.ops.is_empty()
     }
