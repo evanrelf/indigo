@@ -52,26 +52,14 @@ impl OperationSeq {
 
     #[must_use]
     pub fn transform_byte_offset(&self, byte_offset: usize) -> usize {
-        let mut offsets = [byte_offset];
-        self.transform_byte_offsets_sorted(&mut offsets);
-        offsets[0]
+        self.edit.map_position(byte_offset, Bias::Forward)
     }
 
     pub fn transform_byte_offsets_unsorted(&self, byte_offsets: &mut [usize]) {
-        // Pair each offset with its original index so we can scatter results back
-        // after transforming in sorted order.
-        let mut indexed: Vec<(usize, usize)> = byte_offsets.iter().copied().enumerate().collect();
-        indexed.sort_by_key(|&(_, offset)| offset);
-
-        let mut sorted_offsets: Vec<usize> = indexed.iter().map(|&(_, offset)| offset).collect();
-        self.transform_byte_offsets_sorted(&mut sorted_offsets);
-
-        for (sorted_idx, &(orig_idx, _)) in indexed.iter().enumerate() {
-            byte_offsets[orig_idx] = sorted_offsets[sorted_idx];
-        }
+        self.edit.map_positions(byte_offsets, Bias::Forward);
     }
 
     pub fn transform_byte_offsets_sorted(&self, byte_offsets: &mut [usize]) {
-        self.edit.map_positions(byte_offsets, Bias::Forward);
+        self.edit.map_positions_sorted(byte_offsets, Bias::Forward);
     }
 }

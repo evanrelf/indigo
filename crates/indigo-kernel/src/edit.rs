@@ -210,8 +210,30 @@ impl Edit {
         Ok(edit)
     }
 
-    /// Input must be sorted and within the edit's input length.
+    #[must_use]
+    pub fn map_position(&self, byte_index: usize, bias: Bias) -> usize {
+        let mut byte_indexes = [byte_index];
+        self.map_positions(&mut byte_indexes, bias);
+        byte_indexes[0]
+    }
+
+    /// Input must be within the edit's input length.
     pub fn map_positions(&self, byte_indexes: &mut [usize], bias: Bias) {
+        let mut indexed: Vec<(usize, usize)> = byte_indexes.iter().copied().enumerate().collect();
+        indexed.sort_by_key(|&(_, index)| index);
+
+        let mut sorted: Vec<usize> = indexed.iter().map(|&(_, index)| index).collect();
+        self.map_positions_sorted(&mut sorted, bias);
+
+        for (sorted_index, &(original_index, _)) in indexed.iter().enumerate() {
+            byte_indexes[original_index] = sorted[sorted_index];
+        }
+    }
+
+    /// Input must be sorted and within the edit's input length.
+    pub fn map_positions_sorted(&self, byte_indexes: &mut [usize], bias: Bias) {
+        debug_assert!(byte_indexes.is_sorted(), "input is not sorted");
+
         let mut position: usize = 0;
         let mut delta: isize = 0;
         let mut i = 0;
