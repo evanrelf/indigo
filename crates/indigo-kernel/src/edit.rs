@@ -300,6 +300,7 @@ impl Edit {
             match op {
                 Op::Retain(length) => index += length,
                 Op::Delete(text) => {
+                    debug_assert_eq!(rope.slice(index..index + text.len()), *text);
                     rope.try_remove(index..index + text.len())?;
                 }
                 Op::Insert(text) => {
