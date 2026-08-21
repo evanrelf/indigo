@@ -171,6 +171,7 @@ impl Edit {
         loop {
             match (a.peek(), b.peek()) {
                 // Both inserted at the same position; `bias` decides whose text comes first.
+                // Note [Bias].
                 (Some(Op::Insert(_)), Some(Op::Insert(_))) => match bias {
                     Bias::Backward => {
                         let n = a.remaining();
@@ -258,6 +259,7 @@ impl Edit {
                     position += length;
                 }
                 Op::Insert(text) => {
+                    // Note [Bias].
                     if let Bias::Backward = bias {
                         while i < byte_indexes.len() && byte_indexes[i] == position {
                             byte_indexes[i] = position.checked_add_signed(delta).unwrap();
@@ -339,6 +341,7 @@ impl Op {
     }
 }
 
+// Note [Bias]
 #[derive(Clone, Copy)]
 pub enum Bias {
     Backward,
@@ -398,6 +401,24 @@ positionally, and the two orderings interleave concurrent text on opposite sides
 position. If both were representable, equivalent edits could reconcile to different documents
 depending on how they happened to be built. Delete-before-insert is an arbitrary choice; what
 matters is that exactly one order is representable.
+*/
+
+/*
+Note [Bias]
+-----------
+
+Claude: `Bias` picks a side of inserted text. A mapped position sitting exactly at an insertion
+point stays before the new text (`Backward`) or moves after it (`Forward`). Rebasing asks the same
+question of its only ambiguity — both edits inserting at the same point: `Backward` puts this edit's
+text first, `Forward` the other's, and rebasing each of two edits over the other with opposite
+biases produces the same document either way. The kernel always rebases drafts with `Forward`, so
+committed text wins ties.
+
+Replacements are the subtle case: canonical form makes delete-then-insert mean "the new text
+occupies the replaced range", so a concurrent insert at the range's start edge lands before the
+replacement text (bypassing the tie-break), and at its end edge after it. `Forward` rebasing and
+`Forward` mapping therefore agree — an edit's insertion point rebases the way a cursor at that
+position maps.
 */
 
 #[cfg(test)]
