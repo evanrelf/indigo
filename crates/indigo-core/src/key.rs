@@ -333,7 +333,7 @@ mod tests {
     }
 
     #[hegel::composite]
-    fn gen_key(tc: TestCase) -> Key {
+    fn gen_key(tc: &TestCase) -> Key {
         Key {
             modifiers: tc.draw(gen_key_modifiers()),
             code: tc.draw(gen_key_code()),

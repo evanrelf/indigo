@@ -493,20 +493,20 @@ mod tests {
     }
 
     #[hegel::composite]
-    fn gen_edit_and_text(tc: hegel::TestCase, doc: String) -> (Edit, String) {
+    fn gen_edit_and_text(tc: &hegel::TestCase, doc: String) -> (Edit, String) {
         let mut edit = Edit::new();
         let mut expected = String::new();
         let mut index = 0;
         while index < doc.len() {
             match tc.draw(gs::integers::<u8>().max_value(2)) {
                 0 => {
-                    let end = draw_str_end(&tc, &doc, index);
+                    let end = draw_str_end(tc, &doc, index);
                     edit.retain(end - index);
                     expected.push_str(&doc[index..end]);
                     index = end;
                 }
                 1 => {
-                    let end = draw_str_end(&tc, &doc, index);
+                    let end = draw_str_end(tc, &doc, index);
                     edit.delete(&doc[index..end]);
                     index = end;
                 }
@@ -526,7 +526,7 @@ mod tests {
     }
 
     #[hegel::composite]
-    fn gen_edit(tc: hegel::TestCase, doc: String) -> Edit {
+    fn gen_edit(tc: &hegel::TestCase, doc: String) -> Edit {
         tc.draw(gen_edit_and_text(doc.clone())).0
     }
 

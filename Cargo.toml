@@ -11,7 +11,7 @@ bpaf = "0.9.26"
 camino = "1.2.4"
 clap = { version = "4.6.4", features = ["derive", "env"] }
 diff = "0.1.13"
-hegeltest = "0.28.4"
+hegeltest = "0.31.0"
 indigo = { path = "crates/indigo/" }
 indigo-cli = { path = "crates/indigo-cli/" }
 indigo-core = { path = "crates/indigo-core/" }
