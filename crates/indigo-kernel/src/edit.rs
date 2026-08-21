@@ -384,6 +384,22 @@ impl<'a> Cursor<'a> {
     }
 }
 
+/*
+Note [Canonical form]
+---------------------
+
+Claude: An edit is canonical when it has no zero-length ops, no adjacent ops of the same kind, and,
+at a given position, deletion before insertion. Canonical form makes the representation unique:
+equivalent edits are structurally equal.
+
+Uniqueness is more than tidiness. Deleting "d" and inserting "x" at one position produces the same
+document in either order, but when two concurrent edits are reconciled their ops are matched up
+positionally, and the two orderings interleave concurrent text on opposite sides of the same
+position. If both were representable, equivalent edits could reconcile to different documents
+depending on how they happened to be built. Delete-before-insert is an arbitrary choice; what
+matters is that exactly one order is representable.
+*/
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -560,7 +576,7 @@ mod tests {
         assert_eq!(edit.invert().invert(), edit);
     }
 
-    // See Note [Canonical form] in `edit.rs`.
+    // Note [Canonical form]
     #[hegel::test(test_cases = 2_000)]
     fn canonical_form_is_unique(tc: hegel::TestCase) {
         /// A `char` boundary near the middle of `s`.
