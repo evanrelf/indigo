@@ -4,6 +4,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = { workspace = true }
+imbl = "7.0.1"
 ropey = { workspace = true }
 unicode-segmentation = { workspace = true }
 

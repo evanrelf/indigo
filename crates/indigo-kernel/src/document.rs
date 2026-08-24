@@ -1,10 +1,11 @@
 use crate::edit::{Bias, Edit};
+use imbl::Vector;
 use ropey::Rope;
 
 pub struct Document {
     id: usize,
     rope: Rope,
-    commits: Vec<Commit>,
+    commits: Vector<Commit>,
 }
 
 impl Document {
@@ -23,7 +24,7 @@ impl Document {
         Self {
             id,
             rope,
-            commits: Vec::new(),
+            commits: Vector::new(),
         }
     }
 
@@ -41,30 +42,32 @@ impl Document {
     }
 
     #[must_use]
-    pub fn commits(&self) -> &[Commit] {
+    pub fn commits(&self) -> &Vector<Commit> {
         &self.commits
     }
 
     #[must_use]
-    pub fn snapshot(&self) -> Snapshot {
+    pub fn create_snapshot(&self) -> Snapshot {
         Snapshot {
             version: self.version(),
             rope: self.rope.clone(),
+            commits: self.commits.clone(),
         }
     }
 
     #[must_use]
-    pub fn draft(&self) -> Draft {
+    pub fn create_draft(&self) -> Draft {
         Draft {
             base_version: self.version(),
             rope: self.rope.clone(),
             edit: Edit::identity(&self.rope),
+            commits: self.commits.clone(),
         }
     }
 
     pub fn apply_edit(&mut self, edit: Edit) -> anyhow::Result<()> {
         edit.apply(&mut self.rope)?;
-        self.commits.push(Commit {
+        self.commits.push_back(Commit {
             original_base_version: self.version(),
             original_edit: edit.clone(),
             rebased_edit: edit,
@@ -77,7 +80,7 @@ impl Document {
         let concurrent_edit = self.compose_since(draft.base_version)?;
         let rebased_edit = draft.edit.rebase(&concurrent_edit, Bias::Forward)?;
         rebased_edit.apply(&mut self.rope)?;
-        self.commits.push(Commit {
+        self.commits.push_back(Commit {
             original_base_version: draft.base_version,
             original_edit: draft.edit,
             rebased_edit,
@@ -85,9 +88,21 @@ impl Document {
         Ok(())
     }
 
+    pub fn create_anchor(&self, byte_index: usize, bias: Bias) -> anyhow::Result<Anchor> {
+        Anchor::create(self.version(), &self.rope, byte_index, bias)
+    }
+
+    pub fn resolve_anchor(&self, anchor: Anchor) -> anyhow::Result<usize> {
+        anchor.resolve(self.version(), &self.commits)
+    }
+
     fn compose_since(&self, base_version: Version) -> anyhow::Result<Edit> {
         // NOTE: Version compatibility must be checked by caller
-        let mut commits = self.commits[base_version.commit_index..].iter();
+        let mut commits = self
+            .commits
+            .focus()
+            .narrow(base_version.commit_index..)
+            .into_iter();
         if let Some(first_commit) = commits.next() {
             let mut edit = first_commit.rebased_edit.clone();
             for commit in commits {
@@ -121,6 +136,7 @@ pub struct Version {
 pub struct Snapshot {
     version: Version,
     rope: Rope,
+    commits: Vector<Commit>,
 }
 
 impl Snapshot {
@@ -135,12 +151,21 @@ impl Snapshot {
     }
 
     #[must_use]
-    pub fn draft(&self) -> Draft {
+    pub fn create_draft(&self) -> Draft {
         Draft {
             base_version: self.version,
             rope: self.rope.clone(),
             edit: Edit::identity(&self.rope),
+            commits: self.commits.clone(),
         }
+    }
+
+    pub fn create_anchor(&self, byte_index: usize, bias: Bias) -> anyhow::Result<Anchor> {
+        Anchor::create(self.version, &self.rope, byte_index, bias)
+    }
+
+    pub fn resolve_anchor(&self, anchor: Anchor) -> anyhow::Result<usize> {
+        anchor.resolve(self.version, &self.commits)
     }
 }
 
@@ -148,6 +173,7 @@ pub struct Draft {
     base_version: Version,
     rope: Rope,
     edit: Edit,
+    commits: Vector<Commit>,
 }
 
 impl Draft {
@@ -172,8 +198,16 @@ impl Draft {
         self.edit = composed;
         Ok(())
     }
+
+    // No `create_anchor` for `Draft`
+
+    pub fn resolve_anchor(&self, anchor: Anchor) -> anyhow::Result<usize> {
+        let byte_index = anchor.resolve(self.base_version, &self.commits)?;
+        Ok(self.edit.map_position(byte_index, anchor.bias))
+    }
 }
 
+#[derive(Clone)]
 pub struct Commit {
     original_base_version: Version,
     original_edit: Edit,
@@ -194,5 +228,50 @@ impl Commit {
     #[must_use]
     pub fn rebased_edit(&self) -> &Edit {
         &self.rebased_edit
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct Anchor {
+    base_version: Version,
+    byte_index: usize,
+    bias: Bias,
+}
+
+impl Anchor {
+    fn create(
+        base_version: Version,
+        rope: &Rope,
+        byte_index: usize,
+        bias: Bias,
+    ) -> anyhow::Result<Self> {
+        anyhow::ensure!(
+            byte_index <= rope.len(),
+            "anchor byte index {} is beyond rope length {}",
+            byte_index,
+            rope.len()
+        );
+        Ok(Self {
+            base_version,
+            byte_index,
+            bias,
+        })
+    }
+
+    fn resolve(self, version: Version, commits: &Vector<Commit>) -> anyhow::Result<usize> {
+        debug_assert_eq!(version.commit_index, commits.len());
+        anyhow::ensure!(
+            self.base_version.document_id == version.document_id,
+            "anchor does not apply to this document"
+        );
+        anyhow::ensure!(
+            self.base_version.commit_index <= version.commit_index,
+            "anchor version is ahead of resolver version"
+        );
+        let mut byte_index = self.byte_index;
+        for commit in commits.focus().narrow(self.base_version.commit_index..) {
+            byte_index = commit.rebased_edit.map_position(byte_index, self.bias);
+        }
+        Ok(byte_index)
     }
 }
