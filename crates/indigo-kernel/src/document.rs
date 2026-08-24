@@ -10,9 +10,19 @@ pub struct Document {
 impl Document {
     #[must_use]
     pub fn new(id: usize) -> Self {
+        Self::from_rope(id, Rope::new())
+    }
+
+    #[must_use]
+    pub fn from_str(id: usize, str: &str) -> Self {
+        Self::from_rope(id, Rope::from(str))
+    }
+
+    #[must_use]
+    pub fn from_rope(id: usize, rope: Rope) -> Self {
         Self {
             id,
-            rope: Rope::new(),
+            rope,
             commits: Vec::new(),
         }
     }
