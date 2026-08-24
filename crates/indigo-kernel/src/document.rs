@@ -57,12 +57,7 @@ impl Document {
 
     #[must_use]
     pub fn create_draft(&self) -> Draft {
-        Draft {
-            base_version: self.version(),
-            rope: self.rope.clone(),
-            edit: Edit::identity(&self.rope),
-            commits: self.commits.clone(),
-        }
+        self.create_snapshot().into_draft()
     }
 
     pub fn apply_edit(&mut self, edit: Edit) -> anyhow::Result<()> {
@@ -133,6 +128,7 @@ pub struct Version {
     commit_index: usize,
 }
 
+#[derive(Clone)]
 pub struct Snapshot {
     version: Version,
     rope: Rope,
@@ -151,13 +147,18 @@ impl Snapshot {
     }
 
     #[must_use]
-    pub fn create_draft(&self) -> Draft {
+    pub fn into_draft(self) -> Draft {
         Draft {
             base_version: self.version,
-            rope: self.rope.clone(),
             edit: Edit::identity(&self.rope),
-            commits: self.commits.clone(),
+            rope: self.rope,
+            commits: self.commits,
         }
+    }
+
+    #[must_use]
+    pub fn create_draft(&self) -> Draft {
+        self.clone().into_draft()
     }
 
     pub fn create_anchor(&self, byte_index: usize, bias: Bias) -> anyhow::Result<Anchor> {
