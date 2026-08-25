@@ -222,7 +222,7 @@ impl<'a> Iterator for Graphemes<'a> {
                         .next()
                         .expect("only requested when the cursor is not at the end of the rope");
 
-                    // Note [Fresh cursor at chunk crossings]
+                    // Note [Grapheme cursor bug workaround]
                     // BEGIN WORKAROUND
                     let crossing = self.cursor.cur_cursor();
                     self.cursor = GraphemeCursor::new(crossing, self.rope.len(), true);
@@ -261,7 +261,7 @@ impl<'a> Iterator for Graphemes<'a> {
 impl FusedIterator for Graphemes<'_> {}
 
 /*
-Note [Fresh cursor at chunk crossings]
+Note [Grapheme cursor bug workaround]
 --------------------------------------
 
 Claude: `unicode-segmentation` 1.13.3's `GraphemeCursor` produces false grapheme boundaries in
