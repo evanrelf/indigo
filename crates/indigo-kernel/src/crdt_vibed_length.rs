@@ -1,6 +1,6 @@
 //! Length-based FugueMax CRDT.
 //!
-//! Unlike [`crate::crdt_vibed`], the CRDT here stores no text at all — only
+//! Unlike [`crate::crdt_vibed_not_length`], the CRDT here stores no text at all — only
 //! byte lengths and byte positions. Local edits return
 //! [`Insertion`]/[`Deletion`] values to send to other replicas, and
 //! integrating a remote op returns [`BufferEdit`]s telling the caller what to
@@ -699,7 +699,7 @@ skipped and never flip the scan's state. (The same fact is why a whole op
 integrates with a single scan.)
 
 Byte granularity of identity is also why this module converges to the same
-visible sequence as the per-char [`crate::crdt_vibed`]: each char item there
+visible sequence as the per-char [`crate::crdt_vibed_not_length`]: each char item there
 corresponds to a run of byte ids here with order-isomorphic origins, and the
 FugueMax comparisons only consult relative order and replica ids, which agree.
 
@@ -1228,14 +1228,14 @@ mod tests {
     }
 
     /// The headline requirement: driven by the same edits and the same merge
-    /// schedule, this module and the per-char `crdt_vibed` implementation
+    /// schedule, this module and the per-char `crdt_vibed_not_length` implementation
     /// produce identical documents. In ASCII mode (1 char == 1 byte) the full
     /// internal item sequences must match too, not just the visible text.
     #[hegel::test(test_cases = 2_000)]
     fn matches_char_based_implementation(tc: hegel::TestCase) {
-        use crate::crdt_vibed;
+        use crate::crdt_vibed_not_length;
 
-        fn merge_pair_old(docs: &mut [crdt_vibed::Document], into: usize, from: usize) {
+        fn merge_pair_old(docs: &mut [crdt_vibed_not_length::Document], into: usize, from: usize) {
             if into < from {
                 let (left, right) = docs.split_at_mut(from);
                 left[into].merge(&right[0]);
@@ -1248,8 +1248,8 @@ mod tests {
         let ascii = tc.draw(gs::booleans());
         let count = tc.draw(gs::integers::<usize>().min_value(2).max_value(3));
         let mut olds = (1..=count)
-            .map(crdt_vibed::Document::new)
-            .collect::<Vec<crdt_vibed::Document>>();
+            .map(crdt_vibed_not_length::Document::new)
+            .collect::<Vec<crdt_vibed_not_length::Document>>();
         let mut news = (1..=count).map(Doc::new).collect::<Vec<Doc>>();
 
         let rounds = tc.draw(gs::integers::<usize>().min_value(1).max_value(3));
