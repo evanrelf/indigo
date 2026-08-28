@@ -208,6 +208,18 @@ impl Document {
     }
 }
 
+#[cfg(test)]
+impl Document {
+    /// Every item's author, sequence number, and tombstone flag, in document
+    /// order — for cross-implementation equivalence tests.
+    pub(crate) fn item_summaries(&self) -> Vec<(usize, usize, bool)> {
+        self.content
+            .iter()
+            .map(|item| (item.id.document_id.0, item.id.sequence_number, item.deleted))
+            .collect()
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd)]
 struct DocumentId(usize);
 
