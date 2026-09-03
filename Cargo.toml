@@ -7,11 +7,11 @@ anyhow = "1.0.104"
 arbitrary = { version = "1.4.2", features = ["derive"] }
 arrayvec = "0.7.8"
 bitflags = { version = "2.13.1", features = ["std"] }
-bpaf = "0.9.26"
-camino = "1.2.4"
-clap = { version = "4.6.4", features = ["derive", "env"] }
+bpaf = "0.9.27"
+camino = "1.2.5"
+clap = { version = "4.6.6", features = ["derive", "env"] }
 diff = "0.1.13"
-hegeltest = "0.31.0"
+hegeltest = "0.38.0"
 indigo = { path = "crates/indigo/" }
 indigo-cli = { path = "crates/indigo-cli/" }
 indigo-core = { path = "crates/indigo-core/" }
@@ -20,16 +20,16 @@ indigo-term = { path = "crates/indigo-term/" }
 indigo-tui = { path = "crates/indigo-tui/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }
 libc = "0.2.189"
-log = "0.4.33"
+log = "0.4.34"
 memchr = "2.8.3"
 pathdiff = { version = "0.2.3", features = ["camino"] }
 ratatui = "0.30.2"
 regex-cursor = { version = "0.1.5", default-features = false, features = ["perf-inline"] }
-roaring = "0.11.4"
+roaring = "0.11.5"
 ropey = { version = "2.0.0-beta.1" }
 shell-words = "1.1.1"
 slotmap = "1.1.1"
-thiserror = "2.0.19"
+thiserror = "2.0.20"
 tinyvec = { version = "1.12.0", features = ["std"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }

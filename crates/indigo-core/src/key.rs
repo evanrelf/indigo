@@ -55,6 +55,7 @@ fn keys(input: &mut &str) -> ModalResult<Keys> {
 }
 
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+#[cfg_attr(test, derive(hegel::PrettyPrintable))]
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Key {
     pub modifiers: KeyModifiers,
@@ -127,6 +128,9 @@ bitflags! {
     }
 }
 
+#[cfg(test)]
+hegel::pretty_print_as_debug!(KeyModifiers);
+
 impl FromStr for KeyModifiers {
     type Err = anyhow::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -171,6 +175,7 @@ fn key_modifiers(input: &mut &str) -> ModalResult<KeyModifiers> {
     Ok(modifiers)
 }
 
+#[cfg_attr(test, derive(hegel::PrettyPrintable))]
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum KeyCode {
     Backspace,
@@ -306,14 +311,14 @@ mod tests {
     use super::*;
     use hegel::{Generator, TestCase, generators as gs};
 
-    fn gen_key_modifiers() -> impl Generator<KeyModifiers> {
+    fn gen_key_modifiers() -> impl hegel::PrintableGenerator<KeyModifiers> {
         gs::integers::<u8>()
             .min_value(0)
             .max_value(KeyModifiers::all().bits())
             .map(KeyModifiers::from_bits_truncate)
     }
 
-    fn gen_key_code() -> impl Generator<KeyCode> {
+    fn gen_key_code() -> impl hegel::PrintableGenerator<KeyCode> {
         let mut codes: Vec<KeyCode> = (b' '..=b'~')
             .filter(|c| !b" #<>\\".contains(c))
             .map(KeyCode::Char)
