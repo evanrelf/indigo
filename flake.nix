@@ -39,11 +39,17 @@
               cargoExtraArgs = "--bin indigo";
             });
 
+          packages.docs = config.checks.doc;
+
           checks.clippy =
             crane.cargoClippy (commonArgs // { inherit cargoArtifacts; });
 
           checks.doc =
-            crane.cargoDoc (commonArgs // { inherit cargoArtifacts; });
+            crane.cargoDoc (commonArgs // {
+              inherit cargoArtifacts;
+              # Generate a root `index.html` listing all crates (nightly only)
+              RUSTDOCFLAGS = "-Zunstable-options --enable-index-page";
+            });
 
           checks.test =
             crane.cargoTest (commonArgs // { inherit cargoArtifacts; });
