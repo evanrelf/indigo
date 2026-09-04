@@ -141,7 +141,7 @@ pub trait WrapRef {
     type WrapRef<'a, T: ?Sized + 'a>: Deref<Target = T>;
 }
 
-/// Turn `T` into `PhantomData<T>`
+/// Turn `T` into `&'a <T>`
 pub struct WRef;
 
 /// Turn `T` into `&'a T`
