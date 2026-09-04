@@ -31,6 +31,7 @@ infrequently changed, or feature complete:
 
 - The `indigo-kernel` crate uses GHC-style note comments. See its `edit` and
   `grapheme` modules for examples.
+- I prefer `std::{cmp::{min,max}, iter::zip}` functions over method variants.
 
 ## Checking your work
 
