@@ -7,10 +7,12 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-pub trait Merge {
+// INVARIANT: When `Delta ~ Self`, `x == x.merge(x.clone())`
+pub trait Merge<Delta = Self> {
     type Error;
 
-    fn merge(&mut self, child: Self) -> Result<(), Self::Error>;
+    // A semilattice join, I think? (<https://en.wikipedia.org/wiki/Semilattice>)
+    fn merge(&mut self, delta: Delta) -> Result<(), Self::Error>;
 }
 
 static CLOCK: AtomicUsize = AtomicUsize::new(0);
@@ -50,10 +52,10 @@ impl<T> Deref for LastWriteWins<T> {
 
 impl<T> Merge for LastWriteWins<T> {
     type Error = Infallible;
-    fn merge(&mut self, child: Self) -> Result<(), Self::Error> {
-        if self.tick < child.tick {
-            self.tick = child.tick;
-            self.value = child.value;
+    fn merge(&mut self, other: Self) -> Result<(), Self::Error> {
+        if self.tick < other.tick {
+            self.tick = other.tick;
+            self.value = other.value;
         }
         Ok(())
     }
@@ -77,16 +79,18 @@ where
     }
 }
 
+/* TODO: This is an unlawful implementation of `Merge`!!
 impl<T> Merge for GrowOnlyCounter<T>
 where
     Saturating<T>: AddAssign,
 {
     type Error = Infallible;
-    fn merge(&mut self, child: Self) -> Result<(), Self::Error> {
-        self.0 += child.0;
+    fn merge(&mut self, other: Self) -> Result<(), Self::Error> {
+        self.0 += other.0;
         Ok(())
     }
 }
+*/
 
 pub struct GrowOnlyHashSet<T> {
     set: HashSet<T>,
@@ -126,8 +130,8 @@ where
     T: Eq + Hash,
 {
     type Error = Infallible;
-    fn merge(&mut self, mut child: Self) -> Result<(), Self::Error> {
-        self.set.extend(child.set.drain());
+    fn merge(&mut self, mut other: Self) -> Result<(), Self::Error> {
+        self.set.extend(other.set.drain());
         Ok(())
     }
 }
@@ -177,8 +181,8 @@ where
     T: Ord,
 {
     type Error = Infallible;
-    fn merge(&mut self, mut child: Self) -> Result<(), Self::Error> {
-        self.set.append(&mut child.set);
+    fn merge(&mut self, mut other: Self) -> Result<(), Self::Error> {
+        self.set.append(&mut other.set);
         Ok(())
     }
 }
@@ -226,11 +230,11 @@ mod tests {
             }
             #[rule]
             fn merge(&mut self, tc: TestCase) {
-                let parent = self.draw_index(&tc);
-                let child = self.draw_index(&tc);
-                let child_register = self.registers[child].clone();
-                self.registers[parent].merge(child_register).unwrap();
-                self.model[parent] = max(self.model[parent], self.model[child]);
+                let left = self.draw_index(&tc);
+                let right = self.draw_index(&tc);
+                let right_register = self.registers[right].clone();
+                self.registers[left].merge(right_register).unwrap();
+                self.model[left] = max(self.model[left], self.model[right]);
             }
             #[invariant]
             fn reads_agree_with_model(&self, _: TestCase) {
