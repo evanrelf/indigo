@@ -1,18 +1,45 @@
 use std::{
     collections::{BTreeSet, HashSet},
-    convert::Infallible,
     hash::Hash,
-    num::Saturating,
-    ops::{AddAssign, Deref},
+    ops::Deref,
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-// INVARIANT: When `Delta ~ Self`, `x == x.merge(x.clone())`
-pub trait Merge<Delta = Self> {
+/// State-based merge
+///
+/// # Laws
+///
+/// - Associativity: _x_ ∨ (_y_ ∨ _z_) = (_x_ ∨ _y_) ∨ _z_
+/// - Commutativity: _x_ ∨ _y_ = _y_ ∨ _x_
+/// - Idempotence: _x_ ∨ _x_ = _x_
+/// - Identity: If `Self: Default`, then _x_ ∨ `Self::default()` = _x_
+///
+/// where _x_ ∨ _y_ means `x.join(y)`
+///
+/// # References
+///
+/// - Join-semilattices on Wikipedia: <https://en.wikipedia.org/wiki/Semilattice>
+/// - Rob Rix's `semilattices` Haskell package: <https://hackage.haskell.org/package/semilattices>
+/// - State-based CRDTs: <https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type#State-based_CRDTs>
+pub trait Join {
+    fn join(&mut self, other: Self);
+}
+
+/// Operation-based merge
+///
+/// # Laws
+///
+/// - Atomicity: If `x.apply(d)` fails, `x` is unchanged
+/// - Coherence with `Join`: If `Self: Join` and `Delta = Self`, then `x.apply(y)` succeeds and is
+///   the same as `x.join(y)`
+///
+/// # References
+///
+/// - Operation-based CRDTs: <https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type#Operation-based_CRDTs>
+pub trait Apply<Delta> {
     type Error;
 
-    // A semilattice join, I think? (<https://en.wikipedia.org/wiki/Semilattice>)
-    fn merge(&mut self, delta: Delta) -> Result<(), Self::Error>;
+    fn apply(&mut self, delta: Delta) -> Result<(), Self::Error>;
 }
 
 static CLOCK: AtomicUsize = AtomicUsize::new(0);
@@ -50,17 +77,16 @@ impl<T> Deref for LastWriteWins<T> {
     }
 }
 
-impl<T> Merge for LastWriteWins<T> {
-    type Error = Infallible;
-    fn merge(&mut self, other: Self) -> Result<(), Self::Error> {
+impl<T> Join for LastWriteWins<T> {
+    fn join(&mut self, other: Self) {
         if self.tick < other.tick {
             self.tick = other.tick;
             self.value = other.value;
         }
-        Ok(())
     }
 }
 
+/* TODO: Rethink implementation so it satisfies `Join`'s invariant.
 pub struct GrowOnlyCounter<T>(Saturating<T>);
 
 impl<T> Deref for GrowOnlyCounter<T> {
@@ -76,18 +102,6 @@ where
 {
     fn add_assign(&mut self, rhs: Rhs) {
         self.0 += rhs;
-    }
-}
-
-/* TODO: This is an unlawful implementation of `Merge`!!
-impl<T> Merge for GrowOnlyCounter<T>
-where
-    Saturating<T>: AddAssign,
-{
-    type Error = Infallible;
-    fn merge(&mut self, other: Self) -> Result<(), Self::Error> {
-        self.0 += other.0;
-        Ok(())
     }
 }
 */
@@ -125,14 +139,12 @@ impl<T> Deref for GrowOnlyHashSet<T> {
     }
 }
 
-impl<T> Merge for GrowOnlyHashSet<T>
+impl<T> Join for GrowOnlyHashSet<T>
 where
     T: Eq + Hash,
 {
-    type Error = Infallible;
-    fn merge(&mut self, mut other: Self) -> Result<(), Self::Error> {
+    fn join(&mut self, mut other: Self) {
         self.set.extend(other.set.drain());
-        Ok(())
     }
 }
 
@@ -176,14 +188,12 @@ impl<T> Deref for GrowOnlyBTreeSet<T> {
     }
 }
 
-impl<T> Merge for GrowOnlyBTreeSet<T>
+impl<T> Join for GrowOnlyBTreeSet<T>
 where
     T: Ord,
 {
-    type Error = Infallible;
-    fn merge(&mut self, mut other: Self) -> Result<(), Self::Error> {
+    fn join(&mut self, mut other: Self) {
         self.set.append(&mut other.set);
-        Ok(())
     }
 }
 
@@ -229,11 +239,11 @@ mod tests {
                 self.model[index] = self.next_write(value);
             }
             #[rule]
-            fn merge(&mut self, tc: TestCase) {
+            fn join(&mut self, tc: TestCase) {
                 let left = self.draw_index(&tc);
                 let right = self.draw_index(&tc);
                 let right_register = self.registers[right].clone();
-                self.registers[left].merge(right_register).unwrap();
+                self.registers[left].join(right_register);
                 self.model[left] = max(self.model[left], self.model[right]);
             }
             #[invariant]
