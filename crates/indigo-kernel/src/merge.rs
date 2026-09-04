@@ -2,12 +2,14 @@ use std::{
     collections::{BTreeSet, HashSet},
     convert::Infallible,
     hash::Hash,
-    ops::Deref,
+    num::Saturating,
+    ops::{AddAssign, Deref},
     sync::atomic::{AtomicUsize, Ordering},
 };
 
 pub trait Merge {
     type Error;
+
     fn merge(&mut self, child: Self) -> Result<(), Self::Error>;
 }
 
@@ -53,6 +55,35 @@ impl<T> Merge for LastWriteWins<T> {
             self.tick = child.tick;
             self.value = child.value;
         }
+        Ok(())
+    }
+}
+
+pub struct GrowOnlyCounter<T>(Saturating<T>);
+
+impl<T> Deref for GrowOnlyCounter<T> {
+    type Target = T;
+    fn deref(&self) -> &Self::Target {
+        &self.0.0
+    }
+}
+
+impl<T, Rhs> AddAssign<Rhs> for GrowOnlyCounter<T>
+where
+    Saturating<T>: AddAssign<Rhs>,
+{
+    fn add_assign(&mut self, rhs: Rhs) {
+        self.0 += rhs;
+    }
+}
+
+impl<T> Merge for GrowOnlyCounter<T>
+where
+    Saturating<T>: AddAssign,
+{
+    type Error = Infallible;
+    fn merge(&mut self, child: Self) -> Result<(), Self::Error> {
+        self.0 += child.0;
         Ok(())
     }
 }
