@@ -276,12 +276,13 @@ rebuilds the iterator's cursor there, so no stale state survives the hand-off.
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hegel::{TestCase, generators as gs};
     use ropey::Rope;
     use unicode_segmentation::UnicodeSegmentation as _;
 
     // Note [Fresh cursor at chunk crossings]
     #[test]
-    fn flag_run_across_chunks() {
+    fn test_flag_run_across_chunks() {
         let text = "\u{1f1e6}\u{1f1e7}".repeat(1024 / 8 + 1); // should be more than 1 chunk
         let rope = Rope::from_str(&text);
         for start in [0, 4] {
@@ -291,5 +292,53 @@ mod tests {
                 .collect();
             assert_eq!(actual, expected, "slice starting at {start}");
         }
+    }
+
+    #[hegel::test(test_cases = 10_000)]
+    fn test_is_char_boundary(tc: TestCase) {
+        let string = tc.draw(gs::text());
+        let input = tc.draw(gs::integers().max_value(string.len()));
+        let ropey = {
+            let rope = ropey::Rope::from(string.as_str());
+            is_char_boundary(&rope.slice(..), input)
+        };
+        let crop = {
+            let rope = crop::Rope::from(string.as_str());
+            rope.is_char_boundary(input)
+        };
+        assert_eq!(ropey, crop);
+    }
+
+    #[hegel::test(test_cases = 10_000)]
+    fn test_is_grapheme_boundary(tc: TestCase) {
+        let string = tc.draw(gs::text());
+        let input = tc.draw(gs::integers().max_value(string.len()));
+        let ropey = {
+            let rope = ropey::Rope::from(string.as_str());
+            is_grapheme_boundary(&rope.slice(..), input)
+        };
+        let crop = {
+            let rope = crop::Rope::from(string.as_str());
+            rope.is_grapheme_boundary(input)
+        };
+        assert_eq!(ropey, crop);
+    }
+
+    #[hegel::test(test_cases = 10_000)]
+    fn test_graphemes(tc: TestCase) {
+        let string = tc.draw(gs::text());
+        let ropey = {
+            let rope = ropey::Rope::from(string.as_str());
+            Graphemes::new(&rope.slice(..))
+                .map(|slice| slice.to_string())
+                .collect::<Vec<_>>()
+        };
+        let crop = {
+            let rope = crop::Rope::from(string.as_str());
+            rope.graphemes()
+                .map(|cow| cow.to_string())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(ropey, crop);
     }
 }

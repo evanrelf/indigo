@@ -9,6 +9,7 @@ ropey = { workspace = true }
 unicode-segmentation = { workspace = true }
 
 [dev-dependencies]
+crop = { version = "0.4.3", features = ["graphemes"] }
 hegeltest = { workspace = true }
 
 [lints]
