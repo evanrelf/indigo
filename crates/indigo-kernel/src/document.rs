@@ -2,6 +2,12 @@ use crate::edit::{Bias, Edit};
 use imbl::Vector;
 use ropey::Rope;
 
+// TODO: Consider this a first draft of the "document" concept. The next iteration will:
+//
+// Follow "Concurrent Programming with Revisions and Isolation Types", use `Join` and `Apply`
+// traits from `src/merge.rs` with a single `Document` type (i.e. no `Draft` and `Snapshot`), maybe
+// also wait to switch to FugueMax `Replica` if working with OT `Edit` isn't appealing.
+
 pub struct Document {
     id: usize,
     rope: Rope,
