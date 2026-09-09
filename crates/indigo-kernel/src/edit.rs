@@ -42,13 +42,13 @@ impl Edit {
         }
     }
 
-    pub fn retain_rest(&mut self, rope: &Rope) -> anyhow::Result<()> {
-        anyhow::ensure!(
-            self.length_before <= rope.len(),
-            "edit input length {} <= rope length {}",
-            self.length_before,
-            rope.len()
-        );
+    pub fn retain_rest(&mut self, rope: &Rope) -> Result<(), Error> {
+        if self.length_before > rope.len() {
+            return Err(Error::LengthMismatch {
+                expected: self.length_before,
+                actual: rope.len(),
+            });
+        }
 
         self.retain(rope.len() - self.length_before);
 
@@ -97,13 +97,13 @@ impl Edit {
         }
     }
 
-    pub fn compose(&self, other: &Self) -> anyhow::Result<Self> {
-        anyhow::ensure!(
-            self.length_after == other.length_before,
-            "left edit output length {} != right edit input length {}",
-            self.length_after,
-            other.length_before,
-        );
+    pub fn compose(&self, other: &Self) -> Result<Self, Error> {
+        if self.length_after != other.length_before {
+            return Err(Error::LengthMismatch {
+                expected: self.length_after,
+                actual: other.length_before,
+            });
+        }
 
         let mut a = Cursor::new(self);
         let mut b = Cursor::new(other);
@@ -157,13 +157,13 @@ impl Edit {
         edit
     }
 
-    pub fn rebase(&self, onto: &Self, bias: Bias) -> anyhow::Result<Self> {
-        anyhow::ensure!(
-            self.length_before == onto.length_before,
-            "self edit input length {} != onto edit input length {}",
-            self.length_before,
-            onto.length_before,
-        );
+    pub fn rebase(&self, onto: &Self, bias: Bias) -> Result<Self, Error> {
+        if self.length_before != onto.length_before {
+            return Err(Error::LengthMismatch {
+                expected: self.length_before,
+                actual: onto.length_before,
+            });
+        }
 
         let mut a = Cursor::new(self);
         let mut b = Cursor::new(onto);
@@ -286,13 +286,13 @@ impl Edit {
         }
     }
 
-    pub fn apply(&self, rope: &mut Rope) -> anyhow::Result<()> {
-        anyhow::ensure!(
-            self.length_before == rope.len(),
-            "edit input length {} != rope length {}",
-            self.length_before,
-            rope.len()
-        );
+    pub fn apply(&self, rope: &mut Rope) -> Result<(), Error> {
+        if self.length_before != rope.len() {
+            return Err(Error::LengthMismatch {
+                expected: self.length_before,
+                actual: rope.len(),
+            });
+        }
 
         let out = rope;
         let mut rope = out.clone();
@@ -313,7 +313,7 @@ impl Edit {
             }
         }
 
-        anyhow::ensure!(
+        debug_assert!(
             self.length_after == rope.len() && index == rope.len(),
             "edit output length {} != rope length {}",
             self.length_after,
@@ -389,6 +389,38 @@ impl<'a> Cursor<'a> {
     }
 }
 
+#[derive(Debug)]
+pub enum Error {
+    LengthMismatch { expected: usize, actual: usize },
+    Ropey(ropey::Error),
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::LengthMismatch { expected, actual } => {
+                write!(f, "length mismatch: expected {expected}, got {actual}")
+            }
+            Self::Ropey(ropey) => write!(f, "{ropey}"),
+        }
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::LengthMismatch { .. } => None,
+            Self::Ropey(ropey) => Some(ropey),
+        }
+    }
+}
+
+impl From<ropey::Error> for Error {
+    fn from(ropey: ropey::Error) -> Self {
+        Self::Ropey(ropey)
+    }
+}
+
 /*
 Note [Canonical form]
 ---------------------
@@ -430,7 +462,7 @@ mod tests {
     use std::iter::zip;
 
     #[test]
-    fn test() -> anyhow::Result<()> {
+    fn test() -> Result<(), Error> {
         let mut rope = Rope::from("Hello, world!");
         let mut edit = Edit::new();
         edit.retain(7);
@@ -458,7 +490,7 @@ mod tests {
     }
 
     #[test]
-    fn test_map_positions() -> anyhow::Result<()> {
+    fn test_map_positions() -> Result<(), Error> {
         let mut rope = Rope::from("Hello, world!");
 
         let mut edit = Edit::new();
@@ -494,7 +526,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rebase() -> anyhow::Result<()> {
+    fn test_rebase() -> Result<(), Error> {
         let rope = Rope::from("Hello, world!");
 
         let mut a = Edit::new();
