@@ -50,6 +50,9 @@ fn update(state: &mut State, event: Event) {
             KeyCode::Char(char @ ' '..='~') if key.modifiers.is_empty() => {
                 state.message.push(char);
             }
+            KeyCode::Char(' ') if key.modifiers == KeyModifiers::SHIFT => {
+                state.message.push(' ');
+            }
             KeyCode::Backspace if key.modifiers.is_empty() => {
                 state.message.pop();
             }
