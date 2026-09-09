@@ -246,6 +246,8 @@ mod tests {
                 self.registers[left].join(right_register);
                 self.model[left] = max(self.model[left], self.model[right]);
             }
+            // TODO: Use `#[invariant(always_run)]`
+            // https://github.com/hegeldev/hegel-rust/releases/tag/v0.37.0
             #[invariant]
             fn reads_agree_with_model(&self, _: TestCase) {
                 for (register, (_, value)) in zip(&self.registers, &self.model) {
