@@ -462,7 +462,10 @@ fn split_into_lines(editor: &mut Editor) {
 
 fn select_regex(editor: &mut Editor) {
     prompt::enter(editor, "select", |editor, regex_str| {
-        if let Ok(regex) = Regex::new(regex_str) {
+        let regex = Regex::builder()
+            .syntax(regex_cursor::regex_automata::util::syntax::Config::new().multi_line(true))
+            .build(regex_str);
+        if let Ok(regex) = regex {
             let matched = editor
                 .focused_window_mut()
                 .selection_mut()
