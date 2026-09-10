@@ -26,8 +26,8 @@ pub enum Action {
     MoveTo { byte_index: usize },
     MoveLeft { count: u8 },
     MoveRight { count: u8 },
-    MoveUp { goal_column: u16, count: u8 },
-    MoveDown { goal_column: u16, count: u8 },
+    MoveUp { goal_column: GoalColumn, count: u8 },
+    MoveDown { goal_column: GoalColumn, count: u8 },
     MoveToPrevByte { byte: u8, count: u8 },
     MoveToNextByte { byte: u8, count: u8 },
     MoveToPrevBlank { count: u8 },
@@ -51,9 +51,47 @@ pub enum Direction {
     Forward,
 }
 
-pub const GOAL_COLUMN_UNTIL_LINE_END: usize = usize::MAX - 1;
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum GoalColumn {
+    Column(usize),
+    UntilLineEnd,
+    OntoLineEnd,
+}
 
-pub const GOAL_COLUMN_ONTO_LINE_END: usize = usize::MAX;
+impl Default for GoalColumn {
+    fn default() -> Self {
+        Self::Column(0)
+    }
+}
+
+impl From<usize> for GoalColumn {
+    fn from(n: usize) -> Self {
+        if n == usize::MAX {
+            Self::OntoLineEnd
+        } else if n == usize::MAX - 1 {
+            Self::UntilLineEnd
+        } else {
+            Self::Column(n)
+        }
+    }
+}
+
+impl From<GoalColumn> for usize {
+    fn from(goal_column: GoalColumn) -> Self {
+        match goal_column {
+            GoalColumn::Column(n) => {
+                assert!(
+                    n < Self::MAX - 1,
+                    "ambiguous conversion from GoalColumn to usize"
+                );
+                n
+            }
+            GoalColumn::UntilLineEnd => Self::MAX - 1,
+            GoalColumn::OntoLineEnd => Self::MAX,
+        }
+    }
+}
 
 #[derive(Clone, Debug, Default)]
 pub struct CursorState {
@@ -239,15 +277,20 @@ impl<W: WrapMut> CursorView<'_, W> {
         true
     }
 
-    pub fn move_up(&mut self, goal_column: usize, count: usize) -> bool {
+    pub fn move_up(&mut self, goal_column: GoalColumn, count: usize) -> bool {
         self.move_vertical(Direction::Backward, goal_column, count)
     }
 
-    pub fn move_down(&mut self, goal_column: usize, count: usize) -> bool {
+    pub fn move_down(&mut self, goal_column: GoalColumn, count: usize) -> bool {
         self.move_vertical(Direction::Forward, goal_column, count)
     }
 
-    fn move_vertical(&mut self, direction: Direction, goal_column: usize, count: usize) -> bool {
+    fn move_vertical(
+        &mut self,
+        direction: Direction,
+        goal_column: GoalColumn,
+        count: usize,
+    ) -> bool {
         if count == 0 {
             return false;
         }
@@ -278,17 +321,17 @@ impl<W: WrapMut> CursorView<'_, W> {
                     break;
                 }
                 let grapheme_width = grapheme.display_width();
-                if target_line_prefix + grapheme_width > goal_column {
+                if target_line_prefix + grapheme_width > usize::from(goal_column) {
                     reached_line_end = false;
                     break;
                 }
                 target_line_prefix += grapheme_width;
                 target_byte_index += grapheme.len();
             }
-            // Only an empty line or `GOAL_COLUMN_ONTO_LINE_END` puts the cursor on the newline;
+            // Only an empty line or `GoalColumn::OntoLineEnd` puts the cursor on the newline;
             // otherwise stop on the last grapheme before it, like Kakoune.
             if reached_line_end
-                && goal_column != GOAL_COLUMN_ONTO_LINE_END
+                && goal_column != GoalColumn::OntoLineEnd
                 && target_byte_index > target_line_byte_index
             {
                 target_byte_index = self
@@ -511,10 +554,10 @@ pub fn handle_action<W: WrapMut>(cursor: &mut CursorView<'_, W>, action: &Action
             cursor.move_right(usize::from(*count));
         }
         Action::MoveUp { goal_column, count } => {
-            cursor.move_up(usize::from(*goal_column), usize::from(*count));
+            cursor.move_up(*goal_column, usize::from(*count));
         }
         Action::MoveDown { goal_column, count } => {
-            cursor.move_down(usize::from(*goal_column), usize::from(*count));
+            cursor.move_down(*goal_column, usize::from(*count));
         }
         Action::MoveToPrevByte { byte, count } => {
             cursor.move_to_prev_byte(*byte, usize::from(*count));
@@ -697,7 +740,7 @@ mod tests {
         assert_eq!(cursor.byte_index(), 12);
         assert_eq!(cursor.display_column(), 6);
 
-        cursor.move_up(cursor.display_column(), 1);
+        cursor.move_up(GoalColumn::Column(cursor.display_column()), 1);
         // On "4", the last grapheme of line 1, which is shorter than the goal column.
         assert_eq!(cursor.grapheme(), Rope::from("4").slice(..));
         assert_eq!(cursor.line().to_string(), "234\n");
@@ -714,22 +757,22 @@ mod tests {
     #[test]
     fn move_vertical_stops_before_newline() {
         let mut cursor = CursorView::try_from(("a long line\nab\ncd\n", 7)).unwrap();
-        assert!(cursor.move_down(7, 1));
+        assert!(cursor.move_down(GoalColumn::Column(7), 1));
         assert_eq!(cursor.grapheme(), Rope::from("b").slice(..));
         assert_eq!(cursor.byte_index(), 13);
         // The goal column is sticky, so moving back up returns to the original grapheme.
-        assert!(cursor.move_up(7, 1));
+        assert!(cursor.move_up(GoalColumn::Column(7), 1));
         assert_eq!(cursor.byte_index(), 7);
 
         // An empty line has nothing but its newline to land on.
         let mut cursor = CursorView::try_from(("abc\n\nx\n", 2)).unwrap();
-        assert!(cursor.move_down(2, 1));
+        assert!(cursor.move_down(GoalColumn::Column(2), 1));
         assert_eq!(cursor.grapheme(), Rope::from("\n").slice(..));
         assert_eq!(cursor.byte_index(), 4);
 
         // Landing on a CRLF terminator steps back onto the last grapheme too.
         let mut cursor = CursorView::try_from(("abc\r\nab\r\n", 2)).unwrap();
-        assert!(cursor.move_down(2, 1));
+        assert!(cursor.move_down(GoalColumn::Column(2), 1));
         assert_eq!(cursor.grapheme(), Rope::from("b").slice(..));
         assert_eq!(cursor.byte_index(), 6);
     }
@@ -737,12 +780,12 @@ mod tests {
     #[test]
     fn move_vertical_line_end_goal_columns() {
         let mut cursor = CursorView::try_from(("ab\nabcdef\n", 1)).unwrap();
-        assert!(cursor.move_down(GOAL_COLUMN_UNTIL_LINE_END, 1));
+        assert!(cursor.move_down(GoalColumn::UntilLineEnd, 1));
         assert_eq!(cursor.grapheme(), Rope::from("f").slice(..));
         assert_eq!(cursor.byte_index(), 8);
 
         let mut cursor = CursorView::try_from(("ab\nabcdef\n", 2)).unwrap();
-        assert!(cursor.move_down(GOAL_COLUMN_ONTO_LINE_END, 1));
+        assert!(cursor.move_down(GoalColumn::OntoLineEnd, 1));
         assert_eq!(cursor.grapheme(), Rope::from("\n").slice(..));
         assert_eq!(cursor.byte_index(), 9);
     }
@@ -837,18 +880,26 @@ mod tests {
                 let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
                 self.cursor().move_right(count);
             }
+            fn goal_column(cursor: &CursorMut<'_>, tc: TestCase) -> GoalColumn {
+                match tc.draw(gs::integers::<u8>().max_value(2)) {
+                    0 => GoalColumn::Column(cursor.display_column()),
+                    1 => GoalColumn::UntilLineEnd,
+                    2 => GoalColumn::OntoLineEnd,
+                    _ => unreachable!(),
+                }
+            }
             #[rule]
             fn move_up(&mut self, tc: TestCase) {
                 let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
                 let mut cursor = self.cursor();
-                let goal_column = cursor.display_column();
+                let goal_column = Self::goal_column(&cursor, tc);
                 cursor.move_up(goal_column, count);
             }
             #[rule]
             fn move_down(&mut self, tc: TestCase) {
                 let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
                 let mut cursor = self.cursor();
-                let goal_column = cursor.display_column();
+                let goal_column = Self::goal_column(&cursor, tc);
                 cursor.move_down(goal_column, count);
             }
             #[rule]

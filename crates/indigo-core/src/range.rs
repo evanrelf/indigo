@@ -1,8 +1,5 @@
 use crate::{
-    cursor::{
-        Cursor, CursorMut, CursorSnapshot, CursorState, GOAL_COLUMN_ONTO_LINE_END,
-        GOAL_COLUMN_UNTIL_LINE_END,
-    },
+    cursor::{Cursor, CursorMut, CursorSnapshot, CursorState, GoalColumn},
     rope::RopeExt as _,
     text::Text,
 };
@@ -76,7 +73,7 @@ pub enum Action {
 pub struct RangeState {
     pub tail: CursorState,
     pub head: CursorState,
-    pub goal_column: usize,
+    pub goal_column: GoalColumn,
 }
 
 impl RangeState {
@@ -141,7 +138,7 @@ impl RangeState {
 pub struct RangeSnapshot {
     pub tail: CursorSnapshot,
     pub head: CursorSnapshot,
-    pub goal_column: usize,
+    pub goal_column: GoalColumn,
 }
 
 impl RangeSnapshot {
@@ -239,7 +236,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         }
     }
 
-    pub fn goal_column(&self) -> usize {
+    pub fn goal_column(&self) -> GoalColumn {
         self.state.goal_column
     }
 
@@ -326,7 +323,7 @@ impl<W: WrapMut> RangeView<'_, W> {
     /// Should be called after performing any non-vertical movement.
     pub fn update_goal_column(&mut self) {
         let head_column = self.head().display_column();
-        self.state.goal_column = head_column;
+        self.state.goal_column = GoalColumn::Column(head_column);
     }
 
     pub fn extend_to(&mut self, byte_index: usize) {
@@ -475,7 +472,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_until_line_end(&mut self) {
         self.head_mut().move_until_line_end();
-        self.state.goal_column = GOAL_COLUMN_UNTIL_LINE_END;
+        self.state.goal_column = GoalColumn::UntilLineEnd;
     }
 
     pub fn move_until_line_end(&mut self) {
@@ -496,7 +493,7 @@ impl<W: WrapMut> RangeView<'_, W> {
     pub fn expand_to_full_lines(&mut self) {
         self.start_mut().move_to_line_start();
         self.end_mut().move_to_line_end();
-        self.state.goal_column = GOAL_COLUMN_ONTO_LINE_END;
+        self.state.goal_column = GoalColumn::OntoLineEnd;
     }
 
     pub fn flip(&mut self) {
@@ -799,7 +796,7 @@ where
         let state = Box::new(RangeState {
             tail: CursorState { byte_index: tail },
             head: CursorState { byte_index: head },
-            goal_column: 0,
+            goal_column: GoalColumn::default(),
         });
         Self::new(text, state).map(|mut range| {
             range.update_goal_column();

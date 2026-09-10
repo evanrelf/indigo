@@ -1,5 +1,5 @@
 use crate::{
-    cursor::CursorState,
+    cursor::{CursorState, GoalColumn},
     range::{Range, RangeMut, RangeSnapshot, RangeState},
     rope::{LINE_TYPE, RegexCursorInput, RopeExt as _},
     text::Text,
@@ -246,7 +246,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
                 ranges.push(RangeState {
                     tail: CursorState { byte_index: tail },
                     head: CursorState { byte_index: head },
-                    goal_column: 0,
+                    goal_column: GoalColumn::default(),
                 });
             }
         }
@@ -530,7 +530,7 @@ mod tests {
         RangeState {
             tail: CursorState { byte_index: tail },
             head: CursorState { byte_index: head },
-            goal_column: 0,
+            goal_column: GoalColumn::default(),
         }
     }
 

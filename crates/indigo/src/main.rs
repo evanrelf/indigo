@@ -438,7 +438,7 @@ fn render_debug_info(editor: &Editor, area: Rect, surface: &mut Surface) {
         Line::from(Span::raw(format!("ranges: {ranges}")).style(Style::reset().fg(THEME.dots))),
         Line::from(Span::raw(format!("tail: {tail}")).style(Style::reset().fg(THEME.dots))),
         Line::from(Span::raw(format!("head: {head}")).style(Style::reset().fg(THEME.dots))),
-        Line::from(Span::raw(format!("goal: {goal}")).style(Style::reset().fg(THEME.dots))),
+        Line::from(Span::raw(format!("goal: {goal:?}")).style(Style::reset().fg(THEME.dots))),
     ];
 
     let height = u16::try_from(lines.len()).unwrap();
