@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+# Run the same keys through `indigo-cli` and vanilla Kakoune (`kak -n -f`) and
+# diff the resulting text.
+#
+# Keys use `indigo-cli` syntax. The Kakoune keys are derived from them unless
+# given explicitly: `\\` becomes `\`, `\ ` becomes a space, `<bs>` becomes
+# `<backspace>`, and `gk` is prepended to compensate for Kakoune's `-f` starting
+# with the whole buffer selected. Both editors' stderr is shown when the output
+# differs, since Kakoune aborts the remaining keys on an error.
+
+set -Eeuo pipefail
+IFS=$'\n\t'
+
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+  echo "usage: <input> | $0 <keys> [<kakoune keys>]" >&2
+  exit 2
+fi
+
+bin=$(cd "$(dirname "$0")" && pwd)
+keys="$1"
+kak_keys="${2:-$(printf '%s' "$keys" | sed -e 's/\\\\/\\/g' -e 's/\\ / /g' -e 's/<bs>/<backspace>/g')}"
+
+temp=$(mktemp -d)
+
+cat > "$temp/input"
+
+set +e
+"$bin/run-cli" "$keys" < "$temp/input" > "$temp/indigo" 2> "$temp/indigo.err"
+echo "[exit $?]" >> "$temp/indigo"
+kak -n -f "gk$kak_keys" < "$temp/input" > "$temp/kak" 2> "$temp/kak.err"
+echo "[exit $?]" >> "$temp/kak"
+set -e
+
+if cmp -s "$temp/indigo" "$temp/kak"; then
+  echo "same"
+  exit 0
+fi
+
+diff --label indigo --label kakoune -u "$temp/indigo" "$temp/kak" || true
+for editor in indigo kak; do
+  if [ -s "$temp/$editor.err" ]; then
+    echo
+    echo "--- $editor stderr:"
+    cat "$temp/$editor.err"
+  fi
+done
+exit 1

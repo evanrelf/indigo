@@ -49,6 +49,9 @@ Kakoune.
 You must use the `-n` option to prevent sourcing configuration. We want to
 compare against vanilla, unconfigured Kakoune.
 
+The `./bin/compare-kak` script handles this and other quirks for you. Read it
+for more info.
+
 ## Examples
 
 Trivial example making no changes:
