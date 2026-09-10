@@ -1,5 +1,8 @@
 use crate::{
-    cursor::{Cursor, CursorMut, CursorSnapshot, CursorState},
+    cursor::{
+        Cursor, CursorMut, CursorSnapshot, CursorState, GOAL_COLUMN_ONTO_LINE_END,
+        GOAL_COLUMN_UNTIL_LINE_END,
+    },
     rope::RopeExt as _,
     text::Text,
 };
@@ -472,7 +475,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_until_line_end(&mut self) {
         self.head_mut().move_until_line_end();
-        self.update_goal_column();
+        self.state.goal_column = GOAL_COLUMN_UNTIL_LINE_END;
     }
 
     pub fn move_until_line_end(&mut self) {
@@ -493,7 +496,7 @@ impl<W: WrapMut> RangeView<'_, W> {
     pub fn expand_to_full_lines(&mut self) {
         self.start_mut().move_to_line_start();
         self.end_mut().move_to_line_end();
-        self.update_goal_column();
+        self.state.goal_column = GOAL_COLUMN_ONTO_LINE_END;
     }
 
     pub fn flip(&mut self) {

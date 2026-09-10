@@ -51,6 +51,10 @@ pub enum Direction {
     Forward,
 }
 
+pub const GOAL_COLUMN_UNTIL_LINE_END: usize = usize::MAX - 1;
+
+pub const GOAL_COLUMN_ONTO_LINE_END: usize = usize::MAX;
+
 #[derive(Clone, Debug, Default)]
 pub struct CursorState {
     pub byte_index: usize,
@@ -268,16 +272,29 @@ impl<W: WrapMut> CursorView<'_, W> {
             let target_line_slice = self.text.line(target_line_index, LINE_TYPE);
             let mut target_line_prefix = 0;
             let mut target_byte_index = target_line_byte_index;
+            let mut reached_line_end = true;
             for grapheme in target_line_slice.graphemes() {
                 if grapheme.chars().any(|c| c == '\n' || c == '\r') {
                     break;
                 }
                 let grapheme_width = grapheme.display_width();
                 if target_line_prefix + grapheme_width > goal_column {
+                    reached_line_end = false;
                     break;
                 }
                 target_line_prefix += grapheme_width;
                 target_byte_index += grapheme.len();
+            }
+            // Only an empty line or `GOAL_COLUMN_ONTO_LINE_END` puts the cursor on the newline;
+            // otherwise stop on the last grapheme before it, like Kakoune.
+            if reached_line_end
+                && goal_column != GOAL_COLUMN_ONTO_LINE_END
+                && target_byte_index > target_line_byte_index
+            {
+                target_byte_index = self
+                    .text
+                    .prev_grapheme_boundary(target_byte_index)
+                    .expect("Line is not empty, so a grapheme precedes its end");
             }
             self.state.byte_index = target_byte_index;
         }
@@ -681,17 +698,53 @@ mod tests {
         assert_eq!(cursor.display_column(), 6);
 
         cursor.move_up(cursor.display_column(), 1);
-        // On the newline terminating line 1, which is shorter than the goal column.
-        assert_eq!(cursor.grapheme(), Rope::from("\n").slice(..));
-        assert_eq!(cursor.byte_index(), 5);
-        assert_eq!(cursor.display_column(), 3);
-
-        cursor.move_left(1);
-        // On "4" in line 1.
+        // On "4", the last grapheme of line 1, which is shorter than the goal column.
         assert_eq!(cursor.grapheme(), Rope::from("4").slice(..));
         assert_eq!(cursor.line().to_string(), "234\n");
         assert_eq!(cursor.byte_index(), 4);
         assert_eq!(cursor.display_column(), 2);
+
+        cursor.move_left(1);
+        // On "3" in line 1.
+        assert_eq!(cursor.grapheme(), Rope::from("3").slice(..));
+        assert_eq!(cursor.byte_index(), 3);
+        assert_eq!(cursor.display_column(), 1);
+    }
+
+    #[test]
+    fn move_vertical_stops_before_newline() {
+        let mut cursor = CursorView::try_from(("a long line\nab\ncd\n", 7)).unwrap();
+        assert!(cursor.move_down(7, 1));
+        assert_eq!(cursor.grapheme(), Rope::from("b").slice(..));
+        assert_eq!(cursor.byte_index(), 13);
+        // The goal column is sticky, so moving back up returns to the original grapheme.
+        assert!(cursor.move_up(7, 1));
+        assert_eq!(cursor.byte_index(), 7);
+
+        // An empty line has nothing but its newline to land on.
+        let mut cursor = CursorView::try_from(("abc\n\nx\n", 2)).unwrap();
+        assert!(cursor.move_down(2, 1));
+        assert_eq!(cursor.grapheme(), Rope::from("\n").slice(..));
+        assert_eq!(cursor.byte_index(), 4);
+
+        // Landing on a CRLF terminator steps back onto the last grapheme too.
+        let mut cursor = CursorView::try_from(("abc\r\nab\r\n", 2)).unwrap();
+        assert!(cursor.move_down(2, 1));
+        assert_eq!(cursor.grapheme(), Rope::from("b").slice(..));
+        assert_eq!(cursor.byte_index(), 6);
+    }
+
+    #[test]
+    fn move_vertical_line_end_goal_columns() {
+        let mut cursor = CursorView::try_from(("ab\nabcdef\n", 1)).unwrap();
+        assert!(cursor.move_down(GOAL_COLUMN_UNTIL_LINE_END, 1));
+        assert_eq!(cursor.grapheme(), Rope::from("f").slice(..));
+        assert_eq!(cursor.byte_index(), 8);
+
+        let mut cursor = CursorView::try_from(("ab\nabcdef\n", 2)).unwrap();
+        assert!(cursor.move_down(GOAL_COLUMN_ONTO_LINE_END, 1));
+        assert_eq!(cursor.grapheme(), Rope::from("\n").slice(..));
+        assert_eq!(cursor.byte_index(), 9);
     }
 
     #[test]
