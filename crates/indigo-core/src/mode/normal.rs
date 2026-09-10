@@ -462,6 +462,11 @@ fn split_into_lines(editor: &mut Editor) {
 
 fn select_regex(editor: &mut Editor) {
     prompt::enter(editor, "select", |editor, regex_str| {
+        if regex_str.is_empty() {
+            editor.message = Some(Err(String::from("Nothing selected")));
+            editor.count = None;
+            return;
+        }
         let regex = Regex::builder()
             .syntax(
                 regex_cursor::regex_automata::util::syntax::Config::new()
