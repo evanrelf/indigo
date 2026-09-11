@@ -59,6 +59,7 @@
               checks = config.checks;
               packages = with pkgs; [
                 cargo-fuzz
+                kakoune
               ];
             };
         };
