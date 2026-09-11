@@ -1,0 +1,340 @@
+#!/usr/bin/env bash
+
+# Run `compare-kak` over a suite of small examples. Each `same` case must
+# produce identical output in both editors. `todo` cases pin known bugs and
+# `by_design` cases pin intentional divergences; both fail if the editors ever
+# agree, so the case can be moved or dropped.
+#
+# Inputs are passed through `printf '%b'`, so `\n` and `\t` are escapes. Keys
+# use `indigo-cli` syntax; pass explicit Kakoune keys as a third argument when
+# the automatic translation in `compare-kak` isn't enough.
+
+set -Eeuo pipefail
+IFS=$'\n\t'
+
+bin=$(cd "$(dirname "$0")" && pwd)
+
+failures=0
+
+# Usage: same <input> <keys> [<kakoune keys>]
+same() {
+  local input=$1 keys=$2
+  shift 2
+  local output
+  if output=$(printf '%b' "$input" | "$bin/compare-kak" "$keys" "$@"); then
+    echo "ok       $keys"
+  else
+    echo "FAIL     $keys    input=$(printf '%q' "$input")"
+    printf '%s\n' "$output" | sed 's/^/         /'
+    failures=$((failures + 1))
+  fi
+}
+
+# Usage: expect_diff <label> <input> <keys> [<kakoune keys>]
+expect_diff() {
+  local label=$1 input=$2 keys=$3
+  shift 3
+  if printf '%b' "$input" | "$bin/compare-kak" "$keys" "$@" > /dev/null; then
+    echo "FAIL     $keys    input=$(printf '%q' "$input")"
+    echo "         expected a divergence, but the editors now agree"
+    failures=$((failures + 1))
+  else
+    printf '%-8s %s\n' "$label" "$keys"
+  fi
+}
+
+# Usage: todo <input> <keys> [<kakoune keys>]
+todo() {
+  expect_diff todo "$@"
+}
+
+# Usage: by_design <input> <keys> [<kakoune keys>]
+by_design() {
+  expect_diff design "$@"
+}
+
+# Regex select
+
+same 'ab\ncd\n' '%s^<ret>cX<esc>'
+same 'ab\ncd\n' '%s$<ret>cX<esc>'
+same 'ab\n\ncd\n' '%s^$<ret>cX<esc>'
+same 'ab\ncd\n' '%s.<ret>d'
+same 'ab\ncd\n' '%s.*<ret>cX<esc>'
+same 'ab\ncd\n' '%s\\n<ret>cX<esc>'
+same 'ab cd\nef\n' '%s\\w+<ret>cX<esc>'
+same 'ab cd\nef\n' '%s\\s+<ret>d'
+same 'ab cd\nef\n' '%sab|ef<ret>cX<esc>'
+same 'ab cd\nef\n' '%s(?i)AB<ret>cX<esc>'
+same 'aXbXc\n' '%sa.*?X<ret>cY<esc>'
+same 'ab cd\nef\n' '%s\\Aab<ret>d'
+same 'ab cd\nef\n' '%sef\\n\\z<ret>d'
+same 'ab cd\nef gh\n' 'jxs\\w+<ret>cX<esc>'
+same 'ab cd\n' '%<a-;>s\\w+<ret><a-:>d'
+same 'ab cd\n' '%sb\ c<ret>cX<esc>' '%sb c<ret>cX<esc>'
+same 'ab cd\n' '%sxyz<ret>'
+same 'ab cd\n' '%s<ret>'
+same 'héllo wörld\n' '%s\\w+<ret>cX<esc>'
+
+# Horizontal movement
+
+same 'ab\ncd\n' 'lcX<esc>'
+same 'ab\ncd\n' '2lcX<esc>'
+same 'ab\ncd\n' '3lcX<esc>'
+same 'ab\ncd\n' '5lcX<esc>'
+same 'ab\ncd\n' '100lcX<esc>'
+same 'ab\ncd\n' 'hcX<esc>'
+same 'ab\ncd\n' 'jhcX<esc>'
+same 'ab\ncd\n' 'j3hcX<esc>'
+same 'ab\ncd\n' 'gj100lcX<esc>'
+same 'éa\n' 'lcX<esc>'
+same '日本\n' 'lcX<esc>'
+
+# Vertical movement
+
+same 'abc\nd\nefg\n' 'lljjcX<esc>'
+same 'abc\nd\n' 'lljcX<esc>'
+same 'abc\nd\n' 'lljd'
+same 'abc\n\nefg\n' 'lljjcX<esc>'
+same 'abc\n\nefg\n' 'lljd'
+same 'abc\nd\nefg\n' 'gljjcX<esc>'
+same 'abc\nd\nefg\n' 'jjglkkcX<esc>'
+same 'abc\nd\n' 'kcX<esc>'
+same 'abc\nd\n' 'j100jcX<esc>'
+same 'abc\nd\n' 'l100jcX<esc>'
+same 'abc\nd\n' '3jcX<esc>'
+same '\tb\nabcdefghij\n' 'ljcX<esc>'
+same 'abcdefghij\n\tb\n' '8ljcX<esc>'
+same 'abcdefghij\n\tb\n' '3ljcX<esc>'
+same '日本語\nabcdef\n' 'lljcX<esc>'
+same 'abcdef\n日本語\n' '3ljcX<esc>'
+same 'abcdef\n日本語\n' '4ljcX<esc>'
+
+# Extending and flipping
+
+same 'abcd\n' 'LLd'
+same 'abcd\n' '2Ld'
+same 'abcd\n' 'lllHHd'
+same 'abcd\n' 'llHHHHd'
+same 'ab\ncd\n' 'lJd'
+same 'ab\ncd\nef\n' 'jlKd'
+same 'ab\ncd\nef\n' 'l2Jd'
+same 'ab\ncd\n' 'gl2Ld'
+same 'ab\ncd\n' 'j2Hd'
+same 'abcd\n' 'lll<a-;>d'
+same 'abcd\n' 'LL<a-;>;d'
+same 'abcd\n' 'LL<a-;><a-:>;d'
+same 'abcd\n' 'LL;d'
+same 'abcd\n' 'lLL<a-;>LLd'
+same 'ab\ncd\n' 'jJ<a-;>Kd'
+
+# Goto
+
+same 'ab\ncd\n' 'lghcX<esc>'
+same 'ab\ncd\n' 'glcX<esc>'
+same 'ab\ncd\n' 'gllcX<esc>'
+same '  ab\n' 'glgicX<esc>'
+same 'ab\ncd\n' 'gecX<esc>'
+same 'ab\ncd\n' 'gjcX<esc>'
+same 'ab\ncd\n' 'jgkcX<esc>'
+same 'ab\ncd\nef\n' 'jgEd' 'jGed'
+same 'ab\ncd\n' 'lgLd' 'lGld'
+same 'abc\n' 'llgHd' 'llGhd'
+same 'ab\ncd\nef\n' 'jjgKd' 'jjGkd'
+same 'ab\ncd\nef\n' 'jgJd' 'jGjd'
+same '  ab\n' 'glgId' 'glGid'
+
+# Line selections
+
+same 'ab\ncd\nef\n' 'xd'
+same 'ab\ncd\nef\n' 'xxd'
+same 'ab\ncd\nef\n' '2xd'
+same 'ab\ncd\nef\n' 'lxcX<esc>'
+same 'ab\ncd\nef\n' 'gjxd'
+same 'ab\ncd\nef\n' 'jglxd'
+same 'ab\ncd\nef\n' 'gj5xd'
+same 'ab\ncd\nef\n' 'xjcX<esc>'
+same 'ab\ncd\nef\n' 'xJcX<esc>'
+same 'ab\ncd\nef\n' 'jxkcX<esc>'
+same 'ab\ncd\nef\n' '%<a-s>cX<esc>'
+same 'ab\ncd\nef\n' 'lJJ<a-s>cX<esc>'
+same 'ab\n\ncd\n' '%<a-s>d'
+
+# Seek
+
+same 'abcabc\n' 'fcd'
+same 'abcabc\n' '2fcd'
+same 'abcabc\n' 'tcd'
+same 'abcabc\n' '2tcd'
+same 'abcabc\n' 'Fcd'
+same 'abcabc\n' 'Tcd'
+same 'abcabc\n' 'gl<a-f>ad'
+same 'abcabc\n' 'gl<a-t>ad'
+same 'abcabc\n' 'gl<a-F>ad'
+same 'abcabc\n' 'gl<a-T>ad'
+same 'abcabc\n' 'fcfcd'
+same 'abcabc\n' 'tctcd'
+same 'abcabc\n' 'tbd'
+same 'abcabc\n' 'l<a-t>ad'
+same 'abcabc\n' '2fccX<esc>'
+# Kakoune aborts the remaining keys when a seek fails, so a failing seek can't
+# be followed by an edit that would reveal the cursor.
+same 'abcabc\n' '3fc'
+same 'ab\ncd\n' 'f<ret>d'
+same 'ab\ncd\n' 't<ret>d'
+same 'ab\ncd\n' 'fdd'
+same 'a b\n' 'f\ d' 'f d'
+same 'héllo wörld\n' 'fwd'
+
+# Multiple selections
+
+same 'ab cd ef\n' '%s\\w+<ret>,cX<esc>'
+same 'ab cd ef\n' '%s\\w+<ret>(,cX<esc>'
+same 'ab cd ef\n' '%s\\w+<ret>),cX<esc>'
+same 'ab cd ef\n' '%s\\w+<ret>)),cX<esc>'
+same 'ab cd ef\n' '%s\\w+<ret>2),cX<esc>'
+same 'ab cd ef\n' '%s\\w+<ret>d'
+same 'ab cd ef\n' '%s\\w+<ret>rX'
+same 'ab cd ef\n' '%s\\w+<ret>;d'
+same 'ab cd ef\n' '%s\\w+<ret><a-;>d'
+same 'ab cd ef\n' '%s\\w+<ret>Ld'
+same 'ab cd ef\n' '%s\\w+<ret>cX<esc>'
+same 'ab\ncd\n' '%s^<ret>oX<esc>'
+same 'ab\ncd\n' '%s^<ret>OX<esc>'
+same 'ab\ncd\n' '%s^<ret>ixxx<esc>'
+same 'ab\ncd\n' '%s\\w<ret>a<ret><esc>'
+same 'ab\ncd\n' '%s\\w<ret>a<bs><esc>'
+same 'ab\ncd\n' '%s\\w<ret>i<del><esc>'
+
+# Insert mode
+
+same 'abc\n' 'lliX<esc>'
+same 'abc\n' 'llaX<esc>'
+same 'abc\n' 'glaX<esc>'
+same 'abc\n' 'gllaX<esc>'
+same 'abc\n' 'lll<a-;>aX<esc>'
+same 'abc\n' 'lll<a-;>iX<esc>'
+same '  ab\n' 'jIX<esc>'
+same 'ab\ncd\n' 'AX<esc>'
+same 'ab\ncd\n' 'lLAX<esc>d'
+same 'ab\ncd\n' 'lLIX<esc>d'
+same 'ab\ncd\n' 'oX<esc>'
+same 'ab\ncd\n' 'jOX<esc>'
+same '  ab\n' 'oX<esc>'
+same 'a\n\nb\n' 'joX<esc>'
+same 'a\n\nb\n' 'jOX<esc>'
+same 'ab\ncd\n' '<a-o>cX<esc>'
+same 'ab\ncd\n' 'j<a-O>cX<esc>'
+same 'ab\ncd\n' 'gj<a-o>cX<esc>'
+same 'ab\ncd\n' 'lJ<a-o>cX<esc>'
+same 'ab\ncd\n' 'lJ<a-;><a-O>cX<esc>'
+same 'abc\n' 'lliab<bs>c<esc>'
+same 'abc\n' 'i<bs>X<esc>'
+same 'ab\ncd\n' 'ji<bs>X<esc>'
+same 'abc\n' 'i<del>X<esc>'
+same 'abc\n' 'gjgla<del>X<esc>'
+same 'abc\n' 'li<ret>X<esc>'
+same 'abc\n' 'i<tab>X<esc>'
+same 'abc\n' 'i<s-\ >X<esc>' 'i X<esc>'
+same 'abc\n' 'iXY<esc>d'
+same 'abc\n' 'iXY<esc>ld'
+same 'abc\n' 'lLcXY<esc>d'
+same 'ab\ncd\n' 'lJcX<esc>aY<esc>'
+
+# Replace
+
+same 'abc\n' 'rX'
+same 'abc\n' 'lLrX'
+same 'ab\ncd\n' 'lLJrX'
+same 'abc\n' 'lr<ret>'
+same 'abc\n' 'lr<tab>'
+same 'abc\n' '3rX'
+
+# Undo and redo
+
+same 'abc\n' 'iX<esc>u'
+same 'abc\n' 'iX<esc>aY<esc>uu'
+same 'abc\n' 'iX<esc>uU'
+same 'abc\n' 'iX<esc>aY<esc>uuUu'
+same 'abc\n' 'iX<esc>aY<esc>2u'
+same 'abc\n' 'iXY<esc>u'
+same 'abc\n' 'iXY<bs>Z<esc>u'
+same 'abc\n' 'lLduUd'
+same 'abc\n' 'rXu'
+same 'abc\n' 'ldu'
+
+# Buffer edge cases
+
+same '' 'iX<esc>'
+same '' 'd'
+same '' 'oX<esc>'
+same 'abc' 'glaX<esc>'
+same 'abc' 'gld'
+same 'abc\ndef' 'gljcX<esc>'
+same '\n' 'iX<esc>'
+same '\n\n\n' 'jjd'
+same 'ab\ncd\n' 'gedaX<esc>'
+same 'ab\ncd\n' 'gedgjcX<esc>'
+same 'ab\ncd\n' 'gedxd'
+same 'ab\ncd\n' '%diX<esc>'
+same 'ab\ncd\n' '%doX<esc>'
+same 'ab\ncd\n' '%s\\w+<ret>dd'
+
+# Prompt editing
+
+same 'ab cd\n' '%s\\w+x<bs><ret>cX<esc>'
+same 'ab cd\n' '%sxyz<c-u>\\w+<ret>cX<esc>'
+same 'ab cd\n' '%s\\w+xyz<c-a><c-f><c-f><c-f><c-k><ret>cX<esc>'
+same 'ab cd\n' '%sd<c-b>c<ret>cX<esc>'
+same 'ab cd\n' '%s\\w<c-a><c-e>+<ret>cX<esc>'
+same 'ab cd\n' '%s\\w+<esc>cX<esc>'
+
+# Known bugs
+
+# Overlapping or coincident selections are not merged. Deleting in this state
+# panics, so only insertions are pinned here.
+todo 'ab\nc\n' '%s.<ret>jiX<esc>'
+todo 'ab cd\n' '%s\\w+<ret>geiX<esc>'
+
+# Undo does not restore selections.
+todo 'abc\n' 'lLducX<esc>'
+todo 'ab\ncd\n' 'oX<esc>ucX<esc>'
+
+# `r` collapses a multi-grapheme selection to its first grapheme; Kakoune keeps
+# the whole replaced range selected.
+todo 'abc\n' 'lLrXd'
+
+# `o`, `O`, `<a-o>`, and `<a-O>` use the head's line rather than the
+# selection's first or last line.
+todo 'ab\ncd\nef\n' 'lJ<a-;>oX<esc>'
+todo 'ab\ncd\nef\n' 'jlJOX<esc>'
+todo 'a\n\nb\n' 'j<a-o>cX<esc>'
+
+# An empty match right after a non-empty match is skipped.
+todo 'foo\n' '%so*<ret>iX<esc>'
+
+# Lookaround isn't supported by the regex engine.
+todo 'ab\n' '%sa(?=b)<ret>cX<esc>'
+
+# Tabs are a fixed 8 columns wide instead of advancing to the next tab stop.
+todo 'a\tb\nabcdefghijk\n' 'lljcX<esc>'
+
+# Intentional divergences
+
+# `i` and `a` collapse the selection to the head; Kakoune keeps it.
+by_design 'abc\n' '%iX<esc>'
+by_design 'abc\n' 'lLaX<esc>d'
+by_design 'abc\n' 'lLiX<esc>d'
+
+# Grapheme clusters are single units; Kakoune moves by codepoint.
+by_design 'e\xcc\x81x\n' 'd'
+by_design '🇺🇸x\n' 'laX<esc>'
+
+# The key parser only accepts ASCII, so non-ASCII text can't be typed or
+# sought.
+by_design 'abc\n' 'ié<esc>' 'ié<esc>'
+
+if [ "$failures" -gt 0 ]; then
+  echo
+  echo "$failures failure(s)"
+  exit 1
+fi

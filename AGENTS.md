@@ -32,3 +32,7 @@ by Kakoune and CodeMirror.
   `indigo_kernel`'s `edit` and `merge` modules for good examples.
 - Never run `indigo`; you cannot control it. Run `indigo-cli` instead to test
   editor behavior. Read `crates/indigo-cli/README.md` for detailed instructions.
+- Run the `bin/compare-kak-suite` integration suite to compare Kakoune and
+  Indigo behavior when you finish your work (takes a while to run). If you feel
+  strongly that a new test case would be highly valuable, you have permission to
+  extend the suite.
