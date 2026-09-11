@@ -31,40 +31,12 @@
           };
 
           cargoArtifacts = crane.buildDepsOnly commonArgs;
-
-          toolchainWasm =
-            with inputs'.fenix.packages; combine [
-              minimal.cargo
-              minimal.rustc
-              targets.wasm32-wasip1.latest.rust-std
-            ];
-
-          craneWasm = crane.overrideToolchain toolchainWasm;
-
-          commonArgsWasm = commonArgs // {
-            CARGO_BUILD_TARGET = "wasm32-wasip1";
-            cargoExtraArgs = "--package indigo-kernel";
-            # Fenix does not fix up the rpath of `rust-lld` on Darwin, so it cannot
-            # find `libLLVM.dylib` on its own.
-            DYLD_FALLBACK_LIBRARY_PATH = "${toolchainWasm}/lib";
-            doCheck = false;
-          };
-
-          cargoArtifactsWasm = craneWasm.buildDepsOnly commonArgsWasm;
         in
         {
-          packages.default = config.packages.indigo;
-
-          packages.indigo =
+          packages.default =
             crane.buildPackage (commonArgs // {
               inherit cargoArtifacts;
               cargoExtraArgs = "--bin indigo";
-            });
-
-          packages.indigo-kernel-wasm =
-            craneWasm.buildPackage (commonArgsWasm // {
-              pname = "indigo-kernel";
-              cargoArtifacts = cargoArtifactsWasm;
             });
 
           packages.docs = config.checks.doc;
@@ -87,7 +59,6 @@
               checks = config.checks;
               packages = with pkgs; [
                 cargo-fuzz
-                wasmtime
               ];
             };
         };

@@ -3,9 +3,6 @@ name = "indigo-kernel"
 license = "MPL-2.0"
 edition = "2024"
 
-[lib]
-crate-type = ["rlib", "cdylib"]
-
 [dependencies]
 anyhow = { workspace = true }
 imbl = "7.0.1"
