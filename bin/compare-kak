@@ -17,7 +17,11 @@ if [ $# -lt 1 ] || [ $# -gt 2 ]; then
   exit 2
 fi
 
-bin=$(cd "$(dirname "$0")" && pwd)
+if [ -n "${INDIGO_CLI:-}" ]; then
+  indigo_cli="$INDIGO_CLI"
+else
+  indigo_cli="$(git rev-parse --show-toplevel)/bin/run-cli"
+fi
 keys="$1"
 kak_keys="${2:-$(printf '%s' "$keys" | sed -e 's/\\\\/\\/g' -e 's/\\ / /g' -e 's/<bs>/<backspace>/g')}"
 
@@ -26,7 +30,7 @@ temp=$(mktemp -d)
 cat > "$temp/input"
 
 set +e
-"$bin/run-cli" "$keys" < "$temp/input" > "$temp/indigo" 2> "$temp/indigo.err"
+"$indigo_cli" "$keys" < "$temp/input" > "$temp/indigo" 2> "$temp/indigo.err"
 echo "[exit $?]" >> "$temp/indigo"
 kak -n -f "gk$kak_keys" < "$temp/input" > "$temp/kak" 2> "$temp/kak.err"
 echo "[exit $?]" >> "$temp/kak"

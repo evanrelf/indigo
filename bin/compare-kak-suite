@@ -12,7 +12,10 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-bin=$(cd "$(dirname "$0")" && pwd)
+git_root=$(git rev-parse --show-toplevel)
+
+cargo build --quiet --bin indigo-cli
+export INDIGO_CLI="$git_root/target/debug/indigo-cli"
 
 failures=0
 
@@ -21,7 +24,7 @@ same() {
   local input=$1 keys=$2
   shift 2
   local output
-  if output=$(printf '%b' "$input" | "$bin/compare-kak" "$keys" "$@"); then
+  if output=$(printf '%b' "$input" | "$git_root/bin/compare-kak" "$keys" "$@"); then
     echo "ok       $keys"
   else
     echo "FAIL     $keys    input=$(printf '%q' "$input")"
@@ -34,7 +37,7 @@ same() {
 expect_diff() {
   local label=$1 input=$2 keys=$3
   shift 3
-  if printf '%b' "$input" | "$bin/compare-kak" "$keys" "$@" > /dev/null; then
+  if printf '%b' "$input" | "$git_root/bin/compare-kak" "$keys" "$@" > /dev/null; then
     echo "FAIL     $keys    input=$(printf '%q' "$input")"
     echo "         expected a divergence, but the editors now agree"
     failures=$((failures + 1))
