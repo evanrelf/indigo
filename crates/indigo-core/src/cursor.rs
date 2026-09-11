@@ -345,17 +345,7 @@ impl<W: WrapMut> CursorView<'_, W> {
     }
 
     pub fn move_to_prev_byte(&mut self, byte: u8, count: usize) -> bool {
-        if count == 0 {
-            return false;
-        }
-        for _ in 0..count {
-            if let Some(found) = self.text.find_prev_byte(..self.state.byte_index, &[byte]) {
-                self.state.byte_index = self.text.floor_grapheme_boundary(found);
-            } else {
-                return false;
-            }
-        }
-        true
+        self.seek_prev(&[byte], count)
     }
 
     pub fn move_to_next_byte(&mut self, byte: u8, count: usize) -> bool {
@@ -364,17 +354,7 @@ impl<W: WrapMut> CursorView<'_, W> {
 
     pub fn move_to_prev_blank(&mut self, count: usize) -> bool {
         const BYTES: &[u8] = b" \t\n\r";
-        if count == 0 {
-            return false;
-        }
-        for _ in 0..count {
-            if let Some(found) = self.text.find_prev_byte(..self.state.byte_index, BYTES) {
-                self.state.byte_index = self.text.floor_grapheme_boundary(found);
-            } else {
-                return false;
-            }
-        }
-        true
+        self.seek_prev(BYTES, count)
     }
 
     pub fn move_to_next_blank(&mut self, count: usize) -> bool {
@@ -382,28 +362,41 @@ impl<W: WrapMut> CursorView<'_, W> {
         self.seek_next(BYTES, count)
     }
 
-    /// Land on the grapheme containing the next matching byte, searching strictly after the
-    /// grapheme the cursor occupies.
+    /// Land on the grapheme containing the `count`th previous matching byte. The cursor stays put
+    /// unless every step succeeds.
+    fn seek_prev(&mut self, bytes: &[u8], count: usize) -> bool {
+        if count == 0 {
+            return false;
+        }
+        let mut byte_index = self.state.byte_index;
+        for _ in 0..count {
+            let Some(found) = self.text.find_prev_byte(..byte_index, bytes) else {
+                return false;
+            };
+            byte_index = self.text.floor_grapheme_boundary(found);
+        }
+        self.state.byte_index = byte_index;
+        true
+    }
+
+    /// Land on the grapheme containing the `count`th next matching byte, searching strictly after
+    /// the grapheme the cursor occupies. The cursor stays put unless every step succeeds.
     fn seek_next(&mut self, bytes: &[u8], count: usize) -> bool {
         if count == 0 {
             return false;
         }
-        let mut start = self
-            .text
-            .next_grapheme_boundary(self.state.byte_index)
-            .expect("Cursor is always on a grapheme");
+        let mut byte_index = self.state.byte_index;
         for _ in 0..count {
-            if let Some(found) = self.text.find_next_byte(start.., bytes) {
-                let byte_index = self.text.floor_grapheme_boundary(found);
-                self.state.byte_index = byte_index;
-                start = self
-                    .text
-                    .next_grapheme_boundary(byte_index)
-                    .expect("Found byte is within the text");
-            } else {
+            let start = self
+                .text
+                .next_grapheme_boundary(byte_index)
+                .expect("Cursor is always on a grapheme");
+            let Some(found) = self.text.find_next_byte(start.., bytes) else {
                 return false;
-            }
+            };
+            byte_index = self.text.floor_grapheme_boundary(found);
         }
+        self.state.byte_index = byte_index;
         true
     }
 
@@ -827,6 +820,14 @@ mod tests {
         let mut cursor = CursorView::try_from(("hello world\n", 0)).unwrap();
         assert!(cursor.move_to_next_byte(b'l', 3));
         assert_eq!(cursor.byte_index(), 9);
+
+        let mut cursor = CursorView::try_from(("hello world\n", 0)).unwrap();
+        assert!(!cursor.move_to_next_byte(b'l', 4));
+        assert_eq!(cursor.byte_index(), 0);
+
+        let mut cursor = CursorView::try_from(("hello world\n", 11)).unwrap();
+        assert!(!cursor.move_to_prev_byte(b'l', 4));
+        assert_eq!(cursor.byte_index(), 11);
     }
 
     #[test]
@@ -851,6 +852,14 @@ mod tests {
         let mut cursor = CursorView::try_from(("a b\tc\n", 0)).unwrap();
         assert!(cursor.move_to_next_blank(3));
         assert_eq!(cursor.byte_index(), 5);
+
+        let mut cursor = CursorView::try_from(("a b\tc\n", 0)).unwrap();
+        assert!(!cursor.move_to_next_blank(4));
+        assert_eq!(cursor.byte_index(), 0);
+
+        let mut cursor = CursorView::try_from(("a b\tc\n", 4)).unwrap();
+        assert!(!cursor.move_to_prev_blank(3));
+        assert_eq!(cursor.byte_index(), 4);
     }
 
     #[hegel::test(test_cases = 1000)]
