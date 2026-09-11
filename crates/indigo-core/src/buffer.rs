@@ -92,6 +92,10 @@ impl Buffer {
             None
         }
     }
+
+    pub fn assert_invariants(&self) -> anyhow::Result<()> {
+        self.text.assert_invariants()
+    }
 }
 
 impl From<Rope> for Buffer {

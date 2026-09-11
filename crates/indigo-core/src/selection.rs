@@ -13,8 +13,18 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Error from range")]
-    Range(#[source] anyhow::Error),
+    #[error("Selection has no ranges")]
+    Empty,
+
+    #[error("Primary range index {index} is not within {length} ranges")]
+    PrimaryOutOfRange { index: usize, length: usize },
+
+    #[error("Error from range {index}")]
+    Range {
+        index: usize,
+        #[source]
+        source: anyhow::Error,
+    },
 }
 
 #[derive(Clone)]
@@ -154,9 +164,21 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
             .expect("Range end is always on a grapheme")
     }
 
-    #[expect(clippy::unnecessary_wraps)]
-    #[expect(clippy::unused_self)]
-    pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
+    // TODO: Ranges sorted by start and non-overlapping, once overlapping ranges are merged.
+    pub fn assert_invariants(&self) -> anyhow::Result<()> {
+        if self.state.ranges.is_empty() {
+            anyhow::bail!(Error::Empty);
+        }
+        if self.state.primary_range >= self.state.ranges.len() {
+            anyhow::bail!(Error::PrimaryOutOfRange {
+                index: self.state.primary_range,
+                length: self.state.ranges.len(),
+            });
+        }
+        for (index, range_state) in self.state.ranges.iter().enumerate() {
+            let _ = Range::new(&self.text, range_state)
+                .map_err(|source| Error::Range { index, source })?;
+        }
         Ok(())
     }
 }

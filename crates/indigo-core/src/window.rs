@@ -80,6 +80,11 @@ impl<'a, W: WrapRef> WindowView<'a, W> {
         Selection::new(&self.buffer.text, &self.state.selection)
             .expect("Window text and selection state are always kept valid")
     }
+
+    pub fn assert_invariants(&self) -> anyhow::Result<()> {
+        let _ = Selection::new(&self.buffer.text, &self.state.selection)?;
+        Ok(())
+    }
 }
 
 impl<W: WrapMut> WindowView<'_, W> {

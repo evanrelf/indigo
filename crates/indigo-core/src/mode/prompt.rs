@@ -73,6 +73,11 @@ impl State {
             .expect("Command mode text and cursor state are always kept valid")
             .on_drop(|cursor| cursor.assert_invariants().unwrap())
     }
+
+    pub fn assert_invariants(&self) -> anyhow::Result<()> {
+        let _ = Cursor::new(&self.text, &self.cursor)?;
+        Ok(())
+    }
 }
 
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]

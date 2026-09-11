@@ -3,7 +3,6 @@ use crate::{
     fs::{Fs, NoFs},
     key::Key,
     mode::{Mode, command, insert, normal, prompt, replace, seek},
-    selection::Selection,
     window::{Window, WindowKey, WindowMut, WindowState},
 };
 use camino::Utf8PathBuf;
@@ -16,8 +15,31 @@ use arbitrary::Arbitrary;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Error from buffer")]
-    Buffer(#[source] anyhow::Error),
+    #[error("Focused window {key:?} does not exist")]
+    FocusedWindowMissing { key: WindowKey },
+
+    #[error("Window {window_key:?} refers to buffer {buffer_key:?}, which does not exist")]
+    WindowBufferMissing {
+        window_key: WindowKey,
+        buffer_key: BufferKey,
+    },
+
+    #[error("Error from buffer {key:?}")]
+    Buffer {
+        key: BufferKey,
+        #[source]
+        source: anyhow::Error,
+    },
+
+    #[error("Error from window {key:?}")]
+    Window {
+        key: WindowKey,
+        #[source]
+        source: anyhow::Error,
+    },
+
+    #[error("Error from prompt")]
+    Prompt(#[source] anyhow::Error),
 }
 
 #[derive(Clone)]
@@ -176,6 +198,8 @@ impl Editor {
             },
         };
 
+        self.assert_invariants().unwrap();
+
         Ok(handled)
     }
 
@@ -187,17 +211,36 @@ impl Editor {
             Action::Command(action) => command::handle_action(self, action),
             Action::Seek(action) => seek::handle_action(self, action),
         }
+        self.assert_invariants().unwrap();
     }
 
-    #[expect(dead_code)]
-    pub(crate) fn assert_invariants(&self) -> anyhow::Result<()> {
-        for (_, window) in &self.windows {
-            let buffer = self
-                .buffers
-                .get(window.buffer)
-                .expect("Window state is always kept valid");
-            let _selection =
-                Selection::new(&buffer.text, &window.selection).map_err(Error::Buffer)?;
+    pub fn assert_invariants(&self) -> anyhow::Result<()> {
+        if !self.windows.contains_key(self.focused_window) {
+            anyhow::bail!(Error::FocusedWindowMissing {
+                key: self.focused_window,
+            });
+        }
+        for (key, buffer) in &self.buffers {
+            buffer
+                .assert_invariants()
+                .map_err(|source| Error::Buffer { key, source })?;
+        }
+        for (window_key, window) in &self.windows {
+            let Some(buffer) = self.buffers.get(window.buffer) else {
+                anyhow::bail!(Error::WindowBufferMissing {
+                    window_key,
+                    buffer_key: window.buffer,
+                });
+            };
+            Window::new(buffer, window)
+                .assert_invariants()
+                .map_err(|source| Error::Window {
+                    key: window_key,
+                    source,
+                })?;
+        }
+        if let Mode::Prompt(state) = &self.mode {
+            state.assert_invariants().map_err(Error::Prompt)?;
         }
         Ok(())
     }

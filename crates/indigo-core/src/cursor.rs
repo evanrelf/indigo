@@ -18,6 +18,9 @@ pub enum Error {
 
     #[error("Byte index {byte_index} is not the start of a grapheme")]
     NotOnGrapheme { byte_index: usize },
+
+    #[error("Error from text")]
+    Text(#[source] anyhow::Error),
 }
 
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -226,6 +229,7 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     }
 
     pub fn assert_invariants(&self) -> anyhow::Result<()> {
+        self.text.assert_invariants().map_err(Error::Text)?;
         if self.state.byte_index >= self.text.len() {
             anyhow::bail!(Error::OutOfRange {
                 byte_index: self.state.byte_index,

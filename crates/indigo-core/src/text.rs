@@ -2,6 +2,16 @@ use crate::history::History;
 use indigo_kernel::edit::{self, Edit};
 use ropey::Rope;
 use std::ops::{Deref, Range};
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("Text is empty")]
+    Empty,
+
+    #[error("Text does not end with a newline")]
+    MissingTrailingNewline,
+}
 
 #[derive(Clone, Debug)]
 struct BidiEdit {
@@ -89,6 +99,7 @@ impl Text {
             undo,
         });
         self.log.push(ops.clone());
+        self.assert_invariants().unwrap();
         Ok(())
     }
 
@@ -101,6 +112,7 @@ impl Text {
         if let Some(ops) = self.history.undo() {
             ops.undo.apply(&mut self.rope)?;
             self.log.push(ops.undo.clone());
+            self.assert_invariants().unwrap();
             Ok(true)
         } else {
             Ok(false)
@@ -112,6 +124,7 @@ impl Text {
         if let Some(ops) = self.history.redo() {
             ops.redo.apply(&mut self.rope)?;
             self.log.push(ops.redo.clone());
+            self.assert_invariants().unwrap();
             Ok(true)
         } else {
             Ok(false)
@@ -136,6 +149,16 @@ impl Text {
     #[must_use]
     pub fn ops_since(&self, version: usize) -> Option<&[Edit]> {
         self.log.get(version..)
+    }
+
+    pub fn assert_invariants(&self) -> anyhow::Result<()> {
+        if self.rope.len() == 0 {
+            anyhow::bail!(Error::Empty);
+        }
+        if self.rope.byte(self.rope.len() - 1) != b'\n' {
+            anyhow::bail!(Error::MissingTrailingNewline);
+        }
+        Ok(())
     }
 }
 
@@ -288,10 +311,7 @@ mod tests {
             }
             #[invariant]
             fn invariants(&self, _: hegel::TestCase) {
-                assert!(
-                    has_trailing_newline(&self.text),
-                    "Text keeps its trailing newline"
-                );
+                self.text.assert_invariants().unwrap();
             }
         }
         hegel::stateful::run(StateMachine { text: Text::new() }, tc);
