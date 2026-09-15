@@ -468,6 +468,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
     'line: for (line, mut rect) in lines.zip(rows) {
         'grapheme: for grapheme in line.graphemes() {
             let span = match grapheme.get_char(0) {
+                // Ok(' ') => Span::styled("·", THEME.whitespace_fg),
                 Ok('\t') => Span::styled("→       ", THEME.whitespace_fg),
                 Ok('\n') => Span::styled("¬", THEME.whitespace_fg),
                 _ => Span::styled(grapheme, Style::reset()),
