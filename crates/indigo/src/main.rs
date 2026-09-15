@@ -504,8 +504,10 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let vertical_scroll = window.vertical_scroll();
 
-    window.selection().for_each(|i, range| {
-        let (range_bg, cursor_fg, cursor_bg) = if i == window.selection().state().primary_range {
+    let primary_range = window.selection().state().primary_range;
+
+    for (i, range_state) in window.selection().state().ranges.iter().enumerate() {
+        let (range_bg, cursor_fg, cursor_bg) = if i == primary_range {
             (
                 THEME.primary_range_bg,
                 THEME.primary_cursor_fg,
@@ -519,9 +521,12 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
             )
         };
 
-        let start_line = rope.byte_to_line_idx(range.start().byte_index(), LINE_TYPE);
+        let head = range_state.head.byte_index;
+        let start = range_state.start().byte_index;
+        let end = range_state.end().byte_index;
 
-        let end_line = rope.byte_to_line_idx(range.end().byte_index(), LINE_TYPE);
+        let start_line = rope.byte_to_line_idx(start, LINE_TYPE);
+        let end_line = rope.byte_to_line_idx(end, LINE_TYPE);
 
         let grapheme_area =
             |byte_index| byte_index_to_area(byte_index, rope, vertical_scroll, area);
@@ -532,7 +537,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
             .filter_map(|line_index| line_area(line_index).map(|rect| (line_index, rect)))
         {
             if line_index == start_line {
-                if let Some(start_rect) = grapheme_area(range.start().byte_index()) {
+                if let Some(start_rect) = grapheme_area(start) {
                     let delta = start_rect.x - line_rect.x;
                     line_rect.x += delta;
                     line_rect.width -= delta;
@@ -546,7 +551,7 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
             }
             #[expect(clippy::collapsible_if)]
             if line_index == end_line {
-                if let Some(end_rect) = grapheme_area(range.end().byte_index()) {
+                if let Some(end_rect) = grapheme_area(end) {
                     let delta = line_rect.right() - end_rect.right();
                     line_rect.width -= delta;
                 }
@@ -554,8 +559,8 @@ fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
             surface.set_style(line_rect, Style::default().bg(range_bg));
         }
 
-        if let Some(rect) = grapheme_area(range.head().byte_index()) {
+        if let Some(rect) = grapheme_area(head) {
             surface.set_style(rect, Style::default().fg(cursor_fg).bg(cursor_bg));
         }
-    });
+    }
 }
