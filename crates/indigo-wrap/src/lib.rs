@@ -103,7 +103,7 @@ use std::{
     marker::PhantomData,
     ops::{Deref, DerefMut},
     rc::Rc,
-    sync::Arc,
+    sync::{Arc, MutexGuard},
 };
 
 /// Generic reference type wrappers
@@ -189,6 +189,14 @@ pub enum WMut {}
 /// Turn `T` into `&'a mut T`
 impl WrapMut for WMut {
     type WrapMut<'a, T: ?Sized + 'a> = &'a mut T;
+}
+
+/// Turn `T` into `MutexGuard<'a, T>`
+pub enum WMutexGuard {}
+
+/// Turn `T` into `MutexGuard<'a, T>`
+impl WrapMut for WMutexGuard {
+    type WrapMut<'a, T: ?Sized + 'a> = MutexGuard<'a, T>;
 }
 
 /// Turn `T` into `Box<T>`
