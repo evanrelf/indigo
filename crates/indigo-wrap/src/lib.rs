@@ -118,10 +118,10 @@ pub trait Wrap {
     type Wrap<'a, T: ?Sized + 'a>;
 }
 
-/// Turn `T` into `PhantomData<T>`
+/// Turn `T` into `std::marker::PhantomData<T>`
 pub enum WPhantomData {}
 
-/// Turn `T` into `PhantomData<T>`
+/// Turn `T` into `std::marker::PhantomData<T>`
 impl Wrap for WPhantomData {
     type Wrap<'a, T: ?Sized + 'a> = PhantomData<T>;
 }
@@ -151,26 +151,26 @@ impl WrapRef for WRef {
     type WrapRef<'a, T: ?Sized + 'a> = &'a T;
 }
 
-/// Turn `T` into `Ref<'a, T>`
+/// Turn `T` into `std::cell::Ref<'a, T>`
 pub enum WRefCell {}
 
-/// Turn `T` into `Ref<'a, T>`
+/// Turn `T` into `std::cell::Ref<'a, T>`
 impl WrapRef for WRefCell {
     type WrapRef<'a, T: ?Sized + 'a> = Ref<'a, T>;
 }
 
-/// Turn `T` into `Rc<T>`
+/// Turn `T` into `std::rc::Rc<T>`
 pub enum WRc {}
 
-/// Turn `T` into `Rc<T>`
+/// Turn `T` into `std::rc::Rc<T>`
 impl WrapRef for WRc {
     type WrapRef<'a, T: ?Sized + 'a> = Rc<T>;
 }
 
-/// Turn `T` into `Arc<T>`
+/// Turn `T` into `std::sync::Arc<T>`
 pub enum WArc {}
 
-/// Turn `T` into `Arc<T>`
+/// Turn `T` into `std::sync::Arc<T>`
 impl WrapRef for WArc {
     type WrapRef<'a, T: ?Sized + 'a> = Arc<T>;
 }
@@ -200,26 +200,26 @@ impl WrapMut for WMut {
     type WrapMut<'a, T: ?Sized + 'a> = &'a mut T;
 }
 
-/// Turn `T` into `RefMut<'a, T>`
+/// Turn `T` into `std::cell::RefMut<'a, T>`
 pub enum WRefCellMut {}
 
-/// Turn `T` into `RefMut<'a, T>`
+/// Turn `T` into `std::cell::RefMut<'a, T>`
 impl WrapMut for WRefCellMut {
     type WrapMut<'a, T: ?Sized + 'a> = RefMut<'a, T>;
 }
 
-/// Turn `T` into `MutexGuard<'a, T>`
+/// Turn `T` into `std::sync::MutexGuard<'a, T>`
 pub enum WMutexGuard {}
 
-/// Turn `T` into `MutexGuard<'a, T>`
+/// Turn `T` into `std::sync::MutexGuard<'a, T>`
 impl WrapMut for WMutexGuard {
     type WrapMut<'a, T: ?Sized + 'a> = MutexGuard<'a, T>;
 }
 
-/// Turn `T` into `Box<T>`
+/// Turn `T` into `std::boxed::Box<T>`
 pub enum WBox {}
 
-/// Turn `T` into `Box<T>`
+/// Turn `T` into `std::boxed::Box<T>`
 impl WrapMut for WBox {
     type WrapMut<'a, T: ?Sized + 'a> = Box<T>;
 }
