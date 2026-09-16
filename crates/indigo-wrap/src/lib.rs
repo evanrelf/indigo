@@ -45,17 +45,17 @@ state, but whether or not it's valid is in relation to the string it's an offset
 
 ```no_run
 # use indigo_wrap::*;
-type RawCursor = CursorView<'static, WPhantomData>;
-
-type Cursor<'a> = CursorView<'a, WRef>;
-
-type CursorMut<'a> = CursorView<'a, WMut>;
-
 // Use the weakest trait bound `Wrap` when defining the type to perform wrapping:
 struct CursorView<'a, W: Wrap> {
     text: W::Wrap<'a, String>,
     byte_offset: usize,
 }
+
+type RawCursor = CursorView<'static, WPhantomData>;
+
+type Cursor<'a> = CursorView<'a, WRef>;
+
+type CursorMut<'a> = CursorView<'a, WMut>;
 
 // ...or when you don't need to touch the wrapped type:
 impl<W: Wrap> CursorView<'_, W> {
