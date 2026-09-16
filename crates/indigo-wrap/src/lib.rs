@@ -100,6 +100,7 @@ subset that apply to their wrapped type.
 */
 
 use std::{
+    cell::{Ref, RefMut},
     marker::PhantomData,
     ops::{Deref, DerefMut},
     rc::Rc,
@@ -150,6 +151,14 @@ impl WrapRef for WRef {
     type WrapRef<'a, T: ?Sized + 'a> = &'a T;
 }
 
+/// Turn `T` into `Ref<'a, T>`
+pub enum WRefCell {}
+
+/// Turn `T` into `Ref<'a, T>`
+impl WrapRef for WRefCell {
+    type WrapRef<'a, T: ?Sized + 'a> = Ref<'a, T>;
+}
+
 /// Turn `T` into `Rc<T>`
 pub enum WRc {}
 
@@ -189,6 +198,14 @@ pub enum WMut {}
 /// Turn `T` into `&'a mut T`
 impl WrapMut for WMut {
     type WrapMut<'a, T: ?Sized + 'a> = &'a mut T;
+}
+
+/// Turn `T` into `RefMut<'a, T>`
+pub enum WRefCellMut {}
+
+/// Turn `T` into `RefMut<'a, T>`
+impl WrapMut for WRefCellMut {
+    type WrapMut<'a, T: ?Sized + 'a> = RefMut<'a, T>;
 }
 
 /// Turn `T` into `MutexGuard<'a, T>`
