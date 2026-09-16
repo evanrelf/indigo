@@ -118,7 +118,7 @@ pub trait Wrap {
 }
 
 /// Turn `T` into `PhantomData<T>`
-pub struct WPhantomData;
+pub enum WPhantomData {}
 
 /// Turn `T` into `PhantomData<T>`
 impl Wrap for WPhantomData {
@@ -126,6 +126,7 @@ impl Wrap for WPhantomData {
 }
 
 /// Anything implementing [`WrapRef`] trivially implements [`Wrap`].
+#[diagnostic::do_not_recommend]
 impl<R: WrapRef> Wrap for R {
     type Wrap<'a, T: ?Sized + 'a> = R::WrapRef<'a, T>;
 }
@@ -142,7 +143,7 @@ pub trait WrapRef {
 }
 
 /// Turn `T` into `&'a T`
-pub struct WRef;
+pub enum WRef {}
 
 /// Turn `T` into `&'a T`
 impl WrapRef for WRef {
@@ -150,7 +151,7 @@ impl WrapRef for WRef {
 }
 
 /// Turn `T` into `Rc<T>`
-pub struct WRc;
+pub enum WRc {}
 
 /// Turn `T` into `Rc<T>`
 impl WrapRef for WRc {
@@ -158,7 +159,7 @@ impl WrapRef for WRc {
 }
 
 /// Turn `T` into `Arc<T>`
-pub struct WArc;
+pub enum WArc {}
 
 /// Turn `T` into `Arc<T>`
 impl WrapRef for WArc {
@@ -166,6 +167,7 @@ impl WrapRef for WArc {
 }
 
 /// Anything implementing [`WrapMut`] trivially implements [`WrapRef`].
+#[diagnostic::do_not_recommend]
 impl<R: WrapMut> WrapRef for R {
     type WrapRef<'a, T: ?Sized + 'a> = R::WrapMut<'a, T>;
 }
@@ -182,7 +184,7 @@ pub trait WrapMut {
 }
 
 /// Turn `T` into `&'a mut T`
-pub struct WMut;
+pub enum WMut {}
 
 /// Turn `T` into `&'a mut T`
 impl WrapMut for WMut {
@@ -190,7 +192,7 @@ impl WrapMut for WMut {
 }
 
 /// Turn `T` into `Box<T>`
-pub struct WBox;
+pub enum WBox {}
 
 /// Turn `T` into `Box<T>`
 impl WrapMut for WBox {
