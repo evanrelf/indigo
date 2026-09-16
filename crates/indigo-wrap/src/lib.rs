@@ -89,7 +89,7 @@ There are certain operations you can perform:
 - ...while holding an immutable reference (e.g. checking whether the string is empty).
 - ...while holding a mutable reference (e.g. inserting text into the string at the byte offset).
 
-These are captured with the `Wrap`, `WrapRef`, and `WrapMut` traits respectively.
+These are captured with the [`Wrap`], [`WrapRef`], and [`WrapMut`] traits respectively.
 
 If you write generic `impl` blocks with trait bounds on the reference type wrapper (e.g.
 `impl<W: WrapMut> CursorView<'_, W>`) rather than hardcoding it (e.g. `impl CursorView<'_, WMut>`),
@@ -118,10 +118,10 @@ pub trait Wrap {
     type Wrap<'a, T: ?Sized + 'a>;
 }
 
-/// Turn `T` into `std::marker::PhantomData<T>`
+/// Wrap with [`PhantomData`]
 pub enum WPhantomData {}
 
-/// Turn `T` into `std::marker::PhantomData<T>`
+/// Wrap with [`PhantomData`]
 impl Wrap for WPhantomData {
     type Wrap<'a, T: ?Sized + 'a> = PhantomData<T>;
 }
@@ -143,34 +143,34 @@ pub trait WrapRef {
     type WrapRef<'a, T: ?Sized + 'a>: Deref<Target = T>;
 }
 
-/// Turn `T` into `&'a T`
+/// Wrap with [`&`]
 pub enum WRef {}
 
-/// Turn `T` into `&'a T`
+/// Wrap with [`&`]
 impl WrapRef for WRef {
     type WrapRef<'a, T: ?Sized + 'a> = &'a T;
 }
 
-/// Turn `T` into `std::cell::Ref<'a, T>`
+/// Wrap with [`Ref`]
 pub enum WRefCell {}
 
-/// Turn `T` into `std::cell::Ref<'a, T>`
+/// Wrap with [`Ref`]
 impl WrapRef for WRefCell {
     type WrapRef<'a, T: ?Sized + 'a> = Ref<'a, T>;
 }
 
-/// Turn `T` into `std::rc::Rc<T>`
+/// Wrap with [`Rc`]
 pub enum WRc {}
 
-/// Turn `T` into `std::rc::Rc<T>`
+/// Wrap with [`Rc`]
 impl WrapRef for WRc {
     type WrapRef<'a, T: ?Sized + 'a> = Rc<T>;
 }
 
-/// Turn `T` into `std::sync::Arc<T>`
+/// Wrap with [`Arc`]
 pub enum WArc {}
 
-/// Turn `T` into `std::sync::Arc<T>`
+/// Wrap with [`Arc`]
 impl WrapRef for WArc {
     type WrapRef<'a, T: ?Sized + 'a> = Arc<T>;
 }
@@ -192,34 +192,34 @@ pub trait WrapMut {
     type WrapMut<'a, T: ?Sized + 'a>: DerefMut<Target = T>;
 }
 
-/// Turn `T` into `&'a mut T`
+/// Wrap with [`&mut`]
 pub enum WMut {}
 
-/// Turn `T` into `&'a mut T`
+/// Wrap with [`&mut`]
 impl WrapMut for WMut {
     type WrapMut<'a, T: ?Sized + 'a> = &'a mut T;
 }
 
-/// Turn `T` into `std::cell::RefMut<'a, T>`
+/// Wrap with [`RefMut`]
 pub enum WRefCellMut {}
 
-/// Turn `T` into `std::cell::RefMut<'a, T>`
+/// Wrap with [`RefMut`]
 impl WrapMut for WRefCellMut {
     type WrapMut<'a, T: ?Sized + 'a> = RefMut<'a, T>;
 }
 
-/// Turn `T` into `std::sync::MutexGuard<'a, T>`
+/// Wrap with [`MutexGuard`]
 pub enum WMutexGuard {}
 
-/// Turn `T` into `std::sync::MutexGuard<'a, T>`
+/// Wrap with [`MutexGuard`]
 impl WrapMut for WMutexGuard {
     type WrapMut<'a, T: ?Sized + 'a> = MutexGuard<'a, T>;
 }
 
-/// Turn `T` into `std::boxed::Box<T>`
+/// Wrap with [`Box`]
 pub enum WBox {}
 
-/// Turn `T` into `std::boxed::Box<T>`
+/// Wrap with [`Box`]
 impl WrapMut for WBox {
     type WrapMut<'a, T: ?Sized + 'a> = Box<T>;
 }
