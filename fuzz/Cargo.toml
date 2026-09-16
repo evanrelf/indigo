@@ -13,6 +13,9 @@ indigo-core = { workspace = true, features = ["arbitrary"] }
 libfuzzer-sys = "0.4.13"
 ropey = { workspace = true }
 
+[lints]
+workspace = true
+
 [[bin]]
 name = "actions"
 path = "fuzz_targets/actions.rs"

@@ -202,19 +202,18 @@ impl<'a> Arbitrary<'a> for KeyCode {
                     return Ok(Self::Char(c));
                 }
             }
-        } else {
-            Ok(*u.choose(&[
-                Self::Backspace,
-                Self::Delete,
-                Self::Return,
-                Self::Left,
-                Self::Right,
-                Self::Up,
-                Self::Down,
-                Self::Tab,
-                Self::Escape,
-            ])?)
         }
+        Ok(*u.choose(&[
+            Self::Backspace,
+            Self::Delete,
+            Self::Return,
+            Self::Left,
+            Self::Right,
+            Self::Up,
+            Self::Down,
+            Self::Tab,
+            Self::Escape,
+        ])?)
     }
 }
 

@@ -91,7 +91,7 @@ impl<A> Attributes<A> {
                 let end = u32::try_from(pair[1]).expect("Byte offset does not exceed u32::MAX");
                 new_ranges.insert_range(start..=end);
             }
-            assert!(remainder.is_empty());
+            assert_eq!(remainder, []);
             *old_ranges = new_ranges;
         }
     }
