@@ -24,6 +24,16 @@ impl Syntax {
     pub fn reparse(&mut self, code: &Rope) {
         self.tree = parse(code, &mut self.parser, Some(&self.tree));
     }
+
+    #[must_use]
+    pub fn language(&self) -> Language {
+        self.language
+    }
+
+    #[must_use]
+    pub fn tree(&self) -> &Tree {
+        &self.tree
+    }
 }
 
 impl Deref for Syntax {
