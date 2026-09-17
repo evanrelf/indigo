@@ -1,4 +1,4 @@
-use crate::{fs::Fs, text::Text};
+use crate::{fs::Fs, syntax::Syntax, text::Text};
 use camino::Utf8Path;
 use ropey::Rope;
 use std::sync::Arc;
@@ -25,6 +25,7 @@ pub enum BufferKind {
 pub struct Buffer {
     pub kind: BufferKind,
     pub text: Text,
+    pub syntax: Option<Syntax>,
 }
 
 impl Buffer {

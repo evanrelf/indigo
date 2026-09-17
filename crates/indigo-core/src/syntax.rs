@@ -3,6 +3,7 @@ use std::ops::Deref;
 use tree_sitter::{Parser, Tree};
 
 pub struct Syntax {
+    language: Language,
     parser: Parser,
     tree: Tree,
 }
@@ -13,7 +14,11 @@ impl Syntax {
         let mut parser = Parser::new();
         parser.set_language(&language.into()).unwrap();
         let tree = parse(code, &mut parser, None);
-        Self { parser, tree }
+        Self {
+            language,
+            parser,
+            tree,
+        }
     }
 
     pub fn reparse(&mut self, code: &Rope) {
@@ -25,6 +30,18 @@ impl Deref for Syntax {
     type Target = Tree;
     fn deref(&self) -> &Self::Target {
         &self.tree
+    }
+}
+
+impl Clone for Syntax {
+    fn clone(&self) -> Self {
+        let mut parser = Parser::new();
+        parser.set_language(&self.language.into()).unwrap();
+        Self {
+            language: self.language,
+            parser,
+            tree: self.tree.clone(),
+        }
     }
 }
 
