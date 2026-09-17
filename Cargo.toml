@@ -33,6 +33,8 @@ thiserror = "2.0.20"
 tinyvec = { version = "1.12.0", features = ["std"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+tree-sitter = "0.27.0"
+tree-sitter-rust = "0.24.2"
 unicode-segmentation = "1.13.3"
 unicode-width = "0.2.2"
 winnow = "1.0.4"

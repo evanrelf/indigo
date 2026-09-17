@@ -5,6 +5,7 @@ edition = "2024"
 
 [features]
 arbitrary = ["dep:arbitrary", "bitflags/arbitrary"]
+language-rust = ["dep:tree-sitter-rust"]
 
 [dependencies]
 anyhow = { workspace = true }
@@ -23,6 +24,8 @@ shell-words = { workspace = true }
 slotmap = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
+tree-sitter = { workspace = true }
+tree-sitter-rust = { workspace = true, optional = true }
 unicode-segmentation = { workspace = true }
 unicode-width = { workspace = true }
 winnow = { workspace = true }
