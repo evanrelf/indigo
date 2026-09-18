@@ -56,8 +56,7 @@ impl Buffer {
             on_disk: buffer.text.rope().clone(),
         };
         if let Ok(language) = Language::try_from(path) {
-            let syntax = Syntax::parse(language, buffer.text.rope());
-            buffer.syntax = Some(syntax);
+            buffer.set_language(language);
         }
         Ok(buffer)
     }
@@ -82,6 +81,10 @@ impl Buffer {
             on_disk: self.text.rope().clone(),
         };
         Ok(())
+    }
+
+    pub fn set_language(&mut self, language: Language) {
+        self.syntax = Some(Syntax::parse(language, self.text.rope()));
     }
 
     pub fn reparse(&mut self) {
