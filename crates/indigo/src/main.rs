@@ -442,6 +442,7 @@ fn render_debug_info(editor: &Editor, area: Rect, surface: &mut Surface) {
     let tail = primary.tail.byte_index;
     let head = primary.head.byte_index;
     let goal = primary.goal_column;
+    let syntax = render_syntax_breadcrumb(editor, usize::from(area.width));
 
     let lines = vec![
         Line::from(Span::raw("DEBUG").style(Style::reset().fg(THEME.dots))),
@@ -449,6 +450,7 @@ fn render_debug_info(editor: &Editor, area: Rect, surface: &mut Surface) {
         Line::from(Span::raw(format!("tail: {tail}")).style(Style::reset().fg(THEME.dots))),
         Line::from(Span::raw(format!("head: {head}")).style(Style::reset().fg(THEME.dots))),
         Line::from(Span::raw(format!("goal: {goal:?}")).style(Style::reset().fg(THEME.dots))),
+        Line::from(Span::raw(syntax).style(Style::reset().fg(THEME.dots))),
     ];
 
     let height = u16::try_from(lines.len()).unwrap();
@@ -460,6 +462,50 @@ fn render_debug_info(editor: &Editor, area: Rect, surface: &mut Surface) {
     };
 
     Text::from(lines).right_aligned().render(area, surface);
+}
+
+#[cfg_attr(not(debug_assertions), expect(dead_code))]
+fn render_syntax_breadcrumb(editor: &Editor, max_width: usize) -> String {
+    const SEPARATOR: &str = "›";
+    const ELLIPSIS: &str = "… ";
+
+    let window = editor.focused_window();
+
+    let Some(syntax) = window.buffer().text.syntax() else {
+        return String::from("syntax: none");
+    };
+
+    let (start, end) = window.selection().get_primary().byte_offsets();
+
+    let kinds = syntax
+        .node_path(start..end)
+        .into_iter()
+        .map(|node| {
+            if node.is_error() || node.is_missing() {
+                format!("!{}!", node.kind())
+            } else {
+                node.kind().to_string()
+            }
+        })
+        .collect::<Vec<_>>();
+
+    if kinds.is_empty() {
+        return String::from("syntax: no node");
+    }
+
+    let mut skipped = 0;
+    loop {
+        let mut breadcrumb = if skipped > 0 {
+            format!("{ELLIPSIS}{SEPARATOR}")
+        } else {
+            String::new()
+        };
+        breadcrumb.push_str(&kinds[skipped..].join(SEPARATOR));
+        if breadcrumb.as_str().display_width() <= max_width || skipped + 1 >= kinds.len() {
+            return breadcrumb;
+        }
+        skipped += 1;
+    }
 }
 
 fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {

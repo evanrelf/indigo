@@ -1,7 +1,10 @@
 use anyhow::{Context as _, anyhow};
 use camino::Utf8Path;
 use ropey::Rope;
-use std::{ops::Deref, sync::OnceLock};
+use std::{
+    ops::{Deref, Range},
+    sync::OnceLock,
+};
 use tree_sitter::{Node, Parser, Query, TextProvider, Tree};
 
 pub struct Syntax {
@@ -38,6 +41,23 @@ impl Syntax {
     #[must_use]
     pub fn tree(&self) -> &Tree {
         &self.tree
+    }
+
+    /// Nodes from the root down to the smallest node that covers `byte_range`.
+    #[must_use]
+    pub fn node_path(&self, byte_range: Range<usize>) -> Vec<Node<'_>> {
+        let leaf = self
+            .tree
+            .root_node()
+            .descendant_for_byte_range(byte_range.start, byte_range.end);
+        let mut path = Vec::new();
+        let mut node = leaf;
+        while let Some(current) = node {
+            path.push(current);
+            node = current.parent();
+        }
+        path.reverse();
+        path
     }
 }
 
@@ -181,6 +201,33 @@ mod tests {
                     .to_string(),
                 "main"
             );
+        }
+        #[cfg(not(feature = "language-rust"))]
+        panic!("requires 'language-rust' feature");
+    }
+
+    #[test]
+    #[cfg_attr(
+        not(feature = "language-rust"),
+        ignore = "requires 'language-rust' feature"
+    )]
+    fn test_node_path() {
+        #[cfg(feature = "language-rust")]
+        {
+            let rope = Rope::from("fn main() {}");
+            let syntax = Syntax::parse(Language::Rust, &rope);
+            let kinds = syntax
+                .node_path(3..4)
+                .iter()
+                .map(Node::kind)
+                .collect::<Vec<_>>();
+            assert_eq!(kinds, ["source_file", "function_item", "identifier"]);
+            let kinds = syntax
+                .node_path(0..2)
+                .iter()
+                .map(Node::kind)
+                .collect::<Vec<_>>();
+            assert_eq!(kinds, ["source_file", "function_item", "fn"]);
         }
         #[cfg(not(feature = "language-rust"))]
         panic!("requires 'language-rust' feature");
