@@ -1,7 +1,7 @@
 use anyhow::{Context as _, anyhow};
 use camino::Utf8Path;
 use ropey::Rope;
-use std::ops::Deref;
+use std::{ops::Deref, sync::OnceLock};
 use tree_sitter::{Node, Parser, Query, TextProvider, Tree};
 
 pub struct Syntax {
@@ -68,26 +68,41 @@ pub enum Language {
 
 impl Language {
     #[must_use]
-    pub fn highlights_query(&self) -> Query {
+    pub fn highlights_query(&self) -> &Query {
         match self {
             #[cfg(feature = "language-rust")]
-            Self::Rust => Query::new(&(*self).into(), tree_sitter_rust::HIGHLIGHTS_QUERY).unwrap(),
+            Self::Rust => {
+                static QUERY: OnceLock<Query> = OnceLock::new();
+                QUERY.get_or_init(|| {
+                    Query::new(&(*self).into(), tree_sitter_rust::HIGHLIGHTS_QUERY).unwrap()
+                })
+            }
         }
     }
 
     #[must_use]
-    pub fn injections_query(&self) -> Query {
+    pub fn injections_query(&self) -> &Query {
         match self {
             #[cfg(feature = "language-rust")]
-            Self::Rust => Query::new(&(*self).into(), tree_sitter_rust::INJECTIONS_QUERY).unwrap(),
+            Self::Rust => {
+                static QUERY: OnceLock<Query> = OnceLock::new();
+                QUERY.get_or_init(|| {
+                    Query::new(&(*self).into(), tree_sitter_rust::INJECTIONS_QUERY).unwrap()
+                })
+            }
         }
     }
 
     #[must_use]
-    pub fn tags_query(&self) -> Query {
+    pub fn tags_query(&self) -> &Query {
         match self {
             #[cfg(feature = "language-rust")]
-            Self::Rust => Query::new(&(*self).into(), tree_sitter_rust::TAGS_QUERY).unwrap(),
+            Self::Rust => {
+                static QUERY: OnceLock<Query> = OnceLock::new();
+                QUERY.get_or_init(|| {
+                    Query::new(&(*self).into(), tree_sitter_rust::TAGS_QUERY).unwrap()
+                })
+            }
         }
     }
 }
