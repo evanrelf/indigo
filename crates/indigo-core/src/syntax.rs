@@ -60,6 +60,47 @@ impl Syntax {
         path.reverse();
         path
     }
+
+    /// First named node, in document order, whose byte range lies strictly inside `byte_range`.
+    #[must_use]
+    pub fn inner_node(&self, byte_range: Range<usize>) -> Option<Node<'_>> {
+        let mut node = self
+            .tree
+            .root_node()
+            .descendant_for_byte_range(byte_range.start, byte_range.end)?;
+        loop {
+            let mut cursor = node.walk();
+            let child = node.named_children(&mut cursor).find(|child| {
+                !child.byte_range().is_empty()
+                    && byte_range.start <= child.start_byte()
+                    && child.end_byte() <= byte_range.end
+            })?;
+            if child.byte_range() != byte_range {
+                return Some(child);
+            }
+            node = child;
+        }
+    }
+
+    /// Smallest node whose byte range strictly contains `byte_range`.
+    ///
+    /// The root node starts after any leading whitespace, so a range that begins in that
+    /// whitespace has no outer node.
+    #[must_use]
+    pub fn outer_node(&self, byte_range: Range<usize>) -> Option<Node<'_>> {
+        let mut node = self
+            .tree
+            .root_node()
+            .descendant_for_byte_range(byte_range.start, byte_range.end)?;
+        while !strictly_contains(&node.byte_range(), &byte_range) {
+            node = node.parent()?;
+        }
+        Some(node)
+    }
+}
+
+fn strictly_contains(outer: &Range<usize>, inner: &Range<usize>) -> bool {
+    outer.start <= inner.start && inner.end <= outer.end && outer != inner
 }
 
 impl Deref for Syntax {
@@ -240,6 +281,54 @@ mod tests {
                 .map(Node::kind)
                 .collect::<Vec<_>>();
             assert_eq!(kinds, ["source_file", "function_item", "fn"]);
+        }
+        #[cfg(not(feature = "language-rust"))]
+        panic!("requires 'language-rust' feature");
+    }
+
+    #[test]
+    #[cfg_attr(
+        not(feature = "language-rust"),
+        ignore = "requires 'language-rust' feature"
+    )]
+    fn test_outer_inner_node() {
+        #[cfg(feature = "language-rust")]
+        {
+            let rope = Rope::from("fn main() {}\n");
+            let syntax = Syntax::parse(Language::Rust, &rope);
+            let outer = |range| {
+                syntax
+                    .outer_node(range)
+                    .map(|node| (node.kind(), node.byte_range()))
+            };
+            let inner = |range| {
+                syntax
+                    .inner_node(range)
+                    .map(|node| (node.kind(), node.byte_range()))
+            };
+            // `m` grows to `main`, which grows to the whole item.
+            assert_eq!(outer(3..4), Some(("identifier", 3..7)));
+            assert_eq!(outer(3..7), Some(("function_item", 0..12)));
+            // The root has nothing above it.
+            assert_eq!(outer(0..13), None);
+            // The item shrinks to its first named child.
+            assert_eq!(inner(0..12), Some(("identifier", 3..7)));
+            // Leaves and partial slices of leaves have nothing inside them.
+            assert_eq!(inner(3..7), None);
+            assert_eq!(inner(3..5), None);
+            // A selection covering no complete named node stays put.
+            assert_eq!(inner(5..8), None);
+
+            // The root node starts after leading whitespace.
+            let rope = Rope::from("\nfn main() {}\n");
+            let syntax = Syntax::parse(Language::Rust, &rope);
+            assert_eq!(syntax.outer_node(0..1), None);
+            assert_eq!(
+                syntax
+                    .outer_node(1..3)
+                    .map(|node| (node.kind(), node.byte_range())),
+                Some(("function_item", 1..13))
+            );
         }
         #[cfg(not(feature = "language-rust"))]
         panic!("requires 'language-rust' feature");
