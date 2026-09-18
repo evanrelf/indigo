@@ -2,7 +2,7 @@ use anyhow::{Context as _, anyhow};
 use camino::Utf8Path;
 use ropey::Rope;
 use std::ops::Deref;
-use tree_sitter::{Parser, Tree};
+use tree_sitter::{Node, Parser, TextProvider, Tree};
 
 pub struct Syntax {
     language: Language,
@@ -98,6 +98,15 @@ fn parse(rope: &Rope, parser: &mut Parser, old_tree: Option<&Tree>) -> Tree {
             None,
         )
         .expect("parser has a language set")
+}
+
+pub struct RopeTextProvider<'a>(pub ropey::RopeSlice<'a>);
+
+impl<'a> TextProvider<&'a [u8]> for RopeTextProvider<'a> {
+    type I = std::iter::Map<ropey::iter::Chunks<'a>, fn(&'a str) -> &'a [u8]>;
+    fn text(&mut self, node: Node) -> Self::I {
+        self.0.slice(node.byte_range()).chunks().map(str::as_bytes)
+    }
 }
 
 #[cfg(test)]
