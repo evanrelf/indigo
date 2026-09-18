@@ -1,8 +1,4 @@
-use crate::{
-    fs::Fs,
-    syntax::{Language, Syntax},
-    text::Text,
-};
+use crate::{fs::Fs, syntax::Language, text::Text};
 use camino::Utf8Path;
 use ropey::Rope;
 use std::sync::Arc;
@@ -29,7 +25,6 @@ pub enum BufferKind {
 pub struct Buffer {
     kind: BufferKind,
     pub text: Text,
-    syntax: Option<Syntax>,
 }
 
 impl Buffer {
@@ -56,7 +51,7 @@ impl Buffer {
             on_disk: buffer.text.rope().clone(),
         };
         if let Ok(language) = Language::try_from(path) {
-            buffer.set_language(language);
+            buffer.text.set_language(language);
         }
         Ok(buffer)
     }
@@ -83,18 +78,6 @@ impl Buffer {
         Ok(())
     }
 
-    pub fn set_language(&mut self, language: Language) {
-        self.syntax = Some(Syntax::parse(language, self.text.rope()));
-    }
-
-    // TODO: Nothing is calling this yet, so `syntax` falls behind edits to `text`. Figure out how
-    // to keep them in sync, and how to avoid reparsing when nothing has changed.
-    pub fn reparse(&mut self) {
-        if let Some(syntax) = &mut self.syntax {
-            syntax.reparse(&self.text);
-        }
-    }
-
     #[must_use]
     pub fn kind(&self) -> &BufferKind {
         &self.kind
@@ -116,11 +99,6 @@ impl Buffer {
         } else {
             None
         }
-    }
-
-    #[must_use]
-    pub fn syntax(&self) -> Option<&Syntax> {
-        self.syntax.as_ref()
     }
 
     pub fn assert_invariants(&self) -> anyhow::Result<()> {

@@ -1,4 +1,7 @@
-use crate::history::History;
+use crate::{
+    history::History,
+    syntax::{Language, Syntax},
+};
 use indigo_kernel::edit::{self, Edit};
 use ropey::Rope;
 use std::ops::{Deref, Range};
@@ -13,7 +16,7 @@ pub enum Error {
     MissingTrailingNewline,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct BidiEdit {
     /// Inverted operations. Apply to undo the edit.
     undo: Edit,
@@ -37,9 +40,10 @@ impl Extend<Self> for BidiEdit {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Text {
     rope: Rope,
+    syntax: Option<Syntax>,
     history: History<BidiEdit, BidiEdit>,
     log: Vec<Edit>,
     pub readonly: bool,
@@ -49,6 +53,7 @@ impl Default for Text {
     fn default() -> Self {
         Self {
             rope: Rope::from("\n"),
+            syntax: None,
             history: History::default(),
             log: Vec::new(),
             readonly: false,
@@ -65,6 +70,11 @@ impl Text {
     #[must_use]
     pub fn rope(&self) -> &Rope {
         &self.rope
+    }
+
+    #[must_use]
+    pub fn syntax(&self) -> Option<&Syntax> {
+        self.syntax.as_ref()
     }
 
     pub fn insert(&mut self, byte_offset: usize, text: &str) -> anyhow::Result<()> {
@@ -99,6 +109,7 @@ impl Text {
             undo,
         });
         self.log.push(ops.clone());
+        self.reparse();
         self.assert_invariants().unwrap();
         Ok(())
     }
@@ -112,6 +123,7 @@ impl Text {
         if let Some(ops) = self.history.undo() {
             ops.undo.apply(&mut self.rope)?;
             self.log.push(ops.undo.clone());
+            self.reparse();
             self.assert_invariants().unwrap();
             Ok(true)
         } else {
@@ -124,10 +136,22 @@ impl Text {
         if let Some(ops) = self.history.redo() {
             ops.redo.apply(&mut self.rope)?;
             self.log.push(ops.redo.clone());
+            self.reparse();
             self.assert_invariants().unwrap();
             Ok(true)
         } else {
             Ok(false)
+        }
+    }
+
+    pub fn set_language(&mut self, language: Language) {
+        self.syntax = Some(Syntax::parse(language, &self.rope));
+    }
+
+    fn reparse(&mut self) {
+        // TODO: Incremental reparsing by feeding edits to Tree Sitter
+        if let Some(syntax) = &mut self.syntax {
+            syntax.reparse(&self.rope);
         }
     }
 

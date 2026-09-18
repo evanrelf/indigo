@@ -234,12 +234,14 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         },
     };
 
-    let language = editor
-        .focused_buffer()
-        .syntax()
-        .map_or("", |syntax| match syntax.language() {
-            Language::Rust => " rust",
-        });
+    let language =
+        editor
+            .focused_buffer()
+            .text
+            .syntax()
+            .map_or("", |syntax| match syntax.language() {
+                Language::Rust => " rust",
+            });
 
     let window = editor.focused_window();
     let selection = window.selection();
