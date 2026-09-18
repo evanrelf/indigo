@@ -70,6 +70,8 @@ pub enum Action {
     FlipForward,
     SelectAll,
     ExpandToFullLines,
+    ShrinkToInnerNode,
+    ExpandToOuterNode,
     SplitIntoLines,
     SelectRegex,
     Delete,
@@ -141,6 +143,8 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<a-:>" => vec![FlipForward],
         "%" => vec![SelectAll],
         "x" => vec![ExpandToFullLines],
+        "-" => vec![ShrinkToInnerNode],
+        "=" => vec![ExpandToOuterNode],
         "s" => vec![SelectRegex],
         "<a-s>" => vec![SplitIntoLines],
         "d" => vec![Delete],
@@ -223,6 +227,8 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
         Action::FlipForward => flip_forward(editor),
         Action::SelectAll => select_all(editor),
         Action::ExpandToFullLines => expand_to_full_lines(editor),
+        Action::ShrinkToInnerNode => shrink_to_inner_node(editor),
+        Action::ExpandToOuterNode => expand_to_outer_node(editor),
         Action::SplitIntoLines => split_into_lines(editor),
         Action::SelectRegex => select_regex(editor),
         Action::Delete => delete(editor),
@@ -487,6 +493,32 @@ fn select_regex(editor: &mut Editor) {
         }
         editor.count = None;
     });
+}
+
+fn shrink_to_inner_node(editor: &mut Editor) {
+    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
+    let mut window = editor.focused_window_mut();
+    if window.buffer().text.syntax().is_none() {
+        drop(window);
+        editor.message = Some(Err(String::from("Buffer has no syntax tree")));
+    } else {
+        window.shrink_to_inner_node(count);
+        window.scroll_to_selection();
+    }
+    editor.count = None;
+}
+
+fn expand_to_outer_node(editor: &mut Editor) {
+    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
+    let mut window = editor.focused_window_mut();
+    if window.buffer().text.syntax().is_none() {
+        drop(window);
+        editor.message = Some(Err(String::from("Buffer has no syntax tree")));
+    } else {
+        window.expand_to_outer_node(count);
+        window.scroll_to_selection();
+    }
+    editor.count = None;
 }
 
 fn insert_after_head(editor: &mut Editor) {
