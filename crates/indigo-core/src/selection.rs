@@ -8,7 +8,7 @@ use indigo_kernel::edit::{self, Edit};
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use regex_cursor::engines::meta::Regex;
 use ropey::Rope;
-use std::thread;
+use std::{iter::zip, thread};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -51,6 +51,13 @@ impl SelectionState {
                 .snap_to_grapheme_start(offsets[i * 2 + 1])
                 .expect("Text is never empty");
         }
+    }
+
+    /// Whether every range in `other` lies within the range at the same index in `self`.
+    #[must_use]
+    pub fn contains(&self, other: &Self) -> bool {
+        self.ranges.len() == other.ranges.len()
+            && zip(&self.ranges, &other.ranges).all(|(outer, inner)| outer.contains(inner))
     }
 
     #[must_use]

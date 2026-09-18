@@ -112,6 +112,12 @@ impl RangeState {
     }
 
     #[must_use]
+    pub fn contains(&self, other: &Self) -> bool {
+        self.start().byte_index <= other.start().byte_index
+            && other.end().byte_index <= self.end().byte_index
+    }
+
+    #[must_use]
     pub fn with_bounds(&self, start: usize, end: usize) -> Self {
         if self.is_forward() {
             Self {
