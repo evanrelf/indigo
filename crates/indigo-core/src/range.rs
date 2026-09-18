@@ -6,7 +6,12 @@ use crate::{
 use indigo_kernel::edit::Edit;
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
-use std::{mem, thread};
+use std::{
+    cmp::max,
+    mem,
+    ops::{Bound, RangeBounds},
+    thread,
+};
 use thiserror::Error;
 
 #[cfg(feature = "arbitrary")]
@@ -494,6 +499,36 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.start_mut().move_to_line_start();
         self.end_mut().move_to_line_end();
         self.state.goal_column = GoalColumn::OntoLineEnd;
+    }
+
+    fn set_bounds(&mut self, byte_range: impl RangeBounds<usize>) {
+        let start = match byte_range.start_bound() {
+            Bound::Included(n) => self
+                .text
+                .snap_to_grapheme_start(*n)
+                .expect("Text is never empty"),
+            // Technically reachable with a `(Bound, Bound)` tuple, but never produced by ranges
+            // syntax sugar.
+            Bound::Excluded(_) => unreachable!("excluded start bound"),
+            Bound::Unbounded => 0,
+        };
+        let end = match byte_range.end_bound() {
+            // The grapheme containing byte `n`.
+            Bound::Included(n) => self
+                .text
+                .snap_to_grapheme_start(*n)
+                .expect("Text is never empty"),
+            // The last grapheme starting before `n`. For an empty range this lands before
+            // `start`, but the `max` below corrects it.
+            Bound::Excluded(n) => self.text.prev_grapheme_boundary(*n).unwrap_or(0),
+            Bound::Unbounded => self
+                .text
+                .last_grapheme_start()
+                .expect("Text is never empty"),
+        };
+        let end = max(start, end);
+        *self.state = self.state.with_bounds(start, end);
+        self.update_goal_column();
     }
 
     pub fn flip(&mut self) {
