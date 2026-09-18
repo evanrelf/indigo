@@ -1,4 +1,8 @@
-use crate::{fs::Fs, syntax::Syntax, text::Text};
+use crate::{
+    fs::Fs,
+    syntax::{Language, Syntax},
+    text::Text,
+};
 use camino::Utf8Path;
 use ropey::Rope;
 use std::sync::Arc;
@@ -51,6 +55,10 @@ impl Buffer {
             path: Arc::from(path),
             on_disk: buffer.text.rope().clone(),
         };
+        if let Ok(language) = Language::try_from(path) {
+            let syntax = Syntax::parse(language, buffer.text.rope());
+            buffer.syntax = Some(syntax);
+        }
         Ok(buffer)
     }
 

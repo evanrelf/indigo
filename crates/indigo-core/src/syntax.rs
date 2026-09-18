@@ -1,3 +1,5 @@
+use anyhow::{Context as _, anyhow};
+use camino::Utf8Path;
 use ropey::Rope;
 use std::ops::Deref;
 use tree_sitter::{Parser, Tree};
@@ -59,6 +61,18 @@ impl Clone for Syntax {
 pub enum Language {
     #[cfg(feature = "language-rust")]
     Rust,
+}
+
+impl TryFrom<&Utf8Path> for Language {
+    type Error = anyhow::Error;
+    fn try_from(path: &Utf8Path) -> Result<Self, Self::Error> {
+        let extension_str = path.extension().context("path is missing extension")?;
+        match extension_str {
+            #[cfg(feature = "language-rust")]
+            "rs" => Ok(Self::Rust),
+            _ => Err(anyhow!("could not infer language from path")),
+        }
+    }
 }
 
 impl From<Language> for tree_sitter::Language {
