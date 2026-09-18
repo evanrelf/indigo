@@ -87,6 +87,8 @@ impl Buffer {
         self.syntax = Some(Syntax::parse(language, self.text.rope()));
     }
 
+    // TODO: Nothing is calling this yet, so `syntax` falls behind edits to `text`. Figure out how
+    // to keep them in sync, and how to avoid reparsing when nothing has changed.
     pub fn reparse(&mut self) {
         if let Some(syntax) = &mut self.syntax {
             syntax.reparse(&self.text);
