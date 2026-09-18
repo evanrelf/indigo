@@ -27,9 +27,9 @@ pub enum BufferKind {
 
 #[derive(Clone, Default)]
 pub struct Buffer {
-    pub kind: BufferKind,
+    kind: BufferKind,
     pub text: Text,
-    pub syntax: Option<Syntax>,
+    syntax: Option<Syntax>,
 }
 
 impl Buffer {
@@ -91,6 +91,11 @@ impl Buffer {
     }
 
     #[must_use]
+    pub fn kind(&self) -> &BufferKind {
+        &self.kind
+    }
+
+    #[must_use]
     pub fn path(&self) -> Option<&Utf8Path> {
         if let BufferKind::File { path, .. } = &self.kind {
             Some(path)
@@ -106,6 +111,11 @@ impl Buffer {
         } else {
             None
         }
+    }
+
+    #[must_use]
+    pub fn syntax(&self) -> Option<&Syntax> {
+        self.syntax.as_ref()
     }
 
     pub fn assert_invariants(&self) -> anyhow::Result<()> {

@@ -225,7 +225,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         Mode::Prompt(_) => "prompt",
     };
 
-    let path = match (&editor.pwd, &editor.focused_buffer().kind) {
+    let path = match (&editor.pwd, &editor.focused_buffer().kind()) {
         (_, BufferKind::Scratch) => String::from("*scratch*"),
         (None, BufferKind::File { path, .. }) => path.to_string(),
         (Some(pwd), BufferKind::File { path, .. }) => match diff_utf8_paths(path, pwd) {
@@ -236,8 +236,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let language = editor
         .focused_buffer()
-        .syntax
-        .as_ref()
+        .syntax()
         .map_or("", |syntax| match syntax.language() {
             Language::Rust => " rust",
         });
