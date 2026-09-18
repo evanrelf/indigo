@@ -12,6 +12,7 @@ use indigo_core::{
     fs::RealFs,
     prelude::{Buffer, BufferKind, DisplayWidth as _, Editor, Keys, Mode, RopeExt as _},
     rope::LINE_TYPE,
+    syntax::Language,
 };
 use pathdiff::diff_utf8_paths;
 use ratatui::{
@@ -233,6 +234,14 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         },
     };
 
+    let language = editor
+        .focused_buffer()
+        .syntax
+        .as_ref()
+        .map_or("", |syntax| match syntax.language() {
+            Language::Rust => " rust",
+        });
+
     let window = editor.focused_window();
     let selection = window.selection();
 
@@ -250,7 +259,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         None => "",
     };
 
-    Line::raw(format!("{path} {line}:{column} {mode}{count}"))
+    Line::raw(format!("{path}{language} {line}:{column} {mode}{count}"))
         .right_aligned()
         .bg(THEME.status_bar_bg)
         .render(area, surface);
