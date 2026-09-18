@@ -84,6 +84,12 @@ impl Buffer {
         Ok(())
     }
 
+    pub fn reparse(&mut self) {
+        if let Some(syntax) = &mut self.syntax {
+            syntax.reparse(&self.text);
+        }
+    }
+
     #[must_use]
     pub fn path(&self) -> Option<&Utf8Path> {
         if let BufferKind::File { path, .. } = &self.kind {
