@@ -130,7 +130,7 @@ pub enum Language {
 
 impl Language {
     #[must_use]
-    pub fn highlights_query(&self) -> &Query {
+    pub fn highlights_query(&self) -> &'static Query {
         match self {
             #[cfg(feature = "language-rust")]
             Self::Rust => {
@@ -143,7 +143,7 @@ impl Language {
     }
 
     #[must_use]
-    pub fn injections_query(&self) -> &Query {
+    pub fn injections_query(&self) -> &'static Query {
         match self {
             #[cfg(feature = "language-rust")]
             Self::Rust => {
@@ -156,7 +156,7 @@ impl Language {
     }
 
     #[must_use]
-    pub fn tags_query(&self) -> &Query {
+    pub fn tags_query(&self) -> &'static Query {
         match self {
             #[cfg(feature = "language-rust")]
             Self::Rust => {
