@@ -507,6 +507,32 @@ impl<W: WrapMut> RangeView<'_, W> {
         self.state.goal_column = GoalColumn::OntoLineEnd;
     }
 
+    pub fn expand_to_outer_node(&mut self) -> bool {
+        let (start, end) = self.byte_offsets();
+        let Some(syntax) = self.text.syntax() else {
+            return false;
+        };
+        let Some(node) = syntax.outer_node(start..end) else {
+            return false;
+        };
+        let byte_range = node.byte_range();
+        self.set_bounds(byte_range);
+        true
+    }
+
+    pub fn shrink_to_inner_node(&mut self) -> bool {
+        let (start, end) = self.byte_offsets();
+        let Some(syntax) = self.text.syntax() else {
+            return false;
+        };
+        let Some(node) = syntax.inner_node(start..end) else {
+            return false;
+        };
+        let byte_range = node.byte_range();
+        self.set_bounds(byte_range);
+        true
+    }
+
     fn set_bounds(&mut self, byte_range: impl RangeBounds<usize>) {
         let start = match byte_range.start_bound() {
             Bound::Included(n) => self
@@ -1112,6 +1138,26 @@ mod tests {
                 self.range().expand_to_full_lines();
             }
             #[rule]
+            fn expand_to_outer_node(&mut self, _: TestCase) {
+                let (old_start, old_end) = self.range().byte_offsets();
+                self.range().expand_to_outer_node();
+                let (new_start, new_end) = self.range().byte_offsets();
+                assert!(
+                    new_start <= old_start && old_end <= new_end,
+                    "Expanding to a node never shrinks the range"
+                );
+            }
+            #[rule]
+            fn shrink_to_inner_node(&mut self, _: TestCase) {
+                let (old_start, old_end) = self.range().byte_offsets();
+                self.range().shrink_to_inner_node();
+                let (new_start, new_end) = self.range().byte_offsets();
+                assert!(
+                    old_start <= new_start && new_end <= old_end,
+                    "Shrinking to a node never grows the range"
+                );
+            }
+            #[rule]
             fn flip(&mut self, tc: TestCase) {
                 let mut range = self.range();
                 match tc.draw(gs::integers::<u8>().max_value(2)) {
@@ -1174,8 +1220,12 @@ mod tests {
                 );
             }
         }
+        #[cfg_attr(not(feature = "language-rust"), expect(unused_mut))]
+        let mut text = Text::new();
+        #[cfg(feature = "language-rust")]
+        text.set_language(crate::syntax::Language::Rust);
         let machine = StateMachine {
-            text: Text::new(),
+            text,
             state: RangeState::default(),
         };
         hegel::stateful::run(machine, tc);
