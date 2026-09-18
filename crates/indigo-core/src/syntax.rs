@@ -2,7 +2,7 @@ use anyhow::{Context as _, anyhow};
 use camino::Utf8Path;
 use ropey::Rope;
 use std::ops::Deref;
-use tree_sitter::{Node, Parser, TextProvider, Tree};
+use tree_sitter::{Node, Parser, Query, TextProvider, Tree};
 
 pub struct Syntax {
     language: Language,
@@ -61,6 +61,32 @@ impl Clone for Syntax {
 pub enum Language {
     #[cfg(feature = "language-rust")]
     Rust,
+}
+
+impl Language {
+    #[must_use]
+    pub fn highlights_query(&self) -> Query {
+        match self {
+            #[cfg(feature = "language-rust")]
+            Self::Rust => Query::new(&(*self).into(), tree_sitter_rust::HIGHLIGHTS_QUERY).unwrap(),
+        }
+    }
+
+    #[must_use]
+    pub fn injections_query(&self) -> Query {
+        match self {
+            #[cfg(feature = "language-rust")]
+            Self::Rust => Query::new(&(*self).into(), tree_sitter_rust::INJECTIONS_QUERY).unwrap(),
+        }
+    }
+
+    #[must_use]
+    pub fn tags_query(&self) -> Query {
+        match self {
+            #[cfg(feature = "language-rust")]
+            Self::Rust => Query::new(&(*self).into(), tree_sitter_rust::TAGS_QUERY).unwrap(),
+        }
+    }
 }
 
 impl TryFrom<&Utf8Path> for Language {
