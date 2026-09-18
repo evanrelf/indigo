@@ -8,6 +8,9 @@ The `indigo-cli` bin crate is run with the `./bin/run-cli` shell script. It
 accepts the initial buffer text from `stdin`, keys to execute as the first
 argument, and prints the final edited text to `stdout`.
 
+Text read from `stdin` has no file extension, so no language is inferred. Pass
+`--language rust` to parse the buffer as Rust.
+
 When testing the behavior of the selection / ranges / cursors, make edits to the
 text that reveal where the cursors are located. For example, if you want to test
 whether moving to the beginning of the line (`gh`) works, follow that action by

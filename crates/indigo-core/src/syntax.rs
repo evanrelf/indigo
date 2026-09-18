@@ -3,6 +3,7 @@ use camino::Utf8Path;
 use ropey::Rope;
 use std::{
     ops::{Deref, Range},
+    str::FromStr,
     sync::OnceLock,
 };
 use tree_sitter::{Node, Parser, Query, TextProvider, Tree};
@@ -80,7 +81,7 @@ impl Clone for Syntax {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Language {
     #[cfg(feature = "language-rust")]
     Rust,
@@ -135,6 +136,17 @@ impl TryFrom<&Utf8Path> for Language {
             #[cfg(feature = "language-rust")]
             "rs" => Ok(Self::Rust),
             _ => Err(anyhow!("could not infer language from path")),
+        }
+    }
+}
+
+impl FromStr for Language {
+    type Err = anyhow::Error;
+    fn from_str(name: &str) -> Result<Self, Self::Err> {
+        match name {
+            #[cfg(feature = "language-rust")]
+            "rust" => Ok(Self::Rust),
+            _ => Err(anyhow!("unknown language `{name}`")),
         }
     }
 }

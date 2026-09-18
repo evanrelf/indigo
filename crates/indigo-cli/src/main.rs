@@ -1,5 +1,5 @@
 use clap::Parser as _;
-use indigo_core::{key::is, prelude::*};
+use indigo_core::{key::is, prelude::*, syntax::Language};
 use std::{io, process::ExitCode, sync::Arc};
 use tracing_subscriber::EnvFilter;
 
@@ -12,6 +12,10 @@ struct Args {
     /// - Enter `<c-l>` to print information and a diff since the last `<c-l>` key was encountered.
     #[arg(long)]
     debug: bool,
+
+    /// Parse the buffer as this language (e.g. `rust`).
+    #[arg(long)]
+    language: Option<Language>,
 
     #[arg(long, env = "INDIGO_LOG", default_value_t)]
     log_filter: Arc<str>,
@@ -40,7 +44,13 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let rope = Rope::from_reader(io::BufReader::new(io::stdin()))?;
 
-    let mut editor = Editor::from(Buffer::from(rope));
+    let mut buffer = Buffer::from(rope);
+
+    if let Some(language) = args.language {
+        buffer.text.set_language(language);
+    }
+
+    let mut editor = Editor::from(buffer);
 
     let mut debug_keys = vec![];
     let mut debug_rope = editor.focused_buffer().text.rope().clone();

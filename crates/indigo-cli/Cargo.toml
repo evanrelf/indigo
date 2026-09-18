@@ -7,7 +7,7 @@ edition = "2024"
 anyhow = { workspace = true }
 clap = { workspace = true }
 diff = { workspace = true }
-indigo-core = { workspace = true }
+indigo-core = { workspace = true, features = ["language-rust"] }
 tracing-subscriber = { workspace = true }
 
 [lints]
