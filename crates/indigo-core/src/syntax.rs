@@ -24,7 +24,10 @@ impl Syntax {
     }
 
     pub fn reparse(&mut self, code: &Rope) {
-        self.tree = parse(code, &mut self.parser, Some(&self.tree));
+        // TODO: If I want to do incremental reparsing, I need to call `tree.edit(..)`. For now I'll
+        // just parse from scratch every time.
+        // self.tree = parse(code, &mut self.parser, Some(&self.tree));
+        self.tree = parse(code, &mut self.parser, None);
     }
 
     #[must_use]
