@@ -4,9 +4,11 @@ use ropey::Rope;
 use std::{
     ops::{Deref, Range},
     str::FromStr,
-    sync::OnceLock,
 };
 use tree_sitter::{Node, Parser, Query, TextProvider, Tree};
+
+#[allow(clippy::allow_attributes, unused_imports)]
+use std::sync::OnceLock;
 
 pub struct Syntax {
     language: Language,
@@ -131,7 +133,7 @@ pub enum Language {
 impl Language {
     #[must_use]
     pub fn highlights_query(&self) -> &'static Query {
-        match self {
+        match *self {
             #[cfg(feature = "language-rust")]
             Self::Rust => {
                 static QUERY: OnceLock<Query> = OnceLock::new();
@@ -144,7 +146,7 @@ impl Language {
 
     #[must_use]
     pub fn injections_query(&self) -> &'static Query {
-        match self {
+        match *self {
             #[cfg(feature = "language-rust")]
             Self::Rust => {
                 static QUERY: OnceLock<Query> = OnceLock::new();
@@ -157,7 +159,7 @@ impl Language {
 
     #[must_use]
     pub fn tags_query(&self) -> &'static Query {
-        match self {
+        match *self {
             #[cfg(feature = "language-rust")]
             Self::Rust => {
                 static QUERY: OnceLock<Query> = OnceLock::new();
