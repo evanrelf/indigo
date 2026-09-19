@@ -280,7 +280,7 @@ mod tests {
     use ropey::Rope;
     use unicode_segmentation::UnicodeSegmentation as _;
 
-    // Note [Fresh cursor at chunk crossings]
+    // Note [Grapheme cursor bug workaround]
     #[test]
     fn test_flag_run_across_chunks() {
         let text = "\u{1f1e6}\u{1f1e7}".repeat(1024 / 8 + 1); // should be more than 1 chunk
@@ -333,12 +333,10 @@ mod tests {
                 .map(|slice| slice.to_string())
                 .collect::<Vec<_>>()
         };
-        let crop = {
-            let rope = crop::Rope::from(string.as_str());
-            rope.graphemes()
-                .map(|cow| cow.to_string())
-                .collect::<Vec<_>>()
-        };
-        assert_eq!(ropey, crop);
+        let str = string
+            .graphemes(true)
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        assert_eq!(ropey, str);
     }
 }
