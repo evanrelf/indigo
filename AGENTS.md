@@ -28,6 +28,8 @@ by Kakoune and CodeMirror.
 
 - Always run `cargo clippy --all-targets` to check if code compiles. Never run
   `cargo check` or `cargo build`.
+- Some crates may disable tests when feature flags aren't enabled. Err towards
+  running `cargo test` from the root of the repo to include as much as possible.
 - Prefer writing property tests with Hegel over unit tests. Read the tests in
   `indigo_kernel`'s `edit` and `merge` modules for good examples.
 - Never run `indigo`; you cannot control it. Run `indigo-cli` instead to test

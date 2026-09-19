@@ -24,7 +24,7 @@ intuit the final cursor position.
 - Prints when keys are unhandled
 - When executing `<c-l>`, prints:
   - Keys processed
-  - Char offsets of the primary range
+  - Byte indexes of ranges
   - Text changes as a diff
 
 When testing cursor and range behavior, print this debug state often to see the
