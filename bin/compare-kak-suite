@@ -281,6 +281,7 @@ same 'ab\ncd\n' 'gedxd'
 same 'ab\ncd\n' '%diX<esc>'
 same 'ab\ncd\n' '%doX<esc>'
 same 'ab\ncd\n' '%s\\w+<ret>dd'
+same 'abc\n' 'lLrXd'
 
 # Prompt editing
 
@@ -301,10 +302,6 @@ todo 'ab cd\n' '%s\\w+<ret>geiX<esc>'
 # Undo does not restore selections.
 todo 'abc\n' 'lLducX<esc>'
 todo 'ab\ncd\n' 'oX<esc>ucX<esc>'
-
-# `r` collapses a multi-grapheme selection to its first grapheme; Kakoune keeps
-# the whole replaced range selected.
-todo 'abc\n' 'lLrXd'
 
 # `o`, `O`, `<a-o>`, and `<a-O>` use the head's line rather than the
 # selection's first or last line.

@@ -311,8 +311,6 @@ impl<W: WrapMut> SelectionView<'_, W> {
         });
     }
 
-    /// Split each range at the returned cut points (exclusive byte offsets strictly inside the
-    /// range). A segment ending at a cut point covers up to the grapheme before it.
     fn split_at(&mut self, mut f: impl FnMut(Range<'_>) -> Vec<usize>) {
         let old_primary_range = self.state.primary_range;
         let old_primary_head = self.state.ranges[old_primary_range].head.byte_index;
@@ -382,8 +380,6 @@ impl<W: WrapMut> SelectionView<'_, W> {
         ops
     }
 
-    /// Replace each selected grapheme with the given character. Newlines are replaced too, as in
-    /// Kakoune's `r`; replacing the text's final newline re-inserts one after it.
     pub fn replace_each(&mut self, byte: u8) -> Edit {
         debug_assert!(
             self.state
@@ -395,17 +391,24 @@ impl<W: WrapMut> SelectionView<'_, W> {
         let replacement = char::from(byte).to_string();
         let mut ops = Edit::new();
         let mut previous = 0;
+        let mut output_position = 0;
+        let mut ranges = Vec::with_capacity(self.state.ranges.len());
         for range in &self.state.ranges {
             let start = range.start().byte_index;
             let end_exclusive = self
                 .text
                 .next_grapheme_boundary(range.end().byte_index)
                 .expect("Range end is always on a grapheme");
-            ops.retain(start - previous);
+            let retained = start - previous;
+            ops.retain(retained);
+            output_position += retained;
+            let replacement_start = output_position;
             for grapheme in self.text.rope().slice(start..end_exclusive).graphemes() {
                 ops.delete(&grapheme.to_string());
                 ops.insert(&replacement);
+                output_position += replacement.len();
             }
+            ranges.push(range.with_bounds(replacement_start, output_position - replacement.len()));
             if end_exclusive == self.text.len() {
                 // The final newline was replaced; restore the `Text` invariant.
                 ops.insert("\n");
@@ -415,12 +418,11 @@ impl<W: WrapMut> SelectionView<'_, W> {
         ops.retain_rest(&self.text)
             .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
-        self.state.transform(&ops, &self.text);
+        self.state.ranges = ranges;
         self.update_goal_columns();
         ops
     }
 
-    /// Delete the grapheme before each range's start.
     pub fn delete_before(&mut self) -> Edit {
         debug_assert!(
             self.state
@@ -449,8 +451,6 @@ impl<W: WrapMut> SelectionView<'_, W> {
         ops
     }
 
-    /// Delete each range's graphemes. Deleting through the end of the text re-inserts the
-    /// invariant trailing newline.
     pub fn delete(&mut self) -> Edit {
         debug_assert!(
             self.state
@@ -498,7 +498,6 @@ impl<W: WrapMut> SelectionView<'_, W> {
         ops
     }
 
-    /// Delete the grapheme under each range's end cursor, unless it is the text's final newline.
     pub fn delete_after(&mut self) -> Edit {
         debug_assert!(
             self.state
@@ -614,6 +613,8 @@ mod tests {
         selection.replace_each(b'X');
         drop(selection);
         assert_eq!(&text.to_string(), "XXXXXX\n");
+        assert_eq!(state.ranges[0].tail.byte_index, 0);
+        assert_eq!(state.ranges[0].head.byte_index, 5);
     }
 
     #[test]
