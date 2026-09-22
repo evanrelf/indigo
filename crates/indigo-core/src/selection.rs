@@ -1,5 +1,5 @@
 use crate::{
-    cursor::{CursorState, GoalColumn},
+    cursor::CursorState,
     range::{Range, RangeMut, RangeSnapshot, RangeState},
     rope::{LINE_TYPE, RegexCursorInput, RopeExt as _},
     text::Text,
@@ -275,7 +275,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
                 ranges.push(RangeState {
                     tail: CursorState { byte_index: tail },
                     head: CursorState { byte_index: head },
-                    goal_column: GoalColumn::default(),
+                    goal_column: None,
                 });
             }
         }
@@ -376,7 +376,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
             .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
-        self.update_goal_columns();
+        self.invalidate_goal_columns();
         ops
     }
 
@@ -419,7 +419,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
             .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.ranges = ranges;
-        self.update_goal_columns();
+        self.invalidate_goal_columns();
         ops
     }
 
@@ -447,7 +447,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
             .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
-        self.update_goal_columns();
+        self.invalidate_goal_columns();
         ops
     }
 
@@ -494,7 +494,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
             .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
-        self.update_goal_columns();
+        self.invalidate_goal_columns();
         ops
     }
 
@@ -528,14 +528,14 @@ impl<W: WrapMut> SelectionView<'_, W> {
             .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
-        self.update_goal_columns();
+        self.invalidate_goal_columns();
         ops
     }
 
-    fn update_goal_columns(&mut self) {
+    fn invalidate_goal_columns(&mut self) {
         for i in 0..self.state.ranges.len() {
             let mut range = self.unchecked_get_mut(i).unwrap();
-            range.update_goal_column();
+            range.invalidate_goal_column();
         }
     }
 }
@@ -558,7 +558,7 @@ mod tests {
         RangeState {
             tail: CursorState { byte_index: tail },
             head: CursorState { byte_index: head },
-            goal_column: GoalColumn::default(),
+            goal_column: None,
         }
     }
 

@@ -62,12 +62,6 @@ pub enum GoalColumn {
     OntoLineEnd,
 }
 
-impl Default for GoalColumn {
-    fn default() -> Self {
-        Self::Column(0)
-    }
-}
-
 impl From<usize> for GoalColumn {
     fn from(n: usize) -> Self {
         if n == usize::MAX {

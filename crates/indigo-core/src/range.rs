@@ -29,7 +29,7 @@ pub enum Error {
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
-    UpdateGoalColumn,
+    InvalidateGoalColumn,
     ExtendTo(usize),
     MoveTo(usize),
     ExtendLeft(u8),
@@ -78,7 +78,7 @@ pub enum Action {
 pub struct RangeState {
     pub tail: CursorState,
     pub head: CursorState,
-    pub goal_column: GoalColumn,
+    pub goal_column: Option<GoalColumn>,
 }
 
 impl RangeState {
@@ -135,13 +135,17 @@ impl RangeState {
     }
 
     #[must_use]
+    pub fn resolve_goal_column(&self, text: &Text) -> GoalColumn {
+        self.goal_column
+            .unwrap_or_else(|| GoalColumn::Column(text.display_column(self.head.byte_index)))
+    }
+
+    #[must_use]
     pub fn save(&self, text: &Text) -> RangeSnapshot {
-        let tail = self.tail.save(text);
-        let head = self.head.save(text);
         RangeSnapshot {
-            tail,
-            head,
-            goal_column: self.goal_column,
+            tail: self.tail.save(text),
+            head: self.head.save(text),
+            goal_column: self.resolve_goal_column(text),
         }
     }
 }
@@ -160,7 +164,7 @@ impl RangeSnapshot {
         Some(RangeState {
             tail,
             head,
-            goal_column: self.goal_column,
+            goal_column: Some(self.goal_column),
         })
     }
 }
@@ -247,7 +251,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         }
     }
 
-    pub fn goal_column(&self) -> GoalColumn {
+    pub fn goal_column(&self) -> Option<GoalColumn> {
         self.state.goal_column
     }
 
@@ -332,14 +336,19 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     /// Should be called after performing any non-vertical movement.
-    pub fn update_goal_column(&mut self) {
-        let head_column = self.head().display_column();
-        self.state.goal_column = GoalColumn::Column(head_column);
+    pub fn invalidate_goal_column(&mut self) {
+        self.state.goal_column = None;
+    }
+
+    fn resolve_goal_column(&mut self) -> GoalColumn {
+        let goal_column = self.state.resolve_goal_column(&self.text);
+        self.state.goal_column = Some(goal_column);
+        goal_column
     }
 
     pub fn extend_to(&mut self, byte_index: usize) {
         self.head_mut().move_to(byte_index);
-        self.update_goal_column();
+        self.invalidate_goal_column();
     }
 
     pub fn move_to(&mut self, byte_index: usize) {
@@ -349,7 +358,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_left(&mut self, count: usize) {
         self.head_mut().move_left(count);
-        self.update_goal_column();
+        self.invalidate_goal_column();
     }
 
     pub fn move_left(&mut self, count: usize) {
@@ -359,7 +368,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_right(&mut self, count: usize) {
         self.head_mut().move_right(count);
-        self.update_goal_column();
+        self.invalidate_goal_column();
     }
 
     pub fn move_right(&mut self, count: usize) {
@@ -368,7 +377,10 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_up(&mut self, count: usize) {
-        let goal_column = self.state.goal_column;
+        if count == 0 {
+            return;
+        }
+        let goal_column = self.resolve_goal_column();
         self.head_mut().move_up(goal_column, count);
     }
 
@@ -378,7 +390,10 @@ impl<W: WrapMut> RangeView<'_, W> {
     }
 
     pub fn extend_down(&mut self, count: usize) {
-        let goal_column = self.state.goal_column;
+        if count == 0 {
+            return;
+        }
+        let goal_column = self.resolve_goal_column();
         self.head_mut().move_down(goal_column, count);
     }
 
@@ -391,7 +406,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         if self.head_mut().move_to_prev_byte(byte, count) {
             self.head_mut().move_right(1);
         }
-        self.update_goal_column();
+        self.invalidate_goal_column();
     }
 
     pub fn move_until_prev_byte(&mut self, byte: u8, count: usize) {
@@ -401,7 +416,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_onto_prev_byte(&mut self, byte: u8, count: usize) {
         self.head_mut().move_to_prev_byte(byte, count);
-        self.update_goal_column();
+        self.invalidate_goal_column();
     }
 
     pub fn move_onto_prev_byte(&mut self, byte: u8, count: usize) {
@@ -413,7 +428,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         if self.head_mut().move_to_next_byte(byte, count) {
             self.head_mut().move_left(1);
         }
-        self.update_goal_column();
+        self.invalidate_goal_column();
     }
 
     pub fn move_until_next_byte(&mut self, byte: u8, count: usize) {
@@ -423,7 +438,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_onto_next_byte(&mut self, byte: u8, count: usize) {
         self.head_mut().move_to_next_byte(byte, count);
-        self.update_goal_column();
+        self.invalidate_goal_column();
     }
 
     pub fn move_onto_next_byte(&mut self, byte: u8, count: usize) {
@@ -433,7 +448,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_to_start(&mut self) {
         self.head_mut().move_to_start();
-        self.update_goal_column();
+        self.invalidate_goal_column();
     }
 
     pub fn move_to_start(&mut self) {
@@ -443,7 +458,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_to_end(&mut self) {
         self.head_mut().move_to_end();
-        self.update_goal_column();
+        self.invalidate_goal_column();
     }
 
     pub fn move_to_end(&mut self) {
@@ -453,7 +468,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_to_bottom(&mut self) {
         self.head_mut().move_to_bottom();
-        self.update_goal_column();
+        self.invalidate_goal_column();
     }
 
     pub fn move_to_bottom(&mut self) {
@@ -463,7 +478,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_to_line_start(&mut self) {
         self.head_mut().move_to_line_start();
-        self.update_goal_column();
+        self.invalidate_goal_column();
     }
 
     pub fn move_to_line_start(&mut self) {
@@ -473,7 +488,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_to_line_non_blank_start(&mut self) {
         self.head_mut().move_to_line_non_blank_start();
-        self.update_goal_column();
+        self.invalidate_goal_column();
     }
 
     pub fn move_to_line_non_blank_start(&mut self) {
@@ -483,7 +498,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_until_line_end(&mut self) {
         self.head_mut().move_until_line_end();
-        self.state.goal_column = GoalColumn::UntilLineEnd;
+        self.state.goal_column = Some(GoalColumn::UntilLineEnd);
     }
 
     pub fn move_until_line_end(&mut self) {
@@ -493,7 +508,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 
     pub fn extend_onto_line_end(&mut self) {
         self.head_mut().move_to_line_end();
-        self.update_goal_column();
+        self.invalidate_goal_column();
     }
 
     pub fn move_onto_line_end(&mut self) {
@@ -504,7 +519,7 @@ impl<W: WrapMut> RangeView<'_, W> {
     pub fn expand_to_full_lines(&mut self) {
         self.start_mut().move_to_line_start();
         self.end_mut().move_to_line_end();
-        self.state.goal_column = GoalColumn::OntoLineEnd;
+        self.state.goal_column = Some(GoalColumn::OntoLineEnd);
     }
 
     pub fn expand_to_outer_node(&mut self) -> bool {
@@ -560,7 +575,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         };
         let end = max(start, end);
         *self.state = self.state.with_bounds(start, end);
-        self.update_goal_column();
+        self.invalidate_goal_column();
     }
 
     pub fn flip(&mut self) {
@@ -605,12 +620,12 @@ impl<W: WrapMut> RangeView<'_, W> {
                 .expect("Text is never empty");
             self.state.tail.byte_index = last;
             self.state.head.byte_index = last;
-            self.update_goal_column();
+            self.invalidate_goal_column();
             Some(ops)
         } else {
             self.head_mut().move_right(1);
             self.reduce();
-            self.update_goal_column();
+            self.invalidate_goal_column();
             None
         }
     }
@@ -634,7 +649,7 @@ impl<W: WrapMut> RangeView<'_, W> {
             .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
-        self.update_goal_column();
+        self.invalidate_goal_column();
         ops
     }
 
@@ -654,7 +669,7 @@ impl<W: WrapMut> RangeView<'_, W> {
             .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
-        self.update_goal_column();
+        self.invalidate_goal_column();
         Some(ops)
     }
 
@@ -673,7 +688,7 @@ impl<W: WrapMut> RangeView<'_, W> {
             .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
-        self.update_goal_column();
+        self.invalidate_goal_column();
         ops
     }
 
@@ -700,7 +715,7 @@ impl<W: WrapMut> RangeView<'_, W> {
             .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
-        self.update_goal_column();
+        self.invalidate_goal_column();
         Some(ops)
     }
 
@@ -717,8 +732,8 @@ impl<W: WrapMut> RangeView<'_, W> {
 #[expect(clippy::too_many_lines)]
 pub fn handle_action<W: WrapMut>(range: &mut RangeView<'_, W>, action: &Action) {
     match action {
-        Action::UpdateGoalColumn => {
-            range.update_goal_column();
+        Action::InvalidateGoalColumn => {
+            range.invalidate_goal_column();
         }
         Action::ExtendTo(byte_index) => {
             range.extend_to(*byte_index);
@@ -863,12 +878,9 @@ where
         let state = Box::new(RangeState {
             tail: CursorState { byte_index: tail },
             head: CursorState { byte_index: head },
-            goal_column: GoalColumn::default(),
+            goal_column: None,
         });
-        Self::new(text, state).map(|mut range| {
-            range.update_goal_column();
-            range
-        })
+        Self::new(text, state)
     }
 }
 
@@ -885,6 +897,42 @@ impl<W: Wrap> Drop for RangeView<'_, W> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[hegel::test]
+    fn vertical_movement_resolves_and_reuses_goal_column(tc: hegel::TestCase) {
+        use hegel::generators as gs;
+
+        let goal = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
+        let short_line_length = tc.draw(gs::integers::<usize>().max_value(goal));
+        let first_line = "a".repeat(goal + 1);
+        let short_line = "b".repeat(short_line_length);
+        let third_line = "c".repeat(goal + 1);
+        let text = format!("{first_line}\n{short_line}\n{third_line}\n");
+        let third_line_start = first_line.len() + 1 + short_line.len() + 1;
+        let mut range = RangeView::try_from((Text::from(text.as_str()), goal, goal)).unwrap();
+
+        assert_eq!(range.goal_column(), None);
+        range.move_down(1);
+        assert_eq!(range.goal_column(), Some(GoalColumn::Column(goal)));
+
+        range.move_down(1);
+        assert_eq!(range.head().byte_index(), third_line_start + goal);
+        assert_eq!(range.goal_column(), Some(GoalColumn::Column(goal)));
+
+        range.move_left(1);
+        assert_eq!(range.goal_column(), None);
+    }
+
+    #[test]
+    fn snapshot_materializes_unresolved_goal_column() {
+        let range = RangeView::try_from(("a\t界\n", 2, 2)).unwrap();
+
+        assert_eq!(range.goal_column(), None);
+        let snapshot = range.save();
+
+        assert_eq!(snapshot.goal_column, GoalColumn::Column(9));
+        assert_eq!(range.goal_column(), None);
+    }
 
     #[test]
     fn insert_changes_grapheme_boundary() {
