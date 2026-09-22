@@ -5,12 +5,12 @@ edition = "2024"
 
 [dependencies]
 anyhow = { workspace = true }
-imbl = "7.0.1"
+imbl = { workspace = true }
 ropey = { workspace = true }
 unicode-segmentation = { workspace = true }
 
 [dev-dependencies]
-crop = { version = "0.4.3", features = ["graphemes"] }
+crop = { workspace = true }
 hegeltest = { workspace = true }
 
 [lints]
