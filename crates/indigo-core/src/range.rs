@@ -1228,6 +1228,6 @@ mod tests {
             text,
             state: RangeState::default(),
         };
-        hegel::stateful::run(machine, tc);
+        hegel::stateful::machine(machine).run(tc);
     }
 }

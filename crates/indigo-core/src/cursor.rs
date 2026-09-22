@@ -868,6 +868,7 @@ mod tests {
 
     #[hegel::test(test_cases = 1000)]
     fn fuzz(tc: TestCase) {
+        #[derive(Default)]
         struct StateMachine {
             text: Text,
             state: CursorState,
@@ -1003,10 +1004,6 @@ mod tests {
                 );
             }
         }
-        let machine = StateMachine {
-            text: Text::new(),
-            state: CursorState::default(),
-        };
-        hegel::stateful::run(machine, tc);
+        hegel::stateful::machine(StateMachine::default()).run(tc);
     }
 }

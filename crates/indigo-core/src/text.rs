@@ -293,7 +293,7 @@ mod tests {
     fn fuzz(tc: hegel::TestCase) {
         use crate::rope::RopeExt as _;
         use hegel::generators as gs;
-
+        #[derive(Default)]
         struct StateMachine {
             text: Text,
         }
@@ -338,6 +338,6 @@ mod tests {
                 self.text.assert_invariants().unwrap();
             }
         }
-        hegel::stateful::run(StateMachine { text: Text::new() }, tc);
+        hegel::stateful::machine(StateMachine::default()).run(tc);
     }
 }

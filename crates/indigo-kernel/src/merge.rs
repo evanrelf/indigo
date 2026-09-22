@@ -211,7 +211,6 @@ mod tests {
             model: Vec<(usize, i64)>,
             next_sequence_number: usize,
         }
-
         #[expect(clippy::needless_pass_by_value)]
         #[hegel::state_machine]
         impl StateMachine {
@@ -255,7 +254,6 @@ mod tests {
                 }
             }
         }
-
-        hegel::stateful::run(StateMachine::default(), tc);
+        hegel::stateful::machine(StateMachine::default()).run(tc);
     }
 }

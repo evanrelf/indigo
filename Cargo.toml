@@ -6,14 +6,14 @@ members = ["crates/*", "fuzz"]
 anyhow = "1.0.104"
 arbitrary = { version = "1.4.2", features = ["derive"] }
 arrayvec = "0.7.8"
-bitflags = { version = "2.13.1", features = ["std"] }
-bpaf = "0.9.27"
-camino = "1.2.5"
-clap = { version = "4.6.6", features = ["derive", "env"] }
+bitflags = { version = "2.13.2", features = ["std"] }
+bpaf = "0.9.28"
+camino = "1.2.6"
+clap = { version = "4.6.7", features = ["derive", "env"] }
 crop = { version = "0.4.3", features = ["graphemes"] }
 diff = "0.1.13"
-hegeltest = "0.38.0"
-imbl = "7.0.1"
+hegeltest = "0.46.2"
+imbl = "7.0.2"
 indigo = { path = "crates/indigo/" }
 indigo-cli = { path = "crates/indigo-cli/" }
 indigo-core = { path = "crates/indigo-core/" }
@@ -32,7 +32,7 @@ ropey = { version = "2.0.0-beta.1" }
 shell-words = "1.1.1"
 slotmap = "1.1.1"
 thiserror = "2.0.20"
-tinyvec = { version = "1.12.0", features = ["std"] }
+tinyvec = { version = "1.13.3", features = ["std"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 tree-sitter = "0.27.0"
