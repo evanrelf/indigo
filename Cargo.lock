@@ -857,6 +857,7 @@ dependencies = [
  "imbl",
  "ropey",
  "unicode-segmentation",
+ "unicode-width",
 ]
 
 [[package]]

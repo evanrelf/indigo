@@ -1,5 +1,5 @@
 #[doc(inline)]
-pub use indigo_kernel::edit::Edit;
+pub use indigo_kernel::{display_width::DisplayWidth, edit::Edit};
 
 #[doc(inline)]
 pub use crate::{
@@ -9,7 +9,7 @@ pub use crate::{
     key::{Key, KeyCode, KeyModifiers, Keys},
     mode::Mode,
     range::{Range, RangeMut},
-    rope::{Bias, DisplayWidth, RopeExt},
+    rope::{Bias, RopeExt},
     text::Text,
     window::{Window, WindowMut},
 };

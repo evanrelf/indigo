@@ -8,6 +8,7 @@ anyhow = { workspace = true }
 imbl = { workspace = true }
 ropey = { workspace = true }
 unicode-segmentation = { workspace = true }
+unicode-width = { workspace = true }
 
 [dev-dependencies]
 crop = { workspace = true }

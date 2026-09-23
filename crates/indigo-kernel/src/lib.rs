@@ -5,5 +5,6 @@ pub mod grapheme;
 // Under construction
 pub mod crdt_vibed_length;
 pub mod crdt_vibed_not_length;
+pub mod display_width;
 pub mod document;
 pub mod merge;

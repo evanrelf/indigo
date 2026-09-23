@@ -1,8 +1,11 @@
 use crate::{
-    rope::{DisplayWidth as _, LINE_TYPE, RopeExt as _},
+    rope::{LINE_TYPE, RopeExt as _},
     text::{Anchor, Text},
 };
-use indigo_kernel::edit::{self, Edit};
+use indigo_kernel::{
+    display_width::DisplayWidth as _,
+    edit::{self, Edit},
+};
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
 use std::thread;
