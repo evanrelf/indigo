@@ -50,6 +50,7 @@ impl SelectionState {
             range.head.byte_index = text
                 .snap_to_grapheme_start(offsets[i * 2 + 1])
                 .expect("Text is never empty");
+            range.goal_column = None;
         }
     }
 

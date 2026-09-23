@@ -85,6 +85,7 @@ impl RangeState {
     pub fn transform(&mut self, ops: &Edit, text: &Rope) {
         self.tail.transform(ops, text);
         self.head.transform(ops, text);
+        self.goal_column = None;
     }
 
     #[must_use]
@@ -119,18 +120,26 @@ impl RangeState {
 
     #[must_use]
     pub fn with_bounds(&self, start: usize, end: usize) -> Self {
-        if self.is_forward() {
-            Self {
-                tail: CursorState { byte_index: start },
-                head: CursorState { byte_index: end },
-                goal_column: self.goal_column,
-            }
+        let (tail, head) = if self.is_forward() {
+            (
+                CursorState { byte_index: start },
+                CursorState { byte_index: end },
+            )
         } else {
-            Self {
-                tail: CursorState { byte_index: end },
-                head: CursorState { byte_index: start },
-                goal_column: self.goal_column,
-            }
+            (
+                CursorState { byte_index: end },
+                CursorState { byte_index: start },
+            )
+        };
+        let goal_column = if head.byte_index == self.head.byte_index {
+            self.goal_column
+        } else {
+            None
+        };
+        Self {
+            tail,
+            head,
+            goal_column,
         }
     }
 
@@ -584,6 +593,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
         let (tail, head) = both(&mut self.state);
         mem::swap(tail, head);
+        self.invalidate_goal_column();
     }
 
     pub fn flip_forward(&mut self) {
@@ -963,10 +973,12 @@ mod tests {
     fn flip_is_direction_swap() {
         let mut range = RangeView::try_from(("abc\n", 0, 2)).unwrap();
         assert!(range.is_forward());
+        assert_eq!(range.resolve_goal_column(), GoalColumn::Column(2));
         range.flip();
         assert!(range.is_backward());
         assert_eq!(range.tail().byte_index(), 2);
         assert_eq!(range.head().byte_index(), 0);
+        assert_eq!(range.goal_column(), None);
         range.reduce();
         assert!(range.is_forward());
     }
