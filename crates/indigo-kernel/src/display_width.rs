@@ -1,6 +1,5 @@
-use crate::grapheme::Graphemes;
 use ropey::{Rope, RopeSlice};
-use std::{borrow::Cow, cmp::max};
+use std::cmp::max;
 use unicode_segmentation::UnicodeSegmentation as _;
 use unicode_width::UnicodeWidthStr;
 
@@ -10,37 +9,24 @@ pub trait DisplayWidth {
 
 impl DisplayWidth for char {
     fn display_width(&self) -> usize {
-        self.to_string().as_str().display_width()
+        str_width(self.encode_utf8(&mut [0; 4]))
     }
 }
 
 impl DisplayWidth for &str {
     fn display_width(&self) -> usize {
-        if let Some(width) = display_width_fast(self.as_bytes()) {
-            return width;
-        }
-        self.graphemes(true).map(grapheme_width).sum()
+        str_width(self)
     }
 }
 
 impl DisplayWidth for RopeSlice<'_> {
     fn display_width(&self) -> usize {
-        // Chunk widths are additive because the fast path admits no grapheme that could span a
-        // chunk boundary.
-        if let Some(width) = self
-            .chunks()
-            .map(|chunk| display_width_fast(chunk.as_bytes()))
-            .sum()
-        {
-            return width;
+        // Nearly every slice is one line inside one chunk, which needs no iterator or copy.
+        let (chunk, _) = self.chunk(0);
+        if chunk.len() == self.len() {
+            return str_width(chunk);
         }
-        Graphemes::new(self)
-            .map(|grapheme| {
-                let cow = Cow::<str>::from(grapheme);
-                let str = cow.as_ref();
-                grapheme_width(str)
-            })
-            .sum()
+        str_width(&String::from(*self))
     }
 }
 
@@ -52,16 +38,37 @@ impl DisplayWidth for Rope {
 
 const TAB_WIDTH: usize = 8;
 
-fn display_width_fast(bytes: &[u8]) -> Option<usize> {
-    let mut width = 0;
-    for byte in bytes {
-        match byte {
-            b'\t' => width += TAB_WIDTH,
-            0x20..=0x7E => width += 1,
-            _ => return None,
-        }
+fn str_width(str: &str) -> usize {
+    let bytes = str.as_bytes();
+    if bytes.is_ascii() {
+        return ascii_width(bytes);
     }
-    Some(width)
+    // Two adjacent ASCII bytes always lie in different grapheme clusters, CRLF aside, and every
+    // rule that looks back past a byte is reset by an ASCII byte. So cutting the string only
+    // between such pairs hands the segmenter exactly the clusters it would find in the whole.
+    let joined = |&a: &u8, &b: &u8| !(a.is_ascii() && b.is_ascii()) || (a == b'\r' && b == b'\n');
+    let mut width = 0;
+    let mut start = 0;
+    for run in bytes.chunk_by(joined) {
+        let end = start + run.len();
+        width += if run.is_ascii() {
+            ascii_width(run)
+        } else {
+            str[start..end].graphemes(true).map(grapheme_width).sum()
+        };
+        start = end;
+    }
+    width
+}
+
+/// Width of ASCII text, where every byte is its own grapheme except a CRLF pair.
+fn ascii_width(bytes: &[u8]) -> usize {
+    let tabs = bytes
+        .iter()
+        .map(|&byte| usize::from(byte == b'\t'))
+        .sum::<usize>();
+    let crlfs = bytes.windows(2).filter(|pair| pair == b"\r\n").count();
+    bytes.len() + (TAB_WIDTH - 1) * tabs - crlfs
 }
 
 fn grapheme_width(grapheme: &str) -> usize {
