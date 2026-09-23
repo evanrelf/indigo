@@ -23,6 +23,11 @@ impl Edit {
     }
 
     #[must_use]
+    pub fn ops(&self) -> &[Op] {
+        &self.ops
+    }
+
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.ops.is_empty()
     }
@@ -328,7 +333,7 @@ impl Edit {
 
 #[cfg_attr(test, derive(hegel::PrettyPrintable))]
 #[derive(Clone, Debug, Eq, PartialEq)]
-enum Op {
+pub enum Op {
     Retain(usize),
     Delete(String),
     Insert(String),
