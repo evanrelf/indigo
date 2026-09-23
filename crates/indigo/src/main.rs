@@ -238,8 +238,8 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let language = editor
         .focused_buffer()
         .text
-        .syntax_stale()
-        .map_or("", |syntax| match syntax.language() {
+        .language()
+        .map_or("", |language| match language {
             Language::Rust => " rust",
         });
 

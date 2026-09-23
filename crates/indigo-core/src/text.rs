@@ -73,6 +73,11 @@ impl Text {
     }
 
     #[must_use]
+    pub fn language(&self) -> Option<Language> {
+        self.syntax_stale().map(|s| s.language())
+    }
+
+    #[must_use]
     pub fn syntax(&mut self) -> Option<&Syntax> {
         self.reparse();
         self.syntax_stale()
