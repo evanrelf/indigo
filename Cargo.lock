@@ -853,6 +853,7 @@ dependencies = [
  "anyhow",
  "crop",
  "hegeltest",
+ "hegeltest-c",
  "imbl",
  "ropey",
  "unicode-segmentation",

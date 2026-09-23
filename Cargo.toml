@@ -14,6 +14,7 @@ crop = { version = "0.4.3", features = ["graphemes"] }
 diff = "0.1.13"
 divan = "0.1.21"
 hegeltest = { version = "0.46.2", features = ["static-engine"] }
+hegeltest-c = { version = "=0.43.1", features = ["std"] } # TODO: upstream bug workaround :(
 imbl = "7.0.2"
 indigo = { path = "crates/indigo/" }
 indigo-cli = { path = "crates/indigo-cli/" }

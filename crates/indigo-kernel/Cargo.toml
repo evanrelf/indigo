@@ -12,6 +12,7 @@ unicode-segmentation = { workspace = true }
 [dev-dependencies]
 crop = { workspace = true }
 hegeltest = { workspace = true }
+hegeltest-c = { workspace = true } # TODO: upstream bug workaround :(
 
 [lints]
 workspace = true
