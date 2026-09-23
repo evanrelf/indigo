@@ -74,42 +74,47 @@ fn grapheme_width(grapheme: &str) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hegel::{TestCase, generators as gs};
+    use std::str;
 
-    #[test]
-    fn test_display_width() {
-        assert_eq!("".display_width(), 0);
-        assert_eq!("‍".display_width(), 1); // zwj
-        assert_eq!('\x00'.display_width(), 1); // null
-        assert_eq!("\x00".display_width(), 1); // null
-        assert_eq!("\u{200B}".display_width(), 1); // zws
-        assert_eq!("abc".display_width(), 3);
-        assert_eq!("🇯🇵".display_width(), 2);
-        assert_eq!("👩🏻‍❤️‍💋‍👩🏻".display_width(), 2);
-        assert_eq!('\t'.display_width(), 8);
-        assert_eq!("\t".display_width(), 8);
-        assert_eq!("\n".display_width(), 1);
-        // Boundary cases for the printable ASCII + tab fast path.
-        assert_eq!(" ~".display_width(), 2); // 0x20 and 0x7E, the fast path's edges
-        assert_eq!("\x7f".display_width(), 1); // DEL, just past the fast path
-        assert_eq!("a\tb".display_width(), 10); // tabs stay on the fast path, 8 columns each
-        assert_eq!("\t\t".display_width(), 16);
-        assert_eq!("\x08".display_width(), 1); // backspace, the control char next to tab
-        // An ASCII letter and a combining mark form one grapheme; the ASCII prefix must not be
-        // counted separately from it.
-        assert_eq!("abce\u{0301}".display_width(), 4);
+    fn oracle(str: &str) -> usize {
+        str.graphemes(true).map(grapheme_width).sum()
     }
 
-    #[test]
-    fn display_width_fast_path_matches_graphemes_across_chunks() {
-        // Build ropes large enough to span multiple chunks, with and without non-ASCII content,
-        // and check the `RopeSlice` impl agrees with the grapheme-by-grapheme `&str` impl.
-        for text in ["ascii only ", "ascii\tand\ttabs ", "mixed e\u{301} 🇯🇵 \t "] {
-            let string = text.repeat(10_000 / text.len() + 1);
-            let rope = Rope::from_str(&string);
-            assert!(rope.chunks().count() > 1);
-            let expected: usize = string.graphemes(true).map(grapheme_width).sum();
-            assert_eq!(rope.slice(..).display_width(), expected);
-            assert_eq!(string.as_str().display_width(), expected);
+    fn text_gen() -> gs::TextGenerator {
+        /// Exercise every grapheme rule that could interact with ASCII.
+        const ALPHABET: &str = "ab1 \t\r\n\x00\x7f\u{0301}\u{200D}\u{FE0F}\u{20E3}\u{0600}\u{0602}🇯🇵👩❤💋\u{1F3FB}中é\u{1100}\u{1161}\u{0915}\u{094D}\u{0937}";
+        gs::text().alphabet(ALPHABET).max_size(64)
+    }
+
+    #[hegel::test(test_cases = 20_000)]
+    fn str_width_matches_oracle(tc: TestCase) {
+        let text: String = tc.draw(text_gen());
+        assert_eq!(text.as_str().display_width(), oracle(&text));
+        for char in text.chars() {
+            assert_eq!(char.display_width(), oracle(char.encode_utf8(&mut [0; 4])));
         }
+    }
+
+    #[hegel::test(test_cases = 10_000)]
+    fn rope_slice_width_matches_oracle(tc: TestCase) {
+        // Repeat the text enough to span several chunks, then measure random sub-slices so that
+        // chunk boundaries land at arbitrary points inside the text.
+        let text: String = tc.draw(text_gen().min_size(1));
+        let repeats = tc.draw(gs::integers::<usize>().min_value(1).max_value(4_000));
+        let string = text.repeat(repeats);
+        let rope = Rope::from_str(&string);
+        let start = tc.draw(gs::integers::<usize>().max_value(string.len()));
+        let end = tc.draw(
+            gs::integers::<usize>()
+                .min_value(start)
+                .max_value(string.len()),
+        );
+        let start = str::floor_char_boundary(&string, start);
+        let end = str::floor_char_boundary(&string, end);
+        assert_eq!(
+            rope.slice(start..end).display_width(),
+            oracle(&string[start..end])
+        );
     }
 }
