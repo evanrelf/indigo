@@ -12,8 +12,13 @@ unicode-width = { workspace = true }
 
 [dev-dependencies]
 crop = { workspace = true }
+divan = { workspace = true }
 hegeltest = { workspace = true }
 hegeltest-c = { workspace = true } # TODO: upstream bug workaround :(
 
 [lints]
 workspace = true
+
+[[bench]]
+name = "display_width"
+harness = false

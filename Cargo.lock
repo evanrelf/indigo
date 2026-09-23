@@ -852,6 +852,7 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "crop",
+ "divan",
  "hegeltest",
  "hegeltest-c",
  "imbl",
