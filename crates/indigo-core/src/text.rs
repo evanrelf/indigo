@@ -148,7 +148,7 @@ impl Text {
         self.syntax = Some(Syntax::parse(language, &self.rope));
     }
 
-    fn reparse(&mut self) {
+    pub fn reparse(&mut self) {
         // TODO: Incremental reparsing by feeding edits to Tree Sitter
         if let Some(syntax) = &mut self.syntax {
             syntax.reparse(&self.rope);

@@ -31,7 +31,13 @@ unicode-width = { workspace = true }
 winnow = { workspace = true }
 
 [dev-dependencies]
+divan = { workspace = true }
 hegeltest = { workspace = true }
 
 [lints]
 workspace = true
+
+[[bench]]
+name = "syntax_parse"
+harness = false
+required-features = ["language-rust"]

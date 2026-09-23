@@ -12,6 +12,7 @@ camino = "1.2.6"
 clap = { version = "4.6.7", features = ["derive", "env"] }
 crop = { version = "0.4.3", features = ["graphemes"] }
 diff = "0.1.13"
+divan = "0.1.21"
 hegeltest = { version = "0.46.2", features = ["static-engine"] }
 imbl = "7.0.2"
 indigo = { path = "crates/indigo/" }
