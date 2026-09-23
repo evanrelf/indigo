@@ -161,6 +161,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
                 editor.focused_window_mut().scroll_center_selection();
                 pending_center = false;
             }
+            editor.focused_buffer_mut().text.reparse();
             render(&editor, area, surface);
         })?;
 
@@ -234,14 +235,13 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         },
     };
 
-    let language =
-        editor
-            .focused_buffer()
-            .text
-            .syntax()
-            .map_or("", |syntax| match syntax.language() {
-                Language::Rust => " rust",
-            });
+    let language = editor
+        .focused_buffer()
+        .text
+        .syntax_stale()
+        .map_or("", |syntax| match syntax.language() {
+            Language::Rust => " rust",
+        });
 
     let window = editor.focused_window();
     let selection = window.selection();
@@ -471,7 +471,7 @@ fn render_syntax_breadcrumb(editor: &Editor, max_width: usize) -> String {
 
     let window = editor.focused_window();
 
-    let Some(syntax) = window.buffer().text.syntax() else {
+    let Some(syntax) = window.buffer().text.syntax_stale() else {
         return String::from("syntax: none");
     };
 

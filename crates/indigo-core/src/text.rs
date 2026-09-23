@@ -43,7 +43,7 @@ impl Extend<Self> for BidiEdit {
 #[derive(Clone)]
 pub struct Text {
     rope: Rope,
-    syntax: Option<Syntax>,
+    syntax: Option<(Syntax, usize)>,
     history: History<BidiEdit, BidiEdit>,
     log: Vec<Edit>,
     pub readonly: bool,
@@ -73,8 +73,14 @@ impl Text {
     }
 
     #[must_use]
-    pub fn syntax(&self) -> Option<&Syntax> {
-        self.syntax.as_ref()
+    pub fn syntax(&mut self) -> Option<&Syntax> {
+        self.reparse();
+        self.syntax_stale()
+    }
+
+    #[must_use]
+    pub fn syntax_stale(&self) -> Option<&Syntax> {
+        self.syntax.as_ref().map(|(s, _)| s)
     }
 
     pub fn insert(&mut self, byte_offset: usize, text: &str) -> anyhow::Result<()> {
@@ -109,7 +115,6 @@ impl Text {
             undo,
         });
         self.log.push(ops.clone());
-        self.reparse();
         self.assert_invariants().unwrap();
         Ok(())
     }
@@ -123,7 +128,6 @@ impl Text {
         if let Some(ops) = self.history.undo() {
             ops.undo.apply(&mut self.rope)?;
             self.log.push(ops.undo.clone());
-            self.reparse();
             self.assert_invariants().unwrap();
             Ok(true)
         } else {
@@ -136,7 +140,6 @@ impl Text {
         if let Some(ops) = self.history.redo() {
             ops.redo.apply(&mut self.rope)?;
             self.log.push(ops.redo.clone());
-            self.reparse();
             self.assert_invariants().unwrap();
             Ok(true)
         } else {
@@ -145,13 +148,16 @@ impl Text {
     }
 
     pub fn set_language(&mut self, language: Language) {
-        self.syntax = Some(Syntax::parse(language, &self.rope));
+        self.syntax = Some((Syntax::parse(language, &self.rope), self.version()));
     }
 
     pub fn reparse(&mut self) {
-        // TODO: Incremental reparsing by feeding edits to Tree Sitter
-        if let Some(syntax) = &mut self.syntax {
+        let version = self.version();
+        if let Some((syntax, parsed_at)) = &mut self.syntax
+            && *parsed_at < version
+        {
             syntax.reparse(&self.rope);
+            *parsed_at = version;
         }
     }
 
