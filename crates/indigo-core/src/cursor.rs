@@ -306,7 +306,7 @@ impl<W: WrapMut> CursorView<'_, W> {
                 }
                 Direction::Forward => {
                     let target = current_line_index + 1;
-                    if target >= self.text.len_lines_indigo() {
+                    if target >= self.text.len_lines_unix() {
                         return false;
                     }
                     target

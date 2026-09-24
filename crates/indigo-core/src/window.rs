@@ -65,7 +65,7 @@ impl<'a, W: WrapRef> WindowView<'a, W> {
 
     #[must_use]
     pub fn vertical_scroll(&self) -> usize {
-        let last_line = self.buffer.text.rope().len_lines_indigo().saturating_sub(1);
+        let last_line = self.buffer.text.rope().len_lines_unix().saturating_sub(1);
         min(self.state.prev_vertical_scroll, last_line)
     }
 
@@ -93,7 +93,7 @@ impl<W: WrapMut> WindowView<'_, W> {
     }
 
     pub fn scroll_to_line(&mut self, line: usize) {
-        let last_line = self.buffer.text.rope().len_lines_indigo().saturating_sub(1);
+        let last_line = self.buffer.text.rope().len_lines_unix().saturating_sub(1);
         self.state.prev_vertical_scroll = min(line, last_line);
     }
 

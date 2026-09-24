@@ -24,12 +24,9 @@ pub enum Bias {
 pub trait RopeExt {
     fn as_slice(&self) -> RopeSlice<'_>;
 
-    // `ropey` counts lines in a non-intuitive way, at least for my purposes. This method provides
-    // an alternative, Indigo-specific line count.
-    //
-    // See the unit tests below for examples, and this GitHub issue for more info:
-    // https://github.com/cessen/ropey/issues/60
-    fn len_lines_indigo(&self) -> usize {
+    /// <https://docs.rs/ropey/2.0.0-beta.1/ropey/#a-note-about-line-breaks>
+    /// <https://github.com/cessen/ropey/issues/60>
+    fn len_lines_unix(&self) -> usize {
         let rope = self.as_slice();
         if rope.len() == 0 {
             return 0;
@@ -428,32 +425,32 @@ mod tests {
         let rope = Rope::default();
         assert_eq!(rope.chars().count(), 0);
         assert_eq!(rope.len_lines(LINE_TYPE), 1);
-        assert_eq!(rope.len_lines_indigo(), 0);
+        assert_eq!(rope.len_lines_unix(), 0);
 
         let rope = Rope::from_str("x");
         assert_eq!(rope.chars().count(), 1);
         assert_eq!(rope.len_lines(LINE_TYPE), 1);
-        assert_eq!(rope.len_lines_indigo(), 1);
+        assert_eq!(rope.len_lines_unix(), 1);
 
         let rope = Rope::from_str("\n");
         assert_eq!(rope.chars().count(), 1);
         assert_eq!(rope.len_lines(LINE_TYPE), 2);
-        assert_eq!(rope.len_lines_indigo(), 1);
+        assert_eq!(rope.len_lines_unix(), 1);
 
         let rope = Rope::from_str("x\n");
         assert_eq!(rope.chars().count(), 2);
         assert_eq!(rope.len_lines(LINE_TYPE), 2);
-        assert_eq!(rope.len_lines_indigo(), 1);
+        assert_eq!(rope.len_lines_unix(), 1);
 
         let rope = Rope::from_str("x\ny\nz");
         assert_eq!(rope.chars().count(), 5);
         assert_eq!(rope.len_lines(LINE_TYPE), 3);
-        assert_eq!(rope.len_lines_indigo(), 3);
+        assert_eq!(rope.len_lines_unix(), 3);
 
         let rope = Rope::from_str("x\ny\nz\n");
         assert_eq!(rope.chars().count(), 6);
         assert_eq!(rope.len_lines(LINE_TYPE), 4);
-        assert_eq!(rope.len_lines_indigo(), 3);
+        assert_eq!(rope.len_lines_unix(), 3);
     }
 
     #[test]

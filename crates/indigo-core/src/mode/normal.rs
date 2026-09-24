@@ -616,7 +616,7 @@ fn goto_move_to_line(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     let rope = window.buffer().text.rope().clone();
-    let line_index = min(count - 1, rope.len_lines_indigo() - 1);
+    let line_index = min(count - 1, rope.len_lines_unix() - 1);
     let byte_index = rope.line_to_byte_idx(line_index, LINE_TYPE);
     window
         .selection_mut()

@@ -128,7 +128,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
     if let Some(line_number) = goto_line {
         let mut window = editor.focused_window_mut();
         let rope = window.buffer().text.rope();
-        let line_index = min(line_number - 1, rope.len_lines_indigo() - 1);
+        let line_index = min(line_number - 1, rope.len_lines_unix() - 1);
         let byte_index = rope.line_to_byte_idx(line_index, LINE_TYPE);
         window
             .selection_mut()
@@ -309,7 +309,7 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let buffer = window.buffer();
 
-    let total_lines = buffer.text.rope().len_lines_indigo();
+    let total_lines = buffer.text.rope().len_lines_unix();
 
     for (i, row) in area.rows().enumerate() {
         let line_number = i + window.vertical_scroll() + 1;
@@ -340,7 +340,7 @@ fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let window = editor.focused_window();
     let buffer = window.buffer();
 
-    let text_lines = buffer.text.rope().len_lines_indigo();
+    let text_lines = buffer.text.rope().len_lines_unix();
     let window_lines = usize::from(window.height());
     let scroll_lines = text_lines.saturating_add(window_lines.saturating_sub(1));
     let track_cells = usize::from(area.height);
@@ -407,7 +407,7 @@ fn render_dots(editor: &Editor, area: Rect, surface: &mut Surface) {
 
     let buffer = window.buffer();
 
-    let total_lines = buffer.text.rope().len_lines_indigo();
+    let total_lines = buffer.text.rope().len_lines_unix();
 
     let grid_scale = 1;
 
