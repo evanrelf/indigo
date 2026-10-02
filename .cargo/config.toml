@@ -1,0 +1,4 @@
+[target.'cfg(target_os = "macos")']
+# Drop unused dylib references, like the Nix store `libiconv` that `libc` links
+# but nothing calls, so binaries only depend on `libSystem`.
+rustflags = ["-C", "link-arg=-Wl,-dead_strip_dylibs"]
