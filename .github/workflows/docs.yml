@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -19,8 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: DeterminateSystems/nix-installer-action@v22
-      - uses: DeterminateSystems/magic-nix-cache-action@v15
+      - uses: NixOS/nix-installer-action@v1
+      - uses: Mic92/hestia@v3
       - run: nix build .#docs --print-build-logs
       - uses: actions/upload-pages-artifact@v5
         with:
