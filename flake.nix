@@ -17,11 +17,18 @@
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       systems = import inputs.systems;
 
-      perSystem = { config, inputs', pkgs, system, ... }:
+      perSystem = { config, inputs', lib, pkgs, system, ... }:
         let
           crane =
             (inputs.crane.mkLib pkgs).overrideToolchain
               inputs'.fenix.packages.default.toolchain;
+
+          craneStatic =
+            (inputs.crane.mkLib pkgs.pkgsStatic).overrideToolchain (_:
+              inputs'.fenix.packages.combine [
+                inputs'.fenix.packages.default.toolchain
+                inputs'.fenix.packages.targets.${pkgs.pkgsStatic.stdenv.hostPlatform.rust.rustcTarget}.latest.rust-std
+              ]);
 
           commonArgs = {
             pname = "indigo";
@@ -33,13 +40,21 @@
           cargoArtifacts = crane.buildDepsOnly commonArgs;
         in
         {
-          packages.default =
-            crane.buildPackage (commonArgs // {
-              inherit cargoArtifacts;
-              cargoExtraArgs = "--bin indigo";
-            });
+          packages = {
+            default =
+              crane.buildPackage (commonArgs // {
+                inherit cargoArtifacts;
+                cargoExtraArgs = "--bin indigo";
+              });
 
-          packages.docs = config.checks.doc;
+            docs = config.checks.doc;
+          } // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+            static =
+              craneStatic.buildPackage (commonArgs // {
+                cargoArtifacts = craneStatic.buildDepsOnly commonArgs;
+                cargoExtraArgs = "--bin indigo";
+              });
+          };
 
           checks.clippy =
             crane.cargoClippy (commonArgs // { inherit cargoArtifacts; });
