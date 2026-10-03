@@ -8,7 +8,7 @@ use indigo_kernel::edit::{self, Edit};
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use regex_cursor::engines::meta::Regex;
 use ropey::Rope;
-use std::{iter::zip, mem, thread};
+use std::{cmp::max, iter::zip, mem, thread};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -68,6 +68,46 @@ impl SelectionState {
             .position(|(i, _)| *i == self.primary_range)
             .expect("Primary range index is always kept valid");
         self.ranges = ranges.into_iter().map(|(_, range)| range).collect();
+    }
+
+    /// Merge sorted ranges sharing a grapheme into the earlier range. Ranges that merely touch
+    /// stay separate. The primary range follows the range it merges into.
+    ///
+    /// When to merge:
+    ///
+    /// - Merge after selection motions and seeks (e.g. `h`/`j`/`k`/`l`/`f`/`t`/`x`, mouse
+    ///   clicks/drags, etc).
+    /// - Merge after `<a-o>`/`<a-O>`, which edit the buffer without entering insert mode.
+    /// - Merge before `d`/`c`/`r`, but not after, so cursors that coincide after deleting stay
+    ///   separate.
+    /// - Merge after undo and redo. Kakoune instead replaces the selection with the modified
+    ///   ranges, which are always merged.
+    ///
+    /// When not to merge:
+    ///
+    /// - Never merge in insert mode or when entering it (`i`/`a`/`I`/`A`/`o`/`O`), so coincident
+    ///   cursors each insert their own text. Kakoune does merge on insert-mode cursor movement
+    ///   (e.g. arrows), which Indigo doesn't support yet.
+    /// - Never merge after `;`, `<a-;>`, or `<a-:>`.
+    /// - Never merge after `s` or `<a-s>`; they only sort.
+    ///
+    /// In all cases we follow Kakoune.
+    pub fn merge_overlapping(&mut self) {
+        let mut primary_range = 0;
+        for (i, range) in mem::take(&mut self.ranges).into_iter().enumerate() {
+            if let Some(last) = self.ranges.last_mut()
+                && range.start().byte_index <= last.end().byte_index
+            {
+                let end = max(last.end().byte_index, range.end().byte_index);
+                *last = last.with_bounds(last.start().byte_index, end);
+            } else {
+                self.ranges.push(range);
+            }
+            if i == self.primary_range {
+                primary_range = self.ranges.len() - 1;
+            }
+        }
+        self.primary_range = primary_range;
     }
 
     /// Whether every range in `other` lies within the range at the same index in `self`.
@@ -190,7 +230,6 @@ impl<'a, S: WrapRef, T: WrapRef> SelectionView<'a, S, T> {
             .expect("Range end is always on a grapheme")
     }
 
-    // TODO: Ranges non-overlapping, once overlapping ranges are merged.
     pub fn assert_invariants(&self) -> anyhow::Result<()> {
         if self.state.ranges.is_empty() {
             anyhow::bail!(Error::Empty);
@@ -230,6 +269,10 @@ impl<S: WrapMut, T: WrapRef> SelectionView<'_, S, T> {
             f(range);
         }
         self.state.sort();
+    }
+
+    pub fn merge_overlapping(&mut self) {
+        self.state.merge_overlapping();
     }
 
     pub fn keep_primary(&mut self) {
@@ -434,6 +477,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
     }
 
     pub fn replace_each(&mut self, byte: u8) -> Edit {
+        self.state.merge_overlapping();
         debug_assert!(
             self.state
                 .ranges
@@ -505,6 +549,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
     }
 
     pub fn delete(&mut self) -> Edit {
+        self.state.merge_overlapping();
         debug_assert!(
             self.state
                 .ranges
@@ -599,6 +644,8 @@ impl<S: Wrap, T: Wrap> Drop for SelectionView<'_, S, T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hegel::generators as gs;
+    use std::collections::BTreeSet;
 
     fn range(tail: usize, head: usize) -> RangeState {
         RangeState {
@@ -618,6 +665,51 @@ mod tests {
             .unwrap()
             .split_into_lines();
         state
+    }
+
+    #[hegel::test(test_cases = 1000)]
+    fn sort_and_merge_overlapping_ranges(tc: hegel::TestCase) {
+        let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(8));
+        let ranges: Vec<RangeState> = (0..count)
+            .map(|_| {
+                let tail = tc.draw(gs::integers::<usize>().max_value(20));
+                let head = tc.draw(gs::integers::<usize>().max_value(20));
+                range(tail, head)
+            })
+            .collect();
+        let primary_range = tc.draw(gs::integers::<usize>().max_value(count - 1));
+        let covered = |ranges: &[RangeState]| -> BTreeSet<usize> {
+            ranges
+                .iter()
+                .flat_map(|range| range.start().byte_index..=range.end().byte_index)
+                .collect()
+        };
+
+        let mut state = SelectionState {
+            ranges: ranges.clone(),
+            primary_range,
+        };
+        state.sort();
+        state.merge_overlapping();
+
+        for (previous, range) in zip(&state.ranges, &state.ranges[1..]) {
+            assert!(
+                previous.end().byte_index < range.start().byte_index,
+                "Ranges are sorted and share no grapheme"
+            );
+        }
+        assert_eq!(covered(&ranges), covered(&state.ranges));
+        assert!(state.ranges[state.primary_range].contains(&ranges[primary_range]));
+        assert!(
+            state
+                .ranges
+                .iter()
+                .all(|range| ranges.iter().any(|original| {
+                    original.start().byte_index == range.start().byte_index
+                        && original.is_forward() == range.is_forward()
+                })),
+            "A merged range keeps the direction of its earliest range"
+        );
     }
 
     #[test]

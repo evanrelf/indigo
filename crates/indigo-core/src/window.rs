@@ -155,6 +155,7 @@ impl<W: WrapMut> WindowView<'_, W> {
                 for ops in opss {
                     self.state.selection.transform(ops, &self.buffer.text);
                 }
+                self.state.selection.merge_overlapping();
             }
             Ok(true)
         } else {
@@ -170,6 +171,7 @@ impl<W: WrapMut> WindowView<'_, W> {
                 for ops in opss {
                     self.state.selection.transform(ops, &self.buffer.text);
                 }
+                self.state.selection.merge_overlapping();
             }
             Ok(true)
         } else {

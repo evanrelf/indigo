@@ -93,10 +93,11 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
                 )
                 .byte_index()
                 {
-                    editor
-                        .focused_window_mut()
+                    let mut window = editor.focused_window_mut();
+                    window
                         .selection_move()
                         .for_each_move(|mut range| range.move_to(byte_index));
+                    window.selection_move().merge_overlapping();
                 } else {
                     handled = false;
                 }
@@ -118,10 +119,11 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
                 )
                 .byte_index()
                 {
-                    editor
-                        .focused_window_mut()
+                    let mut window = editor.focused_window_mut();
+                    window
                         .selection_move()
                         .for_each_move(|mut range| range.extend_to(byte_index));
+                    window.selection_move().merge_overlapping();
                 } else {
                     handled = false;
                 }

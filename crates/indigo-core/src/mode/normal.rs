@@ -267,6 +267,7 @@ fn extend_left(editor: &mut Editor) {
     window
         .selection_move()
         .for_each_move(|mut range| range.extend_left(count));
+    window.selection_move().merge_overlapping();
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -277,6 +278,7 @@ fn move_left(editor: &mut Editor) {
     window
         .selection_move()
         .for_each_move(|mut range| range.move_left(count));
+    window.selection_move().merge_overlapping();
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -287,6 +289,7 @@ fn extend_right(editor: &mut Editor) {
     window
         .selection_move()
         .for_each_move(|mut range| range.extend_right(count));
+    window.selection_move().merge_overlapping();
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -297,6 +300,7 @@ fn move_right(editor: &mut Editor) {
     window
         .selection_move()
         .for_each_move(|mut range| range.move_right(count));
+    window.selection_move().merge_overlapping();
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -307,6 +311,7 @@ fn extend_up(editor: &mut Editor) {
     window
         .selection_move()
         .for_each_move(|mut range| range.extend_up(count));
+    window.selection_move().merge_overlapping();
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -317,6 +322,7 @@ fn move_up(editor: &mut Editor) {
     window
         .selection_move()
         .for_each_move(|mut range| range.move_up(count));
+    window.selection_move().merge_overlapping();
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -327,6 +333,7 @@ fn extend_down(editor: &mut Editor) {
     window
         .selection_move()
         .for_each_move(|mut range| range.extend_down(count));
+    window.selection_move().merge_overlapping();
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -337,6 +344,7 @@ fn move_down(editor: &mut Editor) {
     window
         .selection_move()
         .for_each_move(|mut range| range.move_down(count));
+    window.selection_move().merge_overlapping();
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -449,6 +457,7 @@ fn expand_to_full_lines(editor: &mut Editor) {
     window
         .selection_move()
         .for_each_move(|mut range| range.expand_to_full_lines());
+    window.selection_move().merge_overlapping();
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -588,6 +597,7 @@ fn add_line_above(editor: &mut Editor) {
         }
         assert!(range.restore(&snapshot));
     });
+    window.selection_move().merge_overlapping();
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -608,6 +618,7 @@ fn add_line_below(editor: &mut Editor) {
         }
         assert!(range.restore(&snapshot));
     });
+    window.selection_move().merge_overlapping();
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -621,108 +632,121 @@ fn goto_move_to_line(editor: &mut Editor) {
     window
         .selection_move()
         .for_each_move(|mut range| range.move_to(byte_index));
+    window.selection_move().merge_overlapping();
     window.scroll_to_selection();
     editor.count = None;
 }
 
 fn goto_move_to_start(editor: &mut Editor) {
-    editor
-        .focused_window_mut()
+    let mut window = editor.focused_window_mut();
+    window
         .selection_move()
         .for_each_move(|mut range| range.move_to_start());
-    editor.focused_window_mut().scroll_to_selection();
+    window.selection_move().merge_overlapping();
+    window.scroll_to_selection();
     editor.count = None;
 }
 
 fn goto_extend_to_start(editor: &mut Editor) {
-    editor
-        .focused_window_mut()
+    let mut window = editor.focused_window_mut();
+    window
         .selection_move()
         .for_each_move(|mut range| range.extend_to_start());
-    editor.focused_window_mut().scroll_to_selection();
+    window.selection_move().merge_overlapping();
+    window.scroll_to_selection();
     editor.count = None;
 }
 
 fn goto_move_to_bottom(editor: &mut Editor) {
-    editor
-        .focused_window_mut()
+    let mut window = editor.focused_window_mut();
+    window
         .selection_move()
         .for_each_move(|mut range| range.move_to_bottom());
-    editor.focused_window_mut().scroll_to_selection();
+    window.selection_move().merge_overlapping();
+    window.scroll_to_selection();
     editor.count = None;
 }
 
 fn goto_extend_to_bottom(editor: &mut Editor) {
-    editor
-        .focused_window_mut()
+    let mut window = editor.focused_window_mut();
+    window
         .selection_move()
         .for_each_move(|mut range| range.extend_to_bottom());
-    editor.focused_window_mut().scroll_to_selection();
+    window.selection_move().merge_overlapping();
+    window.scroll_to_selection();
     editor.count = None;
 }
 
 fn goto_move_to_end(editor: &mut Editor) {
-    editor
-        .focused_window_mut()
+    let mut window = editor.focused_window_mut();
+    window
         .selection_move()
         .for_each_move(|mut range| range.move_to_end());
-    editor.focused_window_mut().scroll_to_selection();
+    window.selection_move().merge_overlapping();
+    window.scroll_to_selection();
     editor.count = None;
 }
 
 fn goto_extend_to_end(editor: &mut Editor) {
-    editor
-        .focused_window_mut()
+    let mut window = editor.focused_window_mut();
+    window
         .selection_move()
         .for_each_move(|mut range| range.extend_to_end());
-    editor.focused_window_mut().scroll_to_selection();
+    window.selection_move().merge_overlapping();
+    window.scroll_to_selection();
     editor.count = None;
 }
 
 fn goto_move_to_line_start(editor: &mut Editor) {
-    editor
-        .focused_window_mut()
+    let mut window = editor.focused_window_mut();
+    window
         .selection_move()
         .for_each_move(|mut range| range.move_to_line_start());
+    window.selection_move().merge_overlapping();
     editor.count = None;
 }
 
 fn goto_extend_to_line_start(editor: &mut Editor) {
-    editor
-        .focused_window_mut()
+    let mut window = editor.focused_window_mut();
+    window
         .selection_move()
         .for_each_move(|mut range| range.extend_to_line_start());
+    window.selection_move().merge_overlapping();
     editor.count = None;
 }
 
 fn goto_move_to_line_non_blank_start(editor: &mut Editor) {
-    editor
-        .focused_window_mut()
+    let mut window = editor.focused_window_mut();
+    window
         .selection_move()
         .for_each_move(|mut range| range.move_to_line_non_blank_start());
+    window.selection_move().merge_overlapping();
     editor.count = None;
 }
 
 fn goto_extend_to_line_non_blank_start(editor: &mut Editor) {
-    editor
-        .focused_window_mut()
+    let mut window = editor.focused_window_mut();
+    window
         .selection_move()
         .for_each_move(|mut range| range.extend_to_line_non_blank_start());
+    window.selection_move().merge_overlapping();
     editor.count = None;
 }
 
 fn goto_move_until_line_end(editor: &mut Editor) {
-    editor
-        .focused_window_mut()
+    let mut window = editor.focused_window_mut();
+    window
         .selection_move()
         .for_each_move(|mut range| range.move_until_line_end());
+    window.selection_move().merge_overlapping();
     editor.count = None;
 }
 
 fn goto_extend_until_line_end(editor: &mut Editor) {
-    editor
-        .focused_window_mut()
+    let mut window = editor.focused_window_mut();
+    window
         .selection_move()
         .for_each_move(|mut range| range.extend_until_line_end());
+    window.selection_move().merge_overlapping();
     editor.count = None;
 }

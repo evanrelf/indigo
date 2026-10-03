@@ -133,6 +133,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
         window
             .selection_move()
             .for_each_move(|mut range| range.move_to(byte_index));
+        window.selection_move().merge_overlapping();
         pending_center = true;
     }
 

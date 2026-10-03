@@ -145,6 +145,7 @@ fn seek(editor: &mut Editor, byte: u8) {
             (Move, Onto, Next) => range.move_onto_next_byte(byte, count),
             (Extend, Onto, Next) => range.extend_onto_next_byte(byte, count),
         });
+    window.selection_move().merge_overlapping();
 
     window.scroll_to_selection();
     editor.count = None;

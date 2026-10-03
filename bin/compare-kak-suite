@@ -208,6 +208,20 @@ same 'ab\ncd\n' '%s\\w<ret>a<ret><esc>'
 same 'ab\ncd\n' '%s\\w<ret>a<bs><esc>'
 same 'ab\ncd\n' '%s\\w<ret>i<del><esc>'
 
+# Selection merging policy; see `SelectionState::merge_overlapping`.
+
+same 'ab cd\n' '%s\\w+<ret>geiX<esc>'
+same 'ab\ncd\n' '%<a-s>gkd'
+same 'abcdef\n' '%s[ac]<ret>LLcX<esc>'
+same 'abcdef\n' '%s[bd]<ret><a-;>HHcX<esc>'
+same 'abcdef\n' '%s[ab]<ret>cX<esc>'
+same 'abcdef\n' '%s[bc]<ret>i<bs><bs>X<esc>'
+same 'abcdef\n' '%s[bc]<ret>i<bs><bs><esc>d'
+same 'abcdef\n' '%s[ab]<ret>c<esc>;iX<esc>'
+same 'abcdef\n' '%s[ab]<ret>c<esc><a-o>iX<esc>'
+same 'abcdef\n' '%s[ab]<ret>c<esc>s.<ret>iX<esc>'
+same 'abcdef\n' '%s[ab]<ret>c<esc><a-s>iX<esc>'
+
 # Insert mode
 
 same 'abc\n' 'lliX<esc>'
@@ -294,10 +308,10 @@ same 'ab cd\n' '%s\\w+<esc>cX<esc>'
 
 # Known bugs
 
-# Overlapping or coincident selections are not merged. Deleting in this state
-# panics, so only insertions are pinned here.
+# `j` on the last line leaves a cursor on the trailing newline; Kakoune moves it
+# back onto the last character.
+todo 'ab\nc\n' 'jljiX<esc>'
 todo 'ab\nc\n' '%s.<ret>jiX<esc>'
-todo 'ab cd\n' '%s\\w+<ret>geiX<esc>'
 
 # Undo does not restore selections.
 todo 'abc\n' 'lLducX<esc>'
