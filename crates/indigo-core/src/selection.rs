@@ -121,9 +121,9 @@ impl SelectionSnapshot {
 }
 
 #[must_use]
-pub struct SelectionView<'a, W: Wrap> {
-    state: W::Wrap<'a, SelectionState>,
-    text: W::Wrap<'a, Text>,
+pub struct SelectionView<'a, S: Wrap, T: Wrap = S> {
+    state: S::Wrap<'a, SelectionState>,
+    text: T::Wrap<'a, Text>,
     #[expect(clippy::type_complexity)]
     on_drop: Option<Box<dyn FnOnce(&mut Self) + 'a>>,
 }
@@ -566,7 +566,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
     }
 }
 
-impl<W: Wrap> Drop for SelectionView<'_, W> {
+impl<S: Wrap, T: Wrap> Drop for SelectionView<'_, S, T> {
     fn drop(&mut self) {
         if !thread::panicking()
             && let Some(f) = self.on_drop.take()
