@@ -8,7 +8,7 @@ use indigo_kernel::edit::{self, Edit};
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use regex_cursor::engines::meta::Regex;
 use ropey::Rope;
-use std::{iter::zip, thread};
+use std::{iter::zip, mem, thread};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -18,6 +18,9 @@ pub enum Error {
 
     #[error("Primary range index {index} is not within {length} ranges")]
     PrimaryOutOfRange { index: usize, length: usize },
+
+    #[error("Range {index} starts before the range preceding it")]
+    Unsorted { index: usize },
 
     #[error("Error from range {index}")]
     Range {
@@ -52,6 +55,19 @@ impl SelectionState {
                 .expect("Text is never empty");
             range.goal_column = None;
         }
+    }
+
+    pub fn sort(&mut self) {
+        let mut ranges: Vec<_> = mem::take(&mut self.ranges)
+            .into_iter()
+            .enumerate()
+            .collect();
+        ranges.sort_by_key(|(_, range)| (range.start().byte_index, range.end().byte_index));
+        self.primary_range = ranges
+            .iter()
+            .position(|(i, _)| *i == self.primary_range)
+            .expect("Primary range index is always kept valid");
+        self.ranges = ranges.into_iter().map(|(_, range)| range).collect();
     }
 
     /// Whether every range in `other` lies within the range at the same index in `self`.
@@ -172,7 +188,7 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
             .expect("Range end is always on a grapheme")
     }
 
-    // TODO: Ranges sorted by start and non-overlapping, once overlapping ranges are merged.
+    // TODO: Ranges non-overlapping, once overlapping ranges are merged.
     pub fn assert_invariants(&self) -> anyhow::Result<()> {
         if self.state.ranges.is_empty() {
             anyhow::bail!(Error::Empty);
@@ -186,6 +202,12 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
         for (index, range_state) in self.state.ranges.iter().enumerate() {
             let _ = Range::new(&self.text, range_state)
                 .map_err(|source| Error::Range { index, source })?;
+        }
+        let ranges = &self.state.ranges;
+        for (index, (previous, range)) in zip(ranges, &ranges[1..]).enumerate() {
+            if range.start().byte_index < previous.start().byte_index {
+                anyhow::bail!(Error::Unsorted { index: index + 1 });
+            }
         }
         Ok(())
     }
@@ -216,6 +238,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
                 }
             }
         }
+        self.state.sort();
     }
 
     pub fn keep_primary(&mut self) {
@@ -284,6 +307,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
         if matched {
             self.state.primary_range = ranges.len() - 1;
             self.state.ranges = ranges;
+            self.state.sort();
         }
         matched
     }
@@ -351,6 +375,7 @@ impl<W: WrapMut> SelectionView<'_, W> {
 
         self.state.ranges = ranges;
         self.state.primary_range = primary_range;
+        self.state.sort();
     }
 
     pub fn insert_char(&mut self, char: char) -> Edit {
