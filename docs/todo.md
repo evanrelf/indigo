@@ -7,6 +7,9 @@
   mode-agnostic/stateless (such that modes simply become a feature of the UI)
 - Store modes as stack (i.e. `Vec<Mode>`) in `Editor` (mode stack as data)
 - Copy Kakoune's one short of newline goal column when reaching EOL via `gl`
+- Enforce 4 GiB size limit. Refuse to open files >= this size, refuse to apply
+  edits that grow text >= this size, etc. So we can use `u32` for indexing bytes
+  in places.
 
 - range: Select word for mouse double click
 - range: Select line for mouse triple click

@@ -55,6 +55,9 @@ compare against vanilla, unconfigured Kakoune.
 The `./bin/compare-kak` script handles this and other quirks for you. Read it
 for more info.
 
+There's a list of more known differences between Indigo and Kakoune at
+`docs/differences-from-kakoune.md`.
+
 ## Examples
 
 Trivial example making no changes:
