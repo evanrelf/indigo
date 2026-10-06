@@ -112,7 +112,11 @@ mod tests {
         // Repeat the text enough to span several chunks, then measure random sub-slices so that
         // chunk boundaries land at arbitrary points inside the text.
         let text: String = tc.draw(text_gen().min_size(1));
-        let repeats = tc.draw(gs::integers::<usize>().min_value(1).max_value(4_000));
+        let repeats = tc.draw(
+            gs::integers::<usize>()
+                .min_value(1)
+                .max_value(16 * 1024 / text.len()),
+        );
         let string = text.repeat(repeats);
         let rope = Rope::from_str(&string);
         let start = tc.draw(gs::integers::<usize>().max_value(string.len()));

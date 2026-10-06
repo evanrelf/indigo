@@ -919,9 +919,9 @@ mod tests {
 
     fn draw_text(tc: &hegel::TestCase, ascii: bool) -> String {
         if ascii {
-            tc.draw(gs::text().codec("ascii"))
+            tc.draw(gs::text().codec("ascii").max_size(8))
         } else {
-            tc.draw(gs::text())
+            tc.draw(gs::text().max_size(8))
         }
     }
 

@@ -344,7 +344,7 @@ mod tests {
     fn edit_both(tc: &hegel::TestCase, doc: &mut Document, model: &mut String) {
         if model.is_empty() || tc.draw(gs::booleans()) {
             let index = draw_boundary(tc, model);
-            let text: String = tc.draw(gs::text());
+            let text: String = tc.draw(gs::text().max_size(8));
             doc.insert(index, &text).unwrap();
             model.insert_str(index, &text);
         } else {
