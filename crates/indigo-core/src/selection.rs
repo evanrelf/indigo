@@ -122,8 +122,8 @@ impl SelectionSnapshot {
 
 #[must_use]
 pub struct SelectionView<'a, W: Wrap> {
-    text: W::Wrap<'a, Text>,
     state: W::Wrap<'a, SelectionState>,
+    text: W::Wrap<'a, Text>,
     #[expect(clippy::type_complexity)]
     on_drop: Option<Box<dyn FnOnce(&mut Self) + 'a>>,
 }
@@ -144,9 +144,9 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
         text: W::WrapRef<'a, Text>,
         state: W::WrapRef<'a, SelectionState>,
     ) -> anyhow::Result<Self> {
-        let selection_view = SelectionView {
-            text,
+        let selection_view = Self {
             state,
+            text,
             on_drop: None,
         };
         selection_view.assert_invariants()?;

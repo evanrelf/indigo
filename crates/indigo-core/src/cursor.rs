@@ -129,8 +129,8 @@ impl CursorSnapshot {
 
 #[must_use]
 pub struct CursorView<'a, W: Wrap> {
-    text: W::Wrap<'a, Text>,
     state: W::Wrap<'a, CursorState>,
+    text: W::Wrap<'a, Text>,
     #[expect(clippy::type_complexity)]
     on_drop: Option<Box<dyn FnOnce(&mut Self) + 'a>>,
 }
@@ -151,9 +151,9 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
         text: W::WrapRef<'a, Text>,
         state: W::WrapRef<'a, CursorState>,
     ) -> anyhow::Result<Self> {
-        let cursor_view = CursorView {
-            text,
+        let cursor_view = Self {
             state,
+            text,
             on_drop: None,
         };
         cursor_view.assert_invariants()?;

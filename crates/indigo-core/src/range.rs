@@ -180,8 +180,8 @@ impl RangeSnapshot {
 
 #[must_use]
 pub struct RangeView<'a, W: Wrap> {
-    text: W::Wrap<'a, Text>,
     state: W::Wrap<'a, RangeState>,
+    text: W::Wrap<'a, Text>,
     #[expect(clippy::type_complexity)]
     on_drop: Option<Box<dyn FnOnce(&mut Self) + 'a>>,
 }
@@ -202,9 +202,9 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         text: W::WrapRef<'a, Text>,
         state: W::WrapRef<'a, RangeState>,
     ) -> anyhow::Result<Self> {
-        let range_view = RangeView {
-            text,
+        let range_view = Self {
             state,
+            text,
             on_drop: None,
         };
         range_view.assert_invariants()?;

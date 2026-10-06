@@ -40,8 +40,8 @@ impl WindowState {
 
 #[must_use]
 pub struct WindowView<'a, W: Wrap> {
-    buffer: W::Wrap<'a, Buffer>,
     state: W::Wrap<'a, WindowState>,
+    buffer: W::Wrap<'a, Buffer>,
 }
 
 pub type Window<'a> = WindowView<'a, WRef>;
@@ -55,7 +55,7 @@ impl<'a, W: Wrap> WindowView<'a, W> {
 
 impl<'a, W: WrapRef> WindowView<'a, W> {
     pub fn new(buffer: W::WrapRef<'a, Buffer>, state: W::WrapRef<'a, WindowState>) -> Self {
-        WindowView { buffer, state }
+        Self { state, buffer }
     }
 
     #[must_use]
