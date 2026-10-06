@@ -95,8 +95,8 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
                 {
                     editor
                         .focused_window_mut()
-                        .selection_mut()
-                        .for_each_mut(|mut range| range.move_to(byte_index));
+                        .selection_move()
+                        .for_each_move(|mut range| range.move_to(byte_index));
                 } else {
                     handled = false;
                 }
@@ -120,8 +120,8 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
                 {
                     editor
                         .focused_window_mut()
-                        .selection_mut()
-                        .for_each_mut(|mut range| range.extend_to(byte_index));
+                        .selection_move()
+                        .for_each_move(|mut range| range.extend_to(byte_index));
                 } else {
                     handled = false;
                 }

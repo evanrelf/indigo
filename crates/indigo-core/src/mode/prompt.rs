@@ -1,7 +1,7 @@
 #![allow(clippy::enum_glob_use)]
 
 use crate::{
-    cursor::{Cursor, CursorEdit, CursorState},
+    cursor::{Cursor, CursorEdit, CursorMove, CursorState},
     editor::Editor,
     key::KeyCode,
     keymap::{Keymap, KeymapResult, keymap},
@@ -68,7 +68,13 @@ impl State {
         cursor
     }
 
-    pub fn cursor_mut(&mut self) -> CursorEdit<'_> {
+    pub fn cursor_move(&mut self) -> CursorMove<'_> {
+        CursorMove::new(&self.text, &mut self.cursor)
+            .expect("Command mode text and cursor state are always kept valid")
+            .on_drop(|cursor| cursor.assert_invariants().unwrap())
+    }
+
+    pub fn cursor_edit(&mut self) -> CursorEdit<'_> {
         CursorEdit::new(&mut self.text, &mut self.cursor)
             .expect("Command mode text and cursor state are always kept valid")
             .on_drop(|cursor| cursor.assert_invariants().unwrap())
@@ -174,35 +180,35 @@ fn move_left(editor: &mut Editor) {
     let Mode::Prompt(prompt_mode) = &mut editor.mode else {
         panic!("Not in prompt mode")
     };
-    prompt_mode.cursor_mut().move_left(1);
+    prompt_mode.cursor_move().move_left(1);
 }
 
 fn move_right(editor: &mut Editor) {
     let Mode::Prompt(prompt_mode) = &mut editor.mode else {
         panic!("Not in prompt mode")
     };
-    prompt_mode.cursor_mut().move_right(1);
+    prompt_mode.cursor_move().move_right(1);
 }
 
 fn move_to_start(editor: &mut Editor) {
     let Mode::Prompt(prompt_mode) = &mut editor.mode else {
         panic!("Not in prompt mode")
     };
-    prompt_mode.cursor_mut().move_to_start();
+    prompt_mode.cursor_move().move_to_start();
 }
 
 fn move_to_end(editor: &mut Editor) {
     let Mode::Prompt(prompt_mode) = &mut editor.mode else {
         panic!("Not in prompt mode")
     };
-    prompt_mode.cursor_mut().move_to_end();
+    prompt_mode.cursor_move().move_to_end();
 }
 
 fn delete_to_start(editor: &mut Editor) {
     let Mode::Prompt(prompt_mode) = &mut editor.mode else {
         panic!("Not in prompt mode")
     };
-    let mut cursor = prompt_mode.cursor_mut();
+    let mut cursor = prompt_mode.cursor_edit();
     while cursor.delete_before().is_some() {}
 }
 
@@ -210,7 +216,7 @@ fn delete_to_end(editor: &mut Editor) {
     let Mode::Prompt(prompt_mode) = &mut editor.mode else {
         panic!("Not in prompt mode")
     };
-    let mut cursor = prompt_mode.cursor_mut();
+    let mut cursor = prompt_mode.cursor_edit();
     while cursor.delete_after().is_some() {}
 }
 
@@ -218,14 +224,14 @@ fn insert_char(editor: &mut Editor, char: char) {
     let Mode::Prompt(prompt_mode) = &mut editor.mode else {
         panic!("Not in prompt mode")
     };
-    prompt_mode.cursor_mut().insert_char(char);
+    prompt_mode.cursor_edit().insert_char(char);
 }
 
 pub fn paste(editor: &mut Editor, text: &str) {
     let Mode::Prompt(prompt_mode) = &mut editor.mode else {
         panic!("Not in prompt mode")
     };
-    prompt_mode.cursor_mut().insert(text);
+    prompt_mode.cursor_edit().insert(text);
 }
 
 fn delete_before(editor: &mut Editor) {
@@ -235,7 +241,7 @@ fn delete_before(editor: &mut Editor) {
     if prompt_mode.cursor().is_at_start() {
         normal::enter(editor);
     } else {
-        prompt_mode.cursor_mut().delete_before();
+        prompt_mode.cursor_edit().delete_before();
     }
 }
 
@@ -263,19 +269,19 @@ mod tests {
         assert_eq!(state.content().to_string(), "");
         assert!(state.cursor().is_at_end());
 
-        state.cursor_mut().insert("abc");
+        state.cursor_edit().insert("abc");
         assert_eq!(state.rope().to_string(), "abc\n");
         assert_eq!(state.content().to_string(), "abc");
 
         // Typing at the "end" inserts before the invariant newline.
-        state.cursor_mut().move_to_end();
+        state.cursor_move().move_to_end();
         assert!(state.cursor().is_at_end());
-        state.cursor_mut().insert_char('!');
+        state.cursor_edit().insert_char('!');
         assert_eq!(state.content().to_string(), "abc!");
 
         // Kill-to-end deletes everything after the cursor except the invariant newline.
-        state.cursor_mut().move_to_start();
-        let mut cursor = state.cursor_mut();
+        state.cursor_move().move_to_start();
+        let mut cursor = state.cursor_edit();
         while cursor.delete_after().is_some() {}
         drop(cursor);
         assert_eq!(state.content().to_string(), "");

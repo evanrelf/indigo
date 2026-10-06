@@ -134,8 +134,8 @@ fn seek(editor: &mut Editor, byte: u8) {
     let mut window = editor.focused_window_mut();
 
     window
-        .selection_mut()
-        .for_each_mut(|mut range| match (select, include, direction) {
+        .selection_move()
+        .for_each_move(|mut range| match (select, include, direction) {
             (Move, Until, Prev) => range.move_until_prev_byte(byte, count),
             (Extend, Until, Prev) => range.extend_until_prev_byte(byte, count),
             (Move, Until, Next) => range.move_until_next_byte(byte, count),

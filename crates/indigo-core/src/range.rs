@@ -1,5 +1,5 @@
 use crate::{
-    cursor::{Cursor, CursorEdit, CursorSnapshot, CursorState, GoalColumn},
+    cursor::{Cursor, CursorMove, CursorSnapshot, CursorState, GoalColumn},
     rope::RopeExt as _,
     text::Text,
 };
@@ -319,32 +319,32 @@ impl<'a, S: WrapRef, T: WrapRef> RangeView<'a, S, T> {
     }
 }
 
-impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
-    fn tail_mut(&mut self) -> CursorEdit<'_> {
-        CursorEdit::new(&mut self.text, &mut self.state.tail)
+impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
+    fn tail_move(&mut self) -> CursorMove<'_> {
+        CursorMove::new(&self.text, &mut self.state.tail)
             .expect("Range text and tail cursor state are always kept valid")
             .on_drop(|cursor| cursor.assert_invariants().unwrap())
     }
 
-    fn head_mut(&mut self) -> CursorEdit<'_> {
-        CursorEdit::new(&mut self.text, &mut self.state.head)
+    fn head_move(&mut self) -> CursorMove<'_> {
+        CursorMove::new(&self.text, &mut self.state.head)
             .expect("Range text and head cursor state are always kept valid")
             .on_drop(|cursor| cursor.assert_invariants().unwrap())
     }
 
-    fn start_mut(&mut self) -> CursorEdit<'_> {
+    fn start_move(&mut self) -> CursorMove<'_> {
         if self.is_forward() {
-            self.tail_mut()
+            self.tail_move()
         } else {
-            self.head_mut()
+            self.head_move()
         }
     }
 
-    fn end_mut(&mut self) -> CursorEdit<'_> {
+    fn end_move(&mut self) -> CursorMove<'_> {
         if self.is_forward() {
-            self.head_mut()
+            self.head_move()
         } else {
-            self.tail_mut()
+            self.tail_move()
         }
     }
 
@@ -360,7 +360,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn extend_to(&mut self, byte_index: usize) {
-        self.head_mut().move_to(byte_index);
+        self.head_move().move_to(byte_index);
         self.invalidate_goal_column();
     }
 
@@ -370,7 +370,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn extend_left(&mut self, count: usize) {
-        self.head_mut().move_left(count);
+        self.head_move().move_left(count);
         self.invalidate_goal_column();
     }
 
@@ -380,7 +380,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn extend_right(&mut self, count: usize) {
-        self.head_mut().move_right(count);
+        self.head_move().move_right(count);
         self.invalidate_goal_column();
     }
 
@@ -394,7 +394,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
             return;
         }
         let goal_column = self.resolve_goal_column();
-        self.head_mut().move_up(goal_column, count);
+        self.head_move().move_up(goal_column, count);
     }
 
     pub fn move_up(&mut self, count: usize) {
@@ -407,7 +407,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
             return;
         }
         let goal_column = self.resolve_goal_column();
-        self.head_mut().move_down(goal_column, count);
+        self.head_move().move_down(goal_column, count);
     }
 
     pub fn move_down(&mut self, count: usize) {
@@ -416,8 +416,8 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn extend_until_prev_byte(&mut self, byte: u8, count: usize) {
-        if self.head_mut().move_to_prev_byte(byte, count) {
-            self.head_mut().move_right(1);
+        if self.head_move().move_to_prev_byte(byte, count) {
+            self.head_move().move_right(1);
         }
         self.invalidate_goal_column();
     }
@@ -428,7 +428,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn extend_onto_prev_byte(&mut self, byte: u8, count: usize) {
-        self.head_mut().move_to_prev_byte(byte, count);
+        self.head_move().move_to_prev_byte(byte, count);
         self.invalidate_goal_column();
     }
 
@@ -438,8 +438,8 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn extend_until_next_byte(&mut self, byte: u8, count: usize) {
-        if self.head_mut().move_to_next_byte(byte, count) {
-            self.head_mut().move_left(1);
+        if self.head_move().move_to_next_byte(byte, count) {
+            self.head_move().move_left(1);
         }
         self.invalidate_goal_column();
     }
@@ -450,7 +450,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn extend_onto_next_byte(&mut self, byte: u8, count: usize) {
-        self.head_mut().move_to_next_byte(byte, count);
+        self.head_move().move_to_next_byte(byte, count);
         self.invalidate_goal_column();
     }
 
@@ -460,7 +460,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn extend_to_start(&mut self) {
-        self.head_mut().move_to_start();
+        self.head_move().move_to_start();
         self.invalidate_goal_column();
     }
 
@@ -470,7 +470,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn extend_to_end(&mut self) {
-        self.head_mut().move_to_end();
+        self.head_move().move_to_end();
         self.invalidate_goal_column();
     }
 
@@ -480,7 +480,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn extend_to_bottom(&mut self) {
-        self.head_mut().move_to_bottom();
+        self.head_move().move_to_bottom();
         self.invalidate_goal_column();
     }
 
@@ -490,7 +490,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn extend_to_line_start(&mut self) {
-        self.head_mut().move_to_line_start();
+        self.head_move().move_to_line_start();
         self.invalidate_goal_column();
     }
 
@@ -500,7 +500,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn extend_to_line_non_blank_start(&mut self) {
-        self.head_mut().move_to_line_non_blank_start();
+        self.head_move().move_to_line_non_blank_start();
         self.invalidate_goal_column();
     }
 
@@ -510,7 +510,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn extend_until_line_end(&mut self) {
-        self.head_mut().move_until_line_end();
+        self.head_move().move_until_line_end();
         self.state.goal_column = Some(GoalColumn::UntilLineEnd);
     }
 
@@ -520,7 +520,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn extend_onto_line_end(&mut self) {
-        self.head_mut().move_to_line_end();
+        self.head_move().move_to_line_end();
         self.invalidate_goal_column();
     }
 
@@ -530,35 +530,9 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn expand_to_full_lines(&mut self) {
-        self.start_mut().move_to_line_start();
-        self.end_mut().move_to_line_end();
+        self.start_move().move_to_line_start();
+        self.end_move().move_to_line_end();
         self.state.goal_column = Some(GoalColumn::OntoLineEnd);
-    }
-
-    pub fn expand_to_outer_node(&mut self) -> bool {
-        let (start, end) = self.byte_offsets();
-        let Some(syntax) = self.text.syntax() else {
-            return false;
-        };
-        let Some(node) = syntax.outer_node(start..end) else {
-            return false;
-        };
-        let byte_range = node.byte_range();
-        self.set_bounds(byte_range);
-        true
-    }
-
-    pub fn shrink_to_inner_node(&mut self) -> bool {
-        let (start, end) = self.byte_offsets();
-        let Some(syntax) = self.text.syntax() else {
-            return false;
-        };
-        let Some(node) = syntax.inner_node(start..end) else {
-            return false;
-        };
-        let byte_range = node.byte_range();
-        self.set_bounds(byte_range);
-        true
     }
 
     fn set_bounds(&mut self, byte_range: impl RangeBounds<usize>) {
@@ -616,6 +590,43 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
         self.state.tail = self.state.head.clone();
     }
 
+    pub fn restore(&mut self, snapshot: &RangeSnapshot) -> bool {
+        if let Some(state) = snapshot.restore(&self.text) {
+            *self.state = state;
+            true
+        } else {
+            false
+        }
+    }
+}
+
+impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
+    pub fn expand_to_outer_node(&mut self) -> bool {
+        let (start, end) = self.byte_offsets();
+        let Some(syntax) = self.text.syntax() else {
+            return false;
+        };
+        let Some(node) = syntax.outer_node(start..end) else {
+            return false;
+        };
+        let byte_range = node.byte_range();
+        self.set_bounds(byte_range);
+        true
+    }
+
+    pub fn shrink_to_inner_node(&mut self) -> bool {
+        let (start, end) = self.byte_offsets();
+        let Some(syntax) = self.text.syntax() else {
+            return false;
+        };
+        let Some(node) = syntax.inner_node(start..end) else {
+            return false;
+        };
+        let byte_range = node.byte_range();
+        self.set_bounds(byte_range);
+        true
+    }
+
     /// Reshape for appending (Kakoune's `a`): reduce to the head, then move onto the following
     /// grapheme so insertion lands after the original head. On the text's last grapheme there is
     /// no following grapheme, so a newline is appended first (as Kakoune does) and the cursor
@@ -637,7 +648,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
             self.invalidate_goal_column();
             Some(ops)
         } else {
-            self.head_mut().move_right(1);
+            self.head_move().move_right(1);
             self.reduce();
             self.invalidate_goal_column();
             None
@@ -731,15 +742,6 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
         self.state.transform(&ops, &self.text);
         self.invalidate_goal_column();
         Some(ops)
-    }
-
-    pub fn restore(&mut self, snapshot: &RangeSnapshot) -> bool {
-        if let Some(state) = snapshot.restore(&self.text) {
-            *self.state = state;
-            true
-        } else {
-            false
-        }
     }
 }
 

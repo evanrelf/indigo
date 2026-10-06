@@ -244,7 +244,7 @@ impl<'a, S: WrapRef, T: WrapRef> CursorView<'a, S, T> {
     }
 }
 
-impl<S: WrapMut, T: WrapMut> CursorView<'_, S, T> {
+impl<S: WrapMut, T: WrapRef> CursorView<'_, S, T> {
     pub fn move_to(&mut self, byte_index: usize) {
         let byte_index = self
             .text
@@ -471,6 +471,17 @@ impl<S: WrapMut, T: WrapMut> CursorView<'_, S, T> {
         }
     }
 
+    pub fn restore(&mut self, snapshot: &CursorSnapshot) -> bool {
+        if let Some(state) = snapshot.restore(&self.text) {
+            *self.state = state;
+            true
+        } else {
+            false
+        }
+    }
+}
+
+impl<S: WrapMut, T: WrapMut> CursorView<'_, S, T> {
     pub fn insert_char(&mut self, char: char) -> Edit {
         self.insert(&char.to_string())
     }
@@ -526,15 +537,6 @@ impl<S: WrapMut, T: WrapMut> CursorView<'_, S, T> {
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
         Some(ops)
-    }
-
-    pub fn restore(&mut self, snapshot: &CursorSnapshot) -> bool {
-        if let Some(state) = snapshot.restore(&self.text) {
-            *self.state = state;
-            true
-        } else {
-            false
-        }
     }
 }
 

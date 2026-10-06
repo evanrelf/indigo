@@ -131,8 +131,8 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
         let line_index = min(line_number - 1, rope.len_lines_unix() - 1);
         let byte_index = rope.line_to_byte_idx(line_index, LINE_TYPE);
         window
-            .selection_mut()
-            .for_each_mut(|mut range| range.move_to(byte_index));
+            .selection_move()
+            .for_each_move(|mut range| range.move_to(byte_index));
         pending_center = true;
     }
 

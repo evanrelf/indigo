@@ -80,7 +80,7 @@ fn replace(editor: &mut Editor, byte: u8) {
         return;
     }
     let mut window = editor.focused_window_mut();
-    window.selection_mut().replace_each(byte);
+    window.selection_edit().replace_each(byte);
     window.scroll_to_selection();
     editor.count = None;
 }

@@ -84,8 +84,8 @@ pub fn enter(editor: &mut Editor) {
     }
     let mut window = editor.focused_window_mut();
     window
-        .selection_mut()
-        .for_each_mut(|mut range| range.reduce());
+        .selection_move()
+        .for_each_move(|mut range| range.reduce());
     window.scroll_to_selection();
     editor.mode = Mode::Insert;
     editor.count = None;
@@ -93,28 +93,28 @@ pub fn enter(editor: &mut Editor) {
 
 fn delete_before(editor: &mut Editor) {
     let mut window = editor.focused_window_mut();
-    window.selection_mut().delete_before();
+    window.selection_edit().delete_before();
     window.scroll_to_selection();
     editor.count = None;
 }
 
 fn delete_after(editor: &mut Editor) {
     let mut window = editor.focused_window_mut();
-    window.selection_mut().delete_after();
+    window.selection_edit().delete_after();
     window.scroll_to_selection();
     editor.count = None;
 }
 
 fn insert_char(editor: &mut Editor, char: char) {
     let mut window = editor.focused_window_mut();
-    window.selection_mut().insert_char(char);
+    window.selection_edit().insert_char(char);
     window.scroll_to_selection();
     editor.count = None;
 }
 
 pub fn paste(editor: &mut Editor, text: &str) {
     let mut window = editor.focused_window_mut();
-    window.selection_mut().insert(text);
+    window.selection_edit().insert(text);
     window.scroll_to_selection();
     editor.count = None;
 }

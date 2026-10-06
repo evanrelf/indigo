@@ -3,7 +3,7 @@ use crate::{
     editor::Editor,
     range::RangeState,
     rope::{LINE_TYPE, RopeExt as _},
-    selection::{Selection, SelectionEdit, SelectionState},
+    selection::{Selection, SelectionEdit, SelectionMove, SelectionState},
 };
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::cmp::min;
@@ -135,7 +135,13 @@ impl<W: WrapMut> WindowView<'_, W> {
         &mut self.buffer
     }
 
-    pub fn selection_mut(&mut self) -> SelectionEdit<'_> {
+    pub fn selection_move(&mut self) -> SelectionMove<'_> {
+        SelectionMove::new(&self.buffer.text, &mut self.state.selection)
+            .expect("Window text and selection state are always kept valid")
+            .on_drop(|selection| selection.assert_invariants().unwrap())
+    }
+
+    pub fn selection_edit(&mut self) -> SelectionEdit<'_> {
         SelectionEdit::new(&mut self.buffer.text, &mut self.state.selection)
             .expect("Window text and selection state are always kept valid")
             .on_drop(|selection| selection.assert_invariants().unwrap())

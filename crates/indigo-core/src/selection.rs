@@ -1,6 +1,6 @@
 use crate::{
     cursor::CursorState,
-    range::{Range, RangeEdit, RangeSnapshot, RangeState},
+    range::{Range, RangeEdit, RangeMove, RangeSnapshot, RangeState},
     rope::{LINE_TYPE, RegexCursorInput, RopeExt as _},
     text::Text,
 };
@@ -215,30 +215,19 @@ impl<'a, S: WrapRef, T: WrapRef> SelectionView<'a, S, T> {
     }
 }
 
-impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
-    fn unchecked_get_mut(&mut self, index: usize) -> Option<RangeEdit<'_>> {
+impl<S: WrapMut, T: WrapRef> SelectionView<'_, S, T> {
+    fn unchecked_get_move(&mut self, index: usize) -> Option<RangeMove<'_>> {
         let range_state = self.state.ranges.get_mut(index)?;
-        let range = RangeEdit::new(&mut self.text, range_state)
+        let range = RangeMove::new(&self.text, range_state)
             .expect("Selection text and range state are always kept valid")
             .on_drop(|range| range.assert_invariants().unwrap());
         Some(range)
     }
 
-    pub fn for_each_mut(&mut self, mut f: impl FnMut(RangeEdit<'_>)) {
+    pub fn for_each_move(&mut self, mut f: impl FnMut(RangeMove<'_>)) {
         for i in 0..self.state.ranges.len() {
-            let version = self.text.version();
-            let range = self.unchecked_get_mut(i).unwrap();
+            let range = self.unchecked_get_move(i).unwrap();
             f(range);
-            if let Some(opss) = self.text.ops_since(version) {
-                for j in 0..self.state.ranges.len() {
-                    if i == j {
-                        continue;
-                    }
-                    for ops in opss {
-                        self.state.ranges[j].transform(ops, &self.text);
-                    }
-                }
-            }
         }
         self.state.sort();
     }
@@ -377,6 +366,42 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
 
         self.state.ranges = ranges;
         self.state.primary_range = primary_range;
+        self.state.sort();
+    }
+
+    fn invalidate_goal_columns(&mut self) {
+        for i in 0..self.state.ranges.len() {
+            let mut range = self.unchecked_get_move(i).unwrap();
+            range.invalidate_goal_column();
+        }
+    }
+}
+
+impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
+    fn unchecked_get_edit(&mut self, index: usize) -> Option<RangeEdit<'_>> {
+        let range_state = self.state.ranges.get_mut(index)?;
+        let range = RangeEdit::new(&mut self.text, range_state)
+            .expect("Selection text and range state are always kept valid")
+            .on_drop(|range| range.assert_invariants().unwrap());
+        Some(range)
+    }
+
+    pub fn for_each_edit(&mut self, mut f: impl FnMut(RangeEdit<'_>)) {
+        for i in 0..self.state.ranges.len() {
+            let version = self.text.version();
+            let range = self.unchecked_get_edit(i).unwrap();
+            f(range);
+            if let Some(opss) = self.text.ops_since(version) {
+                for j in 0..self.state.ranges.len() {
+                    if i == j {
+                        continue;
+                    }
+                    for ops in opss {
+                        self.state.ranges[j].transform(ops, &self.text);
+                    }
+                }
+            }
+        }
         self.state.sort();
     }
 
@@ -558,13 +583,6 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
         self.state.transform(&ops, &self.text);
         self.invalidate_goal_columns();
         ops
-    }
-
-    fn invalidate_goal_columns(&mut self) {
-        for i in 0..self.state.ranges.len() {
-            let mut range = self.unchecked_get_mut(i).unwrap();
-            range.invalidate_goal_column();
-        }
     }
 }
 

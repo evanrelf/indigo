@@ -265,8 +265,8 @@ fn extend_left(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
-        .selection_mut()
-        .for_each_mut(|mut range| range.extend_left(count));
+        .selection_move()
+        .for_each_move(|mut range| range.extend_left(count));
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -275,8 +275,8 @@ fn move_left(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
-        .selection_mut()
-        .for_each_mut(|mut range| range.move_left(count));
+        .selection_move()
+        .for_each_move(|mut range| range.move_left(count));
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -285,8 +285,8 @@ fn extend_right(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
-        .selection_mut()
-        .for_each_mut(|mut range| range.extend_right(count));
+        .selection_move()
+        .for_each_move(|mut range| range.extend_right(count));
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -295,8 +295,8 @@ fn move_right(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
-        .selection_mut()
-        .for_each_mut(|mut range| range.move_right(count));
+        .selection_move()
+        .for_each_move(|mut range| range.move_right(count));
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -305,8 +305,8 @@ fn extend_up(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
-        .selection_mut()
-        .for_each_mut(|mut range| range.extend_up(count));
+        .selection_move()
+        .for_each_move(|mut range| range.extend_up(count));
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -315,8 +315,8 @@ fn move_up(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
-        .selection_mut()
-        .for_each_mut(|mut range| range.move_up(count));
+        .selection_move()
+        .for_each_move(|mut range| range.move_up(count));
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -325,8 +325,8 @@ fn extend_down(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
-        .selection_mut()
-        .for_each_mut(|mut range| range.extend_down(count));
+        .selection_move()
+        .for_each_move(|mut range| range.extend_down(count));
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -335,8 +335,8 @@ fn move_down(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
-        .selection_mut()
-        .for_each_mut(|mut range| range.move_down(count));
+        .selection_move()
+        .for_each_move(|mut range| range.move_down(count));
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -344,8 +344,8 @@ fn move_down(editor: &mut Editor) {
 fn flip(editor: &mut Editor) {
     let mut window = editor.focused_window_mut();
     window
-        .selection_mut()
-        .for_each_mut(|mut range| range.flip());
+        .selection_move()
+        .for_each_move(|mut range| range.flip());
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -353,15 +353,15 @@ fn flip(editor: &mut Editor) {
 fn flip_forward(editor: &mut Editor) {
     let mut window = editor.focused_window_mut();
     window
-        .selection_mut()
-        .for_each_mut(|mut range| range.flip_forward());
+        .selection_move()
+        .for_each_move(|mut range| range.flip_forward());
     window.scroll_to_selection();
     editor.count = None;
 }
 
 fn keep_primary(editor: &mut Editor) {
     let mut window = editor.focused_window_mut();
-    window.selection_mut().keep_primary();
+    window.selection_move().keep_primary();
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -369,7 +369,7 @@ fn keep_primary(editor: &mut Editor) {
 fn rotate_primary_backward(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
-    window.selection_mut().rotate_primary_backward(count);
+    window.selection_move().rotate_primary_backward(count);
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -377,7 +377,7 @@ fn rotate_primary_backward(editor: &mut Editor) {
 fn rotate_primary_forward(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
-    window.selection_mut().rotate_primary_forward(count);
+    window.selection_move().rotate_primary_forward(count);
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -385,8 +385,8 @@ fn rotate_primary_forward(editor: &mut Editor) {
 fn reduce(editor: &mut Editor) {
     let mut window = editor.focused_window_mut();
     window
-        .selection_mut()
-        .for_each_mut(|mut range| range.reduce());
+        .selection_move()
+        .for_each_move(|mut range| range.reduce());
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -398,7 +398,7 @@ fn delete(editor: &mut Editor) {
         return;
     }
     let mut window = editor.focused_window_mut();
-    window.selection_mut().delete();
+    window.selection_edit().delete();
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -439,7 +439,7 @@ fn redo(editor: &mut Editor) {
 
 fn select_all(editor: &mut Editor) {
     let mut window = editor.focused_window_mut();
-    window.selection_mut().select_all();
+    window.selection_move().select_all();
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -447,15 +447,15 @@ fn select_all(editor: &mut Editor) {
 fn expand_to_full_lines(editor: &mut Editor) {
     let mut window = editor.focused_window_mut();
     window
-        .selection_mut()
-        .for_each_mut(|mut range| range.expand_to_full_lines());
+        .selection_move()
+        .for_each_move(|mut range| range.expand_to_full_lines());
     window.scroll_to_selection();
     editor.count = None;
 }
 
 fn split_into_lines(editor: &mut Editor) {
     let mut window = editor.focused_window_mut();
-    window.selection_mut().split_into_lines();
+    window.selection_move().split_into_lines();
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -477,7 +477,7 @@ fn select_regex(editor: &mut Editor) {
         if let Ok(regex) = regex {
             let matched = editor
                 .focused_window_mut()
-                .selection_mut()
+                .selection_move()
                 .select_regex(&regex);
             if !matched {
                 editor.message = Some(Err(String::from("Nothing selected")));
@@ -495,7 +495,7 @@ fn insert_after_head(editor: &mut Editor) {
         return;
     }
     let mut window = editor.focused_window_mut();
-    window.selection_mut().for_each_mut(|mut range| {
+    window.selection_edit().for_each_edit(|mut range| {
         range.prepare_append();
     });
     window.scroll_to_selection();
@@ -509,7 +509,7 @@ fn insert_at_line_non_blank_start(editor: &mut Editor) {
         return;
     }
     let mut window = editor.focused_window_mut();
-    window.selection_mut().for_each_mut(|mut range| {
+    window.selection_move().for_each_move(|mut range| {
         range.move_to_line_non_blank_start();
     });
     window.scroll_to_selection();
@@ -523,7 +523,7 @@ fn insert_at_line_end(editor: &mut Editor) {
         return;
     }
     let mut window = editor.focused_window_mut();
-    window.selection_mut().for_each_mut(|mut range| {
+    window.selection_move().for_each_move(|mut range| {
         range.move_onto_line_end();
     });
     window.scroll_to_selection();
@@ -540,7 +540,7 @@ fn insert_line_above(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     // TODO: Switch to selection-level insert
-    window.selection_mut().for_each_mut(|mut range| {
+    window.selection_edit().for_each_edit(|mut range| {
         range.move_to_line_start();
         for _ in 0..count {
             range.insert_char('\n');
@@ -561,7 +561,7 @@ fn insert_line_below(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     // TODO: Switch to selection-level insert
-    window.selection_mut().for_each_mut(|mut range| {
+    window.selection_edit().for_each_edit(|mut range| {
         range.move_onto_line_end();
         for _ in 0..count {
             range.insert_char('\n');
@@ -580,7 +580,7 @@ fn add_line_above(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     // TODO: Switch to selection-level insert
-    window.selection_mut().for_each_mut(|mut range| {
+    window.selection_edit().for_each_edit(|mut range| {
         let snapshot = range.save();
         range.move_to_line_start();
         for _ in 0..count {
@@ -600,7 +600,7 @@ fn add_line_below(editor: &mut Editor) {
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     // TODO: Switch to selection-level insert
-    window.selection_mut().for_each_mut(|mut range| {
+    window.selection_edit().for_each_edit(|mut range| {
         let snapshot = range.save();
         range.move_onto_line_end();
         for _ in 0..count {
@@ -619,8 +619,8 @@ fn goto_move_to_line(editor: &mut Editor) {
     let line_index = min(count - 1, rope.len_lines_unix() - 1);
     let byte_index = rope.line_to_byte_idx(line_index, LINE_TYPE);
     window
-        .selection_mut()
-        .for_each_mut(|mut range| range.move_to(byte_index));
+        .selection_move()
+        .for_each_move(|mut range| range.move_to(byte_index));
     window.scroll_to_selection();
     editor.count = None;
 }
@@ -628,8 +628,8 @@ fn goto_move_to_line(editor: &mut Editor) {
 fn goto_move_to_start(editor: &mut Editor) {
     editor
         .focused_window_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| range.move_to_start());
+        .selection_move()
+        .for_each_move(|mut range| range.move_to_start());
     editor.focused_window_mut().scroll_to_selection();
     editor.count = None;
 }
@@ -637,8 +637,8 @@ fn goto_move_to_start(editor: &mut Editor) {
 fn goto_extend_to_start(editor: &mut Editor) {
     editor
         .focused_window_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| range.extend_to_start());
+        .selection_move()
+        .for_each_move(|mut range| range.extend_to_start());
     editor.focused_window_mut().scroll_to_selection();
     editor.count = None;
 }
@@ -646,8 +646,8 @@ fn goto_extend_to_start(editor: &mut Editor) {
 fn goto_move_to_bottom(editor: &mut Editor) {
     editor
         .focused_window_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| range.move_to_bottom());
+        .selection_move()
+        .for_each_move(|mut range| range.move_to_bottom());
     editor.focused_window_mut().scroll_to_selection();
     editor.count = None;
 }
@@ -655,8 +655,8 @@ fn goto_move_to_bottom(editor: &mut Editor) {
 fn goto_extend_to_bottom(editor: &mut Editor) {
     editor
         .focused_window_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| range.extend_to_bottom());
+        .selection_move()
+        .for_each_move(|mut range| range.extend_to_bottom());
     editor.focused_window_mut().scroll_to_selection();
     editor.count = None;
 }
@@ -664,8 +664,8 @@ fn goto_extend_to_bottom(editor: &mut Editor) {
 fn goto_move_to_end(editor: &mut Editor) {
     editor
         .focused_window_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| range.move_to_end());
+        .selection_move()
+        .for_each_move(|mut range| range.move_to_end());
     editor.focused_window_mut().scroll_to_selection();
     editor.count = None;
 }
@@ -673,8 +673,8 @@ fn goto_move_to_end(editor: &mut Editor) {
 fn goto_extend_to_end(editor: &mut Editor) {
     editor
         .focused_window_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| range.extend_to_end());
+        .selection_move()
+        .for_each_move(|mut range| range.extend_to_end());
     editor.focused_window_mut().scroll_to_selection();
     editor.count = None;
 }
@@ -682,47 +682,47 @@ fn goto_extend_to_end(editor: &mut Editor) {
 fn goto_move_to_line_start(editor: &mut Editor) {
     editor
         .focused_window_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| range.move_to_line_start());
+        .selection_move()
+        .for_each_move(|mut range| range.move_to_line_start());
     editor.count = None;
 }
 
 fn goto_extend_to_line_start(editor: &mut Editor) {
     editor
         .focused_window_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| range.extend_to_line_start());
+        .selection_move()
+        .for_each_move(|mut range| range.extend_to_line_start());
     editor.count = None;
 }
 
 fn goto_move_to_line_non_blank_start(editor: &mut Editor) {
     editor
         .focused_window_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| range.move_to_line_non_blank_start());
+        .selection_move()
+        .for_each_move(|mut range| range.move_to_line_non_blank_start());
     editor.count = None;
 }
 
 fn goto_extend_to_line_non_blank_start(editor: &mut Editor) {
     editor
         .focused_window_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| range.extend_to_line_non_blank_start());
+        .selection_move()
+        .for_each_move(|mut range| range.extend_to_line_non_blank_start());
     editor.count = None;
 }
 
 fn goto_move_until_line_end(editor: &mut Editor) {
     editor
         .focused_window_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| range.move_until_line_end());
+        .selection_move()
+        .for_each_move(|mut range| range.move_until_line_end());
     editor.count = None;
 }
 
 fn goto_extend_until_line_end(editor: &mut Editor) {
     editor
         .focused_window_mut()
-        .selection_mut()
-        .for_each_mut(|mut range| range.extend_until_line_end());
+        .selection_move()
+        .for_each_move(|mut range| range.extend_until_line_end());
     editor.count = None;
 }
