@@ -11,6 +11,8 @@
 - range: Select word for mouse double click
 - range: Select line for mouse triple click
 
+- kernel: Build my own sum tree, based on my existing B-tree code
+
 ## Friction in use
 
 - No `/` search
