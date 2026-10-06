@@ -1,3 +1,7 @@
+//! Operational transformation (OT) algorithm.
+//!
+//! <https://en.wikipedia.org/wiki/Operational_transformation>
+
 use ropey::Rope;
 use std::cmp::min;
 

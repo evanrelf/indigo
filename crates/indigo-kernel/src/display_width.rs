@@ -1,3 +1,7 @@
+//! Width of text, as displayed in terminal emulators.
+//!
+//! <https://www.unicode.org/reports/tr11/>
+
 use ropey::{Rope, RopeSlice};
 use std::cmp::max;
 use unicode_segmentation::UnicodeSegmentation as _;

@@ -1,3 +1,7 @@
+//! Unicode grapheme cluster boundaries.
+//!
+//! <https://www.unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries>
+
 use ropey::{RopeSlice, iter::Chunks};
 use std::iter::FusedIterator;
 use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
