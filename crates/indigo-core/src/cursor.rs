@@ -137,6 +137,8 @@ pub struct CursorView<'a, S: Wrap, T: Wrap> {
 
 pub type Cursor<'a> = CursorView<'a, WRef, WRef>;
 
+pub type CursorMove<'a> = CursorView<'a, WMut, WRef>;
+
 pub type CursorEdit<'a> = CursorView<'a, WMut, WMut>;
 
 impl<'a, S: Wrap, T: Wrap> CursorView<'a, S, T> {

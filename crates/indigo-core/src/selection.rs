@@ -130,6 +130,8 @@ pub struct SelectionView<'a, S: Wrap, T: Wrap> {
 
 pub type Selection<'a> = SelectionView<'a, WRef, WRef>;
 
+pub type SelectionMove<'a> = SelectionView<'a, WMut, WRef>;
+
 pub type SelectionEdit<'a> = SelectionView<'a, WMut, WMut>;
 
 impl<'a, S: Wrap, T: Wrap> SelectionView<'a, S, T> {

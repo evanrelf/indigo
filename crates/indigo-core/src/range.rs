@@ -188,6 +188,8 @@ pub struct RangeView<'a, S: Wrap, T: Wrap> {
 
 pub type Range<'a> = RangeView<'a, WRef, WRef>;
 
+pub type RangeMove<'a> = RangeView<'a, WMut, WRef>;
+
 pub type RangeEdit<'a> = RangeView<'a, WMut, WMut>;
 
 impl<'a, S: Wrap, T: Wrap> RangeView<'a, S, T> {
