@@ -254,6 +254,11 @@ mod tests {
                 }
             }
         }
-        hegel::stateful::machine(StateMachine::default()).run(tc);
+        let mut state_machine = StateMachine::default();
+        let value = tc.draw(gs::integers::<i64>());
+        state_machine.registers.push(LastWriteWins::new(value));
+        let write = state_machine.next_write(value);
+        state_machine.model.push(write);
+        hegel::stateful::machine(state_machine).run(tc);
     }
 }
