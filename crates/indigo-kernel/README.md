@@ -147,12 +147,15 @@ undo/redo or full time travel debugging or whatever!
 ## Technology
 
 The main technology I'm interested in for merging/convergence/reconciliation of
-concurrent changes is **Conflict-free Replicated Data Types (CRDTs)**. But you
-could implement this with other technologies such as Operational Transformation
-(OT) or plain 2- or 3-way merge. Even if I have a fancy sequence CRDT
-representing text, I might still use a basic merge function for background code
-formatting, because that's an operation I can retry on conflicts (and CRDT
-merging might semantically garble text).
+concurrent changes is [**Conflict-free Replicated Data Types (CRDTs)**][crdts].
+But you could implement this with other technologies such as [**Operational
+Transformation (OT)**][ot] or plain 2- or 3-way merge. Even if I have a fancy
+sequence CRDT representing text, I might still use a basic merge function for
+background code formatting, because that's an operation I can retry on conflicts
+(and CRDT merging might semantically garble text).
+
+[crdts]: https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type
+[ot]: https://en.wikipedia.org/wiki/Operational_transformation
 
 I also really like the way the **"[Concurrent Programming with Revisions and
 Isolation Types](https://dl.acm.org/doi/epdf/10.1145/1932682.1869515)"** paper
@@ -178,3 +181,45 @@ represents these concepts. I'll quote a little to give you an idea:
 > own private copy of the shared data only. A runtime creates and merges copies
 > automatically, and resolves conflicts deterministically, in a manner declared
 > by the chosen isolation type.
+
+To make forking and joining workflows efficient, we need our state to be cheaply
+`Clone`able. I think [**persistent data structures**][persistent] are an elegant
+solution. Copying them is constant time (almost free) because everything is
+shared to start, you just create a new pointer. When you need to mutate your
+copy, only the path through the pointers in the data structure affected by your
+change is copied (copy-on-write), but the rest can remain shared.
+
+[persistent]: https://en.wikipedia.org/wiki/Persistent_data_structure
+
+Data structures:
+
+- Ordered map/set -> Persistent [B-tree][btree]/[B+ tree][bplustree],
+  [sum tree][sumtree]
+- Hash map/set -> [Hash array mapped tries][hamt]
+- String, gap buffer, rope -> Persistent [rope][rope], [sum tree][sumtree],
+  [finger tree][fingertree]
+- Vector -> [RRB vector][rrbvector], [sum tree][sumtree],
+  [finger tree][fingertree]
+
+Finger trees are a very similar idea to sum trees, so I think they could be used
+for maps in the same way, although it may not be optimal choice.
+
+[btree]: https://en.wikipedia.org/wiki/B-tree
+[bplustree]: https://en.wikipedia.org/wiki/B%2B_tree
+[sumtree]: https://zed.dev/blog/zed-decoded-rope-sumtree
+[fingertree]: https://www.cs.tufts.edu/~nr/cs257/archive/koen-claessen/finger-trees.pdf
+[hamt]: https://en.wikipedia.org/wiki/Hash_array_mapped_trie
+[rope]: https://en.wikipedia.org/wiki/Rope_(data_structure)
+[rrbvector]: https://infoscience.epfl.ch/record/213452/files/rrbvector.pdf
+
+Implementations:
+
+- [`imbl`](https://lib.rs/crates/imbl) and [`rpds`](https://lib.rs/crates/rpds)
+  Rust crates have lots of persistent data structures.
+- [`ropey`](https://lib.rs/crates/ropey) and [`crop`](https://lib.rs/crates/crop)
+  Rust crates have persistent ropes.
+- Zed's [`sum_tree`](https://github.com/zed-industries/zed/tree/main/crates/sum_tree) Rust crate.
+- [`containers`](https://hackage.haskell.org/package/containers),
+  [`unordered-containers`](https://hackage.haskell.org/package/unordered-containers),
+  and [`fingertree`](https://hackage-content.haskell.org/package/fingertree)
+  Haskell packages are great too.
