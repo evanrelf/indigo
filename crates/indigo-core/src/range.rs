@@ -1,5 +1,5 @@
 use crate::{
-    cursor::{Cursor, CursorMut, CursorSnapshot, CursorState, GoalColumn},
+    cursor::{Cursor, CursorEdit, CursorSnapshot, CursorState, GoalColumn},
     rope::RopeExt as _,
     text::Text,
 };
@@ -188,7 +188,7 @@ pub struct RangeView<'a, W: Wrap> {
 
 pub type Range<'a> = RangeView<'a, WRef>;
 
-pub type RangeMut<'a> = RangeView<'a, WMut>;
+pub type RangeEdit<'a> = RangeView<'a, WMut>;
 
 impl<'a, W: Wrap> RangeView<'a, W> {
     pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
@@ -316,19 +316,19 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
 }
 
 impl<W: WrapMut> RangeView<'_, W> {
-    fn tail_mut(&mut self) -> CursorMut<'_> {
-        CursorMut::new(&mut self.text, &mut self.state.tail)
+    fn tail_mut(&mut self) -> CursorEdit<'_> {
+        CursorEdit::new(&mut self.text, &mut self.state.tail)
             .expect("Range text and tail cursor state are always kept valid")
             .on_drop(|cursor| cursor.assert_invariants().unwrap())
     }
 
-    fn head_mut(&mut self) -> CursorMut<'_> {
-        CursorMut::new(&mut self.text, &mut self.state.head)
+    fn head_mut(&mut self) -> CursorEdit<'_> {
+        CursorEdit::new(&mut self.text, &mut self.state.head)
             .expect("Range text and head cursor state are always kept valid")
             .on_drop(|cursor| cursor.assert_invariants().unwrap())
     }
 
-    fn start_mut(&mut self) -> CursorMut<'_> {
+    fn start_mut(&mut self) -> CursorEdit<'_> {
         if self.is_forward() {
             self.tail_mut()
         } else {
@@ -336,7 +336,7 @@ impl<W: WrapMut> RangeView<'_, W> {
         }
     }
 
-    fn end_mut(&mut self) -> CursorMut<'_> {
+    fn end_mut(&mut self) -> CursorEdit<'_> {
         if self.is_forward() {
             self.head_mut()
         } else {
@@ -949,7 +949,7 @@ mod tests {
         // combining acute accent (´)
         let mut text = Text::from("\u{0301}");
         let mut state = RangeState::default();
-        let mut range = RangeMut::new(&mut text, &mut state).unwrap();
+        let mut range = RangeEdit::new(&mut text, &mut state).unwrap();
         range.insert("e");
         range.assert_invariants().unwrap();
     }
@@ -1028,7 +1028,7 @@ mod tests {
     fn move_to_line_start_from_newline() {
         let mut text = Text::from("hello world\n");
         let mut state = RangeState::default();
-        let mut range = RangeMut::new(&mut text, &mut state).unwrap();
+        let mut range = RangeEdit::new(&mut text, &mut state).unwrap();
         range.move_until_line_end();
         range.move_right(1);
         assert_eq!(&range.slice().to_string(), "\n");
@@ -1040,7 +1040,7 @@ mod tests {
     fn move_to_line_start_idempotent() {
         let mut text = Text::from("");
         let mut state = RangeState::default();
-        let mut range = RangeMut::new(&mut text, &mut state).unwrap();
+        let mut range = RangeEdit::new(&mut text, &mut state).unwrap();
         range.insert("x\ny");
 
         range.move_to_line_start();
@@ -1060,7 +1060,7 @@ mod tests {
     fn move_to_line_non_blank_start_idempotent() {
         let mut text = Text::from("");
         let mut state = RangeState::default();
-        let mut range = RangeMut::new(&mut text, &mut state).unwrap();
+        let mut range = RangeEdit::new(&mut text, &mut state).unwrap();
         range.insert(" x");
 
         range.move_to_line_non_blank_start();
@@ -1080,7 +1080,7 @@ mod tests {
     fn move_to_line_non_blank_start_symmetric() {
         let mut text = Text::from("");
         let mut state = RangeState::default();
-        let mut range = RangeMut::new(&mut text, &mut state).unwrap();
+        let mut range = RangeEdit::new(&mut text, &mut state).unwrap();
         range.insert("    foo");
 
         range.move_to_line_start();
@@ -1105,8 +1105,8 @@ mod tests {
         #[hegel::state_machine]
         #[expect(clippy::needless_pass_by_value)]
         impl StateMachine {
-            fn range(&mut self) -> RangeMut<'_> {
-                RangeMut::new(&mut self.text, &mut self.state).expect("Range state kept valid")
+            fn range(&mut self) -> RangeEdit<'_> {
+                RangeEdit::new(&mut self.text, &mut self.state).expect("Range state kept valid")
             }
             fn count(tc: &TestCase) -> usize {
                 tc.draw(gs::integers::<usize>().min_value(1).max_value(100))

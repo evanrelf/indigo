@@ -1,7 +1,7 @@
 #![allow(clippy::enum_glob_use)]
 
 use crate::{
-    cursor::{Cursor, CursorMut, CursorState},
+    cursor::{Cursor, CursorEdit, CursorState},
     editor::Editor,
     key::KeyCode,
     keymap::{Keymap, KeymapResult, keymap},
@@ -68,8 +68,8 @@ impl State {
         cursor
     }
 
-    pub fn cursor_mut(&mut self) -> CursorMut<'_> {
-        CursorMut::new(&mut self.text, &mut self.cursor)
+    pub fn cursor_mut(&mut self) -> CursorEdit<'_> {
+        CursorEdit::new(&mut self.text, &mut self.cursor)
             .expect("Command mode text and cursor state are always kept valid")
             .on_drop(|cursor| cursor.assert_invariants().unwrap())
     }

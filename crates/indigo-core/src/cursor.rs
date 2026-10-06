@@ -137,7 +137,7 @@ pub struct CursorView<'a, W: Wrap> {
 
 pub type Cursor<'a> = CursorView<'a, WRef>;
 
-pub type CursorMut<'a> = CursorView<'a, WMut>;
+pub type CursorEdit<'a> = CursorView<'a, WMut>;
 
 impl<'a, W: Wrap> CursorView<'a, W> {
     pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
@@ -873,8 +873,8 @@ mod tests {
         #[hegel::state_machine]
         #[expect(clippy::needless_pass_by_value)]
         impl StateMachine {
-            fn cursor(&mut self) -> CursorMut<'_> {
-                CursorMut::new(&mut self.text, &mut self.state).expect("Cursor state kept valid")
+            fn cursor(&mut self) -> CursorEdit<'_> {
+                CursorEdit::new(&mut self.text, &mut self.state).expect("Cursor state kept valid")
             }
             #[rule]
             fn move_to(&mut self, tc: TestCase) {
@@ -891,7 +891,7 @@ mod tests {
                 let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(100));
                 self.cursor().move_right(count);
             }
-            fn goal_column(cursor: &CursorMut<'_>, tc: TestCase) -> GoalColumn {
+            fn goal_column(cursor: &CursorEdit<'_>, tc: TestCase) -> GoalColumn {
                 match tc.draw(gs::integers::<u8>().max_value(2)) {
                     0 => GoalColumn::Column(cursor.display_column()),
                     1 => GoalColumn::UntilLineEnd,

@@ -1,6 +1,6 @@
 use crate::{
     cursor::CursorState,
-    range::{Range, RangeMut, RangeSnapshot, RangeState},
+    range::{Range, RangeEdit, RangeSnapshot, RangeState},
     rope::{LINE_TYPE, RegexCursorInput, RopeExt as _},
     text::Text,
 };
@@ -130,7 +130,7 @@ pub struct SelectionView<'a, W: Wrap> {
 
 pub type Selection<'a> = SelectionView<'a, WRef>;
 
-pub type SelectionMut<'a> = SelectionView<'a, WMut>;
+pub type SelectionEdit<'a> = SelectionView<'a, WMut>;
 
 impl<'a, W: Wrap> SelectionView<'a, W> {
     pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
@@ -214,15 +214,15 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
 }
 
 impl<W: WrapMut> SelectionView<'_, W> {
-    fn unchecked_get_mut(&mut self, index: usize) -> Option<RangeMut<'_>> {
+    fn unchecked_get_mut(&mut self, index: usize) -> Option<RangeEdit<'_>> {
         let range_state = self.state.ranges.get_mut(index)?;
-        let range = RangeMut::new(&mut self.text, range_state)
+        let range = RangeEdit::new(&mut self.text, range_state)
             .expect("Selection text and range state are always kept valid")
             .on_drop(|range| range.assert_invariants().unwrap());
         Some(range)
     }
 
-    pub fn for_each_mut(&mut self, mut f: impl FnMut(RangeMut<'_>)) {
+    pub fn for_each_mut(&mut self, mut f: impl FnMut(RangeEdit<'_>)) {
         for i in 0..self.state.ranges.len() {
             let version = self.text.version();
             let range = self.unchecked_get_mut(i).unwrap();
@@ -594,7 +594,7 @@ mod tests {
             ranges,
             primary_range: 0,
         };
-        SelectionMut::new(&mut text, &mut state)
+        SelectionEdit::new(&mut text, &mut state)
             .unwrap()
             .split_into_lines();
         state
@@ -634,7 +634,7 @@ mod tests {
         // Kakoune's `r` replaces newlines too; replacing the final newline re-inserts one.
         let mut text = Text::from("ab\ncd\n");
         let mut state = SelectionState::default();
-        let mut selection = SelectionMut::new(&mut text, &mut state).unwrap();
+        let mut selection = SelectionEdit::new(&mut text, &mut state).unwrap();
         selection.select_all();
         selection.replace_each(b'X');
         drop(selection);
@@ -652,7 +652,7 @@ mod tests {
             ranges: vec![range(1, 1), range(2, 3)],
             primary_range: 0,
         };
-        let mut selection = SelectionMut::new(&mut text, &mut state).unwrap();
+        let mut selection = SelectionEdit::new(&mut text, &mut state).unwrap();
         selection.delete();
         drop(selection);
         assert_eq!(&text.to_string(), "a\n");
@@ -665,7 +665,7 @@ mod tests {
         let regex = Regex::new("x*").unwrap();
         let mut text = Text::from("abc\n");
         let mut state = SelectionState::default();
-        let mut selection = SelectionMut::new(&mut text, &mut state).unwrap();
+        let mut selection = SelectionEdit::new(&mut text, &mut state).unwrap();
         selection.select_all();
         assert!(selection.select_regex(&regex));
         drop(selection);
@@ -682,7 +682,7 @@ mod tests {
         let regex = Regex::new("xyz").unwrap();
         let mut text = Text::from("abc\n");
         let mut state = SelectionState::default();
-        let mut selection = SelectionMut::new(&mut text, &mut state).unwrap();
+        let mut selection = SelectionEdit::new(&mut text, &mut state).unwrap();
         selection.select_all();
         assert!(!selection.select_regex(&regex));
         drop(selection);
@@ -696,7 +696,7 @@ mod tests {
         let regex = Regex::new("o+").unwrap();
         let mut text = Text::from("foo bar\n");
         let mut state = SelectionState::default();
-        let mut selection = SelectionMut::new(&mut text, &mut state).unwrap();
+        let mut selection = SelectionEdit::new(&mut text, &mut state).unwrap();
         selection.select_all();
         assert!(selection.select_regex(&regex));
         drop(selection);

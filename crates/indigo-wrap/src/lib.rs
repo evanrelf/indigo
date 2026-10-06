@@ -55,7 +55,7 @@ type RawCursor = CursorView<'static, WPhantomData>;
 
 type Cursor<'a> = CursorView<'a, WRef>;
 
-type CursorMut<'a> = CursorView<'a, WMut>;
+type CursorEdit<'a> = CursorView<'a, WMut>;
 
 // ...or when you don't need to touch the wrapped type:
 impl<W: Wrap> CursorView<'_, W> {
@@ -94,7 +94,7 @@ These are captured with the [`Wrap`], [`WrapRef`], and [`WrapMut`] traits respec
 If you write generic `impl` blocks with trait bounds on the reference type wrapper (e.g.
 `impl<W: WrapMut> CursorView<'_, W>`) rather than hardcoding it (e.g. `impl CursorView<'_, WMut>`),
 you get a kind of subtyping/inheritance thing where the most powerful versions of your type (e.g.
-`CursorMut`) have all the methods available, but your weaker versions (e.g. `Cursor`) only get the
+`CursorEdit`) have all the methods available, but your weaker versions (e.g. `Cursor`) only get the
 subset that apply to their wrapped type.
 
 */
