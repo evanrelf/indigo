@@ -121,28 +121,28 @@ impl SelectionSnapshot {
 }
 
 #[must_use]
-pub struct SelectionView<'a, S: Wrap, T: Wrap = S> {
+pub struct SelectionView<'a, S: Wrap, T: Wrap> {
     state: S::Wrap<'a, SelectionState>,
     text: T::Wrap<'a, Text>,
     #[expect(clippy::type_complexity)]
     on_drop: Option<Box<dyn FnOnce(&mut Self) + 'a>>,
 }
 
-pub type Selection<'a> = SelectionView<'a, WRef>;
+pub type Selection<'a> = SelectionView<'a, WRef, WRef>;
 
-pub type SelectionEdit<'a> = SelectionView<'a, WMut>;
+pub type SelectionEdit<'a> = SelectionView<'a, WMut, WMut>;
 
-impl<'a, W: Wrap> SelectionView<'a, W> {
+impl<'a, S: Wrap, T: Wrap> SelectionView<'a, S, T> {
     pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
         self.on_drop = Some(Box::new(f));
         self
     }
 }
 
-impl<'a, W: WrapRef> SelectionView<'a, W> {
+impl<'a, S: WrapRef, T: WrapRef> SelectionView<'a, S, T> {
     pub fn new(
-        text: W::WrapRef<'a, Text>,
-        state: W::WrapRef<'a, SelectionState>,
+        text: T::WrapRef<'a, Text>,
+        state: S::WrapRef<'a, SelectionState>,
     ) -> anyhow::Result<Self> {
         let selection_view = Self {
             state,
@@ -213,7 +213,7 @@ impl<'a, W: WrapRef> SelectionView<'a, W> {
     }
 }
 
-impl<W: WrapMut> SelectionView<'_, W> {
+impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
     fn unchecked_get_mut(&mut self, index: usize) -> Option<RangeEdit<'_>> {
         let range_state = self.state.ranges.get_mut(index)?;
         let range = RangeEdit::new(&mut self.text, range_state)

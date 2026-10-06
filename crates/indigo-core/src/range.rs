@@ -179,28 +179,28 @@ impl RangeSnapshot {
 }
 
 #[must_use]
-pub struct RangeView<'a, S: Wrap, T: Wrap = S> {
+pub struct RangeView<'a, S: Wrap, T: Wrap> {
     state: S::Wrap<'a, RangeState>,
     text: T::Wrap<'a, Text>,
     #[expect(clippy::type_complexity)]
     on_drop: Option<Box<dyn FnOnce(&mut Self) + 'a>>,
 }
 
-pub type Range<'a> = RangeView<'a, WRef>;
+pub type Range<'a> = RangeView<'a, WRef, WRef>;
 
-pub type RangeEdit<'a> = RangeView<'a, WMut>;
+pub type RangeEdit<'a> = RangeView<'a, WMut, WMut>;
 
-impl<'a, W: Wrap> RangeView<'a, W> {
+impl<'a, S: Wrap, T: Wrap> RangeView<'a, S, T> {
     pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
         self.on_drop = Some(Box::new(f));
         self
     }
 }
 
-impl<'a, W: WrapRef> RangeView<'a, W> {
+impl<'a, S: WrapRef, T: WrapRef> RangeView<'a, S, T> {
     pub fn new(
-        text: W::WrapRef<'a, Text>,
-        state: W::WrapRef<'a, RangeState>,
+        text: T::WrapRef<'a, Text>,
+        state: S::WrapRef<'a, RangeState>,
     ) -> anyhow::Result<Self> {
         let range_view = Self {
             state,
@@ -286,18 +286,20 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
         !self.is_forward()
     }
 
-    pub fn is_touching<W2>(&self, other: &RangeView<'_, W2>) -> bool
+    pub fn is_touching<S2, T2>(&self, other: &RangeView<'_, S2, T2>) -> bool
     where
-        W2: WrapRef,
+        S2: WrapRef,
+        T2: WrapRef,
     {
         let (self_start, self_end) = self.byte_offsets();
         let (other_start, other_end) = other.byte_offsets();
         self_end == other_start || other_end == self_start
     }
 
-    pub fn is_overlapping<W2>(&self, other: &RangeView<'_, W2>) -> bool
+    pub fn is_overlapping<S2, T2>(&self, other: &RangeView<'_, S2, T2>) -> bool
     where
-        W2: WrapRef,
+        S2: WrapRef,
+        T2: WrapRef,
     {
         self.state.start().byte_index <= other.state.end().byte_index
             && other.state.start().byte_index <= self.state.end().byte_index
@@ -315,7 +317,7 @@ impl<'a, W: WrapRef> RangeView<'a, W> {
     }
 }
 
-impl<W: WrapMut> RangeView<'_, W> {
+impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     fn tail_mut(&mut self) -> CursorEdit<'_> {
         CursorEdit::new(&mut self.text, &mut self.state.tail)
             .expect("Range text and tail cursor state are always kept valid")
@@ -740,7 +742,7 @@ impl<W: WrapMut> RangeView<'_, W> {
 }
 
 #[expect(clippy::too_many_lines)]
-pub fn handle_action<W: WrapMut>(range: &mut RangeView<'_, W>, action: &Action) {
+pub fn handle_action<S: WrapMut, T: WrapMut>(range: &mut RangeView<'_, S, T>, action: &Action) {
     match action {
         Action::InvalidateGoalColumn => {
             range.invalidate_goal_column();
@@ -878,7 +880,7 @@ pub fn handle_action<W: WrapMut>(range: &mut RangeView<'_, W>, action: &Action) 
     }
 }
 
-impl<R> TryFrom<(R, usize, usize)> for RangeView<'_, WBox>
+impl<R> TryFrom<(R, usize, usize)> for RangeView<'_, WBox, WBox>
 where
     R: Into<Text>,
 {

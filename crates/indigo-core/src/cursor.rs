@@ -128,28 +128,28 @@ impl CursorSnapshot {
 }
 
 #[must_use]
-pub struct CursorView<'a, S: Wrap, T: Wrap = S> {
+pub struct CursorView<'a, S: Wrap, T: Wrap> {
     state: S::Wrap<'a, CursorState>,
     text: T::Wrap<'a, Text>,
     #[expect(clippy::type_complexity)]
     on_drop: Option<Box<dyn FnOnce(&mut Self) + 'a>>,
 }
 
-pub type Cursor<'a> = CursorView<'a, WRef>;
+pub type Cursor<'a> = CursorView<'a, WRef, WRef>;
 
-pub type CursorEdit<'a> = CursorView<'a, WMut>;
+pub type CursorEdit<'a> = CursorView<'a, WMut, WMut>;
 
-impl<'a, W: Wrap> CursorView<'a, W> {
+impl<'a, S: Wrap, T: Wrap> CursorView<'a, S, T> {
     pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
         self.on_drop = Some(Box::new(f));
         self
     }
 }
 
-impl<'a, W: WrapRef> CursorView<'a, W> {
+impl<'a, S: WrapRef, T: WrapRef> CursorView<'a, S, T> {
     pub fn new(
-        text: W::WrapRef<'a, Text>,
-        state: W::WrapRef<'a, CursorState>,
+        text: T::WrapRef<'a, Text>,
+        state: S::WrapRef<'a, CursorState>,
     ) -> anyhow::Result<Self> {
         let cursor_view = Self {
             state,
@@ -242,7 +242,7 @@ impl<'a, W: WrapRef> CursorView<'a, W> {
     }
 }
 
-impl<W: WrapMut> CursorView<'_, W> {
+impl<S: WrapMut, T: WrapMut> CursorView<'_, S, T> {
     pub fn move_to(&mut self, byte_index: usize) {
         let byte_index = self
             .text
@@ -536,7 +536,7 @@ impl<W: WrapMut> CursorView<'_, W> {
     }
 }
 
-pub fn handle_action<W: WrapMut>(cursor: &mut CursorView<'_, W>, action: &Action) {
+pub fn handle_action<S: WrapMut, T: WrapMut>(cursor: &mut CursorView<'_, S, T>, action: &Action) {
     match action {
         Action::MoveTo { byte_index } => {
             cursor.move_to(*byte_index);
@@ -587,7 +587,7 @@ pub fn handle_action<W: WrapMut>(cursor: &mut CursorView<'_, W>, action: &Action
     }
 }
 
-impl<R> TryFrom<(R, usize)> for CursorView<'_, WBox>
+impl<R> TryFrom<(R, usize)> for CursorView<'_, WBox, WBox>
 where
     R: Into<Text>,
 {
