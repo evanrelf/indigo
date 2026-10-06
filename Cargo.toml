@@ -61,6 +61,12 @@ clippy.should_panic_without_expect = "allow"
 clippy.use_self = "warn"
 rust.unsafe_code = "deny"
 
+[profile.dev.package.hegeltest]
+opt-level = 3
+
+[profile.dev.package.hegeltest-c]
+opt-level = 3
+
 [profile.profile]
 inherits = "release"
 debug = "full"
