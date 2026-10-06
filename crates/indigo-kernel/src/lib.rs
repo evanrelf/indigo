@@ -4,6 +4,7 @@ pub mod edit;
 pub mod grapheme;
 
 // Under construction
+pub mod btree_map;
 pub mod crdt_vibed_length;
 pub mod crdt_vibed_not_length;
 pub mod document;

@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = { workspace = true }
+arrayvec = { workspace = true }
 imbl = { workspace = true }
 ropey = { workspace = true }
 unicode-segmentation = { workspace = true }

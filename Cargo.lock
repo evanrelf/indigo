@@ -851,6 +851,7 @@ name = "indigo-kernel"
 version = "0.0.0"
 dependencies = [
  "anyhow",
+ "arrayvec",
  "crop",
  "divan",
  "hegeltest",
