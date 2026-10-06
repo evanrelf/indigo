@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # TODO: Make Kakoune use a custom config that brings it closer to the desired
-# Indigo behavior. For example, reducing selections when entering insert mode.
+# Indigo behavior. For example, collapsing selections when entering insert mode.
 
 # Run the same keys through `indigo-cli` and vanilla Kakoune (`kak -n -f`) and
 # diff the resulting text.

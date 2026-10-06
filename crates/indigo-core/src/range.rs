@@ -66,7 +66,7 @@ pub enum Action {
     Flip,
     FlipForward,
     FlipBackward,
-    Reduce,
+    Collapse,
     InsertChar(char),
     Insert(String),
     DeleteBefore,
@@ -106,7 +106,7 @@ impl RangeState {
         }
     }
 
-    /// A reduced range is considered forward.
+    /// A collapsed range is considered forward.
     #[must_use]
     pub fn is_forward(&self) -> bool {
         self.tail.byte_index <= self.head.byte_index
@@ -279,7 +279,7 @@ impl<'a, S: WrapRef, T: WrapRef> RangeView<'a, S, T> {
         }
     }
 
-    /// A reduced range is considered forward.
+    /// A collapsed range is considered forward.
     pub fn is_forward(&self) -> bool {
         self.state.is_forward()
     }
@@ -366,7 +366,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
 
     pub fn move_to(&mut self, byte_index: usize) {
         self.extend_to(byte_index);
-        self.reduce();
+        self.collapse();
     }
 
     pub fn extend_left(&mut self, count: usize) {
@@ -376,7 +376,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
 
     pub fn move_left(&mut self, count: usize) {
         self.extend_left(count);
-        self.reduce();
+        self.collapse();
     }
 
     pub fn extend_right(&mut self, count: usize) {
@@ -386,7 +386,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
 
     pub fn move_right(&mut self, count: usize) {
         self.extend_right(count);
-        self.reduce();
+        self.collapse();
     }
 
     pub fn extend_up(&mut self, count: usize) {
@@ -399,7 +399,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
 
     pub fn move_up(&mut self, count: usize) {
         self.extend_up(count);
-        self.reduce();
+        self.collapse();
     }
 
     pub fn extend_down(&mut self, count: usize) {
@@ -412,7 +412,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
 
     pub fn move_down(&mut self, count: usize) {
         self.extend_down(count);
-        self.reduce();
+        self.collapse();
     }
 
     pub fn extend_until_prev_byte(&mut self, byte: u8, count: usize) {
@@ -423,7 +423,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
     }
 
     pub fn move_until_prev_byte(&mut self, byte: u8, count: usize) {
-        self.reduce();
+        self.collapse();
         self.extend_until_prev_byte(byte, count);
     }
 
@@ -433,7 +433,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
     }
 
     pub fn move_onto_prev_byte(&mut self, byte: u8, count: usize) {
-        self.reduce();
+        self.collapse();
         self.extend_onto_prev_byte(byte, count);
     }
 
@@ -445,7 +445,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
     }
 
     pub fn move_until_next_byte(&mut self, byte: u8, count: usize) {
-        self.reduce();
+        self.collapse();
         self.extend_until_next_byte(byte, count);
     }
 
@@ -455,7 +455,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
     }
 
     pub fn move_onto_next_byte(&mut self, byte: u8, count: usize) {
-        self.reduce();
+        self.collapse();
         self.extend_onto_next_byte(byte, count);
     }
 
@@ -466,7 +466,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
 
     pub fn move_to_start(&mut self) {
         self.extend_to_start();
-        self.reduce();
+        self.collapse();
     }
 
     pub fn extend_to_end(&mut self) {
@@ -476,7 +476,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
 
     pub fn move_to_end(&mut self) {
         self.extend_to_end();
-        self.reduce();
+        self.collapse();
     }
 
     pub fn extend_to_bottom(&mut self) {
@@ -486,7 +486,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
 
     pub fn move_to_bottom(&mut self) {
         self.extend_to_bottom();
-        self.reduce();
+        self.collapse();
     }
 
     pub fn extend_to_line_start(&mut self) {
@@ -496,7 +496,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
 
     pub fn move_to_line_start(&mut self) {
         self.extend_to_line_start();
-        self.reduce();
+        self.collapse();
     }
 
     pub fn extend_to_line_non_blank_start(&mut self) {
@@ -506,7 +506,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
 
     pub fn move_to_line_non_blank_start(&mut self) {
         self.extend_to_line_non_blank_start();
-        self.reduce();
+        self.collapse();
     }
 
     pub fn extend_until_line_end(&mut self) {
@@ -516,7 +516,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
 
     pub fn move_until_line_end(&mut self) {
         self.extend_until_line_end();
-        self.reduce();
+        self.collapse();
     }
 
     pub fn extend_onto_line_end(&mut self) {
@@ -526,7 +526,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
 
     pub fn move_onto_line_end(&mut self) {
         self.extend_onto_line_end();
-        self.reduce();
+        self.collapse();
     }
 
     pub fn expand_to_full_lines(&mut self) {
@@ -586,7 +586,7 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
         }
     }
 
-    pub fn reduce(&mut self) {
+    pub fn collapse(&mut self) {
         self.state.tail = self.state.head.clone();
     }
 
@@ -627,12 +627,12 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
         true
     }
 
-    /// Reshape for appending (Kakoune's `a`): reduce to the head, then move onto the following
+    /// Reshape for appending (Kakoune's `a`): collapse to the head, then move onto the following
     /// grapheme so insertion lands after the original head. On the text's last grapheme there is
     /// no following grapheme, so a newline is appended first (as Kakoune does) and the cursor
     /// lands on it.
     pub fn prepare_append(&mut self) -> Option<Edit> {
-        self.reduce();
+        self.collapse();
         if self.head().is_at_end() {
             let mut ops = Edit::new();
             ops.retain(self.text.len());
@@ -649,7 +649,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
             Some(ops)
         } else {
             self.head_move().move_right(1);
-            self.reduce();
+            self.collapse();
             self.invalidate_goal_column();
             None
         }
@@ -665,7 +665,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     pub fn insert(&mut self, text: &str) -> Edit {
         debug_assert!(
             self.grapheme_length() <= 1,
-            "Range reduced before entering insert mode"
+            "Range collapsed before entering insert mode"
         );
         let mut ops = Edit::new();
         ops.retain(self.state.start().byte_index);
@@ -683,7 +683,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     pub fn delete_before(&mut self) -> Option<Edit> {
         debug_assert!(
             self.grapheme_length() <= 1,
-            "Range reduced before entering insert mode"
+            "Range collapsed before entering insert mode"
         );
         let start = self.state.start().byte_index;
         let delete_start = self.text.prev_grapheme_boundary(start)?;
@@ -722,7 +722,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     pub fn delete_after(&mut self) -> Option<Edit> {
         debug_assert!(
             self.grapheme_length() <= 1,
-            "Range reduced before entering insert mode"
+            "Range collapsed before entering insert mode"
         );
         let end = self.state.end().byte_index;
         let delete_end = self
@@ -859,26 +859,26 @@ pub fn handle_action<S: WrapMut, T: WrapMut>(range: &mut RangeView<'_, S, T>, ac
         Action::FlipBackward => {
             range.flip_backward();
         }
-        Action::Reduce => {
-            range.reduce();
+        Action::Collapse => {
+            range.collapse();
         }
         Action::InsertChar(c) => {
-            range.reduce();
+            range.collapse();
             range.insert_char(*c);
         }
         Action::Insert(text) => {
-            range.reduce();
+            range.collapse();
             range.insert(text);
         }
         Action::DeleteBefore => {
-            range.reduce();
+            range.collapse();
             range.delete_before();
         }
         Action::Delete => {
             range.delete();
         }
         Action::DeleteAfter => {
-            range.reduce();
+            range.collapse();
             range.delete_after();
         }
     }
@@ -985,7 +985,7 @@ mod tests {
         assert_eq!(range.tail().byte_index(), 2);
         assert_eq!(range.head().byte_index(), 0);
         assert_eq!(range.goal_column(), None);
-        range.reduce();
+        range.collapse();
         assert!(range.is_forward());
     }
 
@@ -1233,8 +1233,8 @@ mod tests {
                 }
             }
             #[rule]
-            fn reduce(&mut self, _: TestCase) {
-                self.range().reduce();
+            fn collapse(&mut self, _: TestCase) {
+                self.range().collapse();
             }
             #[rule]
             fn prepare_append(&mut self, _: TestCase) {
@@ -1244,13 +1244,13 @@ mod tests {
             fn insert(&mut self, tc: TestCase) {
                 let string = tc.draw(gs::text());
                 let mut range = self.range();
-                range.reduce();
+                range.collapse();
                 range.insert(&string);
             }
             #[rule]
             fn delete_before(&mut self, _: TestCase) {
                 let mut range = self.range();
-                range.reduce();
+                range.collapse();
                 range.delete_before();
             }
             #[rule]
@@ -1260,7 +1260,7 @@ mod tests {
             #[rule]
             fn delete_after(&mut self, _: TestCase) {
                 let mut range = self.range();
-                range.reduce();
+                range.collapse();
                 range.delete_after();
             }
             #[rule]
@@ -1268,7 +1268,7 @@ mod tests {
                 let string = tc.draw(gs::text());
                 let mut range = self.range();
                 let snapshot = range.save();
-                range.reduce();
+                range.collapse();
                 range.insert(&string);
                 assert!(range.restore(&snapshot));
             }

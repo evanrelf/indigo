@@ -463,7 +463,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
         let mut ops = Edit::new();
         let mut previous = 0;
         for range in &self.state.ranges {
-            // TODO: Assert grapheme length is 1 (i.e. reduced)
+            // TODO: Assert grapheme length is 1 (i.e. collapsed)
             ops.retain(range.start().byte_index - previous);
             ops.insert(text);
             previous = range.start().byte_index;

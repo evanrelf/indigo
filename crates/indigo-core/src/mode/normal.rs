@@ -65,7 +65,7 @@ pub enum Action {
     KeepPrimary,
     RotatePrimaryBackward,
     RotatePrimaryForward,
-    Reduce,
+    Collapse,
     Flip,
     FlipForward,
     SelectAll,
@@ -136,7 +136,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "," => vec![KeepPrimary],
         "(" => vec![RotatePrimaryBackward],
         ")" => vec![RotatePrimaryForward],
-        ";" => vec![Reduce],
+        ";" => vec![Collapse],
         "<a-;>" => vec![Flip],
         "<a-:>" => vec![FlipForward],
         "%" => vec![SelectAll],
@@ -218,7 +218,7 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
         Action::KeepPrimary => keep_primary(editor),
         Action::RotatePrimaryBackward => rotate_primary_backward(editor),
         Action::RotatePrimaryForward => rotate_primary_forward(editor),
-        Action::Reduce => reduce(editor),
+        Action::Collapse => collapse(editor),
         Action::Flip => flip(editor),
         Action::FlipForward => flip_forward(editor),
         Action::SelectAll => select_all(editor),
@@ -390,11 +390,11 @@ fn rotate_primary_forward(editor: &mut Editor) {
     editor.count = None;
 }
 
-fn reduce(editor: &mut Editor) {
+fn collapse(editor: &mut Editor) {
     let mut window = editor.focused_window_mut();
     window
         .selection_move()
-        .for_each_move(|mut range| range.reduce());
+        .for_each_move(|mut range| range.collapse());
     window.scroll_to_selection();
     editor.count = None;
 }

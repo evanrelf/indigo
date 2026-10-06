@@ -137,7 +137,7 @@ See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 - [x] `<c-b>` (scroll page up)
 - [x] `<c-f>` (scroll page down)
 - [x] `g` (goto mode)
-- [x] `;` (reduce to cursor)
+- [x] `;` (collapse to cursor)
 - [x] `,` (keep main selection only)
 - [ ] `<a-,>` (clear main selection)
 - [x] `<a-;>` (flip selection direction)
