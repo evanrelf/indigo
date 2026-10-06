@@ -35,6 +35,7 @@ by Kakoune and CodeMirror.
 - Never run `indigo`; you cannot control it. Run `indigo-cli` instead to test
   editor behavior. Read `crates/indigo-cli/README.md` for detailed instructions.
 - Run the `bin/compare-kak-suite` integration suite to compare Kakoune and
-  Indigo behavior when you finish your work (takes a while to run). If you feel
-  strongly that a new test case would be highly valuable, you have permission to
-  extend the suite.
+  Indigo behavior when you finish working on changes that affect editing
+  behavior. If you feel strongly that a new test case would be highly valuable,
+  you have permission to extend the suite.
+- Don't mention if you elect not to run a test (e.g. `bin/compare-kak-suite`).
