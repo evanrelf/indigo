@@ -667,7 +667,7 @@ mod tests {
         state
     }
 
-    #[hegel::test(test_cases = 1000)]
+    #[hegel::test(test_cases = 5_000)]
     fn sort_and_merge_overlapping_ranges(tc: hegel::TestCase) {
         let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(8));
         let ranges: Vec<RangeState> = (0..count)

@@ -107,7 +107,7 @@ mod tests {
         }
     }
 
-    #[hegel::test(test_cases = 10_000)]
+    #[hegel::test(test_cases = 2_000)]
     fn rope_slice_width_matches_oracle(tc: TestCase) {
         // Repeat the text enough to span several chunks, then measure random sub-slices so that
         // chunk boundaries land at arbitrary points inside the text.

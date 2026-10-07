@@ -914,7 +914,7 @@ impl<S: Wrap, T: Wrap> Drop for RangeView<'_, S, T> {
 mod tests {
     use super::*;
 
-    #[hegel::test]
+    #[hegel::test(test_cases = 3_000)]
     fn vertical_movement_resolves_and_reuses_goal_column(tc: hegel::TestCase) {
         use hegel::generators as gs;
 
@@ -1100,7 +1100,7 @@ mod tests {
         assert_eq!(from_start, from_end);
     }
 
-    #[hegel::test(test_cases = 1000)]
+    #[hegel::test(test_cases = 1_000)]
     fn fuzz(tc: hegel::TestCase) {
         use hegel::{TestCase, generators as gs};
 

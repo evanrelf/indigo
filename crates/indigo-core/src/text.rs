@@ -300,7 +300,7 @@ mod tests {
         assert!(has_trailing_newline(&text));
     }
 
-    #[hegel::test(test_cases = 500)]
+    #[hegel::test(test_cases = 1_000)]
     fn fuzz(tc: hegel::TestCase) {
         use crate::rope::RopeExt as _;
         use hegel::generators as gs;

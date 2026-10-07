@@ -867,7 +867,7 @@ mod tests {
         assert_eq!(cursor.byte_index(), 4);
     }
 
-    #[hegel::test(test_cases = 1000)]
+    #[hegel::test(test_cases = 1_000)]
     fn fuzz(tc: TestCase) {
         #[derive(Default)]
         struct StateMachine {

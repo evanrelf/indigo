@@ -203,7 +203,7 @@ mod tests {
     use hegel::{TestCase, generators as gs};
     use std::{cmp::max, iter::zip};
 
-    #[hegel::test(test_cases = 100)]
+    #[hegel::test(test_cases = 1_000)]
     fn test_last_write_wins(tc: TestCase) {
         #[derive(Default)]
         struct StateMachine {

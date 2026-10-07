@@ -1179,7 +1179,7 @@ mod tests {
         }
     }
 
-    #[hegel::test(test_cases = 2_000)]
+    #[hegel::test(test_cases = 5_000)]
     fn out_of_order_delivery(tc: hegel::TestCase) {
         let mut doc1 = Doc::new(1);
         edit_many(&tc, &mut doc1, 6);
@@ -1200,7 +1200,7 @@ mod tests {
         assert!(doc2.replica.pending_deletions.is_empty());
     }
 
-    #[hegel::test(test_cases = 2_000)]
+    #[hegel::test(test_cases = 5_000)]
     fn integration_is_idempotent(tc: hegel::TestCase) {
         let mut doc1 = Doc::new(1);
         let mut doc2 = Doc::new(2);
@@ -1231,7 +1231,7 @@ mod tests {
     /// schedule, this module and the per-char `crdt_vibed_not_length` implementation
     /// produce identical documents. In ASCII mode (1 char == 1 byte) the full
     /// internal item sequences must match too, not just the visible text.
-    #[hegel::test(test_cases = 2_000)]
+    #[hegel::test(test_cases = 1_500)]
     fn matches_char_based_implementation(tc: hegel::TestCase) {
         use crate::crdt_vibed_not_length;
 

@@ -611,7 +611,7 @@ mod tests {
         tc.draw(gen_edit_and_text(doc.clone())).0
     }
 
-    #[hegel::test(test_cases = 2_000)]
+    #[hegel::test(test_cases = 5_000)]
     fn apply_produces_expected_document(tc: hegel::TestCase) {
         let doc: String = tc.draw(gs::text());
         let (edit, expected) = tc.draw(gen_edit_and_text(doc.clone()));
@@ -622,7 +622,7 @@ mod tests {
         assert_eq!(rope, Rope::from(expected.as_str()));
     }
 
-    #[hegel::test(test_cases = 2_000)]
+    #[hegel::test(test_cases = 5_000)]
     fn invert_roundtrips(tc: hegel::TestCase) {
         let doc: String = tc.draw(gs::text());
         let edit = tc.draw(gen_edit(doc.clone()));
@@ -641,7 +641,7 @@ mod tests {
     }
 
     // Note [Canonical form]
-    #[hegel::test(test_cases = 2_000)]
+    #[hegel::test(test_cases = 5_000)]
     fn canonical_form_is_unique(tc: hegel::TestCase) {
         /// A `char` boundary near the middle of `s`.
         fn midpoint(s: &str) -> usize {
@@ -684,7 +684,7 @@ mod tests {
         assert_eq!(one, two);
     }
 
-    #[hegel::test(test_cases = 2_000)]
+    #[hegel::test(test_cases = 5_000)]
     fn compose_agrees_with_sequential_application(tc: hegel::TestCase) {
         let doc: String = tc.draw(gs::text());
         let a = tc.draw(gen_edit(doc.clone()));
@@ -700,7 +700,7 @@ mod tests {
         assert_eq!(composed, sequential);
     }
 
-    #[hegel::test(test_cases = 2_000)]
+    #[hegel::test(test_cases = 5_000)]
     fn compose_is_associative(tc: hegel::TestCase) {
         let doc: String = tc.draw(gs::text());
         let mut rope = Rope::from(doc.as_str());
@@ -717,7 +717,7 @@ mod tests {
         );
     }
 
-    #[hegel::test(test_cases = 2_000)]
+    #[hegel::test(test_cases = 5_000)]
     fn compose_with_identity_is_identity(tc: hegel::TestCase) {
         let doc: String = tc.draw(gs::text());
         let edit = tc.draw(gen_edit(doc.clone()));
@@ -733,7 +733,7 @@ mod tests {
 
     // TP1 convergence: rebasing with opposite biases converges regardless of which edit is applied
     // first.
-    #[hegel::test(test_cases = 2_000)]
+    #[hegel::test(test_cases = 5_000)]
     fn rebase_converges(tc: hegel::TestCase) {
         let doc: String = tc.draw(gs::text());
         let a = tc.draw(gen_edit(doc.clone()));
@@ -756,7 +756,7 @@ mod tests {
         assert_eq!(a_first, b_first);
     }
 
-    #[hegel::test(test_cases = 2_000)]
+    #[hegel::test(test_cases = 5_000)]
     fn transform_byte_indexes_preserves_order_and_validity(tc: hegel::TestCase) {
         let doc: String = tc.draw(gs::text());
         let edit = tc.draw(gen_edit(doc.clone()));

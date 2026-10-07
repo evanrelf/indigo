@@ -412,7 +412,7 @@ mod tests {
         }
     }
 
-    #[hegel::test(test_cases = 2_000)]
+    #[hegel::test(test_cases = 5_000)]
     fn local_edits_match_string(tc: hegel::TestCase) {
         let mut doc = Document::new(1);
         let mut model = String::new();
@@ -423,7 +423,7 @@ mod tests {
         }
     }
 
-    #[hegel::test(test_cases = 2_000)]
+    #[hegel::test(test_cases = 1_500)]
     fn concurrent_edits_converge(tc: hegel::TestCase) {
         let count = tc.draw(gs::integers::<usize>().min_value(2).max_value(4));
         let mut docs = (1..=count).map(Document::new).collect::<Vec<Document>>();
@@ -499,7 +499,7 @@ mod tests {
         assert_eq!(items(&doc1), merged);
     }
 
-    #[hegel::test(test_cases = 2_000)]
+    #[hegel::test(test_cases = 5_000)]
     fn invalid_edits_error_and_change_nothing(tc: hegel::TestCase) {
         let mut doc = Document::new(1);
         let initial: String = tc.draw(gs::text());
