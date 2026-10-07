@@ -55,7 +55,6 @@ fn keys(input: &mut &str) -> ModalResult<Keys> {
 }
 
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-#[cfg_attr(test, derive(hegel::PrettyPrintable))]
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Key {
     pub modifiers: KeyModifiers,
@@ -128,9 +127,6 @@ bitflags! {
     }
 }
 
-#[cfg(test)]
-hegel::pretty_print_as_debug!(KeyModifiers);
-
 impl FromStr for KeyModifiers {
     type Err = anyhow::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -175,7 +171,6 @@ fn key_modifiers(input: &mut &str) -> ModalResult<KeyModifiers> {
     Ok(modifiers)
 }
 
-#[cfg_attr(test, derive(hegel::PrettyPrintable))]
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum KeyCode {
     Backspace,
@@ -308,41 +303,6 @@ pub fn is(x: &Key, y: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hegel::{Generator, TestCase, generators as gs};
-
-    fn gen_key_modifiers() -> impl hegel::PrintableGenerator<KeyModifiers> {
-        gs::integers::<u8>()
-            .min_value(0)
-            .max_value(KeyModifiers::all().bits())
-            .map(KeyModifiers::from_bits_truncate)
-    }
-
-    fn gen_key_code() -> impl hegel::PrintableGenerator<KeyCode> {
-        let mut codes: Vec<KeyCode> = (b' '..=b'~')
-            .filter(|c| !b" #<>\\".contains(c))
-            .map(KeyCode::Char)
-            .collect();
-        codes.extend([
-            KeyCode::Backspace,
-            KeyCode::Delete,
-            KeyCode::Return,
-            KeyCode::Left,
-            KeyCode::Right,
-            KeyCode::Up,
-            KeyCode::Down,
-            KeyCode::Tab,
-            KeyCode::Escape,
-        ]);
-        gs::sampled_from(codes)
-    }
-
-    #[hegel::composite]
-    fn gen_key(tc: &TestCase) -> Key {
-        Key {
-            modifiers: tc.draw(gen_key_modifiers()),
-            code: tc.draw(gen_key_code()),
-        }
-    }
 
     #[test]
     fn random() {
@@ -394,12 +354,32 @@ mod tests {
         assert!("<s-c-a-c-a>".parse::<Key>().is_err());
     }
 
-    #[hegel::test(test_cases = 1000)]
-    fn key_roundtrip(tc: TestCase) {
-        let key = tc.draw(gen_key());
-        match key.to_string().parse::<Key>() {
-            Ok(parsed_key) => assert_eq!(key, parsed_key),
-            Err(e) => panic!("Failed to parse `{key:?}` printed as `{key}`:\n{e}"),
+    #[test]
+    fn key_roundtrip() {
+        let mut codes: Vec<KeyCode> = (b' '..=b'~')
+            .filter(|c| !b" #<>\\".contains(c))
+            .map(KeyCode::Char)
+            .collect();
+        codes.extend([
+            KeyCode::Backspace,
+            KeyCode::Delete,
+            KeyCode::Return,
+            KeyCode::Left,
+            KeyCode::Right,
+            KeyCode::Up,
+            KeyCode::Down,
+            KeyCode::Tab,
+            KeyCode::Escape,
+        ]);
+        for bits in 0..=KeyModifiers::all().bits() {
+            let modifiers = KeyModifiers::from_bits_truncate(bits);
+            for &code in &codes {
+                let key = Key { modifiers, code };
+                match key.to_string().parse::<Key>() {
+                    Ok(parsed_key) => assert_eq!(key, parsed_key),
+                    Err(e) => panic!("Failed to parse `{key:?}` printed as `{key}`:\n{e}"),
+                }
+            }
         }
     }
 
