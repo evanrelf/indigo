@@ -7,7 +7,7 @@ use crate::{
 use indigo_kernel::edit::{self, Edit};
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use regex_cursor::engines::meta::Regex;
-use ropey::Rope;
+use ropey::{Rope, RopeSlice};
 use std::{cmp::max, iter::zip, mem, thread};
 use thiserror::Error;
 
@@ -221,6 +221,13 @@ impl<'a, S: WrapRef, T: WrapRef> SelectionView<'a, S, T> {
                 .expect("Selection text and range state are always kept valid");
             f(i, range);
         }
+    }
+
+    pub fn contents(&self) -> impl Iterator<Item = RopeSlice<'_>> {
+        self.state.ranges.iter().map(|range| {
+            let start = range.start().byte_index;
+            self.text.slice(start..self.end_exclusive(range))
+        })
     }
 
     /// The exclusive byte offset one past a range's last grapheme.
