@@ -1,6 +1,7 @@
+use crate::IndigoBuildHasher;
 use std::{
     collections::{BTreeSet, HashSet},
-    hash::Hash,
+    hash::{BuildHasher, Hash},
     ops::Deref,
     sync::atomic::{AtomicUsize, Ordering},
 };
@@ -106,25 +107,32 @@ where
 }
 */
 
-pub struct GrowOnlyHashSet<T> {
-    set: HashSet<T>,
+pub struct GrowOnlyHashSet<T, S = IndigoBuildHasher> {
+    set: HashSet<T, S>,
 }
 
-impl<T> GrowOnlyHashSet<T> {
+impl<T, S> GrowOnlyHashSet<T, S> {
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new() -> Self
+    where
+        S: Default,
+    {
         Self::default()
     }
 
     pub fn insert(&mut self, value: T) -> bool
     where
         T: Eq + Hash,
+        S: BuildHasher,
     {
         self.set.insert(value)
     }
 }
 
-impl<T> Default for GrowOnlyHashSet<T> {
+impl<T, S> Default for GrowOnlyHashSet<T, S>
+where
+    S: Default,
+{
     fn default() -> Self {
         Self {
             set: HashSet::default(),
@@ -132,16 +140,17 @@ impl<T> Default for GrowOnlyHashSet<T> {
     }
 }
 
-impl<T> Deref for GrowOnlyHashSet<T> {
-    type Target = HashSet<T>;
+impl<T, S> Deref for GrowOnlyHashSet<T, S> {
+    type Target = HashSet<T, S>;
     fn deref(&self) -> &Self::Target {
         &self.set
     }
 }
 
-impl<T> Join for GrowOnlyHashSet<T>
+impl<T, S> Join for GrowOnlyHashSet<T, S>
 where
     T: Eq + Hash,
+    S: BuildHasher,
 {
     fn join(&mut self, mut other: Self) {
         self.set.extend(other.set.drain());

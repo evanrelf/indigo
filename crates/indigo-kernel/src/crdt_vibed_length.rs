@@ -776,6 +776,7 @@ pass first drops copies whose op has since been applied.
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::IndigoBuildHasher;
     use hegel::generators as gs;
     use std::collections::{HashMap, HashSet};
 
@@ -803,9 +804,9 @@ mod tests {
         /// Every op this doc knows, own and received, in a causally valid
         /// order (its own integration order).
         history: Vec<(OpId, Op)>,
-        known: HashSet<OpId>,
+        known: HashSet<OpId, IndigoBuildHasher>,
         /// Texts of known insertions, for resolving `BufferEdit::Insert`s.
-        texts: HashMap<(ReplicaId, usize), String>,
+        texts: HashMap<(ReplicaId, usize), String, IndigoBuildHasher>,
         authored: usize,
     }
 
@@ -816,8 +817,8 @@ mod tests {
                 buffer: String::new(),
                 replica: Replica::new(rid(id), 0),
                 history: Vec::new(),
-                known: HashSet::new(),
-                texts: HashMap::new(),
+                known: HashSet::default(),
+                texts: HashMap::default(),
                 authored: 0,
             }
         }

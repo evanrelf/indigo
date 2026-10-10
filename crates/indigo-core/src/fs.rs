@@ -2,6 +2,7 @@
 
 use anyhow::anyhow;
 use camino::{Utf8Path, Utf8PathBuf};
+use indigo_kernel::IndigoBuildHasher;
 use std::{
     collections::HashMap,
     fs,
@@ -69,7 +70,7 @@ impl Fs for RealFs {
 /// (i.e. absolute, normalized, and no symlinks).
 #[derive(Default)]
 pub struct TestFs {
-    pub files: Arc<Mutex<HashMap<Utf8PathBuf, Vec<u8>>>>,
+    pub files: Arc<Mutex<HashMap<Utf8PathBuf, Vec<u8>, IndigoBuildHasher>>>,
 }
 
 impl Fs for TestFs {

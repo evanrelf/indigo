@@ -7,6 +7,7 @@
 
 #![expect(clippy::doc_markdown)] // Clippy thinks "FugueMax" is missing backticks
 
+use crate::IndigoBuildHasher;
 use std::{collections::HashMap, ops::Range};
 
 pub struct Document {
@@ -239,7 +240,7 @@ struct Item {
 }
 
 #[derive(Default)]
-struct Version(HashMap<DocumentId, usize>);
+struct Version(HashMap<DocumentId, usize, IndigoBuildHasher>);
 
 impl Version {
     fn contains(&self, id: ItemId) -> bool {
