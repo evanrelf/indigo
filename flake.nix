@@ -19,14 +19,18 @@
 
       perSystem = { config, inputs', lib, pkgs, system, ... }:
         let
+          toolchain = inputs'.fenix.packages.combine [
+            inputs'.fenix.packages.default.toolchain
+            inputs'.fenix.packages.complete.rust-src
+          ];
+
           crane =
-            (inputs.crane.mkLib pkgs).overrideToolchain
-              inputs'.fenix.packages.default.toolchain;
+            (inputs.crane.mkLib pkgs).overrideToolchain toolchain;
 
           craneStatic =
             (inputs.crane.mkLib pkgs.pkgsStatic).overrideToolchain (_:
               inputs'.fenix.packages.combine [
-                inputs'.fenix.packages.default.toolchain
+                toolchain
                 inputs'.fenix.packages.targets.${pkgs.pkgsStatic.stdenv.hostPlatform.rust.rustcTarget}.latest.rust-std
               ]);
 
