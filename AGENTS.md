@@ -20,6 +20,9 @@ by Kakoune and CodeMirror.
 
 ## Code style
 
+- Keep the core crates (`indigo-kernel`, `indigo-core`) deterministic. For
+  example, `Hash{Map,Set}` must use `indigo_kernel::IndigoBuildHasher`. If you
+  notice existing sources of nondeterminism, call them out so we can fix it.
 - The `indigo-kernel` crate prefers GHC-style note comments, albeit sparingly.
   See its `edit` and `grapheme` modules for examples.
 - Prefer `std::{cmp::{min,max}, iter::zip}` functions over method variants.
