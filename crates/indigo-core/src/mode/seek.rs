@@ -122,7 +122,7 @@ fn seek(editor: &mut Editor, byte: u8) {
         let Mode::Seek(seek_mode) = &editor.mode else {
             panic!("Not in seek mode")
         };
-        let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
+        let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
         (
             seek_mode.select,
             seek_mode.include,
@@ -148,5 +148,4 @@ fn seek(editor: &mut Editor, byte: u8) {
     window.selection_move().merge_overlapping();
 
     window.scroll_to_selection();
-    editor.count = None;
 }

@@ -264,91 +264,83 @@ pub fn enter(editor: &mut Editor) {
 }
 
 fn extend_left(editor: &mut Editor) {
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
         .selection_move()
         .for_each_move(|mut range| range.extend_left(count));
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn move_left(editor: &mut Editor) {
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
         .selection_move()
         .for_each_move(|mut range| range.move_left(count));
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn extend_right(editor: &mut Editor) {
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
         .selection_move()
         .for_each_move(|mut range| range.extend_right(count));
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn move_right(editor: &mut Editor) {
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
         .selection_move()
         .for_each_move(|mut range| range.move_right(count));
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn extend_up(editor: &mut Editor) {
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
         .selection_move()
         .for_each_move(|mut range| range.extend_up(count));
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn move_up(editor: &mut Editor) {
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
         .selection_move()
         .for_each_move(|mut range| range.move_up(count));
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn extend_down(editor: &mut Editor) {
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
         .selection_move()
         .for_each_move(|mut range| range.extend_down(count));
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn move_down(editor: &mut Editor) {
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window
         .selection_move()
         .for_each_move(|mut range| range.move_down(count));
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn flip(editor: &mut Editor) {
@@ -377,19 +369,17 @@ fn keep_primary(editor: &mut Editor) {
 }
 
 fn rotate_primary_backward(editor: &mut Editor) {
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window.selection_move().rotate_primary_backward(count);
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn rotate_primary_forward(editor: &mut Editor) {
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     window.selection_move().rotate_primary_forward(count);
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn collapse(editor: &mut Editor) {
@@ -414,12 +404,11 @@ fn delete(editor: &mut Editor) {
 }
 
 fn undo(editor: &mut Editor) {
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
-        editor.count = None;
         return;
     }
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     for _ in 1..=count {
         if !window.undo().unwrap() {
@@ -427,16 +416,14 @@ fn undo(editor: &mut Editor) {
         }
     }
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn redo(editor: &mut Editor) {
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
-        editor.count = None;
         return;
     }
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     for _ in 1..=count {
         if !window.redo().unwrap() {
@@ -444,7 +431,6 @@ fn redo(editor: &mut Editor) {
         }
     }
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn select_all(editor: &mut Editor) {
@@ -546,13 +532,12 @@ fn insert_at_line_end(editor: &mut Editor) {
 }
 
 fn insert_line_above(editor: &mut Editor) {
+    // TODO: Insert multiple cursors (like Kakoune) when count > 1
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
-        editor.count = None;
         return;
     }
-    // TODO: Insert multiple cursors (like Kakoune) when count > 1
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     // TODO: Switch to selection-level insert
     window.selection_edit().for_each_edit(|mut range| {
@@ -564,17 +549,15 @@ fn insert_line_above(editor: &mut Editor) {
     });
     window.scroll_to_selection();
     editor.mode = Mode::Insert;
-    editor.count = None;
 }
 
 fn insert_line_below(editor: &mut Editor) {
+    // TODO: Insert multiple cursors (like Kakoune) when count > 1
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
-        editor.count = None;
         return;
     }
-    // TODO: Insert multiple cursors (like Kakoune) when count > 1
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     // TODO: Switch to selection-level insert
     window.selection_edit().for_each_edit(|mut range| {
@@ -585,16 +568,14 @@ fn insert_line_below(editor: &mut Editor) {
     });
     window.scroll_to_selection();
     editor.mode = Mode::Insert;
-    editor.count = None;
 }
 
 fn add_line_above(editor: &mut Editor) {
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
-        editor.count = None;
         return;
     }
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     // TODO: Switch to selection-level insert
     window.selection_edit().for_each_edit(|mut range| {
@@ -607,16 +588,14 @@ fn add_line_above(editor: &mut Editor) {
     });
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn add_line_below(editor: &mut Editor) {
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
-        editor.count = None;
         return;
     }
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     // TODO: Switch to selection-level insert
     window.selection_edit().for_each_edit(|mut range| {
@@ -629,11 +608,10 @@ fn add_line_below(editor: &mut Editor) {
     });
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn goto_move_to_line(editor: &mut Editor) {
-    let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = editor.focused_window_mut();
     let rope = window.buffer().text.rope().clone();
     let line_index = min(count - 1, rope.len_lines_unix() - 1);
@@ -643,7 +621,6 @@ fn goto_move_to_line(editor: &mut Editor) {
         .for_each_move(|mut range| range.move_to(byte_index));
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn goto_move_to_start(editor: &mut Editor) {
