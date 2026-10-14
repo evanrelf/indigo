@@ -460,13 +460,6 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
     }
 
     pub fn insert(&mut self, text: &str) -> Edit {
-        debug_assert!(
-            self.state
-                .ranges
-                .is_sorted_by_key(|range| range.start().byte_index),
-            "this function relies on selection ranges' starts being sorted",
-            // ...prior to it becoming a type-level invariant
-        );
         let mut ops = Edit::new();
         let mut previous = 0;
         for range in &self.state.ranges {
@@ -535,13 +528,6 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
 
     pub fn replace_each(&mut self, byte: u8) -> Edit {
         self.state.merge_overlapping();
-        debug_assert!(
-            self.state
-                .ranges
-                .is_sorted_by_key(|range| range.start().byte_index),
-            "this function relies on selection ranges' starts being sorted",
-            // ...prior to it becoming a type-level invariant
-        );
         let replacement = char::from(byte).to_string();
         let mut ops = Edit::new();
         let mut previous = 0;
@@ -578,13 +564,6 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
     }
 
     pub fn delete_before(&mut self) -> Edit {
-        debug_assert!(
-            self.state
-                .ranges
-                .is_sorted_by_key(|range| range.start().byte_index),
-            "this function relies on selection ranges' starts being sorted",
-            // ...prior to it becoming a type-level invariant
-        );
         let mut ops = Edit::new();
         let mut previous = 0;
         for range in &self.state.ranges {
@@ -607,13 +586,6 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
 
     pub fn delete(&mut self) -> Edit {
         self.state.merge_overlapping();
-        debug_assert!(
-            self.state
-                .ranges
-                .is_sorted_by_key(|range| range.start().byte_index),
-            "this function relies on selection ranges' starts being sorted",
-            // ...prior to it becoming a type-level invariant
-        );
         let spans: Vec<(usize, usize)> = self
             .state
             .ranges
@@ -654,13 +626,6 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
     }
 
     pub fn delete_after(&mut self) -> Edit {
-        debug_assert!(
-            self.state
-                .ranges
-                .is_sorted_by_key(|range| range.start().byte_index),
-            "this function relies on selection ranges' starts being sorted",
-            // ...prior to it becoming a type-level invariant
-        );
         let mut ops = Edit::new();
         let mut previous = 0;
         for range in &self.state.ranges {
