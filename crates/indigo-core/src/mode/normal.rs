@@ -428,9 +428,7 @@ fn paste_after(editor: &mut Editor) {
         editor.message = Some(Err(String::from("Buffer is readonly")));
         return;
     }
-    let Some(values) = editor.registers.get(&'"').cloned() else {
-        return;
-    };
+    let values = editor.registers.get(&'"').cloned().unwrap_or_default();
     let mut window = editor.focused_window_mut();
     for _ in 1..=count {
         window.selection_edit().paste_after(&values);

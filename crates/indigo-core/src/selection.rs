@@ -477,10 +477,8 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
     }
 
     pub fn paste_after(&mut self, values: &[String]) -> Edit {
-        debug_assert!(
-            !values.is_empty() && values.iter().all(|value| !value.is_empty()),
-            "Values are never empty"
-        );
+        const NOTHING: &[String] = &[String::new()];
+        let values = if values.is_empty() { NOTHING } else { values };
         debug_assert!(
             self.state
                 .ranges
@@ -508,7 +506,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
             let value = &values[i % values.len()];
             ops.insert(value);
             output_position += value.len();
-            if position == self.text.len() && !value.ends_with('\n') {
+            if position == self.text.len() && !value.is_empty() && !value.ends_with('\n') {
                 // Pasted after the final newline; restore the `Text` invariant.
                 ops.insert("\n");
                 output_position += 1;
@@ -518,15 +516,20 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
         }
         ops.retain_rest(&self.text)
             .expect("Operations fit within text");
-        self.text.apply(&ops).expect("Operations are well formed");
+        // An empty paste only moves the selection; keep the no-op edit out of the history.
+        if ops != Edit::identity(&self.text) {
+            self.text.apply(&ops).expect("Operations are well formed");
+        }
         for (range, (start, end_exclusive)) in zip(&mut self.state.ranges, spans) {
+            // An empty value selects the insertion point.
+            let last = max(start, end_exclusive.saturating_sub(1));
             let start = self
                 .text
                 .snap_to_grapheme_start(start)
                 .expect("Text is never empty");
             let end = self
                 .text
-                .snap_to_grapheme_start(end_exclusive - 1)
+                .snap_to_grapheme_start(last)
                 .expect("Text is never empty");
             *range = range.with_bounds(start, end);
         }
