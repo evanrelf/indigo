@@ -6,8 +6,9 @@ use crate::{
     window::{Window, WindowKey, WindowMut, WindowState},
 };
 use camino::Utf8PathBuf;
+use indigo_kernel::IndigoBuildHasher;
 use slotmap::SlotMap;
-use std::{num::NonZeroUsize, process::ExitCode, sync::Arc};
+use std::{collections::HashMap, num::NonZeroUsize, process::ExitCode, sync::Arc};
 use thiserror::Error;
 
 #[cfg(feature = "arbitrary")]
@@ -48,6 +49,7 @@ pub struct Editor {
     buffers: SlotMap<BufferKey, Buffer>,
     windows: SlotMap<WindowKey, WindowState>,
     focused_window: WindowKey,
+    pub registers: HashMap<char, Vec<String>, IndigoBuildHasher>,
     pub mode: Mode,
     pub count: Option<NonZeroUsize>,
     pub pending_keys: Vec<Key>,
@@ -261,6 +263,7 @@ impl Default for Editor {
             buffers,
             windows,
             focused_window: window_key,
+            registers: HashMap::default(),
             mode: Mode::default(),
             count: None,
             pending_keys: Vec::new(),
