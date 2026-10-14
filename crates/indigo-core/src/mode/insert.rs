@@ -80,6 +80,7 @@ pub fn handle_keys(editor: &mut Editor) -> bool {
 pub fn enter(editor: &mut Editor) {
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.count = None;
         return;
     }
     let mut window = editor.focused_window_mut();

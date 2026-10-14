@@ -503,6 +503,7 @@ fn select_regex(editor: &mut Editor) {
 fn insert_after_head(editor: &mut Editor) {
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.count = None;
         return;
     }
     let mut window = editor.focused_window_mut();
@@ -517,6 +518,7 @@ fn insert_after_head(editor: &mut Editor) {
 fn insert_at_line_non_blank_start(editor: &mut Editor) {
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.count = None;
         return;
     }
     let mut window = editor.focused_window_mut();
@@ -531,6 +533,7 @@ fn insert_at_line_non_blank_start(editor: &mut Editor) {
 fn insert_at_line_end(editor: &mut Editor) {
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.count = None;
         return;
     }
     let mut window = editor.focused_window_mut();
@@ -545,6 +548,7 @@ fn insert_at_line_end(editor: &mut Editor) {
 fn insert_line_above(editor: &mut Editor) {
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.count = None;
         return;
     }
     // TODO: Insert multiple cursors (like Kakoune) when count > 1
@@ -566,6 +570,7 @@ fn insert_line_above(editor: &mut Editor) {
 fn insert_line_below(editor: &mut Editor) {
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.count = None;
         return;
     }
     // TODO: Insert multiple cursors (like Kakoune) when count > 1
@@ -586,6 +591,7 @@ fn insert_line_below(editor: &mut Editor) {
 fn add_line_above(editor: &mut Editor) {
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.count = None;
         return;
     }
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
@@ -607,6 +613,7 @@ fn add_line_above(editor: &mut Editor) {
 fn add_line_below(editor: &mut Editor) {
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.count = None;
         return;
     }
     let count = editor.count.unwrap_or(NonZeroUsize::MIN).get();
