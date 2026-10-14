@@ -283,6 +283,11 @@ same 'ab cd ef\n' '%s\\w+<ret>y)),p'
 same 'ab\n' 'ygep;iX<esc>'
 same 'ab\n' 'ygepd'
 same 'ab\n' 'y3pcX<esc>'
+same 'ab\ncd\nef\n' 'xyjp'
+same 'ab\ncd\nef\n' 'lLyjlp'
+same 'ab\ncd\n' '%ygep'
+same 'ab\ncd\nef\ngh\n' '%sb\\n|f\\n<ret>y%sa|g<ret>p'
+same 'ab\ncd\nef\ngh\n' '%sa|f\\n<ret>y%sa|g<ret>p'
 
 # Undo and redo
 

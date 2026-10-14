@@ -487,12 +487,20 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
                 .is_sorted_by_key(|range| range.end().byte_index),
             "this function relies on selection ranges' ends being sorted",
         );
+        let linewise = values.iter().all(|value| value.ends_with('\n'));
         let mut ops = Edit::new();
         let mut previous = 0;
         let mut output_position = 0;
         let mut spans = Vec::with_capacity(self.state.ranges.len());
         for (i, range) in self.state.ranges.iter().enumerate() {
-            let position = self.end_exclusive(range);
+            let position = if linewise {
+                let line = self
+                    .text
+                    .byte_to_line_idx(range.end().byte_index, LINE_TYPE);
+                self.text.line_to_byte_idx(line + 1, LINE_TYPE)
+            } else {
+                self.end_exclusive(range)
+            };
             let retained = position - previous;
             ops.retain(retained);
             output_position += retained;
