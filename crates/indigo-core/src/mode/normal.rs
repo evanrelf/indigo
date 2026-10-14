@@ -423,19 +423,19 @@ fn yank(editor: &mut Editor) {
 }
 
 fn paste_after(editor: &mut Editor) {
+    let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
-        editor.count = None;
         return;
     }
     let Some(values) = editor.registers.get(&'"').cloned() else {
-        editor.count = None;
         return;
     };
     let mut window = editor.focused_window_mut();
-    window.selection_edit().paste_after(&values);
+    for _ in 1..=count {
+        window.selection_edit().paste_after(&values);
+    }
     window.scroll_to_selection();
-    editor.count = None;
 }
 
 fn undo(editor: &mut Editor) {
