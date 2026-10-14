@@ -25,6 +25,7 @@ use arbitrary::Arbitrary;
 pub enum Action {
     AppendCountDigit(u8),
     ClearCount,
+    Commit,
     EnterNormalMode,
     EnterCommandMode,
     EnterInsertMode,
@@ -143,12 +144,12 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "x" => vec![ExpandToFullLines],
         "s" => vec![SelectRegex],
         "<a-s>" => vec![SplitIntoLines],
-        "d" => vec![Delete],
+        "d" => vec![Delete, Commit],
         "c" => vec![Delete, EnterInsertMode],
         "O" => vec![InsertLineAbove],
         "o" => vec![InsertLineBelow],
-        "<a-O>" => vec![AddLineAbove],
-        "<a-o>" => vec![AddLineBelow],
+        "<a-O>" => vec![AddLineAbove, Commit],
+        "<a-o>" => vec![AddLineBelow, Commit],
         "u" => vec![Undo],
         "U" => vec![Redo],
         "<c-u>" => vec![ScrollHalfPageUp],
@@ -176,6 +177,7 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
             editor.count = new_count;
         }
         Action::ClearCount => editor.count = None,
+        Action::Commit => editor.focused_buffer_mut().text.commit(),
         Action::EnterNormalMode => enter(editor),
         Action::EnterCommandMode => enter_command_mode(editor),
         Action::EnterInsertMode => insert::enter(editor),

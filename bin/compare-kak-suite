@@ -278,6 +278,13 @@ same 'abc\n' 'iXY<bs>Z<esc>u'
 same 'abc\n' 'lLduUd'
 same 'abc\n' 'rXu'
 same 'abc\n' 'ldu'
+same 'abcd\n' 'ldldu'
+same 'ab cd\n' 'ldiX<esc>u'
+same 'ab cd\n' 'lLcX<esc>u'
+same 'ab\ncd\n' '<a-o><a-o>u'
+same 'ab\ncd\n' '<a-o>iX<esc>u'
+same 'ab\ncd\n' 'd<a-o>u'
+same 'ab\ncd\n' 'j<a-O><a-O>u'
 
 # Buffer edge cases
 
