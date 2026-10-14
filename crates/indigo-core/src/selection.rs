@@ -483,6 +483,56 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
         ops
     }
 
+    pub fn paste_after(&mut self, values: &[String]) -> Edit {
+        debug_assert!(
+            !values.is_empty() && values.iter().all(|value| !value.is_empty()),
+            "Values are never empty"
+        );
+        debug_assert!(
+            self.state
+                .ranges
+                .is_sorted_by_key(|range| range.end().byte_index),
+            "this function relies on selection ranges' ends being sorted",
+        );
+        let mut ops = Edit::new();
+        let mut previous = 0;
+        let mut output_position = 0;
+        let mut spans = Vec::with_capacity(self.state.ranges.len());
+        for (i, range) in self.state.ranges.iter().enumerate() {
+            let position = self.end_exclusive(range);
+            let retained = position - previous;
+            ops.retain(retained);
+            output_position += retained;
+            let start = output_position;
+            let value = &values[i % values.len()];
+            ops.insert(value);
+            output_position += value.len();
+            if position == self.text.len() && !value.ends_with('\n') {
+                // Pasted after the final newline; restore the `Text` invariant.
+                ops.insert("\n");
+                output_position += 1;
+            }
+            spans.push((start, output_position));
+            previous = position;
+        }
+        ops.retain_rest(&self.text)
+            .expect("Operations fit within text");
+        self.text.apply(&ops).expect("Operations are well formed");
+        for (range, (start, end_exclusive)) in zip(&mut self.state.ranges, spans) {
+            let start = self
+                .text
+                .snap_to_grapheme_start(start)
+                .expect("Text is never empty");
+            let end = self
+                .text
+                .snap_to_grapheme_start(end_exclusive - 1)
+                .expect("Text is never empty");
+            *range = range.with_bounds(start, end);
+        }
+        self.invalidate_goal_columns();
+        ops
+    }
+
     pub fn replace_each(&mut self, byte: u8) -> Edit {
         self.state.merge_overlapping();
         debug_assert!(

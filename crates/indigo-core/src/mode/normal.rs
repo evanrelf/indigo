@@ -74,6 +74,8 @@ pub enum Action {
     SplitIntoLines,
     SelectRegex,
     Delete,
+    Yank,
+    PasteAfter,
     Undo,
     Redo,
     ScrollHalfPageUp,
@@ -146,6 +148,8 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<a-s>" => vec![SplitIntoLines],
         "d" => vec![Delete, Commit],
         "c" => vec![Delete, EnterInsertMode],
+        "y" => vec![Yank],
+        "p" => vec![PasteAfter, Commit],
         "O" => vec![InsertLineAbove],
         "o" => vec![InsertLineBelow],
         "<a-O>" => vec![AddLineAbove, Commit],
@@ -228,6 +232,8 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
         Action::SplitIntoLines => split_into_lines(editor),
         Action::SelectRegex => select_regex(editor),
         Action::Delete => delete(editor),
+        Action::Yank => yank(editor),
+        Action::PasteAfter => paste_after(editor),
         Action::Undo => undo(editor),
         Action::Redo => redo(editor),
         Action::ScrollHalfPageUp => scroll_half_page_up(editor),
@@ -399,6 +405,33 @@ fn delete(editor: &mut Editor) {
     }
     let mut window = editor.focused_window_mut();
     window.selection_edit().delete();
+    window.scroll_to_selection();
+    editor.count = None;
+}
+
+fn yank(editor: &mut Editor) {
+    let values = editor
+        .focused_window()
+        .selection()
+        .contents()
+        .map(String::from)
+        .collect();
+    editor.registers.insert('"', values);
+    editor.count = None;
+}
+
+fn paste_after(editor: &mut Editor) {
+    if editor.focused_buffer().text.readonly {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        editor.count = None;
+        return;
+    }
+    let Some(values) = editor.registers.get(&'"').cloned() else {
+        editor.count = None;
+        return;
+    };
+    let mut window = editor.focused_window_mut();
+    window.selection_edit().paste_after(&values);
     window.scroll_to_selection();
     editor.count = None;
 }

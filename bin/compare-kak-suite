@@ -266,6 +266,23 @@ same 'abc\n' 'lr<ret>'
 same 'abc\n' 'lr<tab>'
 same 'abc\n' '3rX'
 
+# Yank and paste
+
+same 'ab cd\n' 'yp'
+same 'ab cd\n' 'lllLypd'
+same 'ab cd\n' 'lllLyp;iX<esc>'
+same 'ab cd\n' 'lllLy<a-;>p;iX<esc>'
+same 'ab cd\n' 'lllL<a-;>y<a-;>p;iX<esc>'
+same 'ab cd ef\n' '%s\\w+<ret>yp'
+# Selection `i` gets value `i % values`, regardless of which is primary.
+same 'ab cd ef\n' '%s\\w+<ret>,y%s\\w+<ret>p'
+same 'ab cd ef gh\n' '%sab|cd<ret>y%s\\w+<ret>p'
+same 'ab cd ef\n' '%s\\w+<ret>y%scd|ef<ret>p'
+same 'ab cd ef\n' '%s\\w+<ret>y),p'
+same 'ab cd ef\n' '%s\\w+<ret>y)),p'
+same 'ab\n' 'ygep;iX<esc>'
+same 'ab\n' 'ygepd'
+
 # Undo and redo
 
 same 'abc\n' 'iX<esc>u'
