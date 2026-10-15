@@ -9,7 +9,7 @@ pub use crate::{
     key::{Key, KeyCode, KeyModifiers, Keys},
     mode::Mode,
     range::{Range, RangeEdit},
-    rope::{Bias, RopeExt},
+    rope::RopeExt,
     text::Text,
     window::{Window, WindowMut},
 };

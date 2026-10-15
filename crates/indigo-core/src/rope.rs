@@ -9,17 +9,7 @@ use regex_cursor::{Cursor, IntoCursor};
 use ropey::{LineType, Rope, RopeSlice};
 use std::ops::{Bound, RangeBounds};
 
-#[cfg(feature = "arbitrary")]
-use arbitrary::Arbitrary;
-
 pub const LINE_TYPE: LineType = LineType::LF_CR;
-
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Bias {
-    Before,
-    After,
-}
 
 pub trait RopeExt {
     fn as_slice(&self) -> RopeSlice<'_>;
@@ -156,18 +146,6 @@ pub trait RopeExt {
     fn last_grapheme_start(&self) -> Option<usize> {
         let rope = self.as_slice();
         prev_grapheme_boundary(&rope, rope.len())
-    }
-
-    fn offset_to_index(&self, byte_offset: usize, bias: Bias) -> Option<usize> {
-        let rope = self.as_slice();
-        let byte_offset = byte_offset.min(rope.len());
-        let byte_index = match bias {
-            Bias::Before if is_grapheme_boundary(&rope, byte_offset) => {
-                prev_grapheme_boundary(&rope, byte_offset).unwrap_or(0)
-            }
-            Bias::After | Bias::Before => byte_offset,
-        };
-        self.snap_to_grapheme_start(byte_index)
     }
 
     fn prev_grapheme_boundary(&self, byte_offset: usize) -> Option<usize> {
