@@ -497,38 +497,50 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
         let mut ops = Edit::new();
         let mut previous = 0;
         let mut output_position = 0;
+        // The last byte of the output so far, to keep the `Text` invariant.
+        let mut last_byte = None;
         let mut spans = Vec::with_capacity(self.state.ranges.len());
         for (i, range) in self.state.ranges.iter().enumerate() {
-            let position = match (paste_position, linewise) {
-                (PastePosition::Before, false) => range.start().byte_index,
+            // The text to replace; empty when only inserting.
+            let at = |offset| offset..offset;
+            let replaced = match (paste_position, linewise) {
+                (PastePosition::Before, false) => at(range.start().byte_index),
                 (PastePosition::Before, true) => {
                     let line = self
                         .text
                         .byte_to_line_idx(range.start().byte_index, LINE_TYPE);
-                    self.text.line_to_byte_idx(line, LINE_TYPE)
+                    at(self.text.line_to_byte_idx(line, LINE_TYPE))
                 }
-                (PastePosition::After, false) => self.end_exclusive(range),
+                (PastePosition::After, false) => at(self.end_exclusive(range)),
                 (PastePosition::After, true) => {
                     let line = self
                         .text
                         .byte_to_line_idx(range.end().byte_index, LINE_TYPE);
-                    self.text.line_to_byte_idx(line + 1, LINE_TYPE)
+                    at(self.text.line_to_byte_idx(line + 1, LINE_TYPE))
                 }
             };
-            let retained = position - previous;
+            let retained = replaced.start - previous;
             ops.retain(retained);
             output_position += retained;
+            if retained > 0 {
+                last_byte = Some(self.text.byte(replaced.start - 1));
+            }
+            ops.delete(&self.text.slice(replaced.clone()).to_string());
             let start = output_position;
             let value = &values[i % values.len()];
             ops.insert(value);
             output_position += value.len();
-            if position == self.text.len() && !value.is_empty() && !value.ends_with('\n') {
-                // Pasted after the final newline; restore the `Text` invariant.
+            if let Some(&byte) = value.as_bytes().last() {
+                last_byte = Some(byte);
+            }
+            if replaced.end == self.text.len() && last_byte != Some(b'\n') {
+                // The edit reaches the end of the text; restore the `Text` invariant.
                 ops.insert("\n");
                 output_position += 1;
+                last_byte = Some(b'\n');
             }
             spans.push((start, output_position));
-            previous = position;
+            previous = replaced.end;
         }
         ops.retain_rest(&self.text)
             .expect("Operations fit within text");
