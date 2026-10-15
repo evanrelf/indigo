@@ -1,12 +1,11 @@
 use crate::key::{Key, Keys};
 use arrayvec::ArrayVec;
-use std::iter;
+use std::{iter, mem};
 
 struct Trie<K, V> {
     root: Node<K, V>,
 }
 
-#[expect(unused)]
 impl<K, V> Trie<K, V> {
     #[must_use]
     fn new() -> Self {
@@ -231,8 +230,14 @@ enum TrieResult<T> {
     Found(T),
 }
 
+struct Entry<V> {
+    value: V,
+    order: u16,
+}
+
 pub struct Keymap<V> {
-    mappings: Trie<Key, V>,
+    mappings: Trie<Key, Entry<V>>,
+    next_order: u16,
     fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<'a, V>,
 }
 
@@ -241,6 +246,7 @@ impl<V> Keymap<V> {
     pub fn new() -> Self {
         Self {
             mappings: Trie::new(),
+            next_order: 0,
             fallback: |_, _| KeymapResult::Unmapped,
         }
     }
@@ -250,7 +256,14 @@ impl<V> Keymap<V> {
         for key in &mut keys.0 {
             key.normalize();
         }
-        self.mappings.insert(&keys.0, value)
+        if let TrieResult::Found(entry) = self.mappings.get_mut(&keys.0) {
+            // Keep original place in order, like `IndexMap::insert`
+            return Some(mem::replace(&mut entry.value, value));
+        }
+        let order = self.next_order;
+        self.next_order = order.checked_add(1).expect("wow that's a lotta keys");
+        self.mappings.insert(&keys.0, Entry { value, order });
+        None
     }
 
     pub fn remove(&mut self, keys: &str) -> Option<V> {
@@ -258,7 +271,7 @@ impl<V> Keymap<V> {
         for key in &mut keys.0 {
             key.normalize();
         }
-        self.mappings.remove(&keys.0)
+        self.mappings.remove(&keys.0).map(|entry| entry.value)
     }
 
     pub fn set_fallback(&mut self, fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<'a, V>) {
@@ -274,7 +287,7 @@ impl<V> Keymap<V> {
         match self.mappings.get(&keys.0) {
             TrieResult::Missing => (self.fallback)(self, &keys.0),
             TrieResult::Partial => KeymapResult::Pending,
-            TrieResult::Found(value) => KeymapResult::Mapped(value),
+            TrieResult::Found(entry) => KeymapResult::Mapped(&entry.value),
         }
     }
 
@@ -283,12 +296,14 @@ impl<V> Keymap<V> {
         match self.mappings.get(keys) {
             TrieResult::Missing => (self.fallback)(self, keys),
             TrieResult::Partial => KeymapResult::Pending,
-            TrieResult::Found(value) => KeymapResult::Mapped(value),
+            TrieResult::Found(entry) => KeymapResult::Mapped(&entry.value),
         }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (ArrayVec<Key, 3>, &V)> + '_ {
-        self.mappings.iter::<3>()
+        let mut pairs: Vec<_> = self.mappings.iter::<3>().collect();
+        pairs.sort_by_key(|(_, entry)| entry.order);
+        pairs.into_iter().map(|(keys, entry)| (keys, &entry.value))
     }
 }
 
@@ -296,11 +311,7 @@ impl<'a, V> IntoIterator for &'a Keymap<V> {
     type Item = (ArrayVec<Key, 3>, &'a V);
     type IntoIter = std::vec::IntoIter<(ArrayVec<Key, 3>, &'a V)>;
     fn into_iter(self) -> Self::IntoIter {
-        let mut pairs = Vec::new();
-        self.mappings
-            .root
-            .collect_pairs::<3>(&mut ArrayVec::new(), &mut pairs);
-        pairs.into_iter()
+        self.iter().collect::<Vec<_>>().into_iter()
     }
 }
 
@@ -463,14 +474,27 @@ mod tests {
 
     #[test]
     fn keymap_iter() {
-        let keymap = keymap! {
-            "gj" => vec![Action("move to bottom")],
+        let mut keymap = keymap! {
             "gk" => vec![Action("move to top")],
+            "x" => vec![Action("select line")],
+            "gj" => vec![Action("move to bottom")],
         };
-        let mut pairs: Vec<_> = keymap.iter().collect();
-        pairs.sort_by_key(|(keys, _)| keys.clone());
-        assert_eq!(pairs.len(), 2);
-        assert_eq!(pairs[0].1, &vec![Action("move to bottom")]);
-        assert_eq!(pairs[1].1, &vec![Action("move to top")]);
+        let values = |keymap: &Keymap<Vec<Action>>| {
+            keymap
+                .iter()
+                .map(|(keys, value)| (Keys(keys.to_vec()).to_string(), value[0].0))
+                .collect::<Vec<_>>()
+        };
+        // insertion order, not trie order
+        assert_eq!(
+            values(&keymap),
+            [
+                (String::from("gk"), "move to top"),
+                (String::from("x"), "select line"),
+                (String::from("gj"), "move to bottom"),
+            ]
+        );
+        // reinserting keeps the original position
+        keymap.insert("gk", vec![Action("goto top")]);
     }
 }
