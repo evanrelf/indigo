@@ -591,7 +591,13 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
                 output_position += 1;
                 last_byte = Some(b'\n');
             }
-            spans.push((start, output_position));
+            // Like Kakoune, pasting selects a restored final newline, but replacing doesn't.
+            let end = if paste_mode == PasteMode::Replace {
+                start + value.len()
+            } else {
+                output_position
+            };
+            spans.push((start, end));
             previous = replaced.end;
         }
         ops.retain_rest(&self.text)

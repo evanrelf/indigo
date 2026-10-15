@@ -302,7 +302,7 @@ same 'ab cd\n' 'lllLyglRd' # selecting the replacement
 same 'ab\ncd\n' 'xyjR' # never linewise
 same 'ab\n' 'y3R' # count is ignored
 same 'ab\n' 'RiX<esc>' # an empty register deletes the selection
-same 'abc\n' 'lygeRd' # replacing the final newline restores it
+same 'abc\n' 'lygeR;iX<esc>' # replacing the final newline restores it, unselected
 same 'ab cd\n' '%s\\w+<ret>yglh<a-p>cX<esc>' # <a-p> pastes every value, each selected
 same 'ab cd\n' '%s\\w+<ret>yglh<a-p>,cX<esc>' # the last one primary
 same 'ab cd ef\n' '%s\\w+<ret>y%sab|cd<ret><a-p>,cX<esc>' # after the primary selection
@@ -394,9 +394,6 @@ todo 'a\tb\nabcdefghijk\n' 'lljcX<esc>'
 # `SelectionState::merge_overlapping`.
 todo 'abcdef\n' '%s[ab]<ret>y<a-c><esc>RiX<esc>'
 todo 'abc\n' '%s[bc]<ret>y<a-d>RiX<esc>'
-
-# `R` selects the final newline it restores; Kakoune doesn't.
-todo 'abc\n' 'lygeR;iX<esc>'
 
 # Intentional divergences
 
