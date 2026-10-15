@@ -233,6 +233,7 @@ enum TrieResult<T> {
 struct Entry<V> {
     value: V,
     order: u16,
+    description: Option<&'static str>,
 }
 
 pub struct Keymap<V> {
@@ -251,18 +252,26 @@ impl<V> Keymap<V> {
         }
     }
 
-    pub fn insert(&mut self, keys: &str, value: V) -> Option<V> {
+    pub fn insert(&mut self, keys: &str, value: V, description: Option<&'static str>) -> Option<V> {
         let mut keys: Keys = keys.parse().unwrap();
         for key in &mut keys.0 {
             key.normalize();
         }
         if let TrieResult::Found(entry) = self.mappings.get_mut(&keys.0) {
             // Keep original place in order, like `IndexMap::insert`
+            entry.description = description;
             return Some(mem::replace(&mut entry.value, value));
         }
         let order = self.next_order;
         self.next_order = order.checked_add(1).expect("wow that's a lotta keys");
-        self.mappings.insert(&keys.0, Entry { value, order });
+        self.mappings.insert(
+            &keys.0,
+            Entry {
+                value,
+                order,
+                description,
+            },
+        );
         None
     }
 
@@ -300,10 +309,19 @@ impl<V> Keymap<V> {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (ArrayVec<Key, 3>, &V)> + '_ {
+    fn entries(&self) -> impl Iterator<Item = (ArrayVec<Key, 3>, &Entry<V>)> {
         let mut pairs: Vec<_> = self.mappings.iter::<3>().collect();
         pairs.sort_by_key(|(_, entry)| entry.order);
-        pairs.into_iter().map(|(keys, entry)| (keys, &entry.value))
+        pairs.into_iter()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (ArrayVec<Key, 3>, &V)> + '_ {
+        self.entries().map(|(keys, entry)| (keys, &entry.value))
+    }
+
+    pub fn docs(&self) -> impl Iterator<Item = (Keys, Option<&'static str>)> + '_ {
+        self.entries()
+            .map(|(keys, entry)| (Keys(keys.to_vec()), entry.description))
     }
 }
 
@@ -325,7 +343,7 @@ macro_rules! keymap {
     // [x] type [x] fallback (base case)
     ($value_ty:ty; $($keys:literal => $value:expr,)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
         let mut keymap: $crate::keymap::Keymap<$value_ty> = $crate::keymap::Keymap::new();
-        $(keymap.insert($keys, $value);)*
+        $(keymap.insert($keys, $value, None);)*
         keymap.set_fallback(|_self, $fallback_arg| $fallback_body);
         keymap
     }};
@@ -495,6 +513,6 @@ mod tests {
             ]
         );
         // reinserting keeps the original position
-        keymap.insert("gk", vec![Action("goto top")]);
+        keymap.insert("gk", vec![Action("goto top")], None);
     }
 }
