@@ -571,10 +571,16 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
             if retained > 0 {
                 last_byte = Some(self.text.byte(replaced.start - 1));
             }
-            ops.delete(&self.text.slice(replaced.clone()).to_string());
             let start = output_position;
             let value = &values[i % values.len()];
-            ops.insert(value);
+            let old = self.text.slice(replaced.clone());
+            if old == value.as_str() {
+                // Like Kakoune, replacing text with itself isn't an edit.
+                ops.retain(old.len());
+            } else {
+                ops.delete(&old.to_string());
+                ops.insert(value);
+            }
             output_position += value.len();
             if let Some(&byte) = value.as_bytes().last() {
                 last_byte = Some(byte);
@@ -590,7 +596,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
         }
         ops.retain_rest(&self.text)
             .expect("Operations fit within text");
-        // An empty paste only moves the selection; keep the no-op edit out of the history.
+        // A paste that changes nothing only moves the selection; keep it out of the history.
         if ops != Edit::identity(&self.text) {
             self.text.apply(&ops).expect("Operations are well formed");
         }

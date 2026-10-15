@@ -332,6 +332,7 @@ same 'ab\ncd\n' '<a-o>iX<esc>u'
 same 'ab\ncd\n' 'd<a-o>u'
 same 'ab\ncd\n' 'j<a-O><a-O>u'
 same 'ab cd\n' 'yp2pu' # a counted paste is one step
+same 'abc\n' 'ldlxyRu' # replacing text with itself isn't a step
 same 'abc\n' 'l<a-d>pu' # pasting an empty register isn't a step
 
 # Buffer edge cases
