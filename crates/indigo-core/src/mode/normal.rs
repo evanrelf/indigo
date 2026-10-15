@@ -10,6 +10,7 @@ use crate::{
         seek::{self, SeekDirection, SeekInclude, SeekSelect},
     },
     rope::{LINE_TYPE, RopeExt as _},
+    selection::PastePosition,
     window::{
         scroll_full_page_down, scroll_full_page_up, scroll_half_page_down, scroll_half_page_up,
     },
@@ -76,6 +77,7 @@ pub enum Action {
     Delete,
     Yank,
     PasteAfter,
+    PasteBefore,
     Undo,
     Redo,
     ScrollHalfPageUp,
@@ -152,6 +154,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<a-c>" => vec![Delete, EnterInsertMode],
         "y" => vec![Yank],
         "p" => vec![PasteAfter, Commit],
+        "P" => vec![PasteBefore, Commit],
         "O" => vec![InsertLineAbove],
         "o" => vec![InsertLineBelow],
         "<a-O>" => vec![AddLineAbove, Commit],
@@ -235,7 +238,8 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
         Action::SelectRegex => select_regex(editor),
         Action::Delete => delete(editor),
         Action::Yank => yank(editor),
-        Action::PasteAfter => paste_after(editor),
+        Action::PasteAfter => paste(editor, PastePosition::After),
+        Action::PasteBefore => paste(editor, PastePosition::Before),
         Action::Undo => undo(editor),
         Action::Redo => redo(editor),
         Action::ScrollHalfPageUp => scroll_half_page_up(editor),
@@ -422,7 +426,7 @@ fn yank(editor: &mut Editor) {
     editor.count = None;
 }
 
-fn paste_after(editor: &mut Editor) {
+fn paste(editor: &mut Editor, paste_position: PastePosition) {
     let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
     if editor.focused_buffer().text.readonly {
         editor.message = Some(Err(String::from("Buffer is readonly")));
@@ -431,7 +435,7 @@ fn paste_after(editor: &mut Editor) {
     let values = editor.registers.get(&'"').cloned().unwrap_or_default();
     let mut window = editor.focused_window_mut();
     for _ in 1..=count {
-        window.selection_edit().paste_after(&values);
+        window.selection_edit().paste(&values, paste_position);
     }
     window.scroll_to_selection();
 }

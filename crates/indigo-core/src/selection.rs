@@ -30,6 +30,12 @@ pub enum Error {
     },
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PastePosition {
+    Before,
+    After,
+}
+
 #[derive(Clone)]
 pub struct SelectionState {
     pub ranges: Vec<RangeState>,
@@ -476,14 +482,16 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
         ops
     }
 
-    pub fn paste_after(&mut self, values: &[String]) -> Edit {
+    pub fn paste(&mut self, values: &[String], paste_position: PastePosition) -> Edit {
         const NOTHING: &[String] = &[String::new()];
         let values = if values.is_empty() { NOTHING } else { values };
         debug_assert!(
-            self.state
-                .ranges
-                .is_sorted_by_key(|range| range.end().byte_index),
-            "this function relies on selection ranges' ends being sorted",
+            paste_position == PastePosition::Before
+                || self
+                    .state
+                    .ranges
+                    .is_sorted_by_key(|range| range.end().byte_index),
+            "pasting after relies on selection ranges' ends being sorted",
         );
         let linewise = values.iter().all(|value| value.ends_with('\n'));
         let mut ops = Edit::new();
@@ -491,13 +499,21 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
         let mut output_position = 0;
         let mut spans = Vec::with_capacity(self.state.ranges.len());
         for (i, range) in self.state.ranges.iter().enumerate() {
-            let position = if linewise {
-                let line = self
-                    .text
-                    .byte_to_line_idx(range.end().byte_index, LINE_TYPE);
-                self.text.line_to_byte_idx(line + 1, LINE_TYPE)
-            } else {
-                self.end_exclusive(range)
+            let position = match (paste_position, linewise) {
+                (PastePosition::Before, false) => range.start().byte_index,
+                (PastePosition::Before, true) => {
+                    let line = self
+                        .text
+                        .byte_to_line_idx(range.start().byte_index, LINE_TYPE);
+                    self.text.line_to_byte_idx(line, LINE_TYPE)
+                }
+                (PastePosition::After, false) => self.end_exclusive(range),
+                (PastePosition::After, true) => {
+                    let line = self
+                        .text
+                        .byte_to_line_idx(range.end().byte_index, LINE_TYPE);
+                    self.text.line_to_byte_idx(line + 1, LINE_TYPE)
+                }
             };
             let retained = position - previous;
             ops.retain(retained);

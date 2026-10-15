@@ -292,6 +292,11 @@ same 'ab\ncd\nef\n' 'lLyjlp'
 same 'ab\ncd\n' '%ygep'
 same 'ab\ncd\nef\ngh\n' '%sb\\n|f\\n<ret>y%sa|g<ret>p'
 same 'ab\ncd\nef\ngh\n' '%sa|f\\n<ret>y%sa|g<ret>p'
+same 'ab cd\n' 'lllLyPd' # P pastes before, selecting the pasted text
+same 'ab cd\n' 'lllL<a-;>yP;iX<esc>' # facing the same way
+same 'ab\ncd\nef\n' 'xyjlP' # linewise P pastes above the selection's line
+same 'ab\n' 'ly3PcX<esc>' # count stacks copies before, selecting the last
+same 'ab\n' 'lPiX<esc>' # an empty register leaves the selection put
 
 # Undo and redo
 
