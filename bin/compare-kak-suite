@@ -303,6 +303,11 @@ same 'ab\ncd\n' 'xyjR' # never linewise
 same 'ab\n' 'y3R' # count is ignored
 same 'ab\n' 'RiX<esc>' # an empty register deletes the selection
 same 'abc\n' 'lygeRd' # replacing the final newline restores it
+same 'ab cd\n' '%s\\w+<ret>yglh<a-p>cX<esc>' # <a-p> pastes every value, each selected
+same 'ab cd\n' '%s\\w+<ret>yglh<a-p>,cX<esc>' # the last one primary
+same 'ab cd ef\n' '%s\\w+<ret>y%sab|cd<ret><a-p>,cX<esc>' # after the primary selection
+same 'ab\ncd\n' '%<a-s>ygk<a-p>cX<esc>' # linewise if every value is
+same 'abc\n' 'lyge<a-p>;iX<esc>' # a restored final newline isn't selected
 
 # Undo and redo
 

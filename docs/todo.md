@@ -93,7 +93,7 @@ See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 - [x] `y` (yank selection)
 - [x] `p` (paste after)
 - [x] `P` (paste before)
-- [ ] `<a-p>` (paste all after)
+- [x] `<a-p>` (paste all after)
 - [ ] `<a-P>` (paste all before)
 - [x] `r` (replace each char)
 - [x] `R` (replace with yanked)

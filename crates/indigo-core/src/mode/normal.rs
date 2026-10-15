@@ -79,6 +79,7 @@ pub enum Action {
     PasteAfter,
     PasteBefore,
     PasteReplace,
+    PasteAllAfter,
     Undo,
     Redo,
     ScrollHalfPageUp,
@@ -157,6 +158,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "p" => vec![PasteAfter, Commit],
         "P" => vec![PasteBefore, Commit],
         "R" => vec![PasteReplace, Commit],
+        "<a-p>" => vec![PasteAllAfter, Commit],
         "O" => vec![InsertLineAbove],
         "o" => vec![InsertLineBelow],
         "<a-O>" => vec![AddLineAbove, Commit],
@@ -243,6 +245,7 @@ pub fn handle_action(editor: &mut Editor, action: &Action) {
         Action::PasteAfter => paste(editor, PasteMode::After),
         Action::PasteBefore => paste(editor, PasteMode::Before),
         Action::PasteReplace => paste(editor, PasteMode::Replace),
+        Action::PasteAllAfter => paste_all(editor, PasteMode::After),
         Action::Undo => undo(editor),
         Action::Redo => redo(editor),
         Action::ScrollHalfPageUp => scroll_half_page_up(editor),
@@ -445,6 +448,22 @@ fn paste(editor: &mut Editor, paste_mode: PasteMode) {
     for _ in 1..=count {
         window.selection_edit().paste(&values, paste_mode);
     }
+    window.scroll_to_selection();
+}
+
+fn paste_all(editor: &mut Editor, paste_mode: PasteMode) {
+    editor.count = None;
+    if editor.focused_buffer().text.readonly {
+        editor.message = Some(Err(String::from("Buffer is readonly")));
+        return;
+    }
+    let values = editor.registers.get(&'"').cloned().unwrap_or_default();
+    if values.is_empty() {
+        editor.message = Some(Err(String::from("Nothing to paste")));
+        return;
+    }
+    let mut window = editor.focused_window_mut();
+    window.selection_edit().paste_all(&values, paste_mode);
     window.scroll_to_selection();
 }
 

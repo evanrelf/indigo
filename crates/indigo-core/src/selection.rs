@@ -37,6 +37,10 @@ pub enum PasteMode {
     Replace,
 }
 
+fn is_linewise(values: &[String], paste_mode: PasteMode) -> bool {
+    paste_mode != PasteMode::Replace && values.iter().all(|value| value.ends_with('\n'))
+}
+
 #[derive(Clone)]
 pub struct SelectionState {
     pub ranges: Vec<RangeState>,
@@ -488,9 +492,38 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
     pub fn paste(&mut self, values: &[String], paste_mode: PasteMode) -> Edit {
         const NOTHING: &[String] = &[String::new()];
         let values = if values.is_empty() { NOTHING } else { values };
-        let linewise =
-            paste_mode != PasteMode::Replace && values.iter().all(|value| value.ends_with('\n'));
-        self.paste_with(values, paste_mode, linewise)
+        self.paste_with(values, paste_mode, is_linewise(values, paste_mode))
+    }
+
+    /// Paste every value at each range, then select each value separately (like Kakoune).
+    pub fn paste_all(&mut self, values: &[String], paste_mode: PasteMode) -> Edit {
+        if values.is_empty() {
+            return Edit::identity(&self.text);
+        }
+        let linewise = is_linewise(values, paste_mode);
+        let ops = self.paste_with(&[values.concat()], paste_mode, linewise);
+        let mut ranges = Vec::with_capacity(self.state.ranges.len() * values.len());
+        for range in &self.state.ranges {
+            let mut start = range.start().byte_index;
+            for value in values {
+                let last = max(start, (start + value.len()).saturating_sub(1));
+                ranges.push(
+                    range.with_bounds(
+                        self.text
+                            .snap_to_grapheme_start(start)
+                            .expect("Text is never empty"),
+                        self.text
+                            .snap_to_grapheme_start(last)
+                            .expect("Text is never empty"),
+                    ),
+                );
+                start += value.len();
+            }
+        }
+        self.state.ranges = ranges;
+        // The last value pasted at the primary range becomes primary.
+        self.state.primary_range = self.state.primary_range * values.len() + values.len() - 1;
+        ops
     }
 
     fn paste_with(&mut self, values: &[String], paste_mode: PasteMode, linewise: bool) -> Edit {
