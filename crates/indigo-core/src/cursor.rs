@@ -8,7 +8,7 @@ use indigo_kernel::{
 };
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
-use std::thread;
+use std::{cmp::min, thread};
 use thiserror::Error;
 
 #[cfg(feature = "arbitrary")]
@@ -297,54 +297,47 @@ impl<S: WrapMut, T: WrapRef> CursorView<'_, S, T> {
         if count == 0 {
             return false;
         }
-        for _ in 0..count {
-            let current_line_index = self.text.byte_to_line_idx(self.state.byte_index, LINE_TYPE);
-            let target_line_index = match direction {
-                Direction::Backward => {
-                    if current_line_index == 0 {
-                        return false;
-                    }
-                    current_line_index - 1
-                }
-                Direction::Forward => {
-                    let target = current_line_index + 1;
-                    if target >= self.text.len_lines_unix() {
-                        return false;
-                    }
-                    target
-                }
-            };
-            let target_line_byte_index = self.text.line_to_byte_idx(target_line_index, LINE_TYPE);
-            let target_line_slice = self.text.line(target_line_index, LINE_TYPE);
-            let mut target_line_prefix = 0;
-            let mut target_byte_index = target_line_byte_index;
-            let mut reached_line_end = true;
-            for grapheme in target_line_slice.graphemes() {
-                if grapheme.chars().any(|c| c == '\n' || c == '\r') {
-                    break;
-                }
-                let grapheme_width = grapheme.display_width();
-                if target_line_prefix + grapheme_width > usize::from(goal_column) {
-                    reached_line_end = false;
-                    break;
-                }
-                target_line_prefix += grapheme_width;
-                target_byte_index += grapheme.len();
+        let old_byte_index = self.state.byte_index;
+        let current_line_index = self.text.byte_to_line_idx(self.state.byte_index, LINE_TYPE);
+        // Like Kakoune, clamp to the first or last line, and still apply the goal column. A cursor
+        // on the newline of the first or last line then moves onto that line's last grapheme.
+        let target_line_index = match direction {
+            Direction::Backward => current_line_index.saturating_sub(count),
+            Direction::Forward => min(
+                current_line_index.saturating_add(count),
+                self.text.len_lines_unix() - 1,
+            ),
+        };
+        let target_line_byte_index = self.text.line_to_byte_idx(target_line_index, LINE_TYPE);
+        let target_line_slice = self.text.line(target_line_index, LINE_TYPE);
+        let mut target_line_prefix = 0;
+        let mut target_byte_index = target_line_byte_index;
+        let mut reached_line_end = true;
+        for grapheme in target_line_slice.graphemes() {
+            if grapheme.chars().any(|c| c == '\n' || c == '\r') {
+                break;
             }
-            // Only an empty line or `GoalColumn::OntoLineEnd` puts the cursor on the newline;
-            // otherwise stop on the last grapheme before it, like Kakoune.
-            if reached_line_end
-                && goal_column != GoalColumn::OntoLineEnd
-                && target_byte_index > target_line_byte_index
-            {
-                target_byte_index = self
-                    .text
-                    .prev_grapheme_boundary(target_byte_index)
-                    .expect("Line is not empty, so a grapheme precedes its end");
+            let grapheme_width = grapheme.display_width();
+            if target_line_prefix + grapheme_width > usize::from(goal_column) {
+                reached_line_end = false;
+                break;
             }
-            self.state.byte_index = target_byte_index;
+            target_line_prefix += grapheme_width;
+            target_byte_index += grapheme.len();
         }
-        true
+        // Only an empty line or `GoalColumn::OntoLineEnd` puts the cursor on the newline;
+        // otherwise stop on the last grapheme before it, like Kakoune.
+        if reached_line_end
+            && goal_column != GoalColumn::OntoLineEnd
+            && target_byte_index > target_line_byte_index
+        {
+            target_byte_index = self
+                .text
+                .prev_grapheme_boundary(target_byte_index)
+                .expect("Line is not empty, so a grapheme precedes its end");
+        }
+        self.state.byte_index = target_byte_index;
+        self.state.byte_index != old_byte_index
     }
 
     pub fn move_to_prev_byte(&mut self, byte: u8, count: usize) -> bool {

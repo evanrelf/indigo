@@ -102,6 +102,10 @@ same 'abc\nd\nefghi\n' 'gljjcX<esc>' # gl sticks to line end going down
 same 'abcde\nd\nefg\n' 'jjglkkcX<esc>' # and going up
 same 'abc\nd\n' 'kcX<esc>' # k on the first line is a no-op
 same 'abc\nd\n' 'l100jcX<esc>' # count clamps at the last line
+# On the last line's newline, j still moves onto the last char; k likewise.
+same 'ab\nc\n' 'jljiX<esc>'
+same 'ab\nc\n' '%s.<ret>jiX<esc>'
+same 'abc\nd\n' 'lllkiX<esc>'
 same '\tb\nabcdefghij\n' 'ljcX<esc>' # tabs are 8 columns wide
 same 'abcdefghij\n\tb\n' '8ljcX<esc>' # column right after a tab
 same 'abcdefghij\n\tb\n' '3ljcX<esc>' # column inside a tab lands on it
@@ -364,11 +368,6 @@ same 'ab cd\n' '%s\\w+<esc>cX<esc>' # <esc> cancels, keeping the selection
 same 'ab cd\n' '%s\\w+xyz<c-a><c-f><c-f><c-f><c-k><ret>cX<esc>'
 
 # Known bugs
-
-# `j` on the last line leaves a cursor on the trailing newline; Kakoune moves it
-# back onto the last character.
-todo 'ab\nc\n' 'jljiX<esc>'
-todo 'ab\nc\n' '%s.<ret>jiX<esc>'
 
 # Undo does not restore selections.
 todo 'abc\n' 'lLducX<esc>'
