@@ -20,6 +20,12 @@ by Kakoune and CodeMirror.
 
 ## Code style
 
+- Break complex changes into small, incremental steps that are easy to review
+  and commit individually. For example, you could implement a feature in
+  multiple passes: first something simple and self-evidently correct, then
+  address edge cases or apply optimizations in later passes. The user wants to
+  review and understand all the code in this project, and regular pauses allow
+  for steering and asking questions.
 - Keep the core crates (`indigo-kernel`, `indigo-core`) deterministic. For
   example, `Hash{Map,Set}` must use `indigo_kernel::IndigoBuildHasher`. If you
   notice existing sources of nondeterminism, call them out so we can fix it.
