@@ -302,7 +302,7 @@ same 'ab cd\n' 'lllLyglRd' # selecting the replacement
 same 'ab\ncd\n' 'xyjR' # never linewise
 same 'ab\n' 'y3R' # count is ignored
 same 'ab\n' 'RiX<esc>' # an empty register deletes the selection
-same 'abc\n' 'lygeRd' # replacing the final newline restores it, selected too
+same 'abc\n' 'lygeRd' # replacing the final newline restores it
 
 # Undo and redo
 
@@ -380,6 +380,15 @@ todo 'ab\n' '%sa(?=b)<ret>cX<esc>'
 
 # Tabs are a fixed 8 columns wide instead of advancing to the next tab stop.
 todo 'a\tb\nabcdefghijk\n' 'lljcX<esc>'
+
+# `R` merges coincident cursors; Kakoune doesn't, and each replaces what follows
+# the one before, even a final newline restored by the one before. See
+# `SelectionState::merge_overlapping`.
+todo 'abcdef\n' '%s[ab]<ret>y<a-c><esc>RiX<esc>'
+todo 'abc\n' '%s[bc]<ret>y<a-d>RiX<esc>'
+
+# `R` selects the final newline it restores; Kakoune doesn't.
+todo 'abc\n' 'lygeR;iX<esc>'
 
 # Intentional divergences
 

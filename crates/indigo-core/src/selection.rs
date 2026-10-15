@@ -89,6 +89,8 @@ impl SelectionState {
     ///   separate.
     /// - Merge after undo and redo. Kakoune instead replaces the selection with the modified
     ///   ranges, which are always merged.
+    /// - Merge before `R`. Kakoune doesn't; it replaces one range at a time, so coincident
+    ///   cursors replace successive graphemes. Merging keeps `R` a single edit, for now.
     ///
     /// When not to merge:
     ///
@@ -98,7 +100,7 @@ impl SelectionState {
     /// - Never merge after `;`, `<a-;>`, or `<a-:>`.
     /// - Never merge after `s` or `<a-s>`; they only sort.
     ///
-    /// In all cases we follow Kakoune.
+    /// Except for `R`, we follow Kakoune.
     pub fn merge_overlapping(&mut self) {
         let mut primary_range = 0;
         for (i, range) in mem::take(&mut self.ranges).into_iter().enumerate() {
@@ -487,6 +489,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
         const NOTHING: &[String] = &[String::new()];
         let values = if values.is_empty() { NOTHING } else { values };
         if paste_mode == PasteMode::Replace {
+            // Unlike Kakoune; see `SelectionState::merge_overlapping`.
             self.state.merge_overlapping();
         }
         debug_assert!(
