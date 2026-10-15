@@ -58,87 +58,85 @@ by_design() {
 
 # Regex select
 
-same 'ab\ncd\n' '%s^<ret>cX<esc>'
-same 'ab\ncd\n' '%s$<ret>cX<esc>'
-same 'ab\n\ncd\n' '%s^$<ret>cX<esc>'
-same 'ab\ncd\n' '%s.<ret>d'
-same 'ab\ncd\n' '%s.*<ret>cX<esc>'
-same 'ab\ncd\n' '%s\\n<ret>cX<esc>'
-same 'ab cd\nef\n' '%s\\w+<ret>cX<esc>'
-same 'ab cd\nef\n' '%s\\s+<ret>d'
-same 'ab cd\nef\n' '%sab|ef<ret>cX<esc>'
-same 'ab cd\nef\n' '%s(?i)AB<ret>cX<esc>'
-same 'aXbXc\n' '%sa.*?X<ret>cY<esc>'
-same 'ab cd\nef\n' '%s\\Aab<ret>d'
-same 'ab cd\nef\n' '%sef\\n\\z<ret>d'
-same 'ab cd\nef gh\n' 'jxs\\w+<ret>cX<esc>'
-same 'ab cd\n' '%<a-;>s\\w+<ret><a-:>d'
+same 'ab\ncd\n' '%s^<ret>cX<esc>' # empty matches select one char
+same 'ab\ncd\n' '%s$<ret>cX<esc>' # $ matches before each newline
+same 'ab\n\ncd\n' '%s^$<ret>cX<esc>' # ^$ matches an empty line
+same 'ab\ncd\n' '%s.<ret>d' # . matches newlines too
+same 'ab\ncd\n' '%s.*<ret>cX<esc>' # so .* spans the whole buffer
+same 'ab\ncd\n' '%s\\n<ret>cX<esc>' # \n matches newlines
+same 'ab cd\nef\n' '%s\\w+<ret>cX<esc>' # \w matches word chars
+same 'ab cd\nef\n' '%s\\s+<ret>d' # \s matches newlines too
+same 'ab cd\nef\n' '%sab|ef<ret>cX<esc>' # alternation
+same 'ab cd\nef\n' '%s(?i)AB<ret>cX<esc>' # case-insensitive flag
+same 'aXbXc\n' '%sa.*?X<ret>cY<esc>' # lazy quantifier
+same 'ab cd\nef\n' '%s\\Aab<ret>d' # \A anchors to buffer start
+same 'ab cd\nef\n' '%sef\\n\\z<ret>d' # \z anchors to buffer end
+same 'ab cd\nef gh\n' 'jxs\\w+<ret>cX<esc>' # only matches within the selection
+same 'ab cd\n' '%<a-;>s\\w+<ret><a-:>d' # within a reversed selection
+same 'ab cd\n' '%sxyz<ret>' # no match keeps the selection
+same 'ab cd\n' '%s<ret>' # empty regex is a no-op
+same 'héllo wörld\n' '%s\\w+<ret>cX<esc>' # \w matches non-ASCII letters
+# Literal space, which `indigo-cli` needs escaped.
 same 'ab cd\n' '%sb\ c<ret>cX<esc>' '%sb c<ret>cX<esc>'
-same 'ab cd\n' '%sxyz<ret>'
-same 'ab cd\n' '%s<ret>'
-same 'héllo wörld\n' '%s\\w+<ret>cX<esc>'
 
 # Horizontal movement
 
 same 'ab\ncd\n' 'lcX<esc>'
-same 'ab\ncd\n' '2lcX<esc>'
-same 'ab\ncd\n' '3lcX<esc>'
-same 'ab\ncd\n' '5lcX<esc>'
-same 'ab\ncd\n' '100lcX<esc>'
-same 'ab\ncd\n' 'hcX<esc>'
-same 'ab\ncd\n' 'jhcX<esc>'
-same 'ab\ncd\n' 'j3hcX<esc>'
-same 'ab\ncd\n' 'gj100lcX<esc>'
-same 'éa\n' 'lcX<esc>'
-same '日本\n' 'lcX<esc>'
+same 'ab\ncd\n' '2lcX<esc>' # l reaches the newline
+same 'ab\ncd\n' '3lcX<esc>' # and wraps onto the next line
+same 'ab\ncd\n' '5lcX<esc>' # count lands exactly on the final newline
+same 'ab\ncd\n' '100lcX<esc>' # count clamps at buffer end
+same 'ab\ncd\n' 'hcX<esc>' # h at buffer start is a no-op
+same 'ab\ncd\n' 'jhcX<esc>' # h wraps onto the previous newline
+same 'ab\ncd\n' 'j3hcX<esc>' # count wraps back to buffer start
+same 'éa\n' 'lcX<esc>' # multibyte char
+same '日本\n' 'lcX<esc>' # wide char
 
 # Vertical movement
 
-same 'abc\nd\nefg\n' 'lljjcX<esc>'
-same 'abc\nd\n' 'lljcX<esc>'
-same 'abc\nd\n' 'lljd'
-same 'abc\n\nefg\n' 'lljjcX<esc>'
-same 'abc\n\nefg\n' 'lljd'
-same 'abc\nd\nefg\n' 'gljjcX<esc>'
-same 'abc\nd\nefg\n' 'jjglkkcX<esc>'
-same 'abc\nd\n' 'kcX<esc>'
-same 'abc\nd\n' 'j100jcX<esc>'
-same 'abc\nd\n' 'l100jcX<esc>'
-same 'abc\nd\n' '3jcX<esc>'
-same '\tb\nabcdefghij\n' 'ljcX<esc>'
-same 'abcdefghij\n\tb\n' '8ljcX<esc>'
-same 'abcdefghij\n\tb\n' '3ljcX<esc>'
-same '日本語\nabcdef\n' 'lljcX<esc>'
-same 'abcdef\n日本語\n' '3ljcX<esc>'
-same 'abcdef\n日本語\n' '4ljcX<esc>'
+same 'abc\nd\nefg\n' 'lljjcX<esc>' # column is remembered past a short line
+same 'abc\nd\n' 'lljcX<esc>' # column clamps to the last char, not the newline
+same 'abc\n\nefg\n' 'lljjcX<esc>' # column is remembered past an empty line
+same 'abc\n\nefg\n' 'lljd' # lands on an empty line's newline
+same 'abc\nd\nefghi\n' 'gljjcX<esc>' # gl sticks to line end going down
+same 'abcde\nd\nefg\n' 'jjglkkcX<esc>' # and going up
+same 'abc\nd\n' 'kcX<esc>' # k on the first line is a no-op
+same 'abc\nd\n' 'l100jcX<esc>' # count clamps at the last line
+same '\tb\nabcdefghij\n' 'ljcX<esc>' # tabs are 8 columns wide
+same 'abcdefghij\n\tb\n' '8ljcX<esc>' # column right after a tab
+same 'abcdefghij\n\tb\n' '3ljcX<esc>' # column inside a tab lands on it
+same '日本語\nabcdef\n' 'lljcX<esc>' # wide chars are 2 columns
+same 'abcdef\n日本語\n' '3ljcX<esc>' # column inside a wide char lands on it
+same 'abcdef\n日本語\n' '4ljcX<esc>' # column at a wide char's start
 
 # Extending and flipping
 
-same 'abcd\n' 'LLd'
-same 'abcd\n' '2Ld'
-same 'abcd\n' 'lllHHd'
-same 'abcd\n' 'llHHHHd'
-same 'ab\ncd\n' 'lJd'
-same 'ab\ncd\nef\n' 'jlKd'
-same 'ab\ncd\nef\n' 'l2Jd'
-same 'ab\ncd\n' 'gl2Ld'
-same 'ab\ncd\n' 'j2Hd'
-same 'abcd\n' 'lll<a-;>d'
-same 'abcd\n' 'LL<a-;>;d'
-same 'abcd\n' 'LL<a-;><a-:>;d'
-same 'abcd\n' 'LL;d'
-same 'abcd\n' 'lLL<a-;>LLd'
-same 'ab\ncd\n' 'jJ<a-;>Kd'
+same 'abcd\n' 'LLd' # L extends right
+same 'abcd\n' '2Ld' # with a count
+same 'abcd\n' 'lllHHd' # H extends left
+same 'abcd\n' 'llHHHHd' # H clamps at buffer start
+same 'ab\ncd\n' 'lJd' # J extends down
+same 'ab\ncd\nef\n' 'jlKd' # K extends up
+same 'ab\ncd\nef\n' 'l2Jd' # J with a count
+same 'ab\ncd\n' 'gl2Ld' # L across a newline
+same 'ab\ncd\n' 'j2Hd' # H across a newline
+same 'abcd\n' 'lll<a-;>d' # flipping a one-char selection is a no-op
+same 'abcd\n' 'LL<a-;>;d' # flip, then collapse to the new head
+same 'abcd\n' 'LL<a-;><a-:>;d' # <a-:> faces forward again
+same 'abcd\n' 'LL;d' # ; collapses to the head
+same 'abcd\n' 'lLL<a-;>LLd' # L after a flip shrinks toward the anchor
+same 'ab\ncd\n' 'jJ<a-;>Kd' # J on the last line is a no-op
 
 # Goto
 
-same 'ab\ncd\n' 'lghcX<esc>'
-same 'ab\ncd\n' 'glcX<esc>'
-same 'ab\ncd\n' 'gllcX<esc>'
-same '  ab\n' 'glgicX<esc>'
-same 'ab\ncd\n' 'gecX<esc>'
-same 'ab\ncd\n' 'gjcX<esc>'
-same 'ab\ncd\n' 'jgkcX<esc>'
+same 'ab\ncd\n' 'lghcX<esc>' # gh: line start
+same 'ab\ncd\n' 'glcX<esc>' # gl: line end, before the newline
+same 'ab\ncd\n' 'gllcX<esc>' # so l then reaches the newline
+same '  ab\n' 'glgicX<esc>' # gi: first non-blank
+same 'ab\ncd\n' 'gecX<esc>' # ge: buffer end, on the final newline
+same 'ab\ncd\n' 'gjcX<esc>' # gj: last line
+same 'ab\ncd\n' 'jgkcX<esc>' # gk: buffer start
+# Indigo extends with `gE`, `gL`, etc; Kakoune spells these `Ge`, `Gl`, etc.
 same 'ab\ncd\nef\n' 'jgEd' 'jGed'
 same 'ab\ncd\n' 'lgLd' 'lGld'
 same 'abc\n' 'llgHd' 'llGhd'
@@ -148,141 +146,145 @@ same '  ab\n' 'glgId' 'glGid'
 
 # Line selections
 
-same 'ab\ncd\nef\n' 'xd'
-same 'ab\ncd\nef\n' 'xxd'
-same 'ab\ncd\nef\n' '2xd'
-same 'ab\ncd\nef\n' 'lxcX<esc>'
-same 'ab\ncd\nef\n' 'gjxd'
-same 'ab\ncd\nef\n' 'jglxd'
-same 'ab\ncd\nef\n' 'gj5xd'
-same 'ab\ncd\nef\n' 'xjcX<esc>'
-same 'ab\ncd\nef\n' 'xJcX<esc>'
-same 'ab\ncd\nef\n' 'jxkcX<esc>'
-same 'ab\ncd\nef\n' '%<a-s>cX<esc>'
-same 'ab\ncd\nef\n' 'lJJ<a-s>cX<esc>'
-same 'ab\n\ncd\n' '%<a-s>d'
+same 'ab\ncd\nef\n' 'xd' # x selects the line and its newline
+same 'ab\ncd\nef\n' 'xxd' # repeated x doesn't extend
+same 'ab\ncd\nef\n' '2xd' # count is ignored
+same 'ab\ncd\nef\n' 'lxcX<esc>' # from mid-line
+same 'ab\ncd\nef\n' 'gjxd' # on the last line
+same 'ab\ncd\nef\n' 'jglxd' # on a middle line, from line end
+same 'ab\ncd\nef\n' 'xjcX<esc>' # x puts the head on the newline
+same 'ab\ncd\nef\n' 'jxkcX<esc>' # so j and k keep that column
+same 'ab\ncd\nef\n' 'xJcX<esc>' # J extends a line selection
+same 'ab\ncd\nef\n' '%<a-s>cX<esc>' # <a-s> splits into lines
+same 'ab\ncd\nef\n' 'lJJ<a-s>cX<esc>' # starting mid-line
+same 'ab\n\ncd\n' '%<a-s>d' # including an empty line
 
 # Seek
 
-same 'abcabc\n' 'fcd'
-same 'abcabc\n' '2fcd'
-same 'abcabc\n' 'tcd'
+same 'abcabc\n' 'fcd' # f selects through the char
+same 'abcabc\n' '2fcd' # count seeks the nth occurrence
+same 'abcabc\n' 'tcd' # t selects up to the char
 same 'abcabc\n' '2tcd'
-same 'abcabc\n' 'Fcd'
+same 'abcabc\n' 'Fcd' # F and T extend
 same 'abcabc\n' 'Tcd'
-same 'abcabc\n' 'gl<a-f>ad'
+same 'abcabc\n' 'gl<a-f>ad' # <a-f> and friends seek backward
 same 'abcabc\n' 'gl<a-t>ad'
 same 'abcabc\n' 'gl<a-F>ad'
 same 'abcabc\n' 'gl<a-T>ad'
-same 'abcabc\n' 'fcfcd'
-same 'abcabc\n' 'tctcd'
-same 'abcabc\n' 'tbd'
-same 'abcabc\n' 'l<a-t>ad'
-same 'abcabc\n' '2fccX<esc>'
+same 'abcabc\n' 'fcfcd' # repeated f starts from the previous head
+same 'abcabc\n' 'tctcd' # repeated t stays stuck before the char
+same 'abcabc\n' 'tbd' # t to the adjacent char selects one char
+same 'abcabc\n' 'l<a-t>ad' # same backward
 # Kakoune aborts the remaining keys when a seek fails, so a failing seek can't
 # be followed by an edit that would reveal the cursor.
 same 'abcabc\n' '3fc'
-same 'ab\ncd\n' 'f<ret>d'
+same 'ab\ncd\n' 'f<ret>d' # seek a newline
 same 'ab\ncd\n' 't<ret>d'
-same 'ab\ncd\n' 'fdd'
+same 'ab\ncd\n' 'fdd' # seek across lines
+same 'héllo wörld\n' 'fwd' # seek past non-ASCII
+# Seek a space, which `indigo-cli` needs escaped.
 same 'a b\n' 'f\ d' 'f d'
-same 'héllo wörld\n' 'fwd'
 
 # Multiple selections
 
-same 'ab cd ef\n' '%s\\w+<ret>,cX<esc>'
-same 'ab cd ef\n' '%s\\w+<ret>(,cX<esc>'
-same 'ab cd ef\n' '%s\\w+<ret>),cX<esc>'
+same 'ab cd ef\n' '%s\\w+<ret>,cX<esc>' # s makes the last match primary
+same 'ab cd ef\n' '%s\\w+<ret>(,cX<esc>' # ( rotates the primary backward
+same 'ab cd ef\n' '%s\\w+<ret>),cX<esc>' # ) rotates it forward, wrapping
 same 'ab cd ef\n' '%s\\w+<ret>)),cX<esc>'
-same 'ab cd ef\n' '%s\\w+<ret>2),cX<esc>'
-same 'ab cd ef\n' '%s\\w+<ret>d'
+same 'ab cd ef\n' '%s\\w+<ret>2),cX<esc>' # with a count
+same 'ab cd ef\n' '%s\\w+<ret>d' # commands apply to every selection
 same 'ab cd ef\n' '%s\\w+<ret>rX'
 same 'ab cd ef\n' '%s\\w+<ret>;d'
 same 'ab cd ef\n' '%s\\w+<ret><a-;>d'
 same 'ab cd ef\n' '%s\\w+<ret>Ld'
-same 'ab cd ef\n' '%s\\w+<ret>cX<esc>'
-same 'ab\ncd\n' '%s^<ret>oX<esc>'
+same 'ab\ncd\n' '%s^<ret>oX<esc>' # as do insert commands
 same 'ab\ncd\n' '%s^<ret>OX<esc>'
 same 'ab\ncd\n' '%s^<ret>ixxx<esc>'
 same 'ab\ncd\n' '%s\\w<ret>a<ret><esc>'
-same 'ab\ncd\n' '%s\\w<ret>a<bs><esc>'
-same 'ab\ncd\n' '%s\\w<ret>i<del><esc>'
+same 'ab\ncd\n' '%s\\w<ret>a<bs><esc>' # <bs> after a deletes the selected char
+same 'ab\ncd\n' '%s\\w<ret>i<del><esc>' # i then <del> deletes the selected char
 
 # Selection merging policy; see `SelectionState::merge_overlapping`.
 
-same 'ab cd\n' '%s\\w+<ret>geiX<esc>'
+same 'ab cd\n' '%s\\w+<ret>geiX<esc>' # motions merge coincident cursors
 same 'ab\ncd\n' '%<a-s>gkd'
-same 'abcdef\n' '%s[ac]<ret>LLcX<esc>'
+same 'abcdef\n' '%s[ac]<ret>LLcX<esc>' # extending merges overlapping ranges
 same 'abcdef\n' '%s[bd]<ret><a-;>HHcX<esc>'
-same 'abcdef\n' '%s[ab]<ret>cX<esc>'
-same 'abcdef\n' '%s[bc]<ret>i<bs><bs>X<esc>'
-same 'abcdef\n' '%s[bc]<ret>i<bs><bs><esc>d'
-same 'abcdef\n' '%s[ab]<ret>c<esc>;iX<esc>'
-same 'abcdef\n' '%s[ab]<ret>c<esc><a-o>iX<esc>'
-same 'abcdef\n' '%s[ab]<ret>c<esc>s.<ret>iX<esc>'
-same 'abcdef\n' '%s[ab]<ret>c<esc><a-s>iX<esc>'
+same 'abcdef\n' '%s[ab]<ret>cX<esc>' # touching ranges stay separate
+same 'abcdef\n' '%s[bc]<ret>i<bs><bs>X<esc>' # insert mode never merges
+same 'abcdef\n' '%s[bc]<ret>i<bs><bs><esc>d' # d merges before deleting
+# The rest start with cursors made coincident by `c`, which doesn't merge after.
+same 'abcdef\n' '%s[ab]<ret>c<esc>;iX<esc>' # ; doesn't merge
+same 'abcdef\n' '%s[ab]<ret>c<esc><a-o>iX<esc>' # <a-o> merges
+same 'abcdef\n' '%s[ab]<ret>c<esc>s.<ret>iX<esc>' # s doesn't merge
+same 'abcdef\n' '%s[ab]<ret>c<esc><a-s>iX<esc>' # <a-s> doesn't merge
 
 # Insert mode
 
-same 'abc\n' 'lliX<esc>'
-same 'abc\n' 'llaX<esc>'
-same 'abc\n' 'glaX<esc>'
-same 'abc\n' 'gllaX<esc>'
-same 'abc\n' 'lll<a-;>aX<esc>'
-same 'abc\n' 'lll<a-;>iX<esc>'
-same '  ab\n' 'jIX<esc>'
-same 'ab\ncd\n' 'AX<esc>'
-same 'ab\ncd\n' 'lLAX<esc>d'
-same 'ab\ncd\n' 'lLIX<esc>d'
-same 'ab\ncd\n' 'oX<esc>'
-same 'ab\ncd\n' 'jOX<esc>'
-same '  ab\n' 'oX<esc>'
-same 'a\n\nb\n' 'joX<esc>'
+same 'abc\n' 'lliX<esc>' # i inserts before the selection
+same 'abc\n' 'llaX<esc>' # a inserts after
+same 'abc\n' 'glaX<esc>' # a at line end inserts before the newline
+same 'abc\n' 'gllaX<esc>' # a on the newline starts a new line
+same 'abc\n' 'lll<a-;>iX<esc>' # i on the newline
+same '  ab\n' 'jIX<esc>' # I inserts after indentation
+same 'ab\ncd\n' 'AX<esc>' # A appends at line end
+same 'ab\ncd\n' 'lLAX<esc>d' # A leaves the cursor on the newline
+same 'ab\ncd\n' 'lLIX<esc>d' # I leaves it on the line's first char
+same 'ab\ncd\n' 'oX<esc>' # o opens a line below
+same 'ab\ncd\n' 'jOX<esc>' # O opens a line above
+same '  ab\n' 'oX<esc>' # o doesn't copy indentation
+same 'a\n\nb\n' 'joX<esc>' # o and O on an empty line
 same 'a\n\nb\n' 'jOX<esc>'
-same 'ab\ncd\n' '<a-o>cX<esc>'
-same 'ab\ncd\n' 'j<a-O>cX<esc>'
-same 'ab\ncd\n' 'gj<a-o>cX<esc>'
-same 'ab\ncd\n' 'lJ<a-o>cX<esc>'
-same 'ab\ncd\n' 'lJ<a-;><a-O>cX<esc>'
-same 'abc\n' 'lliab<bs>c<esc>'
-same 'abc\n' 'i<bs>X<esc>'
-same 'ab\ncd\n' 'ji<bs>X<esc>'
-same 'abc\n' 'i<del>X<esc>'
-same 'abc\n' 'gjgla<del>X<esc>'
-same 'abc\n' 'li<ret>X<esc>'
+same 'ab\ncd\n' '<a-o>cX<esc>' # <a-o> adds a line below without moving
+same 'ab\ncd\n' 'j<a-O>cX<esc>' # <a-O> adds a line above
+same 'ab\ncd\n' 'gj<a-o>cX<esc>' # on the last line
+same 'ab\ncd\n' 'lJ<a-o>cX<esc>' # below a multi-line selection
+same 'ab\ncd\n' 'lJ<a-;><a-O>cX<esc>' # above a multi-line selection
+same 'abc\n' 'lliab<bs>c<esc>' # <bs> deletes typed text
+same 'abc\n' 'i<bs>X<esc>' # <bs> at buffer start is a no-op
+same 'ab\ncd\n' 'ji<bs>X<esc>' # <bs> joins lines
+same 'abc\n' 'i<del>X<esc>' # <del> deletes the selected char
+same 'abc\n' 'gjgla<del>X<esc>' # <del> on the final newline is a no-op
+same 'abc\n' 'li<ret>X<esc>' # <ret> splits the line
 same 'abc\n' 'i<tab>X<esc>'
-same 'abc\n' 'i<s-\ >X<esc>' 'i X<esc>'
-same 'abc\n' 'iXY<esc>d'
+same 'abc\n' 'iXY<esc>d' # after i, the original char is selected
 same 'abc\n' 'iXY<esc>ld'
-same 'abc\n' 'lLcXY<esc>d'
-same 'ab\ncd\n' 'lJcX<esc>aY<esc>'
+same 'abc\n' 'lLcXY<esc>d' # after c, the char following is selected
+same 'ab\ncd\n' 'lJcX<esc>aY<esc>' # even when it's a newline
+# `<s-space>` types a space.
+same 'abc\n' 'i<s-\ >X<esc>' 'i X<esc>'
 
 # Replace
 
 same 'abc\n' 'rX'
-same 'abc\n' 'lLrX'
-same 'ab\ncd\n' 'lLJrX'
-same 'abc\n' 'lr<ret>'
-same 'abc\n' 'lr<tab>'
-same 'abc\n' '3rX'
+same 'abc\n' 'lLrX' # replaces every char in the selection
+same 'abc\n' 'lLrXd' # and keeps all of them selected
+same 'ab\ncd\n' 'lLJrX' # including newlines
+same 'abc\n' 'lr<ret>' # replace with a newline
+same 'abc\n' 'lr<tab>' # replace with a tab
+same 'abc\n' '3rX' # count is ignored
 
 # Yank and paste
 
-same 'ab cd\n' 'yp'
+same 'ab cd\n' 'yp' # p pastes after the selection
+# `p` selects the pasted text, facing the same way as the selection it was
+# pasted after.
 same 'ab cd\n' 'lllLypd'
 same 'ab cd\n' 'lllLyp;iX<esc>'
 same 'ab cd\n' 'lllLy<a-;>p;iX<esc>'
-same 'ab cd\n' 'lllL<a-;>y<a-;>p;iX<esc>'
-same 'ab cd ef\n' '%s\\w+<ret>yp'
+same 'ab cd\n' 'lllL<a-;>y<a-;>p;iX<esc>' # direction at paste time, not yank
+same 'ab cd ef\n' '%s\\w+<ret>yp' # one value per selection
 # Selection `i` gets value `i % values`, regardless of which is primary.
 same 'ab cd ef\n' '%s\\w+<ret>,y%s\\w+<ret>p'
 same 'ab cd ef gh\n' '%sab|cd<ret>y%s\\w+<ret>p'
 same 'ab cd ef\n' '%s\\w+<ret>y%scd|ef<ret>p'
 same 'ab cd ef\n' '%s\\w+<ret>y),p'
 same 'ab cd ef\n' '%s\\w+<ret>y)),p'
-same 'ab\n' 'ygep;iX<esc>'
+same 'ab\n' 'ygep;iX<esc>' # pasting after the final newline adds a line
 same 'ab\n' 'ygepd'
-same 'ab\n' 'y3pcX<esc>'
+same 'ab\n' 'y3pcX<esc>' # count pastes N times, selecting the last copy
+# Values ending in a newline paste linewise, below the selection's line, but
+# only if every value does.
 same 'ab\ncd\nef\n' 'xyjp'
 same 'ab\ncd\nef\n' 'lLyjlp'
 same 'ab\ncd\n' '%ygep'
@@ -293,14 +295,15 @@ same 'ab\ncd\nef\ngh\n' '%sa|f\\n<ret>y%sa|g<ret>p'
 
 same 'abc\n' 'iX<esc>u'
 same 'abc\n' 'iX<esc>aY<esc>uu'
-same 'abc\n' 'iX<esc>uU'
+same 'abc\n' 'iX<esc>uU' # U redoes
 same 'abc\n' 'iX<esc>aY<esc>uuUu'
-same 'abc\n' 'iX<esc>aY<esc>2u'
-same 'abc\n' 'iXY<esc>u'
-same 'abc\n' 'iXY<bs>Z<esc>u'
-same 'abc\n' 'lLduUd'
+same 'abc\n' 'iX<esc>aY<esc>2u' # count undoes N steps
+same 'abc\n' 'iXY<esc>u' # an insert session is one step
+same 'abc\n' 'iXY<bs>Z<esc>u' # including <bs>
+same 'abc\n' 'lLduUd' # where redo leaves the selection
 same 'abc\n' 'rXu'
 same 'abc\n' 'ldu'
+# Each normal mode edit is its own step, but `c` shares one with its insert.
 same 'abcd\n' 'ldldu'
 same 'ab cd\n' 'ldiX<esc>u'
 same 'ab cd\n' 'lLcX<esc>u'
@@ -308,34 +311,35 @@ same 'ab\ncd\n' '<a-o><a-o>u'
 same 'ab\ncd\n' '<a-o>iX<esc>u'
 same 'ab\ncd\n' 'd<a-o>u'
 same 'ab\ncd\n' 'j<a-O><a-O>u'
-same 'ab cd\n' 'yp2pu'
+same 'ab cd\n' 'yp2pu' # a counted paste is one step
 
 # Buffer edge cases
 
-same '' 'iX<esc>'
+same '' 'iX<esc>' # empty buffer
 same '' 'd'
 same '' 'oX<esc>'
-same 'abc' 'glaX<esc>'
+same 'abc' 'glaX<esc>' # no trailing newline
 same 'abc' 'gld'
 same 'abc\ndef' 'gljcX<esc>'
-same '\n' 'iX<esc>'
-same '\n\n\n' 'jjd'
+same '\n' 'iX<esc>' # only a newline
+same '\n\n\n' 'jjd' # deleting the last, empty line
+# `d` on the final newline is a no-op, and must leave a usable cursor.
 same 'ab\ncd\n' 'gedaX<esc>'
 same 'ab\ncd\n' 'gedgjcX<esc>'
 same 'ab\ncd\n' 'gedxd'
-same 'ab\ncd\n' '%diX<esc>'
+same 'ab\ncd\n' '%diX<esc>' # deleting everything
 same 'ab\ncd\n' '%doX<esc>'
-same 'ab\ncd\n' '%s\\w+<ret>dd'
-same 'abc\n' 'lLrXd'
+same 'ab\ncd\n' '%s\\w+<ret>dd' # second d deletes the leftover newlines
 
 # Prompt editing
 
-same 'ab cd\n' '%s\\w+x<bs><ret>cX<esc>'
-same 'ab cd\n' '%sxyz<c-u>\\w+<ret>cX<esc>'
+same 'ab cd\n' '%s\\w+x<bs><ret>cX<esc>' # <bs> deletes a char
+same 'ab cd\n' '%sxyz<c-u>\\w+<ret>cX<esc>' # <c-u> deletes to the start
+same 'ab cd\n' '%sd<c-b>c<ret>cX<esc>' # <c-b> moves back
+same 'ab cd\n' '%s\\w<c-a><c-e>+<ret>cX<esc>' # <c-a>/<c-e> go to start/end
+same 'ab cd\n' '%s\\w+<esc>cX<esc>' # <esc> cancels, keeping the selection
+# `<c-f>` moves forward and `<c-k>` deletes to the end.
 same 'ab cd\n' '%s\\w+xyz<c-a><c-f><c-f><c-f><c-k><ret>cX<esc>'
-same 'ab cd\n' '%sd<c-b>c<ret>cX<esc>'
-same 'ab cd\n' '%s\\w<c-a><c-e>+<ret>cX<esc>'
-same 'ab cd\n' '%s\\w+<esc>cX<esc>'
 
 # Known bugs
 
