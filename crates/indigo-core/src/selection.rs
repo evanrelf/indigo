@@ -488,6 +488,12 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
     pub fn paste(&mut self, values: &[String], paste_mode: PasteMode) -> Edit {
         const NOTHING: &[String] = &[String::new()];
         let values = if values.is_empty() { NOTHING } else { values };
+        let linewise =
+            paste_mode != PasteMode::Replace && values.iter().all(|value| value.ends_with('\n'));
+        self.paste_with(values, paste_mode, linewise)
+    }
+
+    fn paste_with(&mut self, values: &[String], paste_mode: PasteMode, linewise: bool) -> Edit {
         if paste_mode == PasteMode::Replace {
             // Unlike Kakoune; see `SelectionState::merge_overlapping`.
             self.state.merge_overlapping();
@@ -500,8 +506,6 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
                     .is_sorted_by_key(|range| range.end().byte_index),
             "pasting after relies on selection ranges' ends being sorted",
         );
-        let linewise =
-            paste_mode != PasteMode::Replace && values.iter().all(|value| value.ends_with('\n'));
         let mut ops = Edit::new();
         let mut previous = 0;
         let mut output_position = 0;
