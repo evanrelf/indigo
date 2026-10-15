@@ -96,7 +96,7 @@ See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 - [ ] `<a-p>` (paste all after)
 - [ ] `<a-P>` (paste all before)
 - [x] `r` (replace each char)
-- [ ] `R` (replace with yanked)
+- [x] `R` (replace with yanked)
 - [ ] `<a-R>` (replace with every yanked)
 - [x] `o` (open line below)
 - [x] `O` (open line above)

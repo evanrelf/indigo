@@ -297,6 +297,12 @@ same 'ab cd\n' 'lllL<a-;>yP;iX<esc>' # facing the same way
 same 'ab\ncd\nef\n' 'xyjlP' # linewise P pastes above the selection's line
 same 'ab\n' 'ly3PcX<esc>' # count stacks copies before, selecting the last
 same 'ab\n' 'lPiX<esc>' # an empty register leaves the selection put
+same 'ab cd\n' 'lllLyglR' # R replaces the selection
+same 'ab cd\n' 'lllLyglRd' # selecting the replacement
+same 'ab\ncd\n' 'xyjR' # never linewise
+same 'ab\n' 'y3R' # count is ignored
+same 'ab\n' 'RiX<esc>' # an empty register deletes the selection
+same 'abc\n' 'lygeRd' # replacing the final newline restores it, selected too
 
 # Undo and redo
 

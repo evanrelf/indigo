@@ -31,9 +31,10 @@ pub enum Error {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PastePosition {
+pub enum PasteMode {
     Before,
     After,
+    Replace,
 }
 
 #[derive(Clone)]
@@ -482,18 +483,22 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
         ops
     }
 
-    pub fn paste(&mut self, values: &[String], paste_position: PastePosition) -> Edit {
+    pub fn paste(&mut self, values: &[String], paste_mode: PasteMode) -> Edit {
         const NOTHING: &[String] = &[String::new()];
         let values = if values.is_empty() { NOTHING } else { values };
+        if paste_mode == PasteMode::Replace {
+            self.state.merge_overlapping();
+        }
         debug_assert!(
-            paste_position == PastePosition::Before
+            paste_mode == PasteMode::Before
                 || self
                     .state
                     .ranges
                     .is_sorted_by_key(|range| range.end().byte_index),
             "pasting after relies on selection ranges' ends being sorted",
         );
-        let linewise = values.iter().all(|value| value.ends_with('\n'));
+        let linewise =
+            paste_mode != PasteMode::Replace && values.iter().all(|value| value.ends_with('\n'));
         let mut ops = Edit::new();
         let mut previous = 0;
         let mut output_position = 0;
@@ -503,21 +508,22 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
         for (i, range) in self.state.ranges.iter().enumerate() {
             // The text to replace; empty when only inserting.
             let at = |offset| offset..offset;
-            let replaced = match (paste_position, linewise) {
-                (PastePosition::Before, false) => at(range.start().byte_index),
-                (PastePosition::Before, true) => {
+            let replaced = match (paste_mode, linewise) {
+                (PasteMode::Before, false) => at(range.start().byte_index),
+                (PasteMode::Before, true) => {
                     let line = self
                         .text
                         .byte_to_line_idx(range.start().byte_index, LINE_TYPE);
                     at(self.text.line_to_byte_idx(line, LINE_TYPE))
                 }
-                (PastePosition::After, false) => at(self.end_exclusive(range)),
-                (PastePosition::After, true) => {
+                (PasteMode::After, false) => at(self.end_exclusive(range)),
+                (PasteMode::After, true) => {
                     let line = self
                         .text
                         .byte_to_line_idx(range.end().byte_index, LINE_TYPE);
                     at(self.text.line_to_byte_idx(line + 1, LINE_TYPE))
                 }
+                (PasteMode::Replace, _) => range.start().byte_index..self.end_exclusive(range),
             };
             let retained = replaced.start - previous;
             ops.retain(retained);
