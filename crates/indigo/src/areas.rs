@@ -1,6 +1,6 @@
 use indigo_core::{prelude::*, rope::LINE_TYPE};
 use ratatui::layout::{Constraint, Layout, Position, Rect};
-use std::cmp::max;
+use std::cmp::{max, min};
 
 #[derive(Clone, Copy, Default)]
 pub struct Areas {
@@ -191,7 +191,9 @@ pub fn line_index_to_area(
         // Avoid expensive display width calculation if we know it would exceed the viewport width
         area.width
     } else {
-        u16::try_from(line.display_width()).expect("Terminal width is less than u16::MAX")
+        // Tabs are wider than their byte length, so the line can still exceed the viewport width
+        let width = min(line.display_width(), usize::from(area.width));
+        u16::try_from(width).expect("Terminal width is less than u16::MAX")
     };
 
     Some(Rect {
@@ -243,8 +245,12 @@ pub fn byte_index_to_area(
         return None;
     }
 
-    let width = u16::try_from(rope.grapheme(byte_index).display_width())
-        .expect("No grapheme exists with a display width > u16::MAX");
+    // Clip graphemes which straddle the right edge of the area
+    let width = min(
+        rope.grapheme(byte_index).display_width(),
+        usize::from(area.right() - x),
+    );
+    let width = u16::try_from(width).expect("Terminal width is less than u16::MAX");
 
     Some(Rect {
         x,
