@@ -104,15 +104,15 @@ pub enum Action {
 pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     use Action::*;
     keymap! { Vec<Action>;
-        "<esc>" => vec![EnterNormalMode],
-        "<c-b>" => vec![MoveLeft],
-        "<c-f>" => vec![MoveRight],
-        "<c-a>" => vec![MoveToStart],
-        "<c-e>" => vec![MoveToEnd],
-        "<c-u>" => vec![DeleteToStart],
-        "<c-k>" => vec![DeleteToEnd],
-        "<bs>" => vec![DeleteBefore],
-        "<ret>" => vec![Exec],
+        "<esc>" => vec![EnterNormalMode], /// Cancel
+        "<c-b>" => vec![MoveLeft], /// Move left
+        "<c-f>" => vec![MoveRight], /// Move right
+        "<c-a>" => vec![MoveToStart], /// Move to start
+        "<c-e>" => vec![MoveToEnd], /// Move to end
+        "<c-u>" => vec![DeleteToStart], /// Delete to start
+        "<c-k>" => vec![DeleteToEnd], /// Delete to end
+        "<bs>" => vec![DeleteBefore], /// Delete before cursor
+        "<ret>" => vec![Exec], /// Submit
         keys => {
             if let [key] = keys
                 && key.modifiers.is_empty()
@@ -122,7 +122,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
             } else {
                 KeymapResult::Unmapped
             }
-        }
+        } /// Insert character
     }
 });
 

@@ -51,8 +51,9 @@ pub enum Action {
 pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     use Action::*;
     keymap! { Vec<Action>;
-        "<ret>" => vec![Seek(b'\n')],
-        "<tab>" => vec![Seek(b'\t')],
+        "<esc>" => vec![], /// Cancel
+        "<ret>" => vec![Seek(b'\n')], /// Seek to newline
+        "<tab>" => vec![Seek(b'\t')], /// Seek to tab
         keys => {
             if let [key] = keys
                 && key.modifiers.is_empty()
@@ -62,7 +63,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
             } else {
                 KeymapResult::Unmapped
             }
-        }
+        } /// Seek to character
     }
 });
 

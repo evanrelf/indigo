@@ -2,7 +2,7 @@
 
 use crate::{
     editor::Editor,
-    key::KeyCode,
+    key::{KeyCode, KeyModifiers},
     keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal},
 };
@@ -23,22 +23,21 @@ pub enum Action {
 pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     use Action::*;
     keymap! { Vec<Action>;
-        "<esc>" => vec![EnterNormalMode],
-        "<bs>" => vec![DeleteBefore],
-        "<del>" => vec![DeleteAfter],
-        "<s-\\ >" => vec![InsertChar(' ')],
-        "<ret>" => vec![InsertChar('\n')],
-        "<tab>" => vec![InsertChar('\t')],
+        "<esc>" => vec![EnterNormalMode], /// Enter normal mode
+        "<bs>" => vec![DeleteBefore], /// Delete before cursor
+        "<del>" => vec![DeleteAfter], /// Delete after cursor
+        "<ret>" => vec![InsertChar('\n')], /// Insert newline
+        "<tab>" => vec![InsertChar('\t')], /// Insert tab
         keys => {
             if let [key] = keys
-                && key.modifiers.is_empty()
                 && let KeyCode::Char(c) = key.code
+                && key.modifiers.difference(KeyModifiers::SHIFT).is_empty()
             {
                 KeymapResult::Fallback(vec![InsertChar(char::from(c))])
             } else {
                 KeymapResult::Unmapped
             }
-        }
+        } /// Insert character
     }
 });
 

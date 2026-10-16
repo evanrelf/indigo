@@ -304,11 +304,11 @@ impl<S: WrapMut, T: WrapRef> SelectionView<'_, S, T> {
         self.state.ranges.truncate(1);
     }
 
-    pub fn rotate_primary_forward(&mut self, count: usize) {
+    pub fn rotate_forward(&mut self, count: usize) {
         self.state.primary_range = (self.state.primary_range + count) % self.state.ranges.len();
     }
 
-    pub fn rotate_primary_backward(&mut self, count: usize) {
+    pub fn rotate_backward(&mut self, count: usize) {
         let length = self.state.ranges.len();
         self.state.primary_range = (self.state.primary_range + length - (count % length)) % length;
     }
