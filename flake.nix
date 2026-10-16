@@ -79,6 +79,7 @@
               packages = with pkgs; [
                 cargo-fuzz
                 kakoune
+                tmux # Prefer `rex` if available!
               ];
             };
         };

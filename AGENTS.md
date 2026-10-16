@@ -41,8 +41,10 @@ by Kakoune and CodeMirror.
   running `cargo test` from the root of the repo to include as much as possible.
 - Prefer writing property tests with Hegel over unit tests. Read the tests in
   `indigo_kernel`'s `edit` and `merge` modules for good examples.
-- Never run `indigo`; you cannot control it. Run `indigo-cli` instead to test
-  editor behavior. Read `crates/indigo-cli/README.md` for detailed instructions.
+- Run `./bin/run-agent` with `rex` (or `tmux` as fallback) to control the TUI.
+- Run `./bin/run-cli` to control the headless CLI. Prefer this over the TUI if
+  you don't need interactive control, or aren't making UI changes. Read
+  `crates/indigo-cli/README.md` for detailed instructions.
 - Run the `bin/compare-kak-suite` integration suite to compare Kakoune and
   Indigo behavior when you finish working on changes that affect editing
   behavior. If you feel strongly that a new test case would be highly valuable,

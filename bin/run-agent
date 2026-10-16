@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+IFS=$'\n\t'
+
+# Run this under `rex` if available, or `tmux` if not.
+
+cargo run --quiet --bin indigo -- \
+  --log-filter info,indigo_core=debug,indigo=debug \
+  --x-ui-debug-bar \
+  --x-ui-barebones \
+  --x-ui-max-width 80 \
+  --x-ui-max-height 24 \
+  "$@"

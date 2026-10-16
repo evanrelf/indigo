@@ -62,11 +62,21 @@ struct ExperimentalArgs {
     x_ui_barebones: bool,
 
     /// Limit viewport width
-    #[arg(long, value_name = "COLUMNS", default_value_t)]
+    #[arg(
+        long,
+        value_name = "COLUMNS",
+        default_value_t,
+        overrides_with = "x_ui_max_width"
+    )]
     x_ui_max_width: u16,
 
     /// Limit viewport height
-    #[arg(long, value_name = "ROWS", default_value_t)]
+    #[arg(
+        long,
+        value_name = "ROWS",
+        default_value_t,
+        overrides_with = "x_ui_max_height"
+    )]
     x_ui_max_height: u16,
 }
 
