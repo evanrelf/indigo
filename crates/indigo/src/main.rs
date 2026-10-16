@@ -250,7 +250,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
             if event.is_resize() {
                 continue 'frame;
             }
-            if !should_skip_event(&event) {
+            if !should_skip_event(&event, areas) {
                 break 'event_read event;
             }
         };

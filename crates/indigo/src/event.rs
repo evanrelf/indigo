@@ -19,15 +19,22 @@ pub type IndigoEvent = indigo_core::editor::Event;
 pub type TerminalEvent = crossterm::event::Event;
 
 #[must_use]
-pub fn should_skip_event(event: &TerminalEvent) -> bool {
+pub fn should_skip_event(event: &TerminalEvent, areas: Areas) -> bool {
     match event {
         TerminalEvent::Key(key_event) => {
             matches!(key_event.code, KeyCode::Modifier(_)) || key_event.kind.is_release()
         }
-        TerminalEvent::Mouse(mouse_event) => matches!(
-            mouse_event.kind,
-            MouseEventKind::Moved | MouseEventKind::ScrollLeft | MouseEventKind::ScrollRight
-        ),
+        TerminalEvent::Mouse(mouse_event) => {
+            matches!(
+                mouse_event.kind,
+                MouseEventKind::Moved | MouseEventKind::ScrollLeft | MouseEventKind::ScrollRight
+            )
+            // Ignore mouse events outside the UI (e.g. when its size is limited)
+            || !areas.ui.contains(Position {
+                x: mouse_event.column,
+                y: mouse_event.row,
+            })
+        }
         _ => false,
     }
 }

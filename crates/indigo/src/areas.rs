@@ -4,6 +4,7 @@ use std::cmp::{max, min};
 
 #[derive(Clone, Copy, Default)]
 pub struct Areas {
+    pub ui: Rect,
     pub status_bar: Rect,
     pub line_numbers: Rect,
     pub dots: Rect,
@@ -43,6 +44,7 @@ impl Areas {
         .areas(main);
 
         Self {
+            ui: area,
             status_bar,
             line_numbers,
             dots: main,
