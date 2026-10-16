@@ -341,30 +341,30 @@ impl<V> Default for Keymap<V> {
 
 macro_rules! keymap {
     // [x] type [x] fallback (base case)
-    ($value_ty:ty; $($keys:literal => $value:expr,)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
+    ($value_ty:ty; $($keys:literal => $value:expr $(; $desc:literal)?,)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
         let mut keymap: $crate::keymap::Keymap<$value_ty> = $crate::keymap::Keymap::new();
-        $(keymap.insert($keys, $value, None);)*
+        $(keymap.insert($keys, $value, None $(.or(Some($desc)))?);)*
         keymap.set_fallback(|_self, $fallback_arg| $fallback_body);
         keymap
     }};
     // [x] type [ ] fallback
-    ($value_ty:ty; $($keys:literal => $value:expr),* $(,)?) => {
+    ($value_ty:ty; $($keys:literal => $value:expr $(; $desc:literal)?),* $(,)?) => {
         $crate::keymap::keymap! { $value_ty;
-            $($keys => $value,)*
+            $($keys => $value $(; $desc)?,)*
             __keys => { $crate::keymap::KeymapResult::Unmapped },
         }
     };
     // [ ] type [x] fallback
-    ($($keys:literal => $value:expr,)* $fallback_arg:ident => $fallback_body:block $(,)?) => {
+    ($($keys:literal => $value:expr $(; $desc:literal)?,)* $fallback_arg:ident => $fallback_body:block $(,)?) => {
         $crate::keymap::keymap! { _;
-            $($keys => $value,)*
+            $($keys => $value $(; $desc)?,)*
             $fallback_arg => $fallback_body,
         }
     };
     // [ ] type [ ] fallback
-    ($($keys:literal => $value:expr),* $(,)?) => {
+    ($($keys:literal => $value:expr $(; $desc:literal)?),* $(,)?) => {
         $crate::keymap::keymap! { _;
-            $($keys => $value,)*
+            $($keys => $value $(; $desc)?,)*
             __keys => { $crate::keymap::KeymapResult::Unmapped },
         }
     };
@@ -514,5 +514,15 @@ mod tests {
         );
         // reinserting keeps the original position
         keymap.insert("gk", vec![Action("goto top")], None);
+    }
+
+    #[test]
+    fn keymap_descriptions() {
+        let keymap = keymap! {
+            "gk" => (); "Move to top",
+            "x" => (),
+        };
+        let descriptions: Vec<_> = keymap.docs().map(|(_, description)| description).collect();
+        assert_eq!(descriptions, [Some("Move to top"), None]);
     }
 }
