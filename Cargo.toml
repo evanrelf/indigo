@@ -32,6 +32,7 @@ regex-cursor = { version = "0.1.5", default-features = false, features = ["perf-
 roaring = "0.11.5"
 ropey = { version = "2.0.0-beta.1" }
 shell-words = "1.1.1"
+sigpipe = "0.1.3"
 slotmap = "1.1.1"
 thiserror = "2.0.20"
 tinyvec = { version = "1.13.3", features = ["std"] }

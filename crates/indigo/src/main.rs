@@ -97,6 +97,7 @@ fn main() -> anyhow::Result<ExitCode> {
     let args = Args::parse();
 
     if args.experimental.x_keymap {
+        sigpipe::reset();
         print_keymap();
         return Ok(ExitCode::SUCCESS);
     }
