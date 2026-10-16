@@ -357,15 +357,14 @@ fn render_prompt(editor: &Editor, mut area: Rect, surface: &mut Surface) {
 
         format!("{}:", prompt_mode.prompt()).render(area, surface);
 
-        area.x += u16::try_from(prompt_mode.prompt().display_width())
+        let offset = u16::try_from(prompt_mode.prompt().display_width())
             .expect("Prompt width is less than u16::MAX")
             + 1;
-        area.width -= 1;
+        area.x += offset;
+        area.width = area.width.saturating_sub(offset);
 
-        Line::raw(prompt_mode.content()).render(area, surface);
+        Line::raw(format!("{}   ", prompt_mode.content())).render(area, surface);
 
-        // TODO: Color one or two cells after cursor gray to mark the boundary between prompt text
-        // and status bar text.
         if let Some(rect) = byte_index_to_area(
             prompt_mode.cursor().byte_index(),
             prompt_mode.rope(),
