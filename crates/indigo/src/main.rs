@@ -57,6 +57,10 @@ struct ExperimentalArgs {
     #[arg(long)]
     x_ui_debug_hud: bool,
 
+    /// Hide superfluous UI chrome
+    #[arg(long)]
+    x_ui_barebones: bool,
+
     /// Limit viewport width
     #[arg(long, value_name = "COLUMNS", default_value_t)]
     x_ui_max_width: u16,
@@ -215,8 +219,8 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
             let area = frame.area();
             let limit = |max, actual| if max == 0 { actual } else { min(max, actual) };
             let area = Rect {
-                width: limit(args.experimental.x_max_width, area.width),
-                height: limit(args.experimental.x_max_height, area.height),
+                width: limit(args.experimental.x_ui_max_width, area.width),
+                height: limit(args.experimental.x_ui_max_height, area.height),
                 ..area
             };
             let surface = frame.buffer_mut();
@@ -258,13 +262,17 @@ fn render(editor: &Editor, experimental: &ExperimentalArgs, area: Rect, surface:
     render_status_bar(editor, areas.status_bar, surface);
     render_prompt(editor, areas.status_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
-    render_dots(editor, areas.dots, surface);
-    if experimental.x_debug_hud {
+    if !experimental.x_ui_barebones {
+        render_dots(editor, areas.dots, surface);
+    }
+    if experimental.x_ui_debug_hud {
         render_debug_hud(editor, areas.text, surface);
     }
     render_text(editor, areas.text, surface);
     render_selection(editor, areas.text, surface);
-    render_scroll_bar(editor, areas.scroll_bar, surface);
+    if !experimental.x_ui_barebones {
+        render_scroll_bar(editor, areas.scroll_bar, surface);
+    }
 }
 
 fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
