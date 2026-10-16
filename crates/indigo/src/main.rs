@@ -55,7 +55,15 @@ struct ExperimentalArgs {
 
     /// Enable debug HUD
     #[arg(long)]
-    x_debug_hud: bool,
+    x_ui_debug_hud: bool,
+
+    /// Limit viewport width
+    #[arg(long, value_name = "COLUMNS", default_value_t)]
+    x_ui_max_width: u16,
+
+    /// Limit viewport height
+    #[arg(long, value_name = "ROWS", default_value_t)]
+    x_ui_max_height: u16,
 }
 
 fn main() -> anyhow::Result<ExitCode> {
@@ -205,6 +213,12 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
     let exit_code = 'frame: loop {
         terminal.draw(|frame| {
             let area = frame.area();
+            let limit = |max, actual| if max == 0 { actual } else { min(max, actual) };
+            let area = Rect {
+                width: limit(args.experimental.x_max_width, area.width),
+                height: limit(args.experimental.x_max_height, area.height),
+                ..area
+            };
             let surface = frame.buffer_mut();
             areas = Areas::new(&editor, area);
             editor.focused_window_mut().set_height(areas.text.height);
