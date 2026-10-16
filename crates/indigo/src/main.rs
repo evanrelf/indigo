@@ -614,7 +614,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
             let width_u16 = u16::try_from(width_usize)
                 .expect("No grapheme exists with a display width > u16::MAX");
 
-            if rect.x + width_u16 > rect.right() {
+            if width_u16 > rect.width {
                 continue 'line;
             }
 
@@ -625,6 +625,7 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
             span.render(rect, surface);
 
             rect.x += width_u16;
+            rect.width -= width_u16;
         }
     }
 }
