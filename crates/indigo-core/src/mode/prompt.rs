@@ -3,7 +3,7 @@
 use crate::{
     cursor::{Cursor, CursorEdit, CursorMove, CursorState},
     editor::Editor,
-    key::KeyCode,
+    key::{KeyCode, KeyModifiers},
     keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal},
     text::Text,
@@ -115,8 +115,8 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<ret>" => vec![Exec], /// Submit
         keys => {
             if let [key] = keys
-                && key.modifiers.is_empty()
                 && let KeyCode::Char(c) = key.code
+                && key.modifiers.difference(KeyModifiers::SHIFT).is_empty()
             {
                 KeymapResult::Fallback(vec![InsertChar(char::from(c))])
             } else {

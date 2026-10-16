@@ -2,7 +2,7 @@
 
 use crate::{
     editor::Editor,
-    key::KeyCode,
+    key::{KeyCode, KeyModifiers},
     keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal},
 };
@@ -56,8 +56,8 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<tab>" => vec![Seek(b'\t')], /// Seek to tab
         keys => {
             if let [key] = keys
-                && key.modifiers.is_empty()
                 && let KeyCode::Char(c) = key.code
+                && key.modifiers.difference(KeyModifiers::SHIFT).is_empty()
             {
                 KeymapResult::Fallback(vec![Seek(c)])
             } else {
