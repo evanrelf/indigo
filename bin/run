@@ -9,14 +9,14 @@ run_samply() {
   cargo build --profile profile --bin indigo
   samply record -- ./target/profile/indigo \
     --log-filter info,indigo_core=debug,indigo=debug \
-    --x-ui-debug-hud \
+    --x-ui-debug-bar \
     "$@"
 }
 
 run() {
   cargo run --bin indigo -- \
     --log-filter info,indigo_core=debug,indigo=debug \
-    --x-ui-debug-hud \
+    --x-ui-debug-bar \
     "$@"
 }
 

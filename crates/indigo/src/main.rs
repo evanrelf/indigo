@@ -19,7 +19,7 @@ use indigo_core::{
 use pathdiff::diff_utf8_paths;
 use ratatui::{
     crossterm,
-    prelude::{Buffer as Surface, Line, Rect, Span, Style, Stylize as _, Text, Widget as _},
+    prelude::{Buffer as Surface, Line, Rect, Span, Style, Stylize as _, Widget as _},
 };
 use std::{
     cmp::{max, min},
@@ -53,9 +53,9 @@ struct ExperimentalArgs {
     #[arg(long, name = "KEYS", conflicts_with = "x_keymap")]
     x_exec: Option<Keys>,
 
-    /// Enable debug HUD
+    /// Show debug bar
     #[arg(long)]
-    x_ui_debug_hud: bool,
+    x_ui_debug_bar: bool,
 
     /// Hide superfluous UI chrome
     #[arg(long)]
@@ -224,7 +224,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
                 ..area
             };
             let surface = frame.buffer_mut();
-            areas = Areas::new(&editor, area);
+            areas = Areas::new(&editor, area, args.experimental.x_ui_debug_bar);
             editor.focused_window_mut().set_height(areas.text.height);
             if pending_center {
                 editor.focused_window_mut().scroll_center_selection();
@@ -258,15 +258,15 @@ fn render(editor: &Editor, experimental: &ExperimentalArgs, area: Rect, surface:
     if area.is_empty() {
         return;
     }
-    let areas = Areas::new(editor, area);
+    let areas = Areas::new(editor, area, experimental.x_ui_debug_bar);
     render_status_bar(editor, areas.status_bar, surface);
     render_prompt(editor, areas.status_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
     if !experimental.x_ui_barebones {
         render_dots(editor, areas.dots, surface);
     }
-    if experimental.x_ui_debug_hud {
-        render_debug_hud(editor, areas.text, surface);
+    if experimental.x_ui_debug_bar {
+        render_debug_bar(editor, areas.debug_bar, surface);
     }
     render_text(editor, areas.text, surface);
     render_selection(editor, areas.text, surface);
@@ -506,7 +506,7 @@ fn render_dots(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
-fn render_debug_hud(editor: &Editor, area: Rect, surface: &mut Surface) {
+fn render_debug_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let window = editor.focused_window();
     let selection = window.selection();
     let state = selection.state();
@@ -515,26 +515,16 @@ fn render_debug_hud(editor: &Editor, area: Rect, surface: &mut Surface) {
     let tail = primary.tail.byte_index;
     let head = primary.head.byte_index;
     let goal = primary.goal_column;
-    let syntax = render_syntax_breadcrumb(editor, usize::from(area.width));
 
-    let lines = vec![
-        Line::from(Span::raw("DEBUG").style(Style::reset().fg(THEME.dots))),
-        Line::from(Span::raw(format!("ranges: {ranges}")).style(Style::reset().fg(THEME.dots))),
-        Line::from(Span::raw(format!("tail: {tail}")).style(Style::reset().fg(THEME.dots))),
-        Line::from(Span::raw(format!("head: {head}")).style(Style::reset().fg(THEME.dots))),
-        Line::from(Span::raw(format!("goal: {goal:?}")).style(Style::reset().fg(THEME.dots))),
-        Line::from(Span::raw(syntax).style(Style::reset().fg(THEME.dots))),
-    ];
+    let info = format!(" ranges={ranges} tail={tail} head={head} goal={goal:?}");
+    let syntax = render_syntax_breadcrumb(
+        editor,
+        usize::from(area.width).saturating_sub(info.as_str().display_width()),
+    );
 
-    let height = u16::try_from(lines.len()).unwrap();
-
-    let area = Rect {
-        y: area.height - height,
-        height,
-        ..area
-    };
-
-    Text::from(lines).right_aligned().render(area, surface);
+    surface.set_style(area, Style::new().bg(THEME.status_bar_bg));
+    Line::raw(syntax).render(area, surface);
+    Line::raw(info).right_aligned().render(area, surface);
 }
 
 fn render_syntax_breadcrumb(editor: &Editor, max_width: usize) -> String {
@@ -544,7 +534,7 @@ fn render_syntax_breadcrumb(editor: &Editor, max_width: usize) -> String {
     let window = editor.focused_window();
 
     let Some(syntax) = window.buffer().text.syntax_stale() else {
-        return String::from("syntax: none");
+        return String::new();
     };
 
     let (start, end) = window.selection().get_primary().byte_offsets();
@@ -562,7 +552,7 @@ fn render_syntax_breadcrumb(editor: &Editor, max_width: usize) -> String {
         .collect::<Vec<_>>();
 
     if kinds.is_empty() {
-        return String::from("syntax: no node");
+        return String::new();
     }
 
     let mut skipped = 0;

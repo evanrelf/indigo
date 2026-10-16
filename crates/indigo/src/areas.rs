@@ -9,16 +9,19 @@ pub struct Areas {
     pub dots: Rect,
     pub text: Rect,
     pub scroll_bar: Rect,
+    pub debug_bar: Rect,
 }
 
 impl Areas {
     #[must_use]
-    pub fn new(editor: &Editor, area: Rect) -> Self {
-        let [status_bar, main] = Layout::vertical([
+    pub fn new(editor: &Editor, area: Rect, show_debug_bar: bool) -> Self {
+        let [status_bar, main, debug_bar] = Layout::vertical([
             // status_bar
             Constraint::Length(1),
             // line_numbers + text
             Constraint::Fill(1),
+            // debug_bar
+            Constraint::Length(if show_debug_bar { 1 } else { 0 }),
         ])
         .areas(area);
 
@@ -45,6 +48,7 @@ impl Areas {
             dots: main,
             text,
             scroll_bar,
+            debug_bar,
         }
     }
 }
