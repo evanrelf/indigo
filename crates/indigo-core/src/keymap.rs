@@ -353,10 +353,10 @@ impl<V> Default for Keymap<V> {
 
 macro_rules! keymap {
     // [x] type [x] fallback (base case)
-    ($value_ty:ty; $($keys:literal => $value:expr, $(#[doc = $desc:literal])?)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
+    ($value_ty:ty; $($keys:literal => $value:expr, $(#[doc = $desc:literal])?)* $fallback_arg:ident => $fallback_body:block $(,)? $(#[doc = $fallback_desc:literal])?) => {{
         let mut keymap: $crate::keymap::Keymap<$value_ty> = $crate::keymap::Keymap::new();
         $(keymap.insert($keys, $value, None $(.or(Some($desc.trim())))?);)*
-        keymap.set_fallback(|_self, $fallback_arg| $fallback_body, None);
+        keymap.set_fallback(|_self, $fallback_arg| $fallback_body, None $(.or(Some($fallback_desc.trim())))?);
         keymap
     }};
     // [x] type [ ] fallback
@@ -367,10 +367,10 @@ macro_rules! keymap {
         }
     };
     // [ ] type [x] fallback
-    ($($keys:literal => $value:expr, $(#[doc = $desc:literal])?)* $fallback_arg:ident => $fallback_body:block $(,)?) => {
+    ($($keys:literal => $value:expr, $(#[doc = $desc:literal])?)* $fallback_arg:ident => $fallback_body:block $(,)? $(#[doc = $fallback_desc:literal])?) => {
         $crate::keymap::keymap! { _;
             $($keys => $value, $(#[doc = $desc])?)*
-            $fallback_arg => $fallback_body,
+            $fallback_arg => $fallback_body, $(#[doc = $fallback_desc])?
         }
     };
     // [ ] type [ ] fallback
@@ -480,8 +480,9 @@ mod tests {
                 } else {
                     KeymapResult::Unmapped
                 }
-            }
+            } /// Yay 4
         };
+        assert_eq!(keymap.fallback_description(), Some("Yay 4"));
         assert_eq!(
             keymap.get("gj"),
             KeymapResult::Mapped(&vec![Action("move to bottom")])
@@ -536,5 +537,6 @@ mod tests {
         };
         let descriptions: Vec<_> = keymap.docs().map(|(_, description)| description).collect();
         assert_eq!(descriptions, [Some("Move to top"), None]);
+        assert_eq!(keymap.fallback_description(), None);
     }
 }
