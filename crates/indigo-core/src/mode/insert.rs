@@ -23,11 +23,11 @@ pub enum Action {
 pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     use Action::*;
     keymap! { Vec<Action>;
-        "<esc>" => vec![EnterNormalMode], /// Enter normal mode
+        "<esc>" => vec![EnterNormalMode], /// Exit insert mode
+        "<tab>" => vec![InsertChar('\t')], /// Insert tab
+        "<ret>" => vec![InsertChar('\n')], /// Insert newline
         "<bs>" => vec![DeleteBefore], /// Delete before cursor
         "<del>" => vec![DeleteAfter], /// Delete after cursor
-        "<ret>" => vec![InsertChar('\n')], /// Insert newline
-        "<tab>" => vec![InsertChar('\t')], /// Insert tab
         keys => {
             if let [key] = keys
                 && let KeyCode::Char(c) = key.code

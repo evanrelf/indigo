@@ -105,6 +105,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     use Action::*;
     keymap! { Vec<Action>;
         "<esc>" => vec![EnterNormalMode], /// Cancel
+        "<ret>" => vec![Exec], /// Submit
         "<c-b>" => vec![MoveLeft], /// Move left
         "<c-f>" => vec![MoveRight], /// Move right
         "<c-a>" => vec![MoveToStart], /// Move to start
@@ -112,7 +113,6 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<c-u>" => vec![DeleteToStart], /// Delete to start
         "<c-k>" => vec![DeleteToEnd], /// Delete to end
         "<bs>" => vec![DeleteBefore], /// Delete before cursor
-        "<ret>" => vec![Exec], /// Submit
         keys => {
             if let [key] = keys
                 && let KeyCode::Char(c) = key.code

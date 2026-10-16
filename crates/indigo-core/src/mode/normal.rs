@@ -96,6 +96,8 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     use SeekInclude::{Onto, Until};
     use SeekSelect::{Extend, Move};
     keymap! { Vec<Action>;
+        "<esc>" => vec![EnterNormalMode],
+
         "0" => vec![AppendCountDigit(0)],
         "1" => vec![AppendCountDigit(1)],
         "2" => vec![AppendCountDigit(2)],
@@ -106,12 +108,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "7" => vec![AppendCountDigit(7)],
         "8" => vec![AppendCountDigit(8)],
         "9" => vec![AppendCountDigit(9)],
-        "<esc>" => vec![EnterNormalMode],
-        ":" => vec![EnterCommandMode], /// Enter command mode
-        "i" => vec![EnterInsertMode], /// Enter insert mode at cursor
-        "I" => vec![InsertAtLineNonBlankStart], /// Enter insert mode at first non-blank
-        "a" => vec![InsertAfterHead], /// Enter insert mode after cursor
-        "A" => vec![InsertAtLineEnd], /// Enter insert mode at line end
+
         "h" => vec![MoveLeft], /// Move left
         "l" => vec![MoveRight], /// Move right
         "k" => vec![MoveUp], /// Move up
@@ -120,59 +117,75 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "L" => vec![ExtendRight], /// Extend right
         "K" => vec![ExtendUp], /// Extend up
         "J" => vec![ExtendDown], /// Extend down
-        "<a-t>" => vec![EnterSeekMode { select: Move, include: Until, direction: Prev }], /// Move until previous character
-        "<a-T>" => vec![EnterSeekMode { select: Extend, include: Until, direction: Prev }], /// Extend until previous character
-        "t" => vec![EnterSeekMode { select: Move, include: Until, direction: Next }], /// Move until next character
-        "T" => vec![EnterSeekMode { select: Extend, include: Until, direction: Next }], /// Extend until next character
-        "<a-f>" => vec![EnterSeekMode { select: Move, include: Onto, direction: Prev }], /// Move onto previous character
-        "<a-F>" => vec![EnterSeekMode { select: Extend, include: Onto, direction: Prev }], /// Extend onto previous character
-        "f" => vec![EnterSeekMode { select: Move, include: Onto, direction: Next }], /// Move onto next character
-        "F" => vec![EnterSeekMode { select: Extend, include: Onto, direction: Next }], /// Extend onto next character
+
+        "i" => vec![EnterInsertMode], /// Enter insert mode at cursor
+        "a" => vec![InsertAfterHead], /// Enter insert mode after cursor
+        "I" => vec![InsertAtLineNonBlankStart], /// Enter insert mode at first non-blank
+        "A" => vec![InsertAtLineEnd], /// Enter insert mode at line end
+
         "r" => vec![EnterReplaceMode], /// Replace characters
-        // TODO: With a count, `g` runs `GotoLine` instead of entering goto mode.
-        "gk" => vec![GotoMoveToStart], /// Move to buffer start
-        "gK" => vec![GotoExtendToStart], /// Extend to buffer start
-        "gj" => vec![GotoMoveToBottom], /// Move to last line
-        "gJ" => vec![GotoExtendToBottom], /// Extend to last line
-        "ge" => vec![GotoMoveToEnd], /// Move to buffer end
-        "gE" => vec![GotoExtendToEnd], /// Extend to buffer end
-        "gh" => vec![GotoMoveToLineStart], /// Move to line start
-        "gH" => vec![GotoExtendToLineStart], /// Extend to line start
-        "gi" => vec![GotoMoveToLineNonBlankStart], /// Move to first non-blank
-        "gI" => vec![GotoExtendToLineNonBlankStart], /// Extend to first non-blank
-        "gl" => vec![GotoMoveUntilLineEnd], /// Move to line end
-        "gL" => vec![GotoExtendUntilLineEnd], /// Extend to line end
-        "," => vec![KeepPrimary], /// Keep only primary selection range
-        "(" => vec![RotateSelectionBackward], /// Rotate selection backward
-        ")" => vec![RotateSelectionForward], /// Rotate selection forward
-        ";" => vec![Collapse], /// Collapse selection ranges
-        "<a-;>" => vec![Flip], /// Flip selection
-        "<a-:>" => vec![FlipForward], /// Flip selection forward
-        "%" => vec![SelectAll], /// Select all
-        "x" => vec![ExpandToFullLines], /// Expand to full lines
-        "s" => vec![SelectRegex], /// Select regex matches
-        "<a-s>" => vec![SplitIntoLines], /// Split into lines
-        "d" => vec![Yank, Delete, Commit], /// Delete
-        "<a-d>" => vec![Delete, Commit], /// Delete without yanking
-        "c" => vec![Yank, Delete, EnterInsertMode], /// Change
-        "<a-c>" => vec![Delete, EnterInsertMode], /// Change without yanking
         "y" => vec![Yank], /// Yank
+        "c" => vec![Yank, Delete, EnterInsertMode], /// Change
+        "d" => vec![Yank, Delete, Commit], /// Delete
+        "<a-c>" => vec![Delete, EnterInsertMode], /// Change without yanking
+        "<a-d>" => vec![Delete, Commit], /// Delete without yanking
+
         "p" => vec![PasteAfter, Commit], /// Paste after
         "P" => vec![PasteBefore, Commit], /// Paste before
         "R" => vec![PasteReplace, Commit], /// Paste replacing selection
         "<a-p>" => vec![PasteAllAfter, Commit], /// Paste all after
         "<a-P>" => vec![PasteAllBefore, Commit], /// Paste all before
         "<a-R>" => vec![PasteAllReplace, Commit], /// Paste all replacing selection
-        "O" => vec![InsertLineAbove], /// Enter insert mode on new line above
-        "o" => vec![InsertLineBelow], /// Enter insert mode on new line below
-        "<a-O>" => vec![AddLineAbove, Commit], /// Add line above
-        "<a-o>" => vec![AddLineBelow, Commit], /// Add line below
+
         "u" => vec![Undo], /// Undo
         "U" => vec![Redo], /// Redo
+
+        // TODO: With a count, `g` runs `GotoLine` instead of entering goto mode.
+        "gk" => vec![GotoMoveToStart], /// Move to buffer start
+        "gj" => vec![GotoMoveToBottom], /// Move to last line
+        "ge" => vec![GotoMoveToEnd], /// Move to buffer end
+        "gh" => vec![GotoMoveToLineStart], /// Move to line start
+        "gi" => vec![GotoMoveToLineNonBlankStart], /// Move to first non-blank
+        "gl" => vec![GotoMoveUntilLineEnd], /// Move to line end
+        "gK" => vec![GotoExtendToStart], /// Extend to buffer start
+        "gJ" => vec![GotoExtendToBottom], /// Extend to last line
+        "gE" => vec![GotoExtendToEnd], /// Extend to buffer end
+        "gH" => vec![GotoExtendToLineStart], /// Extend to line start
+        "gI" => vec![GotoExtendToLineNonBlankStart], /// Extend to first non-blank
+        "gL" => vec![GotoExtendUntilLineEnd], /// Extend to line end
+
+        "f" => vec![EnterSeekMode { select: Move, include: Onto, direction: Next }], /// Move onto next character
+        "<a-f>" => vec![EnterSeekMode { select: Move, include: Onto, direction: Prev }], /// Move onto previous character
+        "t" => vec![EnterSeekMode { select: Move, include: Until, direction: Next }], /// Move until next character
+        "<a-t>" => vec![EnterSeekMode { select: Move, include: Until, direction: Prev }], /// Move until previous character
+        "F" => vec![EnterSeekMode { select: Extend, include: Onto, direction: Next }], /// Extend onto next character
+        "<a-F>" => vec![EnterSeekMode { select: Extend, include: Onto, direction: Prev }], /// Extend onto previous character
+        "T" => vec![EnterSeekMode { select: Extend, include: Until, direction: Next }], /// Extend until next character
+        "<a-T>" => vec![EnterSeekMode { select: Extend, include: Until, direction: Prev }], /// Extend until previous character
+
+        "%" => vec![SelectAll], /// Select all
+        "s" => vec![SelectRegex], /// Select regex matches
+        "<a-s>" => vec![SplitIntoLines], /// Split into lines
+        "x" => vec![ExpandToFullLines], /// Expand to full lines
+        "<a-;>" => vec![Flip], /// Flip selection
+        "<a-:>" => vec![FlipForward], /// Flip selection forward
+        "(" => vec![RotateSelectionBackward], /// Rotate selection backward
+        ")" => vec![RotateSelectionForward], /// Rotate selection forward
+        "," => vec![KeepPrimary], /// Keep only primary selection range
+        ";" => vec![Collapse], /// Collapse selection ranges
+
+        "o" => vec![InsertLineBelow], /// Enter insert mode on new line below
+        "O" => vec![InsertLineAbove], /// Enter insert mode on new line above
+        "<a-o>" => vec![AddLineBelow, Commit], /// Add line below
+        "<a-O>" => vec![AddLineAbove, Commit], /// Add line above
+
+        ":" => vec![EnterCommandMode], /// Enter command mode
+
         "<c-u>" => vec![ScrollHalfPageUp], /// Scroll half page up
         "<c-d>" => vec![ScrollHalfPageDown], /// Scroll half page down
         "<c-b>" => vec![ScrollFullPageUp], /// Scroll page up
         "<c-f>" => vec![ScrollFullPageDown], /// Scroll page down
+
         _keys => {
             KeymapResult::Fallback(vec![ClearCount])
         }, /// Clear count
