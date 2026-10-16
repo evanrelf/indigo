@@ -24,9 +24,9 @@ This list is not exhaustive!
 
   Reason: I don't feel another mode is necessary.
 
-- Kakoune and Indigo have different syntaxes for keys. Read `key.rs` in
-  `indigo-core` or try the `indigo-parse-keys` bin from `indigo-cli` to learn
-  more.
+- Kakoune and Indigo have different syntaxes for keys. Run `./bin/run --keymap`,
+  read `key.rs` in `indigo-core`, or try the `indigo-parse-keys` bin from
+  `indigo-cli` to learn more.
 
   Reason: I don't care about retaining compatibility here. And by requiring you
   escape spaces (` `) and hashes (`#`), I can support multi-line key sequences

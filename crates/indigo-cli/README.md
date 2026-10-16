@@ -32,7 +32,8 @@ char offsets.
 
 ## Available keys
 
-Key mappings are defined per mode in these files:
+Run `./bin/run --keymap` to see the full keymap (modulo dynamic fallback
+behavior), or read these files:
 
 - Normal mode: `crates/indigo-core/src/mode/normal.rs`
 - Insert mode: `crates/indigo-core/src/mode/insert.rs`
