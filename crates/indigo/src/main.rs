@@ -530,7 +530,7 @@ fn render_debug_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let pending = if editor.pending_keys.is_empty() {
         String::new()
     } else {
-        let keys = Keys(editor.pending_keys.clone());
+        let keys = Keys(&editor.pending_keys);
         format!(" pending={keys}")
     };
 

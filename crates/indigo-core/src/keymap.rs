@@ -326,9 +326,11 @@ impl<V> Keymap<V> {
         self.entries().map(|(keys, entry)| (keys, &entry.value))
     }
 
-    pub fn docs(&self) -> impl Iterator<Item = (Keys, Option<&'static str>)> + '_ {
+    pub fn docs(
+        &self,
+    ) -> impl Iterator<Item = (Keys<ArrayVec<Key, 3>>, Option<&'static str>)> + '_ {
         self.entries()
-            .map(|(keys, entry)| (Keys(keys.to_vec()), entry.description))
+            .map(|(keys, entry)| (Keys(keys), entry.description))
     }
 
     #[must_use]
@@ -513,7 +515,7 @@ mod tests {
         let values = |keymap: &Keymap<Vec<Action>>| {
             keymap
                 .iter()
-                .map(|(keys, value)| (Keys(keys.to_vec()).to_string(), value[0].0))
+                .map(|(keys, value)| (Keys(keys).to_string(), value[0].0))
                 .collect::<Vec<_>>()
         };
         // insertion order, not trie order

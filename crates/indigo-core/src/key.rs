@@ -17,7 +17,7 @@ use arbitrary::Arbitrary;
 
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Clone, Debug)]
-pub struct Keys(pub Vec<Key>);
+pub struct Keys<K = Vec<Key>>(pub K);
 
 impl FromStr for Keys {
     type Err = anyhow::Error;
@@ -26,9 +26,9 @@ impl FromStr for Keys {
     }
 }
 
-impl Display for Keys {
+impl<K: AsRef<[Key]>> Display for Keys<K> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        for key in &self.0 {
+        for key in self.0.as_ref() {
             write!(f, "{key}")?;
         }
         Ok(())
