@@ -10,6 +10,8 @@ use indigo::{
 };
 use indigo_core::{
     fs::RealFs,
+    keymap::Keymap,
+    mode::{insert, normal, prompt, replace, seek},
     prelude::{Buffer, BufferKind, DisplayWidth as _, Editor, Keys, Mode, RopeExt as _},
     rope::LINE_TYPE,
     syntax::Language,
@@ -26,14 +28,19 @@ use std::{
     sync::Arc,
 };
 
+// TODO: Figure out how to represent the mutual exclusion here more elegantly
 #[derive(Debug, clap::Parser)]
 struct Args {
+    #[arg(conflicts_with = "keymap")]
     file: Option<Utf8PathBuf>,
 
-    #[clap(long, name = "KEYS")]
+    #[arg(long, name = "KEYS", conflicts_with = "keymap")]
     exec: Option<Keys>,
 
-    #[clap(long, env = "INDIGO_LOG", default_value_t)]
+    #[arg(long)]
+    keymap: bool,
+
+    #[arg(long, env = "INDIGO_LOG", default_value_t)]
     log_filter: String,
 }
 
@@ -53,6 +60,11 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let args = Args::parse();
 
+    if args.keymap {
+        print_keymap();
+        return Ok(ExitCode::SUCCESS);
+    }
+
     init_tracing(&args)?;
 
     let mut terminal = terminal::init()?;
@@ -62,6 +74,29 @@ fn main() -> anyhow::Result<ExitCode> {
     drop(terminal);
 
     result
+}
+
+fn print_keymap() {
+    fn print_mode<V>(name: &str, keymap: &Keymap<V>) {
+        println!("{name}");
+        for (keys, description) in keymap.docs() {
+            if let Some(description) = description {
+                println!("    {:7} {description}", format!("{keys}"));
+            }
+        }
+        if let Some(description) = keymap.fallback_description() {
+            println!("    ? ? ?   {description}");
+        }
+    }
+    print_mode("normal", &normal::KEYMAP);
+    println!();
+    print_mode("insert", &insert::KEYMAP);
+    println!();
+    print_mode("prompt", &prompt::KEYMAP);
+    println!();
+    print_mode("seek", &seek::KEYMAP);
+    println!();
+    print_mode("replace", &replace::KEYMAP);
 }
 
 fn init_tracing(args: &Args) -> anyhow::Result<()> {
