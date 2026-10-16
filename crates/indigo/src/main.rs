@@ -527,7 +527,14 @@ fn render_debug_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let head = primary.head.byte_index;
     let goal = primary.goal_column;
 
-    let info = format!(" ranges={ranges} tail={tail} head={head} goal={goal:?}");
+    let pending = if editor.pending_keys.is_empty() {
+        String::new()
+    } else {
+        let keys = Keys(editor.pending_keys.clone());
+        format!(" pending={keys}")
+    };
+
+    let info = format!("{pending} ranges={ranges} tail={tail} head={head} goal={goal:?}");
     let syntax = render_syntax_breadcrumb(
         editor,
         usize::from(area.width).saturating_sub(info.as_str().display_width()),
