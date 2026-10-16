@@ -42,6 +42,17 @@ struct Args {
 
     #[arg(long, env = "INDIGO_LOG", default_value_t)]
     log_filter: String,
+
+    #[command(flatten)]
+    debug: DebugArgs,
+}
+
+#[derive(Debug, clap::Args)]
+#[command(next_help_heading = "Debug options")]
+struct DebugArgs {
+    /// Show debug HUD
+    #[arg(long)]
+    debug_hud: bool,
 }
 
 fn main() -> anyhow::Result<ExitCode> {
@@ -199,7 +210,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
                 pending_center = false;
             }
             editor.focused_buffer_mut().text.reparse();
-            render(&editor, area, surface);
+            render(&editor, &args.debug, area, surface);
         })?;
 
         let event = 'event_read: loop {
@@ -222,7 +233,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
     Ok(exit_code)
 }
 
-pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
+fn render(editor: &Editor, debug: &DebugArgs, area: Rect, surface: &mut Surface) {
     if area.is_empty() {
         return;
     }
@@ -231,8 +242,9 @@ pub fn render(editor: &Editor, area: Rect, surface: &mut Surface) {
     render_prompt(editor, areas.status_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
     render_dots(editor, areas.dots, surface);
-    #[cfg(debug_assertions)]
-    render_debug_info(editor, areas.text, surface);
+    if debug.debug_hud {
+        render_debug_hud(editor, areas.text, surface);
+    }
     render_text(editor, areas.text, surface);
     render_selection(editor, areas.text, surface);
     render_scroll_bar(editor, areas.scroll_bar, surface);
@@ -469,8 +481,7 @@ fn render_dots(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
-#[cfg_attr(not(debug_assertions), expect(dead_code))]
-fn render_debug_info(editor: &Editor, area: Rect, surface: &mut Surface) {
+fn render_debug_hud(editor: &Editor, area: Rect, surface: &mut Surface) {
     let window = editor.focused_window();
     let selection = window.selection();
     let state = selection.state();
@@ -501,7 +512,6 @@ fn render_debug_info(editor: &Editor, area: Rect, surface: &mut Surface) {
     Text::from(lines).right_aligned().render(area, surface);
 }
 
-#[cfg_attr(not(debug_assertions), expect(dead_code))]
 fn render_syntax_breadcrumb(editor: &Editor, max_width: usize) -> String {
     const SEPARATOR: &str = "›";
     const ELLIPSIS: &str = "… ";
