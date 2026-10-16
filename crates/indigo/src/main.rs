@@ -97,6 +97,7 @@ fn print_keymap() {
     print_mode("seek", &seek::KEYMAP);
     println!();
     print_mode("replace", &replace::KEYMAP);
+    println!("\n(? ? ? = dynamic fallback behavior, read source for more info)");
 }
 
 fn init_tracing(args: &Args) -> anyhow::Result<()> {
