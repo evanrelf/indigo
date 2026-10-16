@@ -31,28 +31,31 @@ use std::{
 // TODO: Figure out how to represent the mutual exclusion here more elegantly
 #[derive(Debug, clap::Parser)]
 struct Args {
-    #[arg(conflicts_with = "keymap")]
+    #[arg(conflicts_with = "x_keymap")]
     file: Option<Utf8PathBuf>,
-
-    #[arg(long, name = "KEYS", conflicts_with = "keymap")]
-    exec: Option<Keys>,
-
-    #[arg(long)]
-    keymap: bool,
 
     #[arg(long, env = "INDIGO_LOG", default_value_t)]
     log_filter: String,
 
     #[command(flatten)]
-    debug: DebugArgs,
+    experimental: ExperimentalArgs,
 }
 
+#[expect(clippy::struct_field_names)]
 #[derive(Debug, clap::Args)]
-#[command(next_help_heading = "Debug options")]
-struct DebugArgs {
-    /// Show debug HUD
+#[command(next_help_heading = "Experimental options")]
+struct ExperimentalArgs {
+    /// Print key mappings
     #[arg(long)]
-    debug_hud: bool,
+    x_keymap: bool,
+
+    /// Execute keys at startup
+    #[arg(long, name = "KEYS", conflicts_with = "x_keymap")]
+    x_exec: Option<Keys>,
+
+    /// Enable debug HUD
+    #[arg(long)]
+    x_debug_hud: bool,
 }
 
 fn main() -> anyhow::Result<ExitCode> {
@@ -71,7 +74,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let args = Args::parse();
 
-    if args.keymap {
+    if args.experimental.x_keymap {
         print_keymap();
         return Ok(ExitCode::SUCCESS);
     }
@@ -184,7 +187,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
         pending_center = true;
     }
 
-    if let Some(keys) = &args.exec {
+    if let Some(keys) = &args.experimental.x_exec {
         for key in &keys.0 {
             let event = IndigoEvent::Key(indigo_core::editor::KeyEvent {
                 key: *key,
@@ -210,7 +213,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
                 pending_center = false;
             }
             editor.focused_buffer_mut().text.reparse();
-            render(&editor, &args.debug, area, surface);
+            render(&editor, &args.experimental, area, surface);
         })?;
 
         let event = 'event_read: loop {
@@ -233,7 +236,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
     Ok(exit_code)
 }
 
-fn render(editor: &Editor, debug: &DebugArgs, area: Rect, surface: &mut Surface) {
+fn render(editor: &Editor, experimental: &ExperimentalArgs, area: Rect, surface: &mut Surface) {
     if area.is_empty() {
         return;
     }
@@ -242,7 +245,7 @@ fn render(editor: &Editor, debug: &DebugArgs, area: Rect, surface: &mut Surface)
     render_prompt(editor, areas.status_bar, surface);
     render_line_numbers(editor, areas.line_numbers, surface);
     render_dots(editor, areas.dots, surface);
-    if debug.debug_hud {
+    if experimental.x_debug_hud {
         render_debug_hud(editor, areas.text, surface);
     }
     render_text(editor, areas.text, surface);

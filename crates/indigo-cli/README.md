@@ -32,7 +32,7 @@ char offsets.
 
 ## Available keys
 
-Run `./bin/run --keymap` to see the full keymap (modulo dynamic fallback
+Run `./bin/run --x-keymap` to see the full keymap (modulo dynamic fallback
 behavior), or read these files:
 
 - Normal mode: `crates/indigo-core/src/mode/normal.rs`
