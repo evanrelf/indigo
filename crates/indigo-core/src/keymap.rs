@@ -240,6 +240,7 @@ pub struct Keymap<V> {
     mappings: Trie<Key, Entry<V>>,
     next_order: u16,
     fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<'a, V>,
+    fallback_description: Option<&'static str>,
 }
 
 impl<V> Keymap<V> {
@@ -249,6 +250,7 @@ impl<V> Keymap<V> {
             mappings: Trie::new(),
             next_order: 0,
             fallback: |_, _| KeymapResult::Unmapped,
+            fallback_description: None,
         }
     }
 
@@ -283,8 +285,13 @@ impl<V> Keymap<V> {
         self.mappings.remove(&keys.0).map(|entry| entry.value)
     }
 
-    pub fn set_fallback(&mut self, fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<'a, V>) {
+    pub fn set_fallback(
+        &mut self,
+        fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<'a, V>,
+        description: Option<&'static str>,
+    ) {
         self.fallback = fallback;
+        self.fallback_description = description;
     }
 
     #[must_use]
@@ -323,6 +330,11 @@ impl<V> Keymap<V> {
         self.entries()
             .map(|(keys, entry)| (Keys(keys.to_vec()), entry.description))
     }
+
+    #[must_use]
+    pub fn fallback_description(&self) -> Option<&'static str> {
+        self.fallback_description
+    }
 }
 
 impl<'a, V> IntoIterator for &'a Keymap<V> {
@@ -344,7 +356,7 @@ macro_rules! keymap {
     ($value_ty:ty; $($keys:literal => $value:expr, $(#[doc = $desc:literal])?)* $fallback_arg:ident => $fallback_body:block $(,)?) => {{
         let mut keymap: $crate::keymap::Keymap<$value_ty> = $crate::keymap::Keymap::new();
         $(keymap.insert($keys, $value, None $(.or(Some($desc.trim())))?);)*
-        keymap.set_fallback(|_self, $fallback_arg| $fallback_body);
+        keymap.set_fallback(|_self, $fallback_arg| $fallback_body, None);
         keymap
     }};
     // [x] type [ ] fallback
