@@ -40,6 +40,14 @@ pub fn should_skip_event(event: &TerminalEvent, areas: Areas) -> bool {
 }
 
 pub fn handle_event(editor: &mut Editor, areas: Areas, event: TerminalEvent) -> anyhow::Result<()> {
+    // Terminals typically send line breaks in pasted text as `\r`, like the Enter key.
+    let event = match event {
+        TerminalEvent::Paste(text) => {
+            TerminalEvent::Paste(text.replace("\r\n", "\n").replace('\r', "\n"))
+        }
+        event => event,
+    };
+
     let dismiss_message = match event {
         TerminalEvent::Mouse(mouse) => !matches!(
             mouse.kind,
