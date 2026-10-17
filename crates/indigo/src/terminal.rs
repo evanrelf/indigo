@@ -1,8 +1,8 @@
 use ratatui::crossterm::{
     QueueableCommand as _,
     event::{
-        DisableMouseCapture, EnableMouseCapture, KeyboardEnhancementFlags,
-        PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+        DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
+        KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
     },
     terminal::{Clear, ClearType, supports_keyboard_enhancement},
 };
@@ -18,6 +18,7 @@ pub fn init() -> anyhow::Result<TerminalGuard> {
     let mut stdout = io::stdout();
     stdout.queue(Clear(ClearType::All))?;
     stdout.queue(EnableMouseCapture)?;
+    stdout.queue(EnableBracketedPaste)?;
     if let Ok(true) = supports_keyboard_enhancement() {
         stdout.queue(PushKeyboardEnhancementFlags(
             KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES
@@ -47,6 +48,7 @@ impl Drop for TerminalGuard {
     fn drop(&mut self) {
         let mut stdout = io::stdout();
         let _ = stdout.queue(PopKeyboardEnhancementFlags);
+        let _ = stdout.queue(DisableBracketedPaste);
         let _ = stdout.queue(DisableMouseCapture);
         let _ = stdout.flush();
         let _ = ratatui::try_restore();
