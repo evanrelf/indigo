@@ -1,10 +1,10 @@
 #![allow(clippy::enum_glob_use)]
 
 use crate::{
+    client::ClientMut,
     key::{KeyCode, KeyModifiers},
     keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal},
-    session::Session,
 };
 use std::sync::LazyLock;
 
@@ -36,33 +36,33 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     }
 });
 
-pub fn handle_actions(session: &mut Session, actions: &[Action]) {
+pub fn handle_actions(client: &mut ClientMut, actions: &[Action]) {
     for action in actions {
-        handle_action(session, action);
+        handle_action(client, action);
     }
 }
 
-pub fn handle_action(session: &mut Session, action: &Action) {
+pub fn handle_action(client: &mut ClientMut, action: &Action) {
     match action {
-        Action::Replace(byte) => replace(session, *byte),
+        Action::Replace(byte) => replace(client, *byte),
     }
 }
 
-pub fn handle_keys(session: &mut Session) -> bool {
-    match KEYMAP.get_keys(&session.client.pending_keys) {
+pub fn handle_keys(client: &mut ClientMut) -> bool {
+    match KEYMAP.get_keys(&client.state().pending_keys) {
         KeymapResult::Mapped(actions) => {
-            session.client.pending_keys.clear();
-            handle_actions(session, actions);
-            normal::enter(session);
+            client.state_mut().pending_keys.clear();
+            handle_actions(client, actions);
+            normal::enter(client);
         }
         KeymapResult::Fallback(actions) => {
-            session.client.pending_keys.clear();
-            handle_actions(session, &actions);
-            normal::enter(session);
+            client.state_mut().pending_keys.clear();
+            handle_actions(client, &actions);
+            normal::enter(client);
         }
         KeymapResult::Unmapped => {
-            session.client.pending_keys.clear();
-            normal::enter(session);
+            client.state_mut().pending_keys.clear();
+            normal::enter(client);
         }
         KeymapResult::Pending => {}
     }
@@ -70,18 +70,18 @@ pub fn handle_keys(session: &mut Session) -> bool {
     true
 }
 
-pub fn enter(session: &mut Session) {
-    session.client.mode = Mode::Replace;
+pub fn enter(client: &mut ClientMut) {
+    client.state_mut().mode = Mode::Replace;
 }
 
-fn replace(session: &mut Session, byte: u8) {
-    if session.focused_buffer().text.readonly {
-        session.client.message = Some(Err(String::from("Buffer is readonly")));
-        session.client.count = None;
+fn replace(client: &mut ClientMut, byte: u8) {
+    if client.focused_buffer().text.readonly {
+        client.state_mut().message = Some(Err(String::from("Buffer is readonly")));
+        client.state_mut().count = None;
         return;
     }
-    let mut window = session.focused_window_mut();
+    let mut window = client.focused_window_mut();
     window.selection_edit().replace_each(byte);
     window.scroll_to_selection();
-    session.client.count = None;
+    client.state_mut().count = None;
 }

@@ -53,7 +53,7 @@ fn main() -> anyhow::Result<ExitCode> {
     let mut server = Server::from(buffer);
 
     let mut debug_keys = vec![];
-    let mut debug_rope = server.session.focused_buffer().text.rope().clone();
+    let mut debug_rope = server.client().focused_buffer().text.rope().clone();
 
     for key in args.keys.0 {
         if args.debug {
@@ -73,14 +73,15 @@ fn main() -> anyhow::Result<ExitCode> {
 
         if args.debug && is(&key, "<c-l>") {
             let left = debug_rope.to_string();
-            let right = server.session.focused_buffer().text.rope().to_string();
+            let right = server.client().focused_buffer().text.rope().to_string();
             eprint!("keys: ");
             for key in &debug_keys {
                 if !is(key, "<c-l>") {
                     eprint!("{key}");
                 }
             }
-            let window = server.session.focused_window();
+            let client = server.client();
+            let window = client.focused_window();
             let selection = window.selection();
             eprintln!("\nranges:");
             let primary_range = selection.state().primary_range;
@@ -110,12 +111,18 @@ fn main() -> anyhow::Result<ExitCode> {
             }
             eprintln!("```");
             debug_keys.clear();
-            debug_rope = server.session.focused_window().buffer().text.rope().clone();
+            debug_rope = server
+                .client()
+                .focused_window()
+                .buffer()
+                .text
+                .rope()
+                .clone();
         }
     }
 
     let _result = server
-        .session
+        .client()
         .focused_window()
         .buffer()
         .text
@@ -123,8 +130,8 @@ fn main() -> anyhow::Result<ExitCode> {
         .write_to(io::LineWriter::new(io::stdout()));
 
     let exit_code = server
-        .session
-        .client
+        .client()
+        .state()
         .exit_code()
         .unwrap_or(ExitCode::SUCCESS);
 

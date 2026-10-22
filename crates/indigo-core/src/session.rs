@@ -1,10 +1,8 @@
 use crate::{
     buffer::{Buffer, BufferKey},
-    client::ClientState,
     fs::{Fs, NoFs},
     key::Key,
-    mode::{Mode, command, insert, normal, prompt, replace, seek},
-    window::{Window, WindowKey, WindowMut, WindowState},
+    mode::{command, insert, normal, prompt, seek},
 };
 use camino::Utf8PathBuf;
 use indigo_kernel::IndigoBuildHasher;
@@ -17,31 +15,12 @@ use arbitrary::Arbitrary;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Focused window {key:?} does not exist")]
-    FocusedWindowMissing { key: WindowKey },
-
-    #[error("Window {window_key:?} refers to buffer {buffer_key:?}, which does not exist")]
-    WindowBufferMissing {
-        window_key: WindowKey,
-        buffer_key: BufferKey,
-    },
-
     #[error("Error from buffer {key:?}")]
     Buffer {
         key: BufferKey,
         #[source]
         source: anyhow::Error,
     },
-
-    #[error("Error from window {key:?}")]
-    Window {
-        key: WindowKey,
-        #[source]
-        source: anyhow::Error,
-    },
-
-    #[error("Error from prompt")]
-    Prompt(#[source] anyhow::Error),
 }
 
 #[derive(Clone)]
@@ -50,7 +29,6 @@ pub struct Session {
     buffers: SlotMap<BufferKey, Buffer>,
     pub registers: HashMap<char, Vec<String>, IndigoBuildHasher>,
     pub pwd: Option<Utf8PathBuf>,
-    pub client: ClientState,
 }
 
 impl Session {
@@ -74,30 +52,6 @@ impl Session {
         self.buffers.get_mut(buffer_key)
     }
 
-    #[must_use]
-    pub fn focused_buffer(&self) -> &Buffer {
-        let window = self
-            .client
-            .windows
-            .get(self.client.focused_window)
-            .expect("Window state is always kept valid");
-        self.buffers
-            .get(window.buffer)
-            .expect("Window state is always kept valid")
-    }
-
-    #[must_use]
-    pub fn focused_buffer_mut(&mut self) -> &mut Buffer {
-        let window = self
-            .client
-            .windows
-            .get_mut(self.client.focused_window)
-            .expect("Window state is always kept valid");
-        self.buffers
-            .get_mut(window.buffer)
-            .expect("Window state is always kept valid")
-    }
-
     pub fn buffers(&self) -> impl Iterator<Item = (BufferKey, &Buffer)> {
         self.buffers.iter()
     }
@@ -106,132 +60,11 @@ impl Session {
         self.buffers.iter_mut()
     }
 
-    // TODO: Figure out a safer/better way to add and remove windows
-    pub(crate) fn insert_window(&mut self, window: WindowState) -> WindowKey {
-        assert!(
-            self.buffers.contains_key(window.buffer),
-            "Window has invalid buffer key"
-        );
-        self.client.windows.insert(window)
-    }
-
-    pub fn focus_window(&mut self, window_key: WindowKey) -> bool {
-        if self.client.windows.contains_key(window_key) {
-            self.client.focused_window = window_key;
-            true
-        } else {
-            false
-        }
-    }
-
-    #[must_use]
-    pub fn get_window(&self, window_key: WindowKey) -> Option<Window<'_>> {
-        let window = self.client.windows.get(window_key)?;
-        let buffer = self
-            .buffers
-            .get(window.buffer)
-            .expect("Window state is always kept valid");
-        Some(Window::new(buffer, window))
-    }
-
-    #[must_use]
-    pub fn get_window_mut(&mut self, window_key: WindowKey) -> Option<WindowMut<'_>> {
-        let window = self.client.windows.get_mut(window_key)?;
-        let buffer = self
-            .buffers
-            .get_mut(window.buffer)
-            .expect("Window state is always kept valid");
-        Some(WindowMut::new(buffer, window))
-    }
-
-    pub fn focused_window(&self) -> Window<'_> {
-        let window = self
-            .client
-            .windows
-            .get(self.client.focused_window)
-            .expect("Window state is always kept valid");
-        let buffer = self
-            .buffers
-            .get(window.buffer)
-            .expect("Window state is always kept valid");
-        Window::new(buffer, window)
-    }
-
-    pub fn focused_window_mut(&mut self) -> WindowMut<'_> {
-        let window = self
-            .client
-            .windows
-            .get_mut(self.client.focused_window)
-            .expect("Window state is always kept valid");
-        let buffer = self
-            .buffers
-            .get_mut(window.buffer)
-            .expect("Window state is always kept valid");
-        WindowMut::new(buffer, window)
-    }
-
-    // TODO: Add windows iterator
-
-    pub fn handle_event(&mut self, mut event: Event) -> anyhow::Result<bool> {
-        #[expect(irrefutable_let_patterns)]
-        if let Event::Key(KeyEvent { key, .. }) = &mut event {
-            key.normalize();
-            self.client.pending_keys.push(*key);
-        }
-
-        let handled = match event {
-            Event::Key(_) => match self.client.mode {
-                Mode::Normal => normal::handle_keys(self),
-                Mode::Seek(_) => seek::handle_keys(self),
-                Mode::Insert => insert::handle_keys(self),
-                Mode::Prompt(_) => prompt::handle_keys(self),
-                Mode::Replace => replace::handle_keys(self),
-            },
-        };
-
-        self.assert_invariants().unwrap();
-
-        Ok(handled)
-    }
-
-    pub fn handle_action(&mut self, action: &Action) {
-        match action {
-            Action::Normal(action) => normal::handle_action(self, action),
-            Action::Insert(action) => insert::handle_action(self, action),
-            Action::Prompt(action) => prompt::handle_action(self, action),
-            Action::Command(action) => command::handle_action(self, action),
-            Action::Seek(action) => seek::handle_action(self, action),
-        }
-        self.assert_invariants().unwrap();
-    }
-
     pub fn assert_invariants(&self) -> anyhow::Result<()> {
-        if !self.client.windows.contains_key(self.client.focused_window) {
-            anyhow::bail!(Error::FocusedWindowMissing {
-                key: self.client.focused_window,
-            });
-        }
         for (key, buffer) in &self.buffers {
             buffer
                 .assert_invariants()
                 .map_err(|source| Error::Buffer { key, source })?;
-        }
-        for (window_key, window) in &self.client.windows {
-            let Some(buffer) = self.buffers.get(window.buffer) else {
-                anyhow::bail!(Error::WindowBufferMissing {
-                    window_key,
-                    buffer_key: window.buffer,
-                });
-            };
-            Window::new(buffer, window)
-                .assert_invariants()
-                .map_err(|source| Error::Window {
-                    key: window_key,
-                    source,
-                })?;
-        }
-        if let Mode::Prompt(state) = &self.client.mode {
-            state.assert_invariants().map_err(Error::Prompt)?;
         }
         Ok(())
     }
@@ -239,21 +72,11 @@ impl Session {
 
 impl Default for Session {
     fn default() -> Self {
-        Self::from(Buffer::default())
-    }
-}
-
-impl From<Buffer> for Session {
-    fn from(buffer: Buffer) -> Self {
-        let mut buffers = SlotMap::default();
-        let buffer_key = buffers.insert(buffer);
-
         Self {
             fs: Arc::new(NoFs),
-            buffers,
+            buffers: SlotMap::default(),
             registers: HashMap::default(),
             pwd: None,
-            client: ClientState::new(buffer_key),
         }
     }
 }

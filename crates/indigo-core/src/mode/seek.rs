@@ -1,10 +1,10 @@
 #![allow(clippy::enum_glob_use)]
 
 use crate::{
+    client::ClientMut,
     key::{KeyCode, KeyModifiers},
     keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal},
-    session::Session,
 };
 use std::{num::NonZeroUsize, sync::LazyLock};
 
@@ -67,33 +67,33 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     }
 });
 
-pub fn handle_actions(session: &mut Session, actions: &[Action]) {
+pub fn handle_actions(client: &mut ClientMut, actions: &[Action]) {
     for action in actions {
-        handle_action(session, action);
+        handle_action(client, action);
     }
 }
 
-pub fn handle_action(session: &mut Session, action: &Action) {
+pub fn handle_action(client: &mut ClientMut, action: &Action) {
     match action {
-        Action::Seek(byte) => seek(session, *byte),
+        Action::Seek(byte) => seek(client, *byte),
     }
 }
 
-pub fn handle_keys(session: &mut Session) -> bool {
-    match KEYMAP.get_keys(&session.client.pending_keys) {
+pub fn handle_keys(client: &mut ClientMut) -> bool {
+    match KEYMAP.get_keys(&client.state().pending_keys) {
         KeymapResult::Mapped(actions) => {
-            session.client.pending_keys.clear();
-            handle_actions(session, actions);
-            normal::enter(session);
+            client.state_mut().pending_keys.clear();
+            handle_actions(client, actions);
+            normal::enter(client);
         }
         KeymapResult::Fallback(actions) => {
-            session.client.pending_keys.clear();
-            handle_actions(session, &actions);
-            normal::enter(session);
+            client.state_mut().pending_keys.clear();
+            handle_actions(client, &actions);
+            normal::enter(client);
         }
         KeymapResult::Unmapped => {
-            session.client.pending_keys.clear();
-            normal::enter(session);
+            client.state_mut().pending_keys.clear();
+            normal::enter(client);
         }
         KeymapResult::Pending => {}
     }
@@ -102,33 +102,29 @@ pub fn handle_keys(session: &mut Session) -> bool {
 }
 
 pub fn enter(
-    session: &mut Session,
+    client: &mut ClientMut,
     select: SeekSelect,
     include: SeekInclude,
     direction: SeekDirection,
 ) {
-    session.client.mode = Mode::Seek(State {
+    client.state_mut().mode = Mode::Seek(State {
         select,
         include,
         direction,
     });
 }
 
-fn seek(session: &mut Session, byte: u8) {
+fn seek(client: &mut ClientMut, byte: u8) {
     use SeekDirection::{Next, Prev};
     use SeekInclude::{Onto, Until};
     use SeekSelect::{Extend, Move};
 
     let (select, include, direction, count) = {
-        let Mode::Seek(seek_mode) = &session.client.mode else {
+        let state = client.state_mut();
+        let Mode::Seek(seek_mode) = &state.mode else {
             panic!("Not in seek mode")
         };
-        let count = session
-            .client
-            .count
-            .take()
-            .unwrap_or(NonZeroUsize::MIN)
-            .get();
+        let count = state.count.take().unwrap_or(NonZeroUsize::MIN).get();
         (
             seek_mode.select,
             seek_mode.include,
@@ -137,7 +133,7 @@ fn seek(session: &mut Session, byte: u8) {
         )
     };
 
-    let mut window = session.focused_window_mut();
+    let mut window = client.focused_window_mut();
 
     window
         .selection_move()

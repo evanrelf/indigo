@@ -1,10 +1,10 @@
 #![allow(clippy::enum_glob_use)]
 
 use crate::{
+    client::ClientMut,
     key::{KeyCode, KeyModifiers},
     keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal},
-    session::Session,
 };
 use std::sync::LazyLock;
 
@@ -41,80 +41,80 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     }
 });
 
-pub fn handle_actions(session: &mut Session, actions: &[Action]) {
+pub fn handle_actions(client: &mut ClientMut, actions: &[Action]) {
     for action in actions {
-        handle_action(session, action);
+        handle_action(client, action);
     }
 }
 
-pub fn handle_action(session: &mut Session, action: &Action) {
+pub fn handle_action(client: &mut ClientMut, action: &Action) {
     match action {
-        Action::EnterNormalMode => normal::enter(session),
-        Action::DeleteBefore => delete_before(session),
-        Action::DeleteAfter => delete_after(session),
-        Action::InsertChar(c) => insert_char(session, *c),
+        Action::EnterNormalMode => normal::enter(client),
+        Action::DeleteBefore => delete_before(client),
+        Action::DeleteAfter => delete_after(client),
+        Action::InsertChar(c) => insert_char(client, *c),
     }
 }
 
-pub fn handle_keys(session: &mut Session) -> bool {
-    match KEYMAP.get_keys(&session.client.pending_keys) {
+pub fn handle_keys(client: &mut ClientMut) -> bool {
+    match KEYMAP.get_keys(&client.state().pending_keys) {
         KeymapResult::Mapped(actions) => {
-            session.client.pending_keys.clear();
-            handle_actions(session, actions);
+            client.state_mut().pending_keys.clear();
+            handle_actions(client, actions);
             true
         }
         KeymapResult::Fallback(actions) => {
-            session.client.pending_keys.clear();
-            handle_actions(session, &actions);
+            client.state_mut().pending_keys.clear();
+            handle_actions(client, &actions);
             true
         }
         KeymapResult::Unmapped => {
-            session.client.pending_keys.clear();
+            client.state_mut().pending_keys.clear();
             false
         }
         KeymapResult::Pending => true,
     }
 }
 
-pub fn enter(session: &mut Session) {
-    if session.focused_buffer().text.readonly {
-        session.client.message = Some(Err(String::from("Buffer is readonly")));
-        session.client.count = None;
+pub fn enter(client: &mut ClientMut) {
+    if client.focused_buffer().text.readonly {
+        client.state_mut().message = Some(Err(String::from("Buffer is readonly")));
+        client.state_mut().count = None;
         return;
     }
-    let mut window = session.focused_window_mut();
+    let mut window = client.focused_window_mut();
     window
         .selection_move()
         .for_each_move(|mut range| range.collapse());
     window.scroll_to_selection();
-    session.client.mode = Mode::Insert;
-    session.client.count = None;
+    client.state_mut().mode = Mode::Insert;
+    client.state_mut().count = None;
 }
 
-fn delete_before(session: &mut Session) {
-    let mut window = session.focused_window_mut();
+fn delete_before(client: &mut ClientMut) {
+    let mut window = client.focused_window_mut();
     window.selection_edit().delete_before();
     window.scroll_to_selection();
-    session.client.count = None;
+    client.state_mut().count = None;
 }
 
-fn delete_after(session: &mut Session) {
-    let mut window = session.focused_window_mut();
+fn delete_after(client: &mut ClientMut) {
+    let mut window = client.focused_window_mut();
     window.selection_edit().delete_after();
     window.scroll_to_selection();
-    session.client.count = None;
+    client.state_mut().count = None;
 }
 
-fn insert_char(session: &mut Session, char: char) {
-    let mut window = session.focused_window_mut();
+fn insert_char(client: &mut ClientMut, char: char) {
+    let mut window = client.focused_window_mut();
     window.selection_edit().insert_char(char);
     window.scroll_to_selection();
-    session.client.count = None;
+    client.state_mut().count = None;
 }
 
-pub fn paste(session: &mut Session, text: &str) {
-    let mut window = session.focused_window_mut();
+pub fn paste(client: &mut ClientMut, text: &str) {
+    let mut window = client.focused_window_mut();
     window.selection_edit().insert(text);
     window.scroll_to_selection();
-    session.client.count = None;
+    client.state_mut().count = None;
 }

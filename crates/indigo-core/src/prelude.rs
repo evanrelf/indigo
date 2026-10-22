@@ -4,6 +4,7 @@ pub use indigo_kernel::{display_width::DisplayWidth, edit::Edit};
 #[doc(inline)]
 pub use crate::{
     buffer::{Buffer, BufferKind},
+    client::{Client, ClientMut},
     cursor::{Cursor, CursorEdit},
     key::{Key, KeyCode, KeyModifiers, Keys},
     mode::Mode,

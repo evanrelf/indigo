@@ -1,4 +1,4 @@
-use crate::{buffer::Buffer, mode::prompt, session::Session, window::WindowState};
+use crate::{buffer::Buffer, client::ClientMut, mode::prompt, window::WindowState};
 use anyhow::anyhow;
 use camino::Utf8PathBuf;
 use std::sync::Arc;
@@ -29,20 +29,20 @@ impl<'a> Arbitrary<'a> for Command {
     }
 }
 
-pub fn handle_actions(session: &mut Session, actions: &[Action]) {
+pub fn handle_actions(client: &mut ClientMut, actions: &[Action]) {
     for action in actions {
-        handle_action(session, action);
+        handle_action(client, action);
     }
 }
 
-pub fn handle_action(session: &mut Session, action: &Action) {
-    handle_command(session, action.clone());
+pub fn handle_action(client: &mut ClientMut, action: &Action) {
+    handle_command(client, action.clone());
 }
 
-pub fn enter_command_mode(session: &mut Session) {
-    prompt::enter(session, "", |session, input| match parse_command(input) {
-        Ok(command) => handle_command(session, command),
-        Err(error) => session.client.message = Some(Err(error.to_string())),
+pub fn enter_command_mode(client: &mut ClientMut) {
+    prompt::enter(client, "", |client, input| match parse_command(input) {
+        Ok(command) => handle_command(client, command),
+        Err(error) => client.state_mut().message = Some(Err(error.to_string())),
     });
 }
 
@@ -123,46 +123,46 @@ fn parse_command(command: &str) -> anyhow::Result<Command> {
     })
 }
 
-fn handle_command(session: &mut Session, command: Command) {
+fn handle_command(client: &mut ClientMut, command: Command) {
     match command {
         Command::Nop => {}
         Command::Echo { error, message } => {
             if error {
-                session.client.message = Some(Err(message.join(" ")));
+                client.state_mut().message = Some(Err(message.join(" ")));
             } else {
-                session.client.message = Some(Ok(message.join(" ")));
+                client.state_mut().message = Some(Ok(message.join(" ")));
             }
         }
         Command::Edit { path } => {
             // TODO: Edit existing buffer for path if one exists.
-            if let Ok(buffer) = Buffer::open(&session.fs, &path) {
+            if let Ok(buffer) = Buffer::open(&client.session().fs, &path) {
                 // In Kakoune, windows are inextricably linked to buffers, so changing buffer means
                 // changing window, creating a new one if necessary.
                 // https://github.com/mawww/kakoune/blob/afc035ac0e17a6280edec511dfe8da1c0dd565ab/doc/pages/scopes.asciidoc?plain=1#L29-L30
-                let buffer_key = session.insert_buffer(buffer);
+                let buffer_key = client.session_mut().insert_buffer(buffer);
                 let window_state = WindowState::new(buffer_key);
-                let window_key = session.insert_window(window_state);
-                assert!(session.focus_window(window_key));
+                let window_key = client.insert_window(window_state);
+                assert!(client.focus_window(window_key));
                 // TODO: Delete previous window. It's no longer focused, so (at the time of writing)
                 // that means it's not displayed, it's just hanging out unused in memory.
             } else {
-                session.client.message = Some(Err(format!("Failed to open {path}")));
+                client.state_mut().message = Some(Err(format!("Failed to open {path}")));
             }
         }
         Command::Write { path } => {
-            let fs = Arc::clone(&session.fs);
+            let fs = Arc::clone(&client.session().fs);
             let result = if let Some(path) = path {
-                session.focused_buffer_mut().save_as(&fs, path)
+                client.focused_buffer_mut().save_as(&fs, path)
             } else {
-                session.focused_buffer_mut().save(&fs)
+                client.focused_buffer_mut().save(&fs)
             };
             if result.is_err() {
-                session.client.message = Some(Err(String::from("Failed to save")));
+                client.state_mut().message = Some(Err(String::from("Failed to save")));
             }
         }
         Command::Quit { exit_code } => {
             let mut modified = None;
-            for (_, buffer) in session.buffers() {
+            for (_, buffer) in client.session().buffers() {
                 if buffer.is_modified().unwrap_or(false) {
                     modified = Some(
                         buffer
@@ -173,29 +173,29 @@ fn handle_command(session: &mut Session, command: Command) {
                 }
             }
             if let Some(modified) = modified {
-                session.client.message = Some(Err(format!("Unsaved changes in {modified}")));
+                client.state_mut().message = Some(Err(format!("Unsaved changes in {modified}")));
             } else {
-                session.client.exit(exit_code.unwrap_or(0));
+                client.state_mut().exit(exit_code.unwrap_or(0));
             }
         }
         Command::QuitForce { exit_code } => {
-            session.client.exit(exit_code.unwrap_or(0));
+            client.state_mut().exit(exit_code.unwrap_or(0));
         }
         Command::WriteQuit { exit_code } => {
-            let fs = Arc::clone(&session.fs);
-            if session.focused_buffer_mut().save(&fs).is_ok() {
-                session.client.exit(exit_code.unwrap_or(0));
+            let fs = Arc::clone(&client.session().fs);
+            if client.focused_buffer_mut().save(&fs).is_ok() {
+                client.state_mut().exit(exit_code.unwrap_or(0));
             } else {
-                session.client.message = Some(Err(String::from("Failed to save")));
+                client.state_mut().message = Some(Err(String::from("Failed to save")));
             }
         }
         Command::Readonly => {
-            let new_readonly = !session.focused_buffer().text.readonly;
-            session.focused_buffer_mut().text.readonly = new_readonly;
+            let new_readonly = !client.focused_buffer().text.readonly;
+            client.focused_buffer_mut().text.readonly = new_readonly;
             if new_readonly {
-                session.client.message = Some(Ok(String::from("Buffer is now readonly")));
+                client.state_mut().message = Some(Ok(String::from("Buffer is now readonly")));
             } else {
-                session.client.message = Some(Ok(String::from("Buffer is no longer readonly")));
+                client.state_mut().message = Some(Ok(String::from("Buffer is no longer readonly")));
             }
         }
         Command::Panic => panic!(),
