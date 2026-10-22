@@ -41,6 +41,10 @@ behavior), or read these files:
 - Prompt mode: `crates/indigo-core/src/mode/prompt.rs`
 - Command mode: `crates/indigo-core/src/mode/command.rs` (discouraged with CLI)
 
+Whitespace and `#` comments in keys are ignored, so escape them as `\ ` and `\#`
+(e.g. `:q\ 1<ret>`). See `docs/differences-from-kakoune.md` for more on key
+syntax.
+
 ## Comparing with Kakoune
 
 Indigo is inspired by Kakoune, so most keys have the same behavior. Try the same
