@@ -50,10 +50,10 @@ fn main() -> anyhow::Result<ExitCode> {
         buffer.text.set_language(language);
     }
 
-    let mut editor = Editor::from(buffer);
+    let mut session = Session::from(buffer);
 
     let mut debug_keys = vec![];
-    let mut debug_rope = editor.focused_buffer().text.rope().clone();
+    let mut debug_rope = session.focused_buffer().text.rope().clone();
 
     for key in args.keys.0 {
         if args.debug {
@@ -65,7 +65,7 @@ fn main() -> anyhow::Result<ExitCode> {
             kind: KeyEventKind::Press,
         });
 
-        let handled = editor.handle_event(event)?;
+        let handled = session.handle_event(event)?;
 
         if args.debug && !handled && !is(&key, "<c-l>") {
             eprintln!("unhandled key: {key}");
@@ -73,14 +73,14 @@ fn main() -> anyhow::Result<ExitCode> {
 
         if args.debug && is(&key, "<c-l>") {
             let left = debug_rope.to_string();
-            let right = editor.focused_buffer().text.rope().to_string();
+            let right = session.focused_buffer().text.rope().to_string();
             eprint!("keys: ");
             for key in &debug_keys {
                 if !is(key, "<c-l>") {
                     eprint!("{key}");
                 }
             }
-            let window = editor.focused_window();
+            let window = session.focused_window();
             let selection = window.selection();
             eprintln!("\nranges:");
             let primary_range = selection.state().primary_range;
@@ -110,18 +110,18 @@ fn main() -> anyhow::Result<ExitCode> {
             }
             eprintln!("```");
             debug_keys.clear();
-            debug_rope = editor.focused_window().buffer().text.rope().clone();
+            debug_rope = session.focused_window().buffer().text.rope().clone();
         }
     }
 
-    let _result = editor
+    let _result = session
         .focused_window()
         .buffer()
         .text
         .rope()
         .write_to(io::LineWriter::new(io::stdout()));
 
-    let exit_code = editor.exit_code().unwrap_or(ExitCode::SUCCESS);
+    let exit_code = session.exit_code().unwrap_or(ExitCode::SUCCESS);
 
     Ok(exit_code)
 }

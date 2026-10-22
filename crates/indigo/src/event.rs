@@ -14,7 +14,7 @@ use ratatui::crossterm::{
 };
 use ratatui::layout::Position;
 
-pub type IndigoEvent = indigo_core::editor::Event;
+pub type IndigoEvent = indigo_core::session::Event;
 
 pub type TerminalEvent = crossterm::event::Event;
 
@@ -39,7 +39,11 @@ pub fn should_skip_event(event: &TerminalEvent, areas: Areas) -> bool {
     }
 }
 
-pub fn handle_event(editor: &mut Editor, areas: Areas, event: TerminalEvent) -> anyhow::Result<()> {
+pub fn handle_event(
+    session: &mut Session,
+    areas: Areas,
+    event: TerminalEvent,
+) -> anyhow::Result<()> {
     // Terminals typically send line breaks in pasted text as `\r`, like the Enter key.
     let event = match event {
         TerminalEvent::Paste(text) => {
@@ -61,36 +65,36 @@ pub fn handle_event(editor: &mut Editor, areas: Areas, event: TerminalEvent) -> 
     };
 
     if dismiss_message {
-        editor.message = None;
+        session.message = None;
     }
 
     if let Ok(event) = event_t2i(&event) {
-        let handled = editor.handle_event(event)?;
+        let handled = session.handle_event(event)?;
         if handled {
             return Ok(());
         }
     }
 
-    let _handled = match editor.mode {
-        Mode::Normal => handle_event_normal(editor, areas, event),
-        Mode::Seek(_) => handle_event_seek(editor, areas, event)?,
-        Mode::Insert => handle_event_insert(editor, areas, event),
-        Mode::Prompt(_) => handle_event_prompt(editor, areas, event)?,
-        Mode::Replace => handle_event_replace(editor, areas, event)?,
+    let _handled = match session.mode {
+        Mode::Normal => handle_event_normal(session, areas, event),
+        Mode::Seek(_) => handle_event_seek(session, areas, event)?,
+        Mode::Insert => handle_event_insert(session, areas, event),
+        Mode::Prompt(_) => handle_event_prompt(session, areas, event)?,
+        Mode::Replace => handle_event_replace(session, areas, event)?,
     };
 
     Ok(())
 }
 
 #[expect(clippy::needless_pass_by_value)]
-fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) -> bool {
+fn handle_event_normal(session: &mut Session, areas: Areas, event: TerminalEvent) -> bool {
     let mut handled = true;
 
     match event {
         // TODO(horizontal_scroll)
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => scroll_up(editor),
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => scroll_down(editor),
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => scroll_up(session),
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => scroll_down(session),
             // TODO: Kakoune allows creating new selection ranges by control clicking. Would be
             // awesome if Indigo could do the same, but also support control dragging to create
             // vertical lines of selection ranges, akin to Vim's visual block mode. Could snap to
@@ -102,13 +106,13 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
                 };
                 if let Some(byte_index) = position_to_byte_index(
                     position,
-                    editor.focused_buffer().text.rope(),
-                    editor.focused_window().vertical_scroll(),
+                    session.focused_buffer().text.rope(),
+                    session.focused_window().vertical_scroll(),
                     areas.text,
                 )
                 .byte_index()
                 {
-                    let mut window = editor.focused_window_mut();
+                    let mut window = session.focused_window_mut();
                     window
                         .selection_move()
                         .for_each_move(|mut range| range.move_to(byte_index));
@@ -128,13 +132,13 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
                 };
                 if let Some(byte_index) = position_to_byte_index(
                     position,
-                    editor.focused_buffer().text.rope(),
-                    editor.focused_window().vertical_scroll(),
+                    session.focused_buffer().text.rope(),
+                    session.focused_window().vertical_scroll(),
                     areas.text,
                 )
                 .byte_index()
                 {
-                    let mut window = editor.focused_window_mut();
+                    let mut window = session.focused_window_mut();
                     window
                         .selection_move()
                         .for_each_move(|mut range| range.extend_to(byte_index));
@@ -154,7 +158,7 @@ fn handle_event_normal(editor: &mut Editor, areas: Areas, event: TerminalEvent) 
 #[expect(clippy::needless_pass_by_value)]
 #[expect(clippy::unnecessary_wraps)]
 fn handle_event_seek(
-    editor: &mut Editor,
+    session: &mut Session,
     _areas: Areas,
     event: TerminalEvent,
 ) -> anyhow::Result<bool> {
@@ -164,7 +168,7 @@ fn handle_event_seek(
         // TODO: Add mouse events to core, so it can handle this internally.
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
             (KeyModifiers::NONE, _) => {
-                normal::enter(editor);
+                normal::enter(session);
             }
             _ => handled = false,
         },
@@ -177,7 +181,7 @@ fn handle_event_seek(
 #[expect(clippy::needless_pass_by_value)]
 #[expect(clippy::unnecessary_wraps)]
 fn handle_event_replace(
-    editor: &mut Editor,
+    session: &mut Session,
     _areas: Areas,
     event: TerminalEvent,
 ) -> anyhow::Result<bool> {
@@ -187,7 +191,7 @@ fn handle_event_replace(
         // TODO: Add mouse events to core, so it can handle this internally.
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
             (KeyModifiers::NONE, _) => {
-                normal::enter(editor);
+                normal::enter(session);
             }
             _ => handled = false,
         },
@@ -197,17 +201,17 @@ fn handle_event_replace(
     Ok(handled)
 }
 
-fn handle_event_insert(editor: &mut Editor, _areas: Areas, event: TerminalEvent) -> bool {
+fn handle_event_insert(session: &mut Session, _areas: Areas, event: TerminalEvent) -> bool {
     let mut handled = true;
 
     match event {
         // TODO: Add mouse events to core, so it can handle this internally.
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => scroll_up(editor),
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => scroll_down(editor),
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => scroll_up(session),
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => scroll_down(session),
             _ => handled = false,
         },
-        TerminalEvent::Paste(text) => insert::paste(editor, &text),
+        TerminalEvent::Paste(text) => insert::paste(session, &text),
         _ => handled = false,
     }
 
@@ -216,14 +220,14 @@ fn handle_event_insert(editor: &mut Editor, _areas: Areas, event: TerminalEvent)
 
 #[expect(clippy::unnecessary_wraps)]
 fn handle_event_prompt(
-    editor: &mut Editor,
+    session: &mut Session,
     _areas: Areas,
     event: TerminalEvent,
 ) -> anyhow::Result<bool> {
     let mut handled = true;
 
     match event {
-        TerminalEvent::Paste(text) => prompt::paste(editor, &text),
+        TerminalEvent::Paste(text) => prompt::paste(session, &text),
         _ => handled = false,
     }
 

@@ -44,7 +44,7 @@ pub enum Error {
 }
 
 #[derive(Clone)]
-pub struct Editor {
+pub struct Session {
     pub fs: Arc<dyn Fs + Send + Sync>,
     buffers: SlotMap<BufferKey, Buffer>,
     windows: SlotMap<WindowKey, WindowState>,
@@ -58,7 +58,7 @@ pub struct Editor {
     exit_code: Option<ExitCode>,
 }
 
-impl Editor {
+impl Session {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -248,7 +248,7 @@ impl Editor {
     }
 }
 
-impl Default for Editor {
+impl Default for Session {
     fn default() -> Self {
         let mut buffers = SlotMap::default();
         let buffer = Buffer::default();
@@ -274,7 +274,7 @@ impl Default for Editor {
     }
 }
 
-impl From<Buffer> for Editor {
+impl From<Buffer> for Session {
     fn from(buffer: Buffer) -> Self {
         let mut buffers = SlotMap::default();
         let buffer_key = buffers.insert(buffer);

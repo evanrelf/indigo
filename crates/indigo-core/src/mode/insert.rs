@@ -1,10 +1,10 @@
 #![allow(clippy::enum_glob_use)]
 
 use crate::{
-    editor::Editor,
     key::{KeyCode, KeyModifiers},
     keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal},
+    session::Session,
 };
 use std::sync::LazyLock;
 
@@ -41,80 +41,80 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     }
 });
 
-pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
+pub fn handle_actions(session: &mut Session, actions: &[Action]) {
     for action in actions {
-        handle_action(editor, action);
+        handle_action(session, action);
     }
 }
 
-pub fn handle_action(editor: &mut Editor, action: &Action) {
+pub fn handle_action(session: &mut Session, action: &Action) {
     match action {
-        Action::EnterNormalMode => normal::enter(editor),
-        Action::DeleteBefore => delete_before(editor),
-        Action::DeleteAfter => delete_after(editor),
-        Action::InsertChar(c) => insert_char(editor, *c),
+        Action::EnterNormalMode => normal::enter(session),
+        Action::DeleteBefore => delete_before(session),
+        Action::DeleteAfter => delete_after(session),
+        Action::InsertChar(c) => insert_char(session, *c),
     }
 }
 
-pub fn handle_keys(editor: &mut Editor) -> bool {
-    match KEYMAP.get_keys(&editor.pending_keys) {
+pub fn handle_keys(session: &mut Session) -> bool {
+    match KEYMAP.get_keys(&session.pending_keys) {
         KeymapResult::Mapped(actions) => {
-            editor.pending_keys.clear();
-            handle_actions(editor, actions);
+            session.pending_keys.clear();
+            handle_actions(session, actions);
             true
         }
         KeymapResult::Fallback(actions) => {
-            editor.pending_keys.clear();
-            handle_actions(editor, &actions);
+            session.pending_keys.clear();
+            handle_actions(session, &actions);
             true
         }
         KeymapResult::Unmapped => {
-            editor.pending_keys.clear();
+            session.pending_keys.clear();
             false
         }
         KeymapResult::Pending => true,
     }
 }
 
-pub fn enter(editor: &mut Editor) {
-    if editor.focused_buffer().text.readonly {
-        editor.message = Some(Err(String::from("Buffer is readonly")));
-        editor.count = None;
+pub fn enter(session: &mut Session) {
+    if session.focused_buffer().text.readonly {
+        session.message = Some(Err(String::from("Buffer is readonly")));
+        session.count = None;
         return;
     }
-    let mut window = editor.focused_window_mut();
+    let mut window = session.focused_window_mut();
     window
         .selection_move()
         .for_each_move(|mut range| range.collapse());
     window.scroll_to_selection();
-    editor.mode = Mode::Insert;
-    editor.count = None;
+    session.mode = Mode::Insert;
+    session.count = None;
 }
 
-fn delete_before(editor: &mut Editor) {
-    let mut window = editor.focused_window_mut();
+fn delete_before(session: &mut Session) {
+    let mut window = session.focused_window_mut();
     window.selection_edit().delete_before();
     window.scroll_to_selection();
-    editor.count = None;
+    session.count = None;
 }
 
-fn delete_after(editor: &mut Editor) {
-    let mut window = editor.focused_window_mut();
+fn delete_after(session: &mut Session) {
+    let mut window = session.focused_window_mut();
     window.selection_edit().delete_after();
     window.scroll_to_selection();
-    editor.count = None;
+    session.count = None;
 }
 
-fn insert_char(editor: &mut Editor, char: char) {
-    let mut window = editor.focused_window_mut();
+fn insert_char(session: &mut Session, char: char) {
+    let mut window = session.focused_window_mut();
     window.selection_edit().insert_char(char);
     window.scroll_to_selection();
-    editor.count = None;
+    session.count = None;
 }
 
-pub fn paste(editor: &mut Editor, text: &str) {
-    let mut window = editor.focused_window_mut();
+pub fn paste(session: &mut Session, text: &str) {
+    let mut window = session.focused_window_mut();
     window.selection_edit().insert(text);
     window.scroll_to_selection();
-    editor.count = None;
+    session.count = None;
 }

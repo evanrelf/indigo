@@ -15,7 +15,7 @@ pub struct Areas {
 
 impl Areas {
     #[must_use]
-    pub fn new(editor: &Editor, area: Rect, show_debug_bar: bool) -> Self {
+    pub fn new(session: &Session, area: Rect, show_debug_bar: bool) -> Self {
         let [status_bar, main, debug_bar] = Layout::vertical([
             // status_bar
             Constraint::Length(1),
@@ -27,7 +27,7 @@ impl Areas {
         .areas(area);
 
         let line_numbers_width = {
-            let n = editor.focused_buffer().text.rope().len_lines_unix();
+            let n = session.focused_buffer().text.rope().len_lines_unix();
             let digits = 1 + max(1, n).ilog10();
             u16::try_from(max(2, digits) + 1)
                 .expect("Line number width should always be very small")

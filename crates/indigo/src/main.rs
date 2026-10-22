@@ -12,7 +12,7 @@ use indigo_core::{
     fs::RealFs,
     keymap::Keymap,
     mode::{insert, normal, prompt, replace, seek},
-    prelude::{Buffer, BufferKind, DisplayWidth as _, Editor, Keys, Mode, RopeExt as _},
+    prelude::{Buffer, BufferKind, DisplayWidth as _, Keys, Mode, RopeExt as _, Session},
     rope::LINE_TYPE,
     syntax::Language,
 };
@@ -191,15 +191,15 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
         Buffer::new()
     };
 
-    let mut editor = Editor::from(buffer);
+    let mut session = Session::from(buffer);
 
-    editor.fs = Arc::new(RealFs);
-    editor.pwd = Some(Utf8PathBuf::try_from(env::current_dir()?)?);
+    session.fs = Arc::new(RealFs);
+    session.pwd = Some(Utf8PathBuf::try_from(env::current_dir()?)?);
 
     // Centering scroll deferred until height is known
     let mut pending_center = false;
     if let Some(line_number) = goto_line {
-        let mut window = editor.focused_window_mut();
+        let mut window = session.focused_window_mut();
         let rope = window.buffer().text.rope();
         let line_index = min(line_number - 1, rope.len_lines_unix() - 1);
         let byte_index = rope.line_to_byte_idx(line_index, LINE_TYPE);
@@ -212,13 +212,13 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
 
     if let Some(keys) = &args.experimental.x_exec {
         for key in &keys.0 {
-            let event = IndigoEvent::Key(indigo_core::editor::KeyEvent {
+            let event = IndigoEvent::Key(indigo_core::session::KeyEvent {
                 key: *key,
-                kind: indigo_core::editor::KeyEventKind::Press,
+                kind: indigo_core::session::KeyEventKind::Press,
             });
-            editor.handle_event(event)?;
+            session.handle_event(event)?;
         }
-        if let Some(exit_code) = editor.exit_code() {
+        if let Some(exit_code) = session.exit_code() {
             return Ok(exit_code);
         }
     }
@@ -235,14 +235,14 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
                 ..area
             };
             let surface = frame.buffer_mut();
-            areas = Areas::new(&editor, area, args.experimental.x_ui_debug_bar);
-            editor.focused_window_mut().set_height(areas.text.height);
+            areas = Areas::new(&session, area, args.experimental.x_ui_debug_bar);
+            session.focused_window_mut().set_height(areas.text.height);
             if pending_center {
-                editor.focused_window_mut().scroll_center_selection();
+                session.focused_window_mut().scroll_center_selection();
                 pending_center = false;
             }
-            editor.focused_buffer_mut().text.reparse();
-            render(&editor, &args.experimental, area, surface);
+            session.focused_buffer_mut().text.reparse();
+            render(&session, &args.experimental, area, surface);
         })?;
 
         let event = 'event_read: loop {
@@ -255,9 +255,9 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
             }
         };
 
-        handle_event(&mut editor, areas, event)?;
+        handle_event(&mut session, areas, event)?;
 
-        if let Some(exit_code) = editor.exit_code() {
+        if let Some(exit_code) = session.exit_code() {
             break exit_code;
         }
     };
@@ -265,29 +265,29 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
     Ok(exit_code)
 }
 
-fn render(editor: &Editor, experimental: &ExperimentalArgs, area: Rect, surface: &mut Surface) {
+fn render(session: &Session, experimental: &ExperimentalArgs, area: Rect, surface: &mut Surface) {
     if area.is_empty() {
         return;
     }
-    let areas = Areas::new(editor, area, experimental.x_ui_debug_bar);
-    render_status_bar(editor, areas.status_bar, surface);
-    render_prompt(editor, areas.status_bar, surface);
-    render_line_numbers(editor, areas.line_numbers, surface);
+    let areas = Areas::new(session, area, experimental.x_ui_debug_bar);
+    render_status_bar(session, areas.status_bar, surface);
+    render_prompt(session, areas.status_bar, surface);
+    render_line_numbers(session, areas.line_numbers, surface);
     if !experimental.x_ui_barebones {
-        render_dots(editor, areas.dots, surface);
+        render_dots(session, areas.dots, surface);
     }
     if experimental.x_ui_debug_bar {
-        render_debug_bar(editor, areas.debug_bar, surface);
+        render_debug_bar(session, areas.debug_bar, surface);
     }
-    render_text(editor, areas.text, surface);
-    render_selection(editor, areas.text, surface);
+    render_text(session, areas.text, surface);
+    render_selection(session, areas.text, surface);
     if !experimental.x_ui_barebones {
-        render_scroll_bar(editor, areas.scroll_bar, surface);
+        render_scroll_bar(session, areas.scroll_bar, surface);
     }
 }
 
-fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let mode = match &editor.mode {
+fn render_status_bar(session: &Session, area: Rect, surface: &mut Surface) {
+    let mode = match &session.mode {
         Mode::Normal => "normal",
         Mode::Seek(seek_mode) => {
             use indigo_core::mode::seek::{
@@ -311,7 +311,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         Mode::Prompt(_) => "prompt",
     };
 
-    let path = match (&editor.pwd, &editor.focused_buffer().kind()) {
+    let path = match (&session.pwd, &session.focused_buffer().kind()) {
         (_, BufferKind::Scratch) => String::from("*scratch*"),
         (None, BufferKind::File { path, .. }) => path.to_string(),
         (Some(pwd), BufferKind::File { path, .. }) => match diff_utf8_paths(path, pwd) {
@@ -320,7 +320,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         },
     };
 
-    let language = editor
+    let language = session
         .focused_buffer()
         .text
         .language()
@@ -328,7 +328,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
             Language::Rust => " rust",
         });
 
-    let window = editor.focused_window();
+    let window = session.focused_window();
     let selection = window.selection();
 
     let (line, column) = {
@@ -339,7 +339,7 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         (line, column)
     };
 
-    let count = match editor.count {
+    let count = match session.count {
         Some(count) if count.get() == usize::MAX => &String::from(" count=∞"),
         Some(count) => &format!(" count={count}"),
         None => "",
@@ -351,8 +351,8 @@ fn render_status_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
         .render(area, surface);
 }
 
-fn render_prompt(editor: &Editor, mut area: Rect, surface: &mut Surface) {
-    if let Mode::Prompt(ref prompt_mode) = editor.mode {
+fn render_prompt(session: &Session, mut area: Rect, surface: &mut Surface) {
+    if let Mode::Prompt(ref prompt_mode) = session.mode {
         surface.set_style(area, Style::new().bg(THEME.status_bar_bg));
 
         format!("{}:", prompt_mode.prompt()).render(area, surface);
@@ -378,7 +378,7 @@ fn render_prompt(editor: &Editor, mut area: Rect, surface: &mut Surface) {
                     .bg(THEME.primary_cursor_bg),
             );
         }
-    } else if let Some(message) = &editor.message {
+    } else if let Some(message) = &session.message {
         match message {
             Ok(message) => Line::raw(message)
                 .bg(THEME.status_bar_bg)
@@ -388,8 +388,8 @@ fn render_prompt(editor: &Editor, mut area: Rect, surface: &mut Surface) {
     }
 }
 
-fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let window = editor.focused_window();
+fn render_line_numbers(session: &Session, area: Rect, surface: &mut Surface) {
+    let window = session.focused_window();
 
     let buffer = window.buffer();
 
@@ -409,7 +409,7 @@ fn render_line_numbers(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
-fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
+fn render_scroll_bar(session: &Session, area: Rect, surface: &mut Surface) {
     const LOWER_BLOCKS: [&str; 9] = [" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
     const UNITS_PER_CELL: usize = 8;
     const MIN_UNITS: usize = 8;
@@ -421,7 +421,7 @@ fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let track_color = THEME.scroll_bar_track;
     let thumb_color = THEME.scroll_bar_thumb;
 
-    let window = editor.focused_window();
+    let window = session.focused_window();
     let buffer = window.buffer();
 
     let text_lines = buffer.text.rope().len_lines_unix();
@@ -486,8 +486,8 @@ fn render_scroll_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
-fn render_dots(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let window = editor.focused_window();
+fn render_dots(session: &Session, area: Rect, surface: &mut Surface) {
+    let window = session.focused_window();
 
     let buffer = window.buffer();
 
@@ -516,8 +516,8 @@ fn render_dots(editor: &Editor, area: Rect, surface: &mut Surface) {
     }
 }
 
-fn render_debug_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let window = editor.focused_window();
+fn render_debug_bar(session: &Session, area: Rect, surface: &mut Surface) {
+    let window = session.focused_window();
     let selection = window.selection();
     let state = selection.state();
     let ranges = state.ranges.len();
@@ -526,16 +526,16 @@ fn render_debug_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     let head = primary.head.byte_index;
     let goal = primary.goal_column;
 
-    let pending = if editor.pending_keys.is_empty() {
+    let pending = if session.pending_keys.is_empty() {
         String::new()
     } else {
-        let keys = Keys(&editor.pending_keys);
+        let keys = Keys(&session.pending_keys);
         format!(" pending={keys}")
     };
 
     let info = format!("{pending} ranges={ranges} tail={tail} head={head} goal={goal:?}");
     let syntax = render_syntax_breadcrumb(
-        editor,
+        session,
         usize::from(area.width).saturating_sub(info.as_str().display_width()),
     );
 
@@ -544,11 +544,11 @@ fn render_debug_bar(editor: &Editor, area: Rect, surface: &mut Surface) {
     Line::raw(info).right_aligned().render(area, surface);
 }
 
-fn render_syntax_breadcrumb(editor: &Editor, max_width: usize) -> String {
+fn render_syntax_breadcrumb(session: &Session, max_width: usize) -> String {
     const SEPARATOR: &str = "›";
     const ELLIPSIS: &str = "… ";
 
-    let window = editor.focused_window();
+    let window = session.focused_window();
 
     let Some(syntax) = window.buffer().text.syntax_stale() else {
         return String::new();
@@ -587,8 +587,8 @@ fn render_syntax_breadcrumb(editor: &Editor, max_width: usize) -> String {
     }
 }
 
-fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let window = editor.focused_window();
+fn render_text(session: &Session, area: Rect, surface: &mut Surface) {
+    let window = session.focused_window();
 
     let buffer = window.buffer();
 
@@ -631,8 +631,8 @@ fn render_text(editor: &Editor, area: Rect, surface: &mut Surface) {
 }
 
 #[expect(clippy::similar_names)]
-fn render_selection(editor: &Editor, area: Rect, surface: &mut Surface) {
-    let window = editor.focused_window();
+fn render_selection(session: &Session, area: Rect, surface: &mut Surface) {
+    let window = session.focused_window();
 
     let buffer = window.buffer();
 

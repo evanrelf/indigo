@@ -2,10 +2,10 @@
 
 use crate::{
     cursor::{Cursor, CursorEdit, CursorMove, CursorState},
-    editor::Editor,
     key::{KeyCode, KeyModifiers},
     keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal},
+    session::Session,
     text::Text,
 };
 use ropey::{Rope, RopeSlice};
@@ -22,14 +22,14 @@ pub struct State {
     // TODO: Consider changing this back to `Box<dyn FnOnce(..)>`. Either write a weird `Clone` impl
     // that makes `handler = None` or add a new trait for deriving view state?
     #[expect(clippy::type_complexity)]
-    handler: Option<Arc<Mutex<dyn FnMut(&mut Editor, &str) + Send>>>,
+    handler: Option<Arc<Mutex<dyn FnMut(&mut Session, &str) + Send>>>,
 }
 
 impl State {
     #[must_use]
     pub fn new(
         prompt: &'static str,
-        handler: impl FnMut(&mut Editor, &str) + Send + 'static,
+        handler: impl FnMut(&mut Session, &str) + Send + 'static,
     ) -> Self {
         Self {
             prompt,
@@ -126,41 +126,41 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     }
 });
 
-pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
+pub fn handle_actions(session: &mut Session, actions: &[Action]) {
     for action in actions {
-        handle_action(editor, action);
+        handle_action(session, action);
     }
 }
 
-pub fn handle_action(editor: &mut Editor, action: &Action) {
+pub fn handle_action(session: &mut Session, action: &Action) {
     match action {
-        Action::EnterNormalMode => normal::enter(editor),
-        Action::MoveLeft => move_left(editor),
-        Action::MoveRight => move_right(editor),
-        Action::MoveToStart => move_to_start(editor),
-        Action::MoveToEnd => move_to_end(editor),
-        Action::DeleteToStart => delete_to_start(editor),
-        Action::DeleteToEnd => delete_to_end(editor),
-        Action::DeleteBefore => delete_before(editor),
-        Action::InsertChar(c) => insert_char(editor, *c),
-        Action::Exec => exec(editor),
+        Action::EnterNormalMode => normal::enter(session),
+        Action::MoveLeft => move_left(session),
+        Action::MoveRight => move_right(session),
+        Action::MoveToStart => move_to_start(session),
+        Action::MoveToEnd => move_to_end(session),
+        Action::DeleteToStart => delete_to_start(session),
+        Action::DeleteToEnd => delete_to_end(session),
+        Action::DeleteBefore => delete_before(session),
+        Action::InsertChar(c) => insert_char(session, *c),
+        Action::Exec => exec(session),
     }
 }
 
-pub fn handle_keys(editor: &mut Editor) -> bool {
-    match KEYMAP.get_keys(&editor.pending_keys) {
+pub fn handle_keys(session: &mut Session) -> bool {
+    match KEYMAP.get_keys(&session.pending_keys) {
         KeymapResult::Mapped(actions) => {
-            editor.pending_keys.clear();
-            handle_actions(editor, actions);
+            session.pending_keys.clear();
+            handle_actions(session, actions);
             true
         }
         KeymapResult::Fallback(actions) => {
-            editor.pending_keys.clear();
-            handle_actions(editor, &actions);
+            session.pending_keys.clear();
+            handle_actions(session, &actions);
             true
         }
         KeymapResult::Unmapped => {
-            editor.pending_keys.clear();
+            session.pending_keys.clear();
             false
         }
         KeymapResult::Pending => true,
@@ -168,85 +168,85 @@ pub fn handle_keys(editor: &mut Editor) -> bool {
 }
 
 pub fn enter(
-    editor: &mut Editor,
+    session: &mut Session,
     prompt: &'static str,
-    handler: impl FnMut(&mut Editor, &str) + Send + 'static,
+    handler: impl FnMut(&mut Session, &str) + Send + 'static,
 ) {
-    editor.mode = Mode::Prompt(State::new(prompt, handler));
-    editor.count = None;
+    session.mode = Mode::Prompt(State::new(prompt, handler));
+    session.count = None;
 }
 
-fn move_left(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+fn move_left(session: &mut Session) {
+    let Mode::Prompt(prompt_mode) = &mut session.mode else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_move().move_left(1);
 }
 
-fn move_right(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+fn move_right(session: &mut Session) {
+    let Mode::Prompt(prompt_mode) = &mut session.mode else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_move().move_right(1);
 }
 
-fn move_to_start(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+fn move_to_start(session: &mut Session) {
+    let Mode::Prompt(prompt_mode) = &mut session.mode else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_move().move_to_start();
 }
 
-fn move_to_end(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+fn move_to_end(session: &mut Session) {
+    let Mode::Prompt(prompt_mode) = &mut session.mode else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_move().move_to_end();
 }
 
-fn delete_to_start(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+fn delete_to_start(session: &mut Session) {
+    let Mode::Prompt(prompt_mode) = &mut session.mode else {
         panic!("Not in prompt mode")
     };
     let mut cursor = prompt_mode.cursor_edit();
     while cursor.delete_before().is_some() {}
 }
 
-fn delete_to_end(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+fn delete_to_end(session: &mut Session) {
+    let Mode::Prompt(prompt_mode) = &mut session.mode else {
         panic!("Not in prompt mode")
     };
     let mut cursor = prompt_mode.cursor_edit();
     while cursor.delete_after().is_some() {}
 }
 
-fn insert_char(editor: &mut Editor, char: char) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+fn insert_char(session: &mut Session, char: char) {
+    let Mode::Prompt(prompt_mode) = &mut session.mode else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_edit().insert_char(char);
 }
 
-pub fn paste(editor: &mut Editor, text: &str) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+pub fn paste(session: &mut Session, text: &str) {
+    let Mode::Prompt(prompt_mode) = &mut session.mode else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_edit().insert(text);
 }
 
-fn delete_before(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+fn delete_before(session: &mut Session) {
+    let Mode::Prompt(prompt_mode) = &mut session.mode else {
         panic!("Not in prompt mode")
     };
     if prompt_mode.cursor().is_at_start() {
-        normal::enter(editor);
+        normal::enter(session);
     } else {
         prompt_mode.cursor_edit().delete_before();
     }
 }
 
-fn exec(editor: &mut Editor) {
-    let Mode::Prompt(prompt_mode) = &mut editor.mode else {
+fn exec(session: &mut Session) {
+    let Mode::Prompt(prompt_mode) = &mut session.mode else {
         panic!("Not in prompt mode")
     };
     let text = prompt_mode.content().to_string();
@@ -254,8 +254,8 @@ fn exec(editor: &mut Editor) {
         .handler
         .take()
         .expect("Handler is always present");
-    handler.lock().unwrap()(editor, &text);
-    normal::enter(editor);
+    handler.lock().unwrap()(session, &text);
+    normal::enter(session);
 }
 
 #[cfg(test)]

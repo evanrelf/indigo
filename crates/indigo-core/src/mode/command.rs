@@ -1,4 +1,4 @@
-use crate::{buffer::Buffer, editor::Editor, mode::prompt, window::WindowState};
+use crate::{buffer::Buffer, mode::prompt, session::Session, window::WindowState};
 use anyhow::anyhow;
 use camino::Utf8PathBuf;
 use std::sync::Arc;
@@ -29,20 +29,20 @@ impl<'a> Arbitrary<'a> for Command {
     }
 }
 
-pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
+pub fn handle_actions(session: &mut Session, actions: &[Action]) {
     for action in actions {
-        handle_action(editor, action);
+        handle_action(session, action);
     }
 }
 
-pub fn handle_action(editor: &mut Editor, action: &Action) {
-    handle_command(editor, action.clone());
+pub fn handle_action(session: &mut Session, action: &Action) {
+    handle_command(session, action.clone());
 }
 
-pub fn enter_command_mode(editor: &mut Editor) {
-    prompt::enter(editor, "", |editor, input| match parse_command(input) {
-        Ok(command) => handle_command(editor, command),
-        Err(error) => editor.message = Some(Err(error.to_string())),
+pub fn enter_command_mode(session: &mut Session) {
+    prompt::enter(session, "", |session, input| match parse_command(input) {
+        Ok(command) => handle_command(session, command),
+        Err(error) => session.message = Some(Err(error.to_string())),
     });
 }
 
@@ -123,46 +123,46 @@ fn parse_command(command: &str) -> anyhow::Result<Command> {
     })
 }
 
-fn handle_command(editor: &mut Editor, command: Command) {
+fn handle_command(session: &mut Session, command: Command) {
     match command {
         Command::Nop => {}
         Command::Echo { error, message } => {
             if error {
-                editor.message = Some(Err(message.join(" ")));
+                session.message = Some(Err(message.join(" ")));
             } else {
-                editor.message = Some(Ok(message.join(" ")));
+                session.message = Some(Ok(message.join(" ")));
             }
         }
         Command::Edit { path } => {
             // TODO: Edit existing buffer for path if one exists.
-            if let Ok(buffer) = Buffer::open(&editor.fs, &path) {
+            if let Ok(buffer) = Buffer::open(&session.fs, &path) {
                 // In Kakoune, windows are inextricably linked to buffers, so changing buffer means
                 // changing window, creating a new one if necessary.
                 // https://github.com/mawww/kakoune/blob/afc035ac0e17a6280edec511dfe8da1c0dd565ab/doc/pages/scopes.asciidoc?plain=1#L29-L30
-                let buffer_key = editor.insert_buffer(buffer);
+                let buffer_key = session.insert_buffer(buffer);
                 let window_state = WindowState::new(buffer_key);
-                let window_key = editor.insert_window(window_state);
-                assert!(editor.focus_window(window_key));
+                let window_key = session.insert_window(window_state);
+                assert!(session.focus_window(window_key));
                 // TODO: Delete previous window. It's no longer focused, so (at the time of writing)
                 // that means it's not displayed, it's just hanging out unused in memory.
             } else {
-                editor.message = Some(Err(format!("Failed to open {path}")));
+                session.message = Some(Err(format!("Failed to open {path}")));
             }
         }
         Command::Write { path } => {
-            let fs = Arc::clone(&editor.fs);
+            let fs = Arc::clone(&session.fs);
             let result = if let Some(path) = path {
-                editor.focused_buffer_mut().save_as(&fs, path)
+                session.focused_buffer_mut().save_as(&fs, path)
             } else {
-                editor.focused_buffer_mut().save(&fs)
+                session.focused_buffer_mut().save(&fs)
             };
             if result.is_err() {
-                editor.message = Some(Err(String::from("Failed to save")));
+                session.message = Some(Err(String::from("Failed to save")));
             }
         }
         Command::Quit { exit_code } => {
             let mut modified = None;
-            for (_, buffer) in editor.buffers() {
+            for (_, buffer) in session.buffers() {
                 if buffer.is_modified().unwrap_or(false) {
                     modified = Some(
                         buffer
@@ -173,29 +173,29 @@ fn handle_command(editor: &mut Editor, command: Command) {
                 }
             }
             if let Some(modified) = modified {
-                editor.message = Some(Err(format!("Unsaved changes in {modified}")));
+                session.message = Some(Err(format!("Unsaved changes in {modified}")));
             } else {
-                editor.exit(exit_code.unwrap_or(0));
+                session.exit(exit_code.unwrap_or(0));
             }
         }
         Command::QuitForce { exit_code } => {
-            editor.exit(exit_code.unwrap_or(0));
+            session.exit(exit_code.unwrap_or(0));
         }
         Command::WriteQuit { exit_code } => {
-            let fs = Arc::clone(&editor.fs);
-            if editor.focused_buffer_mut().save(&fs).is_ok() {
-                editor.exit(exit_code.unwrap_or(0));
+            let fs = Arc::clone(&session.fs);
+            if session.focused_buffer_mut().save(&fs).is_ok() {
+                session.exit(exit_code.unwrap_or(0));
             } else {
-                editor.message = Some(Err(String::from("Failed to save")));
+                session.message = Some(Err(String::from("Failed to save")));
             }
         }
         Command::Readonly => {
-            let new_readonly = !editor.focused_buffer().text.readonly;
-            editor.focused_buffer_mut().text.readonly = new_readonly;
+            let new_readonly = !session.focused_buffer().text.readonly;
+            session.focused_buffer_mut().text.readonly = new_readonly;
             if new_readonly {
-                editor.message = Some(Ok(String::from("Buffer is now readonly")));
+                session.message = Some(Ok(String::from("Buffer is now readonly")));
             } else {
-                editor.message = Some(Ok(String::from("Buffer is no longer readonly")));
+                session.message = Some(Ok(String::from("Buffer is no longer readonly")));
             }
         }
         Command::Panic => panic!(),

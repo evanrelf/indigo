@@ -5,11 +5,11 @@ pub use indigo_kernel::{display_width::DisplayWidth, edit::Edit};
 pub use crate::{
     buffer::{Buffer, BufferKind},
     cursor::{Cursor, CursorEdit},
-    editor::{Action, Editor, Event, KeyEvent, KeyEventKind},
     key::{Key, KeyCode, KeyModifiers, Keys},
     mode::Mode,
     range::{Range, RangeEdit},
     rope::RopeExt,
+    session::{Action, Event, KeyEvent, KeyEventKind, Session},
     text::Text,
     window::{Window, WindowMut},
 };

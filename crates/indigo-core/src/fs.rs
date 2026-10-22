@@ -32,7 +32,7 @@ impl<T: Fs + ?Sized> Fs for Arc<T> {
 }
 
 /// Trivial filesystem implementation that panics if you do anything. This is the default filesystem
-/// implementation for `Editor`.
+/// implementation for `Session`.
 pub struct NoFs;
 
 impl Fs for NoFs {

@@ -1,10 +1,10 @@
 #![allow(clippy::enum_glob_use)]
 
 use crate::{
-    editor::Editor,
     key::{KeyCode, KeyModifiers},
     keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal},
+    session::Session,
 };
 use std::sync::LazyLock;
 
@@ -36,33 +36,33 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     }
 });
 
-pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
+pub fn handle_actions(session: &mut Session, actions: &[Action]) {
     for action in actions {
-        handle_action(editor, action);
+        handle_action(session, action);
     }
 }
 
-pub fn handle_action(editor: &mut Editor, action: &Action) {
+pub fn handle_action(session: &mut Session, action: &Action) {
     match action {
-        Action::Replace(byte) => replace(editor, *byte),
+        Action::Replace(byte) => replace(session, *byte),
     }
 }
 
-pub fn handle_keys(editor: &mut Editor) -> bool {
-    match KEYMAP.get_keys(&editor.pending_keys) {
+pub fn handle_keys(session: &mut Session) -> bool {
+    match KEYMAP.get_keys(&session.pending_keys) {
         KeymapResult::Mapped(actions) => {
-            editor.pending_keys.clear();
-            handle_actions(editor, actions);
-            normal::enter(editor);
+            session.pending_keys.clear();
+            handle_actions(session, actions);
+            normal::enter(session);
         }
         KeymapResult::Fallback(actions) => {
-            editor.pending_keys.clear();
-            handle_actions(editor, &actions);
-            normal::enter(editor);
+            session.pending_keys.clear();
+            handle_actions(session, &actions);
+            normal::enter(session);
         }
         KeymapResult::Unmapped => {
-            editor.pending_keys.clear();
-            normal::enter(editor);
+            session.pending_keys.clear();
+            normal::enter(session);
         }
         KeymapResult::Pending => {}
     }
@@ -70,18 +70,18 @@ pub fn handle_keys(editor: &mut Editor) -> bool {
     true
 }
 
-pub fn enter(editor: &mut Editor) {
-    editor.mode = Mode::Replace;
+pub fn enter(session: &mut Session) {
+    session.mode = Mode::Replace;
 }
 
-fn replace(editor: &mut Editor, byte: u8) {
-    if editor.focused_buffer().text.readonly {
-        editor.message = Some(Err(String::from("Buffer is readonly")));
-        editor.count = None;
+fn replace(session: &mut Session, byte: u8) {
+    if session.focused_buffer().text.readonly {
+        session.message = Some(Err(String::from("Buffer is readonly")));
+        session.count = None;
         return;
     }
-    let mut window = editor.focused_window_mut();
+    let mut window = session.focused_window_mut();
     window.selection_edit().replace_each(byte);
     window.scroll_to_selection();
-    editor.count = None;
+    session.count = None;
 }

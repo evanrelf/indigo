@@ -1,7 +1,6 @@
 pub mod attributes;
 pub mod buffer;
 pub mod cursor;
-pub mod editor;
 pub mod fs;
 pub mod history;
 pub mod key;
@@ -11,6 +10,7 @@ pub mod prelude;
 pub mod range;
 pub mod rope;
 pub mod selection;
+pub mod session;
 pub mod syntax;
 pub mod text;
 pub mod window;

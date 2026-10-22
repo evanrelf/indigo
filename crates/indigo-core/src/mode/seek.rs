@@ -1,10 +1,10 @@
 #![allow(clippy::enum_glob_use)]
 
 use crate::{
-    editor::Editor,
     key::{KeyCode, KeyModifiers},
     keymap::{Keymap, KeymapResult, keymap},
     mode::{Mode, normal},
+    session::Session,
 };
 use std::{num::NonZeroUsize, sync::LazyLock};
 
@@ -67,33 +67,33 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
     }
 });
 
-pub fn handle_actions(editor: &mut Editor, actions: &[Action]) {
+pub fn handle_actions(session: &mut Session, actions: &[Action]) {
     for action in actions {
-        handle_action(editor, action);
+        handle_action(session, action);
     }
 }
 
-pub fn handle_action(editor: &mut Editor, action: &Action) {
+pub fn handle_action(session: &mut Session, action: &Action) {
     match action {
-        Action::Seek(byte) => seek(editor, *byte),
+        Action::Seek(byte) => seek(session, *byte),
     }
 }
 
-pub fn handle_keys(editor: &mut Editor) -> bool {
-    match KEYMAP.get_keys(&editor.pending_keys) {
+pub fn handle_keys(session: &mut Session) -> bool {
+    match KEYMAP.get_keys(&session.pending_keys) {
         KeymapResult::Mapped(actions) => {
-            editor.pending_keys.clear();
-            handle_actions(editor, actions);
-            normal::enter(editor);
+            session.pending_keys.clear();
+            handle_actions(session, actions);
+            normal::enter(session);
         }
         KeymapResult::Fallback(actions) => {
-            editor.pending_keys.clear();
-            handle_actions(editor, &actions);
-            normal::enter(editor);
+            session.pending_keys.clear();
+            handle_actions(session, &actions);
+            normal::enter(session);
         }
         KeymapResult::Unmapped => {
-            editor.pending_keys.clear();
-            normal::enter(editor);
+            session.pending_keys.clear();
+            normal::enter(session);
         }
         KeymapResult::Pending => {}
     }
@@ -102,28 +102,28 @@ pub fn handle_keys(editor: &mut Editor) -> bool {
 }
 
 pub fn enter(
-    editor: &mut Editor,
+    session: &mut Session,
     select: SeekSelect,
     include: SeekInclude,
     direction: SeekDirection,
 ) {
-    editor.mode = Mode::Seek(State {
+    session.mode = Mode::Seek(State {
         select,
         include,
         direction,
     });
 }
 
-fn seek(editor: &mut Editor, byte: u8) {
+fn seek(session: &mut Session, byte: u8) {
     use SeekDirection::{Next, Prev};
     use SeekInclude::{Onto, Until};
     use SeekSelect::{Extend, Move};
 
     let (select, include, direction, count) = {
-        let Mode::Seek(seek_mode) = &editor.mode else {
+        let Mode::Seek(seek_mode) = &session.mode else {
             panic!("Not in seek mode")
         };
-        let count = editor.count.take().unwrap_or(NonZeroUsize::MIN).get();
+        let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
         (
             seek_mode.select,
             seek_mode.include,
@@ -132,7 +132,7 @@ fn seek(editor: &mut Editor, byte: u8) {
         )
     };
 
-    let mut window = editor.focused_window_mut();
+    let mut window = session.focused_window_mut();
 
     window
         .selection_move()
