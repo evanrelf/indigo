@@ -218,7 +218,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
             });
             server.handle_event(event)?;
         }
-        if let Some(exit_code) = server.session.exit_code() {
+        if let Some(exit_code) = server.session.client.exit_code() {
             return Ok(exit_code);
         }
     }
@@ -263,7 +263,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
 
         handle_event(&mut server, areas, event)?;
 
-        if let Some(exit_code) = server.session.exit_code() {
+        if let Some(exit_code) = server.session.client.exit_code() {
             break exit_code;
         }
     };
@@ -293,7 +293,7 @@ fn render(session: &Session, experimental: &ExperimentalArgs, area: Rect, surfac
 }
 
 fn render_status_bar(session: &Session, area: Rect, surface: &mut Surface) {
-    let mode = match &session.mode {
+    let mode = match &session.client.mode {
         Mode::Normal => "normal",
         Mode::Seek(seek_mode) => {
             use indigo_core::mode::seek::{
@@ -345,7 +345,7 @@ fn render_status_bar(session: &Session, area: Rect, surface: &mut Surface) {
         (line, column)
     };
 
-    let count = match session.count {
+    let count = match session.client.count {
         Some(count) if count.get() == usize::MAX => &String::from(" count=∞"),
         Some(count) => &format!(" count={count}"),
         None => "",
@@ -358,7 +358,7 @@ fn render_status_bar(session: &Session, area: Rect, surface: &mut Surface) {
 }
 
 fn render_prompt(session: &Session, mut area: Rect, surface: &mut Surface) {
-    if let Mode::Prompt(ref prompt_mode) = session.mode {
+    if let Mode::Prompt(ref prompt_mode) = session.client.mode {
         surface.set_style(area, Style::new().bg(THEME.status_bar_bg));
 
         format!("{}:", prompt_mode.prompt()).render(area, surface);
@@ -384,7 +384,7 @@ fn render_prompt(session: &Session, mut area: Rect, surface: &mut Surface) {
                     .bg(THEME.primary_cursor_bg),
             );
         }
-    } else if let Some(message) = &session.message {
+    } else if let Some(message) = &session.client.message {
         match message {
             Ok(message) => Line::raw(message)
                 .bg(THEME.status_bar_bg)
@@ -532,10 +532,10 @@ fn render_debug_bar(session: &Session, area: Rect, surface: &mut Surface) {
     let head = primary.head.byte_index;
     let goal = primary.goal_column;
 
-    let pending = if session.pending_keys.is_empty() {
+    let pending = if session.client.pending_keys.is_empty() {
         String::new()
     } else {
-        let keys = Keys(&session.pending_keys);
+        let keys = Keys(&session.client.pending_keys);
         format!(" pending={keys}")
     };
 

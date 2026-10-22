@@ -1,5 +1,6 @@
 use crate::{
     buffer::{Buffer, BufferKey},
+    client::Client,
     fs::{Fs, NoFs},
     key::Key,
     mode::{Mode, command, insert, normal, prompt, replace, seek},
@@ -8,7 +9,7 @@ use crate::{
 use camino::Utf8PathBuf;
 use indigo_kernel::IndigoBuildHasher;
 use slotmap::SlotMap;
-use std::{collections::HashMap, num::NonZeroUsize, process::ExitCode, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 use thiserror::Error;
 
 #[cfg(feature = "arbitrary")]
@@ -50,12 +51,8 @@ pub struct Session {
     windows: SlotMap<WindowKey, WindowState>,
     focused_window: WindowKey,
     pub registers: HashMap<char, Vec<String>, IndigoBuildHasher>,
-    pub mode: Mode,
-    pub count: Option<NonZeroUsize>,
-    pub pending_keys: Vec<Key>,
     pub pwd: Option<Utf8PathBuf>,
-    pub message: Option<Result<String, String>>,
-    exit_code: Option<ExitCode>,
+    pub client: Client,
 }
 
 impl Session {
@@ -173,25 +170,15 @@ impl Session {
 
     // TODO: Add windows iterator
 
-    #[must_use]
-    pub fn exit_code(&self) -> Option<ExitCode> {
-        self.exit_code
-    }
-
-    /// Doesn't actually terminate the process, just records the desired exit code.
-    pub fn exit(&mut self, exit_code: u8) {
-        self.exit_code = Some(ExitCode::from(exit_code));
-    }
-
     pub fn handle_event(&mut self, mut event: Event) -> anyhow::Result<bool> {
         #[expect(irrefutable_let_patterns)]
         if let Event::Key(KeyEvent { key, .. }) = &mut event {
             key.normalize();
-            self.pending_keys.push(*key);
+            self.client.pending_keys.push(*key);
         }
 
         let handled = match event {
-            Event::Key(_) => match self.mode {
+            Event::Key(_) => match self.client.mode {
                 Mode::Normal => normal::handle_keys(self),
                 Mode::Seek(_) => seek::handle_keys(self),
                 Mode::Insert => insert::handle_keys(self),
@@ -241,7 +228,7 @@ impl Session {
                     source,
                 })?;
         }
-        if let Mode::Prompt(state) = &self.mode {
+        if let Mode::Prompt(state) = &self.client.mode {
             state.assert_invariants().map_err(Error::Prompt)?;
         }
         Ok(())
@@ -264,12 +251,8 @@ impl Default for Session {
             windows,
             focused_window: window_key,
             registers: HashMap::default(),
-            mode: Mode::default(),
-            count: None,
-            pending_keys: Vec::new(),
             pwd: None,
-            message: None,
-            exit_code: None,
+            client: Client::default(),
         }
     }
 }

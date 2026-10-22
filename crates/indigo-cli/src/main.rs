@@ -122,7 +122,11 @@ fn main() -> anyhow::Result<ExitCode> {
         .rope()
         .write_to(io::LineWriter::new(io::stdout()));
 
-    let exit_code = server.session.exit_code().unwrap_or(ExitCode::SUCCESS);
+    let exit_code = server
+        .session
+        .client
+        .exit_code()
+        .unwrap_or(ExitCode::SUCCESS);
 
     Ok(exit_code)
 }

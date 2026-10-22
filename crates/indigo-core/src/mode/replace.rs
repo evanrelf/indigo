@@ -49,19 +49,19 @@ pub fn handle_action(session: &mut Session, action: &Action) {
 }
 
 pub fn handle_keys(session: &mut Session) -> bool {
-    match KEYMAP.get_keys(&session.pending_keys) {
+    match KEYMAP.get_keys(&session.client.pending_keys) {
         KeymapResult::Mapped(actions) => {
-            session.pending_keys.clear();
+            session.client.pending_keys.clear();
             handle_actions(session, actions);
             normal::enter(session);
         }
         KeymapResult::Fallback(actions) => {
-            session.pending_keys.clear();
+            session.client.pending_keys.clear();
             handle_actions(session, &actions);
             normal::enter(session);
         }
         KeymapResult::Unmapped => {
-            session.pending_keys.clear();
+            session.client.pending_keys.clear();
             normal::enter(session);
         }
         KeymapResult::Pending => {}
@@ -71,17 +71,17 @@ pub fn handle_keys(session: &mut Session) -> bool {
 }
 
 pub fn enter(session: &mut Session) {
-    session.mode = Mode::Replace;
+    session.client.mode = Mode::Replace;
 }
 
 fn replace(session: &mut Session, byte: u8) {
     if session.focused_buffer().text.readonly {
-        session.message = Some(Err(String::from("Buffer is readonly")));
-        session.count = None;
+        session.client.message = Some(Err(String::from("Buffer is readonly")));
+        session.client.count = None;
         return;
     }
     let mut window = session.focused_window_mut();
     window.selection_edit().replace_each(byte);
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }

@@ -57,19 +57,19 @@ pub fn handle_action(session: &mut Session, action: &Action) {
 }
 
 pub fn handle_keys(session: &mut Session) -> bool {
-    match KEYMAP.get_keys(&session.pending_keys) {
+    match KEYMAP.get_keys(&session.client.pending_keys) {
         KeymapResult::Mapped(actions) => {
-            session.pending_keys.clear();
+            session.client.pending_keys.clear();
             handle_actions(session, actions);
             true
         }
         KeymapResult::Fallback(actions) => {
-            session.pending_keys.clear();
+            session.client.pending_keys.clear();
             handle_actions(session, &actions);
             true
         }
         KeymapResult::Unmapped => {
-            session.pending_keys.clear();
+            session.client.pending_keys.clear();
             false
         }
         KeymapResult::Pending => true,
@@ -78,8 +78,8 @@ pub fn handle_keys(session: &mut Session) -> bool {
 
 pub fn enter(session: &mut Session) {
     if session.focused_buffer().text.readonly {
-        session.message = Some(Err(String::from("Buffer is readonly")));
-        session.count = None;
+        session.client.message = Some(Err(String::from("Buffer is readonly")));
+        session.client.count = None;
         return;
     }
     let mut window = session.focused_window_mut();
@@ -87,34 +87,34 @@ pub fn enter(session: &mut Session) {
         .selection_move()
         .for_each_move(|mut range| range.collapse());
     window.scroll_to_selection();
-    session.mode = Mode::Insert;
-    session.count = None;
+    session.client.mode = Mode::Insert;
+    session.client.count = None;
 }
 
 fn delete_before(session: &mut Session) {
     let mut window = session.focused_window_mut();
     window.selection_edit().delete_before();
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn delete_after(session: &mut Session) {
     let mut window = session.focused_window_mut();
     window.selection_edit().delete_after();
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn insert_char(session: &mut Session, char: char) {
     let mut window = session.focused_window_mut();
     window.selection_edit().insert_char(char);
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 pub fn paste(session: &mut Session, text: &str) {
     let mut window = session.focused_window_mut();
     window.selection_edit().insert(text);
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }

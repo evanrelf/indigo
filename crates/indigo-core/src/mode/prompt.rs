@@ -148,19 +148,19 @@ pub fn handle_action(session: &mut Session, action: &Action) {
 }
 
 pub fn handle_keys(session: &mut Session) -> bool {
-    match KEYMAP.get_keys(&session.pending_keys) {
+    match KEYMAP.get_keys(&session.client.pending_keys) {
         KeymapResult::Mapped(actions) => {
-            session.pending_keys.clear();
+            session.client.pending_keys.clear();
             handle_actions(session, actions);
             true
         }
         KeymapResult::Fallback(actions) => {
-            session.pending_keys.clear();
+            session.client.pending_keys.clear();
             handle_actions(session, &actions);
             true
         }
         KeymapResult::Unmapped => {
-            session.pending_keys.clear();
+            session.client.pending_keys.clear();
             false
         }
         KeymapResult::Pending => true,
@@ -172,40 +172,40 @@ pub fn enter(
     prompt: &'static str,
     handler: impl FnMut(&mut Session, &str) + Send + 'static,
 ) {
-    session.mode = Mode::Prompt(State::new(prompt, handler));
-    session.count = None;
+    session.client.mode = Mode::Prompt(State::new(prompt, handler));
+    session.client.count = None;
 }
 
 fn move_left(session: &mut Session) {
-    let Mode::Prompt(prompt_mode) = &mut session.mode else {
+    let Mode::Prompt(prompt_mode) = &mut session.client.mode else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_move().move_left(1);
 }
 
 fn move_right(session: &mut Session) {
-    let Mode::Prompt(prompt_mode) = &mut session.mode else {
+    let Mode::Prompt(prompt_mode) = &mut session.client.mode else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_move().move_right(1);
 }
 
 fn move_to_start(session: &mut Session) {
-    let Mode::Prompt(prompt_mode) = &mut session.mode else {
+    let Mode::Prompt(prompt_mode) = &mut session.client.mode else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_move().move_to_start();
 }
 
 fn move_to_end(session: &mut Session) {
-    let Mode::Prompt(prompt_mode) = &mut session.mode else {
+    let Mode::Prompt(prompt_mode) = &mut session.client.mode else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_move().move_to_end();
 }
 
 fn delete_to_start(session: &mut Session) {
-    let Mode::Prompt(prompt_mode) = &mut session.mode else {
+    let Mode::Prompt(prompt_mode) = &mut session.client.mode else {
         panic!("Not in prompt mode")
     };
     let mut cursor = prompt_mode.cursor_edit();
@@ -213,7 +213,7 @@ fn delete_to_start(session: &mut Session) {
 }
 
 fn delete_to_end(session: &mut Session) {
-    let Mode::Prompt(prompt_mode) = &mut session.mode else {
+    let Mode::Prompt(prompt_mode) = &mut session.client.mode else {
         panic!("Not in prompt mode")
     };
     let mut cursor = prompt_mode.cursor_edit();
@@ -221,21 +221,21 @@ fn delete_to_end(session: &mut Session) {
 }
 
 fn insert_char(session: &mut Session, char: char) {
-    let Mode::Prompt(prompt_mode) = &mut session.mode else {
+    let Mode::Prompt(prompt_mode) = &mut session.client.mode else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_edit().insert_char(char);
 }
 
 pub fn paste(session: &mut Session, text: &str) {
-    let Mode::Prompt(prompt_mode) = &mut session.mode else {
+    let Mode::Prompt(prompt_mode) = &mut session.client.mode else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_edit().insert(text);
 }
 
 fn delete_before(session: &mut Session) {
-    let Mode::Prompt(prompt_mode) = &mut session.mode else {
+    let Mode::Prompt(prompt_mode) = &mut session.client.mode else {
         panic!("Not in prompt mode")
     };
     if prompt_mode.cursor().is_at_start() {
@@ -246,7 +246,7 @@ fn delete_before(session: &mut Session) {
 }
 
 fn exec(session: &mut Session) {
-    let Mode::Prompt(prompt_mode) = &mut session.mode else {
+    let Mode::Prompt(prompt_mode) = &mut session.client.mode else {
         panic!("Not in prompt mode")
     };
     let text = prompt_mode.content().to_string();

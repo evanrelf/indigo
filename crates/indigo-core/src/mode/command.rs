@@ -42,7 +42,7 @@ pub fn handle_action(session: &mut Session, action: &Action) {
 pub fn enter_command_mode(session: &mut Session) {
     prompt::enter(session, "", |session, input| match parse_command(input) {
         Ok(command) => handle_command(session, command),
-        Err(error) => session.message = Some(Err(error.to_string())),
+        Err(error) => session.client.message = Some(Err(error.to_string())),
     });
 }
 
@@ -128,9 +128,9 @@ fn handle_command(session: &mut Session, command: Command) {
         Command::Nop => {}
         Command::Echo { error, message } => {
             if error {
-                session.message = Some(Err(message.join(" ")));
+                session.client.message = Some(Err(message.join(" ")));
             } else {
-                session.message = Some(Ok(message.join(" ")));
+                session.client.message = Some(Ok(message.join(" ")));
             }
         }
         Command::Edit { path } => {
@@ -146,7 +146,7 @@ fn handle_command(session: &mut Session, command: Command) {
                 // TODO: Delete previous window. It's no longer focused, so (at the time of writing)
                 // that means it's not displayed, it's just hanging out unused in memory.
             } else {
-                session.message = Some(Err(format!("Failed to open {path}")));
+                session.client.message = Some(Err(format!("Failed to open {path}")));
             }
         }
         Command::Write { path } => {
@@ -157,7 +157,7 @@ fn handle_command(session: &mut Session, command: Command) {
                 session.focused_buffer_mut().save(&fs)
             };
             if result.is_err() {
-                session.message = Some(Err(String::from("Failed to save")));
+                session.client.message = Some(Err(String::from("Failed to save")));
             }
         }
         Command::Quit { exit_code } => {
@@ -173,29 +173,29 @@ fn handle_command(session: &mut Session, command: Command) {
                 }
             }
             if let Some(modified) = modified {
-                session.message = Some(Err(format!("Unsaved changes in {modified}")));
+                session.client.message = Some(Err(format!("Unsaved changes in {modified}")));
             } else {
-                session.exit(exit_code.unwrap_or(0));
+                session.client.exit(exit_code.unwrap_or(0));
             }
         }
         Command::QuitForce { exit_code } => {
-            session.exit(exit_code.unwrap_or(0));
+            session.client.exit(exit_code.unwrap_or(0));
         }
         Command::WriteQuit { exit_code } => {
             let fs = Arc::clone(&session.fs);
             if session.focused_buffer_mut().save(&fs).is_ok() {
-                session.exit(exit_code.unwrap_or(0));
+                session.client.exit(exit_code.unwrap_or(0));
             } else {
-                session.message = Some(Err(String::from("Failed to save")));
+                session.client.message = Some(Err(String::from("Failed to save")));
             }
         }
         Command::Readonly => {
             let new_readonly = !session.focused_buffer().text.readonly;
             session.focused_buffer_mut().text.readonly = new_readonly;
             if new_readonly {
-                session.message = Some(Ok(String::from("Buffer is now readonly")));
+                session.client.message = Some(Ok(String::from("Buffer is now readonly")));
             } else {
-                session.message = Some(Ok(String::from("Buffer is no longer readonly")));
+                session.client.message = Some(Ok(String::from("Buffer is no longer readonly")));
             }
         }
         Command::Panic => panic!(),

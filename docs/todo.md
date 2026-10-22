@@ -5,7 +5,7 @@
   of multi-key mappings
 - Figure out what to do with mode state, try to make actions
   mode-agnostic/stateless (such that modes simply become a feature of the UI)
-- Store modes as stack (i.e. `Vec<Mode>`) in `Session` (mode stack as data)
+- Store modes as stack (i.e. `Vec<Mode>`) in `ClientState` (mode stack as data)
 - Copy Kakoune's one short of newline goal column when reaching EOL via `gl`
 - Enforce 4 GiB size limit. Refuse to open files >= this size, refuse to apply
   edits that grow text >= this size, etc. So we can use `u32` for indexing bytes

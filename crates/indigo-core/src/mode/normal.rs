@@ -202,11 +202,11 @@ pub fn handle_action(session: &mut Session, action: &Action) {
     match action {
         Action::AppendCountDigit(digit) => {
             let digit = usize::from(*digit);
-            let old_count = session.count.map_or(0, |count| usize::from(count));
+            let old_count = session.client.count.map_or(0, |count| usize::from(count));
             let new_count = NonZeroUsize::new(old_count.saturating_mul(10).saturating_add(digit));
-            session.count = new_count;
+            session.client.count = new_count;
         }
-        Action::ClearCount => session.count = None,
+        Action::ClearCount => session.client.count = None,
         Action::Commit => session.focused_buffer_mut().text.commit(),
         Action::EnterNormalMode => enter(session),
         Action::EnterCommandMode => enter_command_mode(session),
@@ -275,19 +275,19 @@ pub fn handle_action(session: &mut Session, action: &Action) {
 }
 
 pub fn handle_keys(session: &mut Session) -> bool {
-    match KEYMAP.get_keys(&session.pending_keys) {
+    match KEYMAP.get_keys(&session.client.pending_keys) {
         KeymapResult::Mapped(actions) => {
-            session.pending_keys.clear();
+            session.client.pending_keys.clear();
             handle_actions(session, actions);
             true
         }
         KeymapResult::Fallback(actions) => {
-            session.pending_keys.clear();
+            session.client.pending_keys.clear();
             handle_actions(session, &actions);
             true
         }
         KeymapResult::Unmapped => {
-            session.pending_keys.clear();
+            session.client.pending_keys.clear();
             false
         }
         KeymapResult::Pending => true,
@@ -296,12 +296,17 @@ pub fn handle_keys(session: &mut Session) -> bool {
 
 pub fn enter(session: &mut Session) {
     session.focused_buffer_mut().text.commit();
-    session.mode = Mode::Normal;
-    session.count = None;
+    session.client.mode = Mode::Normal;
+    session.client.count = None;
 }
 
 fn extend_left(session: &mut Session) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     let mut window = session.focused_window_mut();
     window
         .selection_move()
@@ -311,7 +316,12 @@ fn extend_left(session: &mut Session) {
 }
 
 fn move_left(session: &mut Session) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     let mut window = session.focused_window_mut();
     window
         .selection_move()
@@ -321,7 +331,12 @@ fn move_left(session: &mut Session) {
 }
 
 fn extend_right(session: &mut Session) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     let mut window = session.focused_window_mut();
     window
         .selection_move()
@@ -331,7 +346,12 @@ fn extend_right(session: &mut Session) {
 }
 
 fn move_right(session: &mut Session) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     let mut window = session.focused_window_mut();
     window
         .selection_move()
@@ -341,7 +361,12 @@ fn move_right(session: &mut Session) {
 }
 
 fn extend_up(session: &mut Session) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     let mut window = session.focused_window_mut();
     window
         .selection_move()
@@ -351,7 +376,12 @@ fn extend_up(session: &mut Session) {
 }
 
 fn move_up(session: &mut Session) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     let mut window = session.focused_window_mut();
     window
         .selection_move()
@@ -361,7 +391,12 @@ fn move_up(session: &mut Session) {
 }
 
 fn extend_down(session: &mut Session) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     let mut window = session.focused_window_mut();
     window
         .selection_move()
@@ -371,7 +406,12 @@ fn extend_down(session: &mut Session) {
 }
 
 fn move_down(session: &mut Session) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     let mut window = session.focused_window_mut();
     window
         .selection_move()
@@ -386,7 +426,7 @@ fn flip(session: &mut Session) {
         .selection_move()
         .for_each_move(|mut range| range.flip());
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn flip_forward(session: &mut Session) {
@@ -395,25 +435,35 @@ fn flip_forward(session: &mut Session) {
         .selection_move()
         .for_each_move(|mut range| range.flip_forward());
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn keep_primary(session: &mut Session) {
     let mut window = session.focused_window_mut();
     window.selection_move().keep_primary();
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn rotate_selection_backward(session: &mut Session) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     let mut window = session.focused_window_mut();
     window.selection_move().rotate_backward(count);
     window.scroll_to_selection();
 }
 
 fn rotate_selection_forward(session: &mut Session) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     let mut window = session.focused_window_mut();
     window.selection_move().rotate_forward(count);
     window.scroll_to_selection();
@@ -425,19 +475,19 @@ fn collapse(session: &mut Session) {
         .selection_move()
         .for_each_move(|mut range| range.collapse());
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn delete(session: &mut Session) {
     if session.focused_buffer().text.readonly {
-        session.message = Some(Err(String::from("Buffer is readonly")));
-        session.count = None;
+        session.client.message = Some(Err(String::from("Buffer is readonly")));
+        session.client.count = None;
         return;
     }
     let mut window = session.focused_window_mut();
     window.selection_edit().delete();
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn yank(session: &mut Session) {
@@ -448,13 +498,18 @@ fn yank(session: &mut Session) {
         .map(String::from)
         .collect();
     session.registers.insert('"', values);
-    session.count = None;
+    session.client.count = None;
 }
 
 fn paste(session: &mut Session, paste_mode: PasteMode) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     if session.focused_buffer().text.readonly {
-        session.message = Some(Err(String::from("Buffer is readonly")));
+        session.client.message = Some(Err(String::from("Buffer is readonly")));
         return;
     }
     let count = if paste_mode == PasteMode::Replace {
@@ -471,14 +526,14 @@ fn paste(session: &mut Session, paste_mode: PasteMode) {
 }
 
 fn paste_all(session: &mut Session, paste_mode: PasteMode) {
-    session.count = None;
+    session.client.count = None;
     if session.focused_buffer().text.readonly {
-        session.message = Some(Err(String::from("Buffer is readonly")));
+        session.client.message = Some(Err(String::from("Buffer is readonly")));
         return;
     }
     let values = session.registers.get(&'"').cloned().unwrap_or_default();
     if values.is_empty() {
-        session.message = Some(Err(String::from("Nothing to paste")));
+        session.client.message = Some(Err(String::from("Nothing to paste")));
         return;
     }
     let mut window = session.focused_window_mut();
@@ -487,9 +542,14 @@ fn paste_all(session: &mut Session, paste_mode: PasteMode) {
 }
 
 fn undo(session: &mut Session) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     if session.focused_buffer().text.readonly {
-        session.message = Some(Err(String::from("Buffer is readonly")));
+        session.client.message = Some(Err(String::from("Buffer is readonly")));
         return;
     }
     let mut window = session.focused_window_mut();
@@ -502,9 +562,14 @@ fn undo(session: &mut Session) {
 }
 
 fn redo(session: &mut Session) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     if session.focused_buffer().text.readonly {
-        session.message = Some(Err(String::from("Buffer is readonly")));
+        session.client.message = Some(Err(String::from("Buffer is readonly")));
         return;
     }
     let mut window = session.focused_window_mut();
@@ -520,7 +585,7 @@ fn select_all(session: &mut Session) {
     let mut window = session.focused_window_mut();
     window.selection_move().select_all();
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn expand_to_full_lines(session: &mut Session) {
@@ -530,21 +595,21 @@ fn expand_to_full_lines(session: &mut Session) {
         .for_each_move(|mut range| range.expand_to_full_lines());
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn split_into_lines(session: &mut Session) {
     let mut window = session.focused_window_mut();
     window.selection_move().split_into_lines();
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn select_regex(session: &mut Session) {
     prompt::enter(session, "select", |session, regex_str| {
         if regex_str.is_empty() {
-            session.message = Some(Err(String::from("Nothing selected")));
-            session.count = None;
+            session.client.message = Some(Err(String::from("Nothing selected")));
+            session.client.count = None;
             return;
         }
         let regex = Regex::builder()
@@ -560,19 +625,19 @@ fn select_regex(session: &mut Session) {
                 .selection_move()
                 .select_regex(&regex);
             if !matched {
-                session.message = Some(Err(String::from("Nothing selected")));
+                session.client.message = Some(Err(String::from("Nothing selected")));
             }
         } else {
-            session.message = Some(Err(String::from("Invalid regex")));
+            session.client.message = Some(Err(String::from("Invalid regex")));
         }
-        session.count = None;
+        session.client.count = None;
     });
 }
 
 fn insert_after_head(session: &mut Session) {
     if session.focused_buffer().text.readonly {
-        session.message = Some(Err(String::from("Buffer is readonly")));
-        session.count = None;
+        session.client.message = Some(Err(String::from("Buffer is readonly")));
+        session.client.count = None;
         return;
     }
     let mut window = session.focused_window_mut();
@@ -580,14 +645,14 @@ fn insert_after_head(session: &mut Session) {
         range.prepare_append();
     });
     window.scroll_to_selection();
-    session.mode = Mode::Insert;
-    session.count = None;
+    session.client.mode = Mode::Insert;
+    session.client.count = None;
 }
 
 fn insert_at_line_non_blank_start(session: &mut Session) {
     if session.focused_buffer().text.readonly {
-        session.message = Some(Err(String::from("Buffer is readonly")));
-        session.count = None;
+        session.client.message = Some(Err(String::from("Buffer is readonly")));
+        session.client.count = None;
         return;
     }
     let mut window = session.focused_window_mut();
@@ -595,14 +660,14 @@ fn insert_at_line_non_blank_start(session: &mut Session) {
         range.move_to_line_non_blank_start();
     });
     window.scroll_to_selection();
-    session.mode = Mode::Insert;
-    session.count = None;
+    session.client.mode = Mode::Insert;
+    session.client.count = None;
 }
 
 fn insert_at_line_end(session: &mut Session) {
     if session.focused_buffer().text.readonly {
-        session.message = Some(Err(String::from("Buffer is readonly")));
-        session.count = None;
+        session.client.message = Some(Err(String::from("Buffer is readonly")));
+        session.client.count = None;
         return;
     }
     let mut window = session.focused_window_mut();
@@ -610,15 +675,20 @@ fn insert_at_line_end(session: &mut Session) {
         range.move_onto_line_end();
     });
     window.scroll_to_selection();
-    session.mode = Mode::Insert;
-    session.count = None;
+    session.client.mode = Mode::Insert;
+    session.client.count = None;
 }
 
 fn insert_line_above(session: &mut Session) {
     // TODO: Insert multiple cursors (like Kakoune) when count > 1
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     if session.focused_buffer().text.readonly {
-        session.message = Some(Err(String::from("Buffer is readonly")));
+        session.client.message = Some(Err(String::from("Buffer is readonly")));
         return;
     }
     let mut window = session.focused_window_mut();
@@ -631,14 +701,19 @@ fn insert_line_above(session: &mut Session) {
         range.move_left(1);
     });
     window.scroll_to_selection();
-    session.mode = Mode::Insert;
+    session.client.mode = Mode::Insert;
 }
 
 fn insert_line_below(session: &mut Session) {
     // TODO: Insert multiple cursors (like Kakoune) when count > 1
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     if session.focused_buffer().text.readonly {
-        session.message = Some(Err(String::from("Buffer is readonly")));
+        session.client.message = Some(Err(String::from("Buffer is readonly")));
         return;
     }
     let mut window = session.focused_window_mut();
@@ -650,13 +725,18 @@ fn insert_line_below(session: &mut Session) {
         }
     });
     window.scroll_to_selection();
-    session.mode = Mode::Insert;
+    session.client.mode = Mode::Insert;
 }
 
 fn add_line_above(session: &mut Session) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     if session.focused_buffer().text.readonly {
-        session.message = Some(Err(String::from("Buffer is readonly")));
+        session.client.message = Some(Err(String::from("Buffer is readonly")));
         return;
     }
     let mut window = session.focused_window_mut();
@@ -674,9 +754,14 @@ fn add_line_above(session: &mut Session) {
 }
 
 fn add_line_below(session: &mut Session) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     if session.focused_buffer().text.readonly {
-        session.message = Some(Err(String::from("Buffer is readonly")));
+        session.client.message = Some(Err(String::from("Buffer is readonly")));
         return;
     }
     let mut window = session.focused_window_mut();
@@ -694,7 +779,12 @@ fn add_line_below(session: &mut Session) {
 }
 
 fn goto_move_to_line(session: &mut Session) {
-    let count = session.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    let count = session
+        .client
+        .count
+        .take()
+        .unwrap_or(NonZeroUsize::MIN)
+        .get();
     let mut window = session.focused_window_mut();
     let rope = window.buffer().text.rope().clone();
     let line_index = min(count - 1, rope.len_lines_unix() - 1);
@@ -713,7 +803,7 @@ fn goto_move_to_start(session: &mut Session) {
         .for_each_move(|mut range| range.move_to_start());
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn goto_extend_to_start(session: &mut Session) {
@@ -723,7 +813,7 @@ fn goto_extend_to_start(session: &mut Session) {
         .for_each_move(|mut range| range.extend_to_start());
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn goto_move_to_bottom(session: &mut Session) {
@@ -733,7 +823,7 @@ fn goto_move_to_bottom(session: &mut Session) {
         .for_each_move(|mut range| range.move_to_bottom());
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn goto_extend_to_bottom(session: &mut Session) {
@@ -743,7 +833,7 @@ fn goto_extend_to_bottom(session: &mut Session) {
         .for_each_move(|mut range| range.extend_to_bottom());
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn goto_move_to_end(session: &mut Session) {
@@ -753,7 +843,7 @@ fn goto_move_to_end(session: &mut Session) {
         .for_each_move(|mut range| range.move_to_end());
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn goto_extend_to_end(session: &mut Session) {
@@ -763,7 +853,7 @@ fn goto_extend_to_end(session: &mut Session) {
         .for_each_move(|mut range| range.extend_to_end());
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn goto_move_to_line_start(session: &mut Session) {
@@ -772,7 +862,7 @@ fn goto_move_to_line_start(session: &mut Session) {
         .selection_move()
         .for_each_move(|mut range| range.move_to_line_start());
     window.selection_move().merge_overlapping();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn goto_extend_to_line_start(session: &mut Session) {
@@ -781,7 +871,7 @@ fn goto_extend_to_line_start(session: &mut Session) {
         .selection_move()
         .for_each_move(|mut range| range.extend_to_line_start());
     window.selection_move().merge_overlapping();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn goto_move_to_line_non_blank_start(session: &mut Session) {
@@ -790,7 +880,7 @@ fn goto_move_to_line_non_blank_start(session: &mut Session) {
         .selection_move()
         .for_each_move(|mut range| range.move_to_line_non_blank_start());
     window.selection_move().merge_overlapping();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn goto_extend_to_line_non_blank_start(session: &mut Session) {
@@ -799,7 +889,7 @@ fn goto_extend_to_line_non_blank_start(session: &mut Session) {
         .selection_move()
         .for_each_move(|mut range| range.extend_to_line_non_blank_start());
     window.selection_move().merge_overlapping();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn goto_move_until_line_end(session: &mut Session) {
@@ -808,7 +898,7 @@ fn goto_move_until_line_end(session: &mut Session) {
         .selection_move()
         .for_each_move(|mut range| range.move_until_line_end());
     window.selection_move().merge_overlapping();
-    session.count = None;
+    session.client.count = None;
 }
 
 fn goto_extend_until_line_end(session: &mut Session) {
@@ -817,5 +907,5 @@ fn goto_extend_until_line_end(session: &mut Session) {
         .selection_move()
         .for_each_move(|mut range| range.extend_until_line_end());
     window.selection_move().merge_overlapping();
-    session.count = None;
+    session.client.count = None;
 }

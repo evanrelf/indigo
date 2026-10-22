@@ -1,5 +1,6 @@
 pub mod attributes;
 pub mod buffer;
+pub mod client;
 pub mod cursor;
 pub mod fs;
 pub mod history;
