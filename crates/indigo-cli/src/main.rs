@@ -84,12 +84,12 @@ fn main() -> anyhow::Result<ExitCode> {
             let window = client.focused_window();
             let selection = window.selection();
             eprintln!("\nranges:");
-            let primary_index = selection.primary_index();
+            let primary_index = selection.primary_range;
             selection.for_each(|index, range| {
-                let tail = range.tail().byte_index();
-                let head = range.head().byte_index();
-                let start = range.start().byte_index();
-                let end = range.end().byte_index();
+                let tail = range.tail().byte_index;
+                let head = range.head().byte_index;
+                let start = range.start().byte_index;
+                let end = range.end().byte_index;
                 let direction = if range.is_forward() {
                     "forward"
                 } else {
@@ -129,7 +129,7 @@ fn main() -> anyhow::Result<ExitCode> {
         .rope()
         .write_to(io::LineWriter::new(io::stdout()));
 
-    let exit_code = server.client().exit_code().unwrap_or(ExitCode::SUCCESS);
+    let exit_code = server.client().exit_code.unwrap_or(ExitCode::SUCCESS);
 
     Ok(exit_code)
 }

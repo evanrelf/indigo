@@ -8,7 +8,7 @@ use indigo_kernel::{
 };
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
-use std::{cmp::min, thread};
+use std::{cmp::min, ops::Deref, thread};
 use thiserror::Error;
 
 #[cfg(feature = "arbitrary")]
@@ -141,6 +141,14 @@ pub type CursorMove<'a> = CursorView<'a, WMut, WRef>;
 
 pub type CursorEdit<'a> = CursorView<'a, WMut, WMut>;
 
+impl<S: WrapRef, T: Wrap> Deref for CursorView<'_, S, T> {
+    type Target = CursorState;
+
+    fn deref(&self) -> &Self::Target {
+        &self.state
+    }
+}
+
 impl<'a, S: Wrap, T: Wrap> CursorView<'a, S, T> {
     pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
         self.on_drop = Some(Box::new(f));
@@ -164,15 +172,6 @@ impl<'a, S: WrapRef, T: WrapRef> CursorView<'a, S, T> {
 
     pub fn text(&self) -> &Text {
         &self.text
-    }
-
-    pub fn state(&self) -> &CursorState {
-        &self.state
-    }
-
-    #[must_use]
-    pub fn byte_index(&self) -> usize {
-        self.state.byte_index
     }
 
     #[must_use]
@@ -622,7 +621,7 @@ mod tests {
         cursor.delete_before();
         cursor.assert_invariants().unwrap();
         // '@' merged with the combining mark into "@\u{36b}" (one grapheme starting at 0).
-        assert_eq!(cursor.byte_index(), 0);
+        assert_eq!(cursor.byte_index, 0);
         assert_eq!(**cursor.text, "@\u{36b}\n");
     }
 
@@ -677,39 +676,39 @@ mod tests {
 
         cursor.insert("hello");
         assert_eq!(**cursor.text, "hello\n");
-        assert_eq!(cursor.byte_index(), 5);
+        assert_eq!(cursor.byte_index, 5);
 
         cursor.delete_before();
         cursor.delete_before();
         assert_eq!(**cursor.text, "hel\n");
-        assert_eq!(cursor.byte_index(), 3);
+        assert_eq!(cursor.byte_index, 3);
 
         cursor.move_left(2);
-        assert_eq!(cursor.byte_index(), 1);
+        assert_eq!(cursor.byte_index, 1);
 
         cursor.delete_after();
-        assert_eq!(cursor.byte_index(), 1);
+        assert_eq!(cursor.byte_index, 1);
         assert_eq!(**cursor.text, "hl\n");
 
         cursor.move_right(1);
-        assert_eq!(cursor.byte_index(), 2);
+        assert_eq!(cursor.byte_index, 2);
         // The trailing newline is the last grapheme; can't move past it.
         cursor.move_right(1);
-        assert_eq!(cursor.byte_index(), 2);
+        assert_eq!(cursor.byte_index, 2);
 
         // Deleting the grapheme under the cursor would delete the final newline; refused.
         cursor.delete_after();
         assert_eq!(**cursor.text, "hl\n");
-        assert_eq!(cursor.byte_index(), 2);
+        assert_eq!(cursor.byte_index, 2);
 
         cursor.delete_before();
         cursor.delete_before();
         assert_eq!(**cursor.text, "\n");
-        assert_eq!(cursor.byte_index(), 0);
+        assert_eq!(cursor.byte_index, 0);
 
         cursor.delete_before();
         assert_eq!(**cursor.text, "\n");
-        assert_eq!(cursor.byte_index(), 0);
+        assert_eq!(cursor.byte_index, 0);
     }
 
     #[test]
@@ -722,26 +721,26 @@ mod tests {
         // On the invariant trailing newline (the empty final line the insert pushed down).
         assert_eq!(cursor.grapheme(), Rope::from("\n").slice(..));
         assert_eq!(cursor.line().to_string(), "\n");
-        assert_eq!(cursor.byte_index(), 13);
+        assert_eq!(cursor.byte_index, 13);
         assert_eq!(cursor.display_column(), 0);
 
         cursor.move_left(1);
         // On the newline terminating line 2.
         assert_eq!(cursor.grapheme(), Rope::from("\n").slice(..));
-        assert_eq!(cursor.byte_index(), 12);
+        assert_eq!(cursor.byte_index, 12);
         assert_eq!(cursor.display_column(), 6);
 
         cursor.move_up(GoalColumn::Column(cursor.display_column()), 1);
         // On "4", the last grapheme of line 1, which is shorter than the goal column.
         assert_eq!(cursor.grapheme(), Rope::from("4").slice(..));
         assert_eq!(cursor.line().to_string(), "234\n");
-        assert_eq!(cursor.byte_index(), 4);
+        assert_eq!(cursor.byte_index, 4);
         assert_eq!(cursor.display_column(), 2);
 
         cursor.move_left(1);
         // On "3" in line 1.
         assert_eq!(cursor.grapheme(), Rope::from("3").slice(..));
-        assert_eq!(cursor.byte_index(), 3);
+        assert_eq!(cursor.byte_index, 3);
         assert_eq!(cursor.display_column(), 1);
     }
 
@@ -750,22 +749,22 @@ mod tests {
         let mut cursor = CursorView::try_from(("a long line\nab\ncd\n", 7)).unwrap();
         assert!(cursor.move_down(GoalColumn::Column(7), 1));
         assert_eq!(cursor.grapheme(), Rope::from("b").slice(..));
-        assert_eq!(cursor.byte_index(), 13);
+        assert_eq!(cursor.byte_index, 13);
         // The goal column is sticky, so moving back up returns to the original grapheme.
         assert!(cursor.move_up(GoalColumn::Column(7), 1));
-        assert_eq!(cursor.byte_index(), 7);
+        assert_eq!(cursor.byte_index, 7);
 
         // An empty line has nothing but its newline to land on.
         let mut cursor = CursorView::try_from(("abc\n\nx\n", 2)).unwrap();
         assert!(cursor.move_down(GoalColumn::Column(2), 1));
         assert_eq!(cursor.grapheme(), Rope::from("\n").slice(..));
-        assert_eq!(cursor.byte_index(), 4);
+        assert_eq!(cursor.byte_index, 4);
 
         // Landing on a CRLF terminator steps back onto the last grapheme too.
         let mut cursor = CursorView::try_from(("abc\r\nab\r\n", 2)).unwrap();
         assert!(cursor.move_down(GoalColumn::Column(2), 1));
         assert_eq!(cursor.grapheme(), Rope::from("b").slice(..));
-        assert_eq!(cursor.byte_index(), 6);
+        assert_eq!(cursor.byte_index, 6);
     }
 
     #[test]
@@ -773,12 +772,12 @@ mod tests {
         let mut cursor = CursorView::try_from(("ab\nabcdef\n", 1)).unwrap();
         assert!(cursor.move_down(GoalColumn::UntilLineEnd, 1));
         assert_eq!(cursor.grapheme(), Rope::from("f").slice(..));
-        assert_eq!(cursor.byte_index(), 8);
+        assert_eq!(cursor.byte_index, 8);
 
         let mut cursor = CursorView::try_from(("ab\nabcdef\n", 2)).unwrap();
         assert!(cursor.move_down(GoalColumn::OntoLineEnd, 1));
         assert_eq!(cursor.grapheme(), Rope::from("\n").slice(..));
-        assert_eq!(cursor.byte_index(), 9);
+        assert_eq!(cursor.byte_index, 9);
     }
 
     #[test]
@@ -787,21 +786,21 @@ mod tests {
         assert_eq!(cursor.grapheme(), Rope::from("y").slice(..));
 
         cursor.move_to_line_end();
-        assert_eq!(cursor.byte_index(), 3);
+        assert_eq!(cursor.byte_index, 3);
         assert_eq!(cursor.grapheme(), Rope::from("\n").slice(..));
 
         // Idempotent: already on the line end.
         cursor.move_to_line_end();
-        assert_eq!(cursor.byte_index(), 3);
+        assert_eq!(cursor.byte_index, 3);
 
         cursor.move_until_line_end();
-        assert_eq!(cursor.byte_index(), 2);
+        assert_eq!(cursor.byte_index, 2);
         assert_eq!(cursor.grapheme(), Rope::from("y").slice(..));
 
         // On an empty line, `move_until_line_end` stays on the line end.
         let mut cursor = CursorView::try_from(("\nx\n", 0)).unwrap();
         cursor.move_until_line_end();
-        assert_eq!(cursor.byte_index(), 0);
+        assert_eq!(cursor.byte_index, 0);
     }
 
     #[test]
@@ -809,23 +808,23 @@ mod tests {
         let mut cursor = CursorView::try_from(("hello world\n", 0)).unwrap();
 
         assert!(cursor.move_to_next_byte(b'l', 1));
-        assert_eq!(cursor.byte_index(), 2);
+        assert_eq!(cursor.byte_index, 2);
 
         let mut cursor = CursorView::try_from(("hello world\n", 0)).unwrap();
         assert!(cursor.move_to_next_byte(b'l', 2));
-        assert_eq!(cursor.byte_index(), 3);
+        assert_eq!(cursor.byte_index, 3);
 
         let mut cursor = CursorView::try_from(("hello world\n", 0)).unwrap();
         assert!(cursor.move_to_next_byte(b'l', 3));
-        assert_eq!(cursor.byte_index(), 9);
+        assert_eq!(cursor.byte_index, 9);
 
         let mut cursor = CursorView::try_from(("hello world\n", 0)).unwrap();
         assert!(!cursor.move_to_next_byte(b'l', 4));
-        assert_eq!(cursor.byte_index(), 0);
+        assert_eq!(cursor.byte_index, 0);
 
         let mut cursor = CursorView::try_from(("hello world\n", 11)).unwrap();
         assert!(!cursor.move_to_prev_byte(b'l', 4));
-        assert_eq!(cursor.byte_index(), 11);
+        assert_eq!(cursor.byte_index, 11);
     }
 
     #[test]
@@ -833,7 +832,7 @@ mod tests {
         // Like Kakoune's `f`, the search starts after the grapheme the cursor occupies.
         let mut cursor = CursorView::try_from(("ll\n", 0)).unwrap();
         assert!(cursor.move_to_next_byte(b'l', 1));
-        assert_eq!(cursor.byte_index(), 1);
+        assert_eq!(cursor.byte_index, 1);
     }
 
     #[test]
@@ -841,23 +840,23 @@ mod tests {
         let mut cursor = CursorView::try_from(("a b\tc\n", 0)).unwrap();
 
         assert!(cursor.move_to_next_blank(1));
-        assert_eq!(cursor.byte_index(), 1);
+        assert_eq!(cursor.byte_index, 1);
 
         let mut cursor = CursorView::try_from(("a b\tc\n", 0)).unwrap();
         assert!(cursor.move_to_next_blank(2));
-        assert_eq!(cursor.byte_index(), 3);
+        assert_eq!(cursor.byte_index, 3);
 
         let mut cursor = CursorView::try_from(("a b\tc\n", 0)).unwrap();
         assert!(cursor.move_to_next_blank(3));
-        assert_eq!(cursor.byte_index(), 5);
+        assert_eq!(cursor.byte_index, 5);
 
         let mut cursor = CursorView::try_from(("a b\tc\n", 0)).unwrap();
         assert!(!cursor.move_to_next_blank(4));
-        assert_eq!(cursor.byte_index(), 0);
+        assert_eq!(cursor.byte_index, 0);
 
         let mut cursor = CursorView::try_from(("a b\tc\n", 4)).unwrap();
         assert!(!cursor.move_to_prev_blank(3));
-        assert_eq!(cursor.byte_index(), 4);
+        assert_eq!(cursor.byte_index, 4);
     }
 
     #[hegel::test(test_cases = 1_000)]

@@ -45,6 +45,6 @@ fuzz_target!(|input: (&str, usize, usize, Vec<FuzzAction>)| {
         range.assert_invariants().unwrap();
         assert_eq!(range.byte_length(), range.slice().len());
         assert_eq!(range.is_backward(), !range.is_forward());
-        assert!(range.start().byte_index() <= range.end().byte_index());
+        assert!(range.start().byte_index <= range.end().byte_index);
     }
 });

@@ -219,7 +219,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
             });
             server.handle_event(event)?;
         }
-        if let Some(exit_code) = server.client().exit_code() {
+        if let Some(exit_code) = server.client().exit_code {
             return Ok(exit_code);
         }
     }
@@ -264,7 +264,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
 
         handle_event(&mut server, areas, event)?;
 
-        if let Some(exit_code) = server.client().exit_code() {
+        if let Some(exit_code) = server.client().exit_code {
             break exit_code;
         }
     };
@@ -294,7 +294,7 @@ fn render(client: &Client, experimental: &ExperimentalArgs, area: Rect, surface:
 }
 
 fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
-    let mode = match client.mode() {
+    let mode = match &client.mode {
         Mode::Normal => "normal",
         Mode::Seek(seek_mode) => {
             use indigo_core::mode::seek::{
@@ -346,7 +346,7 @@ fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
         (line, column)
     };
 
-    let count = match client.count() {
+    let count = match client.count {
         Some(count) if count.get() == usize::MAX => &String::from(" count=∞"),
         Some(count) => &format!(" count={count}"),
         None => "",
@@ -359,12 +359,12 @@ fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
 }
 
 fn render_prompt(client: &Client, mut area: Rect, surface: &mut Surface) {
-    if let Mode::Prompt(prompt_mode) = client.mode() {
+    if let Mode::Prompt(prompt_mode) = &client.mode {
         surface.set_style(area, Style::new().bg(THEME.status_bar_bg));
 
-        format!("{}:", prompt_mode.prompt()).render(area, surface);
+        format!("{}:", prompt_mode.prompt).render(area, surface);
 
-        let offset = u16::try_from(prompt_mode.prompt().display_width())
+        let offset = u16::try_from(prompt_mode.prompt.display_width())
             .expect("Prompt width is less than u16::MAX")
             + 1;
         area.x += offset;
@@ -372,12 +372,9 @@ fn render_prompt(client: &Client, mut area: Rect, surface: &mut Surface) {
 
         Line::raw(format!("{}   ", prompt_mode.content())).render(area, surface);
 
-        if let Some(rect) = byte_index_to_area(
-            prompt_mode.cursor().byte_index(),
-            prompt_mode.rope(),
-            0,
-            area,
-        ) {
+        if let Some(rect) =
+            byte_index_to_area(prompt_mode.cursor().byte_index, prompt_mode.rope(), 0, area)
+        {
             surface.set_style(
                 rect,
                 Style::default()
@@ -385,7 +382,7 @@ fn render_prompt(client: &Client, mut area: Rect, surface: &mut Surface) {
                     .bg(THEME.primary_cursor_bg),
             );
         }
-    } else if let Some(message) = client.message() {
+    } else if let Some(message) = client.message.as_ref() {
         match message {
             Ok(message) => Line::raw(message)
                 .bg(THEME.status_bar_bg)
@@ -526,16 +523,16 @@ fn render_dots(client: &Client, area: Rect, surface: &mut Surface) {
 fn render_debug_bar(client: &Client, area: Rect, surface: &mut Surface) {
     let window = client.focused_window();
     let selection = window.selection();
-    let ranges = selection.len();
+    let ranges = selection.ranges.len();
     let primary = selection.get_primary();
-    let tail = primary.tail().byte_index();
-    let head = primary.head().byte_index();
-    let goal = primary.goal_column();
+    let tail = primary.tail().byte_index;
+    let head = primary.head().byte_index;
+    let goal = primary.goal_column;
 
-    let pending = if client.pending_keys().is_empty() {
+    let pending = if client.pending_keys.is_empty() {
         String::new()
     } else {
-        let keys = Keys(client.pending_keys());
+        let keys = Keys(&client.pending_keys);
         format!(" pending={keys}")
     };
 
@@ -648,7 +645,7 @@ fn render_selection(client: &Client, area: Rect, surface: &mut Surface) {
 
     let selection = window.selection();
 
-    let primary_index = selection.primary_index();
+    let primary_index = selection.primary_range;
 
     selection.for_each(|i, range| {
         let (range_bg, cursor_fg, cursor_bg) = if i == primary_index {
@@ -665,9 +662,9 @@ fn render_selection(client: &Client, area: Rect, surface: &mut Surface) {
             )
         };
 
-        let head = range.head().byte_index();
-        let start = range.start().byte_index();
-        let end = range.end().byte_index();
+        let head = range.head().byte_index;
+        let start = range.start().byte_index;
+        let end = range.end().byte_index;
 
         let start_line = rope.byte_to_line_idx(start, LINE_TYPE);
         let end_line = rope.byte_to_line_idx(end, LINE_TYPE);

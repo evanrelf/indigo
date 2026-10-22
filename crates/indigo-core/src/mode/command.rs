@@ -41,7 +41,7 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
 pub fn enter_command_mode(client: &mut ClientMut) {
     prompt::enter(client, "", |client, input| match parse_command(input) {
         Ok(command) => handle_command(client, command),
-        Err(error) => client.set_message(Some(Err(error.to_string()))),
+        Err(error) => client.message = Some(Err(error.to_string())),
     });
 }
 
@@ -127,9 +127,9 @@ fn handle_command(client: &mut ClientMut, command: Command) {
         Command::Nop => {}
         Command::Echo { error, message } => {
             if error {
-                client.set_message(Some(Err(message.join(" "))));
+                client.message = Some(Err(message.join(" ")));
             } else {
-                client.set_message(Some(Ok(message.join(" "))));
+                client.message = Some(Ok(message.join(" ")));
             }
         }
         Command::Edit { path } => {
@@ -145,7 +145,7 @@ fn handle_command(client: &mut ClientMut, command: Command) {
                 // TODO: Delete previous window. It's no longer focused, so (at the time of writing)
                 // that means it's not displayed, it's just hanging out unused in memory.
             } else {
-                client.set_message(Some(Err(format!("Failed to open {path}"))));
+                client.message = Some(Err(format!("Failed to open {path}")));
             }
         }
         Command::Write { path } => {
@@ -156,7 +156,7 @@ fn handle_command(client: &mut ClientMut, command: Command) {
                 client.focused_buffer_mut().save(fs)
             };
             if result.is_err() {
-                client.set_message(Some(Err(String::from("Failed to save"))));
+                client.message = Some(Err(String::from("Failed to save")));
             }
         }
         Command::Quit { exit_code } => {
@@ -172,7 +172,7 @@ fn handle_command(client: &mut ClientMut, command: Command) {
                 }
             }
             if let Some(modified) = modified {
-                client.set_message(Some(Err(format!("Unsaved changes in {modified}"))));
+                client.message = Some(Err(format!("Unsaved changes in {modified}")));
             } else {
                 client.exit(exit_code.unwrap_or(0));
             }
@@ -185,16 +185,16 @@ fn handle_command(client: &mut ClientMut, command: Command) {
             if client.focused_buffer_mut().save(fs).is_ok() {
                 client.exit(exit_code.unwrap_or(0));
             } else {
-                client.set_message(Some(Err(String::from("Failed to save"))));
+                client.message = Some(Err(String::from("Failed to save")));
             }
         }
         Command::Readonly => {
             let new_readonly = !client.focused_buffer().text.readonly;
             client.focused_buffer_mut().text.readonly = new_readonly;
             if new_readonly {
-                client.set_message(Some(Ok(String::from("Buffer is now readonly"))));
+                client.message = Some(Ok(String::from("Buffer is now readonly")));
             } else {
-                client.set_message(Some(Ok(String::from("Buffer is no longer readonly"))));
+                client.message = Some(Ok(String::from("Buffer is no longer readonly")));
             }
         }
         Command::Panic => panic!(),

@@ -8,7 +8,7 @@ use indigo_kernel::edit::{self, Edit};
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use regex_cursor::engines::meta::Regex;
 use ropey::{Rope, RopeSlice};
-use std::{cmp::max, iter::zip, mem, thread};
+use std::{cmp::max, iter::zip, mem, ops::Deref, thread};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -187,6 +187,14 @@ pub type SelectionMove<'a> = SelectionView<'a, WMut, WRef>;
 
 pub type SelectionEdit<'a> = SelectionView<'a, WMut, WMut>;
 
+impl<S: WrapRef, T: Wrap> Deref for SelectionView<'_, S, T> {
+    type Target = SelectionState;
+
+    fn deref(&self) -> &Self::Target {
+        &self.state
+    }
+}
+
 impl<'a, S: Wrap, T: Wrap> SelectionView<'a, S, T> {
     pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
         self.on_drop = Some(Box::new(f));
@@ -210,19 +218,6 @@ impl<'a, S: WrapRef, T: WrapRef> SelectionView<'a, S, T> {
 
     pub fn text(&self) -> &Text {
         &self.text
-    }
-
-    pub fn state(&self) -> &SelectionState {
-        &self.state
-    }
-
-    #[expect(clippy::len_without_is_empty)]
-    pub fn len(&self) -> usize {
-        self.state.ranges.len()
-    }
-
-    pub fn primary_index(&self) -> usize {
-        self.state.primary_range
     }
 
     pub fn get(&self, index: usize) -> Option<Range<'_>> {
@@ -387,8 +382,8 @@ impl<S: WrapMut, T: WrapRef> SelectionView<'_, S, T> {
 
     pub fn split_into_lines(&mut self) {
         self.split_at(|range| {
-            let start = range.start().byte_index();
-            let end = range.end().byte_index();
+            let start = range.start().byte_index;
+            let end = range.end().byte_index;
 
             let start_line = range.text().byte_to_line_idx(start, LINE_TYPE);
             let end_line = range.text().byte_to_line_idx(end, LINE_TYPE);
@@ -409,8 +404,8 @@ impl<S: WrapMut, T: WrapRef> SelectionView<'_, S, T> {
             let range = Range::new(&self.text, range_state)
                 .expect("Selection text and range state are always kept valid");
 
-            let start = range.start().byte_index();
-            let end = range.end().byte_index();
+            let start = range.start().byte_index;
+            let end = range.end().byte_index;
 
             let mut boundaries = f(range);
             boundaries.sort_unstable();

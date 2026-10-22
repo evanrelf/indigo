@@ -9,7 +9,7 @@ use ropey::{Rope, RopeSlice};
 use std::{
     cmp::max,
     mem,
-    ops::{Bound, RangeBounds},
+    ops::{Bound, Deref, RangeBounds},
     thread,
 };
 use thiserror::Error;
@@ -192,6 +192,14 @@ pub type RangeMove<'a> = RangeView<'a, WMut, WRef>;
 
 pub type RangeEdit<'a> = RangeView<'a, WMut, WMut>;
 
+impl<S: WrapRef, T: Wrap> Deref for RangeView<'_, S, T> {
+    type Target = RangeState;
+
+    fn deref(&self) -> &Self::Target {
+        &self.state
+    }
+}
+
 impl<'a, S: Wrap, T: Wrap> RangeView<'a, S, T> {
     pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
         self.on_drop = Some(Box::new(f));
@@ -215,10 +223,6 @@ impl<'a, S: WrapRef, T: WrapRef> RangeView<'a, S, T> {
 
     pub fn text(&self) -> &Text {
         &self.text
-    }
-
-    pub fn state(&self) -> &RangeState {
-        &self.state
     }
 
     #[must_use]
@@ -262,10 +266,6 @@ impl<'a, S: WrapRef, T: WrapRef> RangeView<'a, S, T> {
         }
     }
 
-    pub fn goal_column(&self) -> Option<GoalColumn> {
-        self.state.goal_column
-    }
-
     pub fn byte_length(&self) -> usize {
         let (start, end) = self.byte_offsets();
         end - start
@@ -277,11 +277,6 @@ impl<'a, S: WrapRef, T: WrapRef> RangeView<'a, S, T> {
             1 => 1,
             _ => self.slice().graphemes().count(),
         }
-    }
-
-    /// A collapsed range is considered forward.
-    pub fn is_forward(&self) -> bool {
-        self.state.is_forward()
     }
 
     pub fn is_backward(&self) -> bool {
@@ -927,27 +922,27 @@ mod tests {
         let third_line_start = first_line.len() + 1 + short_line.len() + 1;
         let mut range = RangeView::try_from((Text::from(text.as_str()), goal, goal)).unwrap();
 
-        assert_eq!(range.goal_column(), None);
+        assert_eq!(range.goal_column, None);
         range.move_down(1);
-        assert_eq!(range.goal_column(), Some(GoalColumn::Column(goal)));
+        assert_eq!(range.goal_column, Some(GoalColumn::Column(goal)));
 
         range.move_down(1);
-        assert_eq!(range.head().byte_index(), third_line_start + goal);
-        assert_eq!(range.goal_column(), Some(GoalColumn::Column(goal)));
+        assert_eq!(range.head().byte_index, third_line_start + goal);
+        assert_eq!(range.goal_column, Some(GoalColumn::Column(goal)));
 
         range.move_left(1);
-        assert_eq!(range.goal_column(), None);
+        assert_eq!(range.goal_column, None);
     }
 
     #[test]
     fn snapshot_materializes_unresolved_goal_column() {
         let range = RangeView::try_from(("a\t界\n", 2, 2)).unwrap();
 
-        assert_eq!(range.goal_column(), None);
+        assert_eq!(range.goal_column, None);
         let snapshot = range.save();
 
         assert_eq!(snapshot.goal_column, GoalColumn::Column(9));
-        assert_eq!(range.goal_column(), None);
+        assert_eq!(range.goal_column, None);
     }
 
     #[test]
@@ -982,9 +977,9 @@ mod tests {
         assert_eq!(range.resolve_goal_column(), GoalColumn::Column(2));
         range.flip();
         assert!(range.is_backward());
-        assert_eq!(range.tail().byte_index(), 2);
-        assert_eq!(range.head().byte_index(), 0);
-        assert_eq!(range.goal_column(), None);
+        assert_eq!(range.tail().byte_index, 2);
+        assert_eq!(range.head().byte_index, 0);
+        assert_eq!(range.goal_column, None);
         range.collapse();
         assert!(range.is_forward());
     }
@@ -994,7 +989,7 @@ mod tests {
         let mut range = RangeView::try_from(("abc\n", 1, 1)).unwrap();
         range.delete();
         assert_eq!(&range.text().to_string(), "ac\n");
-        assert_eq!(range.head().byte_index(), 1);
+        assert_eq!(range.head().byte_index, 1);
     }
 
     #[test]
@@ -1009,7 +1004,7 @@ mod tests {
         let mut range = RangeView::try_from(("abc\n", 0, 3)).unwrap();
         range.delete();
         assert_eq!(&range.text().to_string(), "\n");
-        assert_eq!(range.head().byte_index(), 0);
+        assert_eq!(range.head().byte_index, 0);
     }
 
     #[test]
@@ -1019,7 +1014,7 @@ mod tests {
         let mut range = RangeView::try_from(("ab\n", 2, 2)).unwrap();
         range.prepare_append();
         assert_eq!(&range.text().to_string(), "ab\n\n");
-        assert_eq!(range.head().byte_index(), 3);
+        assert_eq!(range.head().byte_index, 3);
         range.insert("x");
         assert_eq!(&range.text().to_string(), "ab\nx\n");
 
@@ -1027,7 +1022,7 @@ mod tests {
         let mut range = RangeView::try_from(("ab\n", 0, 0)).unwrap();
         range.prepare_append();
         assert_eq!(&range.text().to_string(), "ab\n");
-        assert_eq!(range.head().byte_index(), 1);
+        assert_eq!(range.head().byte_index, 1);
     }
 
     #[test]
@@ -1050,13 +1045,13 @@ mod tests {
         range.insert("x\ny");
 
         range.move_to_line_start();
-        let first_tail_index = range.tail().byte_index();
-        let first_head_index = range.head().byte_index();
+        let first_tail_index = range.tail().byte_index;
+        let first_head_index = range.head().byte_index;
         assert_eq!(&range.slice().to_string(), "y");
 
         range.move_to_line_start();
-        let second_tail_index = range.tail().byte_index();
-        let second_head_index = range.head().byte_index();
+        let second_tail_index = range.tail().byte_index;
+        let second_head_index = range.head().byte_index;
         assert_eq!(first_tail_index, second_tail_index);
         assert_eq!(first_head_index, second_head_index);
         assert_eq!(&range.slice().to_string(), "y");
@@ -1070,13 +1065,13 @@ mod tests {
         range.insert(" x");
 
         range.move_to_line_non_blank_start();
-        let first_tail_index = range.tail().byte_index();
-        let first_head_index = range.head().byte_index();
+        let first_tail_index = range.tail().byte_index;
+        let first_head_index = range.head().byte_index;
         assert_eq!(&range.slice().to_string(), "x");
 
         range.move_to_line_non_blank_start();
-        let second_tail_index = range.tail().byte_index();
-        let second_head_index = range.head().byte_index();
+        let second_tail_index = range.tail().byte_index;
+        let second_head_index = range.head().byte_index;
         assert_eq!(first_tail_index, second_tail_index);
         assert_eq!(first_head_index, second_head_index);
         assert_eq!(&range.slice().to_string(), "x");
@@ -1091,11 +1086,11 @@ mod tests {
 
         range.move_to_line_start();
         range.move_to_line_non_blank_start();
-        let from_start = range.head().byte_index();
+        let from_start = range.head().byte_index;
 
         range.move_until_line_end();
         range.move_to_line_non_blank_start();
-        let from_end = range.head().byte_index();
+        let from_end = range.head().byte_index;
 
         assert_eq!(from_start, from_end);
     }
@@ -1278,7 +1273,7 @@ mod tests {
                     Range::new(&self.text, &self.state).expect("Range valid after every operation");
                 assert!(range.grapheme_length() >= 1, "Range is never empty");
                 assert_eq!(range.byte_length(), range.slice().len());
-                assert!(range.state().start().byte_index <= range.state().end().byte_index);
+                assert!(self.state.start().byte_index <= self.state.end().byte_index);
                 let rope = self.text.rope();
                 assert!(
                     rope.len() > 0 && rope.byte(rope.len() - 1) == b'\n',
