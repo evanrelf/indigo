@@ -9,6 +9,7 @@ pub use crate::{
     mode::Mode,
     range::{Range, RangeEdit},
     rope::RopeExt,
+    server::Server,
     session::{Action, Event, KeyEvent, KeyEventKind, Session},
     text::Text,
     window::{Window, WindowMut},

@@ -10,6 +10,7 @@ pub mod prelude;
 pub mod range;
 pub mod rope;
 pub mod selection;
+pub mod server;
 pub mod session;
 pub mod syntax;
 pub mod text;

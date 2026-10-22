@@ -39,11 +39,7 @@ pub fn should_skip_event(event: &TerminalEvent, areas: Areas) -> bool {
     }
 }
 
-pub fn handle_event(
-    session: &mut Session,
-    areas: Areas,
-    event: TerminalEvent,
-) -> anyhow::Result<()> {
+pub fn handle_event(server: &mut Server, areas: Areas, event: TerminalEvent) -> anyhow::Result<()> {
     // Terminals typically send line breaks in pasted text as `\r`, like the Enter key.
     let event = match event {
         TerminalEvent::Paste(text) => {
@@ -65,15 +61,17 @@ pub fn handle_event(
     };
 
     if dismiss_message {
-        session.message = None;
+        server.session.message = None;
     }
 
     if let Ok(event) = event_t2i(&event) {
-        let handled = session.handle_event(event)?;
+        let handled = server.handle_event(event)?;
         if handled {
             return Ok(());
         }
     }
+
+    let session = &mut server.session;
 
     let _handled = match session.mode {
         Mode::Normal => handle_event_normal(session, areas, event),

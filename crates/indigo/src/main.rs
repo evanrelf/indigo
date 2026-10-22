@@ -12,7 +12,7 @@ use indigo_core::{
     fs::RealFs,
     keymap::Keymap,
     mode::{insert, normal, prompt, replace, seek},
-    prelude::{Buffer, BufferKind, DisplayWidth as _, Keys, Mode, RopeExt as _, Session},
+    prelude::{Buffer, BufferKind, DisplayWidth as _, Keys, Mode, RopeExt as _, Server, Session},
     rope::LINE_TYPE,
     syntax::Language,
 };
@@ -191,15 +191,15 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
         Buffer::new()
     };
 
-    let mut session = Session::from(buffer);
+    let mut server = Server::from(buffer);
 
-    session.fs = Arc::new(RealFs);
-    session.pwd = Some(Utf8PathBuf::try_from(env::current_dir()?)?);
+    server.session.fs = Arc::new(RealFs);
+    server.session.pwd = Some(Utf8PathBuf::try_from(env::current_dir()?)?);
 
     // Centering scroll deferred until height is known
     let mut pending_center = false;
     if let Some(line_number) = goto_line {
-        let mut window = session.focused_window_mut();
+        let mut window = server.session.focused_window_mut();
         let rope = window.buffer().text.rope();
         let line_index = min(line_number - 1, rope.len_lines_unix() - 1);
         let byte_index = rope.line_to_byte_idx(line_index, LINE_TYPE);
@@ -216,9 +216,9 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
                 key: *key,
                 kind: indigo_core::session::KeyEventKind::Press,
             });
-            session.handle_event(event)?;
+            server.handle_event(event)?;
         }
-        if let Some(exit_code) = session.exit_code() {
+        if let Some(exit_code) = server.session.exit_code() {
             return Ok(exit_code);
         }
     }
@@ -235,14 +235,20 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
                 ..area
             };
             let surface = frame.buffer_mut();
-            areas = Areas::new(&session, area, args.experimental.x_ui_debug_bar);
-            session.focused_window_mut().set_height(areas.text.height);
+            areas = Areas::new(&server.session, area, args.experimental.x_ui_debug_bar);
+            server
+                .session
+                .focused_window_mut()
+                .set_height(areas.text.height);
             if pending_center {
-                session.focused_window_mut().scroll_center_selection();
+                server
+                    .session
+                    .focused_window_mut()
+                    .scroll_center_selection();
                 pending_center = false;
             }
-            session.focused_buffer_mut().text.reparse();
-            render(&session, &args.experimental, area, surface);
+            server.session.focused_buffer_mut().text.reparse();
+            render(&server.session, &args.experimental, area, surface);
         })?;
 
         let event = 'event_read: loop {
@@ -255,9 +261,9 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
             }
         };
 
-        handle_event(&mut session, areas, event)?;
+        handle_event(&mut server, areas, event)?;
 
-        if let Some(exit_code) = session.exit_code() {
+        if let Some(exit_code) = server.session.exit_code() {
             break exit_code;
         }
     };
