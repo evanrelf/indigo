@@ -8,7 +8,7 @@ use slotmap::SlotMap;
 use std::{num::NonZeroUsize, process::ExitCode};
 
 #[derive(Clone)]
-pub struct Client {
+pub struct ClientState {
     pub(crate) windows: SlotMap<WindowKey, WindowState>,
     pub(crate) focused_window: WindowKey,
     pub mode: Mode,
@@ -18,7 +18,7 @@ pub struct Client {
     exit_code: Option<ExitCode>,
 }
 
-impl Client {
+impl ClientState {
     #[must_use]
     pub(crate) fn new(buffer_key: BufferKey) -> Self {
         let window = WindowState::new(buffer_key);

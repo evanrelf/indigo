@@ -1,6 +1,6 @@
 use crate::{
     buffer::{Buffer, BufferKey},
-    client::Client,
+    client::ClientState,
     fs::{Fs, NoFs},
     key::Key,
     mode::{Mode, command, insert, normal, prompt, replace, seek},
@@ -50,7 +50,7 @@ pub struct Session {
     buffers: SlotMap<BufferKey, Buffer>,
     pub registers: HashMap<char, Vec<String>, IndigoBuildHasher>,
     pub pwd: Option<Utf8PathBuf>,
-    pub client: Client,
+    pub client: ClientState,
 }
 
 impl Session {
@@ -253,7 +253,7 @@ impl From<Buffer> for Session {
             buffers,
             registers: HashMap::default(),
             pwd: None,
-            client: Client::new(buffer_key),
+            client: ClientState::new(buffer_key),
         }
     }
 }
