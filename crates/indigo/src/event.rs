@@ -61,7 +61,7 @@ pub fn handle_event(server: &mut Server, areas: Areas, event: TerminalEvent) -> 
     };
 
     if dismiss_message {
-        server.client_mut().state_mut().message = None;
+        server.client_mut().set_message(None);
     }
 
     if let Ok(event) = event_t2i(&event) {
@@ -73,7 +73,7 @@ pub fn handle_event(server: &mut Server, areas: Areas, event: TerminalEvent) -> 
 
     let client = &mut server.client_mut();
 
-    let _handled = match client.state().mode {
+    let _handled = match client.mode() {
         Mode::Normal => handle_event_normal(client, areas, event),
         Mode::Seek(_) => handle_event_seek(client, areas, event)?,
         Mode::Insert => handle_event_insert(client, areas, event),

@@ -34,13 +34,13 @@ pub enum Error {
 
 #[derive(Clone)]
 pub struct ClientState {
-    windows: SlotMap<WindowKey, WindowState>,
-    focused_window: WindowKey,
+    pub windows: SlotMap<WindowKey, WindowState>,
+    pub focused_window: WindowKey,
     pub mode: Mode,
     pub count: Option<NonZeroUsize>,
     pub pending_keys: Vec<Key>,
     pub message: Option<Result<String, String>>,
-    exit_code: Option<ExitCode>,
+    pub exit_code: Option<ExitCode>,
 }
 
 impl ClientState {
@@ -59,16 +59,6 @@ impl ClientState {
             message: None,
             exit_code: None,
         }
-    }
-
-    #[must_use]
-    pub fn exit_code(&self) -> Option<ExitCode> {
-        self.exit_code
-    }
-
-    /// Doesn't actually terminate the process, just records the desired exit code.
-    pub fn exit(&mut self, exit_code: u8) {
-        self.exit_code = Some(ExitCode::from(exit_code));
     }
 }
 
@@ -95,6 +85,31 @@ impl<'a, W: WrapRef> ClientView<'a, W> {
     #[must_use]
     pub fn session(&self) -> &Session {
         &self.session
+    }
+
+    #[must_use]
+    pub fn mode(&self) -> &Mode {
+        &self.state.mode
+    }
+
+    #[must_use]
+    pub fn count(&self) -> Option<NonZeroUsize> {
+        self.state.count
+    }
+
+    #[must_use]
+    pub fn pending_keys(&self) -> &[Key] {
+        &self.state.pending_keys
+    }
+
+    #[must_use]
+    pub fn message(&self) -> Option<&Result<String, String>> {
+        self.state.message.as_ref()
+    }
+
+    #[must_use]
+    pub fn exit_code(&self) -> Option<ExitCode> {
+        self.state.exit_code
     }
 
     #[must_use]
@@ -164,13 +179,38 @@ impl<'a, W: WrapRef> ClientView<'a, W> {
 
 impl<W: WrapMut> ClientView<'_, W> {
     #[must_use]
-    pub fn state_mut(&mut self) -> &mut ClientState {
-        &mut self.state
+    pub fn session_mut(&mut self) -> &mut Session {
+        &mut self.session
     }
 
     #[must_use]
-    pub fn session_mut(&mut self) -> &mut Session {
-        &mut self.session
+    pub fn mode_mut(&mut self) -> &mut Mode {
+        &mut self.state.mode
+    }
+
+    pub fn set_mode(&mut self, mode: Mode) {
+        self.state.mode = mode;
+    }
+
+    pub fn set_count(&mut self, count: Option<NonZeroUsize>) {
+        self.state.count = count;
+    }
+
+    pub fn take_count(&mut self) -> Option<NonZeroUsize> {
+        self.state.count.take()
+    }
+
+    pub fn clear_pending_keys(&mut self) {
+        self.state.pending_keys.clear();
+    }
+
+    pub fn set_message(&mut self, message: Option<Result<String, String>>) {
+        self.state.message = message;
+    }
+
+    /// Doesn't actually terminate the process, just records the desired exit code.
+    pub fn exit(&mut self, exit_code: u8) {
+        self.state.exit_code = Some(ExitCode::from(exit_code));
     }
 
     #[must_use]

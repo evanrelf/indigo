@@ -148,19 +148,19 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
 }
 
 pub fn handle_keys(client: &mut ClientMut) -> bool {
-    match KEYMAP.get_keys(&client.state().pending_keys) {
+    match KEYMAP.get_keys(client.pending_keys()) {
         KeymapResult::Mapped(actions) => {
-            client.state_mut().pending_keys.clear();
+            client.clear_pending_keys();
             handle_actions(client, actions);
             true
         }
         KeymapResult::Fallback(actions) => {
-            client.state_mut().pending_keys.clear();
+            client.clear_pending_keys();
             handle_actions(client, &actions);
             true
         }
         KeymapResult::Unmapped => {
-            client.state_mut().pending_keys.clear();
+            client.clear_pending_keys();
             false
         }
         KeymapResult::Pending => true,
@@ -172,40 +172,40 @@ pub fn enter(
     prompt: &'static str,
     handler: impl FnMut(&mut ClientMut, &str) + Send + 'static,
 ) {
-    client.state_mut().mode = Mode::Prompt(State::new(prompt, handler));
-    client.state_mut().count = None;
+    client.set_mode(Mode::Prompt(State::new(prompt, handler)));
+    client.set_count(None);
 }
 
 fn move_left(client: &mut ClientMut) {
-    let Mode::Prompt(prompt_mode) = &mut client.state_mut().mode else {
+    let Mode::Prompt(prompt_mode) = client.mode_mut() else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_move().move_left(1);
 }
 
 fn move_right(client: &mut ClientMut) {
-    let Mode::Prompt(prompt_mode) = &mut client.state_mut().mode else {
+    let Mode::Prompt(prompt_mode) = client.mode_mut() else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_move().move_right(1);
 }
 
 fn move_to_start(client: &mut ClientMut) {
-    let Mode::Prompt(prompt_mode) = &mut client.state_mut().mode else {
+    let Mode::Prompt(prompt_mode) = client.mode_mut() else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_move().move_to_start();
 }
 
 fn move_to_end(client: &mut ClientMut) {
-    let Mode::Prompt(prompt_mode) = &mut client.state_mut().mode else {
+    let Mode::Prompt(prompt_mode) = client.mode_mut() else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_move().move_to_end();
 }
 
 fn delete_to_start(client: &mut ClientMut) {
-    let Mode::Prompt(prompt_mode) = &mut client.state_mut().mode else {
+    let Mode::Prompt(prompt_mode) = client.mode_mut() else {
         panic!("Not in prompt mode")
     };
     let mut cursor = prompt_mode.cursor_edit();
@@ -213,7 +213,7 @@ fn delete_to_start(client: &mut ClientMut) {
 }
 
 fn delete_to_end(client: &mut ClientMut) {
-    let Mode::Prompt(prompt_mode) = &mut client.state_mut().mode else {
+    let Mode::Prompt(prompt_mode) = client.mode_mut() else {
         panic!("Not in prompt mode")
     };
     let mut cursor = prompt_mode.cursor_edit();
@@ -221,21 +221,21 @@ fn delete_to_end(client: &mut ClientMut) {
 }
 
 fn insert_char(client: &mut ClientMut, char: char) {
-    let Mode::Prompt(prompt_mode) = &mut client.state_mut().mode else {
+    let Mode::Prompt(prompt_mode) = client.mode_mut() else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_edit().insert_char(char);
 }
 
 pub fn paste(client: &mut ClientMut, text: &str) {
-    let Mode::Prompt(prompt_mode) = &mut client.state_mut().mode else {
+    let Mode::Prompt(prompt_mode) = client.mode_mut() else {
         panic!("Not in prompt mode")
     };
     prompt_mode.cursor_edit().insert(text);
 }
 
 fn delete_before(client: &mut ClientMut) {
-    let Mode::Prompt(prompt_mode) = &mut client.state_mut().mode else {
+    let Mode::Prompt(prompt_mode) = client.mode_mut() else {
         panic!("Not in prompt mode")
     };
     if prompt_mode.cursor().is_at_start() {
@@ -246,7 +246,7 @@ fn delete_before(client: &mut ClientMut) {
 }
 
 fn exec(client: &mut ClientMut) {
-    let Mode::Prompt(prompt_mode) = &mut client.state_mut().mode else {
+    let Mode::Prompt(prompt_mode) = client.mode_mut() else {
         panic!("Not in prompt mode")
     };
     let text = prompt_mode.content().to_string();

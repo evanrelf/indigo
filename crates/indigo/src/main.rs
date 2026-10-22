@@ -219,7 +219,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
             });
             server.handle_event(event)?;
         }
-        if let Some(exit_code) = server.client().state().exit_code() {
+        if let Some(exit_code) = server.client().exit_code() {
             return Ok(exit_code);
         }
     }
@@ -264,7 +264,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
 
         handle_event(&mut server, areas, event)?;
 
-        if let Some(exit_code) = server.client().state().exit_code() {
+        if let Some(exit_code) = server.client().exit_code() {
             break exit_code;
         }
     };
@@ -294,7 +294,7 @@ fn render(client: &Client, experimental: &ExperimentalArgs, area: Rect, surface:
 }
 
 fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
-    let mode = match &client.state().mode {
+    let mode = match client.mode() {
         Mode::Normal => "normal",
         Mode::Seek(seek_mode) => {
             use indigo_core::mode::seek::{
@@ -346,7 +346,7 @@ fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
         (line, column)
     };
 
-    let count = match client.state().count {
+    let count = match client.count() {
         Some(count) if count.get() == usize::MAX => &String::from(" count=∞"),
         Some(count) => &format!(" count={count}"),
         None => "",
@@ -359,7 +359,7 @@ fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
 }
 
 fn render_prompt(client: &Client, mut area: Rect, surface: &mut Surface) {
-    if let Mode::Prompt(ref prompt_mode) = client.state().mode {
+    if let Mode::Prompt(prompt_mode) = client.mode() {
         surface.set_style(area, Style::new().bg(THEME.status_bar_bg));
 
         format!("{}:", prompt_mode.prompt()).render(area, surface);
@@ -385,7 +385,7 @@ fn render_prompt(client: &Client, mut area: Rect, surface: &mut Surface) {
                     .bg(THEME.primary_cursor_bg),
             );
         }
-    } else if let Some(message) = &client.state().message {
+    } else if let Some(message) = client.message() {
         match message {
             Ok(message) => Line::raw(message)
                 .bg(THEME.status_bar_bg)
@@ -526,17 +526,16 @@ fn render_dots(client: &Client, area: Rect, surface: &mut Surface) {
 fn render_debug_bar(client: &Client, area: Rect, surface: &mut Surface) {
     let window = client.focused_window();
     let selection = window.selection();
-    let state = selection.state();
-    let ranges = state.ranges.len();
-    let primary = &state.ranges[state.primary_range];
-    let tail = primary.tail.byte_index;
-    let head = primary.head.byte_index;
-    let goal = primary.goal_column;
+    let ranges = selection.len();
+    let primary = selection.get_primary();
+    let tail = primary.tail().byte_index();
+    let head = primary.head().byte_index();
+    let goal = primary.goal_column();
 
-    let pending = if client.state().pending_keys.is_empty() {
+    let pending = if client.pending_keys().is_empty() {
         String::new()
     } else {
-        let keys = Keys(&client.state().pending_keys);
+        let keys = Keys(client.pending_keys());
         format!(" pending={keys}")
     };
 
@@ -647,10 +646,12 @@ fn render_selection(client: &Client, area: Rect, surface: &mut Surface) {
 
     let vertical_scroll = window.vertical_scroll();
 
-    let primary_range = window.selection().state().primary_range;
+    let selection = window.selection();
 
-    for (i, range_state) in window.selection().state().ranges.iter().enumerate() {
-        let (range_bg, cursor_fg, cursor_bg) = if i == primary_range {
+    let primary_index = selection.primary_index();
+
+    selection.for_each(|i, range| {
+        let (range_bg, cursor_fg, cursor_bg) = if i == primary_index {
             (
                 THEME.primary_range_bg,
                 THEME.primary_cursor_fg,
@@ -664,9 +665,9 @@ fn render_selection(client: &Client, area: Rect, surface: &mut Surface) {
             )
         };
 
-        let head = range_state.head.byte_index;
-        let start = range_state.start().byte_index;
-        let end = range_state.end().byte_index;
+        let head = range.head().byte_index();
+        let start = range.start().byte_index();
+        let end = range.end().byte_index();
 
         let start_line = rope.byte_to_line_idx(start, LINE_TYPE);
         let end_line = rope.byte_to_line_idx(end, LINE_TYPE);
@@ -705,5 +706,5 @@ fn render_selection(client: &Client, area: Rect, surface: &mut Surface) {
         if let Some(rect) = grapheme_area(head) {
             surface.set_style(rect, Style::default().fg(cursor_fg).bg(cursor_bg));
         }
-    }
+    });
 }

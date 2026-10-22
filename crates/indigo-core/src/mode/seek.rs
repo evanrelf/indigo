@@ -80,19 +80,19 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
 }
 
 pub fn handle_keys(client: &mut ClientMut) -> bool {
-    match KEYMAP.get_keys(&client.state().pending_keys) {
+    match KEYMAP.get_keys(client.pending_keys()) {
         KeymapResult::Mapped(actions) => {
-            client.state_mut().pending_keys.clear();
+            client.clear_pending_keys();
             handle_actions(client, actions);
             normal::enter(client);
         }
         KeymapResult::Fallback(actions) => {
-            client.state_mut().pending_keys.clear();
+            client.clear_pending_keys();
             handle_actions(client, &actions);
             normal::enter(client);
         }
         KeymapResult::Unmapped => {
-            client.state_mut().pending_keys.clear();
+            client.clear_pending_keys();
             normal::enter(client);
         }
         KeymapResult::Pending => {}
@@ -107,11 +107,11 @@ pub fn enter(
     include: SeekInclude,
     direction: SeekDirection,
 ) {
-    client.state_mut().mode = Mode::Seek(State {
+    client.set_mode(Mode::Seek(State {
         select,
         include,
         direction,
-    });
+    }));
 }
 
 fn seek(client: &mut ClientMut, byte: u8) {
@@ -120,11 +120,10 @@ fn seek(client: &mut ClientMut, byte: u8) {
     use SeekSelect::{Extend, Move};
 
     let (select, include, direction, count) = {
-        let state = client.state_mut();
-        let Mode::Seek(seek_mode) = &state.mode else {
+        let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
+        let Mode::Seek(seek_mode) = client.mode() else {
             panic!("Not in seek mode")
         };
-        let count = state.count.take().unwrap_or(NonZeroUsize::MIN).get();
         (
             seek_mode.select,
             seek_mode.include,

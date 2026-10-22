@@ -84,7 +84,7 @@ fn main() -> anyhow::Result<ExitCode> {
             let window = client.focused_window();
             let selection = window.selection();
             eprintln!("\nranges:");
-            let primary_range = selection.state().primary_range;
+            let primary_index = selection.primary_index();
             selection.for_each(|index, range| {
                 let tail = range.tail().byte_index();
                 let head = range.head().byte_index();
@@ -95,7 +95,7 @@ fn main() -> anyhow::Result<ExitCode> {
                 } else {
                     "backward"
                 };
-                let primary = if index == primary_range { " primary" } else { "" };
+                let primary = if index == primary_index { " primary" } else { "" };
                 let preview = escaped_preview(&range.slice().to_string());
                 eprintln!(
                     "  {index}: tail={tail} head={head} start={start} end={end} direction={direction}{primary} text=\"{preview}\""
@@ -129,11 +129,7 @@ fn main() -> anyhow::Result<ExitCode> {
         .rope()
         .write_to(io::LineWriter::new(io::stdout()));
 
-    let exit_code = server
-        .client()
-        .state()
-        .exit_code()
-        .unwrap_or(ExitCode::SUCCESS);
+    let exit_code = server.client().exit_code().unwrap_or(ExitCode::SUCCESS);
 
     Ok(exit_code)
 }

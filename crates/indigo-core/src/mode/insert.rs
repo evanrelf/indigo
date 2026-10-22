@@ -57,19 +57,19 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
 }
 
 pub fn handle_keys(client: &mut ClientMut) -> bool {
-    match KEYMAP.get_keys(&client.state().pending_keys) {
+    match KEYMAP.get_keys(client.pending_keys()) {
         KeymapResult::Mapped(actions) => {
-            client.state_mut().pending_keys.clear();
+            client.clear_pending_keys();
             handle_actions(client, actions);
             true
         }
         KeymapResult::Fallback(actions) => {
-            client.state_mut().pending_keys.clear();
+            client.clear_pending_keys();
             handle_actions(client, &actions);
             true
         }
         KeymapResult::Unmapped => {
-            client.state_mut().pending_keys.clear();
+            client.clear_pending_keys();
             false
         }
         KeymapResult::Pending => true,
@@ -78,8 +78,8 @@ pub fn handle_keys(client: &mut ClientMut) -> bool {
 
 pub fn enter(client: &mut ClientMut) {
     if client.focused_buffer().text.readonly {
-        client.state_mut().message = Some(Err(String::from("Buffer is readonly")));
-        client.state_mut().count = None;
+        client.set_message(Some(Err(String::from("Buffer is readonly"))));
+        client.set_count(None);
         return;
     }
     let mut window = client.focused_window_mut();
@@ -87,34 +87,34 @@ pub fn enter(client: &mut ClientMut) {
         .selection_move()
         .for_each_move(|mut range| range.collapse());
     window.scroll_to_selection();
-    client.state_mut().mode = Mode::Insert;
-    client.state_mut().count = None;
+    client.set_mode(Mode::Insert);
+    client.set_count(None);
 }
 
 fn delete_before(client: &mut ClientMut) {
     let mut window = client.focused_window_mut();
     window.selection_edit().delete_before();
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn delete_after(client: &mut ClientMut) {
     let mut window = client.focused_window_mut();
     window.selection_edit().delete_after();
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn insert_char(client: &mut ClientMut, char: char) {
     let mut window = client.focused_window_mut();
     window.selection_edit().insert_char(char);
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 pub fn paste(client: &mut ClientMut, text: &str) {
     let mut window = client.focused_window_mut();
     window.selection_edit().insert(text);
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }

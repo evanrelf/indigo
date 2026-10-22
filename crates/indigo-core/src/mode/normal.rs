@@ -202,11 +202,11 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
     match action {
         Action::AppendCountDigit(digit) => {
             let digit = usize::from(*digit);
-            let old_count = client.state().count.map_or(0, |count| usize::from(count));
+            let old_count = client.count().map_or(0, |count| usize::from(count));
             let new_count = NonZeroUsize::new(old_count.saturating_mul(10).saturating_add(digit));
-            client.state_mut().count = new_count;
+            client.set_count(new_count);
         }
-        Action::ClearCount => client.state_mut().count = None,
+        Action::ClearCount => client.set_count(None),
         Action::Commit => client.focused_buffer_mut().text.commit(),
         Action::EnterNormalMode => enter(client),
         Action::EnterCommandMode => enter_command_mode(client),
@@ -275,19 +275,19 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
 }
 
 pub fn handle_keys(client: &mut ClientMut) -> bool {
-    match KEYMAP.get_keys(&client.state().pending_keys) {
+    match KEYMAP.get_keys(client.pending_keys()) {
         KeymapResult::Mapped(actions) => {
-            client.state_mut().pending_keys.clear();
+            client.clear_pending_keys();
             handle_actions(client, actions);
             true
         }
         KeymapResult::Fallback(actions) => {
-            client.state_mut().pending_keys.clear();
+            client.clear_pending_keys();
             handle_actions(client, &actions);
             true
         }
         KeymapResult::Unmapped => {
-            client.state_mut().pending_keys.clear();
+            client.clear_pending_keys();
             false
         }
         KeymapResult::Pending => true,
@@ -296,17 +296,12 @@ pub fn handle_keys(client: &mut ClientMut) -> bool {
 
 pub fn enter(client: &mut ClientMut) {
     client.focused_buffer_mut().text.commit();
-    client.state_mut().mode = Mode::Normal;
-    client.state_mut().count = None;
+    client.set_mode(Mode::Normal);
+    client.set_count(None);
 }
 
 fn extend_left(client: &mut ClientMut) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = client.focused_window_mut();
     window
         .selection_move()
@@ -316,12 +311,7 @@ fn extend_left(client: &mut ClientMut) {
 }
 
 fn move_left(client: &mut ClientMut) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = client.focused_window_mut();
     window
         .selection_move()
@@ -331,12 +321,7 @@ fn move_left(client: &mut ClientMut) {
 }
 
 fn extend_right(client: &mut ClientMut) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = client.focused_window_mut();
     window
         .selection_move()
@@ -346,12 +331,7 @@ fn extend_right(client: &mut ClientMut) {
 }
 
 fn move_right(client: &mut ClientMut) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = client.focused_window_mut();
     window
         .selection_move()
@@ -361,12 +341,7 @@ fn move_right(client: &mut ClientMut) {
 }
 
 fn extend_up(client: &mut ClientMut) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = client.focused_window_mut();
     window
         .selection_move()
@@ -376,12 +351,7 @@ fn extend_up(client: &mut ClientMut) {
 }
 
 fn move_up(client: &mut ClientMut) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = client.focused_window_mut();
     window
         .selection_move()
@@ -391,12 +361,7 @@ fn move_up(client: &mut ClientMut) {
 }
 
 fn extend_down(client: &mut ClientMut) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = client.focused_window_mut();
     window
         .selection_move()
@@ -406,12 +371,7 @@ fn extend_down(client: &mut ClientMut) {
 }
 
 fn move_down(client: &mut ClientMut) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = client.focused_window_mut();
     window
         .selection_move()
@@ -426,7 +386,7 @@ fn flip(client: &mut ClientMut) {
         .selection_move()
         .for_each_move(|mut range| range.flip());
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn flip_forward(client: &mut ClientMut) {
@@ -435,35 +395,25 @@ fn flip_forward(client: &mut ClientMut) {
         .selection_move()
         .for_each_move(|mut range| range.flip_forward());
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn keep_primary(client: &mut ClientMut) {
     let mut window = client.focused_window_mut();
     window.selection_move().keep_primary();
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn rotate_selection_backward(client: &mut ClientMut) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = client.focused_window_mut();
     window.selection_move().rotate_backward(count);
     window.scroll_to_selection();
 }
 
 fn rotate_selection_forward(client: &mut ClientMut) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = client.focused_window_mut();
     window.selection_move().rotate_forward(count);
     window.scroll_to_selection();
@@ -475,19 +425,19 @@ fn collapse(client: &mut ClientMut) {
         .selection_move()
         .for_each_move(|mut range| range.collapse());
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn delete(client: &mut ClientMut) {
     if client.focused_buffer().text.readonly {
-        client.state_mut().message = Some(Err(String::from("Buffer is readonly")));
-        client.state_mut().count = None;
+        client.set_message(Some(Err(String::from("Buffer is readonly"))));
+        client.set_count(None);
         return;
     }
     let mut window = client.focused_window_mut();
     window.selection_edit().delete();
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn yank(client: &mut ClientMut) {
@@ -498,18 +448,13 @@ fn yank(client: &mut ClientMut) {
         .map(String::from)
         .collect();
     client.session_mut().registers.insert('"', values);
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn paste(client: &mut ClientMut, paste_mode: PasteMode) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     if client.focused_buffer().text.readonly {
-        client.state_mut().message = Some(Err(String::from("Buffer is readonly")));
+        client.set_message(Some(Err(String::from("Buffer is readonly"))));
         return;
     }
     let count = if paste_mode == PasteMode::Replace {
@@ -531,9 +476,9 @@ fn paste(client: &mut ClientMut, paste_mode: PasteMode) {
 }
 
 fn paste_all(client: &mut ClientMut, paste_mode: PasteMode) {
-    client.state_mut().count = None;
+    client.set_count(None);
     if client.focused_buffer().text.readonly {
-        client.state_mut().message = Some(Err(String::from("Buffer is readonly")));
+        client.set_message(Some(Err(String::from("Buffer is readonly"))));
         return;
     }
     let values = client
@@ -543,7 +488,7 @@ fn paste_all(client: &mut ClientMut, paste_mode: PasteMode) {
         .cloned()
         .unwrap_or_default();
     if values.is_empty() {
-        client.state_mut().message = Some(Err(String::from("Nothing to paste")));
+        client.set_message(Some(Err(String::from("Nothing to paste"))));
         return;
     }
     let mut window = client.focused_window_mut();
@@ -552,14 +497,9 @@ fn paste_all(client: &mut ClientMut, paste_mode: PasteMode) {
 }
 
 fn undo(client: &mut ClientMut) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     if client.focused_buffer().text.readonly {
-        client.state_mut().message = Some(Err(String::from("Buffer is readonly")));
+        client.set_message(Some(Err(String::from("Buffer is readonly"))));
         return;
     }
     let mut window = client.focused_window_mut();
@@ -572,14 +512,9 @@ fn undo(client: &mut ClientMut) {
 }
 
 fn redo(client: &mut ClientMut) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     if client.focused_buffer().text.readonly {
-        client.state_mut().message = Some(Err(String::from("Buffer is readonly")));
+        client.set_message(Some(Err(String::from("Buffer is readonly"))));
         return;
     }
     let mut window = client.focused_window_mut();
@@ -595,7 +530,7 @@ fn select_all(client: &mut ClientMut) {
     let mut window = client.focused_window_mut();
     window.selection_move().select_all();
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn expand_to_full_lines(client: &mut ClientMut) {
@@ -605,21 +540,21 @@ fn expand_to_full_lines(client: &mut ClientMut) {
         .for_each_move(|mut range| range.expand_to_full_lines());
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn split_into_lines(client: &mut ClientMut) {
     let mut window = client.focused_window_mut();
     window.selection_move().split_into_lines();
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn select_regex(client: &mut ClientMut) {
     prompt::enter(client, "select", |client, regex_str| {
         if regex_str.is_empty() {
-            client.state_mut().message = Some(Err(String::from("Nothing selected")));
-            client.state_mut().count = None;
+            client.set_message(Some(Err(String::from("Nothing selected"))));
+            client.set_count(None);
             return;
         }
         let regex = Regex::builder()
@@ -635,19 +570,19 @@ fn select_regex(client: &mut ClientMut) {
                 .selection_move()
                 .select_regex(&regex);
             if !matched {
-                client.state_mut().message = Some(Err(String::from("Nothing selected")));
+                client.set_message(Some(Err(String::from("Nothing selected"))));
             }
         } else {
-            client.state_mut().message = Some(Err(String::from("Invalid regex")));
+            client.set_message(Some(Err(String::from("Invalid regex"))));
         }
-        client.state_mut().count = None;
+        client.set_count(None);
     });
 }
 
 fn insert_after_head(client: &mut ClientMut) {
     if client.focused_buffer().text.readonly {
-        client.state_mut().message = Some(Err(String::from("Buffer is readonly")));
-        client.state_mut().count = None;
+        client.set_message(Some(Err(String::from("Buffer is readonly"))));
+        client.set_count(None);
         return;
     }
     let mut window = client.focused_window_mut();
@@ -655,14 +590,14 @@ fn insert_after_head(client: &mut ClientMut) {
         range.prepare_append();
     });
     window.scroll_to_selection();
-    client.state_mut().mode = Mode::Insert;
-    client.state_mut().count = None;
+    client.set_mode(Mode::Insert);
+    client.set_count(None);
 }
 
 fn insert_at_line_non_blank_start(client: &mut ClientMut) {
     if client.focused_buffer().text.readonly {
-        client.state_mut().message = Some(Err(String::from("Buffer is readonly")));
-        client.state_mut().count = None;
+        client.set_message(Some(Err(String::from("Buffer is readonly"))));
+        client.set_count(None);
         return;
     }
     let mut window = client.focused_window_mut();
@@ -670,14 +605,14 @@ fn insert_at_line_non_blank_start(client: &mut ClientMut) {
         range.move_to_line_non_blank_start();
     });
     window.scroll_to_selection();
-    client.state_mut().mode = Mode::Insert;
-    client.state_mut().count = None;
+    client.set_mode(Mode::Insert);
+    client.set_count(None);
 }
 
 fn insert_at_line_end(client: &mut ClientMut) {
     if client.focused_buffer().text.readonly {
-        client.state_mut().message = Some(Err(String::from("Buffer is readonly")));
-        client.state_mut().count = None;
+        client.set_message(Some(Err(String::from("Buffer is readonly"))));
+        client.set_count(None);
         return;
     }
     let mut window = client.focused_window_mut();
@@ -685,20 +620,15 @@ fn insert_at_line_end(client: &mut ClientMut) {
         range.move_onto_line_end();
     });
     window.scroll_to_selection();
-    client.state_mut().mode = Mode::Insert;
-    client.state_mut().count = None;
+    client.set_mode(Mode::Insert);
+    client.set_count(None);
 }
 
 fn insert_line_above(client: &mut ClientMut) {
     // TODO: Insert multiple cursors (like Kakoune) when count > 1
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     if client.focused_buffer().text.readonly {
-        client.state_mut().message = Some(Err(String::from("Buffer is readonly")));
+        client.set_message(Some(Err(String::from("Buffer is readonly"))));
         return;
     }
     let mut window = client.focused_window_mut();
@@ -711,19 +641,14 @@ fn insert_line_above(client: &mut ClientMut) {
         range.move_left(1);
     });
     window.scroll_to_selection();
-    client.state_mut().mode = Mode::Insert;
+    client.set_mode(Mode::Insert);
 }
 
 fn insert_line_below(client: &mut ClientMut) {
     // TODO: Insert multiple cursors (like Kakoune) when count > 1
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     if client.focused_buffer().text.readonly {
-        client.state_mut().message = Some(Err(String::from("Buffer is readonly")));
+        client.set_message(Some(Err(String::from("Buffer is readonly"))));
         return;
     }
     let mut window = client.focused_window_mut();
@@ -735,18 +660,13 @@ fn insert_line_below(client: &mut ClientMut) {
         }
     });
     window.scroll_to_selection();
-    client.state_mut().mode = Mode::Insert;
+    client.set_mode(Mode::Insert);
 }
 
 fn add_line_above(client: &mut ClientMut) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     if client.focused_buffer().text.readonly {
-        client.state_mut().message = Some(Err(String::from("Buffer is readonly")));
+        client.set_message(Some(Err(String::from("Buffer is readonly"))));
         return;
     }
     let mut window = client.focused_window_mut();
@@ -764,14 +684,9 @@ fn add_line_above(client: &mut ClientMut) {
 }
 
 fn add_line_below(client: &mut ClientMut) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     if client.focused_buffer().text.readonly {
-        client.state_mut().message = Some(Err(String::from("Buffer is readonly")));
+        client.set_message(Some(Err(String::from("Buffer is readonly"))));
         return;
     }
     let mut window = client.focused_window_mut();
@@ -789,12 +704,7 @@ fn add_line_below(client: &mut ClientMut) {
 }
 
 fn goto_move_to_line(client: &mut ClientMut) {
-    let count = client
-        .state_mut()
-        .count
-        .take()
-        .unwrap_or(NonZeroUsize::MIN)
-        .get();
+    let count = client.take_count().unwrap_or(NonZeroUsize::MIN).get();
     let mut window = client.focused_window_mut();
     let rope = window.buffer().text.rope().clone();
     let line_index = min(count - 1, rope.len_lines_unix() - 1);
@@ -813,7 +723,7 @@ fn goto_move_to_start(client: &mut ClientMut) {
         .for_each_move(|mut range| range.move_to_start());
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn goto_extend_to_start(client: &mut ClientMut) {
@@ -823,7 +733,7 @@ fn goto_extend_to_start(client: &mut ClientMut) {
         .for_each_move(|mut range| range.extend_to_start());
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn goto_move_to_bottom(client: &mut ClientMut) {
@@ -833,7 +743,7 @@ fn goto_move_to_bottom(client: &mut ClientMut) {
         .for_each_move(|mut range| range.move_to_bottom());
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn goto_extend_to_bottom(client: &mut ClientMut) {
@@ -843,7 +753,7 @@ fn goto_extend_to_bottom(client: &mut ClientMut) {
         .for_each_move(|mut range| range.extend_to_bottom());
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn goto_move_to_end(client: &mut ClientMut) {
@@ -853,7 +763,7 @@ fn goto_move_to_end(client: &mut ClientMut) {
         .for_each_move(|mut range| range.move_to_end());
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn goto_extend_to_end(client: &mut ClientMut) {
@@ -863,7 +773,7 @@ fn goto_extend_to_end(client: &mut ClientMut) {
         .for_each_move(|mut range| range.extend_to_end());
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn goto_move_to_line_start(client: &mut ClientMut) {
@@ -872,7 +782,7 @@ fn goto_move_to_line_start(client: &mut ClientMut) {
         .selection_move()
         .for_each_move(|mut range| range.move_to_line_start());
     window.selection_move().merge_overlapping();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn goto_extend_to_line_start(client: &mut ClientMut) {
@@ -881,7 +791,7 @@ fn goto_extend_to_line_start(client: &mut ClientMut) {
         .selection_move()
         .for_each_move(|mut range| range.extend_to_line_start());
     window.selection_move().merge_overlapping();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn goto_move_to_line_non_blank_start(client: &mut ClientMut) {
@@ -890,7 +800,7 @@ fn goto_move_to_line_non_blank_start(client: &mut ClientMut) {
         .selection_move()
         .for_each_move(|mut range| range.move_to_line_non_blank_start());
     window.selection_move().merge_overlapping();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn goto_extend_to_line_non_blank_start(client: &mut ClientMut) {
@@ -899,7 +809,7 @@ fn goto_extend_to_line_non_blank_start(client: &mut ClientMut) {
         .selection_move()
         .for_each_move(|mut range| range.extend_to_line_non_blank_start());
     window.selection_move().merge_overlapping();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn goto_move_until_line_end(client: &mut ClientMut) {
@@ -908,7 +818,7 @@ fn goto_move_until_line_end(client: &mut ClientMut) {
         .selection_move()
         .for_each_move(|mut range| range.move_until_line_end());
     window.selection_move().merge_overlapping();
-    client.state_mut().count = None;
+    client.set_count(None);
 }
 
 fn goto_extend_until_line_end(client: &mut ClientMut) {
@@ -917,5 +827,5 @@ fn goto_extend_until_line_end(client: &mut ClientMut) {
         .selection_move()
         .for_each_move(|mut range| range.extend_until_line_end());
     window.selection_move().merge_overlapping();
-    client.state_mut().count = None;
+    client.set_count(None);
 }

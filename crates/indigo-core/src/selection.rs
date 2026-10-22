@@ -216,6 +216,15 @@ impl<'a, S: WrapRef, T: WrapRef> SelectionView<'a, S, T> {
         &self.state
     }
 
+    #[expect(clippy::len_without_is_empty)]
+    pub fn len(&self) -> usize {
+        self.state.ranges.len()
+    }
+
+    pub fn primary_index(&self) -> usize {
+        self.state.primary_range
+    }
+
     pub fn get(&self, index: usize) -> Option<Range<'_>> {
         let range_state = self.state.ranges.get(index)?;
         let range = Range::new(&self.text, range_state)
