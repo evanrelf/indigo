@@ -48,8 +48,6 @@ pub enum Error {
 pub struct Session {
     pub fs: Arc<dyn Fs + Send + Sync>,
     buffers: SlotMap<BufferKey, Buffer>,
-    windows: SlotMap<WindowKey, WindowState>,
-    focused_window: WindowKey,
     pub registers: HashMap<char, Vec<String>, IndigoBuildHasher>,
     pub pwd: Option<Utf8PathBuf>,
     pub client: Client,
@@ -79,8 +77,9 @@ impl Session {
     #[must_use]
     pub fn focused_buffer(&self) -> &Buffer {
         let window = self
+            .client
             .windows
-            .get(self.focused_window)
+            .get(self.client.focused_window)
             .expect("Window state is always kept valid");
         self.buffers
             .get(window.buffer)
@@ -90,8 +89,9 @@ impl Session {
     #[must_use]
     pub fn focused_buffer_mut(&mut self) -> &mut Buffer {
         let window = self
+            .client
             .windows
-            .get_mut(self.focused_window)
+            .get_mut(self.client.focused_window)
             .expect("Window state is always kept valid");
         self.buffers
             .get_mut(window.buffer)
@@ -112,12 +112,12 @@ impl Session {
             self.buffers.contains_key(window.buffer),
             "Window has invalid buffer key"
         );
-        self.windows.insert(window)
+        self.client.windows.insert(window)
     }
 
     pub fn focus_window(&mut self, window_key: WindowKey) -> bool {
-        if self.windows.contains_key(window_key) {
-            self.focused_window = window_key;
+        if self.client.windows.contains_key(window_key) {
+            self.client.focused_window = window_key;
             true
         } else {
             false
@@ -126,7 +126,7 @@ impl Session {
 
     #[must_use]
     pub fn get_window(&self, window_key: WindowKey) -> Option<Window<'_>> {
-        let window = self.windows.get(window_key)?;
+        let window = self.client.windows.get(window_key)?;
         let buffer = self
             .buffers
             .get(window.buffer)
@@ -136,7 +136,7 @@ impl Session {
 
     #[must_use]
     pub fn get_window_mut(&mut self, window_key: WindowKey) -> Option<WindowMut<'_>> {
-        let window = self.windows.get_mut(window_key)?;
+        let window = self.client.windows.get_mut(window_key)?;
         let buffer = self
             .buffers
             .get_mut(window.buffer)
@@ -146,8 +146,9 @@ impl Session {
 
     pub fn focused_window(&self) -> Window<'_> {
         let window = self
+            .client
             .windows
-            .get(self.focused_window)
+            .get(self.client.focused_window)
             .expect("Window state is always kept valid");
         let buffer = self
             .buffers
@@ -158,8 +159,9 @@ impl Session {
 
     pub fn focused_window_mut(&mut self) -> WindowMut<'_> {
         let window = self
+            .client
             .windows
-            .get_mut(self.focused_window)
+            .get_mut(self.client.focused_window)
             .expect("Window state is always kept valid");
         let buffer = self
             .buffers
@@ -204,9 +206,9 @@ impl Session {
     }
 
     pub fn assert_invariants(&self) -> anyhow::Result<()> {
-        if !self.windows.contains_key(self.focused_window) {
+        if !self.client.windows.contains_key(self.client.focused_window) {
             anyhow::bail!(Error::FocusedWindowMissing {
-                key: self.focused_window,
+                key: self.client.focused_window,
             });
         }
         for (key, buffer) in &self.buffers {
@@ -214,7 +216,7 @@ impl Session {
                 .assert_invariants()
                 .map_err(|source| Error::Buffer { key, source })?;
         }
-        for (window_key, window) in &self.windows {
+        for (window_key, window) in &self.client.windows {
             let Some(buffer) = self.buffers.get(window.buffer) else {
                 anyhow::bail!(Error::WindowBufferMissing {
                     window_key,
@@ -241,18 +243,12 @@ impl Default for Session {
         let buffer = Buffer::default();
         let buffer_key = buffers.insert(buffer);
 
-        let window = WindowState::new(buffer_key);
-        let mut windows = SlotMap::default();
-        let window_key = windows.insert(window);
-
         Self {
             fs: Arc::new(NoFs),
             buffers,
-            windows,
-            focused_window: window_key,
             registers: HashMap::default(),
             pwd: None,
-            client: Client::default(),
+            client: Client::new(buffer_key),
         }
     }
 }
@@ -262,14 +258,9 @@ impl From<Buffer> for Session {
         let mut buffers = SlotMap::default();
         let buffer_key = buffers.insert(buffer);
 
-        let window = WindowState::new(buffer_key);
-        let mut windows = SlotMap::default();
-        let window_key = windows.insert(window);
-
         Self {
             buffers,
-            windows,
-            focused_window: window_key,
+            client: Client::new(buffer_key),
             ..Self::default()
         }
     }

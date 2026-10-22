@@ -1,8 +1,16 @@
-use crate::{key::Key, mode::Mode};
+use crate::{
+    buffer::BufferKey,
+    key::Key,
+    mode::Mode,
+    window::{WindowKey, WindowState},
+};
+use slotmap::SlotMap;
 use std::{num::NonZeroUsize, process::ExitCode};
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct Client {
+    pub(crate) windows: SlotMap<WindowKey, WindowState>,
+    pub(crate) focused_window: WindowKey,
     pub mode: Mode,
     pub count: Option<NonZeroUsize>,
     pub pending_keys: Vec<Key>,
@@ -12,8 +20,20 @@ pub struct Client {
 
 impl Client {
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub(crate) fn new(buffer_key: BufferKey) -> Self {
+        let window = WindowState::new(buffer_key);
+        let mut windows = SlotMap::default();
+        let window_key = windows.insert(window);
+
+        Self {
+            windows,
+            focused_window: window_key,
+            mode: Mode::default(),
+            count: None,
+            pending_keys: Vec::new(),
+            message: None,
+            exit_code: None,
+        }
     }
 
     #[must_use]
