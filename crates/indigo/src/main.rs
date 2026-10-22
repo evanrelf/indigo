@@ -193,7 +193,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
 
     let mut server = Server::from(buffer);
 
-    server.client_mut().session_mut().fs = Arc::new(RealFs);
+    server.fs = Arc::new(RealFs);
     server.client_mut().session_mut().pwd = Some(Utf8PathBuf::try_from(env::current_dir()?)?);
 
     // Centering scroll deferred until height is known

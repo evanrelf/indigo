@@ -1,13 +1,12 @@
 use crate::{
     buffer::{Buffer, BufferKey},
-    fs::{Fs, NoFs},
     key::Key,
     mode::{command, insert, normal, prompt, seek},
 };
 use camino::Utf8PathBuf;
 use indigo_kernel::IndigoBuildHasher;
 use slotmap::SlotMap;
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 use thiserror::Error;
 
 #[cfg(feature = "arbitrary")]
@@ -23,9 +22,8 @@ pub enum Error {
     },
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Session {
-    pub fs: Arc<dyn Fs + Send + Sync>,
     buffers: SlotMap<BufferKey, Buffer>,
     pub registers: HashMap<char, Vec<String>, IndigoBuildHasher>,
     pub pwd: Option<Utf8PathBuf>,
@@ -67,17 +65,6 @@ impl Session {
                 .map_err(|source| Error::Buffer { key, source })?;
         }
         Ok(())
-    }
-}
-
-impl Default for Session {
-    fn default() -> Self {
-        Self {
-            fs: Arc::new(NoFs),
-            buffers: SlotMap::default(),
-            registers: HashMap::default(),
-            pwd: None,
-        }
     }
 }
 

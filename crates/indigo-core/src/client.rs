@@ -1,5 +1,6 @@
 use crate::{
     buffer::{Buffer, BufferKey},
+    fs::Fs,
     key::Key,
     mode::{Mode, command, insert, normal, prompt, replace, seek},
     session::{Action, Event, KeyEvent, Session},
@@ -7,7 +8,7 @@ use crate::{
 };
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use slotmap::SlotMap;
-use std::{num::NonZeroUsize, process::ExitCode};
+use std::{num::NonZeroUsize, process::ExitCode, sync::Arc};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -66,6 +67,7 @@ impl ClientState {
 pub struct ClientView<'a, W: Wrap> {
     state: W::Wrap<'a, ClientState>,
     session: W::Wrap<'a, Session>,
+    fs: &'a Arc<dyn Fs + Send + Sync>,
 }
 
 pub type Client<'a> = ClientView<'a, WRef>;
@@ -73,8 +75,12 @@ pub type Client<'a> = ClientView<'a, WRef>;
 pub type ClientMut<'a> = ClientView<'a, WMut>;
 
 impl<'a, W: WrapRef> ClientView<'a, W> {
-    pub fn new(session: W::WrapRef<'a, Session>, state: W::WrapRef<'a, ClientState>) -> Self {
-        Self { state, session }
+    pub fn new(
+        fs: &'a Arc<dyn Fs + Send + Sync>,
+        session: W::WrapRef<'a, Session>,
+        state: W::WrapRef<'a, ClientState>,
+    ) -> Self {
+        Self { state, session, fs }
     }
 
     #[must_use]
@@ -85,6 +91,11 @@ impl<'a, W: WrapRef> ClientView<'a, W> {
     #[must_use]
     pub fn session(&self) -> &Session {
         &self.session
+    }
+
+    #[must_use]
+    pub fn fs(&self) -> &'a Arc<dyn Fs + Send + Sync> {
+        self.fs
     }
 
     #[must_use]

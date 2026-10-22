@@ -1,7 +1,6 @@
 use crate::{buffer::Buffer, client::ClientMut, mode::prompt, window::WindowState};
 use anyhow::anyhow;
 use camino::Utf8PathBuf;
-use std::sync::Arc;
 
 #[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
@@ -135,7 +134,7 @@ fn handle_command(client: &mut ClientMut, command: Command) {
         }
         Command::Edit { path } => {
             // TODO: Edit existing buffer for path if one exists.
-            if let Ok(buffer) = Buffer::open(&client.session().fs, &path) {
+            if let Ok(buffer) = Buffer::open(client.fs(), &path) {
                 // In Kakoune, windows are inextricably linked to buffers, so changing buffer means
                 // changing window, creating a new one if necessary.
                 // https://github.com/mawww/kakoune/blob/afc035ac0e17a6280edec511dfe8da1c0dd565ab/doc/pages/scopes.asciidoc?plain=1#L29-L30
@@ -150,11 +149,11 @@ fn handle_command(client: &mut ClientMut, command: Command) {
             }
         }
         Command::Write { path } => {
-            let fs = Arc::clone(&client.session().fs);
+            let fs = client.fs();
             let result = if let Some(path) = path {
-                client.focused_buffer_mut().save_as(&fs, path)
+                client.focused_buffer_mut().save_as(fs, path)
             } else {
-                client.focused_buffer_mut().save(&fs)
+                client.focused_buffer_mut().save(fs)
             };
             if result.is_err() {
                 client.set_message(Some(Err(String::from("Failed to save"))));
@@ -182,8 +181,8 @@ fn handle_command(client: &mut ClientMut, command: Command) {
             client.exit(exit_code.unwrap_or(0));
         }
         Command::WriteQuit { exit_code } => {
-            let fs = Arc::clone(&client.session().fs);
-            if client.focused_buffer_mut().save(&fs).is_ok() {
+            let fs = client.fs();
+            if client.focused_buffer_mut().save(fs).is_ok() {
                 client.exit(exit_code.unwrap_or(0));
             } else {
                 client.set_message(Some(Err(String::from("Failed to save"))));

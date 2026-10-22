@@ -1,11 +1,14 @@
 use crate::{
     buffer::Buffer,
     client::{Client, ClientMut, ClientState},
+    fs::{Fs, NoFs},
     session::{Action, Event, Session},
 };
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct Server {
+    pub fs: Arc<dyn Fs + Send + Sync>,
     session: Session,
     client: ClientState,
 }
@@ -17,11 +20,11 @@ impl Server {
     }
 
     pub fn client(&self) -> Client<'_> {
-        Client::new(&self.session, &self.client)
+        Client::new(&self.fs, &self.session, &self.client)
     }
 
     pub fn client_mut(&mut self) -> ClientMut<'_> {
-        ClientMut::new(&mut self.session, &mut self.client)
+        ClientMut::new(&self.fs, &mut self.session, &mut self.client)
     }
 
     pub fn handle_event(&mut self, event: Event) -> anyhow::Result<bool> {
@@ -44,6 +47,10 @@ impl From<Buffer> for Server {
         let mut session = Session::new();
         let buffer_key = session.insert_buffer(buffer);
         let client = ClientState::new(buffer_key);
-        Self { session, client }
+        Self {
+            fs: Arc::new(NoFs),
+            session,
+            client,
+        }
     }
 }
