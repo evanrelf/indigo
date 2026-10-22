@@ -1,16 +1,9 @@
-use crate::{
-    buffer::{Buffer, BufferKey},
-    key::Key,
-    mode::{command, insert, normal, prompt, seek},
-};
+use crate::buffer::{Buffer, BufferKey};
 use camino::Utf8PathBuf;
 use indigo_kernel::IndigoBuildHasher;
 use slotmap::SlotMap;
 use std::collections::HashMap;
 use thiserror::Error;
-
-#[cfg(feature = "arbitrary")]
-use arbitrary::Arbitrary;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -66,36 +59,4 @@ impl Session {
         }
         Ok(())
     }
-}
-
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-#[derive(Debug)]
-pub enum Event {
-    Key(KeyEvent),
-}
-
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-#[derive(Debug, PartialEq)]
-pub struct KeyEvent {
-    pub key: Key,
-    pub kind: KeyEventKind,
-}
-
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-#[derive(Debug, PartialEq)]
-pub enum KeyEventKind {
-    Press,
-    Repeat,
-    Release,
-}
-
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-#[derive(Debug)]
-pub enum Action {
-    Normal(normal::Action),
-    Insert(insert::Action),
-    Prompt(prompt::Action),
-    Command(command::Action),
-    // TODO: Replace this with multi-key mappings in normal mode
-    Seek(seek::Action),
 }

@@ -3,7 +3,7 @@ use crate::{
     fs::Fs,
     key::Key,
     mode::{Mode, command, insert, normal, prompt, replace, seek},
-    session::{Action, Event, KeyEvent, Session},
+    session::Session,
     window::{Window, WindowKey, WindowMut, WindowState},
 };
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
@@ -15,6 +15,9 @@ use std::{
     sync::Arc,
 };
 use thiserror::Error;
+
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -276,4 +279,36 @@ impl ClientMut<'_> {
         }
         self.assert_invariants().unwrap();
     }
+}
+
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+#[derive(Debug)]
+pub enum Event {
+    Key(KeyEvent),
+}
+
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+#[derive(Debug, PartialEq)]
+pub struct KeyEvent {
+    pub key: Key,
+    pub kind: KeyEventKind,
+}
+
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+#[derive(Debug, PartialEq)]
+pub enum KeyEventKind {
+    Press,
+    Repeat,
+    Release,
+}
+
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+#[derive(Debug)]
+pub enum Action {
+    Normal(normal::Action),
+    Insert(insert::Action),
+    Prompt(prompt::Action),
+    Command(command::Action),
+    // TODO: Replace this with multi-key mappings in normal mode
+    Seek(seek::Action),
 }

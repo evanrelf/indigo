@@ -1,8 +1,8 @@
 use crate::{
     buffer::Buffer,
-    client::{Client, ClientMut, ClientState},
+    client::{Action, Client, ClientMut, ClientState, Event},
     fs::{Fs, NoFs},
-    session::{Action, Event, Session},
+    session::Session,
 };
 use std::sync::Arc;
 

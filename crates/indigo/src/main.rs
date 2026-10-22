@@ -213,9 +213,9 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
 
     if let Some(keys) = &args.experimental.x_exec {
         for key in &keys.0 {
-            let event = IndigoEvent::Key(indigo_core::session::KeyEvent {
+            let event = IndigoEvent::Key(indigo_core::client::KeyEvent {
                 key: *key,
-                kind: indigo_core::session::KeyEventKind::Press,
+                kind: indigo_core::client::KeyEventKind::Press,
             });
             server.handle_event(event)?;
         }

@@ -7,8 +7,8 @@ mod t {
 }
 
 mod i {
+    pub use indigo_core::client::{KeyEvent, KeyEventKind};
     pub use indigo_core::key::{Key, KeyCode, KeyModifiers};
-    pub use indigo_core::session::{KeyEvent, KeyEventKind};
 }
 
 pub fn key_event_t2i(key_event: &t::KeyEvent) -> anyhow::Result<i::KeyEvent> {

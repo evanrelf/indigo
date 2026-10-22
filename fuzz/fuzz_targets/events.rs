@@ -1,6 +1,6 @@
 #![no_main]
 
-use indigo_core::{buffer::Buffer, server::Server, session::Event};
+use indigo_core::{buffer::Buffer, client::Event, server::Server};
 use libfuzzer_sys::fuzz_target;
 use ropey::Rope;
 

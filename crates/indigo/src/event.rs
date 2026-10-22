@@ -14,7 +14,7 @@ use ratatui::crossterm::{
 };
 use ratatui::layout::Position;
 
-pub type IndigoEvent = indigo_core::session::Event;
+pub type IndigoEvent = indigo_core::client::Event;
 
 pub type TerminalEvent = crossterm::event::Event;
 
