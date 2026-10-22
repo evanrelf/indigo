@@ -239,17 +239,7 @@ impl Session {
 
 impl Default for Session {
     fn default() -> Self {
-        let mut buffers = SlotMap::default();
-        let buffer = Buffer::default();
-        let buffer_key = buffers.insert(buffer);
-
-        Self {
-            fs: Arc::new(NoFs),
-            buffers,
-            registers: HashMap::default(),
-            pwd: None,
-            client: Client::new(buffer_key),
-        }
+        Self::from(Buffer::default())
     }
 }
 
@@ -259,9 +249,11 @@ impl From<Buffer> for Session {
         let buffer_key = buffers.insert(buffer);
 
         Self {
+            fs: Arc::new(NoFs),
             buffers,
+            registers: HashMap::default(),
+            pwd: None,
             client: Client::new(buffer_key),
-            ..Self::default()
         }
     }
 }
