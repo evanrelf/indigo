@@ -230,8 +230,12 @@ enum TrieResult<T> {
     Found(T),
 }
 
+enum Mapping<V> {
+    Static(V),
+}
+
 struct Entry<V> {
-    value: V,
+    value: Mapping<V>,
     order: u16,
     description: Option<&'static str>,
 }
@@ -262,14 +266,16 @@ impl<V> Keymap<V> {
         if let TrieResult::Found(entry) = self.mappings.get_mut(&keys.0) {
             // Keep original place in order, like `IndexMap::insert`
             entry.description = description;
-            return Some(mem::replace(&mut entry.value, value));
+            match mem::replace(&mut entry.value, Mapping::Static(value)) {
+                Mapping::Static(old_value) => return Some(old_value),
+            }
         }
         let order = self.next_order;
         self.next_order = order.checked_add(1).expect("wow that's a lotta keys");
         self.mappings.insert(
             &keys.0,
             Entry {
-                value,
+                value: Mapping::Static(value),
                 order,
                 description,
             },
@@ -282,7 +288,11 @@ impl<V> Keymap<V> {
         for key in &mut keys.0 {
             key.normalize();
         }
-        self.mappings.remove(&keys.0).map(|entry| entry.value)
+        self.mappings
+            .remove(&keys.0)
+            .map(|entry| match entry.value {
+                Mapping::Static(value) => value,
+            })
     }
 
     pub fn set_fallback(
@@ -308,7 +318,9 @@ impl<V> Keymap<V> {
         match self.mappings.get(keys) {
             TrieResult::Missing => (self.fallback)(self, keys),
             TrieResult::Partial => KeymapResult::Pending,
-            TrieResult::Found(entry) => KeymapResult::Mapped(&entry.value),
+            TrieResult::Found(entry) => match &entry.value {
+                Mapping::Static(value) => KeymapResult::Mapped(value),
+            },
         }
     }
 
@@ -319,7 +331,9 @@ impl<V> Keymap<V> {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (ArrayVec<Key, 3>, &V)> + '_ {
-        self.entries().map(|(keys, entry)| (keys, &entry.value))
+        self.entries().map(|(keys, entry)| match &entry.value {
+            Mapping::Static(value) => (keys, value),
+        })
     }
 
     pub fn docs(
