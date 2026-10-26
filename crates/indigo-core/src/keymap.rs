@@ -232,7 +232,7 @@ enum TrieResult<T> {
 
 pub enum Mapping<V> {
     Static(V),
-    Char(fn(u8) -> V),
+    Char(fn(u8) -> Option<V>),
 }
 
 impl<V> From<V> for Mapping<V> {
@@ -328,8 +328,9 @@ impl<V> Keymap<V> {
                     && let TrieResult::Found(entry) = self.mappings.get(init)
                     && let Mapping::Char(f) = entry.value
                     && let Some(byte) = key_byte(*last)
+                    && let Some(value) = f(byte)
                 {
-                    KeymapResult::Fallback(f(byte))
+                    KeymapResult::Fallback(value)
                 } else {
                     (self.fallback)(self, keys)
                 }
@@ -537,8 +538,8 @@ mod tests {
     #[test]
     fn keymap_char() {
         let keymap = keymap! { Vec<u8>;
-            "f" => Mapping::Char(|byte| vec![byte]),
-            "<a-f>" => Mapping::Char(|byte| vec![byte, byte]),
+            "f" => Mapping::Char(|byte| Some(vec![byte])),
+            "<a-f>" => Mapping::Char(|byte| byte.is_ascii_digit().then(|| vec![byte, byte])),
         };
         assert_eq!(keymap.get("f"), KeymapResult::Pending);
         assert_eq!(keymap.get("<a-f>"), KeymapResult::Pending);
@@ -566,10 +567,14 @@ mod tests {
                 KeymapResult::Fallback(vec![byte])
             );
             assert_eq!(keymap.get_keys(&[f, alted]), KeymapResult::Unmapped);
-            assert_eq!(
-                keymap.get_keys(&[alt_f, key]),
-                KeymapResult::Fallback(vec![byte, byte])
-            );
+            if byte.is_ascii_digit() {
+                assert_eq!(
+                    keymap.get_keys(&[alt_f, key]),
+                    KeymapResult::Fallback(vec![byte, byte])
+                );
+            } else {
+                assert_eq!(keymap.get_keys(&[alt_f, key]), KeymapResult::Unmapped);
+            }
         }
         assert_eq!(keymap.get("f<ret>"), KeymapResult::Fallback(vec![b'\n']));
         assert_eq!(keymap.get("f<tab>"), KeymapResult::Fallback(vec![b'\t']));
