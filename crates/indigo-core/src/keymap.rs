@@ -300,11 +300,7 @@ impl<V> Keymap<V> {
         for key in &mut keys.0 {
             key.normalize();
         }
-        match self.mappings.get(&keys.0) {
-            TrieResult::Missing => (self.fallback)(self, &keys.0),
-            TrieResult::Partial => KeymapResult::Pending,
-            TrieResult::Found(entry) => KeymapResult::Mapped(&entry.value),
-        }
+        self.get_keys(&keys.0)
     }
 
     #[must_use]
