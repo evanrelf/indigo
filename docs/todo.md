@@ -1,8 +1,8 @@
 # Todo
 
 - Create `Mode` (mode as data)
-- Get rid of goto, seek, and prompt modes (keep only normal and insert) in favor
-  of multi-key mappings
+- Get rid of seek, replace, and prompt modes (keep only normal and insert) in
+  favor of multi-key mappings
 - Figure out what to do with mode state, try to make actions
   mode-agnostic/stateless (such that modes simply become a feature of the UI)
 - Store modes as stack (i.e. `Vec<Mode>`) in `ClientState` (mode stack as data)
@@ -19,7 +19,6 @@
 ## Friction in use
 
 - No `/` search
-- No auto-scroll to keep primary range in view
 - No `C` or `<a-C>`
 - No detection of file changing from underneath it (e.g. when I move to another
   change with `jj new` it doesn't warn that the working copy has changed)
@@ -38,10 +37,6 @@ See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 - [x] `<del>` (delete after cursor)
 - [x] `<ret>` (insert newline)
 - [x] `<tab>` (insert tab)
-- [x] `<c-u>` (scroll half page up)
-- [x] `<c-d>` (scroll half page down)
-- [x] `<c-b>` (scroll page up)
-- [x] `<c-f>` (scroll page down)
 - [x] `<esc>` (leave insert mode)
 - [ ] `<c-r>` (insert register contents)
 - [ ] `<c-v>` (insert keystroke literally)
@@ -128,7 +123,7 @@ See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 - [ ] `<a-(>` (rotate selection contents backward)
 - [ ] `<+>` (duplicate each selection)
 - [ ] `<a-+>` (merge overlapping selections)
-- [ ] `x` (select full lines)
+- [x] `x` (select full lines)
 - [ ] `X` (extend to full lines)
 - [ ] `<a-x>` (trim to full lines)
 - [x] `%` (select whole buffer)
@@ -136,7 +131,6 @@ See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 - [x] `<c-d>` (scroll half page down)
 - [x] `<c-b>` (scroll page up)
 - [x] `<c-f>` (scroll page down)
-- [x] `g` (goto mode)
 - [x] `;` (collapse to cursor)
 - [x] `,` (keep main selection only)
 - [ ] `<a-,>` (clear main selection)
@@ -147,7 +141,7 @@ See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 - [ ] `<space>` (user mode)
 - [ ] Ctrl + left click (add cursor)
 
-### Goto mode
+### Goto (`g` prefix)
 
 - [x] `j` (go to buffer bottom)
 - [x] `J` (extend to buffer bottom)
@@ -189,7 +183,7 @@ See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 
 - [x] `s` (select regex matches within)
 - [ ] `S` (split on regex)
-- [ ] `<a-s>` (split on line boundaries)
+- [x] `<a-s>` (split on line boundaries)
 - [ ] `<a-S>` (select first and last chars)
 - [ ] `C` (duplicate selections down)
 - [ ] `<a-C>` (duplicate selections up)
