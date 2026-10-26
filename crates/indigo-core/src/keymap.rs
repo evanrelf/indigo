@@ -230,8 +230,14 @@ enum TrieResult<T> {
     Found(T),
 }
 
-enum Mapping<V> {
+pub enum Mapping<V> {
     Static(V),
+}
+
+impl<V> From<V> for Mapping<V> {
+    fn from(value: V) -> Self {
+        Self::Static(value)
+    }
 }
 
 struct Entry<V> {
@@ -258,7 +264,13 @@ impl<V> Keymap<V> {
         }
     }
 
-    pub fn insert(&mut self, keys: &str, value: V, description: Option<&'static str>) -> Option<V> {
+    pub fn insert(
+        &mut self,
+        keys: &str,
+        value: impl Into<Mapping<V>>,
+        description: Option<&'static str>,
+    ) -> Option<Mapping<V>> {
+        let value = value.into();
         let mut keys: Keys = keys.parse().unwrap();
         for key in &mut keys.0 {
             key.normalize();
@@ -266,16 +278,14 @@ impl<V> Keymap<V> {
         if let TrieResult::Found(entry) = self.mappings.get_mut(&keys.0) {
             // Keep original place in order, like `IndexMap::insert`
             entry.description = description;
-            match mem::replace(&mut entry.value, Mapping::Static(value)) {
-                Mapping::Static(old_value) => return Some(old_value),
-            }
+            return Some(mem::replace(&mut entry.value, value));
         }
         let order = self.next_order;
         self.next_order = order.checked_add(1).expect("wow that's a lotta keys");
         self.mappings.insert(
             &keys.0,
             Entry {
-                value: Mapping::Static(value),
+                value,
                 order,
                 description,
             },
@@ -283,16 +293,12 @@ impl<V> Keymap<V> {
         None
     }
 
-    pub fn remove(&mut self, keys: &str) -> Option<V> {
+    pub fn remove(&mut self, keys: &str) -> Option<Mapping<V>> {
         let mut keys: Keys = keys.parse().unwrap();
         for key in &mut keys.0 {
             key.normalize();
         }
-        self.mappings
-            .remove(&keys.0)
-            .map(|entry| match entry.value {
-                Mapping::Static(value) => value,
-            })
+        self.mappings.remove(&keys.0).map(|entry| entry.value)
     }
 
     pub fn set_fallback(
@@ -330,10 +336,8 @@ impl<V> Keymap<V> {
         pairs.into_iter()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (ArrayVec<Key, 3>, &V)> + '_ {
-        self.entries().map(|(keys, entry)| match &entry.value {
-            Mapping::Static(value) => (keys, value),
-        })
+    pub fn iter(&self) -> impl Iterator<Item = (ArrayVec<Key, 3>, &Mapping<V>)> + '_ {
+        self.entries().map(|(keys, entry)| (keys, &entry.value))
     }
 
     pub fn docs(
@@ -350,8 +354,8 @@ impl<V> Keymap<V> {
 }
 
 impl<'a, V> IntoIterator for &'a Keymap<V> {
-    type Item = (ArrayVec<Key, 3>, &'a V);
-    type IntoIter = std::vec::IntoIter<(ArrayVec<Key, 3>, &'a V)>;
+    type Item = (ArrayVec<Key, 3>, &'a Mapping<V>);
+    type IntoIter = std::vec::IntoIter<(ArrayVec<Key, 3>, &'a Mapping<V>)>;
     fn into_iter(self) -> Self::IntoIter {
         self.iter().collect::<Vec<_>>().into_iter()
     }
@@ -471,7 +475,10 @@ mod tests {
             keymap.get("gj"),
             KeymapResult::Mapped(&vec![Action("move to bottom")])
         );
-        assert_eq!(keymap.remove("gj"), Some(vec![Action("move to bottom")]));
+        assert!(matches!(
+            keymap.remove("gj"),
+            Some(Mapping::Static(value)) if value == vec![Action("move to bottom")]
+        ));
         assert_eq!(keymap.get("gj"), KeymapResult::Unmapped);
         // sibling still present
         assert_eq!(
@@ -479,7 +486,7 @@ mod tests {
             KeymapResult::Mapped(&vec![Action("move to top")])
         );
         // missing key returns None
-        assert_eq!(keymap.remove("x"), None);
+        assert!(keymap.remove("x").is_none());
     }
 
     #[test]
@@ -525,7 +532,9 @@ mod tests {
         let values = |keymap: &Keymap<Vec<Action>>| {
             keymap
                 .iter()
-                .map(|(keys, value)| (Keys(keys).to_string(), value[0].0))
+                .map(|(keys, value)| match value {
+                    Mapping::Static(value) => (Keys(keys).to_string(), value[0].0),
+                })
                 .collect::<Vec<_>>()
         };
         // insertion order, not trie order
