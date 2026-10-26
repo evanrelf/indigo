@@ -1,4 +1,4 @@
-use crate::key::{Key, Keys};
+use crate::key::{Key, KeyCode, KeyModifiers, Keys};
 use arrayvec::ArrayVec;
 use std::{iter, mem};
 
@@ -232,6 +232,7 @@ enum TrieResult<T> {
 
 pub enum Mapping<V> {
     Static(V),
+    Char(fn(u8) -> V),
 }
 
 impl<V> From<V> for Mapping<V> {
@@ -322,10 +323,21 @@ impl<V> Keymap<V> {
     #[must_use]
     pub fn get_keys(&self, keys: &[Key]) -> KeymapResult<'_, V> {
         match self.mappings.get(keys) {
-            TrieResult::Missing => (self.fallback)(self, keys),
+            TrieResult::Missing => {
+                if let Some((last, init)) = keys.split_last()
+                    && let TrieResult::Found(entry) = self.mappings.get(init)
+                    && let Mapping::Char(f) = entry.value
+                    && let Some(byte) = key_byte(*last)
+                {
+                    KeymapResult::Fallback(f(byte))
+                } else {
+                    (self.fallback)(self, keys)
+                }
+            }
             TrieResult::Partial => KeymapResult::Pending,
             TrieResult::Found(entry) => match &entry.value {
                 Mapping::Static(value) => KeymapResult::Mapped(value),
+                Mapping::Char(_) => KeymapResult::Pending,
             },
         }
     }
@@ -364,6 +376,15 @@ impl<'a, V> IntoIterator for &'a Keymap<V> {
 impl<V> Default for Keymap<V> {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+fn key_byte(key: Key) -> Option<u8> {
+    match key.code {
+        KeyCode::Char(c) if key.modifiers.difference(KeyModifiers::SHIFT).is_empty() => Some(c),
+        KeyCode::Return if key.modifiers.is_empty() => Some(b'\n'),
+        KeyCode::Tab if key.modifiers.is_empty() => Some(b'\t'),
+        _ => None,
     }
 }
 
@@ -514,6 +535,50 @@ mod tests {
     }
 
     #[test]
+    fn keymap_char() {
+        let keymap = keymap! { Vec<u8>;
+            "f" => Mapping::Char(|byte| vec![byte]),
+            "<a-f>" => Mapping::Char(|byte| vec![byte, byte]),
+        };
+        assert_eq!(keymap.get("f"), KeymapResult::Pending);
+        assert_eq!(keymap.get("<a-f>"), KeymapResult::Pending);
+        let f: Key = "f".parse().unwrap();
+        let alt_f: Key = "<a-f>".parse().unwrap();
+        for byte in 0..=u8::MAX {
+            let key = Key {
+                modifiers: KeyModifiers::empty(),
+                code: KeyCode::Char(byte),
+            };
+            let shifted = Key {
+                modifiers: KeyModifiers::SHIFT,
+                ..key
+            };
+            let alted = Key {
+                modifiers: KeyModifiers::ALT,
+                ..key
+            };
+            assert_eq!(
+                keymap.get_keys(&[f, key]),
+                KeymapResult::Fallback(vec![byte])
+            );
+            assert_eq!(
+                keymap.get_keys(&[f, shifted]),
+                KeymapResult::Fallback(vec![byte])
+            );
+            assert_eq!(keymap.get_keys(&[f, alted]), KeymapResult::Unmapped);
+            assert_eq!(
+                keymap.get_keys(&[alt_f, key]),
+                KeymapResult::Fallback(vec![byte, byte])
+            );
+        }
+        assert_eq!(keymap.get("f<ret>"), KeymapResult::Fallback(vec![b'\n']));
+        assert_eq!(keymap.get("f<tab>"), KeymapResult::Fallback(vec![b'\t']));
+        assert_eq!(keymap.get("f<esc>"), KeymapResult::Unmapped);
+        assert_eq!(keymap.get("f<s-ret>"), KeymapResult::Unmapped);
+        assert_eq!(keymap.get("fxy"), KeymapResult::Unmapped);
+    }
+
+    #[test]
     #[should_panic]
     fn keymap_forbids_overlap() {
         let _keymap = keymap! {
@@ -534,6 +599,7 @@ mod tests {
                 .iter()
                 .map(|(keys, value)| match value {
                     Mapping::Static(value) => (Keys(keys).to_string(), value[0].0),
+                    Mapping::Char(_) => unreachable!(),
                 })
                 .collect::<Vec<_>>()
         };
