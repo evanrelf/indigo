@@ -44,4 +44,6 @@ by Kakoune and CodeMirror.
   Indigo behavior when you finish working on changes that affect editing
   behavior. If you feel strongly that a new test case would be highly valuable,
   you have permission to extend the suite.
-- Don't mention if you elect not to run a test (e.g. `bin/compare-kak-suite`).
+- Don't mention when you run standard tests (i.e. "it compiles and tests pass").
+  Don't mention if you elect not to run a test (e.g. `bin/compare-kak-suite`).
+  It's a given that you're presenting work that you've vetted.
