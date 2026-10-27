@@ -118,7 +118,7 @@ fn print_keymap() {
         println!("{name}");
         for (keys, description) in keymap.docs() {
             if let Some(description) = description {
-                println!("    {:7} {description}", format!("{keys}"));
+                println!("    {:10} {description}", format!("{keys}"));
             }
         }
     }
