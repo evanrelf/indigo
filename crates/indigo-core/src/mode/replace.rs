@@ -64,7 +64,7 @@ pub fn enter(client: &mut ClientMut) {
     client.mode = Mode::Replace;
 }
 
-fn replace(client: &mut ClientMut, byte: u8) {
+pub fn replace(client: &mut ClientMut, byte: u8) {
     if client.focused_buffer().text.readonly {
         client.message = Some(Err(String::from("Buffer is readonly")));
         client.count = None;
