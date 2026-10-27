@@ -1,4 +1,4 @@
-use crate::key::{Key, KeyCode, Keys};
+use crate::key::{Key, Keys};
 use arrayvec::ArrayVec;
 use std::{iter, mem};
 
@@ -202,7 +202,7 @@ struct Match<'a, K, V, const N: usize> {
 
 pub enum Mapping<V> {
     Static(V),
-    Char(fn(u8) -> Option<V>),
+    Any(fn(Key) -> Option<V>),
 }
 
 impl<V> From<V> for Mapping<V> {
@@ -245,6 +245,10 @@ impl<V> Keymap<V> {
         let mut keys: Keys = keys.parse().unwrap();
         for key in &mut keys.0 {
             key.normalize();
+        }
+        if let Mapping::Any(_) = value {
+            let anys = keys.0.iter().filter(|key| **key == Key::ANY).count();
+            assert_eq!(anys, 1, "`Mapping::Any` requires exactly one `<any>` key");
         }
         if let TrieResult::Found(entry) = self.mappings.get_mut(&keys.0) {
             // Keep original place in order, like `IndexMap::insert`
@@ -293,23 +297,22 @@ impl<V> Keymap<V> {
     #[must_use]
     pub fn get_keys(&self, keys: &[Key]) -> KeymapResult<'_, V> {
         match self.mappings.get::<3>(keys, &Key::ANY) {
-            TrieResult::Missing => {
-                if let Some((last, init)) = keys.split_last()
-                    && let TrieResult::Found(Match { value: entry, .. }) =
-                        self.mappings.get::<3>(init, &Key::ANY)
-                    && let Mapping::Char(f) = entry.value
-                    && let Some(byte) = key_byte(*last)
-                    && let Some(value) = f(byte)
-                {
-                    KeymapResult::Fallback(value)
-                } else {
-                    (self.fallback)(self, keys)
-                }
-            }
+            TrieResult::Missing => (self.fallback)(self, keys),
             TrieResult::Partial => KeymapResult::Pending,
-            TrieResult::Found(Match { value: entry, .. }) => match &entry.value {
+            TrieResult::Found(Match {
+                value: entry,
+                captures,
+            }) => match &entry.value {
                 Mapping::Static(value) => KeymapResult::Mapped(value),
-                Mapping::Char(_) => KeymapResult::Pending,
+                Mapping::Any(f) => {
+                    if let &[key] = captures.as_slice()
+                        && let Some(value) = f(key)
+                    {
+                        KeymapResult::Fallback(value)
+                    } else {
+                        (self.fallback)(self, keys)
+                    }
+                }
             },
         }
     }
@@ -348,14 +351,6 @@ impl<'a, V> IntoIterator for &'a Keymap<V> {
 impl<V> Default for Keymap<V> {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-fn key_byte(key: Key) -> Option<u8> {
-    match key.code {
-        KeyCode::Return if key.modifiers.is_empty() => Some(b'\n'),
-        KeyCode::Tab if key.modifiers.is_empty() => Some(b'\t'),
-        _ => key.typed_char(),
     }
 }
 
@@ -403,7 +398,6 @@ pub enum KeymapResult<'a, V> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::key::KeyModifiers;
 
     #[derive(Clone, Debug, PartialEq)]
     struct Action(&'static str);
@@ -539,51 +533,35 @@ mod tests {
     }
 
     #[test]
-    fn keymap_char() {
-        let keymap = keymap! { Vec<u8>;
-            "f" => Mapping::Char(|byte| Some(vec![byte])),
-            "<a-f>" => Mapping::Char(|byte| byte.is_ascii_digit().then(|| vec![byte, byte])),
+    fn keymap_any() {
+        let keymap = keymap! { Vec<Key>;
+            "f<any>" => Mapping::Any(|key| Some(vec![key])),
+            "g<any>" => Mapping::Any(|key| key.typed_char().map(|_| vec![key])),
         };
+        let key = |key: &str| key.parse::<Key>().unwrap();
         assert_eq!(keymap.get("f"), KeymapResult::Pending);
-        assert_eq!(keymap.get("<a-f>"), KeymapResult::Pending);
-        let f: Key = "f".parse().unwrap();
-        let alt_f: Key = "<a-f>".parse().unwrap();
-        for byte in 0..=u8::MAX {
-            let key = Key {
-                modifiers: KeyModifiers::empty(),
-                code: KeyCode::Char(byte),
-            };
-            let shifted = Key {
-                modifiers: KeyModifiers::SHIFT,
-                ..key
-            };
-            let alted = Key {
-                modifiers: KeyModifiers::ALT,
-                ..key
-            };
-            assert_eq!(
-                keymap.get_keys(&[f, key]),
-                KeymapResult::Fallback(vec![byte])
-            );
-            assert_eq!(
-                keymap.get_keys(&[f, shifted]),
-                KeymapResult::Fallback(vec![byte])
-            );
-            assert_eq!(keymap.get_keys(&[f, alted]), KeymapResult::Unmapped);
-            if byte.is_ascii_digit() {
-                assert_eq!(
-                    keymap.get_keys(&[alt_f, key]),
-                    KeymapResult::Fallback(vec![byte, byte])
-                );
-            } else {
-                assert_eq!(keymap.get_keys(&[alt_f, key]), KeymapResult::Unmapped);
-            }
-        }
-        assert_eq!(keymap.get("f<ret>"), KeymapResult::Fallback(vec![b'\n']));
-        assert_eq!(keymap.get("f<tab>"), KeymapResult::Fallback(vec![b'\t']));
-        assert_eq!(keymap.get("f<esc>"), KeymapResult::Unmapped);
-        assert_eq!(keymap.get("f<s-ret>"), KeymapResult::Unmapped);
+        // the captured key is passed through as-is
+        assert_eq!(keymap.get("fx"), KeymapResult::Fallback(vec![key("x")]));
+        assert_eq!(
+            keymap.get("f<a-x>"),
+            KeymapResult::Fallback(vec![key("<a-x>")])
+        );
+        assert_eq!(
+            keymap.get("f<esc>"),
+            KeymapResult::Fallback(vec![key("<esc>")])
+        );
         assert_eq!(keymap.get("fxy"), KeymapResult::Unmapped);
+        // returning `None` falls back
+        assert_eq!(keymap.get("gx"), KeymapResult::Fallback(vec![key("x")]));
+        assert_eq!(keymap.get("g<a-x>"), KeymapResult::Unmapped);
+    }
+
+    #[test]
+    #[should_panic(expected = "requires exactly one `<any>`")]
+    fn keymap_any_requires_any_key() {
+        let _keymap = keymap! { Vec<Key>;
+            "f" => Mapping::Any(|key| Some(vec![key])),
+        };
     }
 
     #[test]
@@ -607,7 +585,7 @@ mod tests {
                 .iter()
                 .map(|(keys, value)| match value {
                     Mapping::Static(value) => (Keys(keys).to_string(), value[0].0),
-                    Mapping::Char(_) => unreachable!(),
+                    Mapping::Any(_) => unreachable!(),
                 })
                 .collect::<Vec<_>>()
         };
