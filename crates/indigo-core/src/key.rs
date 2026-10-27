@@ -119,7 +119,9 @@ fn key_wrapped(input: &mut &str) -> ModalResult<Key> {
             .context(StrContext::Label("key modifiers"))
             .parse_next(input)?;
         let allow_bare = !modifiers.is_empty();
+        // TODO: Allow modifiers on `<any>`, e.g. `<a-any>` to match any alt chord.
         let code = alt((key_code_wrapped, key_code_bare.verify(|_| allow_bare)))
+            .verify(|code| modifiers.is_empty() || *code != KeyCode::Any)
             .context(StrContext::Label("key code"))
             .parse_next(input)?;
         Ok(Key { modifiers, code })
@@ -390,7 +392,6 @@ mod tests {
             KeyCode::Down,
             KeyCode::Tab,
             KeyCode::Escape,
-            KeyCode::Any,
         ]);
         for bits in 0..=KeyModifiers::all().bits() {
             let modifiers = KeyModifiers::from_bits_truncate(bits);
@@ -402,6 +403,13 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn no_modified_any() {
+        assert_eq!("<any>".parse::<Key>().unwrap(), Key::ANY);
+        assert!("<a-any>".parse::<Key>().is_err());
+        assert!("<s-any>".parse::<Key>().is_err());
     }
 
     #[test]
