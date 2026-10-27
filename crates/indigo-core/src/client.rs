@@ -2,7 +2,7 @@ use crate::{
     buffer::{Buffer, BufferKey},
     fs::Fs,
     key::Key,
-    mode::{Mode, command, insert, normal, prompt, replace},
+    mode::{Mode, command, insert, normal, prompt},
     session::Session,
     window::{Window, WindowKey, WindowMut, WindowState},
 };
@@ -259,7 +259,6 @@ impl ClientMut<'_> {
                 Mode::Normal => normal::handle_keys(self),
                 Mode::Insert => insert::handle_keys(self),
                 Mode::Prompt(_) => prompt::handle_keys(self),
-                Mode::Replace => replace::handle_keys(self),
             },
         };
 

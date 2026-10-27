@@ -2,7 +2,6 @@ pub mod command;
 pub mod insert;
 pub mod normal;
 pub mod prompt;
-pub mod replace;
 
 #[derive(Clone, Default)]
 pub enum Mode {
@@ -10,7 +9,6 @@ pub enum Mode {
     Normal,
     Insert,
     Prompt(prompt::State),
-    Replace,
 }
 
 impl Mode {
@@ -20,7 +18,6 @@ impl Mode {
             Self::Normal => ModeKind::Normal,
             Self::Insert => ModeKind::Insert,
             Self::Prompt(_) => ModeKind::Prompt,
-            Self::Replace => ModeKind::Replace,
         }
     }
 }
@@ -31,5 +28,4 @@ pub enum ModeKind {
     Insert,
     Prompt,
     // TODO: `Command`?
-    Replace,
 }

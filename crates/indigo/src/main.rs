@@ -11,7 +11,7 @@ use indigo::{
 use indigo_core::{
     fs::RealFs,
     keymap::Keymap,
-    mode::{insert, normal, prompt, replace},
+    mode::{insert, normal, prompt},
     prelude::{Buffer, BufferKind, Client, DisplayWidth as _, Keys, Mode, RopeExt as _, Server},
     rope::LINE_TYPE,
     syntax::Language,
@@ -127,8 +127,6 @@ fn print_keymap() {
     print_mode("insert", &insert::KEYMAP);
     println!();
     print_mode("prompt", &prompt::KEYMAP);
-    println!();
-    print_mode("replace", &replace::KEYMAP);
 }
 
 fn init_tracing(args: &Args) -> anyhow::Result<()> {
@@ -290,7 +288,6 @@ fn render(client: &Client, experimental: &ExperimentalArgs, area: Rect, surface:
 fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
     let mode = match &client.mode {
         Mode::Normal => "normal",
-        Mode::Replace => "replace",
         Mode::Insert => "insert",
         Mode::Prompt(_) => "prompt",
     };

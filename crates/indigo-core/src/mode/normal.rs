@@ -548,7 +548,7 @@ fn paste_all(client: &mut ClientMut, paste_mode: PasteMode) {
     window.scroll_to_selection();
 }
 
-pub fn replace(client: &mut ClientMut, byte: u8) {
+fn replace(client: &mut ClientMut, byte: u8) {
     if client.focused_buffer().text.readonly {
         client.message = Some(Err(String::from("Buffer is readonly")));
         client.count = None;
