@@ -35,12 +35,12 @@ pub fn handle_actions(client: &mut ClientMut, actions: &[Action]) {
 }
 
 pub fn handle_action(client: &mut ClientMut, action: &Action) {
-    handle_command(client, action.clone());
+    handle_command(client, action);
 }
 
 pub fn enter_command_mode(client: &mut ClientMut) {
     prompt::enter(client, "", |client, input| match parse_command(input) {
-        Ok(command) => handle_command(client, command),
+        Ok(command) => handle_command(client, &command),
         Err(error) => client.message = Some(Err(error.to_string())),
     });
 }
@@ -122,11 +122,11 @@ fn parse_command(command: &str) -> anyhow::Result<Command> {
     })
 }
 
-fn handle_command(client: &mut ClientMut, command: Command) {
+fn handle_command(client: &mut ClientMut, command: &Command) {
     match command {
         Command::Nop => {}
         Command::Echo { error, message } => {
-            if error {
+            if *error {
                 client.message = Some(Err(message.join(" ")));
             } else {
                 client.message = Some(Ok(message.join(" ")));
@@ -134,7 +134,7 @@ fn handle_command(client: &mut ClientMut, command: Command) {
         }
         Command::Edit { path } => {
             // TODO: Edit existing buffer for path if one exists.
-            if let Ok(buffer) = Buffer::open(client.fs(), &path) {
+            if let Ok(buffer) = Buffer::open(client.fs(), path) {
                 // In Kakoune, windows are inextricably linked to buffers, so changing buffer means
                 // changing window, creating a new one if necessary.
                 // https://github.com/mawww/kakoune/blob/afc035ac0e17a6280edec511dfe8da1c0dd565ab/doc/pages/scopes.asciidoc?plain=1#L29-L30
