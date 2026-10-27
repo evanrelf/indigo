@@ -21,14 +21,13 @@ pub fn key_event_t2i(key_event: &t::KeyEvent) -> anyhow::Result<i::KeyEvent> {
     })
 }
 
-#[must_use]
-pub fn key_event_i2t(key_event: &i::KeyEvent) -> t::KeyEvent {
-    t::KeyEvent {
+pub fn key_event_i2t(key_event: &i::KeyEvent) -> anyhow::Result<t::KeyEvent> {
+    Ok(t::KeyEvent {
         modifiers: key_modifiers_i2t(&key_event.key.modifiers),
-        code: key_code_i2t(&key_event.key.code),
+        code: key_code_i2t(&key_event.key.code)?,
         kind: key_event_kind_i2t(&key_event.kind),
         state: t::KeyEventState::NONE,
-    }
+    })
 }
 
 pub fn key_modifiers_t2i(modifiers: &t::KeyModifiers) -> anyhow::Result<i::KeyModifiers> {
@@ -73,19 +72,19 @@ pub fn key_code_t2i(code: &t::KeyCode) -> anyhow::Result<i::KeyCode> {
     }
 }
 
-#[must_use]
-pub fn key_code_i2t(code: &i::KeyCode) -> t::KeyCode {
+pub fn key_code_i2t(code: &i::KeyCode) -> anyhow::Result<t::KeyCode> {
     match code {
-        i::KeyCode::Backspace => t::KeyCode::Backspace,
-        i::KeyCode::Delete => t::KeyCode::Delete,
-        i::KeyCode::Return => t::KeyCode::Enter,
-        i::KeyCode::Left => t::KeyCode::Left,
-        i::KeyCode::Right => t::KeyCode::Right,
-        i::KeyCode::Up => t::KeyCode::Up,
-        i::KeyCode::Down => t::KeyCode::Down,
-        i::KeyCode::Tab => t::KeyCode::Tab,
-        i::KeyCode::Escape => t::KeyCode::Esc,
-        i::KeyCode::Char(c) => t::KeyCode::Char(char::from(*c)),
+        i::KeyCode::Backspace => Ok(t::KeyCode::Backspace),
+        i::KeyCode::Delete => Ok(t::KeyCode::Delete),
+        i::KeyCode::Return => Ok(t::KeyCode::Enter),
+        i::KeyCode::Left => Ok(t::KeyCode::Left),
+        i::KeyCode::Right => Ok(t::KeyCode::Right),
+        i::KeyCode::Up => Ok(t::KeyCode::Up),
+        i::KeyCode::Down => Ok(t::KeyCode::Down),
+        i::KeyCode::Tab => Ok(t::KeyCode::Tab),
+        i::KeyCode::Escape => Ok(t::KeyCode::Esc),
+        i::KeyCode::Char(c) => Ok(t::KeyCode::Char(char::from(*c))),
+        i::KeyCode::Any => Err(anyhow!("Unsupported indigo key code: {code:?}")),
     }
 }
 
@@ -127,8 +126,8 @@ mod tests {
             state: t::KeyEventState::NONE,
         };
         assert_eq!(key_event_t2i(&c).unwrap(), i);
-        assert_eq!(key_event_t2i(&key_event_i2t(&i)).unwrap(), i);
-        assert_eq!(key_event_i2t(&i), c);
-        assert_eq!(key_event_i2t(&key_event_t2i(&c).unwrap()), c);
+        assert_eq!(key_event_t2i(&key_event_i2t(&i).unwrap()).unwrap(), i);
+        assert_eq!(key_event_i2t(&i).unwrap(), c);
+        assert_eq!(key_event_i2t(&key_event_t2i(&c).unwrap()).unwrap(), c);
     }
 }

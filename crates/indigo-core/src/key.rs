@@ -196,6 +196,8 @@ pub enum KeyCode {
     // NOTE: Replace `u8` with `AsciiChar` once it stabilizes.
     // https://github.com/rust-lang/rust/issues/110998
     Char(u8),
+    /// <https://en.wikipedia.org/wiki/Any_key>
+    Any,
 }
 
 #[cfg(feature = "arbitrary")]
@@ -251,6 +253,7 @@ impl Display for KeyCode {
             Self::Char(b'\n') => write!(f, "\\n")?,
             Self::Char(b'\r') => write!(f, "\\r")?,
             Self::Char(c) => write!(f, "{}", char::from(*c))?,
+            Self::Any => write!(f, "any")?,
         }
         Ok(())
     }
@@ -261,7 +264,7 @@ fn key_code(input: &mut &str) -> ModalResult<KeyCode> {
 }
 
 fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
-    alt((
+    alt([
         "bs".value(KeyCode::Backspace),
         "del".value(KeyCode::Delete),
         "ret".value(KeyCode::Return),
@@ -271,7 +274,8 @@ fn key_code_wrapped(input: &mut &str) -> ModalResult<KeyCode> {
         "down".value(KeyCode::Down),
         "tab".value(KeyCode::Tab),
         "esc".value(KeyCode::Escape),
-    ))
+        "any".value(KeyCode::Any),
+    ])
     .parse_next(input)
 }
 
@@ -381,6 +385,7 @@ mod tests {
             KeyCode::Down,
             KeyCode::Tab,
             KeyCode::Escape,
+            KeyCode::Any,
         ]);
         for bits in 0..=KeyModifiers::all().bits() {
             let modifiers = KeyModifiers::from_bits_truncate(bits);

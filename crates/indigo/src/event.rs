@@ -243,6 +243,6 @@ pub fn event_t2i(event: &TerminalEvent) -> anyhow::Result<IndigoEvent> {
 
 pub fn event_i2t(event: &IndigoEvent) -> anyhow::Result<TerminalEvent> {
     match event {
-        IndigoEvent::Key(key_event) => Ok(TerminalEvent::Key(key_event_i2t(key_event))),
+        IndigoEvent::Key(key_event) => Ok(TerminalEvent::Key(key_event_i2t(key_event)?)),
     }
 }
