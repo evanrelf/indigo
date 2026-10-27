@@ -2,66 +2,7 @@ use crate::key::{Key, KeyCode, Keys};
 use arrayvec::ArrayVec;
 use std::{iter, mem};
 
-struct Trie<K, V> {
-    root: Node<K, V>,
-}
-
-impl<K, V> Trie<K, V> {
-    #[must_use]
-    fn new() -> Self {
-        Self {
-            root: Node::default(),
-        }
-    }
-
-    fn insert(&mut self, key: &[K], value: V) -> Option<V>
-    where
-        K: Clone + Ord,
-    {
-        self.root.insert(key, value)
-    }
-
-    fn remove(&mut self, key: &[K]) -> Option<V>
-    where
-        K: Ord,
-    {
-        self.root.remove(key)
-    }
-
-    #[must_use]
-    fn get(&self, key: &[K]) -> TrieResult<&V>
-    where
-        K: Ord,
-    {
-        self.root.get(key)
-    }
-
-    #[must_use]
-    fn get_mut(&mut self, key: &[K]) -> TrieResult<&mut V>
-    where
-        K: Ord,
-    {
-        self.root.get_mut(key)
-    }
-
-    fn iter<const N: usize>(&self) -> impl Iterator<Item = (ArrayVec<K, N>, &V)>
-    where
-        K: Clone,
-    {
-        let mut pairs = Vec::new();
-        self.root
-            .collect_pairs::<N>(&mut ArrayVec::new(), &mut pairs);
-        pairs.into_iter()
-    }
-}
-
-impl<K, V> Default for Trie<K, V> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-enum Node<K, V> {
+enum Trie<K, V> {
     Branch {
         keys: Vec<K>,
         children: Vec<Box<Self>>,
@@ -71,7 +12,7 @@ enum Node<K, V> {
     },
 }
 
-impl<K, V> Node<K, V> {
+impl<K, V> Trie<K, V> {
     fn insert(&mut self, key: &[K], value: V) -> Option<V>
     where
         K: Clone + Ord,
@@ -200,6 +141,15 @@ impl<K, V> Node<K, V> {
         }
     }
 
+    fn iter<const N: usize>(&self) -> impl Iterator<Item = (ArrayVec<K, N>, &V)>
+    where
+        K: Clone,
+    {
+        let mut pairs = Vec::new();
+        self.collect_pairs::<N>(&mut ArrayVec::new(), &mut pairs);
+        pairs.into_iter()
+    }
+
     fn collect_pairs<'a, const N: usize>(
         &'a self,
         prefix: &mut ArrayVec<K, N>,
@@ -222,7 +172,7 @@ impl<K, V> Node<K, V> {
     }
 }
 
-impl<K, V> Default for Node<K, V> {
+impl<K, V> Default for Trie<K, V> {
     fn default() -> Self {
         Self::Branch {
             keys: Vec::new(),
@@ -266,7 +216,7 @@ impl<V> Keymap<V> {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            mappings: Trie::new(),
+            mappings: Trie::default(),
             next_order: 0,
             fallback: |_, _| KeymapResult::Unmapped,
             fallback_description: None,
@@ -447,7 +397,7 @@ mod tests {
 
     #[test]
     fn trie_works() {
-        let mut trie: Trie<&str, &str> = Trie::new();
+        let mut trie: Trie<&str, &str> = Trie::default();
 
         trie.insert(&["1", "+", "2"], "3");
         trie.insert(&["1", "+", "9"], "10");
@@ -477,7 +427,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn trie_forbids_overlap() {
-        let mut trie: Trie<&str, ()> = Trie::new();
+        let mut trie: Trie<&str, ()> = Trie::default();
         trie.insert(&["1"], ());
         trie.insert(&["1", "2"], ());
     }
