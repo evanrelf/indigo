@@ -7,6 +7,7 @@ use indigo_kernel::edit::Edit;
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
 use std::{
+    borrow::Cow,
     cmp::max,
     mem,
     ops::{Bound, Deref, RangeBounds},
@@ -684,7 +685,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
         let delete_start = self.text.prev_grapheme_boundary(start)?;
         let mut ops = Edit::new();
         ops.retain(delete_start);
-        ops.delete(&self.text.slice(delete_start..start).to_string());
+        ops.delete(&Cow::from(self.text.slice(delete_start..start)));
         ops.retain_rest(&self.text)
             .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
@@ -700,7 +701,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
         let (start, end) = self.byte_offsets();
         let mut ops = Edit::new();
         ops.retain(start);
-        ops.delete(&self.text.slice(start..end).to_string());
+        ops.delete(&Cow::from(self.text.slice(start..end)));
         if end == self.text.len() && (start == 0 || self.text.byte(start - 1) != b'\n') {
             ops.insert("\n");
         }
@@ -730,7 +731,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
         }
         let mut ops = Edit::new();
         ops.retain(end);
-        ops.delete(&self.text.slice(end..delete_end).to_string());
+        ops.delete(&Cow::from(self.text.slice(end..delete_end)));
         ops.retain_rest(&self.text)
             .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");

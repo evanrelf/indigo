@@ -8,7 +8,7 @@ use indigo_kernel::{
 };
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
-use std::{cmp::min, ops::Deref, thread};
+use std::{borrow::Cow, cmp::min, ops::Deref, thread};
 use thiserror::Error;
 
 #[cfg(feature = "arbitrary")]
@@ -501,7 +501,7 @@ impl<S: WrapMut, T: WrapMut> CursorView<'_, S, T> {
         let start = self.text.prev_grapheme_boundary(self.state.byte_index)?;
         let mut ops = Edit::new();
         ops.retain(start);
-        ops.delete(&self.text.slice(start..self.state.byte_index).to_string());
+        ops.delete(&Cow::from(self.text.slice(start..self.state.byte_index)));
         ops.retain_rest(&self.text)
             .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
@@ -523,7 +523,7 @@ impl<S: WrapMut, T: WrapMut> CursorView<'_, S, T> {
         }
         let mut ops = Edit::new();
         ops.retain(self.state.byte_index);
-        ops.delete(&self.text.slice(self.state.byte_index..end).to_string());
+        ops.delete(&Cow::from(self.text.slice(self.state.byte_index..end)));
         ops.retain_rest(&self.text)
             .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");

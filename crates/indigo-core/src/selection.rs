@@ -8,7 +8,7 @@ use indigo_kernel::edit::{self, Edit};
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use regex_cursor::engines::meta::Regex;
 use ropey::{Rope, RopeSlice};
-use std::{cmp::max, iter::zip, mem, ops::Deref, thread};
+use std::{borrow::Cow, cmp::max, iter::zip, mem, ops::Deref, thread};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -582,7 +582,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
                 // Like Kakoune, replacing text with itself isn't an edit.
                 ops.retain(old.len());
             } else {
-                ops.delete(&old.to_string());
+                ops.delete(&Cow::from(old));
                 ops.insert(value);
             }
             output_position += value.len();
@@ -645,7 +645,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
             output_position += retained;
             let replacement_start = output_position;
             for grapheme in self.text.rope().slice(start..end_exclusive).graphemes() {
-                ops.delete(&grapheme.to_string());
+                ops.delete(&Cow::from(grapheme));
                 ops.insert(&replacement);
                 output_position += replacement.len();
             }
@@ -673,7 +673,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
                 && prev_boundary >= previous
             {
                 ops.retain(prev_boundary - previous);
-                ops.delete(&self.text.slice(prev_boundary..start).to_string());
+                ops.delete(&Cow::from(self.text.slice(prev_boundary..start)));
                 previous = start;
             }
         }
@@ -697,7 +697,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
         let mut previous = 0;
         for &(start, end_exclusive) in &spans {
             ops.retain(start - previous);
-            ops.delete(&self.text.slice(start..end_exclusive).to_string());
+            ops.delete(&Cow::from(self.text.slice(start..end_exclusive)));
             previous = end_exclusive;
         }
         // If the deletions reach the end of the text, the last surviving byte must still be a
@@ -741,7 +741,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
             }
             if end >= previous {
                 ops.retain(end - previous);
-                ops.delete(&self.text.slice(end..next_boundary).to_string());
+                ops.delete(&Cow::from(self.text.slice(end..next_boundary)));
                 previous = next_boundary;
             }
         }

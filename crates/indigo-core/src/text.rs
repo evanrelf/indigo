@@ -4,7 +4,10 @@ use crate::{
 };
 use indigo_kernel::edit::{self, Edit};
 use ropey::Rope;
-use std::ops::{Deref, Range};
+use std::{
+    borrow::Cow,
+    ops::{Deref, Range},
+};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -100,7 +103,7 @@ impl Text {
     pub fn delete(&mut self, range: Range<usize>) -> anyhow::Result<()> {
         let mut ops = Edit::new();
         ops.retain(range.start);
-        ops.delete(&self.rope.slice(range.start..range.end).to_string());
+        ops.delete(&Cow::from(self.rope.slice(range.start..range.end)));
         if range.end == self.rope.len()
             && (range.start == 0 || self.rope.byte(range.start - 1) != b'\n')
         {
