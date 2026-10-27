@@ -2,7 +2,8 @@
 
 use crate::{
     client::ClientMut,
-    keymap::{Keymap, KeymapResult, keymap},
+    key::{Key, KeyCode},
+    keymap::{Keymap, KeymapResult, Mapping, keymap},
     mode::{
         Mode,
         command::enter_command_mode,
@@ -29,11 +30,6 @@ pub enum Action {
     EnterNormalMode,
     EnterCommandMode,
     EnterInsertMode,
-    EnterSeekMode {
-        select: SeekSelect,
-        include: SeekInclude,
-        direction: SeekDirection,
-    },
     EnterReplaceMode,
     InsertAfterHead,
     InsertAtLineNonBlankStart,
@@ -159,14 +155,14 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "gI" => vec![GotoExtendToLineNonBlankStart], /// Extend to first non-blank
         "gL" => vec![GotoExtendUntilLineEnd], /// Extend to line end
 
-        "f" => vec![EnterSeekMode { select: Move, include: Onto, direction: Next }], /// Move onto next character
-        "<a-f>" => vec![EnterSeekMode { select: Move, include: Onto, direction: Prev }], /// Move onto previous character
-        "t" => vec![EnterSeekMode { select: Move, include: Until, direction: Next }], /// Move until next character
-        "<a-t>" => vec![EnterSeekMode { select: Move, include: Until, direction: Prev }], /// Move until previous character
-        "F" => vec![EnterSeekMode { select: Extend, include: Onto, direction: Next }], /// Extend onto next character
-        "<a-F>" => vec![EnterSeekMode { select: Extend, include: Onto, direction: Prev }], /// Extend onto previous character
-        "T" => vec![EnterSeekMode { select: Extend, include: Until, direction: Next }], /// Extend until next character
-        "<a-T>" => vec![EnterSeekMode { select: Extend, include: Until, direction: Prev }], /// Extend until previous character
+        "f<any>" => Mapping::Any(|key| Some(vec![Seek { select: Move, include: Onto, direction: Next, byte: key_char(key)? }])), /// Move onto next character
+        "<a-f><any>" => Mapping::Any(|key| Some(vec![Seek { select: Move, include: Onto, direction: Prev, byte: key_char(key)? }])), /// Move onto previous character
+        "t<any>" => Mapping::Any(|key| Some(vec![Seek { select: Move, include: Until, direction: Next, byte: key_char(key)? }])), /// Move until next character
+        "<a-t><any>" => Mapping::Any(|key| Some(vec![Seek { select: Move, include: Until, direction: Prev, byte: key_char(key)? }])), /// Move until previous character
+        "F<any>" => Mapping::Any(|key| Some(vec![Seek { select: Extend, include: Onto, direction: Next, byte: key_char(key)? }])), /// Extend onto next character
+        "<a-F><any>" => Mapping::Any(|key| Some(vec![Seek { select: Extend, include: Onto, direction: Prev, byte: key_char(key)? }])), /// Extend onto previous character
+        "T<any>" => Mapping::Any(|key| Some(vec![Seek { select: Extend, include: Until, direction: Next, byte: key_char(key)? }])), /// Extend until next character
+        "<a-T><any>" => Mapping::Any(|key| Some(vec![Seek { select: Extend, include: Until, direction: Prev, byte: key_char(key)? }])), /// Extend until previous character
 
         "%" => vec![SelectAll], /// Select all
         "s" => vec![SelectRegex], /// Select regex matches
@@ -211,13 +207,6 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
         Action::EnterNormalMode => enter(client),
         Action::EnterCommandMode => enter_command_mode(client),
         Action::EnterInsertMode => insert::enter(client),
-        Action::EnterSeekMode {
-            select,
-            include,
-            direction,
-        } => {
-            seek::enter(client, *select, *include, *direction);
-        }
         Action::EnterReplaceMode => replace::enter(client),
         Action::InsertAfterHead => insert_after_head(client),
         Action::InsertAtLineNonBlankStart => insert_at_line_non_blank_start(client),
@@ -298,6 +287,14 @@ pub fn handle_keys(client: &mut ClientMut) -> bool {
             false
         }
         KeymapResult::Pending => true,
+    }
+}
+
+fn key_char(key: Key) -> Option<u8> {
+    match key.code {
+        KeyCode::Return if key.modifiers.is_empty() => Some(b'\n'),
+        KeyCode::Tab if key.modifiers.is_empty() => Some(b'\t'),
+        _ => key.typed_char(),
     }
 }
 
