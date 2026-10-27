@@ -22,6 +22,7 @@ use ratatui::{
     prelude::{Buffer as Surface, Line, Rect, Span, Style, Stylize as _, Widget as _},
 };
 use std::{
+    borrow::Cow,
     cmp::{max, min},
     env, fs,
     process::ExitCode,
@@ -293,11 +294,11 @@ fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
     };
 
     let path = match (&client.session().pwd, &client.focused_buffer().kind()) {
-        (_, BufferKind::Scratch) => String::from("*scratch*"),
-        (None, BufferKind::File { path, .. }) => path.to_string(),
+        (_, BufferKind::Scratch) => Cow::Borrowed("*scratch*"),
+        (None, BufferKind::File { path, .. }) => Cow::Borrowed(path.as_str()),
         (Some(pwd), BufferKind::File { path, .. }) => match diff_utf8_paths(path, pwd) {
-            None => path.to_string(),
-            Some(path) => path.to_string(),
+            None => Cow::Borrowed(path.as_str()),
+            Some(path) => Cow::Owned(path.into_string()),
         },
     };
 
@@ -321,9 +322,9 @@ fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
     };
 
     let count = match client.count {
-        Some(count) if count.get() == usize::MAX => &String::from(" count=∞"),
-        Some(count) => &format!(" count={count}"),
-        None => "",
+        Some(count) if count.get() == usize::MAX => Cow::Borrowed(" count=∞"),
+        Some(count) => Cow::Owned(format!(" count={count}")),
+        None => Cow::Borrowed(""),
     };
 
     Line::raw(format!("{path}{language} {line}:{column} {mode}{count}"))
