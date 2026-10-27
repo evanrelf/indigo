@@ -3,33 +3,15 @@
 use crate::{
     client::ClientMut,
     keymap::{Keymap, KeymapResult, keymap},
-    mode::{Mode, normal},
+    mode::{
+        Mode,
+        normal::{self, SeekDirection, SeekInclude, SeekSelect},
+    },
 };
-use std::{num::NonZeroUsize, sync::LazyLock};
+use std::sync::LazyLock;
 
 #[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
-
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-#[derive(Clone, Copy, Debug)]
-pub enum SeekSelect {
-    Move,
-    Extend,
-}
-
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-#[derive(Clone, Copy, Debug)]
-pub enum SeekInclude {
-    Until,
-    Onto,
-}
-
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-#[derive(Clone, Copy, Debug)]
-pub enum SeekDirection {
-    Prev,
-    Next,
-}
 
 #[derive(Clone)]
 pub struct State {
@@ -79,7 +61,7 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
             };
             let (select, include, direction) =
                 (seek_mode.select, seek_mode.include, seek_mode.direction);
-            seek(client, select, include, direction, *byte);
+            normal::seek(client, select, include, direction, *byte);
         }
     }
 }
@@ -117,36 +99,4 @@ pub fn enter(
         include,
         direction,
     });
-}
-
-pub fn seek(
-    client: &mut ClientMut,
-    select: SeekSelect,
-    include: SeekInclude,
-    direction: SeekDirection,
-    byte: u8,
-) {
-    use SeekDirection::{Next, Prev};
-    use SeekInclude::{Onto, Until};
-    use SeekSelect::{Extend, Move};
-
-    let count = client.count.take().unwrap_or(NonZeroUsize::MIN).get();
-
-    let mut window = client.focused_window_mut();
-
-    window
-        .selection_move()
-        .for_each_move(|mut range| match (select, include, direction) {
-            (Move, Until, Prev) => range.move_until_prev_byte(byte, count),
-            (Extend, Until, Prev) => range.extend_until_prev_byte(byte, count),
-            (Move, Until, Next) => range.move_until_next_byte(byte, count),
-            (Extend, Until, Next) => range.extend_until_next_byte(byte, count),
-            (Move, Onto, Prev) => range.move_onto_prev_byte(byte, count),
-            (Extend, Onto, Prev) => range.extend_onto_prev_byte(byte, count),
-            (Move, Onto, Next) => range.move_onto_next_byte(byte, count),
-            (Extend, Onto, Next) => range.extend_onto_next_byte(byte, count),
-        });
-    window.selection_move().merge_overlapping();
-
-    window.scroll_to_selection();
 }

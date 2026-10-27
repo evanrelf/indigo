@@ -4,12 +4,7 @@ use crate::{
     client::ClientMut,
     key::{Key, KeyCode},
     keymap::{Keymap, KeymapResult, Mapping, keymap},
-    mode::{
-        Mode,
-        command::enter_command_mode,
-        insert, prompt, replace,
-        seek::{self, SeekDirection, SeekInclude, SeekSelect},
-    },
+    mode::{Mode, command::enter_command_mode, insert, prompt, replace},
     rope::{LINE_TYPE, RopeExt as _},
     selection::PasteMode,
     window::{
@@ -89,6 +84,27 @@ pub enum Action {
     ScrollHalfPageDown,
     ScrollFullPageUp,
     ScrollFullPageDown,
+}
+
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+#[derive(Clone, Copy, Debug)]
+pub enum SeekSelect {
+    Move,
+    Extend,
+}
+
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+#[derive(Clone, Copy, Debug)]
+pub enum SeekInclude {
+    Until,
+    Onto,
+}
+
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+#[derive(Clone, Copy, Debug)]
+pub enum SeekDirection {
+    Prev,
+    Next,
 }
 
 pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
@@ -241,7 +257,7 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
             include,
             direction,
             byte,
-        } => seek::seek(client, *select, *include, *direction, *byte),
+        } => seek(client, *select, *include, *direction, *byte),
         Action::KeepPrimary => keep_primary(client),
         Action::RotateSelectionBackward => rotate_selection_backward(client),
         Action::RotateSelectionForward => rotate_selection_forward(client),
@@ -296,6 +312,38 @@ fn key_char(key: Key) -> Option<u8> {
         KeyCode::Tab if key.modifiers.is_empty() => Some(b'\t'),
         _ => key.typed_char(),
     }
+}
+
+pub fn seek(
+    client: &mut ClientMut,
+    select: SeekSelect,
+    include: SeekInclude,
+    direction: SeekDirection,
+    byte: u8,
+) {
+    use SeekDirection::{Next, Prev};
+    use SeekInclude::{Onto, Until};
+    use SeekSelect::{Extend, Move};
+
+    let count = client.count.take().unwrap_or(NonZeroUsize::MIN).get();
+
+    let mut window = client.focused_window_mut();
+
+    window
+        .selection_move()
+        .for_each_move(|mut range| match (select, include, direction) {
+            (Move, Until, Prev) => range.move_until_prev_byte(byte, count),
+            (Extend, Until, Prev) => range.extend_until_prev_byte(byte, count),
+            (Move, Until, Next) => range.move_until_next_byte(byte, count),
+            (Extend, Until, Next) => range.extend_until_next_byte(byte, count),
+            (Move, Onto, Prev) => range.move_onto_prev_byte(byte, count),
+            (Extend, Onto, Prev) => range.extend_onto_prev_byte(byte, count),
+            (Move, Onto, Next) => range.move_onto_next_byte(byte, count),
+            (Extend, Onto, Next) => range.extend_onto_next_byte(byte, count),
+        });
+    window.selection_move().merge_overlapping();
+
+    window.scroll_to_selection();
 }
 
 pub fn enter(client: &mut ClientMut) {

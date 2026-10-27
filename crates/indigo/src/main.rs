@@ -297,7 +297,7 @@ fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
     let mode = match &client.mode {
         Mode::Normal => "normal",
         Mode::Seek(seek_mode) => {
-            use indigo_core::mode::seek::{
+            use indigo_core::mode::normal::{
                 SeekDirection::{Next, Prev},
                 SeekInclude::{Onto, Until},
                 SeekSelect::{Extend, Move},
