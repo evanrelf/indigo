@@ -36,15 +36,6 @@ impl<K, V> Trie<K, V> {
         self.root.get(key)
     }
 
-    #[expect(dead_code)]
-    #[must_use]
-    fn get_with<F>(&self, key: &[K], child: &F) -> TrieResult<&V>
-    where
-        F: for<'a> Fn(&'a Node<K, V>, &K) -> Option<&'a Node<K, V>>,
-    {
-        self.root.get_with(key, child)
-    }
-
     #[must_use]
     fn get_mut(&mut self, key: &[K]) -> TrieResult<&mut V>
     where
@@ -180,17 +171,9 @@ impl<K, V> Node<K, V> {
     where
         K: Ord,
     {
-        self.get_with(key, &Self::child)
-    }
-
-    #[must_use]
-    fn get_with<F>(&self, key: &[K], child: &F) -> TrieResult<&V>
-    where
-        F: for<'a> Fn(&'a Self, &K) -> Option<&'a Self>,
-    {
         match key.split_first() {
-            Some((head, tail)) => match child(self, head) {
-                Some(node) => node.get_with(tail, child),
+            Some((head, tail)) => match self.child(head) {
+                Some(child) => child.get(tail),
                 None => TrieResult::Missing,
             },
             None => match self {
