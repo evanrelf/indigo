@@ -25,7 +25,6 @@ pub enum Action {
     EnterNormalMode,
     EnterCommandMode,
     EnterInsertMode,
-    EnterReplaceMode,
     InsertAfterHead,
     InsertAtLineNonBlankStart,
     InsertAtLineEnd,
@@ -141,7 +140,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "I" => vec![InsertAtLineNonBlankStart], /// Enter insert mode at first non-blank
         "A" => vec![InsertAtLineEnd], /// Enter insert mode at line end
 
-        "r" => vec![EnterReplaceMode], /// Replace characters
+        "r<any>" => Mapping::Any(|key| Some(vec![Replace(key_char(key)?), Commit])), /// Replace characters
         "y" => vec![Yank], /// Yank
         "c" => vec![Yank, Delete, EnterInsertMode], /// Change
         "d" => vec![Yank, Delete, Commit], /// Delete
@@ -224,7 +223,6 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
         Action::EnterNormalMode => enter(client),
         Action::EnterCommandMode => enter_command_mode(client),
         Action::EnterInsertMode => insert::enter(client),
-        Action::EnterReplaceMode => replace::enter(client),
         Action::InsertAfterHead => insert_after_head(client),
         Action::InsertAtLineNonBlankStart => insert_at_line_non_blank_start(client),
         Action::InsertAtLineEnd => insert_at_line_end(client),
