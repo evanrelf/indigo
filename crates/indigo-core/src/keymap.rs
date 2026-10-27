@@ -242,9 +242,14 @@ impl<V> Keymap<V> {
         for key in &mut keys.0 {
             key.normalize();
         }
-        if let Mapping::Any(_) = value {
-            let anys = keys.0.iter().filter(|key| **key == Key::ANY).count();
-            assert_eq!(anys, 1, "`Mapping::Any` requires exactly one `<any>` key");
+        let anys = keys.0.iter().filter(|key| **key == Key::ANY).count();
+        match value {
+            Mapping::Static(_) => {
+                assert_eq!(anys, 0, "`Mapping::Static` forbids `<any>` keys");
+            }
+            Mapping::Any(_) => {
+                assert_eq!(anys, 1, "`Mapping::Any` requires exactly one `<any>` key");
+            }
         }
         if let TrieResult::Found(entry) = self.mappings.get_mut(&keys.0) {
             // Keep original place in order, like `IndexMap::insert`
@@ -503,6 +508,14 @@ mod tests {
     fn keymap_any_requires_any_key() {
         let _keymap = keymap! { Vec<Key>;
             "f" => Mapping::Any(|key| Some(vec![key])),
+        };
+    }
+
+    #[test]
+    #[should_panic(expected = "forbids `<any>`")]
+    fn keymap_static_forbids_any_key() {
+        let _keymap = keymap! {
+            "f<any>" => vec![Action("seek")],
         };
     }
 
