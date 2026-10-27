@@ -2,7 +2,7 @@ use crate::{
     buffer::{Buffer, BufferKey},
     fs::Fs,
     key::Key,
-    mode::{Mode, command, insert, normal, prompt, replace, seek},
+    mode::{Mode, command, insert, normal, prompt, replace},
     session::Session,
     window::{Window, WindowKey, WindowMut, WindowState},
 };
@@ -257,7 +257,6 @@ impl ClientMut<'_> {
         let handled = match event {
             Event::Key(_) => match self.state.mode {
                 Mode::Normal => normal::handle_keys(self),
-                Mode::Seek(_) => seek::handle_keys(self),
                 Mode::Insert => insert::handle_keys(self),
                 Mode::Prompt(_) => prompt::handle_keys(self),
                 Mode::Replace => replace::handle_keys(self),
@@ -275,7 +274,6 @@ impl ClientMut<'_> {
             Action::Insert(action) => insert::handle_action(self, action),
             Action::Prompt(action) => prompt::handle_action(self, action),
             Action::Command(action) => command::handle_action(self, action),
-            Action::Seek(action) => seek::handle_action(self, action),
         }
         self.assert_invariants().unwrap();
     }
@@ -309,6 +307,4 @@ pub enum Action {
     Insert(insert::Action),
     Prompt(prompt::Action),
     Command(command::Action),
-    // TODO: Replace this with multi-key mappings in normal mode
-    Seek(seek::Action),
 }

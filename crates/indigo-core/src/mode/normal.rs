@@ -314,7 +314,7 @@ fn key_char(key: Key) -> Option<u8> {
     }
 }
 
-pub fn seek(
+fn seek(
     client: &mut ClientMut,
     select: SeekSelect,
     include: SeekInclude,

@@ -1,8 +1,8 @@
 # Todo
 
 - Create `Mode` (mode as data)
-- Get rid of seek, replace, and prompt modes (keep only normal and insert) in
-  favor of multi-key mappings
+- Get rid of replace and prompt modes (keep only normal and insert) in favor of
+  multi-key mappings
 - Figure out what to do with mode state, try to make actions
   mode-agnostic/stateless (such that modes simply become a feature of the UI)
 - Store modes as stack (i.e. `Vec<Mode>`) in `ClientState` (mode stack as data)

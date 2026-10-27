@@ -75,7 +75,6 @@ pub fn handle_event(server: &mut Server, areas: Areas, event: TerminalEvent) -> 
 
     let _handled = match &client.mode {
         Mode::Normal => handle_event_normal(client, areas, event),
-        Mode::Seek(_) => handle_event_seek(client, areas, event)?,
         Mode::Insert => handle_event_insert(client, areas, event),
         Mode::Prompt(_) => handle_event_prompt(client, areas, event)?,
         Mode::Replace => handle_event_replace(client, areas, event)?,
@@ -151,29 +150,6 @@ fn handle_event_normal(client: &mut ClientMut, areas: Areas, event: TerminalEven
     }
 
     handled
-}
-
-#[expect(clippy::needless_pass_by_value)]
-#[expect(clippy::unnecessary_wraps)]
-fn handle_event_seek(
-    client: &mut ClientMut,
-    _areas: Areas,
-    event: TerminalEvent,
-) -> anyhow::Result<bool> {
-    let mut handled = true;
-
-    match event {
-        // TODO: Add mouse events to core, so it can handle this internally.
-        TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, _) => {
-                normal::enter(client);
-            }
-            _ => handled = false,
-        },
-        _ => handled = false,
-    }
-
-    Ok(handled)
 }
 
 #[expect(clippy::needless_pass_by_value)]

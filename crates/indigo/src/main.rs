@@ -11,7 +11,7 @@ use indigo::{
 use indigo_core::{
     fs::RealFs,
     keymap::Keymap,
-    mode::{insert, normal, prompt, replace, seek},
+    mode::{insert, normal, prompt, replace},
     prelude::{Buffer, BufferKind, Client, DisplayWidth as _, Keys, Mode, RopeExt as _, Server},
     rope::LINE_TYPE,
     syntax::Language,
@@ -130,8 +130,6 @@ fn print_keymap() {
     print_mode("insert", &insert::KEYMAP);
     println!();
     print_mode("prompt", &prompt::KEYMAP);
-    println!();
-    print_mode("seek", &seek::KEYMAP);
     println!();
     print_mode("replace", &replace::KEYMAP);
     println!("\n(? ? ? = dynamic fallback behavior, read source for more info)");
@@ -296,23 +294,6 @@ fn render(client: &Client, experimental: &ExperimentalArgs, area: Rect, surface:
 fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
     let mode = match &client.mode {
         Mode::Normal => "normal",
-        Mode::Seek(seek_mode) => {
-            use indigo_core::mode::normal::{
-                SeekDirection::{Next, Prev},
-                SeekInclude::{Onto, Until},
-                SeekSelect::{Extend, Move},
-            };
-            match (&seek_mode.select, &seek_mode.include, &seek_mode.direction) {
-                (Move, Until, Prev) => "move until prev",
-                (Extend, Until, Prev) => "extend until prev",
-                (Move, Until, Next) => "move until next",
-                (Extend, Until, Next) => "extend until next",
-                (Move, Onto, Prev) => "move onto prev",
-                (Extend, Onto, Prev) => "extend onto prev",
-                (Move, Onto, Next) => "move onto next",
-                (Extend, Onto, Next) => "extend onto next",
-            }
-        }
         Mode::Replace => "replace",
         Mode::Insert => "insert",
         Mode::Prompt(_) => "prompt",

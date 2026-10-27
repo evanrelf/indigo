@@ -37,7 +37,6 @@ behavior), or read these files:
 
 - Normal mode: `crates/indigo-core/src/mode/normal.rs`
 - Insert mode: `crates/indigo-core/src/mode/insert.rs`
-- Seek mode: `crates/indigo-core/src/mode/seek.rs`
 - Prompt mode: `crates/indigo-core/src/mode/prompt.rs`
 - Command mode: `crates/indigo-core/src/mode/command.rs` (discouraged with CLI)
 
