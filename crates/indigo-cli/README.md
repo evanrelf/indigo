@@ -32,7 +32,7 @@ char offsets.
 
 ## Available keys
 
-Run `./bin/run --x-keymap` to see the full keymap, or read these files:
+Run `./bin/run --keymap` to see the full keymap, or read these files:
 
 - Normal mode: `crates/indigo-core/src/mode/normal.rs`
 - Insert mode: `crates/indigo-core/src/mode/insert.rs`

@@ -31,8 +31,12 @@ use std::{
 // TODO: Figure out how to represent the mutual exclusion here more elegantly
 #[derive(Debug, clap::Parser)]
 struct Args {
-    #[arg(conflicts_with = "x_keymap")]
+    #[arg(conflicts_with = "keymap")]
     file: Option<Utf8PathBuf>,
+
+    /// Print key mappings
+    #[arg(long)]
+    keymap: bool,
 
     #[arg(long, env = "INDIGO_LOG", default_value_t)]
     log_filter: String,
@@ -45,12 +49,8 @@ struct Args {
 #[derive(Debug, clap::Args)]
 #[command(next_help_heading = "Experimental options")]
 struct ExperimentalArgs {
-    /// Print key mappings
-    #[arg(long)]
-    x_keymap: bool,
-
     /// Execute keys at startup
-    #[arg(long, name = "KEYS", conflicts_with = "x_keymap")]
+    #[arg(long, name = "KEYS", conflicts_with = "keymap")]
     x_exec: Option<Keys>,
 
     /// Show debug bar
@@ -96,7 +96,7 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let args = Args::parse();
 
-    if args.experimental.x_keymap {
+    if args.keymap {
         sigpipe::reset();
         print_keymap();
         return Ok(ExitCode::SUCCESS);
