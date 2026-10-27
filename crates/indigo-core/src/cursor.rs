@@ -475,7 +475,7 @@ impl<S: WrapMut, T: WrapRef> CursorView<'_, S, T> {
 
 impl<S: WrapMut, T: WrapMut> CursorView<'_, S, T> {
     pub fn insert_char(&mut self, char: char) -> Edit {
-        self.insert(&char.to_string())
+        self.insert(char.encode_utf8(&mut [0; 4]))
     }
 
     /// Insert before the grapheme the cursor occupies. The cursor stays on its grapheme (i.e.

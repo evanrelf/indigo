@@ -473,7 +473,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
     }
 
     pub fn insert_char(&mut self, char: char) -> Edit {
-        self.insert(&char.to_string())
+        self.insert(char.encode_utf8(&mut [0; 4]))
     }
 
     pub fn insert(&mut self, text: &str) -> Edit {
@@ -629,7 +629,8 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
 
     pub fn replace_each(&mut self, byte: u8) -> Edit {
         self.state.merge_overlapping();
-        let replacement = char::from(byte).to_string();
+        let mut buffer = [0; 4];
+        let replacement = &*char::from(byte).encode_utf8(&mut buffer);
         let mut ops = Edit::new();
         let mut previous = 0;
         let mut output_position = 0;
@@ -646,7 +647,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
             let replacement_start = output_position;
             for grapheme in self.text.rope().slice(start..end_exclusive).graphemes() {
                 ops.delete(&Cow::from(grapheme));
-                ops.insert(&replacement);
+                ops.insert(replacement);
                 output_position += replacement.len();
             }
             ranges.push(range.with_bounds(replacement_start, output_position - replacement.len()));

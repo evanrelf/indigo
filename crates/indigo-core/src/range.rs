@@ -652,7 +652,7 @@ impl<S: WrapMut, T: WrapMut> RangeView<'_, S, T> {
     }
 
     pub fn insert_char(&mut self, char: char) -> Edit {
-        self.insert(&char.to_string())
+        self.insert(char.encode_utf8(&mut [0; 4]))
     }
 
     /// Insert before the range's first grapheme. Both endpoints stay on their graphemes (i.e.
