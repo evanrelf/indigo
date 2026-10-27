@@ -220,8 +220,6 @@ struct Entry<V> {
 pub struct Keymap<V> {
     mappings: Trie<Key, Entry<V>>,
     next_order: u16,
-    fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<'a, V>,
-    fallback_description: Option<&'static str>,
 }
 
 impl<V> Keymap<V> {
@@ -230,8 +228,6 @@ impl<V> Keymap<V> {
         Self {
             mappings: Trie::default(),
             next_order: 0,
-            fallback: |_, _| KeymapResult::Unmapped,
-            fallback_description: None,
         }
     }
 
@@ -276,15 +272,6 @@ impl<V> Keymap<V> {
         self.mappings.remove(&keys.0).map(|entry| entry.value)
     }
 
-    pub fn set_fallback(
-        &mut self,
-        fallback: for<'a> fn(&'a Self, &[Key]) -> KeymapResult<'a, V>,
-        description: Option<&'static str>,
-    ) {
-        self.fallback = fallback;
-        self.fallback_description = description;
-    }
-
     #[must_use]
     pub fn get(&self, keys: &str) -> KeymapResult<'_, V> {
         let mut keys: Keys = keys.parse().unwrap();
@@ -297,7 +284,7 @@ impl<V> Keymap<V> {
     #[must_use]
     pub fn get_keys(&self, keys: &[Key]) -> KeymapResult<'_, V> {
         match self.mappings.get::<3>(keys, &Key::ANY) {
-            TrieResult::Missing => (self.fallback)(self, keys),
+            TrieResult::Missing => KeymapResult::Unmapped,
             TrieResult::Partial => KeymapResult::Pending,
             TrieResult::Found(Match {
                 value: entry,
@@ -310,7 +297,7 @@ impl<V> Keymap<V> {
                     {
                         KeymapResult::Fallback(value)
                     } else {
-                        (self.fallback)(self, keys)
+                        KeymapResult::Unmapped
                     }
                 }
             },
@@ -333,11 +320,6 @@ impl<V> Keymap<V> {
         self.entries()
             .map(|(keys, entry)| (Keys(keys), entry.description))
     }
-
-    #[must_use]
-    pub fn fallback_description(&self) -> Option<&'static str> {
-        self.fallback_description
-    }
 }
 
 impl<'a, V> IntoIterator for &'a Keymap<V> {
@@ -355,32 +337,16 @@ impl<V> Default for Keymap<V> {
 }
 
 macro_rules! keymap {
-    // [x] type [x] fallback (base case)
-    ($value_ty:ty; $($keys:literal => $value:expr, $(#[doc = $desc:literal])?)* $fallback_arg:ident => $fallback_body:block $(,)? $(#[doc = $fallback_desc:literal])?) => {{
+    // [x] type (base case)
+    ($value_ty:ty; $($keys:literal => $value:expr, $(#[doc = $desc:literal])?)*) => {{
         let mut keymap: $crate::keymap::Keymap<$value_ty> = $crate::keymap::Keymap::new();
         $(keymap.insert($keys, $value, None $(.or(Some($desc.trim())))?);)*
-        keymap.set_fallback(|_self, $fallback_arg| $fallback_body, None $(.or(Some($fallback_desc.trim())))?);
         keymap
     }};
-    // [x] type [ ] fallback
-    ($value_ty:ty; $($keys:literal => $value:expr, $(#[doc = $desc:literal])?)*) => {
-        $crate::keymap::keymap! { $value_ty;
-            $($keys => $value, $(#[doc = $desc])?)*
-            __keys => { $crate::keymap::KeymapResult::Unmapped },
-        }
-    };
-    // [ ] type [x] fallback
-    ($($keys:literal => $value:expr, $(#[doc = $desc:literal])?)* $fallback_arg:ident => $fallback_body:block $(,)? $(#[doc = $fallback_desc:literal])?) => {
-        $crate::keymap::keymap! { _;
-            $($keys => $value, $(#[doc = $desc])?)*
-            $fallback_arg => $fallback_body, $(#[doc = $fallback_desc])?
-        }
-    };
-    // [ ] type [ ] fallback
+    // [ ] type
     ($($keys:literal => $value:expr, $(#[doc = $desc:literal])?)*) => {
         $crate::keymap::keymap! { _;
             $($keys => $value, $(#[doc = $desc])?)*
-            __keys => { $crate::keymap::KeymapResult::Unmapped },
         }
     };
 }
@@ -509,30 +475,6 @@ mod tests {
     }
 
     #[test]
-    fn keymap_fallback() {
-        let keymap = keymap! {
-            "gj" => vec![Action("move to bottom")],
-            keys => {
-                if keys.len() == 4 {
-                    KeymapResult::Fallback(vec![Action("yay 4")])
-                } else {
-                    KeymapResult::Unmapped
-                }
-            } /// Yay 4
-        };
-        assert_eq!(keymap.fallback_description(), Some("Yay 4"));
-        assert_eq!(
-            keymap.get("gj"),
-            KeymapResult::Mapped(&vec![Action("move to bottom")])
-        );
-        assert_eq!(keymap.get("123"), KeymapResult::Unmapped);
-        assert_eq!(
-            keymap.get("1234"),
-            KeymapResult::Fallback(vec![Action("yay 4")])
-        );
-    }
-
-    #[test]
     fn keymap_any() {
         let keymap = keymap! { Vec<Key>;
             "f<any>" => Mapping::Any(|key| Some(vec![key])),
@@ -610,6 +552,5 @@ mod tests {
         };
         let descriptions: Vec<_> = keymap.docs().map(|(_, description)| description).collect();
         assert_eq!(descriptions, [Some("Move to top"), None]);
-        assert_eq!(keymap.fallback_description(), None);
     }
 }

@@ -121,9 +121,6 @@ fn print_keymap() {
                 println!("    {:7} {description}", format!("{keys}"));
             }
         }
-        if let Some(description) = keymap.fallback_description() {
-            println!("    ? ? ?   {description}");
-        }
     }
     print_mode("normal", &normal::KEYMAP);
     println!();
@@ -132,7 +129,6 @@ fn print_keymap() {
     print_mode("prompt", &prompt::KEYMAP);
     println!();
     print_mode("replace", &replace::KEYMAP);
-    println!("\n(? ? ? = dynamic fallback behavior, read source for more info)");
 }
 
 fn init_tracing(args: &Args) -> anyhow::Result<()> {
