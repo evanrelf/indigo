@@ -71,6 +71,17 @@ impl Key {
             self.code = KeyCode::Char(c.to_ascii_uppercase());
         }
     }
+
+    #[must_use]
+    pub fn typed_char(&self) -> Option<u8> {
+        if let KeyCode::Char(c) = self.code
+            && self.modifiers.difference(KeyModifiers::SHIFT).is_empty()
+        {
+            Some(c)
+        } else {
+            None
+        }
+    }
 }
 
 impl FromStr for Key {

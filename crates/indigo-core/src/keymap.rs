@@ -1,4 +1,4 @@
-use crate::key::{Key, KeyCode, KeyModifiers, Keys};
+use crate::key::{Key, KeyCode, Keys};
 use arrayvec::ArrayVec;
 use std::{iter, mem};
 
@@ -382,10 +382,9 @@ impl<V> Default for Keymap<V> {
 
 fn key_byte(key: Key) -> Option<u8> {
     match key.code {
-        KeyCode::Char(c) if key.modifiers.difference(KeyModifiers::SHIFT).is_empty() => Some(c),
         KeyCode::Return if key.modifiers.is_empty() => Some(b'\n'),
         KeyCode::Tab if key.modifiers.is_empty() => Some(b'\t'),
-        _ => None,
+        _ => key.typed_char(),
     }
 }
 
@@ -433,6 +432,7 @@ pub enum KeymapResult<'a, V> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::key::KeyModifiers;
 
     #[derive(Clone, Debug, PartialEq)]
     struct Action(&'static str);
