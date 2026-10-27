@@ -295,7 +295,7 @@ impl<V> Keymap<V> {
                     if let &[key] = captures.as_slice()
                         && let Some(value) = f(key)
                     {
-                        KeymapResult::Fallback(value)
+                        KeymapResult::Computed(value)
                     } else {
                         KeymapResult::Unmapped
                     }
@@ -358,7 +358,7 @@ pub enum KeymapResult<'a, V> {
     Unmapped,
     Pending,
     Mapped(&'a V),
-    Fallback(V),
+    Computed(V),
 }
 
 #[cfg(test)]
@@ -483,18 +483,18 @@ mod tests {
         let key = |key: &str| key.parse::<Key>().unwrap();
         assert_eq!(keymap.get("f"), KeymapResult::Pending);
         // the captured key is passed through as-is
-        assert_eq!(keymap.get("fx"), KeymapResult::Fallback(vec![key("x")]));
+        assert_eq!(keymap.get("fx"), KeymapResult::Computed(vec![key("x")]));
         assert_eq!(
             keymap.get("f<a-x>"),
-            KeymapResult::Fallback(vec![key("<a-x>")])
+            KeymapResult::Computed(vec![key("<a-x>")])
         );
         assert_eq!(
             keymap.get("f<esc>"),
-            KeymapResult::Fallback(vec![key("<esc>")])
+            KeymapResult::Computed(vec![key("<esc>")])
         );
         assert_eq!(keymap.get("fxy"), KeymapResult::Unmapped);
         // returning `None` falls back
-        assert_eq!(keymap.get("gx"), KeymapResult::Fallback(vec![key("x")]));
+        assert_eq!(keymap.get("gx"), KeymapResult::Computed(vec![key("x")]));
         assert_eq!(keymap.get("g<a-x>"), KeymapResult::Unmapped);
     }
 

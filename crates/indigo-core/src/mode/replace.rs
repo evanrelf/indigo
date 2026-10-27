@@ -45,7 +45,7 @@ pub fn handle_keys(client: &mut ClientMut) -> bool {
             handle_actions(client, actions);
             normal::enter(client);
         }
-        KeymapResult::Fallback(actions) => {
+        KeymapResult::Computed(actions) => {
             client.pending_keys.clear();
             handle_actions(client, &actions);
             normal::enter(client);
