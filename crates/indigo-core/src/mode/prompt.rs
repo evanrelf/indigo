@@ -3,7 +3,7 @@
 use crate::{
     client::ClientMut,
     cursor::{Cursor, CursorEdit, CursorMove, CursorState},
-    keymap::{Keymap, KeymapResult, keymap},
+    keymap::{Keymap, KeymapResult, Mapping, keymap},
     mode::{Mode, normal},
     text::Text,
 };
@@ -107,15 +107,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<c-u>" => vec![DeleteToStart], /// Delete to start
         "<c-k>" => vec![DeleteToEnd], /// Delete to end
         "<bs>" => vec![DeleteBefore], /// Delete before cursor
-        keys => {
-            if let [key] = keys
-                && let Some(c) = key.typed_char()
-            {
-                KeymapResult::Fallback(vec![InsertChar(char::from(c))])
-            } else {
-                KeymapResult::Unmapped
-            }
-        } /// Insert character
+        "<any>" => Mapping::Any(|key| Some(vec![InsertChar(char::from(key.typed_char()?))])), /// Insert character
     }
 });
 
