@@ -62,6 +62,11 @@ pub struct Key {
 }
 
 impl Key {
+    pub const ANY: Self = Self {
+        modifiers: KeyModifiers::empty(),
+        code: KeyCode::Any,
+    };
+
     pub fn normalize(&mut self) {
         if !self.modifiers.contains(KeyModifiers::SHIFT) {
             return;

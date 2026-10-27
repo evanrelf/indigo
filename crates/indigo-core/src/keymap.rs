@@ -108,19 +108,25 @@ impl<K, V> Trie<K, V> {
     }
 
     #[must_use]
-    fn get(&self, key: &[K]) -> TrieResult<&V>
+    fn get(&self, key: &[K], wildcard: &K) -> TrieResult<Match<'_, K, V>>
     where
-        K: Ord,
+        K: Clone + Ord,
     {
-        match key.split_first() {
-            Some((head, tail)) => match self.child(head) {
-                Some(child) => child.get(tail),
-                None => TrieResult::Missing,
-            },
-            None => match self {
-                Self::Branch { .. } => TrieResult::Partial,
-                Self::Leaf { value } => TrieResult::Found(value),
-            },
+        let mut trie = self;
+        let mut captures = Vec::new();
+        for k in key {
+            trie = if let Some(child) = trie.child(k) {
+                child
+            } else if let Some(child) = trie.child(wildcard) {
+                captures.push(k.clone());
+                child
+            } else {
+                return TrieResult::Missing;
+            };
+        }
+        match trie {
+            Self::Branch { .. } => TrieResult::Partial,
+            Self::Leaf { value } => TrieResult::Found(Match { value, captures }),
         }
     }
 
@@ -186,6 +192,12 @@ enum TrieResult<T> {
     Missing,
     Partial,
     Found(T),
+}
+
+#[derive(Debug, PartialEq)]
+struct Match<'a, K, V> {
+    value: &'a V,
+    captures: Vec<K>,
 }
 
 pub enum Mapping<V> {
@@ -280,10 +292,11 @@ impl<V> Keymap<V> {
 
     #[must_use]
     pub fn get_keys(&self, keys: &[Key]) -> KeymapResult<'_, V> {
-        match self.mappings.get(keys) {
+        match self.mappings.get(keys, &Key::ANY) {
             TrieResult::Missing => {
                 if let Some((last, init)) = keys.split_last()
-                    && let TrieResult::Found(entry) = self.mappings.get(init)
+                    && let TrieResult::Found(Match { value: entry, .. }) =
+                        self.mappings.get(init, &Key::ANY)
                     && let Mapping::Char(f) = entry.value
                     && let Some(byte) = key_byte(*last)
                     && let Some(value) = f(byte)
@@ -294,7 +307,7 @@ impl<V> Keymap<V> {
                 }
             }
             TrieResult::Partial => KeymapResult::Pending,
-            TrieResult::Found(entry) => match &entry.value {
+            TrieResult::Found(Match { value: entry, .. }) => match &entry.value {
                 Mapping::Static(value) => KeymapResult::Mapped(value),
                 Mapping::Char(_) => KeymapResult::Pending,
             },
@@ -395,6 +408,10 @@ mod tests {
     #[derive(Clone, Debug, PartialEq)]
     struct Action(&'static str);
 
+    fn found<K, V>(value: &V, captures: Vec<K>) -> TrieResult<Match<'_, K, V>> {
+        TrieResult::Found(Match { value, captures })
+    }
+
     #[test]
     fn trie_works() {
         let mut trie: Trie<&str, &str> = Trie::default();
@@ -402,12 +419,15 @@ mod tests {
         trie.insert(&["1", "+", "2"], "3");
         trie.insert(&["1", "+", "9"], "10");
 
-        assert_eq!(trie.get(&["1"]), TrieResult::Partial);
-        assert_eq!(trie.get(&["1", "+"]), TrieResult::Partial);
-        assert_eq!(trie.get(&["1", "+", "2"]), TrieResult::Found(&"3"));
-        assert_eq!(trie.get(&["1", "+", "9"]), TrieResult::Found(&"10"));
-        assert_eq!(trie.get(&["1", "+", "5"]), TrieResult::Missing);
-        assert_eq!(trie.get(&["1", "+", "2", "+", "3"]), TrieResult::Missing);
+        assert_eq!(trie.get(&["1"], &"*"), TrieResult::Partial);
+        assert_eq!(trie.get(&["1", "+"], &"*"), TrieResult::Partial);
+        assert_eq!(trie.get(&["1", "+", "2"], &"*"), found(&"3", vec![]));
+        assert_eq!(trie.get(&["1", "+", "9"], &"*"), found(&"10", vec![]));
+        assert_eq!(trie.get(&["1", "+", "5"], &"*"), TrieResult::Missing);
+        assert_eq!(
+            trie.get(&["1", "+", "2", "+", "3"], &"*"),
+            TrieResult::Missing
+        );
 
         // remove returns the value, missing keys return None
         assert_eq!(trie.remove(&["1", "+", "5"]), None);
@@ -415,13 +435,34 @@ mod tests {
         assert_eq!(trie.remove(&["1", "+", "2"]), Some("3"));
 
         // after removal: exact key is gone, sibling and its parent are intact
-        assert_eq!(trie.get(&["1", "+", "2"]), TrieResult::Missing);
-        assert_eq!(trie.get(&["1", "+", "9"]), TrieResult::Found(&"10"));
-        assert_eq!(trie.get(&["1"]), TrieResult::Partial);
+        assert_eq!(trie.get(&["1", "+", "2"], &"*"), TrieResult::Missing);
+        assert_eq!(trie.get(&["1", "+", "9"], &"*"), found(&"10", vec![]));
+        assert_eq!(trie.get(&["1"], &"*"), TrieResult::Partial);
 
         // removing the last entry prunes empty branches
         assert_eq!(trie.remove(&["1", "+", "9"]), Some("10"));
-        assert_eq!(trie.get(&["1"]), TrieResult::Missing);
+        assert_eq!(trie.get(&["1"], &"*"), TrieResult::Missing);
+    }
+
+    #[test]
+    fn trie_wildcard() {
+        let mut trie: Trie<&str, &str> = Trie::default();
+
+        trie.insert(&["g", "k"], "gk");
+        trie.insert(&["g", "*"], "g*");
+        trie.insert(&["*", "x"], "*x");
+
+        assert_eq!(trie.get(&["g"], &"*"), TrieResult::Partial);
+        // exact key wins over wildcard
+        assert_eq!(trie.get(&["g", "k"], &"*"), found(&"gk", vec![]));
+        assert_eq!(trie.get(&["g", "z"], &"*"), found(&"g*", vec!["z"]));
+        // exact `g` was taken, so `* x` isn't considered
+        assert_eq!(trie.get(&["g", "x"], &"*"), found(&"g*", vec!["x"]));
+        // the wildcard key itself matches exactly, so isn't captured
+        assert_eq!(trie.get(&["g", "*"], &"*"), found(&"g*", vec![]));
+        assert_eq!(trie.get(&["q"], &"*"), TrieResult::Partial);
+        assert_eq!(trie.get(&["q", "x"], &"*"), found(&"*x", vec!["q"]));
+        assert_eq!(trie.get(&["q", "y"], &"*"), TrieResult::Missing);
     }
 
     #[test]
