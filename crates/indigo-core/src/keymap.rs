@@ -139,29 +139,47 @@ impl<K, V> Node<K, V> {
     }
 
     #[must_use]
-    fn get(&self, key: &[K]) -> TrieResult<&V>
+    fn child(&self, key: &K) -> Option<&Self>
     where
         K: Ord,
     {
         match self {
             Self::Branch { keys, children } => {
-                if let Some((head, tail)) = key.split_first() {
-                    if let Ok(index) = keys.binary_search(head) {
-                        children[index].get(tail)
-                    } else {
-                        TrieResult::Missing
-                    }
-                } else {
-                    TrieResult::Partial
-                }
+                let index = keys.binary_search(key).ok()?;
+                Some(&children[index])
             }
-            Self::Leaf { value } => {
-                if key.is_empty() {
-                    TrieResult::Found(value)
-                } else {
-                    TrieResult::Missing
-                }
+            Self::Leaf { .. } => None,
+        }
+    }
+
+    #[must_use]
+    fn child_mut(&mut self, key: &K) -> Option<&mut Self>
+    where
+        K: Ord,
+    {
+        match self {
+            Self::Branch { keys, children } => {
+                let index = keys.binary_search(key).ok()?;
+                Some(&mut children[index])
             }
+            Self::Leaf { .. } => None,
+        }
+    }
+
+    #[must_use]
+    fn get(&self, key: &[K]) -> TrieResult<&V>
+    where
+        K: Ord,
+    {
+        match key.split_first() {
+            Some((head, tail)) => match self.child(head) {
+                Some(child) => child.get(tail),
+                None => TrieResult::Missing,
+            },
+            None => match self {
+                Self::Branch { .. } => TrieResult::Partial,
+                Self::Leaf { value } => TrieResult::Found(value),
+            },
         }
     }
 
@@ -170,25 +188,15 @@ impl<K, V> Node<K, V> {
     where
         K: Ord,
     {
-        match self {
-            Self::Branch { keys, children } => {
-                if let Some((head, tail)) = key.split_first() {
-                    if let Ok(index) = keys.binary_search(head) {
-                        children[index].get_mut(tail)
-                    } else {
-                        TrieResult::Missing
-                    }
-                } else {
-                    TrieResult::Partial
-                }
-            }
-            Self::Leaf { value } => {
-                if key.is_empty() {
-                    TrieResult::Found(value)
-                } else {
-                    TrieResult::Missing
-                }
-            }
+        match key.split_first() {
+            Some((head, tail)) => match self.child_mut(head) {
+                Some(child) => child.get_mut(tail),
+                None => TrieResult::Missing,
+            },
+            None => match self {
+                Self::Branch { .. } => TrieResult::Partial,
+                Self::Leaf { value } => TrieResult::Found(value),
+            },
         }
     }
 
