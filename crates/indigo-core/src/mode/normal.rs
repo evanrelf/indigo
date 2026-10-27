@@ -25,7 +25,6 @@ use arbitrary::Arbitrary;
 #[derive(Debug)]
 pub enum Action {
     AppendCountDigit(u8),
-    ClearCount,
     Commit,
     EnterNormalMode,
     EnterCommandMode,
@@ -185,10 +184,6 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<c-d>" => vec![ScrollHalfPageDown], /// Scroll half page down
         "<c-b>" => vec![ScrollFullPageUp], /// Scroll page up
         "<c-f>" => vec![ScrollFullPageDown], /// Scroll page down
-
-        _keys => {
-            KeymapResult::Fallback(vec![ClearCount])
-        }, /// Clear count
     }
 });
 
@@ -206,7 +201,6 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
             let new_count = NonZeroUsize::new(old_count.saturating_mul(10).saturating_add(digit));
             client.count = new_count;
         }
-        Action::ClearCount => client.count = None,
         Action::Commit => client.focused_buffer_mut().text.commit(),
         Action::EnterNormalMode => enter(client),
         Action::EnterCommandMode => enter_command_mode(client),
@@ -288,6 +282,7 @@ pub fn handle_keys(client: &mut ClientMut) -> bool {
         }
         KeymapResult::Unmapped => {
             client.pending_keys.clear();
+            client.count = None;
             false
         }
         KeymapResult::Pending => true,
