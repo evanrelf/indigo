@@ -4,7 +4,7 @@ use crate::{
     client::ClientMut,
     key::{Key, KeyCode},
     keymap::{Keymap, KeymapResult, Mapping, keymap},
-    mode::{Mode, command::enter_command_mode, insert, prompt, replace},
+    mode::{Mode, command::enter_command_mode, insert, prompt},
     rope::{LINE_TYPE, RopeExt as _},
     selection::PasteMode,
     window::{
@@ -275,7 +275,7 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
         Action::PasteAllAfter => paste_all(client, PasteMode::After),
         Action::PasteAllBefore => paste_all(client, PasteMode::Before),
         Action::PasteAllReplace => paste_all(client, PasteMode::Replace),
-        Action::Replace(byte) => replace::replace(client, *byte),
+        Action::Replace(byte) => replace(client, *byte),
         Action::Undo => undo(client),
         Action::Redo => redo(client),
         Action::ScrollHalfPageUp => scroll_half_page_up(client),
@@ -546,6 +546,18 @@ fn paste_all(client: &mut ClientMut, paste_mode: PasteMode) {
     let mut window = client.focused_window_mut();
     window.selection_edit().paste_all(&values, paste_mode);
     window.scroll_to_selection();
+}
+
+pub fn replace(client: &mut ClientMut, byte: u8) {
+    if client.focused_buffer().text.readonly {
+        client.message = Some(Err(String::from("Buffer is readonly")));
+        client.count = None;
+        return;
+    }
+    let mut window = client.focused_window_mut();
+    window.selection_edit().replace_each(byte);
+    window.scroll_to_selection();
+    client.count = None;
 }
 
 fn undo(client: &mut ClientMut) {

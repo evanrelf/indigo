@@ -34,7 +34,7 @@ pub fn handle_actions(client: &mut ClientMut, actions: &[Action]) {
 
 pub fn handle_action(client: &mut ClientMut, action: &Action) {
     match action {
-        Action::Replace(byte) => replace(client, *byte),
+        Action::Replace(byte) => normal::replace(client, *byte),
     }
 }
 
@@ -62,16 +62,4 @@ pub fn handle_keys(client: &mut ClientMut) -> bool {
 
 pub fn enter(client: &mut ClientMut) {
     client.mode = Mode::Replace;
-}
-
-pub fn replace(client: &mut ClientMut, byte: u8) {
-    if client.focused_buffer().text.readonly {
-        client.message = Some(Err(String::from("Buffer is readonly")));
-        client.count = None;
-        return;
-    }
-    let mut window = client.focused_window_mut();
-    window.selection_edit().replace_each(byte);
-    window.scroll_to_selection();
-    client.count = None;
 }
