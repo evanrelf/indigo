@@ -73,7 +73,14 @@ pub fn handle_actions(client: &mut ClientMut, actions: &[Action]) {
 
 pub fn handle_action(client: &mut ClientMut, action: &Action) {
     match action {
-        Action::Seek(byte) => seek(client, *byte),
+        Action::Seek(byte) => {
+            let Mode::Seek(seek_mode) = &client.mode else {
+                panic!("Not in seek mode")
+            };
+            let (select, include, direction) =
+                (seek_mode.select, seek_mode.include, seek_mode.direction);
+            seek(client, select, include, direction, *byte);
+        }
     }
 }
 
@@ -112,23 +119,18 @@ pub fn enter(
     });
 }
 
-fn seek(client: &mut ClientMut, byte: u8) {
+pub fn seek(
+    client: &mut ClientMut,
+    select: SeekSelect,
+    include: SeekInclude,
+    direction: SeekDirection,
+    byte: u8,
+) {
     use SeekDirection::{Next, Prev};
     use SeekInclude::{Onto, Until};
     use SeekSelect::{Extend, Move};
 
-    let (select, include, direction, count) = {
-        let count = client.count.take().unwrap_or(NonZeroUsize::MIN).get();
-        let Mode::Seek(seek_mode) = &client.mode else {
-            panic!("Not in seek mode")
-        };
-        (
-            seek_mode.select,
-            seek_mode.include,
-            seek_mode.direction,
-            count,
-        )
-    };
+    let count = client.count.take().unwrap_or(NonZeroUsize::MIN).get();
 
     let mut window = client.focused_window_mut();
 
