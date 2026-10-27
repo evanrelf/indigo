@@ -2,7 +2,7 @@
 
 use crate::{
     client::ClientMut,
-    keymap::{Keymap, KeymapResult, keymap},
+    keymap::{Keymap, KeymapResult, Mapping, keymap},
     mode::{Mode, normal},
 };
 use std::sync::LazyLock;
@@ -22,15 +22,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<esc>" => vec![], /// Cancel
         "<ret>" => vec![Replace(b'\n')], /// Replace with newline
         "<tab>" => vec![Replace(b'\t')], /// Replace with tab
-        keys => {
-            if let [key] = keys
-                && let Some(c) = key.typed_char()
-            {
-                KeymapResult::Fallback(vec![Replace(c)])
-            } else {
-                KeymapResult::Unmapped
-            }
-        } /// Replace with character
+        "<any>" => Mapping::Any(|key| Some(vec![Replace(key.typed_char()?)])), /// Replace with character
     }
 });
 
