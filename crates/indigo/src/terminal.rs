@@ -37,10 +37,12 @@ pub fn init() -> anyhow::Result<TerminalGuard> {
 
 pub fn suspend(terminal: &mut TerminalGuard) -> anyhow::Result<()> {
     leave();
-    // SAFETY: `raise` has no preconditions beyond receiving a valid signal number.
+    // Stop our whole process group, like the terminal does for `^Z`, so wrappers like `cargo run`
+    // stop too and the shell regains control.
+    // SAFETY: `kill` has no preconditions beyond receiving a valid signal number.
     #[expect(unsafe_code)]
     unsafe {
-        libc::raise(libc::SIGTSTP);
+        libc::kill(0, libc::SIGTSTP);
     }
     // Execution resumes here once the process is continued (e.g. with `fg`).
     enter()?;
