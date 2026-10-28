@@ -6,7 +6,6 @@ use anyhow::anyhow;
 use indigo_core::{
     mode::{insert, prompt},
     prelude::*,
-    window::{scroll_down, scroll_up},
 };
 use ratatui::crossterm::{
     self,
@@ -89,8 +88,12 @@ fn handle_event_normal(client: &mut ClientMut, areas: Areas, event: TerminalEven
     match event {
         // TODO(horizontal_scroll)
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => scroll_up(client),
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => scroll_down(client),
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => {
+                client.focused_window_mut().scroll_up();
+            }
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => {
+                client.focused_window_mut().scroll_down();
+            }
             // TODO: Kakoune allows creating new selection ranges by control clicking. Would be
             // awesome if Indigo could do the same, but also support control dragging to create
             // vertical lines of selection ranges, akin to Vim's visual block mode. Could snap to
@@ -157,8 +160,12 @@ fn handle_event_insert(client: &mut ClientMut, _areas: Areas, event: TerminalEve
     match event {
         // TODO: Add mouse events to core, so it can handle this internally.
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => scroll_up(client),
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => scroll_down(client),
+            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => {
+                client.focused_window_mut().scroll_up();
+            }
+            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => {
+                client.focused_window_mut().scroll_down();
+            }
             _ => handled = false,
         },
         TerminalEvent::Paste(text) => insert::paste(client, &text),

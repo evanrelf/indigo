@@ -1,6 +1,5 @@
 use crate::{
     buffer::{Buffer, BufferKey},
-    client::ClientMut,
     range::RangeState,
     selection::{Selection, SelectionEdit, SelectionMove, SelectionState},
 };
@@ -130,6 +129,42 @@ impl<W: WrapMut> WindowView<'_, W> {
         self.state.prev_vertical_scroll = line.saturating_sub(half_height);
     }
 
+    pub fn scroll_up(&mut self) {
+        let line = self.vertical_scroll().saturating_sub(3);
+        self.scroll_to_line(line);
+    }
+
+    pub fn scroll_down(&mut self) {
+        let line = self.vertical_scroll() + 3;
+        self.scroll_to_line(line);
+    }
+
+    // TODO(horizontal_scroll)
+
+    pub fn scroll_half_page_up(&mut self) {
+        let line = self
+            .vertical_scroll()
+            .saturating_sub(usize::from(self.height()) / 2);
+        self.scroll_to_line(line);
+    }
+
+    pub fn scroll_half_page_down(&mut self) {
+        let line = self.vertical_scroll() + usize::from(self.height()) / 2;
+        self.scroll_to_line(line);
+    }
+
+    pub fn scroll_full_page_up(&mut self) {
+        let line = self
+            .vertical_scroll()
+            .saturating_sub(usize::from(self.height()));
+        self.scroll_to_line(line);
+    }
+
+    pub fn scroll_full_page_down(&mut self) {
+        let line = self.vertical_scroll() + usize::from(self.height());
+        self.scroll_to_line(line);
+    }
+
     #[must_use]
     pub fn buffer_mut(&mut self) -> &mut Buffer {
         &mut self.buffer
@@ -178,46 +213,4 @@ impl<W: WrapMut> WindowView<'_, W> {
             Ok(false)
         }
     }
-}
-
-pub fn scroll_up(client: &mut ClientMut) {
-    let mut window = client.focused_window_mut();
-    let line = window.vertical_scroll().saturating_sub(3);
-    window.scroll_to_line(line);
-}
-
-pub fn scroll_down(client: &mut ClientMut) {
-    let mut window = client.focused_window_mut();
-    let line = window.vertical_scroll() + 3;
-    window.scroll_to_line(line);
-}
-
-// TODO(horizontal_scroll)
-
-pub fn scroll_half_page_up(client: &mut ClientMut) {
-    let mut window = client.focused_window_mut();
-    let line = window
-        .vertical_scroll()
-        .saturating_sub(usize::from(window.height()) / 2);
-    window.scroll_to_line(line);
-}
-
-pub fn scroll_half_page_down(client: &mut ClientMut) {
-    let mut window = client.focused_window_mut();
-    let line = window.vertical_scroll() + usize::from(window.height()) / 2;
-    window.scroll_to_line(line);
-}
-
-pub fn scroll_full_page_up(client: &mut ClientMut) {
-    let mut window = client.focused_window_mut();
-    let line = window
-        .vertical_scroll()
-        .saturating_sub(usize::from(window.height()));
-    window.scroll_to_line(line);
-}
-
-pub fn scroll_full_page_down(client: &mut ClientMut) {
-    let mut window = client.focused_window_mut();
-    let line = window.vertical_scroll() + usize::from(window.height());
-    window.scroll_to_line(line);
 }

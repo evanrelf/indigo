@@ -4,9 +4,6 @@ use crate::{
     client::ClientMut,
     mode::{Mode, command::enter_command_mode, insert, prompt},
     selection::PasteMode,
-    window::{
-        scroll_full_page_down, scroll_full_page_up, scroll_half_page_down, scroll_half_page_up,
-    },
 };
 use indigo_key::{Key, KeyCode, Keymap, KeymapResult, Mapping, keymap};
 use indigo_text::rope::{LINE_TYPE, RopeExt as _};
@@ -280,10 +277,10 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
         Action::Replace(byte) => replace(client, *byte),
         Action::Undo => undo(client),
         Action::Redo => redo(client),
-        Action::ScrollHalfPageUp => scroll_half_page_up(client),
-        Action::ScrollHalfPageDown => scroll_half_page_down(client),
-        Action::ScrollFullPageUp => scroll_full_page_up(client),
-        Action::ScrollFullPageDown => scroll_full_page_down(client),
+        Action::ScrollHalfPageUp => client.focused_window_mut().scroll_half_page_up(),
+        Action::ScrollHalfPageDown => client.focused_window_mut().scroll_half_page_down(),
+        Action::ScrollFullPageUp => client.focused_window_mut().scroll_full_page_up(),
+        Action::ScrollFullPageDown => client.focused_window_mut().scroll_full_page_down(),
         Action::Suspend => client.suspend = true,
     }
 }
