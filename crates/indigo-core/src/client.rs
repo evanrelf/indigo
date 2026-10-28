@@ -1,11 +1,11 @@
 use crate::{
     buffer::{Buffer, BufferKey},
     fs::Fs,
-    key::Key,
     mode::{Mode, command, insert, normal, prompt},
     session::Session,
     window::{Window, WindowKey, WindowMut, WindowState},
 };
+use indigo_key::Key;
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use slotmap::SlotMap;
 use std::{

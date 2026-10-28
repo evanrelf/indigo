@@ -6,6 +6,7 @@ by Kakoune and CodeMirror.
 ## Crates
 
 - `indigo-core`: functional core, most code lives here.
+- `indigo-key`: keys, key syntax parsing and printing, and keymaps.
 - `indigo-kernel`: part of the functional core, in flux. A more ambitious and
   theoretically sound rethinking of the architecture embracing eventual
   consistency.

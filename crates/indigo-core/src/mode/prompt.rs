@@ -3,10 +3,10 @@
 use crate::{
     client::ClientMut,
     cursor::{Cursor, CursorEdit, CursorMove, CursorState},
-    keymap::{Keymap, KeymapResult, Mapping, keymap},
     mode::{Mode, normal},
     text::Text,
 };
+use indigo_key::{Keymap, KeymapResult, Mapping, keymap};
 use ropey::{Rope, RopeSlice};
 use std::sync::{Arc, LazyLock, Mutex};
 

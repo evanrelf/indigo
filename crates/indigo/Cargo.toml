@@ -9,6 +9,7 @@ arrayvec = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
 indigo-core = { workspace = true, features = ["language-rust"] }
+indigo-key = { workspace = true }
 libc = { workspace = true }
 pathdiff = { workspace = true }
 ratatui = { workspace = true }

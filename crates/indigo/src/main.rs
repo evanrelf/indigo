@@ -11,12 +11,12 @@ use indigo::{
 };
 use indigo_core::{
     fs::RealFs,
-    keymap::Keymap,
     mode::{insert, normal, prompt},
     prelude::{Buffer, BufferKind, Client, DisplayWidth as _, Keys, Mode, RopeExt as _, Server},
     rope::LINE_TYPE,
     syntax::Language,
 };
+use indigo_key::Keymap;
 use pathdiff::diff_utf8_paths;
 use ratatui::{
     crossterm,

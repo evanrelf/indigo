@@ -2,9 +2,9 @@
 
 use crate::{
     client::ClientMut,
-    keymap::{Keymap, KeymapResult, Mapping, keymap},
     mode::{Mode, normal},
 };
+use indigo_key::{Keymap, KeymapResult, Mapping, keymap};
 use std::sync::LazyLock;
 
 #[cfg(feature = "arbitrary")]

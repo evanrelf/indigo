@@ -8,6 +8,7 @@ anyhow = { workspace = true }
 clap = { workspace = true }
 diff = { workspace = true }
 indigo-core = { workspace = true, features = ["language-rust"] }
+indigo-key = { workspace = true }
 tracing-subscriber = { workspace = true }
 
 [lints]

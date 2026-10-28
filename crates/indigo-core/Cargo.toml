@@ -4,17 +4,16 @@ license = "MPL-2.0"
 edition = "2024"
 
 [features]
-arbitrary = ["dep:arbitrary", "bitflags/arbitrary"]
+arbitrary = ["dep:arbitrary", "indigo-key/arbitrary"]
 language-rust = ["dep:tree-sitter-rust"]
 
 [dependencies]
 anyhow = { workspace = true }
 arbitrary = { workspace = true, optional = true }
-arrayvec = { workspace = true }
-bitflags = { workspace = true }
 bpaf = { workspace = true }
 camino = { workspace = true }
 indigo-kernel = { workspace = true }
+indigo-key = { workspace = true }
 indigo-wrap = { workspace = true }
 memchr = { workspace = true }
 regex-cursor = { workspace = true }
@@ -28,7 +27,6 @@ tree-sitter = { workspace = true }
 tree-sitter-rust = { workspace = true, optional = true }
 unicode-segmentation = { workspace = true }
 unicode-width = { workspace = true }
-winnow = { workspace = true }
 
 [dev-dependencies]
 divan = { workspace = true }

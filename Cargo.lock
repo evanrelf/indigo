@@ -791,6 +791,7 @@ dependencies = [
  "camino",
  "clap",
  "indigo-core",
+ "indigo-key",
  "libc",
  "pathdiff",
  "ratatui",
@@ -807,6 +808,7 @@ dependencies = [
  "clap",
  "diff",
  "indigo-core",
+ "indigo-key",
  "tracing-subscriber",
 ]
 
@@ -816,13 +818,12 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "arbitrary",
- "arrayvec",
- "bitflags 2.13.2",
  "bpaf",
  "camino",
  "divan",
  "hegeltest",
  "indigo-kernel",
+ "indigo-key",
  "indigo-wrap",
  "memchr",
  "regex-cursor",
@@ -836,7 +837,6 @@ dependencies = [
  "tree-sitter-rust",
  "unicode-segmentation",
  "unicode-width",
- "winnow",
 ]
 
 [[package]]
@@ -863,6 +863,18 @@ dependencies = [
  "ropey",
  "unicode-segmentation",
  "unicode-width",
+]
+
+[[package]]
+name = "indigo-key"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "arbitrary",
+ "arrayvec",
+ "bitflags 2.13.2",
+ "clap",
+ "winnow",
 ]
 
 [[package]]

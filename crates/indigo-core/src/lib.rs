@@ -4,8 +4,6 @@ pub mod client;
 pub mod cursor;
 pub mod fs;
 pub mod history;
-pub mod key;
-pub mod keymap;
 pub mod mode;
 pub mod prelude;
 pub mod range;

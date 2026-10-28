@@ -1,5 +1,6 @@
 use clap::Parser as _;
-use indigo_core::{key::is, prelude::*, syntax::Language};
+use indigo_core::{prelude::*, syntax::Language};
+use indigo_key::is;
 use std::{io, process::ExitCode, sync::Arc};
 use tracing_subscriber::EnvFilter;
 

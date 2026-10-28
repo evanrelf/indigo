@@ -341,22 +341,21 @@ impl<V> Default for Keymap<V> {
     }
 }
 
+#[macro_export]
 macro_rules! keymap {
     // [x] type (base case)
     ($value_ty:ty; $($keys:literal => $value:expr, $(#[doc = $desc:literal])?)*) => {{
-        let mut keymap: $crate::keymap::Keymap<$value_ty> = $crate::keymap::Keymap::new();
+        let mut keymap: $crate::Keymap<$value_ty> = $crate::Keymap::new();
         $(keymap.insert($keys, $value, None $(.or(Some($desc.trim())))?);)*
         keymap
     }};
     // [ ] type
     ($($keys:literal => $value:expr, $(#[doc = $desc:literal])?)*) => {
-        $crate::keymap::keymap! { _;
+        $crate::keymap! { _;
             $($keys => $value, $(#[doc = $desc])?)*
         }
     };
 }
-
-pub(crate) use keymap;
 
 #[derive(Debug, PartialEq)]
 pub enum KeymapResult<'a, V> {
