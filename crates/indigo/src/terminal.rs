@@ -2,6 +2,7 @@ use ratatui::{
     Terminal,
     crossterm::{
         QueueableCommand as _,
+        cursor::Show,
         event::{
             DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
             KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
@@ -79,6 +80,7 @@ fn leave() {
     let _ = stdout.queue(PopKeyboardEnhancementFlags);
     let _ = stdout.queue(DisableBracketedPaste);
     let _ = stdout.queue(DisableMouseCapture);
+    let _ = stdout.queue(Show);
     let _ = stdout.flush();
     let _ = disable_raw_mode();
     let _ = stdout.queue(LeaveAlternateScreen);
