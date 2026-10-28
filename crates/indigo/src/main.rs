@@ -27,7 +27,7 @@ use std::{
     cmp::{max, min},
     env,
     fmt::Write as _,
-    fs,
+    fs, mem,
     process::ExitCode,
     sync::Arc,
 };
@@ -223,6 +223,10 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
     let mut areas = Areas::default();
 
     let exit_code = 'frame: loop {
+        if mem::take(&mut server.client_mut().suspend) {
+            terminal::suspend(terminal)?;
+        }
+
         terminal.draw(|frame| {
             let area = frame.area();
             let limit = |max, actual| if max == 0 { actual } else { min(max, actual) };
