@@ -1,7 +1,7 @@
-// cargo bench --package indigo-kernel --bench display_width
+// cargo bench --package indigo-text --bench display_width
 
 use divan::{Bencher, black_box};
-use indigo_kernel::display_width::DisplayWidth as _;
+use indigo_text::display_width::DisplayWidth as _;
 use ropey::Rope;
 
 fn main() {

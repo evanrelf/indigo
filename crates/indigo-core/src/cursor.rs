@@ -1,10 +1,8 @@
-use crate::{
-    rope::{LINE_TYPE, RopeExt as _},
-    text::{Anchor, Text},
-};
-use indigo_kernel::{
+use crate::text::{Anchor, Text};
+use indigo_text::{
     display_width::DisplayWidth as _,
     edit::{self, Edit},
+    rope::{LINE_TYPE, RopeExt as _},
 };
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};

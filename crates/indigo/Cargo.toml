@@ -10,6 +10,7 @@ camino = { workspace = true }
 clap = { workspace = true }
 indigo-core = { workspace = true, features = ["language-rust"] }
 indigo-key = { workspace = true }
+indigo-text = { workspace = true }
 libc = { workspace = true }
 pathdiff = { workspace = true }
 ratatui = { workspace = true }

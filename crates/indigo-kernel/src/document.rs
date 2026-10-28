@@ -1,5 +1,5 @@
-use crate::edit::{Bias, Edit};
 use imbl::Vector;
+use indigo_text::edit::{Bias, Edit};
 use ropey::Rope;
 
 // TODO: Consider this a first draft of the "document" concept. The next iteration will:

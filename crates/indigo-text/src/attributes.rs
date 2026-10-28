@@ -1,4 +1,4 @@
-use indigo_kernel::edit::{self, Edit};
+use crate::edit::{self, Edit};
 use roaring::RoaringBitmap;
 use std::{
     borrow::Borrow,

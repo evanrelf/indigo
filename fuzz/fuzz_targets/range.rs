@@ -2,9 +2,9 @@
 
 use indigo_core::{
     range::{self, Action, RangeSnapshot, RangeView},
-    rope::RopeExt as _,
     text::Text,
 };
+use indigo_text::rope::RopeExt as _;
 use libfuzzer_sys::fuzz_target;
 use std::array;
 

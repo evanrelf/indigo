@@ -2,7 +2,7 @@ use crate::{
     history::History,
     syntax::{Language, Syntax},
 };
-use indigo_kernel::edit::{self, Edit};
+use indigo_text::edit::{self, Edit};
 use ropey::Rope;
 use std::{
     borrow::Cow,
@@ -305,8 +305,8 @@ mod tests {
 
     #[hegel::test(test_cases = 1_000)]
     fn fuzz(tc: hegel::TestCase) {
-        use crate::rope::RopeExt as _;
         use hegel::generators as gs;
+        use indigo_text::rope::RopeExt as _;
         #[derive(Default)]
         struct StateMachine {
             text: Text,

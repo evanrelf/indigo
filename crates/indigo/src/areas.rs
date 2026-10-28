@@ -1,4 +1,5 @@
-use indigo_core::{prelude::*, rope::LINE_TYPE};
+use indigo_core::prelude::*;
+use indigo_text::rope::LINE_TYPE;
 use ratatui::layout::{Constraint, Layout, Position, Rect};
 use std::cmp::{max, min};
 

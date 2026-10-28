@@ -1,9 +1,8 @@
 use crate::{
     cursor::{Cursor, CursorMove, CursorSnapshot, CursorState, GoalColumn},
-    rope::RopeExt as _,
     text::Text,
 };
-use indigo_kernel::edit::Edit;
+use indigo_text::{edit::Edit, rope::RopeExt as _};
 use indigo_wrap::{WBox, WMut, WRef, Wrap, WrapMut, WrapRef};
 use ropey::{Rope, RopeSlice};
 use std::{

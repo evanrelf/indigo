@@ -3,13 +3,13 @@
 use crate::{
     client::ClientMut,
     mode::{Mode, command::enter_command_mode, insert, prompt},
-    rope::{LINE_TYPE, RopeExt as _},
     selection::PasteMode,
     window::{
         scroll_full_page_down, scroll_full_page_up, scroll_half_page_down, scroll_half_page_up,
     },
 };
 use indigo_key::{Key, KeyCode, Keymap, KeymapResult, Mapping, keymap};
+use indigo_text::rope::{LINE_TYPE, RopeExt as _};
 use regex_cursor::engines::meta::Regex;
 use std::{cmp::min, num::NonZeroUsize, sync::LazyLock};
 

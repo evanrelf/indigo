@@ -2,9 +2,9 @@ use crate::{
     buffer::{Buffer, BufferKey},
     client::ClientMut,
     range::RangeState,
-    rope::{LINE_TYPE, RopeExt as _},
     selection::{Selection, SelectionEdit, SelectionMove, SelectionState},
 };
+use indigo_text::rope::{LINE_TYPE, RopeExt as _};
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use std::cmp::min;
 

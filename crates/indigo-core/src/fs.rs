@@ -1,8 +1,8 @@
 //! Abstract filesystem interface.
 
+use crate::IndigoBuildHasher;
 use anyhow::anyhow;
 use camino::{Utf8Path, Utf8PathBuf};
-use indigo_kernel::IndigoBuildHasher;
 use std::{
     collections::HashMap,
     fs,

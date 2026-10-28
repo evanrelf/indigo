@@ -1,4 +1,3 @@
-pub mod attributes;
 pub mod buffer;
 pub mod client;
 pub mod cursor;
@@ -7,10 +6,12 @@ pub mod history;
 pub mod mode;
 pub mod prelude;
 pub mod range;
-pub mod rope;
 pub mod selection;
 pub mod server;
 pub mod session;
 pub mod syntax;
 pub mod text;
 pub mod window;
+
+pub type IndigoHasher = std::hash::DefaultHasher;
+pub type IndigoBuildHasher = std::hash::BuildHasherDefault<IndigoHasher>;

@@ -10,6 +10,8 @@ by Kakoune and CodeMirror.
 - `indigo-kernel`: part of the functional core, in flux. A more ambitious and
   theoretically sound rethinking of the architecture embracing eventual
   consistency.
+- `indigo-text`: low-level text primitives (edits, graphemes, display width,
+  rope extensions).
 - `indigo`: interactive TUI / primary imperative shell.
 - `indigo-cli`: non-interactive CLI / tiny imperative shell, currently for
   debugging and headless driving by coding agents.
@@ -36,7 +38,8 @@ by Kakoune and CodeMirror.
 - Some crates may disable tests when feature flags aren't enabled. Err towards
   running `cargo test` from the root of the repo to include as much as possible.
 - Prefer writing property tests with Hegel over unit tests. Read the tests in
-  `indigo_kernel`'s `edit` and `merge` modules for good examples.
+  `indigo_text`'s `edit` module and `indigo_kernel`'s `merge` module for good
+  examples.
 - Run `./bin/run-agent` with `rex` (or `tmux` as fallback) to control the TUI.
 - Run `./bin/run-cli` to control the headless CLI. Prefer this over the TUI if
   you don't need interactive control, or aren't making UI changes. Read

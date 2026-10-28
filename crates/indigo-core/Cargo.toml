@@ -12,12 +12,10 @@ anyhow = { workspace = true }
 arbitrary = { workspace = true, optional = true }
 bpaf = { workspace = true }
 camino = { workspace = true }
-indigo-kernel = { workspace = true }
 indigo-key = { workspace = true }
+indigo-text = { workspace = true }
 indigo-wrap = { workspace = true }
-memchr = { workspace = true }
 regex-cursor = { workspace = true }
-roaring = { workspace = true }
 ropey = { workspace = true }
 shell-words = { workspace = true }
 slotmap = { workspace = true }
@@ -25,8 +23,6 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 tree-sitter = { workspace = true }
 tree-sitter-rust = { workspace = true, optional = true }
-unicode-segmentation = { workspace = true }
-unicode-width = { workspace = true }
 
 [dev-dependencies]
 divan = { workspace = true }

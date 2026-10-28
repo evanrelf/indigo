@@ -1,4 +1,4 @@
-use indigo_kernel::{
+use crate::{
     display_width::DisplayWidth as _,
     grapheme::{
         Graphemes, ceil_grapheme_boundary, floor_grapheme_boundary, is_grapheme_boundary,
@@ -339,7 +339,7 @@ pub fn memchr<'a>(needle: u8, haystacks: impl IntoIterator<Item = &'a [u8]>) -> 
 /// example:
 ///
 /// ```rust
-/// # use indigo_core::rope::memrchr;
+/// # use indigo_text::rope::memrchr;
 /// let haystacks = ["123", "456"].iter().rev().map(|s| s.as_bytes());
 /// assert_eq!(memrchr(b'4', haystacks), Some(2));
 /// ```

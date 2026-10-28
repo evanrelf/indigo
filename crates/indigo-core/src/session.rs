@@ -1,6 +1,8 @@
-use crate::buffer::{Buffer, BufferKey};
+use crate::{
+    IndigoBuildHasher,
+    buffer::{Buffer, BufferKey},
+};
 use camino::Utf8PathBuf;
-use indigo_kernel::IndigoBuildHasher;
 use slotmap::SlotMap;
 use std::collections::HashMap;
 use thiserror::Error;

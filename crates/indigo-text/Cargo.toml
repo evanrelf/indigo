@@ -1,0 +1,24 @@
+[package]
+name = "indigo-text"
+license = "MPL-2.0"
+edition = "2024"
+
+[dependencies]
+memchr = { workspace = true }
+regex-cursor = { workspace = true }
+roaring = { workspace = true }
+ropey = { workspace = true }
+unicode-segmentation = { workspace = true }
+unicode-width = { workspace = true }
+
+[dev-dependencies]
+crop = { workspace = true }
+divan = { workspace = true }
+hegeltest = { workspace = true }
+
+[lints]
+workspace = true
+
+[[bench]]
+name = "display_width"
+harness = false

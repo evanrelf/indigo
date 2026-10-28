@@ -1,5 +1,5 @@
 #[doc(inline)]
-pub use indigo_kernel::{display_width::DisplayWidth, edit::Edit};
+pub use indigo_text::{display_width::DisplayWidth, edit::Edit, rope::RopeExt};
 
 #[doc(inline)]
 pub use indigo_key::{Key, KeyCode, KeyModifiers, Keys};
@@ -11,7 +11,6 @@ pub use crate::{
     cursor::{Cursor, CursorEdit},
     mode::Mode,
     range::{Range, RangeEdit},
-    rope::RopeExt,
     server::Server,
     session::Session,
     text::Text,

@@ -792,6 +792,7 @@ dependencies = [
  "clap",
  "indigo-core",
  "indigo-key",
+ "indigo-text",
  "libc",
  "pathdiff",
  "ratatui",
@@ -822,12 +823,10 @@ dependencies = [
  "camino",
  "divan",
  "hegeltest",
- "indigo-kernel",
  "indigo-key",
+ "indigo-text",
  "indigo-wrap",
- "memchr",
  "regex-cursor",
- "roaring",
  "ropey",
  "shell-words",
  "slotmap",
@@ -835,8 +834,6 @@ dependencies = [
  "tracing",
  "tree-sitter",
  "tree-sitter-rust",
- "unicode-segmentation",
- "unicode-width",
 ]
 
 [[package]]
@@ -845,6 +842,7 @@ version = "0.0.0"
 dependencies = [
  "arbitrary",
  "indigo-core",
+ "indigo-text",
  "libfuzzer-sys",
  "ropey",
 ]
@@ -855,14 +853,11 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "arrayvec",
- "crop",
- "divan",
  "hegeltest",
  "hegeltest-c",
  "imbl",
+ "indigo-text",
  "ropey",
- "unicode-segmentation",
- "unicode-width",
 ]
 
 [[package]]
@@ -886,6 +881,21 @@ dependencies = [
  "log",
  "tinyvec",
  "winnow",
+]
+
+[[package]]
+name = "indigo-text"
+version = "0.0.0"
+dependencies = [
+ "crop",
+ "divan",
+ "hegeltest",
+ "memchr",
+ "regex-cursor",
+ "roaring",
+ "ropey",
+ "unicode-segmentation",
+ "unicode-width",
 ]
 
 [[package]]

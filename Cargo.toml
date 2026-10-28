@@ -22,6 +22,7 @@ indigo-core = { path = "crates/indigo-core/" }
 indigo-key = { path = "crates/indigo-key/" }
 indigo-kernel = { path = "crates/indigo-kernel/" }
 indigo-term = { path = "crates/indigo-term/" }
+indigo-text = { path = "crates/indigo-text/" }
 indigo-tui = { path = "crates/indigo-tui/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }
 libc = "0.2.189"

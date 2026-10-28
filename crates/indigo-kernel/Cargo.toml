@@ -7,19 +7,12 @@ edition = "2024"
 anyhow = { workspace = true }
 arrayvec = { workspace = true }
 imbl = { workspace = true }
+indigo-text = { workspace = true }
 ropey = { workspace = true }
-unicode-segmentation = { workspace = true }
-unicode-width = { workspace = true }
 
 [dev-dependencies]
-crop = { workspace = true }
-divan = { workspace = true }
 hegeltest = { workspace = true }
 hegeltest-c = { workspace = true } # TODO: upstream bug workaround :(
 
 [lints]
 workspace = true
-
-[[bench]]
-name = "display_width"
-harness = false

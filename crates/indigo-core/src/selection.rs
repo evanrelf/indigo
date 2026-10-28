@@ -1,10 +1,12 @@
 use crate::{
     cursor::CursorState,
     range::{Range, RangeEdit, RangeMove, RangeSnapshot, RangeState},
-    rope::{LINE_TYPE, RegexCursorInput, RopeExt as _},
     text::Text,
 };
-use indigo_kernel::edit::{self, Edit};
+use indigo_text::{
+    edit::{self, Edit},
+    rope::{LINE_TYPE, RegexCursorInput, RopeExt as _},
+};
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use regex_cursor::engines::meta::Regex;
 use ropey::{Rope, RopeSlice};
