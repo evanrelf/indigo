@@ -2,7 +2,7 @@
 #![allow(clippy::uninlined_format_args)]
 #![allow(clippy::wildcard_imports)]
 
-use indigo_term::{KeyboardEnhancementFlags as KEF, *};
+use crate::{KeyboardEnhancementFlags as KEF, *};
 use std::{
     collections::VecDeque,
     io::{self, Write},

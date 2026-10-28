@@ -17,9 +17,8 @@ by Kakoune and CodeMirror.
   debugging and headless driving by coding agents.
 - `indigo-wrap`: higher-kinded types emulation / mutability generics, powers the
   `{Cursor,Window,etc}View` pattern pervasive in `indigo-core`.
-- `indigo-term`: low-level terminal manipulation library, currently unused and
+- `indigo-term`: terminal manipulation library, currently unused and
   unfinished.
-- `indigo-tui`: high-level terminal UI library, currently unused and unfinished.
 
 ## Code style
 

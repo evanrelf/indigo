@@ -1,3 +1,3 @@
 # indigo-term
 
-A low-level terminal manipulation library.
+A terminal manipulation library.
