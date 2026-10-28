@@ -787,6 +787,7 @@ name = "indigo"
 version = "0.0.0"
 dependencies = [
  "anyhow",
+ "arrayvec",
  "camino",
  "clap",
  "indigo-core",

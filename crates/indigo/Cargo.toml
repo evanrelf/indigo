@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = { workspace = true }
+arrayvec = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
 indigo-core = { workspace = true, features = ["language-rust"] }

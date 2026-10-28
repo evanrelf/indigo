@@ -1,4 +1,5 @@
 use anyhow::Context as _;
+use arrayvec::ArrayString;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use indigo::{
@@ -24,7 +25,9 @@ use ratatui::{
 use std::{
     borrow::Cow,
     cmp::{max, min},
-    env, fs,
+    env,
+    fmt::Write as _,
+    fs,
     process::ExitCode,
     sync::Arc,
 };
@@ -381,10 +384,19 @@ fn render_line_numbers(client: &Client, area: Rect, surface: &mut Surface) {
             break;
         }
 
-        Line::raw(format!("{line_number} "))
-            .fg(THEME.line_numbers_fg)
-            .right_aligned()
-            .render(row, surface);
+        let mut label = ArrayString::<24>::new();
+        write!(label, "{line_number} ").expect("usize and a space fit in 24 bytes");
+
+        let width = u16::try_from(label.len()).expect("Label width is less than u16::MAX");
+        let x = max(row.x, row.right().saturating_sub(width));
+
+        surface.set_stringn(
+            x,
+            row.y,
+            label,
+            usize::from(row.width),
+            Style::new().fg(THEME.line_numbers_fg),
+        );
     }
 }
 
