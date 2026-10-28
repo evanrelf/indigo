@@ -7,7 +7,8 @@ use ratatui::{
             KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
         },
         terminal::{
-            Clear, ClearType, EnterAlternateScreen, enable_raw_mode, supports_keyboard_enhancement,
+            Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode,
+            enable_raw_mode, supports_keyboard_enhancement,
         },
     },
     prelude::CrosstermBackend,
@@ -26,6 +27,12 @@ pub fn init() -> anyhow::Result<TerminalGuard> {
         ratatui::restore();
         hook(info);
     }));
+    enter()?;
+    let terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
+    Ok(TerminalGuard(terminal))
+}
+
+fn enter() -> anyhow::Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     stdout.queue(EnterAlternateScreen)?;
@@ -41,8 +48,18 @@ pub fn init() -> anyhow::Result<TerminalGuard> {
         ))?;
     }
     stdout.flush()?;
-    let terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
-    Ok(TerminalGuard(terminal))
+    Ok(())
+}
+
+fn leave() {
+    let mut stdout = io::stdout();
+    let _ = stdout.queue(PopKeyboardEnhancementFlags);
+    let _ = stdout.queue(DisableBracketedPaste);
+    let _ = stdout.queue(DisableMouseCapture);
+    let _ = stdout.flush();
+    let _ = disable_raw_mode();
+    let _ = stdout.queue(LeaveAlternateScreen);
+    let _ = stdout.flush();
 }
 
 impl Deref for TerminalGuard {
@@ -60,11 +77,6 @@ impl DerefMut for TerminalGuard {
 
 impl Drop for TerminalGuard {
     fn drop(&mut self) {
-        let mut stdout = io::stdout();
-        let _ = stdout.queue(PopKeyboardEnhancementFlags);
-        let _ = stdout.queue(DisableBracketedPaste);
-        let _ = stdout.queue(DisableMouseCapture);
-        let _ = stdout.flush();
-        let _ = ratatui::try_restore();
+        leave();
     }
 }
