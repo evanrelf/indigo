@@ -171,17 +171,12 @@ pub fn line_index_to_area(
     // TODO(horizontal_scroll)
     area: Rect,
 ) -> Option<Rect> {
-    if vertical_scroll > line_index {
+    if !(vertical_scroll..vertical_scroll + usize::from(area.height)).contains(&line_index) {
         return None;
     }
 
     let y = area.y
-        + u16::try_from(line_index - vertical_scroll)
-            .expect("Terminal height is less than u16::MAX");
-
-    if !(area.top()..area.bottom()).contains(&y) {
-        return None;
-    }
+        + u16::try_from(line_index - vertical_scroll).expect("Line is within the area's height");
 
     // TODO(horizontal_scroll)
     let x = area.x;
@@ -220,17 +215,12 @@ pub fn byte_index_to_area(
 
     let line_index = rope.byte_to_line_idx(byte_index, LINE_TYPE);
 
-    if vertical_scroll > line_index {
+    if !(vertical_scroll..vertical_scroll + usize::from(area.height)).contains(&line_index) {
         return None;
     }
 
     let y = area.y
-        + u16::try_from(line_index - vertical_scroll)
-            .expect("Terminal height is less than u16::MAX");
-
-    if !(area.top()..area.bottom()).contains(&y) {
-        return None;
-    }
+        + u16::try_from(line_index - vertical_scroll).expect("Line is within the area's height");
 
     let line_byte_index = rope.line_to_byte_idx(line_index, LINE_TYPE);
 
