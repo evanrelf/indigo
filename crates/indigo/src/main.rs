@@ -360,12 +360,12 @@ fn render_prompt(client: &Client, mut area: Rect, surface: &mut Surface) {
                     .bg(THEME.primary_cursor_bg),
             );
         }
-    } else if let Some(message) = client.message.as_ref() {
+    } else if let Some(message) = client.message() {
         match message {
-            Ok(message) => Line::raw(&**message)
+            Ok(message) => Line::raw(message)
                 .bg(THEME.status_bar_bg)
                 .render(area, surface),
-            Err(message) => Line::raw(&**message).bg(THEME.error_bg).render(area, surface),
+            Err(message) => Line::raw(message).bg(THEME.error_bg).render(area, surface),
         }
     }
 }

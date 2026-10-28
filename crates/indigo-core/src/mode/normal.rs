@@ -12,7 +12,7 @@ use crate::{
     },
 };
 use regex_cursor::engines::meta::Regex;
-use std::{borrow::Cow, cmp::min, num::NonZeroUsize, sync::LazyLock};
+use std::{cmp::min, num::NonZeroUsize, sync::LazyLock};
 
 #[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
@@ -482,7 +482,7 @@ fn collapse(client: &mut ClientMut) {
 
 fn delete(client: &mut ClientMut) {
     if client.focused_buffer().text.readonly {
-        client.message = Some(Err(Cow::Borrowed("Buffer is readonly")));
+        client.set_error("Buffer is readonly");
         client.count = None;
         return;
     }
@@ -506,7 +506,7 @@ fn yank(client: &mut ClientMut) {
 fn paste(client: &mut ClientMut, paste_mode: PasteMode) {
     let count = client.count.take().unwrap_or(NonZeroUsize::MIN).get();
     if client.focused_buffer().text.readonly {
-        client.message = Some(Err(Cow::Borrowed("Buffer is readonly")));
+        client.set_error("Buffer is readonly");
         return;
     }
     let count = if paste_mode == PasteMode::Replace {
@@ -530,7 +530,7 @@ fn paste(client: &mut ClientMut, paste_mode: PasteMode) {
 fn paste_all(client: &mut ClientMut, paste_mode: PasteMode) {
     client.count = None;
     if client.focused_buffer().text.readonly {
-        client.message = Some(Err(Cow::Borrowed("Buffer is readonly")));
+        client.set_error("Buffer is readonly");
         return;
     }
     let values = client
@@ -540,7 +540,7 @@ fn paste_all(client: &mut ClientMut, paste_mode: PasteMode) {
         .cloned()
         .unwrap_or_default();
     if values.is_empty() {
-        client.message = Some(Err(Cow::Borrowed("Nothing to paste")));
+        client.set_error("Nothing to paste");
         return;
     }
     let mut window = client.focused_window_mut();
@@ -550,7 +550,7 @@ fn paste_all(client: &mut ClientMut, paste_mode: PasteMode) {
 
 fn replace(client: &mut ClientMut, byte: u8) {
     if client.focused_buffer().text.readonly {
-        client.message = Some(Err(Cow::Borrowed("Buffer is readonly")));
+        client.set_error("Buffer is readonly");
         client.count = None;
         return;
     }
@@ -563,7 +563,7 @@ fn replace(client: &mut ClientMut, byte: u8) {
 fn undo(client: &mut ClientMut) {
     let count = client.count.take().unwrap_or(NonZeroUsize::MIN).get();
     if client.focused_buffer().text.readonly {
-        client.message = Some(Err(Cow::Borrowed("Buffer is readonly")));
+        client.set_error("Buffer is readonly");
         return;
     }
     let mut window = client.focused_window_mut();
@@ -578,7 +578,7 @@ fn undo(client: &mut ClientMut) {
 fn redo(client: &mut ClientMut) {
     let count = client.count.take().unwrap_or(NonZeroUsize::MIN).get();
     if client.focused_buffer().text.readonly {
-        client.message = Some(Err(Cow::Borrowed("Buffer is readonly")));
+        client.set_error("Buffer is readonly");
         return;
     }
     let mut window = client.focused_window_mut();
@@ -617,7 +617,7 @@ fn split_into_lines(client: &mut ClientMut) {
 fn select_regex(client: &mut ClientMut) {
     prompt::enter(client, "select", |client, regex_str| {
         if regex_str.is_empty() {
-            client.message = Some(Err(Cow::Borrowed("Nothing selected")));
+            client.set_error("Nothing selected");
             client.count = None;
             return;
         }
@@ -634,10 +634,10 @@ fn select_regex(client: &mut ClientMut) {
                 .selection_move()
                 .select_regex(&regex);
             if !matched {
-                client.message = Some(Err(Cow::Borrowed("Nothing selected")));
+                client.set_error("Nothing selected");
             }
         } else {
-            client.message = Some(Err(Cow::Borrowed("Invalid regex")));
+            client.set_error("Invalid regex");
         }
         client.count = None;
     });
@@ -645,7 +645,7 @@ fn select_regex(client: &mut ClientMut) {
 
 fn insert_after_head(client: &mut ClientMut) {
     if client.focused_buffer().text.readonly {
-        client.message = Some(Err(Cow::Borrowed("Buffer is readonly")));
+        client.set_error("Buffer is readonly");
         client.count = None;
         return;
     }
@@ -660,7 +660,7 @@ fn insert_after_head(client: &mut ClientMut) {
 
 fn insert_at_line_non_blank_start(client: &mut ClientMut) {
     if client.focused_buffer().text.readonly {
-        client.message = Some(Err(Cow::Borrowed("Buffer is readonly")));
+        client.set_error("Buffer is readonly");
         client.count = None;
         return;
     }
@@ -675,7 +675,7 @@ fn insert_at_line_non_blank_start(client: &mut ClientMut) {
 
 fn insert_at_line_end(client: &mut ClientMut) {
     if client.focused_buffer().text.readonly {
-        client.message = Some(Err(Cow::Borrowed("Buffer is readonly")));
+        client.set_error("Buffer is readonly");
         client.count = None;
         return;
     }
@@ -692,7 +692,7 @@ fn insert_line_above(client: &mut ClientMut) {
     // TODO: Insert multiple cursors (like Kakoune) when count > 1
     let count = client.count.take().unwrap_or(NonZeroUsize::MIN).get();
     if client.focused_buffer().text.readonly {
-        client.message = Some(Err(Cow::Borrowed("Buffer is readonly")));
+        client.set_error("Buffer is readonly");
         return;
     }
     let mut window = client.focused_window_mut();
@@ -712,7 +712,7 @@ fn insert_line_below(client: &mut ClientMut) {
     // TODO: Insert multiple cursors (like Kakoune) when count > 1
     let count = client.count.take().unwrap_or(NonZeroUsize::MIN).get();
     if client.focused_buffer().text.readonly {
-        client.message = Some(Err(Cow::Borrowed("Buffer is readonly")));
+        client.set_error("Buffer is readonly");
         return;
     }
     let mut window = client.focused_window_mut();
@@ -730,7 +730,7 @@ fn insert_line_below(client: &mut ClientMut) {
 fn add_line_above(client: &mut ClientMut) {
     let count = client.count.take().unwrap_or(NonZeroUsize::MIN).get();
     if client.focused_buffer().text.readonly {
-        client.message = Some(Err(Cow::Borrowed("Buffer is readonly")));
+        client.set_error("Buffer is readonly");
         return;
     }
     let mut window = client.focused_window_mut();
@@ -750,7 +750,7 @@ fn add_line_above(client: &mut ClientMut) {
 fn add_line_below(client: &mut ClientMut) {
     let count = client.count.take().unwrap_or(NonZeroUsize::MIN).get();
     if client.focused_buffer().text.readonly {
-        client.message = Some(Err(Cow::Borrowed("Buffer is readonly")));
+        client.set_error("Buffer is readonly");
         return;
     }
     let mut window = client.focused_window_mut();

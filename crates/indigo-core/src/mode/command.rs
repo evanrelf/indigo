@@ -1,7 +1,6 @@
 use crate::{buffer::Buffer, client::ClientMut, mode::prompt, window::WindowState};
 use anyhow::anyhow;
 use camino::Utf8PathBuf;
-use std::borrow::Cow;
 
 #[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
@@ -42,7 +41,7 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
 pub fn enter_command_mode(client: &mut ClientMut) {
     prompt::enter(client, "", |client, input| match parse_command(input) {
         Ok(command) => handle_command(client, &command),
-        Err(error) => client.message = Some(Err(Cow::Owned(error.to_string()))),
+        Err(error) => client.set_error(error.to_string()),
     });
 }
 
@@ -128,9 +127,9 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
         Command::Nop => {}
         Command::Echo { error, message } => {
             if *error {
-                client.message = Some(Err(Cow::Owned(message.join(" "))));
+                client.set_error(message.join(" "));
             } else {
-                client.message = Some(Ok(Cow::Owned(message.join(" "))));
+                client.set_message(message.join(" "));
             }
         }
         Command::Edit { path } => {
@@ -146,7 +145,7 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
                 // TODO: Delete previous window. It's no longer focused, so (at the time of writing)
                 // that means it's not displayed, it's just hanging out unused in memory.
             } else {
-                client.message = Some(Err(Cow::Owned(format!("Failed to open {path}"))));
+                client.set_error(format!("Failed to open {path}"));
             }
         }
         Command::Write { path } => {
@@ -157,7 +156,7 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
                 client.focused_buffer_mut().save(fs)
             };
             if result.is_err() {
-                client.message = Some(Err(Cow::Borrowed("Failed to save")));
+                client.set_error("Failed to save");
             }
         }
         Command::Quit { exit_code } => {
@@ -173,7 +172,8 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
                 }
             }
             if let Some(modified) = modified {
-                client.message = Some(Err(Cow::Owned(format!("Unsaved changes in {modified}"))));
+                let error = format!("Unsaved changes in {modified}");
+                client.set_error(error);
             } else {
                 client.exit(exit_code.unwrap_or(0));
             }
@@ -186,16 +186,16 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
             if client.focused_buffer_mut().save(fs).is_ok() {
                 client.exit(exit_code.unwrap_or(0));
             } else {
-                client.message = Some(Err(Cow::Borrowed("Failed to save")));
+                client.set_error("Failed to save");
             }
         }
         Command::Readonly => {
             let new_readonly = !client.focused_buffer().text.readonly;
             client.focused_buffer_mut().text.readonly = new_readonly;
             if new_readonly {
-                client.message = Some(Ok(Cow::Borrowed("Buffer is now readonly")));
+                client.set_message("Buffer is now readonly");
             } else {
-                client.message = Some(Ok(Cow::Borrowed("Buffer is no longer readonly")));
+                client.set_message("Buffer is no longer readonly");
             }
         }
         Command::Panic => panic!(),

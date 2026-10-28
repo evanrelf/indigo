@@ -61,7 +61,7 @@ pub fn handle_event(server: &mut Server, areas: Areas, event: TerminalEvent) -> 
     };
 
     if dismiss_message {
-        server.client_mut().message = None;
+        server.client_mut().clear_message();
     }
 
     if let Ok(event) = event_t2i(&event) {

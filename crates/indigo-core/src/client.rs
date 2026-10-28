@@ -49,7 +49,7 @@ pub struct ClientState {
     pub mode: Mode,
     pub count: Option<NonZeroUsize>,
     pub pending_keys: Vec<Key>,
-    pub message: Option<Result<Cow<'static, str>, Cow<'static, str>>>,
+    message: Option<Result<Cow<'static, str>, Cow<'static, str>>>,
     pub exit_code: Option<ExitCode>,
 }
 
@@ -69,6 +69,27 @@ impl ClientState {
             message: None,
             exit_code: None,
         }
+    }
+
+    #[must_use]
+    pub fn message(&self) -> Option<Result<&str, &str>> {
+        match &self.message {
+            Some(Ok(message)) => Some(Ok(message)),
+            Some(Err(message)) => Some(Err(message)),
+            None => None,
+        }
+    }
+
+    pub fn set_message(&mut self, message: impl Into<Cow<'static, str>>) {
+        self.message = Some(Ok(message.into()));
+    }
+
+    pub fn set_error(&mut self, message: impl Into<Cow<'static, str>>) {
+        self.message = Some(Err(message.into()));
+    }
+
+    pub fn clear_message(&mut self) {
+        self.message = None;
     }
 
     /// Doesn't actually terminate the process, just records the desired exit code.
