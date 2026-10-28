@@ -9,6 +9,7 @@ use crate::{
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use slotmap::SlotMap;
 use std::{
+    borrow::Cow,
     num::NonZeroUsize,
     ops::{Deref, DerefMut},
     process::ExitCode,
@@ -48,7 +49,7 @@ pub struct ClientState {
     pub mode: Mode,
     pub count: Option<NonZeroUsize>,
     pub pending_keys: Vec<Key>,
-    pub message: Option<Result<String, String>>,
+    pub message: Option<Result<Cow<'static, str>, Cow<'static, str>>>,
     pub exit_code: Option<ExitCode>,
 }
 

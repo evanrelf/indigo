@@ -5,7 +5,7 @@ use crate::{
     keymap::{Keymap, KeymapResult, Mapping, keymap},
     mode::{Mode, normal},
 };
-use std::sync::LazyLock;
+use std::{borrow::Cow, sync::LazyLock};
 
 #[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
@@ -68,7 +68,7 @@ pub fn handle_keys(client: &mut ClientMut) -> bool {
 
 pub fn enter(client: &mut ClientMut) {
     if client.focused_buffer().text.readonly {
-        client.message = Some(Err(String::from("Buffer is readonly")));
+        client.message = Some(Err(Cow::Borrowed("Buffer is readonly")));
         client.count = None;
         return;
     }
