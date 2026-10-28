@@ -622,7 +622,22 @@ fn render_selection(client: &Client, area: Rect, surface: &mut Surface) {
 
     let primary_index = selection.primary_range;
 
-    selection.for_each(|i, range| {
+    let visible_lines = vertical_scroll..vertical_scroll + usize::from(area.height);
+
+    let visible_ranges = {
+        // Assumes ranges don't nest, so ends are sorted like starts.
+        let start = selection.ranges.partition_point(|range| {
+            rope.byte_to_line_idx(range.end().byte_index, LINE_TYPE) < visible_lines.start
+        });
+        let end = selection.ranges.partition_point(|range| {
+            rope.byte_to_line_idx(range.start().byte_index, LINE_TYPE) < visible_lines.end
+        });
+        start..end
+    };
+
+    for i in visible_ranges {
+        let range = selection.get(i).unwrap();
+
         let (range_bg, cursor_fg, cursor_bg) = if i == primary_index {
             (
                 THEME.primary_range_bg,
@@ -649,7 +664,10 @@ fn render_selection(client: &Client, area: Rect, surface: &mut Surface) {
 
         let line_area = |line_index| line_index_to_area(line_index, rope, vertical_scroll, area);
 
-        for (line_index, mut line_rect) in (start_line..=end_line)
+        let visible_start_line = max(start_line, visible_lines.start);
+        let visible_end_line = min(end_line + 1, visible_lines.end);
+
+        for (line_index, mut line_rect) in (visible_start_line..visible_end_line)
             .filter_map(|line_index| line_area(line_index).map(|rect| (line_index, rect)))
         {
             if line_index == start_line {
@@ -678,5 +696,5 @@ fn render_selection(client: &Client, area: Rect, surface: &mut Surface) {
         if let Some(rect) = grapheme_area(head) {
             surface.set_style(rect, Style::default().fg(cursor_fg).bg(cursor_bg));
         }
-    });
+    }
 }
