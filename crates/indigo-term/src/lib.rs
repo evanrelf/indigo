@@ -109,3 +109,18 @@ pub const SYNC_UPDATE_MODE: u16 = 2026;
 pub const SYNC_UPDATE_QUERY: ModeQuery = ModeQuery(SYNC_UPDATE_MODE);
 pub const SYNC_UPDATE_SET: ModeSet = ModeSet(SYNC_UPDATE_MODE);
 pub const SYNC_UPDATE_RESET: ModeReset = ModeReset(SYNC_UPDATE_MODE);
+
+// Color scheme
+// https://github.com/contour-terminal/contour/blob/master/docs/vt-extensions/color-palette-update-notifications.md
+
+#[derive(Debug, PartialEq)]
+pub enum ColorScheme {
+    Dark,
+    Light,
+}
+
+pub const COLOR_SCHEME_QUERY: &str = "\x1b[?996n";
+pub const COLOR_SCHEME_UPDATES_MODE: u16 = 2031;
+pub const COLOR_SCHEME_UPDATES_QUERY: ModeQuery = ModeQuery(COLOR_SCHEME_UPDATES_MODE);
+pub const COLOR_SCHEME_UPDATES_SET: ModeSet = ModeSet(COLOR_SCHEME_UPDATES_MODE);
+pub const COLOR_SCHEME_UPDATES_RESET: ModeReset = ModeReset(COLOR_SCHEME_UPDATES_MODE);

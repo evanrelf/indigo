@@ -1,5 +1,5 @@
 use crate::{
-    ModeSetting,
+    ColorScheme, ModeSetting,
     event::Event,
     key::{Key, KeyCode, KeyModifiers, KeyboardEnhancementFlags},
 };
@@ -25,6 +25,7 @@ fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
         in_band_resize,
         da1,
         decrpm,
+        color_scheme,
         kitty_key_u,
         kitty_key_letter,
         unknown_csi,
@@ -194,6 +195,19 @@ fn decrpm(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     Ok(Event::Decrpm { mode, setting })
 }
 
+fn color_scheme(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
+    "\x1b[?997;".void().parse_next(input)?;
+    let color_scheme = u8
+        .verify_map(|n| match n {
+            1 => Some(ColorScheme::Dark),
+            2 => Some(ColorScheme::Light),
+            _ => None,
+        })
+        .parse_next(input)?;
+    "n".void().parse_next(input)?;
+    Ok(Event::ColorScheme(color_scheme))
+}
+
 fn unknown_csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     "\x1b[".void().parse_next(input)?;
     let MyTinyVec(parameter_bytes) = repeat(0.., one_of(0x30..=0x3F)).parse_next(input)?;
@@ -343,6 +357,30 @@ mod tests {
             },
         ));
         assert_eq!(decrpm.parse_peek(Partial::new(input)), output);
+        assert_eq!(csi.parse_peek(Partial::new(input)), output);
+        assert_eq!(event.parse_peek(Partial::new(input)), output);
+    }
+
+    #[test]
+    fn parses_color_scheme_dark() {
+        let input = b"\x1b[?997;1n";
+        let output = Ok((
+            Partial::new(&b""[..]),
+            Event::ColorScheme(ColorScheme::Dark),
+        ));
+        assert_eq!(color_scheme.parse_peek(Partial::new(input)), output);
+        assert_eq!(csi.parse_peek(Partial::new(input)), output);
+        assert_eq!(event.parse_peek(Partial::new(input)), output);
+    }
+
+    #[test]
+    fn parses_color_scheme_light() {
+        let input = b"\x1b[?997;2n";
+        let output = Ok((
+            Partial::new(&b""[..]),
+            Event::ColorScheme(ColorScheme::Light),
+        ));
+        assert_eq!(color_scheme.parse_peek(Partial::new(input)), output);
         assert_eq!(csi.parse_peek(Partial::new(input)), output);
         assert_eq!(event.parse_peek(Partial::new(input)), output);
     }

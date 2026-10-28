@@ -1,5 +1,5 @@
 use crate::{
-    ModeSetting,
+    ColorScheme, ModeSetting,
     key::{Key, KeyboardEnhancementFlags},
 };
 use tinyvec::TinyVec;
@@ -28,6 +28,10 @@ pub enum Event {
         mode: u16,
         setting: ModeSetting,
     },
+    /// Color scheme report, sent in response to a query or when the color scheme changes
+    ///
+    /// <https://github.com/contour-terminal/contour/blob/master/docs/vt-extensions/color-palette-update-notifications.md>
+    ColorScheme(ColorScheme),
     /// Control Sequence Introducer
     ///
     /// <https://ghostty.org/docs/vt/concepts/sequences#csi>
