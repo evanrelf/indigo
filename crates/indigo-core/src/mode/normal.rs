@@ -84,6 +84,7 @@ pub enum Action {
     ScrollHalfPageDown,
     ScrollFullPageUp,
     ScrollFullPageDown,
+    Suspend,
 }
 
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -202,6 +203,8 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<c-d>" => vec![ScrollHalfPageDown], /// Scroll half page down
         "<c-b>" => vec![ScrollFullPageUp], /// Scroll page up
         "<c-f>" => vec![ScrollFullPageDown], /// Scroll page down
+
+        "<c-z>" => vec![Suspend], /// Suspend
     }
 });
 
@@ -282,6 +285,7 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
         Action::ScrollHalfPageDown => scroll_half_page_down(client),
         Action::ScrollFullPageUp => scroll_full_page_up(client),
         Action::ScrollFullPageDown => scroll_full_page_down(client),
+        Action::Suspend => client.suspend = true,
     }
 }
 

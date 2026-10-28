@@ -50,6 +50,7 @@ pub struct ClientState {
     pub count: Option<NonZeroUsize>,
     pub pending_keys: Vec<Key>,
     message: Option<Result<Cow<'static, str>, Cow<'static, str>>>,
+    pub suspend: bool,
     pub exit_code: Option<ExitCode>,
 }
 
@@ -67,6 +68,7 @@ impl ClientState {
             count: None,
             pending_keys: Vec::new(),
             message: None,
+            suspend: false,
             exit_code: None,
         }
     }
