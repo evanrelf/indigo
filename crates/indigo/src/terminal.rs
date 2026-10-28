@@ -27,7 +27,7 @@ static ENTERED: AtomicBool = AtomicBool::new(false);
 pub fn init() -> anyhow::Result<TerminalGuard> {
     let hook = panic::take_hook();
     panic::set_hook(Box::new(move |info| {
-        ratatui::restore();
+        leave();
         hook(info);
     }));
     enter()?;
