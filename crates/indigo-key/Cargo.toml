@@ -11,8 +11,10 @@ anyhow = { workspace = true }
 arbitrary = { workspace = true, optional = true }
 arrayvec = { workspace = true }
 bitflags = { workspace = true }
-clap = { workspace = true }
 winnow = { workspace = true }
+
+[dev-dependencies]
+clap = { workspace = true }
 
 [lints]
 workspace = true
