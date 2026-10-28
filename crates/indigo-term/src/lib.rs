@@ -1,4 +1,5 @@
 mod cursor;
+mod decoder;
 mod event;
 mod key;
 mod parser;
@@ -10,7 +11,8 @@ mod tty;
 use std::fmt::{self, Display};
 
 pub use crate::{
-    cursor::*, event::Event, key::*, reader::Reader, style::*, terminal::Terminal, tty::Tty,
+    cursor::*, decoder::Decoder, event::Event, key::*, reader::Reader, style::*,
+    terminal::Terminal, tty::Tty,
 };
 
 // Clearing
