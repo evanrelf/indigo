@@ -454,8 +454,8 @@ Claude: `Bias` picks a side of inserted text. A mapped position sitting exactly 
 point stays before the new text (`Backward`) or moves after it (`Forward`). Rebasing asks the same
 question of its only ambiguity — both edits inserting at the same point: `Backward` puts this edit's
 text first, `Forward` the other's, and rebasing each of two edits over the other with opposite
-biases produces the same document either way. The kernel always rebases drafts with `Forward`, so
-committed text wins ties.
+biases produces the same document either way. `indigo-kernel` always rebases drafts with
+`Forward`, so committed text wins ties.
 
 Replacements are the subtle case: canonical form makes delete-then-insert mean "the new text
 occupies the replaced range", so a concurrent insert at the range's start edge lands before the
