@@ -1,21 +1,34 @@
-use ratatui::crossterm::{
-    QueueableCommand as _,
-    event::{
-        DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
-        KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+use ratatui::{
+    Terminal,
+    crossterm::{
+        QueueableCommand as _,
+        event::{
+            DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
+            KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+        },
+        terminal::{
+            Clear, ClearType, EnterAlternateScreen, enable_raw_mode, supports_keyboard_enhancement,
+        },
     },
-    terminal::{Clear, ClearType, supports_keyboard_enhancement},
+    prelude::CrosstermBackend,
 };
 use std::{
     io::{self, Write as _},
     ops::{Deref, DerefMut},
+    panic,
 };
 
 pub struct TerminalGuard(pub ratatui::DefaultTerminal);
 
 pub fn init() -> anyhow::Result<TerminalGuard> {
-    let terminal = ratatui::init();
+    let hook = panic::take_hook();
+    panic::set_hook(Box::new(move |info| {
+        ratatui::restore();
+        hook(info);
+    }));
+    enable_raw_mode()?;
     let mut stdout = io::stdout();
+    stdout.queue(EnterAlternateScreen)?;
     stdout.queue(Clear(ClearType::All))?;
     stdout.queue(EnableMouseCapture)?;
     stdout.queue(EnableBracketedPaste)?;
@@ -28,6 +41,7 @@ pub fn init() -> anyhow::Result<TerminalGuard> {
         ))?;
     }
     stdout.flush()?;
+    let terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
     Ok(TerminalGuard(terminal))
 }
 
