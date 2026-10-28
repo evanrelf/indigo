@@ -791,6 +791,7 @@ dependencies = [
  "camino",
  "clap",
  "indigo-core",
+ "libc",
  "pathdiff",
  "ratatui",
  "sigpipe",

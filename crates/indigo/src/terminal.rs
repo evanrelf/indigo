@@ -35,6 +35,20 @@ pub fn init() -> anyhow::Result<TerminalGuard> {
     Ok(TerminalGuard(terminal))
 }
 
+pub fn suspend(terminal: &mut TerminalGuard) -> anyhow::Result<()> {
+    leave();
+    // SAFETY: `raise` has no preconditions beyond receiving a valid signal number.
+    #[expect(unsafe_code)]
+    unsafe {
+        libc::raise(libc::SIGTSTP);
+    }
+    // Execution resumes here once the process is continued (e.g. with `fg`).
+    enter()?;
+    // `enter` cleared the screen, so Ratatui's previous frame is stale. Force a full redraw.
+    terminal.clear()?;
+    Ok(())
+}
+
 fn enter() -> anyhow::Result<()> {
     ENTERED.store(true, Ordering::Relaxed);
     enable_raw_mode()?;
