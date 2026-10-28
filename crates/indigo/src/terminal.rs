@@ -17,9 +17,12 @@ use std::{
     io::{self, Write as _},
     ops::{Deref, DerefMut},
     panic,
+    sync::atomic::{AtomicBool, Ordering},
 };
 
 pub struct TerminalGuard(pub ratatui::DefaultTerminal);
+
+static ENTERED: AtomicBool = AtomicBool::new(false);
 
 pub fn init() -> anyhow::Result<TerminalGuard> {
     let hook = panic::take_hook();
@@ -33,6 +36,7 @@ pub fn init() -> anyhow::Result<TerminalGuard> {
 }
 
 fn enter() -> anyhow::Result<()> {
+    ENTERED.store(true, Ordering::Relaxed);
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     stdout.queue(EnterAlternateScreen)?;
@@ -52,6 +56,9 @@ fn enter() -> anyhow::Result<()> {
 }
 
 fn leave() {
+    if !ENTERED.swap(false, Ordering::Relaxed) {
+        return;
+    }
     let mut stdout = io::stdout();
     let _ = stdout.queue(PopKeyboardEnhancementFlags);
     let _ = stdout.queue(DisableBracketedPaste);
