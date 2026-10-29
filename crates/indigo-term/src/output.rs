@@ -174,6 +174,14 @@ impl Display for ModeReset {
 
 pub const DA1_QUERY: &str = "\x1b[c";
 
+// Alternate screen
+// https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-The-Alternate-Screen-Buffer
+
+pub const ALTERNATE_SCREEN_MODE: u16 = 1049;
+pub const ALTERNATE_SCREEN_QUERY: ModeQuery = ModeQuery(ALTERNATE_SCREEN_MODE);
+pub const ALTERNATE_SCREEN_SET: ModeSet = ModeSet(ALTERNATE_SCREEN_MODE);
+pub const ALTERNATE_SCREEN_RESET: ModeReset = ModeReset(ALTERNATE_SCREEN_MODE);
+
 // Bracketed paste
 // https://en.wikipedia.org/wiki/Bracketed-paste
 

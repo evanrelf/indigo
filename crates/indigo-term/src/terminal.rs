@@ -12,10 +12,17 @@ use std::{
     io::{self, Write},
 };
 
+// NOTE: All these flags must be enabled to get full keyboard functionality, since the raw/legacy
+// keys are intentionally not supported.
+const KEYBOARD_FLAGS: KeyboardEnhancementFlags = KEF::DISAMBIGUATE
+    .union(KEF::REPORT_EVENTS)
+    .union(KEF::REPORT_ALL_KEYS);
+
 pub struct Terminal {
     tty: Tty,
     reader: Reader,
     events: VecDeque<Event>,
+    alternate_screen: bool,
 }
 
 impl Terminal {
@@ -24,6 +31,7 @@ impl Terminal {
             tty: Tty::init()?,
             reader: Reader::new(),
             events: VecDeque::new(),
+            alternate_screen: false,
         };
 
         this.tty.enable_raw_mode()?;
@@ -44,15 +52,7 @@ impl Terminal {
             drop(this);
             panic!("terminal does not support kitty keyboard protocol");
         }
-        write!(
-            this.tty,
-            "{}",
-            // NOTE: All these flags must be enabled to get full keyboard functionality, since the
-            // raw/legacy keys are intentionally not supported.
-            KeyboardEnhancementFlagsPush(
-                KEF::DISAMBIGUATE | KEF::REPORT_EVENTS | KEF::REPORT_ALL_KEYS
-            )
-        )?;
+        write!(this.tty, "{}", KeyboardEnhancementFlagsPush(KEYBOARD_FLAGS))?;
 
         if !this.enable_mode(BRACKETED_PASTE_MODE)? {
             drop(this);
@@ -157,6 +157,36 @@ impl Terminal {
         Ok(())
     }
 
+    pub fn enter_alternate_screen(&mut self) -> io::Result<()> {
+        if self.alternate_screen {
+            return Ok(());
+        }
+        // The alternate screen has its own stack of keyboard flags
+        write!(
+            self.tty,
+            "{}{}",
+            ALTERNATE_SCREEN_SET,
+            KeyboardEnhancementFlagsPush(KEYBOARD_FLAGS)
+        )?;
+        self.tty.flush()?;
+        self.alternate_screen = true;
+        Ok(())
+    }
+
+    pub fn leave_alternate_screen(&mut self) -> io::Result<()> {
+        if !self.alternate_screen {
+            return Ok(());
+        }
+        write!(
+            self.tty,
+            "{}{}",
+            KeyboardEnhancementFlagsPop, ALTERNATE_SCREEN_RESET
+        )?;
+        self.tty.flush()?;
+        self.alternate_screen = false;
+        Ok(())
+    }
+
     pub fn size(&self) -> io::Result<(u16, u16)> {
         self.tty.size()
     }
@@ -184,6 +214,7 @@ impl Write for Terminal {
 
 impl Drop for Terminal {
     fn drop(&mut self) {
+        let _ = self.leave_alternate_screen();
         let _ = write!(self.tty, "{}", SYNC_UPDATE_RESET);
         let _ = write!(self.tty, "{}", IN_BAND_RESIZE_RESET);
         let _ = write!(self.tty, "{}", KeyboardEnhancementFlagsPop);
