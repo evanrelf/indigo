@@ -74,6 +74,10 @@ pub const CURSOR_RESTORE: &str = "\x1b[u";
 pub const CURSOR_HIDE: &str = "\x1b[?25l";
 pub const CURSOR_SHOW: &str = "\x1b[?25h";
 
+// Device Status Report (DSR), answered with a Cursor Position Report (CPR)
+// https://vt100.net/docs/vt510-rm/DSR-CPR.html
+pub const CURSOR_POSITION_QUERY: &str = "\x1b[6n";
+
 // Style
 
 pub const BOLD: &str = "\x1b[1m";

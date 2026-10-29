@@ -83,6 +83,13 @@ pub enum Event {
     ///
     /// <https://github.com/contour-terminal/contour/blob/master/docs/vt-extensions/color-palette-update-notifications.md>
     ColorScheme(ColorScheme),
+    /// Cursor position report, sent in response to a query. The row and column start at 1.
+    ///
+    /// <https://vt100.net/docs/vt510-rm/CPR.html>
+    CursorPosition {
+        row: u16,
+        column: u16,
+    },
     /// A sequence that isn't recognized
     Unknown(Token),
 }

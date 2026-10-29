@@ -39,6 +39,7 @@ pub fn decode(token: Token) -> Event {
         da1,
         decrpm,
         color_scheme,
+        cursor_position,
         kitty_key_u,
         kitty_key_letter,
     ))
@@ -221,6 +222,15 @@ fn color_scheme(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     Ok(Event::ColorScheme(color_scheme))
 }
 
+fn cursor_position(input: &mut &[u8]) -> winnow::ModalResult<Event> {
+    "\x1b[".void().parse_next(input)?;
+    let row = u16.parse_next(input)?;
+    ";".void().parse_next(input)?;
+    let column = u16.parse_next(input)?;
+    "R".void().parse_next(input)?;
+    Ok(Event::CursorPosition { row, column })
+}
+
 fn u8(input: &mut &[u8]) -> winnow::ModalResult<u8> {
     digit1
         .try_map(|bytes| str::from_utf8(bytes))
@@ -316,6 +326,20 @@ mod tests {
         let input = b"\x1b[?997;2n";
         let output = Event::ColorScheme(ColorScheme::Light);
         assert_eq!(color_scheme.parse(&input[..]).as_ref().ok(), Some(&output));
+        assert_eq!(decode_bytes(input), Some(output));
+    }
+
+    #[test]
+    fn parses_cursor_position() {
+        let input = b"\x1b[12;34R";
+        let output = Event::CursorPosition {
+            row: 12,
+            column: 34,
+        };
+        assert_eq!(
+            cursor_position.parse(&input[..]).as_ref().ok(),
+            Some(&output)
+        );
         assert_eq!(decode_bytes(input), Some(output));
     }
 
