@@ -90,28 +90,28 @@ pub enum Color {
     Magenta,
     Cyan,
     White,
-}
-
-impl Color {
-    fn sgr_offset(&self) -> u8 {
-        match self {
-            Self::Black => 0,
-            Self::Red => 1,
-            Self::Green => 2,
-            Self::Yellow => 3,
-            Self::Blue => 4,
-            Self::Magenta => 5,
-            Self::Cyan => 6,
-            Self::White => 7,
-        }
-    }
+    /// A color from the terminal's 256-color palette
+    Indexed(u8),
+    /// A 24-bit color
+    Rgb(u8, u8, u8),
 }
 
 pub struct Fg(pub Color);
 
 impl Display for Fg {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "\x1b[{}m", 30 + self.0.sgr_offset())
+        match self.0 {
+            Color::Black => write!(f, "\x1b[30m"),
+            Color::Red => write!(f, "\x1b[31m"),
+            Color::Green => write!(f, "\x1b[32m"),
+            Color::Yellow => write!(f, "\x1b[33m"),
+            Color::Blue => write!(f, "\x1b[34m"),
+            Color::Magenta => write!(f, "\x1b[35m"),
+            Color::Cyan => write!(f, "\x1b[36m"),
+            Color::White => write!(f, "\x1b[37m"),
+            Color::Indexed(index) => write!(f, "\x1b[38;5;{index}m"),
+            Color::Rgb(r, g, b) => write!(f, "\x1b[38;2;{r};{g};{b}m"),
+        }
     }
 }
 
@@ -119,7 +119,18 @@ pub struct Bg(pub Color);
 
 impl Display for Bg {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "\x1b[{}m", 40 + self.0.sgr_offset())
+        match self.0 {
+            Color::Black => write!(f, "\x1b[40m"),
+            Color::Red => write!(f, "\x1b[41m"),
+            Color::Green => write!(f, "\x1b[42m"),
+            Color::Yellow => write!(f, "\x1b[43m"),
+            Color::Blue => write!(f, "\x1b[44m"),
+            Color::Magenta => write!(f, "\x1b[45m"),
+            Color::Cyan => write!(f, "\x1b[46m"),
+            Color::White => write!(f, "\x1b[47m"),
+            Color::Indexed(index) => write!(f, "\x1b[48;5;{index}m"),
+            Color::Rgb(r, g, b) => write!(f, "\x1b[48;2;{r};{g};{b}m"),
+        }
     }
 }
 
