@@ -54,6 +54,11 @@ impl Terminal {
             )
         )?;
 
+        if !this.enable_mode(BRACKETED_PASTE_MODE)? {
+            drop(this);
+            panic!("terminal does not support bracketed paste");
+        }
+
         Ok(this)
     }
 
@@ -182,6 +187,7 @@ impl Drop for Terminal {
         let _ = write!(self.tty, "{}", SYNC_UPDATE_RESET);
         let _ = write!(self.tty, "{}", IN_BAND_RESIZE_RESET);
         let _ = write!(self.tty, "{}", KeyboardEnhancementFlagsPop);
+        let _ = write!(self.tty, "{}", BRACKETED_PASTE_RESET);
         let _ = self.tty.flush();
     }
 }

@@ -70,6 +70,14 @@ fn update(state: &mut State, event: Event) {
             state.prev_width = Some(state.width);
             state.width = width;
         }
+        Event::Paste(text) => {
+            let text = text
+                .chars()
+                .map(|c| if c.is_whitespace() { ' ' } else { c });
+            state
+                .message
+                .extend(text.filter(|c| matches!(c, ' '..='~')));
+        }
         _ => {}
     }
 }
