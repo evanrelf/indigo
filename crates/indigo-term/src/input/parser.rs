@@ -1,23 +1,28 @@
 use crate::{
-    input::{ColorScheme, Event, Key, KeyCode, KeyModifiers, ModeSetting, physical},
+    input::{
+        ColorScheme, Event, Key, KeyCode, KeyModifiers, ModeSetting,
+        physical::{self, Token},
+    },
     output::KeyboardEnhancementFlags,
 };
 use std::str;
 use winnow::{
     Partial,
     ascii::digit1,
-    combinator::{alt, cut_err, opt, peek, separated},
+    combinator::{alt, opt, separated},
     prelude::*,
     token::one_of,
 };
 
 pub fn event(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
-    alt((csi, osc)).parse_next(input)
+    alt((physical::csi, physical::osc))
+        .with_taken()
+        .map(|(token, bytes)| decode(token, bytes))
+        .parse_next(input)
 }
 
-fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
-    peek("\x1b[").parse_next(input)?;
-    cut_err(alt((
+fn decode(token: Token, bytes: &[u8]) -> Event {
+    alt((
         kitty_keyboard_flags,
         in_band_resize,
         da1,
@@ -25,12 +30,12 @@ fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
         color_scheme,
         kitty_key_u,
         kitty_key_letter,
-        physical::csi.map(Event::Unknown),
-    )))
-    .parse_next(input)
+    ))
+    .parse(bytes)
+    .unwrap_or(Event::Unknown(token))
 }
 
-fn kitty_keyboard_flags(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
+fn kitty_keyboard_flags(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     "\x1b[?".void().parse_next(input)?;
     let flags = u8
         .verify_map(|n| KeyboardEnhancementFlags::from_bits(n))
@@ -39,7 +44,7 @@ fn kitty_keyboard_flags(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event
     Ok(Event::KeyboardEnhancementFlags(flags))
 }
 
-fn kitty_key_u(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
+fn kitty_key_u(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     "\x1b[".void().parse_next(input)?;
     let key_code = u32.verify_map(key_code_from_number).parse_next(input)?;
     let (modifiers, event_type) = opt((";".void(), modifiers_and_event_type))
@@ -70,7 +75,7 @@ fn key_code_from_number(n: u32) -> Option<KeyCode> {
     }
 }
 
-fn kitty_key_letter(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
+fn kitty_key_letter(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     "\x1b[".void().parse_next(input)?;
     let (modifiers, event_type) = opt(("1;".void(), modifiers_and_event_type))
         .map(|o| o.map_or((KeyModifiers::empty(), 1), |((), m)| m))
@@ -91,7 +96,7 @@ fn kitty_key_letter(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     Ok(make_key_event(key, event_type))
 }
 
-fn modifiers_and_event_type(input: &mut Partial<&[u8]>) -> winnow::ModalResult<(KeyModifiers, u8)> {
+fn modifiers_and_event_type(input: &mut &[u8]) -> winnow::ModalResult<(KeyModifiers, u8)> {
     let mods_raw = u8.parse_next(input)?;
     let modifiers = KeyModifiers::from_bits_truncate(mods_raw.saturating_sub(1));
     let event_type = opt((":".void(), u8))
@@ -147,14 +152,14 @@ fn make_key_event(mut key: Key, event_type: u8) -> Event {
     }
 }
 
-fn u32(input: &mut Partial<&[u8]>) -> winnow::ModalResult<u32> {
+fn u32(input: &mut &[u8]) -> winnow::ModalResult<u32> {
     digit1
         .try_map(|bytes| str::from_utf8(bytes))
         .try_map(|str| str::parse(str))
         .parse_next(input)
 }
 
-fn in_band_resize(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
+fn in_band_resize(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     "\x1b[48;".void().parse_next(input)?;
     let height = u16.parse_next(input)?;
     ";".void().parse_next(input)?;
@@ -167,14 +172,14 @@ fn in_band_resize(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     Ok(Event::Resize { height, width })
 }
 
-fn da1(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
+fn da1(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     "\x1b[?".void().parse_next(input)?;
     separated(0.., digit1, ";").map(|()| ()).parse_next(input)?;
     "c".void().parse_next(input)?;
     Ok(Event::Da1)
 }
 
-fn decrpm(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
+fn decrpm(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     ("\x1b[", opt("?")).void().parse_next(input)?;
     let mode = u16.parse_next(input)?;
     ";".void().parse_next(input)?;
@@ -192,7 +197,7 @@ fn decrpm(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     Ok(Event::Decrpm { mode, setting })
 }
 
-fn color_scheme(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
+fn color_scheme(input: &mut &[u8]) -> winnow::ModalResult<Event> {
     "\x1b[?997;".void().parse_next(input)?;
     let color_scheme = u8
         .verify_map(|n| match n {
@@ -205,19 +210,14 @@ fn color_scheme(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     Ok(Event::ColorScheme(color_scheme))
 }
 
-fn osc(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
-    peek("\x1b]").parse_next(input)?;
-    cut_err(physical::osc.map(Event::Unknown)).parse_next(input)
-}
-
-fn u8(input: &mut Partial<&[u8]>) -> winnow::ModalResult<u8> {
+fn u8(input: &mut &[u8]) -> winnow::ModalResult<u8> {
     digit1
         .try_map(|bytes| str::from_utf8(bytes))
         .try_map(|str| str::parse(str))
         .parse_next(input)
 }
 
-fn u16(input: &mut Partial<&[u8]>) -> winnow::ModalResult<u16> {
+fn u16(input: &mut &[u8]) -> winnow::ModalResult<u16> {
     digit1
         .try_map(|bytes| str::from_utf8(bytes))
         .try_map(|str| str::parse(str))
@@ -231,212 +231,212 @@ mod tests {
     #[test]
     fn parses_kitty_keyboard_flags() {
         let input = b"\x1b[?3u";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::KeyboardEnhancementFlags(
-                KeyboardEnhancementFlags::DISAMBIGUATE | KeyboardEnhancementFlags::REPORT_EVENTS,
-            ),
-        ));
-        assert_eq!(kitty_keyboard_flags.parse_peek(Partial::new(input)), output);
-        assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
+        let output = Event::KeyboardEnhancementFlags(
+            KeyboardEnhancementFlags::DISAMBIGUATE | KeyboardEnhancementFlags::REPORT_EVENTS,
+        );
+        assert_eq!(
+            kitty_keyboard_flags.parse(&input[..]).as_ref().ok(),
+            Some(&output)
+        );
+        assert_eq!(
+            event.parse_peek(Partial::new(input)),
+            Ok((Partial::new(&b""[..]), output))
+        );
     }
 
     #[test]
     fn parses_in_band_resize() {
         let input = b"\x1b[48;40;80;0;0t";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::Resize {
-                height: 40,
-                width: 80,
-            },
-        ));
-        assert_eq!(in_band_resize.parse_peek(Partial::new(input)), output);
-        assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
+        let output = Event::Resize {
+            height: 40,
+            width: 80,
+        };
+        assert_eq!(
+            in_band_resize.parse(&input[..]).as_ref().ok(),
+            Some(&output)
+        );
+        assert_eq!(
+            event.parse_peek(Partial::new(input)),
+            Ok((Partial::new(&b""[..]), output))
+        );
     }
 
     #[test]
     fn parses_da1() {
         let input = b"\x1b[?64;1234c";
-        let output = Ok((Partial::new(&b""[..]), Event::Da1));
-        assert_eq!(da1.parse_peek(Partial::new(input)), output);
-        assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
+        let output = Event::Da1;
+        assert_eq!(da1.parse(&input[..]).as_ref().ok(), Some(&output));
+        assert_eq!(
+            event.parse_peek(Partial::new(input)),
+            Ok((Partial::new(&b""[..]), output))
+        );
     }
 
     #[test]
     fn parses_ansi_decrpm() {
         let input = b"\x1b[1234;1$y";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::Decrpm {
-                mode: 1234,
-                setting: ModeSetting::Set,
-            },
-        ));
-        assert_eq!(decrpm.parse_peek(Partial::new(input)), output);
-        assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
+        let output = Event::Decrpm {
+            mode: 1234,
+            setting: ModeSetting::Set,
+        };
+        assert_eq!(decrpm.parse(&input[..]).as_ref().ok(), Some(&output));
+        assert_eq!(
+            event.parse_peek(Partial::new(input)),
+            Ok((Partial::new(&b""[..]), output))
+        );
     }
 
     #[test]
     fn parses_dec_decrpm() {
         let input = b"\x1b[?1234;2$y";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::Decrpm {
-                mode: 1234,
-                setting: ModeSetting::Reset,
-            },
-        ));
-        assert_eq!(decrpm.parse_peek(Partial::new(input)), output);
-        assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
+        let output = Event::Decrpm {
+            mode: 1234,
+            setting: ModeSetting::Reset,
+        };
+        assert_eq!(decrpm.parse(&input[..]).as_ref().ok(), Some(&output));
+        assert_eq!(
+            event.parse_peek(Partial::new(input)),
+            Ok((Partial::new(&b""[..]), output))
+        );
     }
 
     #[test]
     fn parses_color_scheme_dark() {
         let input = b"\x1b[?997;1n";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::ColorScheme(ColorScheme::Dark),
-        ));
-        assert_eq!(color_scheme.parse_peek(Partial::new(input)), output);
-        assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
+        let output = Event::ColorScheme(ColorScheme::Dark);
+        assert_eq!(color_scheme.parse(&input[..]).as_ref().ok(), Some(&output));
+        assert_eq!(
+            event.parse_peek(Partial::new(input)),
+            Ok((Partial::new(&b""[..]), output))
+        );
     }
 
     #[test]
     fn parses_color_scheme_light() {
         let input = b"\x1b[?997;2n";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::ColorScheme(ColorScheme::Light),
-        ));
-        assert_eq!(color_scheme.parse_peek(Partial::new(input)), output);
-        assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
+        let output = Event::ColorScheme(ColorScheme::Light);
+        assert_eq!(color_scheme.parse(&input[..]).as_ref().ok(), Some(&output));
+        assert_eq!(
+            event.parse_peek(Partial::new(input)),
+            Ok((Partial::new(&b""[..]), output))
+        );
     }
 
     #[test]
     fn parses_kitty_key_plain() {
         let input = b"\x1b[97u";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::KeyPress(Key {
-                code: KeyCode::Char('a'),
-                modifiers: KeyModifiers::empty(),
-            }),
-        ));
-        assert_eq!(kitty_key_u.parse_peek(Partial::new(input)), output);
-        assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
+        let output = Event::KeyPress(Key {
+            code: KeyCode::Char('a'),
+            modifiers: KeyModifiers::empty(),
+        });
+        assert_eq!(kitty_key_u.parse(&input[..]).as_ref().ok(), Some(&output));
+        assert_eq!(
+            event.parse_peek(Partial::new(input)),
+            Ok((Partial::new(&b""[..]), output))
+        );
     }
 
     #[test]
     fn parses_kitty_key_with_modifiers() {
         let input = b"\x1b[97;6u";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::KeyPress(Key {
-                code: KeyCode::Char('a'),
-                modifiers: KeyModifiers::CTRL | KeyModifiers::SHIFT,
-            }),
-        ));
-        assert_eq!(kitty_key_u.parse_peek(Partial::new(input)), output);
-        assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
+        let output = Event::KeyPress(Key {
+            code: KeyCode::Char('a'),
+            modifiers: KeyModifiers::CTRL | KeyModifiers::SHIFT,
+        });
+        assert_eq!(kitty_key_u.parse(&input[..]).as_ref().ok(), Some(&output));
+        assert_eq!(
+            event.parse_peek(Partial::new(input)),
+            Ok((Partial::new(&b""[..]), output))
+        );
     }
 
     #[test]
     fn parses_kitty_key_release() {
         let input = b"\x1b[97;1:3u";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::KeyRelease(Key {
-                code: KeyCode::Char('a'),
-                modifiers: KeyModifiers::empty(),
-            }),
-        ));
-        assert_eq!(kitty_key_u.parse_peek(Partial::new(input)), output);
-        assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
+        let output = Event::KeyRelease(Key {
+            code: KeyCode::Char('a'),
+            modifiers: KeyModifiers::empty(),
+        });
+        assert_eq!(kitty_key_u.parse(&input[..]).as_ref().ok(), Some(&output));
+        assert_eq!(
+            event.parse_peek(Partial::new(input)),
+            Ok((Partial::new(&b""[..]), output))
+        );
     }
 
     #[test]
     fn parses_kitty_key_repeat() {
         let input = b"\x1b[97;1:2u";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::KeyRepeat(Key {
-                code: KeyCode::Char('a'),
-                modifiers: KeyModifiers::empty(),
-            }),
-        ));
-        assert_eq!(kitty_key_u.parse_peek(Partial::new(input)), output);
-        assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
+        let output = Event::KeyRepeat(Key {
+            code: KeyCode::Char('a'),
+            modifiers: KeyModifiers::empty(),
+        });
+        assert_eq!(kitty_key_u.parse(&input[..]).as_ref().ok(), Some(&output));
+        assert_eq!(
+            event.parse_peek(Partial::new(input)),
+            Ok((Partial::new(&b""[..]), output))
+        );
     }
 
     #[test]
     fn parses_kitty_key_esc() {
         let input = b"\x1b[27u";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::KeyPress(Key {
-                code: KeyCode::Esc,
-                modifiers: KeyModifiers::empty(),
-            }),
-        ));
-        assert_eq!(kitty_key_u.parse_peek(Partial::new(input)), output);
-        assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
+        let output = Event::KeyPress(Key {
+            code: KeyCode::Esc,
+            modifiers: KeyModifiers::empty(),
+        });
+        assert_eq!(kitty_key_u.parse(&input[..]).as_ref().ok(), Some(&output));
+        assert_eq!(
+            event.parse_peek(Partial::new(input)),
+            Ok((Partial::new(&b""[..]), output))
+        );
     }
 
     #[test]
     fn parses_kitty_key_enter() {
         let input = b"\x1b[13u";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::KeyPress(Key {
-                code: KeyCode::Enter,
-                modifiers: KeyModifiers::empty(),
-            }),
-        ));
-        assert_eq!(kitty_key_u.parse_peek(Partial::new(input)), output);
-        assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
+        let output = Event::KeyPress(Key {
+            code: KeyCode::Enter,
+            modifiers: KeyModifiers::empty(),
+        });
+        assert_eq!(kitty_key_u.parse(&input[..]).as_ref().ok(), Some(&output));
+        assert_eq!(
+            event.parse_peek(Partial::new(input)),
+            Ok((Partial::new(&b""[..]), output))
+        );
     }
 
     #[test]
     fn parses_kitty_arrow_no_modifiers() {
         let input = b"\x1b[A";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::KeyPress(Key {
-                code: KeyCode::Up,
-                modifiers: KeyModifiers::empty(),
-            }),
-        ));
-        assert_eq!(kitty_key_letter.parse_peek(Partial::new(input)), output);
-        assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
+        let output = Event::KeyPress(Key {
+            code: KeyCode::Up,
+            modifiers: KeyModifiers::empty(),
+        });
+        assert_eq!(
+            kitty_key_letter.parse(&input[..]).as_ref().ok(),
+            Some(&output)
+        );
+        assert_eq!(
+            event.parse_peek(Partial::new(input)),
+            Ok((Partial::new(&b""[..]), output))
+        );
     }
 
     #[test]
     fn parses_kitty_arrow_with_modifiers() {
         let input = b"\x1b[1;2A";
-        let output = Ok((
-            Partial::new(&b""[..]),
-            Event::KeyPress(Key {
-                code: KeyCode::Up,
-                modifiers: KeyModifiers::SHIFT,
-            }),
-        ));
-        assert_eq!(kitty_key_letter.parse_peek(Partial::new(input)), output);
-        assert_eq!(csi.parse_peek(Partial::new(input)), output);
-        assert_eq!(event.parse_peek(Partial::new(input)), output);
+        let output = Event::KeyPress(Key {
+            code: KeyCode::Up,
+            modifiers: KeyModifiers::SHIFT,
+        });
+        assert_eq!(
+            kitty_key_letter.parse(&input[..]).as_ref().ok(),
+            Some(&output)
+        );
+        assert_eq!(
+            event.parse_peek(Partial::new(input)),
+            Ok((Partial::new(&b""[..]), output))
+        );
     }
 }
