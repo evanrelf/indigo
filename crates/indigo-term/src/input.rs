@@ -35,6 +35,22 @@ impl Decoder {
 
     /// Decode the next event, or return `None` if more bytes are needed.
     pub fn next_event(&mut self) -> Option<Event> {
+        while let Some(token) = self.next_token() {
+            match token {
+                Token::PasteBegin => {}
+                Token::PasteChunk(chunk) => self.paste.extend_from_slice(&chunk),
+                Token::PasteEnd => {
+                    let paste = mem::take(&mut self.paste);
+                    return Some(Event::Paste(String::from_utf8_lossy(&paste).into_owned()));
+                }
+                token => return Some(logical::decode(token)),
+            }
+        }
+        None
+    }
+
+    /// Split off the next token, or return `None` if more bytes are needed.
+    fn next_token(&mut self) -> Option<Token> {
         loop {
             // Pasted text isn't garbage
             if !self.in_paste {
@@ -55,27 +71,14 @@ impl Decoder {
 
             match token.parse_peek(input) {
                 Ok((remaining, token)) => {
-                    let event = match token {
-                        Token::PasteBegin => {
-                            self.in_paste = true;
-                            None
-                        }
-                        Token::PasteChunk(chunk) => {
-                            self.paste.extend_from_slice(&chunk);
-                            None
-                        }
-                        Token::PasteEnd => {
-                            self.in_paste = false;
-                            let paste = mem::take(&mut self.paste);
-                            Some(Event::Paste(String::from_utf8_lossy(&paste).into_owned()))
-                        }
-                        token => Some(logical::decode(token)),
-                    };
                     let consumed = self.buffer.len() - remaining.len();
                     self.buffer.drain(..consumed);
-                    if let Some(event) = event {
-                        return Some(event);
+                    match token {
+                        Token::PasteBegin => self.in_paste = true,
+                        Token::PasteEnd => self.in_paste = false,
+                        _ => {}
                     }
+                    return Some(token);
                 }
                 Err(ErrMode::Incomplete(_)) => return None,
                 Err(_) => {
