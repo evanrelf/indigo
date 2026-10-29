@@ -47,14 +47,14 @@ impl Decoder {
 
             let input = Partial::new(self.buffer.as_slice());
 
-            let token = if self.in_paste {
+            let mut token = if self.in_paste {
                 physical::paste_token
             } else {
                 physical::token
             };
 
-            match token.with_taken().parse_peek(input) {
-                Ok((remaining, (token, bytes))) => {
+            match token.parse_peek(input) {
+                Ok((remaining, token)) => {
                     let event = match token {
                         Token::PasteBegin => {
                             self.in_paste = true;
@@ -69,7 +69,7 @@ impl Decoder {
                             let paste = mem::take(&mut self.paste);
                             Some(Event::Paste(String::from_utf8_lossy(&paste).into_owned()))
                         }
-                        token => Some(logical::decode(token, bytes)),
+                        token => Some(logical::decode(token)),
                     };
                     let consumed = self.buffer.len() - remaining.len();
                     self.buffer.drain(..consumed);

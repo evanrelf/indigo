@@ -10,7 +10,22 @@ use winnow::{
     token::one_of,
 };
 
-pub fn decode(token: Token, bytes: &[u8]) -> Event {
+pub fn decode(token: Token) -> Event {
+    let Token::Csi {
+        parameter_bytes,
+        intermediate_bytes,
+        final_byte,
+    } = &token
+    else {
+        return Event::Unknown(token);
+    };
+    let bytes = [
+        b"\x1b[",
+        &parameter_bytes[..],
+        &intermediate_bytes[..],
+        &[*final_byte],
+    ]
+    .concat();
     alt((
         kitty_keyboard_flags,
         in_band_resize,
@@ -20,7 +35,7 @@ pub fn decode(token: Token, bytes: &[u8]) -> Event {
         kitty_key_u,
         kitty_key_letter,
     ))
-    .parse(bytes)
+    .parse(&bytes[..])
     .unwrap_or(Event::Unknown(token))
 }
 
