@@ -195,6 +195,23 @@ impl Terminal {
         self.tty.pixel_size()
     }
 
+    pub fn query_cursor_position(&mut self) -> io::Result<Option<(u16, u16)>> {
+        write!(self.tty, "{}{}", CURSOR_POSITION_QUERY, DA1_QUERY)?;
+        self.tty.flush()?;
+
+        let mut position = None;
+
+        loop {
+            // We record the position from the reply, but continue reading events until a DA1 event
+            // is consumed. Leaving it in the event stream would confuse future queries.
+            match self.reader.read_event(&mut self.tty)? {
+                Event::CursorPosition { row, column } => position = Some((row, column)),
+                Event::Da1 => return Ok(position),
+                event => self.events.push_back(event),
+            }
+        }
+    }
+
     pub fn read_event(&mut self) -> io::Result<Event> {
         if let Some(event) = self.events.pop_front() {
             Ok(event)
