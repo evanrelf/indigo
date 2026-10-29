@@ -26,7 +26,11 @@ pub enum Token {
     Osc { data_bytes: TinyVec<[u8; 32]> },
 }
 
-pub(crate) fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
+pub(crate) fn token(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
+    alt((csi, osc)).parse_next(input)
+}
+
+fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
     "\x1b[".void().parse_next(input)?;
     let Accumulated(parameter_bytes) = repeat(0.., one_of(0x30..=0x3F)).parse_next(input)?;
     if parameter_bytes.is_heap() {
@@ -50,7 +54,7 @@ pub(crate) fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
     })
 }
 
-pub(crate) fn osc(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
+fn osc(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
     "\x1b]".void().parse_next(input)?;
     let Accumulated(data_bytes) = repeat(0.., one_of(0x20..=0xFF)).parse_next(input)?;
     if data_bytes.is_heap() {

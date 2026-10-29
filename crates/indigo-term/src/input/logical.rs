@@ -1,27 +1,16 @@
 use crate::{
-    input::{
-        ColorScheme, Event, Key, KeyCode, KeyModifiers, ModeSetting,
-        physical::{self, Token},
-    },
+    input::{ColorScheme, Event, Key, KeyCode, KeyModifiers, ModeSetting, physical::Token},
     output::KeyboardEnhancementFlags,
 };
 use std::str;
 use winnow::{
-    Partial,
     ascii::digit1,
     combinator::{alt, opt, separated},
     prelude::*,
     token::one_of,
 };
 
-pub fn event(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
-    alt((physical::csi, physical::osc))
-        .with_taken()
-        .map(|(token, bytes)| decode(token, bytes))
-        .parse_next(input)
-}
-
-fn decode(token: Token, bytes: &[u8]) -> Event {
+pub fn decode(token: Token, bytes: &[u8]) -> Event {
     alt((
         kitty_keyboard_flags,
         in_band_resize,
@@ -227,6 +216,13 @@ fn u16(input: &mut &[u8]) -> winnow::ModalResult<u16> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::input::Decoder;
+
+    fn decode_bytes(input: &[u8]) -> Option<Event> {
+        let mut decoder = Decoder::new();
+        assert_eq!(decoder.feed(input), input.len());
+        decoder.next_event()
+    }
 
     #[test]
     fn parses_kitty_keyboard_flags() {
@@ -238,10 +234,7 @@ mod tests {
             kitty_keyboard_flags.parse(&input[..]).as_ref().ok(),
             Some(&output)
         );
-        assert_eq!(
-            event.parse_peek(Partial::new(input)),
-            Ok((Partial::new(&b""[..]), output))
-        );
+        assert_eq!(decode_bytes(input), Some(output));
     }
 
     #[test]
@@ -255,10 +248,7 @@ mod tests {
             in_band_resize.parse(&input[..]).as_ref().ok(),
             Some(&output)
         );
-        assert_eq!(
-            event.parse_peek(Partial::new(input)),
-            Ok((Partial::new(&b""[..]), output))
-        );
+        assert_eq!(decode_bytes(input), Some(output));
     }
 
     #[test]
@@ -266,10 +256,7 @@ mod tests {
         let input = b"\x1b[?64;1234c";
         let output = Event::Da1;
         assert_eq!(da1.parse(&input[..]).as_ref().ok(), Some(&output));
-        assert_eq!(
-            event.parse_peek(Partial::new(input)),
-            Ok((Partial::new(&b""[..]), output))
-        );
+        assert_eq!(decode_bytes(input), Some(output));
     }
 
     #[test]
@@ -280,10 +267,7 @@ mod tests {
             setting: ModeSetting::Set,
         };
         assert_eq!(decrpm.parse(&input[..]).as_ref().ok(), Some(&output));
-        assert_eq!(
-            event.parse_peek(Partial::new(input)),
-            Ok((Partial::new(&b""[..]), output))
-        );
+        assert_eq!(decode_bytes(input), Some(output));
     }
 
     #[test]
@@ -294,10 +278,7 @@ mod tests {
             setting: ModeSetting::Reset,
         };
         assert_eq!(decrpm.parse(&input[..]).as_ref().ok(), Some(&output));
-        assert_eq!(
-            event.parse_peek(Partial::new(input)),
-            Ok((Partial::new(&b""[..]), output))
-        );
+        assert_eq!(decode_bytes(input), Some(output));
     }
 
     #[test]
@@ -305,10 +286,7 @@ mod tests {
         let input = b"\x1b[?997;1n";
         let output = Event::ColorScheme(ColorScheme::Dark);
         assert_eq!(color_scheme.parse(&input[..]).as_ref().ok(), Some(&output));
-        assert_eq!(
-            event.parse_peek(Partial::new(input)),
-            Ok((Partial::new(&b""[..]), output))
-        );
+        assert_eq!(decode_bytes(input), Some(output));
     }
 
     #[test]
@@ -316,10 +294,7 @@ mod tests {
         let input = b"\x1b[?997;2n";
         let output = Event::ColorScheme(ColorScheme::Light);
         assert_eq!(color_scheme.parse(&input[..]).as_ref().ok(), Some(&output));
-        assert_eq!(
-            event.parse_peek(Partial::new(input)),
-            Ok((Partial::new(&b""[..]), output))
-        );
+        assert_eq!(decode_bytes(input), Some(output));
     }
 
     #[test]
@@ -330,10 +305,7 @@ mod tests {
             modifiers: KeyModifiers::empty(),
         });
         assert_eq!(kitty_key_u.parse(&input[..]).as_ref().ok(), Some(&output));
-        assert_eq!(
-            event.parse_peek(Partial::new(input)),
-            Ok((Partial::new(&b""[..]), output))
-        );
+        assert_eq!(decode_bytes(input), Some(output));
     }
 
     #[test]
@@ -344,10 +316,7 @@ mod tests {
             modifiers: KeyModifiers::CTRL | KeyModifiers::SHIFT,
         });
         assert_eq!(kitty_key_u.parse(&input[..]).as_ref().ok(), Some(&output));
-        assert_eq!(
-            event.parse_peek(Partial::new(input)),
-            Ok((Partial::new(&b""[..]), output))
-        );
+        assert_eq!(decode_bytes(input), Some(output));
     }
 
     #[test]
@@ -358,10 +327,7 @@ mod tests {
             modifiers: KeyModifiers::empty(),
         });
         assert_eq!(kitty_key_u.parse(&input[..]).as_ref().ok(), Some(&output));
-        assert_eq!(
-            event.parse_peek(Partial::new(input)),
-            Ok((Partial::new(&b""[..]), output))
-        );
+        assert_eq!(decode_bytes(input), Some(output));
     }
 
     #[test]
@@ -372,10 +338,7 @@ mod tests {
             modifiers: KeyModifiers::empty(),
         });
         assert_eq!(kitty_key_u.parse(&input[..]).as_ref().ok(), Some(&output));
-        assert_eq!(
-            event.parse_peek(Partial::new(input)),
-            Ok((Partial::new(&b""[..]), output))
-        );
+        assert_eq!(decode_bytes(input), Some(output));
     }
 
     #[test]
@@ -386,10 +349,7 @@ mod tests {
             modifiers: KeyModifiers::empty(),
         });
         assert_eq!(kitty_key_u.parse(&input[..]).as_ref().ok(), Some(&output));
-        assert_eq!(
-            event.parse_peek(Partial::new(input)),
-            Ok((Partial::new(&b""[..]), output))
-        );
+        assert_eq!(decode_bytes(input), Some(output));
     }
 
     #[test]
@@ -400,10 +360,7 @@ mod tests {
             modifiers: KeyModifiers::empty(),
         });
         assert_eq!(kitty_key_u.parse(&input[..]).as_ref().ok(), Some(&output));
-        assert_eq!(
-            event.parse_peek(Partial::new(input)),
-            Ok((Partial::new(&b""[..]), output))
-        );
+        assert_eq!(decode_bytes(input), Some(output));
     }
 
     #[test]
@@ -417,10 +374,7 @@ mod tests {
             kitty_key_letter.parse(&input[..]).as_ref().ok(),
             Some(&output)
         );
-        assert_eq!(
-            event.parse_peek(Partial::new(input)),
-            Ok((Partial::new(&b""[..]), output))
-        );
+        assert_eq!(decode_bytes(input), Some(output));
     }
 
     #[test]
@@ -434,9 +388,6 @@ mod tests {
             kitty_key_letter.parse(&input[..]).as_ref().ok(),
             Some(&output)
         );
-        assert_eq!(
-            event.parse_peek(Partial::new(input)),
-            Ok((Partial::new(&b""[..]), output))
-        );
+        assert_eq!(decode_bytes(input), Some(output));
     }
 }

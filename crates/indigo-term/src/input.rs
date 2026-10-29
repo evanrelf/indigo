@@ -42,8 +42,9 @@ impl Decoder {
 
             let input = Partial::new(self.buffer.as_slice());
 
-            match logical::event.parse_peek(input) {
-                Ok((remaining, event)) => {
+            match physical::token.with_taken().parse_peek(input) {
+                Ok((remaining, (token, bytes))) => {
+                    let event = logical::decode(token, bytes);
                     let consumed = self.buffer.len() - remaining.len();
                     self.buffer.drain(..consumed);
                     return Some(event);
