@@ -36,11 +36,82 @@ pub enum Token {
     PasteEnd,
 }
 
-pub(crate) fn token(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
+#[derive(Default)]
+pub struct Tokenizer {
+    buffer: ArrayVec<[u8; 1024]>,
+    in_paste: bool,
+}
+
+impl Tokenizer {
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Add as many bytes as fit, returning how many were added. Take tokens with
+    /// [`Tokenizer::next_token`] to make room for more.
+    #[must_use]
+    pub fn feed(&mut self, bytes: &[u8]) -> usize {
+        let count = min(bytes.len(), self.buffer.capacity() - self.buffer.len());
+        self.buffer.extend_from_slice(&bytes[..count]);
+        count
+    }
+
+    /// Split off the next token, or return `None` if more bytes are needed.
+    pub fn next_token(&mut self) -> Option<Token> {
+        loop {
+            // Pasted text isn't garbage
+            if !self.in_paste {
+                self.skip_garbage();
+            }
+
+            if self.buffer.is_empty() {
+                return None;
+            }
+
+            let input = Partial::new(self.buffer.as_slice());
+
+            let mut parser = if self.in_paste { paste_token } else { token };
+
+            match parser.parse_peek(input) {
+                Ok((remaining, token)) => {
+                    let consumed = self.buffer.len() - remaining.len();
+                    self.buffer.drain(..consumed);
+                    match token {
+                        Token::PasteBegin => self.in_paste = true,
+                        Token::PasteEnd => self.in_paste = false,
+                        _ => {}
+                    }
+                    return Some(token);
+                }
+                Err(ErrMode::Incomplete(_)) => return None,
+                Err(_) => {
+                    // Malformed sequence, skip the leading 0x1b and retry
+                    self.buffer.drain(..1);
+                }
+            }
+        }
+    }
+
+    /// Skip any non-ESC bytes at the front of the buffer. These are garbage bytes that don't start
+    /// any recognized sequence.
+    fn skip_garbage(&mut self) {
+        let garbage_count = self
+            .buffer
+            .iter()
+            .position(|&byte| byte == /* ESC */ 0x1B)
+            .unwrap_or(self.buffer.len());
+        if garbage_count > 0 {
+            self.buffer.drain(..garbage_count);
+        }
+    }
+}
+
+fn token(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
     alt((paste_begin, csi, osc)).parse_next(input)
 }
 
-pub(crate) fn paste_token(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
+fn paste_token(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
     alt((paste_end, paste_chunk)).parse_next(input)
 }
 

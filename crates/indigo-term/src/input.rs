@@ -3,18 +3,18 @@
 mod logical;
 pub mod physical;
 
-use crate::{input::physical::Token, output::KeyboardEnhancementFlags};
+use crate::{
+    input::physical::{Token, Tokenizer},
+    output::KeyboardEnhancementFlags,
+};
 use bitflags::bitflags;
-use std::{cmp::min, mem};
-use tinyvec::ArrayVec;
-use winnow::{Parser, Partial, error::ErrMode};
+use std::mem;
 
 // Decoder
 
 #[derive(Default)]
 pub struct Decoder {
-    buffer: ArrayVec<[u8; 1024]>,
-    in_paste: bool,
+    tokenizer: Tokenizer,
     paste: Vec<u8>,
 }
 
@@ -28,14 +28,12 @@ impl Decoder {
     /// [`Decoder::next_event`] to make room for more.
     #[must_use]
     pub fn feed(&mut self, bytes: &[u8]) -> usize {
-        let count = min(bytes.len(), self.buffer.capacity() - self.buffer.len());
-        self.buffer.extend_from_slice(&bytes[..count]);
-        count
+        self.tokenizer.feed(bytes)
     }
 
     /// Decode the next event, or return `None` if more bytes are needed.
     pub fn next_event(&mut self) -> Option<Event> {
-        while let Some(token) = self.next_token() {
+        while let Some(token) = self.tokenizer.next_token() {
             match token {
                 Token::PasteBegin => {}
                 Token::PasteChunk(chunk) => self.paste.extend_from_slice(&chunk),
@@ -47,59 +45,6 @@ impl Decoder {
             }
         }
         None
-    }
-
-    /// Split off the next token, or return `None` if more bytes are needed.
-    fn next_token(&mut self) -> Option<Token> {
-        loop {
-            // Pasted text isn't garbage
-            if !self.in_paste {
-                self.skip_garbage();
-            }
-
-            if self.buffer.is_empty() {
-                return None;
-            }
-
-            let input = Partial::new(self.buffer.as_slice());
-
-            let mut token = if self.in_paste {
-                physical::paste_token
-            } else {
-                physical::token
-            };
-
-            match token.parse_peek(input) {
-                Ok((remaining, token)) => {
-                    let consumed = self.buffer.len() - remaining.len();
-                    self.buffer.drain(..consumed);
-                    match token {
-                        Token::PasteBegin => self.in_paste = true,
-                        Token::PasteEnd => self.in_paste = false,
-                        _ => {}
-                    }
-                    return Some(token);
-                }
-                Err(ErrMode::Incomplete(_)) => return None,
-                Err(_) => {
-                    // Malformed sequence, skip the leading 0x1b and retry
-                    self.buffer.drain(..1);
-                }
-            }
-        }
-    }
-
-    /// Skip any non-ESC bytes at the front of the buffer. These are garbage bytes that don't start
-    /// any recognized sequence.
-    fn skip_garbage(&mut self) {
-        let garbage_count = self
-            .buffer
-            .iter()
-            .position(|&byte| byte == /* ESC */ 0x1B)
-            .unwrap_or(self.buffer.len());
-        if garbage_count > 0 {
-            self.buffer.drain(..garbage_count);
-        }
     }
 }
 
@@ -114,7 +59,8 @@ pub enum Event {
         height: u16,
         width: u16,
     },
-    /// Text pasted while bracketed paste is enabled
+    /// Text pasted while bracketed paste is enabled, with any invalid UTF-8 replaced. Use a
+    /// [`Tokenizer`] to get the raw bytes instead, as they arrive.
     ///
     /// <https://en.wikipedia.org/wiki/Bracketed-paste>
     Paste(String),
@@ -284,7 +230,6 @@ mod tests {
     fn paste_can_be_larger_than_the_buffer() {
         let text = "a run of pasted text that fills a whole chunk\n".repeat(100);
         let input = [BRACKETED_PASTE_BEGIN, &text, BRACKETED_PASTE_END].concat();
-        assert!(input.len() > Decoder::new().buffer.capacity());
         assert_eq!(
             decode_chunked(input.as_bytes(), &[]),
             vec![Event::Paste(text)]
