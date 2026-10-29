@@ -2,6 +2,7 @@ mod cursor;
 mod decoder;
 mod event;
 mod key;
+pub mod new;
 mod parser;
 mod reader;
 mod style;
