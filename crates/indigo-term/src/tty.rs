@@ -50,21 +50,13 @@ impl Tty {
     }
 
     pub fn size(&self) -> io::Result<(u16, u16)> {
-        let mut winsize = MaybeUninit::<libc::winsize>::uninit();
-        // SAFETY: `winsize` points to valid, writable memory of the right size.
-        let ret = unsafe {
-            libc::ioctl(
-                self.reader.as_raw_fd(),
-                libc::TIOCGWINSZ,
-                winsize.as_mut_ptr(),
-            )
-        };
-        if ret != 0 {
-            return Err(io::Error::last_os_error());
-        }
-        // SAFETY: `ioctl` succeeded, so `winsize` is initialized.
-        let winsize = unsafe { winsize.assume_init() };
+        let winsize = winsize(self.reader.as_raw_fd())?;
         Ok((winsize.ws_row, winsize.ws_col))
+    }
+
+    pub fn pixel_size(&self) -> io::Result<(u16, u16)> {
+        let winsize = winsize(self.reader.as_raw_fd())?;
+        Ok((winsize.ws_ypixel, winsize.ws_xpixel))
     }
 }
 
@@ -91,6 +83,17 @@ impl Write for Tty {
     fn flush(&mut self) -> io::Result<()> {
         self.writer.flush()
     }
+}
+
+fn winsize(fd: RawFd) -> io::Result<libc::winsize> {
+    let mut winsize = MaybeUninit::<libc::winsize>::uninit();
+    // SAFETY: `winsize` points to valid, writable memory of the right size.
+    let ret = unsafe { libc::ioctl(fd, libc::TIOCGWINSZ, winsize.as_mut_ptr()) };
+    if ret != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    // SAFETY: `ioctl` succeeded, so `winsize` is initialized.
+    Ok(unsafe { winsize.assume_init() })
 }
 
 fn tcgetattr(fd: RawFd) -> io::Result<libc::termios> {

@@ -191,6 +191,10 @@ impl Terminal {
         self.tty.size()
     }
 
+    pub fn pixel_size(&self) -> io::Result<(u16, u16)> {
+        self.tty.pixel_size()
+    }
+
     pub fn read_event(&mut self) -> io::Result<Event> {
         if let Some(event) = self.events.pop_front() {
             Ok(event)
