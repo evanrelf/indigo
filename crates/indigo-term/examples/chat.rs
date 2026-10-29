@@ -4,8 +4,9 @@
 #![allow(clippy::wildcard_imports)]
 
 use indigo_term::{
-    BOLD, CLEAR_LINE, CLEAR_TO_END_OF_SCREEN, Color, CursorUp, Event, Fg, KeyCode, KeyModifiers,
-    RESET, Terminal,
+    Terminal,
+    input::{Event, KeyCode, KeyModifiers},
+    output::{BOLD, CLEAR_LINE, CLEAR_TO_END_OF_SCREEN, Color, CursorUp, Fg, RESET},
 };
 use std::{
     cmp::{max, min},

@@ -1,7 +1,7 @@
 #![allow(clippy::uninlined_format_args)]
 #![allow(clippy::wildcard_imports)]
 
-use indigo_term::*;
+use indigo_term::{Tty, output::*};
 use std::{
     io::{self, Write as _},
     thread,

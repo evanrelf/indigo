@@ -1,3 +1,5 @@
+//! Decoding what the terminal sends
+
 mod parser;
 
 use crate::output::KeyboardEnhancementFlags;

@@ -1,7 +1,11 @@
 #![allow(clippy::uninlined_format_args)]
 #![allow(clippy::wildcard_imports)]
 
-use indigo_term::{KeyboardEnhancementFlags as KEF, *};
+use indigo_term::{
+    Reader, Tty,
+    input::*,
+    output::{KeyboardEnhancementFlags as KEF, *},
+};
 use std::io::{self, Write as _};
 
 const CTRL_C: Event = Event::KeyPress(Key {

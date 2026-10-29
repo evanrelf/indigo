@@ -1,3 +1,5 @@
+//! What you send to the terminal
+
 use bitflags::bitflags;
 use std::fmt::{self, Display};
 
