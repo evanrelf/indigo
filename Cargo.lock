@@ -877,6 +877,7 @@ name = "indigo-term"
 version = "0.0.0"
 dependencies = [
  "bitflags 2.13.2",
+ "hegeltest",
  "libc",
  "log",
  "tinyvec",

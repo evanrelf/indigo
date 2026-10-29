@@ -1,10 +1,12 @@
 //! Splitting bytes from the terminal into sequences, without interpreting them
 
-use std::ops::Deref;
-use tinyvec::TinyVec;
+use crate::input::{BRACKETED_PASTE_BEGIN, BRACKETED_PASTE_END};
+use std::{cmp::min, ops::Deref};
+use tinyvec::{ArrayVec, TinyVec};
 use winnow::{
     Partial,
     combinator::{alt, repeat},
+    error::{ErrMode, Needed},
     prelude::*,
     stream::Accumulate,
     token::one_of,
@@ -24,10 +26,50 @@ pub enum Token {
     ///
     /// <https://ghostty.org/docs/vt/concepts/sequences#osc>
     Osc { data_bytes: TinyVec<[u8; 32]> },
+    /// Start of pasted text, when bracketed paste is enabled
+    ///
+    /// <https://en.wikipedia.org/wiki/Bracketed-paste>
+    PasteBegin,
+    /// Some pasted text, between [`Token::PasteBegin`] and [`Token::PasteEnd`]
+    PasteChunk(ArrayVec<[u8; 32]>),
+    /// End of pasted text
+    PasteEnd,
 }
 
 pub(crate) fn token(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
-    alt((csi, osc)).parse_next(input)
+    alt((paste_begin, csi, osc)).parse_next(input)
+}
+
+pub(crate) fn paste_token(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
+    alt((paste_end, paste_chunk)).parse_next(input)
+}
+
+fn paste_begin(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
+    BRACKETED_PASTE_BEGIN.void().parse_next(input)?;
+    Ok(Token::PasteBegin)
+}
+
+fn paste_end(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
+    BRACKETED_PASTE_END.void().parse_next(input)?;
+    Ok(Token::PasteEnd)
+}
+
+fn paste_chunk(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
+    if input.is_empty() {
+        return Err(ErrMode::Incomplete(Needed::new(1)));
+    }
+    // Take whatever bytes are available, up to the chunk's capacity, but stop before the next ESC
+    // in case it begins the end marker. A leading ESC is pasted text, since `paste_end` didn't
+    // match it.
+    let mut chunk = ArrayVec::new();
+    let length = input
+        .iter()
+        .skip(1)
+        .position(|&byte| byte == 0x1B)
+        .map_or(input.len(), |position| position + 1);
+    let length = min(length, chunk.capacity());
+    chunk.extend_from_slice(input.next_slice(length));
+    Ok(Token::PasteChunk(chunk))
 }
 
 fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {

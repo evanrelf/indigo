@@ -5,7 +5,7 @@ pub mod physical;
 
 use crate::{input::physical::Token, output::KeyboardEnhancementFlags};
 use bitflags::bitflags;
-use std::cmp::min;
+use std::{cmp::min, mem};
 use tinyvec::ArrayVec;
 use winnow::{Parser, Partial, error::ErrMode};
 
@@ -14,6 +14,8 @@ use winnow::{Parser, Partial, error::ErrMode};
 #[derive(Default)]
 pub struct Decoder {
     buffer: ArrayVec<[u8; 1024]>,
+    in_paste: bool,
+    paste: Vec<u8>,
 }
 
 impl Decoder {
@@ -34,7 +36,10 @@ impl Decoder {
     /// Decode the next event, or return `None` if more bytes are needed.
     pub fn next_event(&mut self) -> Option<Event> {
         loop {
-            self.skip_garbage();
+            // Pasted text isn't garbage
+            if !self.in_paste {
+                self.skip_garbage();
+            }
 
             if self.buffer.is_empty() {
                 return None;
@@ -42,12 +47,35 @@ impl Decoder {
 
             let input = Partial::new(self.buffer.as_slice());
 
-            match physical::token.with_taken().parse_peek(input) {
+            let token = if self.in_paste {
+                physical::paste_token
+            } else {
+                physical::token
+            };
+
+            match token.with_taken().parse_peek(input) {
                 Ok((remaining, (token, bytes))) => {
-                    let event = logical::decode(token, bytes);
+                    let event = match token {
+                        Token::PasteBegin => {
+                            self.in_paste = true;
+                            None
+                        }
+                        Token::PasteChunk(chunk) => {
+                            self.paste.extend_from_slice(&chunk);
+                            None
+                        }
+                        Token::PasteEnd => {
+                            self.in_paste = false;
+                            let paste = mem::take(&mut self.paste);
+                            Some(Event::Paste(String::from_utf8_lossy(&paste).into_owned()))
+                        }
+                        token => Some(logical::decode(token, bytes)),
+                    };
                     let consumed = self.buffer.len() - remaining.len();
                     self.buffer.drain(..consumed);
-                    return Some(event);
+                    if let Some(event) = event {
+                        return Some(event);
+                    }
                 }
                 Err(ErrMode::Incomplete(_)) => return None,
                 Err(_) => {
@@ -83,6 +111,10 @@ pub enum Event {
         height: u16,
         width: u16,
     },
+    /// Text pasted while bracketed paste is enabled
+    ///
+    /// <https://en.wikipedia.org/wiki/Bracketed-paste>
+    Paste(String),
     /// Kitty keyboard protocol progressive enhancement flags
     ///
     /// <https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement>
@@ -186,3 +218,73 @@ pub enum ColorScheme {
 
 pub const BRACKETED_PASTE_BEGIN: &str = "\x1b[200~";
 pub const BRACKETED_PASTE_END: &str = "\x1b[201~";
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use hegel::generators as gs;
+
+    /// Feed `input` to a decoder in chunks split at `splits`, taking events after each chunk.
+    fn decode_chunked(input: &[u8], splits: &[usize]) -> Vec<Event> {
+        let mut decoder = Decoder::new();
+        let mut events = Vec::new();
+        let mut start = 0;
+        for end in splits.iter().copied().chain([input.len()]) {
+            let mut chunk = &input[start..end];
+            start = end;
+            while !chunk.is_empty() {
+                let fed = decoder.feed(chunk);
+                assert!(fed > 0, "decoder buffer full");
+                chunk = &chunk[fed..];
+                while let Some(event) = decoder.next_event() {
+                    events.push(event);
+                }
+            }
+        }
+        events
+    }
+
+    #[hegel::test(test_cases = 1_000)]
+    fn paste_is_decoded_regardless_of_chunking(tc: hegel::TestCase) {
+        // A partial end marker, an escape sequence, a run long enough to fill a chunk, multi-byte
+        // UTF-8, and invalid UTF-8. None of these combine to form the end marker.
+        let piece = gs::sampled_from(vec![
+            &b"\x1b[20"[..],
+            b"\x1b[A",
+            b"a run of pasted text that fills a whole chunk",
+            "é".as_bytes(),
+            b"\xff",
+        ]);
+        let text = tc.draw(gs::vecs(piece)).concat();
+        let input = [
+            BRACKETED_PASTE_BEGIN.as_bytes(),
+            &text,
+            BRACKETED_PASTE_END.as_bytes(),
+            b"\x1b[97u",
+        ]
+        .concat();
+        let mut splits = tc.draw(gs::vecs(gs::integers::<usize>().max_value(input.len())));
+        splits.sort_unstable();
+        assert_eq!(
+            decode_chunked(&input, &splits),
+            vec![
+                Event::Paste(String::from_utf8_lossy(&text).into_owned()),
+                Event::KeyPress(Key {
+                    code: KeyCode::Char('a'),
+                    modifiers: KeyModifiers::empty(),
+                }),
+            ]
+        );
+    }
+
+    #[test]
+    fn paste_can_be_larger_than_the_buffer() {
+        let text = "a run of pasted text that fills a whole chunk\n".repeat(100);
+        let input = [BRACKETED_PASTE_BEGIN, &text, BRACKETED_PASTE_END].concat();
+        assert!(input.len() > Decoder::new().buffer.capacity());
+        assert_eq!(
+            decode_chunked(input.as_bytes(), &[]),
+            vec![Event::Paste(text)]
+        );
+    }
+}
