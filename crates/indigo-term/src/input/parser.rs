@@ -1,4 +1,4 @@
-use crate::new::{
+use crate::{
     input::{ColorScheme, Event, Key, KeyCode, KeyModifiers, ModeSetting},
     output::KeyboardEnhancementFlags,
 };

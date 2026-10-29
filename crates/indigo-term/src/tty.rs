@@ -1,6 +1,6 @@
 #![expect(unsafe_code)]
 
-use crate::new::input::{Decoder, Event};
+use crate::input::{Decoder, Event};
 use std::{
     fs::{self, File},
     io::{self, BufWriter, Read, Write},

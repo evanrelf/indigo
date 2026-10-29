@@ -1,6 +1,6 @@
 mod parser;
 
-use crate::new::output::KeyboardEnhancementFlags;
+use crate::output::KeyboardEnhancementFlags;
 use bitflags::bitflags;
 use std::cmp::min;
 use tinyvec::{ArrayVec, TinyVec};
