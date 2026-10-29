@@ -1,15 +1,13 @@
 use crate::{
-    input::{ColorScheme, Event, Key, KeyCode, KeyModifiers, ModeSetting},
+    input::{ColorScheme, Event, Key, KeyCode, KeyModifiers, ModeSetting, physical},
     output::KeyboardEnhancementFlags,
 };
-use std::{ops::Deref, str};
-use tinyvec::TinyVec;
+use std::str;
 use winnow::{
     Partial,
     ascii::digit1,
-    combinator::{alt, cut_err, opt, peek, repeat, separated},
+    combinator::{alt, cut_err, opt, peek, separated},
     prelude::*,
-    stream::Accumulate,
     token::one_of,
 };
 
@@ -27,7 +25,7 @@ fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
         color_scheme,
         kitty_key_u,
         kitty_key_letter,
-        unknown_csi,
+        physical::csi.map(Event::Unknown),
     )))
     .parse_next(input)
 }
@@ -207,46 +205,9 @@ fn color_scheme(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     Ok(Event::ColorScheme(color_scheme))
 }
 
-fn unknown_csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
-    "\x1b[".void().parse_next(input)?;
-    let MyTinyVec(parameter_bytes) = repeat(0.., one_of(0x30..=0x3F)).parse_next(input)?;
-    if parameter_bytes.is_heap() {
-        log::debug!(
-            "got {} csi parameter bytes, overflowing to heap",
-            parameter_bytes.len()
-        );
-    }
-    let MyTinyVec(intermediate_bytes) = repeat(0.., one_of(0x20..=0x2F)).parse_next(input)?;
-    if intermediate_bytes.is_heap() {
-        log::debug!(
-            "got {} csi intermediate bytes, overflowing to heap",
-            intermediate_bytes.len()
-        );
-    }
-    let final_byte = one_of(0x40..=0x7E).parse_next(input)?;
-    Ok(Event::UnknownCsi {
-        parameter_bytes,
-        intermediate_bytes,
-        final_byte,
-    })
-}
-
 fn osc(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
     peek("\x1b]").parse_next(input)?;
-    cut_err(unknown_osc).parse_next(input)
-}
-
-fn unknown_osc(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Event> {
-    "\x1b]".void().parse_next(input)?;
-    let MyTinyVec(data_bytes) = repeat(0.., one_of(0x20..=0xFF)).parse_next(input)?;
-    if data_bytes.is_heap() {
-        log::debug!(
-            "found {} osc intermediate bytes, overflowing to heap",
-            data_bytes.len()
-        );
-    }
-    alt(("\x07", "\x1b\x5c")).void().parse_next(input)?;
-    Ok(Event::UnknownOsc { data_bytes })
+    cut_err(physical::osc.map(Event::Unknown)).parse_next(input)
 }
 
 fn u8(input: &mut Partial<&[u8]>) -> winnow::ModalResult<u8> {
@@ -261,31 +222,6 @@ fn u16(input: &mut Partial<&[u8]>) -> winnow::ModalResult<u16> {
         .try_map(|bytes| str::from_utf8(bytes))
         .try_map(|str| str::parse(str))
         .parse_next(input)
-}
-
-struct MyTinyVec<T: tinyvec::Array>(TinyVec<T>);
-
-impl<T: tinyvec::Array> Deref for MyTinyVec<T> {
-    type Target = TinyVec<T>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T, const N: usize> Accumulate<T> for MyTinyVec<[T; N]>
-where
-    T: Default,
-{
-    fn initial(capacity: Option<usize>) -> Self {
-        if let Some(capacity) = capacity {
-            Self(TinyVec::with_capacity(capacity))
-        } else {
-            Self(TinyVec::new())
-        }
-    }
-    fn accumulate(&mut self, acc: T) {
-        self.0.push(acc);
-    }
 }
 
 #[cfg(test)]

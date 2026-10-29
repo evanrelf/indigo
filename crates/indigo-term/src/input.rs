@@ -1,11 +1,12 @@
 //! Decoding what the terminal sends
 
 mod parser;
+pub mod physical;
 
-use crate::output::KeyboardEnhancementFlags;
+use crate::{input::physical::Token, output::KeyboardEnhancementFlags};
 use bitflags::bitflags;
 use std::cmp::min;
-use tinyvec::{ArrayVec, TinyVec};
+use tinyvec::ArrayVec;
 use winnow::{Parser, Partial, error::ErrMode};
 
 // Decoder
@@ -100,20 +101,8 @@ pub enum Event {
     ///
     /// <https://github.com/contour-terminal/contour/blob/master/docs/vt-extensions/color-palette-update-notifications.md>
     ColorScheme(ColorScheme),
-    /// Control Sequence Introducer
-    ///
-    /// <https://ghostty.org/docs/vt/concepts/sequences#csi>
-    UnknownCsi {
-        parameter_bytes: TinyVec<[u8; 32]>,
-        intermediate_bytes: TinyVec<[u8; 2]>,
-        final_byte: u8,
-    },
-    /// Operating System Command
-    ///
-    /// <https://ghostty.org/docs/vt/concepts/sequences#osc>
-    UnknownOsc {
-        data_bytes: TinyVec<[u8; 32]>,
-    },
+    /// A sequence that isn't recognized
+    Unknown(Token),
 }
 
 // Keys
