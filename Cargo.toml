@@ -29,6 +29,7 @@ log = "0.4.34"
 memchr = "2.8.3"
 pathdiff = { version = "0.2.3", features = ["camino"] }
 ratatui = "0.30.2"
+ratatui-core = "0.1.2"
 regex-cursor = { version = "0.1.5", default-features = false, features = ["perf-inline"] }
 roaring = "0.11.5"
 ropey = { version = "2.0.0-beta.1" }

@@ -880,6 +880,7 @@ dependencies = [
  "hegeltest",
  "libc",
  "log",
+ "ratatui-core",
  "tinyvec",
  "winnow",
 ]

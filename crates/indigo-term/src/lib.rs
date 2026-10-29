@@ -1,5 +1,7 @@
 pub mod input;
 pub mod output;
+#[cfg(feature = "ratatui")]
+pub mod ratatui;
 mod terminal;
 mod tty;
 
