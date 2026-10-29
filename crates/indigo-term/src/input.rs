@@ -1,6 +1,6 @@
 //! Decoding what the terminal sends
 
-mod logical;
+pub mod logical;
 pub mod physical;
 
 use crate::{

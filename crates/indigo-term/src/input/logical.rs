@@ -1,3 +1,5 @@
+//! Interpreting tokens from the terminal as events
+
 use crate::{
     input::{ColorScheme, Event, Key, KeyCode, KeyModifiers, ModeSetting, physical::Token},
     output::KeyboardEnhancementFlags,
@@ -10,6 +12,11 @@ use winnow::{
     token::one_of,
 };
 
+/// Interpret a token as an event.
+///
+/// Paste tokens come back as [`Event::Unknown`], because assembling a paste takes state across
+/// tokens. Use a [`Decoder`](crate::input::Decoder) for that.
+#[must_use]
 pub fn decode(token: Token) -> Event {
     let Token::Csi {
         parameter_bytes,
