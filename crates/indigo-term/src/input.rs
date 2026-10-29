@@ -1,6 +1,6 @@
 //! Decoding what the terminal sends
 
-mod parser;
+mod logical;
 pub mod physical;
 
 use crate::{input::physical::Token, output::KeyboardEnhancementFlags};
@@ -42,7 +42,7 @@ impl Decoder {
 
             let input = Partial::new(self.buffer.as_slice());
 
-            match parser::event.parse_peek(input) {
+            match logical::event.parse_peek(input) {
                 Ok((remaining, event)) => {
                     let consumed = self.buffer.len() - remaining.len();
                     self.buffer.drain(..consumed);
