@@ -28,14 +28,14 @@ pub enum Token {
 
 pub(crate) fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
     "\x1b[".void().parse_next(input)?;
-    let MyTinyVec(parameter_bytes) = repeat(0.., one_of(0x30..=0x3F)).parse_next(input)?;
+    let Accumulated(parameter_bytes) = repeat(0.., one_of(0x30..=0x3F)).parse_next(input)?;
     if parameter_bytes.is_heap() {
         log::debug!(
             "got {} csi parameter bytes, overflowing to heap",
             parameter_bytes.len()
         );
     }
-    let MyTinyVec(intermediate_bytes) = repeat(0.., one_of(0x20..=0x2F)).parse_next(input)?;
+    let Accumulated(intermediate_bytes) = repeat(0.., one_of(0x20..=0x2F)).parse_next(input)?;
     if intermediate_bytes.is_heap() {
         log::debug!(
             "got {} csi intermediate bytes, overflowing to heap",
@@ -52,7 +52,7 @@ pub(crate) fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
 
 pub(crate) fn osc(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
     "\x1b]".void().parse_next(input)?;
-    let MyTinyVec(data_bytes) = repeat(0.., one_of(0x20..=0xFF)).parse_next(input)?;
+    let Accumulated(data_bytes) = repeat(0.., one_of(0x20..=0xFF)).parse_next(input)?;
     if data_bytes.is_heap() {
         log::debug!(
             "found {} osc intermediate bytes, overflowing to heap",
@@ -63,16 +63,16 @@ pub(crate) fn osc(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
     Ok(Token::Osc { data_bytes })
 }
 
-struct MyTinyVec<T: tinyvec::Array>(TinyVec<T>);
+struct Accumulated<T: tinyvec::Array>(TinyVec<T>);
 
-impl<T: tinyvec::Array> Deref for MyTinyVec<T> {
+impl<T: tinyvec::Array> Deref for Accumulated<T> {
     type Target = TinyVec<T>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl<T, const N: usize> Accumulate<T> for MyTinyVec<[T; N]>
+impl<T, const N: usize> Accumulate<T> for Accumulated<[T; N]>
 where
     T: Default,
 {
