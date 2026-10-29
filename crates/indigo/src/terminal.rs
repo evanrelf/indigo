@@ -19,6 +19,7 @@ use std::{
     ops::{Deref, DerefMut},
     panic,
     sync::atomic::{AtomicBool, Ordering},
+    thread,
 };
 
 pub struct TerminalGuard(pub ratatui::DefaultTerminal);
@@ -26,9 +27,12 @@ pub struct TerminalGuard(pub ratatui::DefaultTerminal);
 static ENTERED: AtomicBool = AtomicBool::new(false);
 
 pub fn init() -> anyhow::Result<TerminalGuard> {
+    let main_thread = thread::current().id();
     let hook = panic::take_hook();
     panic::set_hook(Box::new(move |info| {
-        leave();
+        if thread::current().id() == main_thread {
+            leave();
+        }
         hook(info);
     }));
     enter()?;
