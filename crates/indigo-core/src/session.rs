@@ -2,7 +2,7 @@ use crate::{
     IndigoBuildHasher,
     buffer::{Buffer, BufferKey},
 };
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8PathBuf;
 use slotmap::SlotMap;
 use std::collections::HashMap;
 use thiserror::Error;
@@ -51,14 +51,6 @@ impl Session {
 
     pub fn buffers_mut(&mut self) -> impl Iterator<Item = (BufferKey, &mut Buffer)> {
         self.buffers.iter_mut()
-    }
-
-    #[must_use]
-    pub fn absolute_path(&self, path: &Utf8Path) -> Utf8PathBuf {
-        match &self.pwd {
-            Some(pwd) => pwd.join(path),
-            None => path.to_path_buf(),
-        }
     }
 
     pub fn assert_invariants(&self) -> anyhow::Result<()> {

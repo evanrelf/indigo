@@ -6,7 +6,7 @@ use crate::{
     session::Session,
     window::{Window, WindowKey, WindowMut, WindowState},
 };
-use camino::Utf8Path;
+use camino::{Utf8Path, Utf8PathBuf};
 use indigo_key::Key;
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use slotmap::SlotMap;
@@ -156,6 +156,11 @@ impl<'a, W: WrapRef> ClientView<'a, W> {
     #[must_use]
     pub fn home(&self) -> Option<&Utf8Path> {
         self.home
+    }
+
+    #[must_use]
+    pub fn absolute_path(&self, path: &Utf8Path) -> Utf8PathBuf {
+        path::absolute_path(self.home, self.session.pwd.as_deref(), path)
     }
 
     #[must_use]
