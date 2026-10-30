@@ -190,6 +190,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
 
     server.fs = Arc::new(RealFs);
     server.client_mut().session_mut().pwd = Some(Utf8PathBuf::try_from(env::current_dir()?)?);
+    server.home = env::home_dir().map(Utf8PathBuf::try_from).transpose()?;
 
     // Centering scroll deferred until height is known
     let mut pending_center = false;

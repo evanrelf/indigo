@@ -4,11 +4,13 @@ use crate::{
     fs::{Fs, NoFs},
     session::Session,
 };
+use camino::Utf8PathBuf;
 use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct Server {
     pub fs: Arc<dyn Fs + Send + Sync>,
+    pub home: Option<Utf8PathBuf>,
     session: Session,
     client: ClientState,
 }
@@ -20,11 +22,16 @@ impl Server {
     }
 
     pub fn client(&self) -> Client<'_> {
-        Client::new(&self.fs, &self.session, &self.client)
+        Client::new(&self.fs, self.home.as_deref(), &self.session, &self.client)
     }
 
     pub fn client_mut(&mut self) -> ClientMut<'_> {
-        ClientMut::new(&self.fs, &mut self.session, &mut self.client)
+        ClientMut::new(
+            &self.fs,
+            self.home.as_deref(),
+            &mut self.session,
+            &mut self.client,
+        )
     }
 
     pub fn handle_event(&mut self, event: Event) -> anyhow::Result<bool> {
@@ -49,6 +56,7 @@ impl From<Buffer> for Server {
         let client = ClientState::new(buffer_key);
         Self {
             fs: Arc::new(NoFs),
+            home: None,
             session,
             client,
         }

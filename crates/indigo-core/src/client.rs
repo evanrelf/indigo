@@ -5,6 +5,7 @@ use crate::{
     session::Session,
     window::{Window, WindowKey, WindowMut, WindowState},
 };
+use camino::Utf8Path;
 use indigo_key::Key;
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use slotmap::SlotMap;
@@ -105,6 +106,7 @@ pub struct ClientView<'a, W: Wrap> {
     state: W::Wrap<'a, ClientState>,
     session: W::Wrap<'a, Session>,
     fs: &'a Arc<dyn Fs + Send + Sync>,
+    home: Option<&'a Utf8Path>,
 }
 
 pub type Client<'a> = ClientView<'a, WRef>;
@@ -128,10 +130,16 @@ impl<W: WrapMut> DerefMut for ClientView<'_, W> {
 impl<'a, W: WrapRef> ClientView<'a, W> {
     pub fn new(
         fs: &'a Arc<dyn Fs + Send + Sync>,
+        home: Option<&'a Utf8Path>,
         session: W::WrapRef<'a, Session>,
         state: W::WrapRef<'a, ClientState>,
     ) -> Self {
-        Self { state, session, fs }
+        Self {
+            state,
+            session,
+            fs,
+            home,
+        }
     }
 
     #[must_use]
@@ -142,6 +150,11 @@ impl<'a, W: WrapRef> ClientView<'a, W> {
     #[must_use]
     pub fn fs(&self) -> &'a Arc<dyn Fs + Send + Sync> {
         self.fs
+    }
+
+    #[must_use]
+    pub fn home(&self) -> Option<&Utf8Path> {
+        self.home
     }
 
     #[must_use]
