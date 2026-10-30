@@ -15,8 +15,8 @@ pub enum BufferKind {
     Scratch,
     /// Buffer mapping to a file on disk.
     File {
-        /// Absolute path, unless there was no working directory to resolve it against. Symlinks
-        /// and `..` components aren't resolved, so the same file can appear under different paths.
+        /// Absolute path. Symlinks and `..` components aren't resolved, so the same file can appear
+        /// under different paths.
         path: Arc<Utf8Path>,
         /// Last known state of file on disk, used for modification tracking.
         on_disk: Rope,
@@ -104,6 +104,9 @@ impl Buffer {
     }
 
     pub fn assert_invariants(&self) -> anyhow::Result<()> {
+        if let Some(path) = self.path() {
+            anyhow::ensure!(path.is_absolute(), "Path is not absolute: `{path}`");
+        }
         self.text.assert_invariants()
     }
 }
@@ -131,17 +134,18 @@ mod tests {
     #[test]
     fn fs() -> anyhow::Result<()> {
         let fs = TestFs::default();
-        fs.write("main.rs".into(), b"fn main() {}")?;
-        let mut buffer = Buffer::open(&fs, "main.rs")?;
+        fs.write("/main.rs".into(), b"fn main() {}")?;
+        let mut buffer = Buffer::open(&fs, "/main.rs")?;
+        buffer.assert_invariants()?;
         // Text normalization appends the missing trailing newline on open.
         assert_eq!(&buffer.text.to_string(), "fn main() {}\n");
         assert_eq!(buffer.is_modified(), Some(false));
         let BufferKind::File { path, .. } = &mut buffer.kind else {
             unreachable!();
         };
-        *path = Arc::from(Utf8Path::new("main2.rs"));
+        *path = Arc::from(Utf8Path::new("/main2.rs"));
         buffer.save(&fs)?;
-        assert_eq!(fs.read("main2.rs".into())?, b"fn main() {}\n");
+        assert_eq!(fs.read("/main2.rs".into())?, b"fn main() {}\n");
         Ok(())
     }
 }
