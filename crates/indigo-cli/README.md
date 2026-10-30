@@ -22,6 +22,7 @@ intuit the final cursor position.
 `indigo-cli` has a `--debug` mode with more verbose output on `stderr`.
 
 - Prints when keys are unhandled
+- Prints messages (errors are always printed, even without `--debug`)
 - When executing `<c-l>`, prints:
   - Keys processed
   - Byte indexes of ranges

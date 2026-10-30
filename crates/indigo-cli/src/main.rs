@@ -72,6 +72,14 @@ fn main() -> anyhow::Result<ExitCode> {
 
         let handled = server.handle_event(event)?;
 
+        let mut client = server.client_mut();
+        match client.message() {
+            Some(Ok(message)) if args.debug => eprintln!("message: {message}"),
+            Some(Err(message)) => eprintln!("error: {message}"),
+            _ => {}
+        }
+        client.clear_message();
+
         if args.debug && !handled && !is(&key, "<c-l>") {
             eprintln!("unhandled key: {key}");
         }
