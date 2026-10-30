@@ -98,7 +98,12 @@ impl Fs for TestFs {
 
 pub fn home_dir() -> anyhow::Result<Utf8PathBuf> {
     let home = env::home_dir().context("Failed to get home directory")?;
-    Ok(Utf8PathBuf::try_from(home)?)
+    let home = Utf8PathBuf::try_from(home)?;
+    anyhow::ensure!(
+        home.is_absolute(),
+        "Home directory is not absolute: `{home}`"
+    );
+    Ok(home)
 }
 
 pub fn pwd() -> anyhow::Result<Utf8PathBuf> {
