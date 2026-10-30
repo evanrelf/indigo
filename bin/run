@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-log="$HOME/.local/state/indigo/indigo.log"
+log="$HOME/.local/state/indigo/log"
 
 run_samply() {
   cargo build --profile profile --bin indigo
