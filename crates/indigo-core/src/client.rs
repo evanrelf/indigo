@@ -206,6 +206,11 @@ impl<'a, W: WrapRef> ClientView<'a, W> {
     // TODO: Add windows iterator
 
     pub fn assert_invariants(&self) -> anyhow::Result<()> {
+        let home = self.home;
+        anyhow::ensure!(
+            home.is_absolute(),
+            "Home directory is not absolute: `{home}`"
+        );
         self.session.assert_invariants()?;
         if !self.state.windows.contains_key(self.state.focused_window) {
             anyhow::bail!(Error::FocusedWindowMissing {

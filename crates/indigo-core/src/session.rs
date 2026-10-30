@@ -2,7 +2,7 @@ use crate::{
     IndigoBuildHasher,
     buffer::{Buffer, BufferKey},
 };
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::{Utf8Component, Utf8Path, Utf8PathBuf};
 use slotmap::SlotMap;
 use std::collections::HashMap;
 use thiserror::Error;
@@ -63,6 +63,15 @@ impl Session {
     }
 
     pub fn assert_invariants(&self) -> anyhow::Result<()> {
+        let pwd = &self.pwd;
+        anyhow::ensure!(
+            pwd.is_absolute(),
+            "Working directory is not absolute: `{pwd}`"
+        );
+        anyhow::ensure!(
+            !pwd.components().any(|c| c == Utf8Component::ParentDir),
+            "Working directory contains `..`: `{pwd}`"
+        );
         for (key, buffer) in &self.buffers {
             buffer
                 .assert_invariants()
