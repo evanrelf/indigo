@@ -12,12 +12,11 @@ use indigo::{
 use indigo_core::{
     fs::RealFs,
     mode::{insert, normal, prompt},
-    prelude::{Buffer, BufferKind, Client, DisplayWidth as _, Keys, Mode, RopeExt as _, Server},
+    prelude::{Buffer, Client, DisplayWidth as _, Keys, Mode, RopeExt as _, Server},
     syntax::Language,
 };
 use indigo_key::Keymap;
 use indigo_text::rope::LINE_TYPE;
-use pathdiff::diff_utf8_paths;
 use ratatui::{
     crossterm,
     prelude::{Buffer as Surface, Line, Rect, Span, Style, Stylize as _, Widget as _},
@@ -300,14 +299,12 @@ fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
         Mode::Prompt(_) => "prompt",
     };
 
-    let path = match (&client.session().pwd, &client.focused_buffer().kind()) {
-        (_, BufferKind::Scratch) => Cow::Borrowed("*scratch*"),
-        (None, BufferKind::File { path, .. }) => Cow::Borrowed(path.as_str()),
-        (Some(pwd), BufferKind::File { path, .. }) => match diff_utf8_paths(path, pwd) {
-            None => Cow::Borrowed(path.as_str()),
-            Some(path) => Cow::Owned(path.into_string()),
-        },
-    };
+    let path = client
+        .focused_buffer()
+        .path()
+        .map_or(Cow::Borrowed("*scratch*"), |path| {
+            client.session().display_path(path)
+        });
 
     let language = client
         .focused_buffer()

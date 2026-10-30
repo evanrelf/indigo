@@ -1,6 +1,7 @@
 use crate::{buffer::Buffer, client::ClientMut, mode::prompt, window::WindowState};
 use anyhow::anyhow;
 use camino::Utf8PathBuf;
+use std::borrow::Cow;
 
 #[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
@@ -162,13 +163,16 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
             }
         }
         Command::Quit { exit_code } => {
+            let session = client.session();
             let mut modified = None;
-            for (_, buffer) in client.session().buffers() {
+            for (_, buffer) in session.buffers() {
                 if buffer.is_modified().unwrap_or(false) {
                     modified = Some(
                         buffer
                             .path()
-                            .map_or("a scratch buffer", |path| path.as_str()),
+                            .map_or(Cow::Borrowed("a scratch buffer"), |path| {
+                                session.display_path(path)
+                            }),
                     );
                     break;
                 }

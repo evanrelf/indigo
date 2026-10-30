@@ -15,6 +15,7 @@ camino = { workspace = true }
 indigo-key = { workspace = true }
 indigo-text = { workspace = true }
 indigo-wrap = { workspace = true }
+pathdiff = { workspace = true }
 regex-cursor = { workspace = true }
 ropey = { workspace = true }
 shell-words = { workspace = true }
