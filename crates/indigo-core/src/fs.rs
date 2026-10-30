@@ -2,7 +2,7 @@
 
 use crate::IndigoBuildHasher;
 use anyhow::{Context as _, anyhow};
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::{Utf8Component, Utf8Path, Utf8PathBuf};
 use std::{
     collections::HashMap,
     env, fs,
@@ -115,6 +115,13 @@ pub fn pwd() -> anyhow::Result<Utf8PathBuf> {
     };
     if !shell_pwd.is_absolute() {
         // Not absolute
+        return Ok(unix_cwd);
+    }
+    if shell_pwd
+        .components()
+        .any(|c| c == Utf8Component::ParentDir)
+    {
+        // Not normalized
         return Ok(unix_cwd);
     }
     if !fs::canonicalize(&shell_pwd).is_ok_and(|pwd| pwd == unix_cwd) {
