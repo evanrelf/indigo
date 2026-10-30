@@ -303,8 +303,15 @@ fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
         .path()
         .map_or(Cow::Borrowed("*scratch*"), |path| client.display_path(path));
 
-    let language = client
-        .focused_buffer()
+    let buffer = client.focused_buffer();
+
+    let modified = if buffer.is_modified().unwrap_or(false) {
+        " [+]"
+    } else {
+        ""
+    };
+
+    let language = buffer
         .text
         .language()
         .map_or("", |language| match language {
@@ -328,10 +335,12 @@ fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
         None => Cow::Borrowed(""),
     };
 
-    Line::raw(format!("{path}{language} {line}:{column} {mode}{count}"))
-        .right_aligned()
-        .bg(THEME.status_bar_bg)
-        .render(area, surface);
+    Line::raw(format!(
+        "{path}{modified}{language} {line}:{column} {mode}{count}"
+    ))
+    .right_aligned()
+    .bg(THEME.status_bar_bg)
+    .render(area, surface);
 }
 
 fn render_prompt(client: &Client, mut area: Rect, surface: &mut Surface) {
