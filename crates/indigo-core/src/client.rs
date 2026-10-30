@@ -160,12 +160,12 @@ impl<'a, W: WrapRef> ClientView<'a, W> {
 
     #[must_use]
     pub fn absolute_path(&self, path: &Utf8Path) -> Utf8PathBuf {
-        path::absolute_path(self.home, self.session.pwd.as_deref(), path)
+        path::absolute_path(self.home, &self.session.pwd, path)
     }
 
     #[must_use]
     pub fn display_path<'p>(&self, path: &'p Utf8Path) -> Cow<'p, str> {
-        path::display_path(self.home, self.session.pwd.as_deref(), path)
+        path::display_path(self.home, &self.session.pwd, path)
     }
 
     #[must_use]

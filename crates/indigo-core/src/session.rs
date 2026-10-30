@@ -17,17 +17,21 @@ pub enum Error {
     },
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct Session {
     buffers: SlotMap<BufferKey, Buffer>,
     pub registers: HashMap<char, Vec<String>, IndigoBuildHasher>,
-    pub pwd: Option<Utf8PathBuf>,
+    pub pwd: Utf8PathBuf,
 }
 
 impl Session {
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(pwd: Utf8PathBuf) -> Self {
+        Self {
+            buffers: SlotMap::default(),
+            registers: HashMap::default(),
+            pwd,
+        }
     }
 
     // TODO: Figure out a safer/better way to add and remove buffers

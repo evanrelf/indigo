@@ -101,6 +101,24 @@ pub fn home_dir() -> anyhow::Result<Utf8PathBuf> {
     Ok(Utf8PathBuf::try_from(home)?)
 }
 
+pub fn pwd() -> anyhow::Result<Utf8PathBuf> {
+    // Try to use the shell's `$PWD` (doesn't resolve symlinks) if possible
+    let unix_cwd = Utf8PathBuf::try_from(env::current_dir()?)?;
+    let Ok(shell_pwd) = env::var("PWD").map(Utf8PathBuf::from) else {
+        // Missing or not UTF-8
+        return Ok(unix_cwd);
+    };
+    if !shell_pwd.is_absolute() {
+        // Not absolute
+        return Ok(unix_cwd);
+    }
+    if !fs::canonicalize(&shell_pwd).is_ok_and(|pwd| pwd == unix_cwd) {
+        // Stale
+        return Ok(unix_cwd);
+    }
+    Ok(shell_pwd)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

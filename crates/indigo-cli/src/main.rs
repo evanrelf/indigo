@@ -1,5 +1,9 @@
 use clap::Parser as _;
-use indigo_core::{fs::home_dir, prelude::*, syntax::Language};
+use indigo_core::{
+    fs::{home_dir, pwd},
+    prelude::*,
+    syntax::Language,
+};
 use indigo_key::is;
 use std::{io, process::ExitCode, sync::Arc};
 use tracing_subscriber::EnvFilter;
@@ -51,7 +55,7 @@ fn main() -> anyhow::Result<ExitCode> {
         buffer.text.set_language(language);
     }
 
-    let mut server = Server::new(home_dir()?, buffer);
+    let mut server = Server::new(home_dir()?, pwd()?, buffer);
 
     let mut debug_keys = vec![];
     let mut debug_rope = server.client().focused_buffer().text.rope().clone();

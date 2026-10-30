@@ -17,8 +17,8 @@ pub struct Server {
 
 impl Server {
     #[must_use]
-    pub fn new(home: Utf8PathBuf, buffer: Buffer) -> Self {
-        let mut session = Session::new();
+    pub fn new(home: Utf8PathBuf, pwd: Utf8PathBuf, buffer: Buffer) -> Self {
+        let mut session = Session::new(pwd);
         let buffer_key = session.insert_buffer(buffer);
         let client = ClientState::new(buffer_key);
         Self {

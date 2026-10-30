@@ -6,7 +6,11 @@ use ropey::Rope;
 
 fuzz_target!(|input: (&str, Vec<Action>)| {
     let (text, actions) = input;
-    let mut server = Server::new("/home/fuzz".into(), Buffer::from(Rope::from(text)));
+    let mut server = Server::new(
+        "/home/fuzz".into(),
+        "/home/fuzz/project".into(),
+        Buffer::from(Rope::from(text)),
+    );
     for action in actions {
         server.handle_action(&action);
     }

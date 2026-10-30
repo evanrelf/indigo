@@ -9,7 +9,7 @@ use indigo::{
     theme::THEME,
 };
 use indigo_core::{
-    fs::{RealFs, home_dir},
+    fs::{RealFs, home_dir, pwd},
     mode::{insert, normal, prompt},
     prelude::{Buffer, Client, DisplayWidth as _, Keys, Mode, RopeExt as _, Server},
     syntax::Language,
@@ -23,7 +23,6 @@ use ratatui::{
 use std::{
     borrow::Cow,
     cmp::{max, min},
-    env,
     fmt::Write as _,
     fs, mem,
     process::ExitCode,
@@ -171,24 +170,6 @@ fn parse_file_line(raw: &Utf8PathBuf) -> (Utf8PathBuf, Option<usize>) {
     (raw.clone(), None)
 }
 
-fn pwd() -> anyhow::Result<Utf8PathBuf> {
-    // Try to use the shell's `$PWD` (doesn't resolve symlinks) if possible
-    let unix_cwd = Utf8PathBuf::try_from(env::current_dir()?)?;
-    let Ok(shell_pwd) = env::var("PWD").map(Utf8PathBuf::from) else {
-        // Missing or not UTF-8
-        return Ok(unix_cwd);
-    };
-    if !shell_pwd.is_absolute() {
-        // Not absolute
-        return Ok(unix_cwd);
-    }
-    if !fs::canonicalize(&shell_pwd).is_ok_and(|pwd| pwd == unix_cwd) {
-        // Stale
-        return Ok(unix_cwd);
-    }
-    Ok(shell_pwd)
-}
-
 fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
     let (file, goto_line) = if let Some(raw) = &args.file {
         let (path, line) = parse_file_line(raw);
@@ -205,10 +186,9 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
         Buffer::new()
     };
 
-    let mut server = Server::new(home_dir()?, buffer);
+    let mut server = Server::new(home_dir()?, pwd, buffer);
 
     server.fs = Arc::new(RealFs);
-    server.client_mut().session_mut().pwd = Some(pwd);
 
     // Centering scroll deferred until height is known
     let mut pending_center = false;
