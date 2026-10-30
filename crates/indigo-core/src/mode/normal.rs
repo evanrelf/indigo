@@ -82,6 +82,7 @@ pub enum Action {
     ScrollFullPageDown,
     ScrollCenter,
     Suspend,
+    QuitHint,
 }
 
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -204,6 +205,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "vc" => vec![ScrollCenter], /// Scroll to center cursor
 
         "<c-z>" => vec![Suspend], /// Suspend
+        "<c-c>" => vec![QuitHint],
     }
 });
 
@@ -286,6 +288,7 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
         Action::ScrollFullPageDown => client.focused_window_mut().scroll_full_page_down(),
         Action::ScrollCenter => client.focused_window_mut().scroll_center_selection(),
         Action::Suspend => client.suspend = true,
+        Action::QuitHint => quit_hint(client),
     }
 }
 
@@ -434,6 +437,11 @@ fn move_down(client: &mut ClientMut) {
         .for_each_move(|mut range| range.move_down(count));
     window.selection_move().merge_overlapping();
     window.scroll_to_selection();
+}
+
+fn quit_hint(client: &mut ClientMut) {
+    client.set_message("Type :q<ret> to quit");
+    client.count = None;
 }
 
 fn flip(client: &mut ClientMut) {
