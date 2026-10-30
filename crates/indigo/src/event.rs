@@ -72,6 +72,10 @@ pub fn handle_event(server: &mut Server, areas: Areas, event: TerminalEvent) -> 
 
     let client = &mut server.client_mut();
 
+    if handle_event_scroll(client, &event) {
+        return Ok(());
+    }
+
     let _handled = match &client.mode {
         Mode::Normal => handle_event_normal(client, areas, event),
         Mode::Insert => handle_event_insert(client, areas, event),
@@ -81,19 +85,31 @@ pub fn handle_event(server: &mut Server, areas: Areas, event: TerminalEvent) -> 
     Ok(())
 }
 
+// TODO: Add mouse events to core, so it can handle this internally.
+// TODO(horizontal_scroll)
+fn handle_event_scroll(client: &mut ClientMut, event: &TerminalEvent) -> bool {
+    let TerminalEvent::Mouse(mouse_event) = event else {
+        return false;
+    };
+    match (mouse_event.modifiers, mouse_event.kind) {
+        (KeyModifiers::NONE, MouseEventKind::ScrollUp) => {
+            client.focused_window_mut().scroll_up();
+            true
+        }
+        (KeyModifiers::NONE, MouseEventKind::ScrollDown) => {
+            client.focused_window_mut().scroll_down();
+            true
+        }
+        _ => false,
+    }
+}
+
 #[expect(clippy::needless_pass_by_value)]
 fn handle_event_normal(client: &mut ClientMut, areas: Areas, event: TerminalEvent) -> bool {
     let mut handled = true;
 
     match event {
-        // TODO(horizontal_scroll)
         TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => {
-                client.focused_window_mut().scroll_up();
-            }
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => {
-                client.focused_window_mut().scroll_down();
-            }
             // TODO: Kakoune allows creating new selection ranges by control clicking. Would be
             // awesome if Indigo could do the same, but also support control dragging to create
             // vertical lines of selection ranges, akin to Vim's visual block mode. Could snap to
@@ -158,16 +174,6 @@ fn handle_event_insert(client: &mut ClientMut, _areas: Areas, event: TerminalEve
     let mut handled = true;
 
     match event {
-        // TODO: Add mouse events to core, so it can handle this internally.
-        TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
-            (KeyModifiers::NONE, MouseEventKind::ScrollUp) => {
-                client.focused_window_mut().scroll_up();
-            }
-            (KeyModifiers::NONE, MouseEventKind::ScrollDown) => {
-                client.focused_window_mut().scroll_down();
-            }
-            _ => handled = false,
-        },
         TerminalEvent::Paste(text) => insert::paste(client, &text),
         _ => handled = false,
     }
