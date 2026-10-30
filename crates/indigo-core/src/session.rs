@@ -2,7 +2,7 @@ use crate::{
     IndigoBuildHasher,
     buffer::{Buffer, BufferKey},
 };
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 use slotmap::SlotMap;
 use std::collections::HashMap;
 use thiserror::Error;
@@ -21,7 +21,7 @@ pub enum Error {
 pub struct Session {
     buffers: SlotMap<BufferKey, Buffer>,
     pub registers: HashMap<char, Vec<String>, IndigoBuildHasher>,
-    pub pwd: Utf8PathBuf,
+    pwd: Utf8PathBuf,
 }
 
 impl Session {
@@ -32,6 +32,11 @@ impl Session {
             registers: HashMap::default(),
             pwd,
         }
+    }
+
+    #[must_use]
+    pub fn pwd(&self) -> &Utf8Path {
+        &self.pwd
     }
 
     // TODO: Figure out a safer/better way to add and remove buffers

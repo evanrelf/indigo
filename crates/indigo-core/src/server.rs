@@ -10,7 +10,7 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub struct Server {
     pub fs: Arc<dyn Fs + Send + Sync>,
-    pub home: Utf8PathBuf,
+    home: Utf8PathBuf,
     session: Session,
     client: ClientState,
 }
