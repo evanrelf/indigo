@@ -113,6 +113,10 @@ fn parse_command(command: &str) -> anyhow::Result<Command> {
         anyhow::bail!("Invalid command");
     };
 
+    if args.is_empty() {
+        return Ok(Command::Nop);
+    }
+
     parser.run_inner(args.as_slice()).map_err(|failure| {
         let message = match failure {
             ParseFailure::Stderr(doc) => doc.monochrome(true),
