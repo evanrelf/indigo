@@ -165,6 +165,7 @@ See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 
 - [ ] `v` (view mode)
 - [ ] `V` (lock view mode)
+- [x] `vc` (center view on cursor)
 
 ### Searching
 

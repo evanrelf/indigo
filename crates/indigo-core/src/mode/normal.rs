@@ -80,6 +80,7 @@ pub enum Action {
     ScrollHalfPageDown,
     ScrollFullPageUp,
     ScrollFullPageDown,
+    ScrollCenter,
     Suspend,
 }
 
@@ -200,6 +201,8 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<c-b>" => vec![ScrollFullPageUp], /// Scroll page up
         "<c-f>" => vec![ScrollFullPageDown], /// Scroll page down
 
+        "vc" => vec![ScrollCenter], /// Scroll to center cursor
+
         "<c-z>" => vec![Suspend], /// Suspend
     }
 });
@@ -281,6 +284,7 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
         Action::ScrollHalfPageDown => client.focused_window_mut().scroll_half_page_down(),
         Action::ScrollFullPageUp => client.focused_window_mut().scroll_full_page_up(),
         Action::ScrollFullPageDown => client.focused_window_mut().scroll_full_page_down(),
+        Action::ScrollCenter => client.focused_window_mut().scroll_center_selection(),
         Action::Suspend => client.suspend = true,
     }
 }
