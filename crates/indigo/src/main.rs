@@ -14,17 +14,21 @@ use indigo_core::{
     prelude::{Buffer, Client, DisplayWidth as _, Keys, Mode, RopeExt as _, Server},
     syntax::Language,
 };
-use indigo_key::Keymap;
+use indigo_key::{Key, Keymap};
 use indigo_text::rope::LINE_TYPE;
 use ratatui::{
     crossterm,
+    layout::Margin,
     prelude::{Buffer as Surface, Line, Rect, Span, Style, Stylize as _, Widget as _},
+    widgets::Clear,
 };
 use std::{
     borrow::Cow,
     cmp::{max, min},
     fmt::Write as _,
-    fs, mem,
+    fs,
+    iter::zip,
+    mem,
     process::ExitCode,
     sync::Arc,
 };
@@ -286,6 +290,7 @@ fn render(client: &Client, experimental: &ExperimentalArgs, area: Rect, surface:
     }
     render_text(client, areas.text, surface);
     render_selection(client, areas.text, surface);
+    render_pending_keys(client, areas.text, surface);
     if !experimental.x_ui_barebones {
         render_scroll_bar(client, areas.scroll_bar, surface);
     }
@@ -375,6 +380,78 @@ fn render_prompt(client: &Client, mut area: Rect, surface: &mut Surface) {
             Err(message) => Line::raw(message).bg(THEME.error_bg).render(area, surface),
         }
     }
+}
+
+fn render_pending_keys(client: &Client, area: Rect, surface: &mut Surface) {
+    if client.pending_keys.is_empty() {
+        return;
+    }
+
+    let mappings = match &client.mode {
+        Mode::Normal => pending_mappings(&normal::KEYMAP, &client.pending_keys),
+        Mode::Insert => pending_mappings(&insert::KEYMAP, &client.pending_keys),
+        Mode::Prompt(_) => pending_mappings(&prompt::KEYMAP, &client.pending_keys),
+    };
+
+    let keys_width = mappings
+        .iter()
+        .map(|(keys, _)| keys.len())
+        .max()
+        .unwrap_or(0);
+
+    let mut lines = vec![Keys(&client.pending_keys).to_string()];
+    if !mappings.is_empty() {
+        lines.push(String::new());
+    }
+    for (keys, description) in &mappings {
+        lines.push(format!("{keys:keys_width$} {description}"));
+    }
+
+    let width = lines
+        .iter()
+        .map(|line| line.as_str().display_width())
+        .max()
+        .unwrap_or(0);
+    let width = u16::try_from(width).unwrap_or(u16::MAX);
+    let height = u16::try_from(lines.len()).unwrap_or(u16::MAX);
+
+    // Horizontal padding is wider than vertical padding because terminal cells are taller than
+    // they are wide.
+    let padding = Margin {
+        horizontal: 2,
+        vertical: 1,
+    };
+    let width = width.saturating_add(2 * padding.horizontal);
+    let height = height.saturating_add(2 * padding.vertical);
+
+    // Floats in the top right corner of the area. The right margin is wider than the top margin
+    // because terminal cells are taller than they are wide.
+    let rect = Rect {
+        x: area.right().saturating_sub(width.saturating_add(2)),
+        y: area.y.saturating_add(1),
+        width,
+        height,
+    }
+    .intersection(area);
+
+    // Erase the text underneath, which would otherwise show through after shorter lines
+    Clear.render(rect, surface);
+    surface.set_style(rect, Style::new().bg(THEME.status_bar_bg));
+
+    for (line, row) in zip(lines, rect.inner(padding).rows()) {
+        Line::raw(line).render(row, surface);
+    }
+}
+
+/// Documented mappings starting with the pending keys, as (remaining keys, description) pairs.
+fn pending_mappings<V>(keymap: &Keymap<V>, pending_keys: &[Key]) -> Vec<(String, &'static str)> {
+    keymap
+        .docs()
+        .filter_map(|(keys, description)| {
+            let rest = keys.0.strip_prefix(pending_keys)?;
+            Some((Keys(rest).to_string(), description?))
+        })
+        .collect()
 }
 
 fn render_line_numbers(client: &Client, area: Rect, surface: &mut Surface) {
