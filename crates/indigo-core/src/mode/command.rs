@@ -135,7 +135,8 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
         }
         Command::Edit { path } => {
             // TODO: Edit existing buffer for path if one exists.
-            match Buffer::open(client.fs(), path) {
+            let absolute_path = client.session().absolute_path(path);
+            match Buffer::open(client.fs(), absolute_path) {
                 Ok(buffer) => {
                     // In Kakoune, windows are inextricably linked to buffers, so changing buffer
                     // means changing window, creating a new one if necessary.
@@ -154,7 +155,8 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
         Command::Write { path } => {
             let fs = client.fs();
             let result = if let Some(path) = path {
-                client.focused_buffer_mut().save_as(fs, path)
+                let absolute_path = client.session().absolute_path(path);
+                client.focused_buffer_mut().save_as(fs, absolute_path)
             } else {
                 client.focused_buffer_mut().save(fs)
             };

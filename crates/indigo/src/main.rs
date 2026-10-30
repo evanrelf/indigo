@@ -198,8 +198,10 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
         (None, None)
     };
 
+    let pwd = pwd()?;
+
     let buffer = if let Some(path) = &file {
-        Buffer::open(&RealFs, path)?
+        Buffer::open(&RealFs, pwd.join(path))?
     } else {
         Buffer::new()
     };
@@ -208,7 +210,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
 
     server.fs = Arc::new(RealFs);
     server.home = env::home_dir().map(Utf8PathBuf::try_from).transpose()?;
-    server.client_mut().session_mut().pwd = Some(pwd()?);
+    server.client_mut().session_mut().pwd = Some(pwd);
 
     // Centering scroll deferred until height is known
     let mut pending_center = false;

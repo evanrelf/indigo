@@ -15,6 +15,8 @@ pub enum BufferKind {
     Scratch,
     /// Buffer mapping to a file on disk.
     File {
+        /// Absolute path, unless there was no working directory to resolve it against. Symlinks
+        /// and `..` components aren't resolved, so the same file can appear under different paths.
         path: Arc<Utf8Path>,
         /// Last known state of file on disk, used for modification tracking.
         on_disk: Rope,
