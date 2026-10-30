@@ -136,7 +136,7 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
         Command::Edit { path } => {
             // TODO: Edit existing buffer for path if one exists.
             let absolute_path = client.session().absolute_path(path);
-            match Buffer::open(client.fs(), absolute_path) {
+            match Buffer::open(client.fs(), &absolute_path) {
                 Ok(buffer) => {
                     // In Kakoune, windows are inextricably linked to buffers, so changing buffer
                     // means changing window, creating a new one if necessary.
@@ -149,7 +149,10 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
                     // writing) that means it's not displayed, it's just hanging out unused in
                     // memory.
                 }
-                Err(error) => client.set_error(format!("Failed to open {path}: {error:#}")),
+                Err(error) => {
+                    let path = client.display_path(&absolute_path);
+                    client.set_error(format!("Failed to open {path}: {error:#}"));
+                }
             }
         }
         Command::Write { path } => {
