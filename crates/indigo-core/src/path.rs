@@ -4,7 +4,7 @@ use std::borrow::Cow;
 
 #[must_use]
 pub fn display_path<'a>(
-    home: Option<&Utf8Path>,
+    home: &Utf8Path,
     pwd: Option<&Utf8Path>,
     path: &'a Utf8Path,
 ) -> Cow<'a, str> {
@@ -19,9 +19,7 @@ pub fn display_path<'a>(
     }
     // If we're outside `$PWD`, use the shortest option (preferring absolute, then `~`, on ties).
     let mut shortest = absolute.clone();
-    if let Some(home) = home
-        && let Ok(relative) = absolute.strip_prefix(home)
-    {
+    if let Ok(relative) = absolute.strip_prefix(home) {
         let tilde = Utf8Path::new("~").join(relative);
         if tilde.as_str().len() < shortest.as_str().len() {
             shortest = tilde;
@@ -36,15 +34,9 @@ pub fn display_path<'a>(
 }
 
 #[must_use]
-pub fn absolute_path(
-    home: Option<&Utf8Path>,
-    pwd: Option<&Utf8Path>,
-    path: &Utf8Path,
-) -> Utf8PathBuf {
+pub fn absolute_path(home: &Utf8Path, pwd: Option<&Utf8Path>, path: &Utf8Path) -> Utf8PathBuf {
     // If the path starts with `~`, join it onto `$HOME`.
-    if let Some(home) = home
-        && let Ok(relative) = path.strip_prefix("~")
-    {
+    if let Ok(relative) = path.strip_prefix("~") {
         return home.join(relative);
     }
     // Otherwise join it onto `$PWD`, which does nothing to absolute paths. Don't resolve `..`
@@ -89,7 +81,7 @@ mod tests {
             ("/me/src/indigo", "../../Library/foo", "~/Library/foo"),
             ("/", "me/foo", "me/foo"),
         ] {
-            let display_path = display_path(Some("/me".into()), Some(pwd.into()), path.into());
+            let display_path = display_path("/me".into(), Some(pwd.into()), path.into());
             assert_eq!(display_path, expected, "{path} in {pwd}");
         }
     }
@@ -103,11 +95,8 @@ mod tests {
             ("../foo", "/me/src/indigo/../foo"),
             ("/etc/shells", "/etc/shells"),
         ] {
-            let absolute_path = absolute_path(
-                Some("/me".into()),
-                Some("/me/src/indigo".into()),
-                path.into(),
-            );
+            let absolute_path =
+                absolute_path("/me".into(), Some("/me/src/indigo".into()), path.into());
             assert_eq!(absolute_path, expected, "{path}");
         }
     }
@@ -125,9 +114,9 @@ mod tests {
         let path = tc.draw(gen_path(tc.draw(gs::sampled_from(vec!["", "/"]))));
         let absolute = normalize(&pwd.join(&path));
 
-        let display_path = display_path(Some(&home), Some(&pwd), path.as_str().into());
+        let display_path = display_path(&home, Some(&pwd), path.as_str().into());
 
-        let resolved = absolute_path(Some(&home), Some(&pwd), display_path.as_ref().into());
+        let resolved = absolute_path(&home, Some(&pwd), display_path.as_ref().into());
         assert_eq!(normalize(&resolved), absolute);
         assert!(display_path.len() <= absolute.as_str().len());
         if absolute.starts_with(&pwd) {

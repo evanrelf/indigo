@@ -1,11 +1,11 @@
 //! Abstract filesystem interface.
 
 use crate::IndigoBuildHasher;
-use anyhow::anyhow;
+use anyhow::{Context as _, anyhow};
 use camino::{Utf8Path, Utf8PathBuf};
 use std::{
     collections::HashMap,
-    fs,
+    env, fs,
     sync::{Arc, Mutex},
 };
 
@@ -94,6 +94,11 @@ impl Fs for TestFs {
         let exists = files.contains_key(path);
         Ok(exists)
     }
+}
+
+pub fn home_dir() -> anyhow::Result<Utf8PathBuf> {
+    let home = env::home_dir().context("Failed to get home directory")?;
+    Ok(Utf8PathBuf::try_from(home)?)
 }
 
 #[cfg(test)]

@@ -107,7 +107,7 @@ pub struct ClientView<'a, W: Wrap> {
     state: W::Wrap<'a, ClientState>,
     session: W::Wrap<'a, Session>,
     fs: &'a Arc<dyn Fs + Send + Sync>,
-    home: Option<&'a Utf8Path>,
+    home: &'a Utf8Path,
 }
 
 pub type Client<'a> = ClientView<'a, WRef>;
@@ -131,7 +131,7 @@ impl<W: WrapMut> DerefMut for ClientView<'_, W> {
 impl<'a, W: WrapRef> ClientView<'a, W> {
     pub fn new(
         fs: &'a Arc<dyn Fs + Send + Sync>,
-        home: Option<&'a Utf8Path>,
+        home: &'a Utf8Path,
         session: W::WrapRef<'a, Session>,
         state: W::WrapRef<'a, ClientState>,
     ) -> Self {
@@ -154,7 +154,7 @@ impl<'a, W: WrapRef> ClientView<'a, W> {
     }
 
     #[must_use]
-    pub fn home(&self) -> Option<&Utf8Path> {
+    pub fn home(&self) -> &Utf8Path {
         self.home
     }
 

@@ -1,4 +1,3 @@
-use anyhow::Context as _;
 use arrayvec::ArrayString;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
@@ -10,7 +9,7 @@ use indigo::{
     theme::THEME,
 };
 use indigo_core::{
-    fs::RealFs,
+    fs::{RealFs, home_dir},
     mode::{insert, normal, prompt},
     prelude::{Buffer, Client, DisplayWidth as _, Keys, Mode, RopeExt as _, Server},
     syntax::Language,
@@ -135,7 +134,7 @@ fn print_keymap() {
 fn init_tracing(args: &Args) -> anyhow::Result<()> {
     use tracing_subscriber::{EnvFilter, Registry, fmt, prelude::*};
 
-    let home = Utf8PathBuf::try_from(env::home_dir().context("Failed to get home directory")?)?;
+    let home = home_dir()?;
 
     let log_path = home.join(".local/state/indigo/log");
 
@@ -206,10 +205,9 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
         Buffer::new()
     };
 
-    let mut server = Server::from(buffer);
+    let mut server = Server::new(home_dir()?, buffer);
 
     server.fs = Arc::new(RealFs);
-    server.home = env::home_dir().map(Utf8PathBuf::try_from).transpose()?;
     server.client_mut().session_mut().pwd = Some(pwd);
 
     // Centering scroll deferred until height is known
