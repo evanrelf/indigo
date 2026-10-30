@@ -157,14 +157,23 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
         }
         Command::Write { path } => {
             let fs = client.fs();
-            let result = if let Some(path) = path {
-                let absolute_path = client.session().absolute_path(path);
+            let absolute_path = path
+                .as_ref()
+                .map(|path| client.session().absolute_path(path));
+            let result = if let Some(absolute_path) = &absolute_path {
                 client.focused_buffer_mut().save_as(fs, absolute_path)
             } else {
                 client.focused_buffer_mut().save(fs)
             };
             if let Err(error) = result {
-                client.set_error(format!("Failed to save: {error:#}"));
+                let path = absolute_path
+                    .as_deref()
+                    .or_else(|| client.focused_buffer().path())
+                    .map_or(Cow::Borrowed("a scratch buffer"), |path| {
+                        client.display_path(path)
+                    });
+                let error = format!("Failed to save {path}: {error:#}");
+                client.set_error(error);
             }
         }
         Command::Quit { exit_code } => {
@@ -195,7 +204,16 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
             let fs = client.fs();
             match client.focused_buffer_mut().save(fs) {
                 Ok(()) => client.exit(exit_code.unwrap_or(0)),
-                Err(error) => client.set_error(format!("Failed to save: {error:#}")),
+                Err(error) => {
+                    let path = client
+                        .focused_buffer()
+                        .path()
+                        .map_or(Cow::Borrowed("a scratch buffer"), |path| {
+                            client.display_path(path)
+                        });
+                    let error = format!("Failed to save {path}: {error:#}");
+                    client.set_error(error);
+                }
             }
         }
         Command::Readonly => {
