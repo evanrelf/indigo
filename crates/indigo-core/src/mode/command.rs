@@ -134,18 +134,20 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
         }
         Command::Edit { path } => {
             // TODO: Edit existing buffer for path if one exists.
-            if let Ok(buffer) = Buffer::open(client.fs(), path) {
-                // In Kakoune, windows are inextricably linked to buffers, so changing buffer means
-                // changing window, creating a new one if necessary.
-                // https://github.com/mawww/kakoune/blob/afc035ac0e17a6280edec511dfe8da1c0dd565ab/doc/pages/scopes.asciidoc?plain=1#L29-L30
-                let buffer_key = client.session_mut().insert_buffer(buffer);
-                let window_state = WindowState::new(buffer_key);
-                let window_key = client.insert_window(window_state);
-                assert!(client.focus_window(window_key));
-                // TODO: Delete previous window. It's no longer focused, so (at the time of writing)
-                // that means it's not displayed, it's just hanging out unused in memory.
-            } else {
-                client.set_error(format!("Failed to open {path}"));
+            match Buffer::open(client.fs(), path) {
+                Ok(buffer) => {
+                    // In Kakoune, windows are inextricably linked to buffers, so changing buffer
+                    // means changing window, creating a new one if necessary.
+                    // https://github.com/mawww/kakoune/blob/afc035ac0e17a6280edec511dfe8da1c0dd565ab/doc/pages/scopes.asciidoc?plain=1#L29-L30
+                    let buffer_key = client.session_mut().insert_buffer(buffer);
+                    let window_state = WindowState::new(buffer_key);
+                    let window_key = client.insert_window(window_state);
+                    assert!(client.focus_window(window_key));
+                    // TODO: Delete previous window. It's no longer focused, so (at the time of
+                    // writing) that means it's not displayed, it's just hanging out unused in
+                    // memory.
+                }
+                Err(error) => client.set_error(format!("Failed to open {path}: {error:#}")),
             }
         }
         Command::Write { path } => {
@@ -155,8 +157,8 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
             } else {
                 client.focused_buffer_mut().save(fs)
             };
-            if result.is_err() {
-                client.set_error("Failed to save");
+            if let Err(error) = result {
+                client.set_error(format!("Failed to save: {error:#}"));
             }
         }
         Command::Quit { exit_code } => {
@@ -183,10 +185,9 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
         }
         Command::WriteQuit { exit_code } => {
             let fs = client.fs();
-            if client.focused_buffer_mut().save(fs).is_ok() {
-                client.exit(exit_code.unwrap_or(0));
-            } else {
-                client.set_error("Failed to save");
+            match client.focused_buffer_mut().save(fs) {
+                Ok(()) => client.exit(exit_code.unwrap_or(0)),
+                Err(error) => client.set_error(format!("Failed to save: {error:#}")),
             }
         }
         Command::Readonly => {

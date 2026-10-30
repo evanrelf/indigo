@@ -628,16 +628,25 @@ fn select_regex(client: &mut ClientMut) {
                     .dot_matches_new_line(true),
             )
             .build(regex_str);
-        if let Ok(regex) = regex {
-            let matched = client
-                .focused_window_mut()
-                .selection_move()
-                .select_regex(&regex);
-            if !matched {
-                client.set_error("Nothing selected");
+        match regex {
+            Ok(regex) => {
+                let matched = client
+                    .focused_window_mut()
+                    .selection_move()
+                    .select_regex(&regex);
+                if !matched {
+                    client.set_error("Nothing selected");
+                }
             }
-        } else {
-            client.set_error("Invalid regex");
+            Err(error) => {
+                // Syntax errors notate the pattern over several lines, ending in "error: <reason>".
+                let error = error
+                    .syntax_error()
+                    .map_or_else(|| error.to_string(), ToString::to_string);
+                let last_line = error.lines().last().unwrap_or_default();
+                let reason = last_line.strip_prefix("error: ").unwrap_or(last_line);
+                client.set_error(format!("Invalid regex: {reason}"));
+            }
         }
         client.count = None;
     });
