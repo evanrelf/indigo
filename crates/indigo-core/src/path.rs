@@ -2,18 +2,18 @@ use camino::{Utf8Component, Utf8Path, Utf8PathBuf};
 use pathdiff::diff_utf8_paths;
 use std::borrow::Cow;
 
-/// Path for showing to the user. Paths under the working directory are shown relative to it.
-/// Otherwise we show the shorter of the path relative to the working directory or absolute,
-/// preferring absolute on ties.
 #[must_use]
 pub fn display_path<'a>(path: &'a Utf8Path, pwd: Option<&Utf8Path>) -> Cow<'a, str> {
+    // If there's no `$PWD`, use the path verbatim, because we have nothing to go on.
     let Some(pwd) = pwd else {
         return Cow::Borrowed(path.as_str());
     };
+    // If we're under `$PWD`, use a relative path.
     let absolute = normalize(&pwd.join(path));
     if let Ok(relative) = absolute.strip_prefix(pwd) {
         return Cow::Owned(relative.to_string());
     }
+    // If we're outside `$PWD`, use the shorter option (preferring absolute on ties).
     if let Some(relative) = diff_utf8_paths(&absolute, pwd)
         && relative.as_str().len() < absolute.as_str().len()
     {
@@ -43,10 +43,13 @@ mod tests {
     #[test]
     fn test_display_path() {
         for (pwd, path, expected) in [
-            ("/me/src/indigo", "/etc/shells", "/etc/shells"),
+            // Paths under `$PWD` are shown relative to it.
             ("/me/src/indigo", "/me/src/indigo/Cargo.toml", "Cargo.toml"),
             ("/me/src/indigo", "./src/../Cargo.toml", "Cargo.toml"),
             ("/me/src/indigo", "../indigo/Cargo.toml", "Cargo.toml"),
+            // Paths outside `$PWD` are shown as whichever is shorter: relative to `$PWD` or
+            // absolute (preferring absolute on ties).
+            ("/me/src/indigo", "/etc/shells", "/etc/shells"),
             ("/me/src/indigo", "../../../etc/shells", "/etc/shells"),
             ("/me/src/indigo", "/me/src/kak/README", "../kak/README"),
             ("/me/src/indigo", "../kak/README", "../kak/README"),
