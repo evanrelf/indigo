@@ -4,6 +4,7 @@ pub mod cursor;
 pub mod fs;
 pub mod history;
 pub mod mode;
+pub mod path;
 pub mod prelude;
 pub mod range;
 pub mod selection;
