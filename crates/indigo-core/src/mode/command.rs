@@ -163,15 +163,14 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
             }
         }
         Command::Quit { exit_code } => {
-            let session = client.session();
             let mut modified = None;
-            for (_, buffer) in session.buffers() {
+            for (_, buffer) in client.session().buffers() {
                 if buffer.is_modified().unwrap_or(false) {
                     modified = Some(
                         buffer
                             .path()
                             .map_or(Cow::Borrowed("a scratch buffer"), |path| {
-                                session.display_path(path)
+                                client.display_path(path)
                             }),
                     );
                     break;

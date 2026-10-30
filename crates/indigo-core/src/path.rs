@@ -3,7 +3,11 @@ use pathdiff::diff_utf8_paths;
 use std::borrow::Cow;
 
 #[must_use]
-pub fn display_path<'a>(path: &'a Utf8Path, pwd: Option<&Utf8Path>) -> Cow<'a, str> {
+pub fn display_path<'a>(
+    home: Option<&Utf8Path>,
+    pwd: Option<&Utf8Path>,
+    path: &'a Utf8Path,
+) -> Cow<'a, str> {
     // If there's no `$PWD`, use the path verbatim, because we have nothing to go on.
     let Some(pwd) = pwd else {
         return Cow::Borrowed(path.as_str());
@@ -13,13 +17,22 @@ pub fn display_path<'a>(path: &'a Utf8Path, pwd: Option<&Utf8Path>) -> Cow<'a, s
     if let Ok(relative) = absolute.strip_prefix(pwd) {
         return Cow::Owned(relative.to_string());
     }
-    // If we're outside `$PWD`, use the shorter option (preferring absolute on ties).
-    if let Some(relative) = diff_utf8_paths(&absolute, pwd)
-        && relative.as_str().len() < absolute.as_str().len()
+    // If we're outside `$PWD`, use the shortest option (preferring absolute, then `~`, on ties).
+    let mut shortest = absolute.clone();
+    if let Some(home) = home
+        && let Ok(relative) = absolute.strip_prefix(home)
     {
-        return Cow::Owned(relative.into_string());
+        let tilde = Utf8Path::new("~").join(relative);
+        if tilde.as_str().len() < shortest.as_str().len() {
+            shortest = tilde;
+        }
     }
-    Cow::Owned(absolute.into_string())
+    if let Some(relative) = diff_utf8_paths(&absolute, pwd)
+        && relative.as_str().len() < shortest.as_str().len()
+    {
+        shortest = relative;
+    }
+    Cow::Owned(shortest.into_string())
 }
 
 /// Resolve `.` and `..` components without touching the filesystem, preserving symlinks.
@@ -47,14 +60,16 @@ mod tests {
             ("/me/src/indigo", "/me/src/indigo/Cargo.toml", "Cargo.toml"),
             ("/me/src/indigo", "./src/../Cargo.toml", "Cargo.toml"),
             ("/me/src/indigo", "../indigo/Cargo.toml", "Cargo.toml"),
-            // Paths outside `$PWD` are shown as whichever is shorter: relative to `$PWD` or
-            // absolute (preferring absolute on ties).
+            // Paths outside `$PWD` are shown as whichever is shortest: relative to `$PWD`,
+            // relative to `~`, or absolute (preferring absolute, then `~`, on ties).
             ("/me/src/indigo", "/etc/shells", "/etc/shells"),
             ("/me/src/indigo", "../../../etc/shells", "/etc/shells"),
             ("/me/src/indigo", "/me/src/kak/README", "../kak/README"),
             ("/me/src/indigo", "../kak/README", "../kak/README"),
+            ("/me/src/indigo", "../../Library/foo", "~/Library/foo"),
+            ("/", "me/foo", "me/foo"),
         ] {
-            let display_path = display_path(path.into(), Some(pwd.into()));
+            let display_path = display_path(Some("/me".into()), Some(pwd.into()), path.into());
             assert_eq!(display_path, expected, "{path} in {pwd}");
         }
     }
@@ -67,16 +82,21 @@ mod tests {
 
     #[hegel::test(test_cases = 5_000)]
     fn display_path_points_to_same_place(tc: hegel::TestCase) {
+        let home = normalize(Utf8Path::new(&tc.draw(gen_path("/"))));
         let pwd = normalize(Utf8Path::new(&tc.draw(gen_path("/"))));
         let path = tc.draw(gen_path(tc.draw(gs::sampled_from(vec!["", "/"]))));
         let absolute = normalize(&pwd.join(&path));
 
-        let display_path = display_path(path.as_str().into(), Some(&pwd));
+        let display_path = display_path(Some(&home), Some(&pwd), path.as_str().into());
 
-        assert_eq!(normalize(&pwd.join(display_path.as_ref())), absolute);
+        let resolved = match display_path.strip_prefix("~") {
+            Some(rest) => home.join(rest.trim_start_matches('/')),
+            None => pwd.join(display_path.as_ref()),
+        };
+        assert_eq!(normalize(&resolved), absolute);
         assert!(display_path.len() <= absolute.as_str().len());
         if absolute.starts_with(&pwd) {
-            assert!(!display_path.starts_with('/') && !display_path.contains(".."));
+            assert!(!display_path.starts_with(['/', '~']) && !display_path.contains(".."));
         }
     }
 }

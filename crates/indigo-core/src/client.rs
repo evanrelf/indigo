@@ -2,6 +2,7 @@ use crate::{
     buffer::{Buffer, BufferKey},
     fs::Fs,
     mode::{Mode, command, insert, normal, prompt},
+    path,
     session::Session,
     window::{Window, WindowKey, WindowMut, WindowState},
 };
@@ -155,6 +156,11 @@ impl<'a, W: WrapRef> ClientView<'a, W> {
     #[must_use]
     pub fn home(&self) -> Option<&Utf8Path> {
         self.home
+    }
+
+    #[must_use]
+    pub fn display_path<'p>(&self, path: &'p Utf8Path) -> Cow<'p, str> {
+        path::display_path(self.home, self.session.pwd.as_deref(), path)
     }
 
     #[must_use]
