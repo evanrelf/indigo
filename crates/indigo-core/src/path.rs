@@ -1,18 +1,25 @@
 use camino::{Utf8Component, Utf8Path, Utf8PathBuf};
+use pathdiff::diff_utf8_paths;
 use std::borrow::Cow;
 
-/// Path for showing to the user. Paths under the working directory are shown relative to it, and
-/// other paths are shown absolute.
+/// Path for showing to the user. Paths under the working directory are shown relative to it.
+/// Otherwise we show the shorter of the path relative to the working directory or absolute,
+/// preferring absolute on ties.
 #[must_use]
 pub fn display_path<'a>(path: &'a Utf8Path, pwd: Option<&Utf8Path>) -> Cow<'a, str> {
     let Some(pwd) = pwd else {
         return Cow::Borrowed(path.as_str());
     };
     let absolute = normalize(&pwd.join(path));
-    match absolute.strip_prefix(pwd) {
-        Ok(relative) => Cow::Owned(relative.to_string()),
-        Err(_) => Cow::Owned(absolute.into_string()),
+    if let Ok(relative) = absolute.strip_prefix(pwd) {
+        return Cow::Owned(relative.to_string());
     }
+    if let Some(relative) = diff_utf8_paths(&absolute, pwd)
+        && relative.as_str().len() < absolute.as_str().len()
+    {
+        return Cow::Owned(relative.into_string());
+    }
+    Cow::Owned(absolute.into_string())
 }
 
 /// Resolve `.` and `..` components without touching the filesystem, preserving symlinks.
@@ -41,7 +48,8 @@ mod tests {
             ("/me/src/indigo", "./src/../Cargo.toml", "Cargo.toml"),
             ("/me/src/indigo", "../indigo/Cargo.toml", "Cargo.toml"),
             ("/me/src/indigo", "../../../etc/shells", "/etc/shells"),
-            ("/me/src/indigo", "/me/src/kak/README", "/me/src/kak/README"),
+            ("/me/src/indigo", "/me/src/kak/README", "../kak/README"),
+            ("/me/src/indigo", "../kak/README", "../kak/README"),
         ] {
             let display_path = display_path(path.into(), Some(pwd.into()));
             assert_eq!(display_path, expected, "{path} in {pwd}");
