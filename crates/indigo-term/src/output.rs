@@ -256,3 +256,105 @@ impl Display for KeyboardEnhancementFlagsPop {
 }
 
 pub const KEYBOARD_ENHANCEMENT_FLAGS_QUERY: &str = "\x1b[?u";
+
+// Pointer shapes
+// https://sw.kovidgoyal.net/kitty/pointer-shapes/
+
+// TODO: Add query for current pointer shape.
+// TODO: Add methods to `Terminal`. Needs to handle separate stacks for main and alternate screens.
+
+pub enum PointerShape {
+    Alias,
+    Cell,
+    Copy,
+    Crosshair,
+    Default,
+    EResize,
+    EwResize,
+    Grab,
+    Grabbing,
+    Help,
+    Move,
+    NResize,
+    NeResize,
+    NeswResize,
+    NoDrop,
+    NotAllowed,
+    NsResize,
+    NwResize,
+    NwseResize,
+    Pointer,
+    Progress,
+    SResize,
+    SeResize,
+    SwResize,
+    Text,
+    VerticalText,
+    WResize,
+    Wait,
+    ZoomIn,
+    ZoomOut,
+}
+
+impl Display for PointerShape {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = match self {
+            Self::Alias => "alias",
+            Self::Cell => "cell",
+            Self::Copy => "copy",
+            Self::Crosshair => "crosshair",
+            Self::Default => "default",
+            Self::EResize => "e-resize",
+            Self::EwResize => "ew-resize",
+            Self::Grab => "grab",
+            Self::Grabbing => "grabbing",
+            Self::Help => "help",
+            Self::Move => "move",
+            Self::NResize => "n-resize",
+            Self::NeResize => "ne-resize",
+            Self::NeswResize => "nesw-resize",
+            Self::NoDrop => "no-drop",
+            Self::NotAllowed => "not-allowed",
+            Self::NsResize => "ns-resize",
+            Self::NwResize => "nw-resize",
+            Self::NwseResize => "nwse-resize",
+            Self::Pointer => "pointer",
+            Self::Progress => "progress",
+            Self::SResize => "s-resize",
+            Self::SeResize => "se-resize",
+            Self::SwResize => "sw-resize",
+            Self::Text => "text",
+            Self::VerticalText => "vertical-text",
+            Self::WResize => "w-resize",
+            Self::Wait => "wait",
+            Self::ZoomIn => "zoom-in",
+            Self::ZoomOut => "zoom-out",
+        };
+        write!(f, "{name}")
+    }
+}
+
+/// Replaces the shape at the top of the stack. Omits the optional `=` for xterm compatibility.
+pub struct PointerShapeSet(pub PointerShape);
+
+impl Display for PointerShapeSet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "\x1b]22;{}\x1b\\", self.0)
+    }
+}
+
+pub struct PointerShapePush(pub PointerShape);
+
+impl Display for PointerShapePush {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "\x1b]22;>{}\x1b\\", self.0)
+    }
+}
+
+pub struct PointerShapePop;
+
+impl Display for PointerShapePop {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "\x1b]22;<\x1b\\")
+    }
+}
