@@ -1,15 +1,26 @@
 #![allow(clippy::uninlined_format_args)]
 #![allow(clippy::wildcard_imports)]
 
-use indigo_term::{Reader, Tty, input::*, output::*};
+use indigo_term::{
+    Reader, Tty,
+    input::*,
+    output::{KeyboardEnhancementFlags as KEF, *},
+};
 use std::{
     io::{self, Write as _},
     process,
 };
 
+const CTRL_C: Event = Event::KeyPress(Key {
+    code: KeyCode::Char('c'),
+    modifiers: KeyModifiers::CTRL,
+});
+
 fn main() -> io::Result<()> {
     let mut tty = Tty::init()?;
     let mut reader = Reader::new();
+
+    tty.enable_raw_mode()?;
 
     // Send the DECRQM query followed by DA1 as a sentinel
     write!(tty, "{}{}", IN_BAND_RESIZE_QUERY, DA1_QUERY)?;
@@ -45,18 +56,31 @@ fn main() -> io::Result<()> {
         }
     }
 
-    let mut stdout = io::stdout().lock();
+    // Raw mode disables signals, so Ctrl-C has to arrive as a key event
+    write!(tty, "{}", KeyboardEnhancementFlagsPush(KEF::DISAMBIGUATE))?;
+    tty.flush()?;
+
     let pid = process::id();
 
     loop {
-        if let Event::Resize { height, width } = reader.read_event(&mut tty)? {
+        let event = reader.read_event(&mut tty)?;
+        if let Event::Resize { height, width } = event {
             write!(
-                stdout,
+                tty,
                 "{}{}pid:{pid},height:{height},width:{width}",
                 CursorColumn(1),
                 CLEAR_LINE,
             )?;
-            stdout.flush()?;
+            tty.flush()?;
+        } else if event == CTRL_C {
+            break;
         }
     }
+
+    write!(tty, "{}", IN_BAND_RESIZE_RESET)?;
+    write!(tty, "{}", KeyboardEnhancementFlagsPop)?;
+    write!(tty, "\n\r")?;
+    tty.flush()?;
+
+    Ok(())
 }
