@@ -70,19 +70,15 @@ fn main() -> anyhow::Result<ExitCode> {
             kind: KeyEventKind::Press,
         });
 
-        let handled = server.handle_event(event)?;
+        server.handle_event(event)?;
 
         let mut client = server.client_mut();
         match client.message() {
             Some(Ok(message)) if args.debug => eprintln!("message: {message}"),
-            Some(Err(message)) => eprintln!("error: {message}"),
+            Some(Err(message)) if !is(&key, "<c-l>") => eprintln!("error: {message}"),
             _ => {}
         }
         client.clear_message();
-
-        if args.debug && !handled && !is(&key, "<c-l>") {
-            eprintln!("unhandled key: {key}");
-        }
 
         if args.debug && is(&key, "<c-l>") {
             let left = debug_rope.to_string();

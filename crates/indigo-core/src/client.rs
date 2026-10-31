@@ -7,7 +7,7 @@ use crate::{
     window::{Window, WindowKey, WindowMut, WindowState},
 };
 use camino::{Utf8Path, Utf8PathBuf};
-use indigo_key::Key;
+use indigo_key::{Key, Keys};
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use slotmap::SlotMap;
 use std::{
@@ -307,6 +307,8 @@ impl ClientMut<'_> {
             self.state.pending_keys.push(*key);
         }
 
+        let keys = Keys(self.state.pending_keys.clone());
+
         let handled = match event {
             Event::Key(_) => match self.state.mode {
                 Mode::Normal => normal::handle_keys(self),
@@ -314,6 +316,10 @@ impl ClientMut<'_> {
                 Mode::Prompt(_) => prompt::handle_keys(self),
             },
         };
+
+        if !handled {
+            self.set_error(format!("{keys} is not mapped"));
+        }
 
         self.assert_invariants().unwrap();
 
