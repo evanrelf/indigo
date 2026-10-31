@@ -139,13 +139,13 @@ impl<W: WrapMut> WindowView<'_, W> {
         self.scroll_to_line(line);
     }
 
-    pub fn scroll_line_up(&mut self) {
-        let line = self.vertical_scroll().saturating_sub(1);
+    pub fn scroll_lines_up(&mut self, count: usize) {
+        let line = self.vertical_scroll().saturating_sub(count);
         self.scroll_to_line(line);
     }
 
-    pub fn scroll_line_down(&mut self) {
-        let line = self.vertical_scroll() + 1;
+    pub fn scroll_lines_down(&mut self, count: usize) {
+        let line = self.vertical_scroll().saturating_add(count);
         self.scroll_to_line(line);
     }
 

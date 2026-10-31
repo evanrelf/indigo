@@ -325,12 +325,7 @@ pub fn handle_actions(client: &mut ClientMut, actions: &[Action]) {
 
 pub fn handle_action(client: &mut ClientMut, action: &Action) {
     match action {
-        Action::AppendCountDigit(digit) => {
-            let digit = usize::from(*digit);
-            let old_count = client.count.map_or(0, |count| usize::from(count));
-            let new_count = NonZeroUsize::new(old_count.saturating_mul(10).saturating_add(digit));
-            client.count = new_count;
-        }
+        Action::AppendCountDigit(digit) => append_count_digit(client, *digit),
         Action::Commit => client.focused_buffer_mut().text.commit(),
         Action::EnterNormalMode => enter(client),
         Action::EnterCommandMode => enter_command_mode(client),
@@ -421,6 +416,13 @@ pub fn handle_keys(client: &mut ClientMut) -> bool {
         }
         KeymapResult::Pending => true,
     }
+}
+
+pub fn append_count_digit(client: &mut ClientMut, digit: u8) {
+    let digit = usize::from(digit);
+    let old_count = client.count.map_or(0, |count| usize::from(count));
+    let new_count = NonZeroUsize::new(old_count.saturating_mul(10).saturating_add(digit));
+    client.count = new_count;
 }
 
 fn key_char(key: Key) -> Option<u8> {

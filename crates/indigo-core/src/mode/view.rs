@@ -5,7 +5,7 @@ use crate::{
     mode::{Mode, normal},
 };
 use indigo_key::{Keymap, KeymapResult, keymap};
-use std::sync::Arc;
+use std::{num::NonZeroUsize, sync::Arc};
 
 #[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
@@ -14,6 +14,7 @@ use arbitrary::Arbitrary;
 #[derive(Debug)]
 pub enum Action {
     EnterNormalMode,
+    AppendCountDigit(u8),
     ScrollLineUp,
     ScrollLineDown,
     ScrollHalfPageUp,
@@ -28,6 +29,18 @@ pub fn keymap() -> Keymap<Vec<Action>> {
     use Action::*;
     keymap! { Vec<Action>;
         "<esc>" => vec![EnterNormalMode], /// Exit view mode
+
+        "0" => vec![AppendCountDigit(0)],
+        "1" => vec![AppendCountDigit(1)],
+        "2" => vec![AppendCountDigit(2)],
+        "3" => vec![AppendCountDigit(3)],
+        "4" => vec![AppendCountDigit(4)],
+        "5" => vec![AppendCountDigit(5)],
+        "6" => vec![AppendCountDigit(6)],
+        "7" => vec![AppendCountDigit(7)],
+        "8" => vec![AppendCountDigit(8)],
+        "9" => vec![AppendCountDigit(9)],
+
         "k" => vec![ScrollLineUp], /// Scroll line up
         "j" => vec![ScrollLineDown], /// Scroll line down
         "u" => vec![ScrollHalfPageUp], /// Scroll half page up
@@ -47,13 +60,14 @@ pub fn handle_actions(client: &mut ClientMut, actions: &[Action]) {
 pub fn handle_action(client: &mut ClientMut, action: &Action) {
     match action {
         Action::EnterNormalMode => normal::enter(client),
-        Action::ScrollLineUp => client.focused_window_mut().scroll_line_up(),
-        Action::ScrollLineDown => client.focused_window_mut().scroll_line_down(),
-        Action::ScrollHalfPageUp => client.focused_window_mut().scroll_half_page_up(),
-        Action::ScrollHalfPageDown => client.focused_window_mut().scroll_half_page_down(),
-        Action::ScrollFullPageUp => client.focused_window_mut().scroll_full_page_up(),
-        Action::ScrollFullPageDown => client.focused_window_mut().scroll_full_page_down(),
-        Action::ScrollCenter => client.focused_window_mut().scroll_center_selection(),
+        Action::AppendCountDigit(digit) => normal::append_count_digit(client, *digit),
+        Action::ScrollLineUp => scroll_line_up(client),
+        Action::ScrollLineDown => scroll_line_down(client),
+        Action::ScrollHalfPageUp => scroll_half_page_up(client),
+        Action::ScrollHalfPageDown => scroll_half_page_down(client),
+        Action::ScrollFullPageUp => scroll_full_page_up(client),
+        Action::ScrollFullPageDown => scroll_full_page_down(client),
+        Action::ScrollCenter => scroll_center(client),
     }
 }
 
@@ -72,6 +86,7 @@ pub fn handle_keys(client: &mut ClientMut) -> bool {
         }
         KeymapResult::Unmapped => {
             client.pending_keys.clear();
+            client.count = None;
             false
         }
         KeymapResult::Pending => true,
@@ -80,4 +95,39 @@ pub fn handle_keys(client: &mut ClientMut) -> bool {
 
 pub fn enter(client: &mut ClientMut) {
     client.mode = Mode::View;
+}
+
+fn scroll_line_up(client: &mut ClientMut) {
+    let count = client.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    client.focused_window_mut().scroll_lines_up(count);
+}
+
+fn scroll_line_down(client: &mut ClientMut) {
+    let count = client.count.take().unwrap_or(NonZeroUsize::MIN).get();
+    client.focused_window_mut().scroll_lines_down(count);
+}
+
+fn scroll_half_page_up(client: &mut ClientMut) {
+    client.focused_window_mut().scroll_half_page_up();
+    client.count = None;
+}
+
+fn scroll_half_page_down(client: &mut ClientMut) {
+    client.focused_window_mut().scroll_half_page_down();
+    client.count = None;
+}
+
+fn scroll_full_page_up(client: &mut ClientMut) {
+    client.focused_window_mut().scroll_full_page_up();
+    client.count = None;
+}
+
+fn scroll_full_page_down(client: &mut ClientMut) {
+    client.focused_window_mut().scroll_full_page_down();
+    client.count = None;
+}
+
+fn scroll_center(client: &mut ClientMut) {
+    client.focused_window_mut().scroll_center_selection();
+    client.count = None;
 }
