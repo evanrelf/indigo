@@ -1,6 +1,6 @@
 use crate::{
     key::{Key, Keys},
-    trie::{Match, Trie, TrieResult},
+    trie::{GetError, InsertError, Match, Trie},
 };
 use arrayvec::ArrayVec;
 use std::mem;
@@ -41,7 +41,7 @@ impl<V> Keymap<V> {
         keys: &str,
         value: impl Into<Mapping<V>>,
         description: Option<&'static str>,
-    ) -> Option<Mapping<V>> {
+    ) -> Result<Option<Mapping<V>>, InsertError> {
         let value = value.into();
         let mut keys: Keys = keys.parse().unwrap();
         for key in &mut keys.0 {
@@ -56,10 +56,10 @@ impl<V> Keymap<V> {
                 assert_eq!(anys, 1, "`Mapping::Any` requires exactly one `<any>` key");
             }
         }
-        if let TrieResult::Found(entry) = self.mappings.get_mut(&keys.0) {
+        if let Ok(entry) = self.mappings.get_mut(&keys.0) {
             // Keep original place in order, like `IndexMap::insert`
             entry.description = description;
-            return Some(mem::replace(&mut entry.value, value));
+            return Ok(Some(mem::replace(&mut entry.value, value)));
         }
         let order = self.next_order;
         self.next_order = order.checked_add(1).expect("wow that's a lotta keys");
@@ -70,8 +70,8 @@ impl<V> Keymap<V> {
                 order,
                 description,
             },
-        );
-        None
+        )?;
+        Ok(None)
     }
 
     pub fn remove(&mut self, keys: &str) -> Option<Mapping<V>> {
@@ -94,9 +94,9 @@ impl<V> Keymap<V> {
     #[must_use]
     pub fn get_keys(&self, keys: &[Key]) -> KeymapResult<'_, V> {
         match self.mappings.get::<3>(keys, &Key::ANY) {
-            TrieResult::Missing => KeymapResult::Unmapped,
-            TrieResult::Partial => KeymapResult::Pending,
-            TrieResult::Found(Match {
+            Err(GetError::Missing) => KeymapResult::Unmapped,
+            Err(GetError::Partial) => KeymapResult::Pending,
+            Ok(Match {
                 value: entry,
                 captures,
             }) => match &entry.value {
@@ -151,7 +151,7 @@ macro_rules! keymap {
     // [x] type (base case)
     ($value_ty:ty; $($keys:literal => $value:expr, $(#[doc = $desc:literal])?)*) => {{
         let mut keymap: $crate::Keymap<$value_ty> = $crate::Keymap::new();
-        $(keymap.insert($keys, $value, None $(.or(Some($desc.trim())))?);)*
+        $(keymap.insert($keys, $value, None $(.or(Some($desc.trim())))?).unwrap();)*
         keymap
     }};
     // [ ] type
@@ -289,7 +289,7 @@ mod tests {
             ]
         );
         // reinserting keeps the original position
-        keymap.insert("gk", vec![Action("goto top")], None);
+        keymap.insert("gk", vec![Action("goto top")], None).unwrap();
     }
 
     #[test]
