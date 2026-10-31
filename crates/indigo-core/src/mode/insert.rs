@@ -5,7 +5,7 @@ use crate::{
     mode::{Mode, normal},
 };
 use indigo_key::{Keymap, KeymapResult, Mapping, keymap};
-use std::sync::LazyLock;
+use std::sync::Arc;
 
 #[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
@@ -21,7 +21,8 @@ pub enum Action {
     Todo(&'static str),
 }
 
-pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
+#[must_use]
+pub fn keymap() -> Keymap<Vec<Action>> {
     use Action::*;
     keymap! { Vec<Action>;
         "<esc>" => vec![EnterNormalMode], /// Exit insert mode
@@ -34,7 +35,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<a-;>" => vec![Todo("<a-;>")], /// TODO: Run one normal mode command
         "<any>" => Mapping::Any(|key| Some(vec![InsertChar(char::from(key.typed_char()?))])), /// Insert character
     }
-});
+}
 
 pub fn handle_actions(client: &mut ClientMut, actions: &[Action]) {
     for action in actions {
@@ -53,7 +54,8 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
 }
 
 pub fn handle_keys(client: &mut ClientMut) -> bool {
-    match KEYMAP.get_keys(&client.pending_keys) {
+    let keymap = Arc::clone(&client.keymaps.insert);
+    match keymap.get_keys(&client.pending_keys) {
         KeymapResult::Mapped(actions) => {
             client.pending_keys.clear();
             handle_actions(client, actions);

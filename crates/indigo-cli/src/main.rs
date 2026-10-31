@@ -1,6 +1,7 @@
 use clap::Parser as _;
 use indigo_core::{
     fs::{home_dir, pwd},
+    mode::{Keymaps, insert, normal, prompt},
     prelude::*,
     syntax::Language,
 };
@@ -26,6 +27,7 @@ struct Args {
     log_filter: Arc<str>,
 }
 
+#[expect(clippy::too_many_lines)]
 fn main() -> anyhow::Result<ExitCode> {
     #[cfg(debug_assertions)]
     if std::env::var("RUST_BACKTRACE").is_err() {
@@ -57,6 +59,19 @@ fn main() -> anyhow::Result<ExitCode> {
 
     let mut server = Server::new(home_dir()?, pwd()?, buffer);
 
+    // Map `<c-l>` to nothing in every mode, so it isn't reported as unmapped.
+    let mut normal_keymap = normal::keymap();
+    let mut insert_keymap = insert::keymap();
+    let mut prompt_keymap = prompt::keymap();
+    normal_keymap.insert("<c-l>", vec![], None).unwrap();
+    insert_keymap.insert("<c-l>", vec![], None).unwrap();
+    prompt_keymap.insert("<c-l>", vec![], None).unwrap();
+    server.client_mut().keymaps = Keymaps {
+        normal: Arc::new(normal_keymap),
+        insert: Arc::new(insert_keymap),
+        prompt: Arc::new(prompt_keymap),
+    };
+
     let mut debug_keys = vec![];
     let mut debug_rope = server.client().focused_buffer().text.rope().clone();
 
@@ -75,7 +90,7 @@ fn main() -> anyhow::Result<ExitCode> {
         let mut client = server.client_mut();
         match client.message() {
             Some(Ok(message)) if args.debug => eprintln!("message: {message}"),
-            Some(Err(message)) if !is(&key, "<c-l>") => eprintln!("error: {message}"),
+            Some(Err(message)) => eprintln!("error: {message}"),
             _ => {}
         }
         client.clear_message();

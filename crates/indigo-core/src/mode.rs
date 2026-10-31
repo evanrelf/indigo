@@ -3,6 +3,9 @@ pub mod insert;
 pub mod normal;
 pub mod prompt;
 
+use indigo_key::Keymap;
+use std::sync::Arc;
+
 #[derive(Clone, Default)]
 pub enum Mode {
     #[default]
@@ -28,4 +31,21 @@ pub enum ModeKind {
     Insert,
     Prompt,
     // TODO: `Command`?
+}
+
+#[derive(Clone)]
+pub struct Keymaps {
+    pub normal: Arc<Keymap<Vec<normal::Action>>>,
+    pub insert: Arc<Keymap<Vec<insert::Action>>>,
+    pub prompt: Arc<Keymap<Vec<prompt::Action>>>,
+}
+
+impl Default for Keymaps {
+    fn default() -> Self {
+        Self {
+            normal: Arc::new(normal::keymap()),
+            insert: Arc::new(insert::keymap()),
+            prompt: Arc::new(prompt::keymap()),
+        }
+    }
 }

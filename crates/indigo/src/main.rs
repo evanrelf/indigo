@@ -123,11 +123,11 @@ fn print_keymap() {
             }
         }
     }
-    print_mode("normal", &normal::KEYMAP);
+    print_mode("normal", &normal::keymap());
     println!();
-    print_mode("insert", &insert::KEYMAP);
+    print_mode("insert", &insert::keymap());
     println!();
-    print_mode("prompt", &prompt::KEYMAP);
+    print_mode("prompt", &prompt::keymap());
 }
 
 fn init_tracing(args: &Args) -> anyhow::Result<()> {

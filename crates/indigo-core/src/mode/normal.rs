@@ -10,7 +10,7 @@ use crate::{
 use indigo_key::{Key, KeyCode, Keymap, KeymapResult, Mapping, keymap};
 use indigo_text::rope::{LINE_TYPE, RopeExt as _};
 use regex_cursor::engines::meta::Regex;
-use std::{cmp::min, num::NonZeroUsize, sync::LazyLock};
+use std::{cmp::min, num::NonZeroUsize, sync::Arc};
 
 #[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
@@ -110,7 +110,9 @@ pub enum SeekDirection {
     Next,
 }
 
-pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
+#[expect(clippy::too_many_lines)]
+#[must_use]
+pub fn keymap() -> Keymap<Vec<Action>> {
     use Action::*;
     use SeekDirection::{Next, Prev};
     use SeekInclude::{Onto, Until};
@@ -316,7 +318,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<c-z>" => vec![Suspend], /// Suspend
         "<c-c>" => vec![QuitHint],
     }
-});
+}
 
 pub fn handle_actions(client: &mut ClientMut, actions: &[Action]) {
     for action in actions {
@@ -403,7 +405,8 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
 }
 
 pub fn handle_keys(client: &mut ClientMut) -> bool {
-    match KEYMAP.get_keys(&client.pending_keys) {
+    let keymap = Arc::clone(&client.keymaps.normal);
+    match keymap.get_keys(&client.pending_keys) {
         KeymapResult::Mapped(actions) => {
             client.pending_keys.clear();
             handle_actions(client, actions);
