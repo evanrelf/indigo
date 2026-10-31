@@ -1,6 +1,7 @@
 use crate::{
     areas::{Areas, position_to_byte_index},
     key::{key_event_i2t, key_event_t2i},
+    scroll_bar::{self, UNITS_PER_CELL},
 };
 use anyhow::anyhow;
 use indigo_core::{
@@ -76,6 +77,10 @@ pub fn handle_event(server: &mut Server, areas: Areas, event: TerminalEvent) -> 
         return Ok(());
     }
 
+    if handle_event_scroll_bar(client, areas, &event) {
+        return Ok(());
+    }
+
     let _handled = match &client.mode {
         Mode::Normal => handle_event_normal(client, areas, event),
         Mode::Insert => handle_event_insert(client, areas, event),
@@ -103,6 +108,52 @@ fn handle_event_scroll(client: &mut ClientMut, event: &TerminalEvent) -> bool {
         }
         _ => false,
     }
+}
+
+fn handle_event_scroll_bar(client: &mut ClientMut, areas: Areas, event: &TerminalEvent) -> bool {
+    let TerminalEvent::Mouse(mouse_event) = event else {
+        return false;
+    };
+
+    let MouseEventKind::Down(button) = mouse_event.kind else {
+        return false;
+    };
+
+    let position = Position {
+        x: mouse_event.column,
+        y: mouse_event.row,
+    };
+
+    if !areas.scroll_bar.contains(position) {
+        return false;
+    }
+
+    // Don't let scroll bar clicks fall through to the text.
+    if (mouse_event.modifiers, button) != (KeyModifiers::NONE, MouseButton::Left) {
+        return true;
+    }
+
+    let window = client.focused_window();
+
+    let Some(thumb) = scroll_bar::thumb(
+        window.buffer().text.rope().len_lines_unix(),
+        usize::from(window.height()),
+        window.vertical_scroll(),
+        usize::from(areas.scroll_bar.height),
+    ) else {
+        return true;
+    };
+
+    let cell_top = usize::from(position.y - areas.scroll_bar.y) * UNITS_PER_CELL;
+    let cell_bottom = cell_top + UNITS_PER_CELL;
+
+    if cell_bottom <= thumb.start {
+        client.focused_window_mut().scroll_full_page_up();
+    } else if thumb.end <= cell_top {
+        client.focused_window_mut().scroll_full_page_down();
+    }
+
+    true
 }
 
 #[expect(clippy::needless_pass_by_value)]
