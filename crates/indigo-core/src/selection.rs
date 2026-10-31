@@ -636,7 +636,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
         let mut ops = Edit::new();
         let mut previous = 0;
         let mut output_position = 0;
-        let mut ranges = Vec::with_capacity(self.state.ranges.len());
+        let mut spans = Vec::with_capacity(self.state.ranges.len());
         for range in &self.state.ranges {
             let start = range.start().byte_index;
             let end_exclusive = self
@@ -652,7 +652,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
                 ops.insert(replacement);
                 output_position += replacement.len();
             }
-            ranges.push(range.with_bounds(replacement_start, output_position - replacement.len()));
+            spans.push((replacement_start, output_position - replacement.len()));
             if end_exclusive == self.text.len() {
                 // The final newline was replaced; restore the `Text` invariant.
                 ops.insert("\n");
@@ -662,7 +662,18 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
         ops.retain_rest(&self.text)
             .expect("Operations fit within text");
         self.text.apply(&ops).expect("Operations are well formed");
-        self.state.ranges = ranges;
+        // A replacement can merge with its neighbors into one grapheme (e.g. "\r" + "\n").
+        for (range, (start, last)) in zip(&mut self.state.ranges, spans) {
+            let start = self
+                .text
+                .snap_to_grapheme_start(start)
+                .expect("Text is never empty");
+            let end = self
+                .text
+                .snap_to_grapheme_start(last)
+                .expect("Text is never empty");
+            *range = range.with_bounds(start, end);
+        }
         self.invalidate_goal_columns();
         ops
     }
@@ -879,6 +890,37 @@ mod tests {
         assert_eq!(&text.to_string(), "XXXXXX\n");
         assert_eq!(state.ranges[0].tail.byte_index, 0);
         assert_eq!(state.ranges[0].head.byte_index, 5);
+    }
+
+    #[hegel::test(test_cases = 5_000)]
+    fn replace_each_keeps_selection_valid(tc: hegel::TestCase) {
+        // Replacing with '\r' or '\n' can merge with neighboring graphemes (e.g. "\r" + "\n").
+        let pieces = ["a", "\r", "\n", "\r\n", "e\u{301}"];
+        let length = tc.draw(gs::integers::<usize>().max_value(8));
+        let text: String = (0..length)
+            .map(|_| tc.draw(gs::sampled_from(pieces.to_vec())))
+            .collect();
+        let mut text = Text::from(text.as_str());
+        let count = tc.draw(gs::integers::<usize>().min_value(1).max_value(4));
+        let mut state = SelectionState {
+            ranges: (0..count)
+                .map(|_| {
+                    let draw_cursor = || {
+                        let index = tc.draw(gs::integers::<usize>().max_value(text.len() - 1));
+                        text.snap_to_grapheme_start(index).unwrap()
+                    };
+                    range(draw_cursor(), draw_cursor())
+                })
+                .collect(),
+            primary_range: 0,
+        };
+        state.sort();
+        let byte = tc.draw(gs::sampled_from(vec![b'x', b'\r', b'\n']));
+
+        let mut selection = SelectionEdit::new(&mut text, &mut state).unwrap();
+        selection.replace_each(byte);
+
+        selection.assert_invariants().unwrap();
     }
 
     #[test]
