@@ -2,6 +2,7 @@ use crate::{
     areas::{Areas, position_to_byte_index},
     key::{key_event_i2t, key_event_t2i},
     scroll_bar::{self, UNITS_PER_CELL},
+    state::{MouseCapture, State},
 };
 use anyhow::anyhow;
 use indigo_core::{
@@ -10,7 +11,7 @@ use indigo_core::{
 };
 use ratatui::crossterm::{
     self,
-    event::{KeyCode, KeyModifiers, MouseButton, MouseEventKind},
+    event::{KeyCode, KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
 };
 use ratatui::layout::Position;
 
@@ -39,7 +40,12 @@ pub fn should_skip_event(event: &TerminalEvent, areas: Areas) -> bool {
     }
 }
 
-pub fn handle_event(server: &mut Server, areas: Areas, event: TerminalEvent) -> anyhow::Result<()> {
+pub fn handle_event(
+    server: &mut Server,
+    areas: Areas,
+    state: &mut State,
+    event: TerminalEvent,
+) -> anyhow::Result<()> {
     // Terminals typically send line breaks in pasted text as `\r`, like the Enter key.
     let event = match event {
         TerminalEvent::Paste(text) => {
@@ -71,13 +77,20 @@ pub fn handle_event(server: &mut Server, areas: Areas, event: TerminalEvent) -> 
         }
     }
 
+    // Pressing a mouse button ends any capture whose release was missed (e.g. outside the UI).
+    if let TerminalEvent::Mouse(mouse_event) = &event
+        && let MouseEventKind::Down(_) = mouse_event.kind
+    {
+        state.mouse_capture = None;
+    }
+
     let client = &mut server.client_mut();
 
     if handle_event_scroll(client, &event) {
         return Ok(());
     }
 
-    if handle_event_scroll_bar(client, areas, &event) {
+    if handle_event_scroll_bar(client, areas, &mut state.mouse_capture, &event) {
         return Ok(());
     }
 
@@ -110,27 +123,65 @@ fn handle_event_scroll(client: &mut ClientMut, event: &TerminalEvent) -> bool {
     }
 }
 
-fn handle_event_scroll_bar(client: &mut ClientMut, areas: Areas, event: &TerminalEvent) -> bool {
+fn handle_event_scroll_bar(
+    client: &mut ClientMut,
+    areas: Areas,
+    mouse_capture: &mut Option<MouseCapture>,
+    event: &TerminalEvent,
+) -> bool {
     let TerminalEvent::Mouse(mouse_event) = event else {
         return false;
     };
 
-    let MouseEventKind::Down(button) = mouse_event.kind else {
-        return false;
-    };
+    match mouse_event.kind {
+        MouseEventKind::Down(button) => {
+            let Some(capture) = scroll_bar_down(client, areas, *mouse_event, button) else {
+                return false;
+            };
+            *mouse_capture = Some(capture);
+            true
+        }
+        // Don't let drags which started on the scroll bar fall through to the text.
+        MouseEventKind::Drag(_) => match *mouse_capture {
+            Some(MouseCapture::ScrollBarThumb {
+                row_at_grab,
+                thumb_start_at_grab,
+            }) => {
+                scroll_bar_drag(
+                    client,
+                    areas,
+                    row_at_grab,
+                    thumb_start_at_grab,
+                    mouse_event.row,
+                );
+                true
+            }
+            Some(MouseCapture::ScrollBar) => true,
+            None => false,
+        },
+        MouseEventKind::Up(_) => mouse_capture.take().is_some(),
+        _ => false,
+    }
+}
 
+fn scroll_bar_down(
+    client: &mut ClientMut,
+    areas: Areas,
+    mouse_event: MouseEvent,
+    button: MouseButton,
+) -> Option<MouseCapture> {
     let position = Position {
         x: mouse_event.column,
         y: mouse_event.row,
     };
 
     if !areas.scroll_bar.contains(position) {
-        return false;
+        return None;
     }
 
     // Don't let scroll bar clicks fall through to the text.
     if (mouse_event.modifiers, button) != (KeyModifiers::NONE, MouseButton::Left) {
-        return true;
+        return Some(MouseCapture::ScrollBar);
     }
 
     let window = client.focused_window();
@@ -141,7 +192,7 @@ fn handle_event_scroll_bar(client: &mut ClientMut, areas: Areas, event: &Termina
         window.vertical_scroll(),
         usize::from(areas.scroll_bar.height),
     ) else {
-        return true;
+        return Some(MouseCapture::ScrollBar);
     };
 
     let cell_top = usize::from(position.y - areas.scroll_bar.y) * UNITS_PER_CELL;
@@ -149,11 +200,44 @@ fn handle_event_scroll_bar(client: &mut ClientMut, areas: Areas, event: &Termina
 
     if cell_bottom <= thumb.start {
         client.focused_window_mut().scroll_full_page_up();
+        Some(MouseCapture::ScrollBar)
     } else if thumb.end <= cell_top {
         client.focused_window_mut().scroll_full_page_down();
+        Some(MouseCapture::ScrollBar)
+    } else {
+        Some(MouseCapture::ScrollBarThumb {
+            row_at_grab: position.y,
+            thumb_start_at_grab: thumb.start,
+        })
     }
+}
 
-    true
+fn scroll_bar_drag(
+    client: &mut ClientMut,
+    areas: Areas,
+    row_at_grab: u16,
+    thumb_start_at_grab: usize,
+    row: u16,
+) {
+    // Move the thumb as far as the mouse moved, so the grabbed spot stays under the mouse.
+    let thumb_start = if row < row_at_grab {
+        thumb_start_at_grab.saturating_sub(usize::from(row_at_grab - row) * UNITS_PER_CELL)
+    } else {
+        thumb_start_at_grab + usize::from(row - row_at_grab) * UNITS_PER_CELL
+    };
+
+    let window = client.focused_window();
+
+    let Some(line) = scroll_bar::vertical_scroll(
+        window.buffer().text.rope().len_lines_unix(),
+        usize::from(window.height()),
+        thumb_start,
+        usize::from(areas.scroll_bar.height),
+    ) else {
+        return;
+    };
+
+    client.focused_window_mut().scroll_to_line(line);
 }
 
 #[expect(clippy::needless_pass_by_value)]

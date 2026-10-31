@@ -5,6 +5,7 @@ use indigo::{
     areas::{self, Areas, byte_index_to_area, line_index_to_area},
     event::{IndigoEvent, handle_event, should_skip_event},
     scroll_bar::{self, UNITS_PER_CELL},
+    state::State,
     terminal,
     terminal::TerminalGuard,
     theme::THEME,
@@ -223,6 +224,8 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
 
     let mut areas = Areas::default();
 
+    let mut state = State::default();
+
     let exit_code = 'frame: loop {
         if mem::take(&mut server.client_mut().suspend) {
             terminal::suspend(terminal)?;
@@ -270,7 +273,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
             }
         };
 
-        handle_event(&mut server, areas, event)?;
+        handle_event(&mut server, areas, &mut state, event)?;
 
         if let Some(exit_code) = server.client().exit_code {
             break exit_code;
