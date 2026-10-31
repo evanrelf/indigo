@@ -1,7 +1,7 @@
 use clap::Parser as _;
 use indigo_core::{
     fs::{home_dir, pwd},
-    mode::{Keymaps, insert, normal, prompt},
+    mode::{Keymaps, insert, normal, prompt, view},
     prelude::*,
     syntax::Language,
 };
@@ -63,13 +63,16 @@ fn main() -> anyhow::Result<ExitCode> {
     let mut normal_keymap = normal::keymap();
     let mut insert_keymap = insert::keymap();
     let mut prompt_keymap = prompt::keymap();
+    let mut view_keymap = view::keymap();
     normal_keymap.insert("<c-l>", vec![], None).unwrap();
     insert_keymap.insert("<c-l>", vec![], None).unwrap();
     prompt_keymap.insert("<c-l>", vec![], None).unwrap();
+    view_keymap.insert("<c-l>", vec![], None).unwrap();
     server.client_mut().keymaps = Keymaps {
         normal: Arc::new(normal_keymap),
         insert: Arc::new(insert_keymap),
         prompt: Arc::new(prompt_keymap),
+        view: Arc::new(view_keymap),
     };
 
     let mut debug_keys = vec![];

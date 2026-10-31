@@ -139,6 +139,16 @@ impl<W: WrapMut> WindowView<'_, W> {
         self.scroll_to_line(line);
     }
 
+    pub fn scroll_line_up(&mut self) {
+        let line = self.vertical_scroll().saturating_sub(1);
+        self.scroll_to_line(line);
+    }
+
+    pub fn scroll_line_down(&mut self) {
+        let line = self.vertical_scroll() + 1;
+        self.scroll_to_line(line);
+    }
+
     // TODO(horizontal_scroll)
 
     pub fn scroll_half_page_up(&mut self) {

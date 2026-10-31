@@ -1,10 +1,8 @@
 #![allow(clippy::enum_glob_use)]
 
-// TODO: Break out view keys (e.g. `vc`, `V`) into a new `view` mode.
-
 use crate::{
     client::ClientMut,
-    mode::{Mode, command::enter_command_mode, insert, prompt},
+    mode::{Mode, command::enter_command_mode, insert, prompt, view},
     selection::PasteMode,
 };
 use indigo_key::{Key, KeyCode, Keymap, KeymapResult, Mapping, keymap};
@@ -23,6 +21,7 @@ pub enum Action {
     EnterNormalMode,
     EnterCommandMode,
     EnterInsertMode,
+    EnterViewMode,
     InsertAfterHead,
     InsertAtLineNonBlankStart,
     InsertAtLineEnd,
@@ -82,7 +81,6 @@ pub enum Action {
     ScrollHalfPageDown,
     ScrollFullPageUp,
     ScrollFullPageDown,
-    ScrollCenter,
     Suspend,
     QuitHint,
     #[cfg_attr(feature = "arbitrary", arbitrary(skip))]
@@ -312,8 +310,7 @@ pub fn keymap() -> Keymap<Vec<Action>> {
         "<c-b>" => vec![ScrollFullPageUp], /// Scroll page up
         "<c-f>" => vec![ScrollFullPageDown], /// Scroll page down
 
-        "vc" => vec![ScrollCenter], /// Scroll to center cursor
-        "V" => vec![Todo("V")], /// TODO: Enter locked view mode
+        "v" => vec![EnterViewMode], /// Enter view mode
 
         "<c-z>" => vec![Suspend], /// Suspend
         "<c-c>" => vec![QuitHint],
@@ -338,6 +335,7 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
         Action::EnterNormalMode => enter(client),
         Action::EnterCommandMode => enter_command_mode(client),
         Action::EnterInsertMode => insert::enter(client),
+        Action::EnterViewMode => view::enter(client),
         Action::InsertAfterHead => insert_after_head(client),
         Action::InsertAtLineNonBlankStart => insert_at_line_non_blank_start(client),
         Action::InsertAtLineEnd => insert_at_line_end(client),
@@ -397,7 +395,6 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
         Action::ScrollHalfPageDown => client.focused_window_mut().scroll_half_page_down(),
         Action::ScrollFullPageUp => client.focused_window_mut().scroll_full_page_up(),
         Action::ScrollFullPageDown => client.focused_window_mut().scroll_full_page_down(),
-        Action::ScrollCenter => client.focused_window_mut().scroll_center_selection(),
         Action::Suspend => client.suspend = true,
         Action::QuitHint => quit_hint(client),
         Action::Todo(keys) => todo(client, keys),

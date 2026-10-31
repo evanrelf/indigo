@@ -80,6 +80,7 @@ pub fn handle_event(server: &mut Server, areas: Areas, event: TerminalEvent) -> 
         Mode::Normal => handle_event_normal(client, areas, event),
         Mode::Insert => handle_event_insert(client, areas, event),
         Mode::Prompt(_) => handle_event_prompt(client, areas, event)?,
+        Mode::View => false,
     };
 
     Ok(())

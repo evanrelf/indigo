@@ -10,7 +10,7 @@ use indigo::{
 };
 use indigo_core::{
     fs::{RealFs, home_dir, pwd},
-    mode::{insert, normal, prompt},
+    mode::{insert, normal, prompt, view},
     prelude::{Buffer, Client, DisplayWidth as _, Keys, Mode, RopeExt as _, Server},
     syntax::Language,
 };
@@ -128,6 +128,8 @@ fn print_keymap() {
     print_mode("insert", &insert::keymap());
     println!();
     print_mode("prompt", &prompt::keymap());
+    println!();
+    print_mode("view", &view::keymap());
 }
 
 fn init_tracing(args: &Args) -> anyhow::Result<()> {
@@ -296,6 +298,7 @@ fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
         Mode::Normal => "normal",
         Mode::Insert => "insert",
         Mode::Prompt(_) => "prompt",
+        Mode::View => "view",
     };
 
     let path = client

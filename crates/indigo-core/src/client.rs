@@ -1,7 +1,7 @@
 use crate::{
     buffer::{Buffer, BufferKey},
     fs::Fs,
-    mode::{Keymaps, Mode, command, insert, normal, prompt},
+    mode::{Keymaps, Mode, command, insert, normal, prompt, view},
     path,
     session::Session,
     window::{Window, WindowKey, WindowMut, WindowState},
@@ -316,6 +316,7 @@ impl ClientMut<'_> {
                 Mode::Normal => normal::handle_keys(self),
                 Mode::Insert => insert::handle_keys(self),
                 Mode::Prompt(_) => prompt::handle_keys(self),
+                Mode::View => view::handle_keys(self),
             },
         };
 
@@ -333,6 +334,7 @@ impl ClientMut<'_> {
             Action::Normal(action) => normal::handle_action(self, action),
             Action::Insert(action) => insert::handle_action(self, action),
             Action::Prompt(action) => prompt::handle_action(self, action),
+            Action::View(action) => view::handle_action(self, action),
             Action::Command(action) => command::handle_action(self, action),
         }
         self.assert_invariants().unwrap();
@@ -366,5 +368,6 @@ pub enum Action {
     Normal(normal::Action),
     Insert(insert::Action),
     Prompt(prompt::Action),
+    View(view::Action),
     Command(command::Action),
 }

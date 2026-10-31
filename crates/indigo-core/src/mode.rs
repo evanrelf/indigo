@@ -2,6 +2,7 @@ pub mod command;
 pub mod insert;
 pub mod normal;
 pub mod prompt;
+pub mod view;
 
 use indigo_key::Keymap;
 use std::sync::Arc;
@@ -12,6 +13,7 @@ pub enum Mode {
     Normal,
     Insert,
     Prompt(prompt::State),
+    View,
 }
 
 impl Mode {
@@ -21,6 +23,7 @@ impl Mode {
             Self::Normal => ModeKind::Normal,
             Self::Insert => ModeKind::Insert,
             Self::Prompt(_) => ModeKind::Prompt,
+            Self::View => ModeKind::View,
         }
     }
 }
@@ -30,6 +33,7 @@ pub enum ModeKind {
     Normal,
     Insert,
     Prompt,
+    View,
     // TODO: `Command`?
 }
 
@@ -38,6 +42,7 @@ pub struct Keymaps {
     pub normal: Arc<Keymap<Vec<normal::Action>>>,
     pub insert: Arc<Keymap<Vec<insert::Action>>>,
     pub prompt: Arc<Keymap<Vec<prompt::Action>>>,
+    pub view: Arc<Keymap<Vec<view::Action>>>,
 }
 
 impl Default for Keymaps {
@@ -46,6 +51,7 @@ impl Default for Keymaps {
             normal: Arc::new(normal::keymap()),
             insert: Arc::new(insert::keymap()),
             prompt: Arc::new(prompt::keymap()),
+            view: Arc::new(view::keymap()),
         }
     }
 }

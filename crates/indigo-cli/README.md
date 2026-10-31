@@ -37,6 +37,7 @@ Run `./bin/run --keymap` to see the full keymap, or read these files:
 - Normal mode: `crates/indigo-core/src/mode/normal.rs`
 - Insert mode: `crates/indigo-core/src/mode/insert.rs`
 - Prompt mode: `crates/indigo-core/src/mode/prompt.rs`
+- View mode: `crates/indigo-core/src/mode/view.rs`
 - Command mode: `crates/indigo-core/src/mode/command.rs` (discouraged with CLI)
 
 Whitespace and `#` comments in keys are ignored, so escape them as `\ ` and `\#`

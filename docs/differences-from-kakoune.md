@@ -24,6 +24,9 @@ This list is not exhaustive!
 
   Reason: I don't feel another mode is necessary.
 
+- Kakoune's view mode (`v`) exits after one command, and its locked view mode
+  (`V`) stays active until `<esc>`. Indigo only has locked view mode (`v`).
+
 - Kakoune and Indigo have different syntaxes for keys. Run
   `./bin/run --keymap`, read the `indigo-key` crate, or try its example
   (`cargo run -p indigo-key --example parse-keys`) to learn more.

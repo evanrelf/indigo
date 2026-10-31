@@ -163,9 +163,10 @@ See also: https://github.com/mawww/kakoune/blob/master/doc/pages/keys.asciidoc.
 
 ### View mode
 
-- [ ] `v` (view mode)
-- [ ] `V` (lock view mode)
+- [x] `v` (view mode)
 - [x] `vc` (center view on cursor)
+- [x] `vj` (scroll line down)
+- [x] `vk` (scroll line up)
 
 ### Searching
 
