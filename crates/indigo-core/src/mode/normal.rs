@@ -1,5 +1,7 @@
 #![allow(clippy::enum_glob_use)]
 
+// TODO: Break out view keys (e.g. `vc`, `V`) into a new `view` mode.
+
 use crate::{
     client::ClientMut,
     mode::{Mode, command::enter_command_mode, insert, prompt},
@@ -83,6 +85,8 @@ pub enum Action {
     ScrollCenter,
     Suspend,
     QuitHint,
+    #[cfg_attr(feature = "arbitrary", arbitrary(skip))]
+    Todo(&'static str),
 }
 
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -134,6 +138,24 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "K" => vec![ExtendUp], /// Extend up
         "J" => vec![ExtendDown], /// Extend down
 
+        "q" => vec![Todo("q")], /// TODO: Move to previous word start
+        "w" => vec![Todo("w")], /// TODO: Move to next word start
+        "e" => vec![Todo("e")], /// TODO: Move to next word end
+        "<a-q>" => vec![Todo("<a-q>")], /// TODO: Move to previous WORD start
+        "<a-w>" => vec![Todo("<a-w>")], /// TODO: Move to next WORD start
+        "<a-e>" => vec![Todo("<a-e>")], /// TODO: Move to next WORD end
+        "Q" => vec![Todo("Q")], /// TODO: Extend to previous word start
+        "W" => vec![Todo("W")], /// TODO: Extend to next word start
+        "E" => vec![Todo("E")], /// TODO: Extend to next word end
+        "<a-Q>" => vec![Todo("<a-Q>")], /// TODO: Extend to previous WORD start
+        "<a-W>" => vec![Todo("<a-W>")], /// TODO: Extend to next WORD start
+        "<a-E>" => vec![Todo("<a-E>")], /// TODO: Extend to next WORD end
+
+        "m" => vec![Todo("m")], /// TODO: Move to next matching bracket
+        "<a-m>" => vec![Todo("<a-m>")], /// TODO: Move to previous matching bracket
+        "M" => vec![Todo("M")], /// TODO: Extend to next matching bracket
+        "<a-M>" => vec![Todo("<a-M>")], /// TODO: Extend to previous matching bracket
+
         "i" => vec![EnterInsertMode], /// Enter insert mode at cursor
         "a" => vec![InsertAfterHead], /// Enter insert mode after cursor
         "I" => vec![InsertAtLineNonBlankStart], /// Enter insert mode at first non-blank
@@ -153,8 +175,41 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<a-P>" => vec![PasteAllBefore, Commit], /// Paste all before
         "<a-R>" => vec![PasteAllReplace, Commit], /// Paste all replacing selection
 
+        "<a-j>" => vec![Todo("<a-j>")], /// TODO: Join lines
+        "<a-J>" => vec![Todo("<a-J>")], /// TODO: Join lines and select spaces
+
+        "\\>" => vec![Todo("\\>")], /// TODO: Indent
+        "\\<" => vec![Todo("\\<")], /// TODO: Unindent
+        "<a-\\>>" => vec![Todo("<a-\\>>")], /// TODO: Indent including empty lines
+        "<a-\\<>" => vec![Todo("<a-\\<>")], /// TODO: Unindent and keep incomplete indent
+        "&" => vec![Todo("&")], /// TODO: Align selections
+        "<a-&>" => vec![Todo("<a-&>")], /// TODO: Copy indent from primary selection
+
+        "`" => vec![Todo("`")], /// TODO: Convert to lowercase
+        "~" => vec![Todo("~")], /// TODO: Convert to uppercase
+        "<a-`>" => vec![Todo("<a-`>")], /// TODO: Swap case
+        "@" => vec![Todo("@")], /// TODO: Convert tabs to spaces
+        "<a-@>" => vec![Todo("<a-@>")], /// TODO: Convert spaces to tabs
+
+        "<a-)>" => vec![Todo("<a-)>")], /// TODO: Rotate selection contents forward
+        "<a-(>" => vec![Todo("<a-(>")], /// TODO: Rotate selection contents backward
+
+        "." => vec![Todo(".")], /// TODO: Repeat last insert
+        "<a-.>" => vec![Todo("<a-.>")], /// TODO: Repeat last object or seek selection
+
+        "|" => vec![Todo("|")], /// TODO: Pipe through filter and replace
+        "<a-|>" => vec![Todo("<a-|>")], /// TODO: Pipe through filter and ignore output
+        "$" => vec![Todo("$")], /// TODO: Keep selections where filter exits successfully
+        "!" => vec![Todo("!")], /// TODO: Insert command output before
+        "<a-!>" => vec![Todo("<a-!>")], /// TODO: Append command output after
+
         "u" => vec![Undo], /// Undo
         "U" => vec![Redo], /// Redo
+
+        "<a-u>" => vec![Todo("<a-u>")], /// TODO: Undo selection change
+        "<a-U>" => vec![Todo("<a-U>")], /// TODO: Redo selection change
+        "<c-k>" => vec![Todo("<c-k>")], /// TODO: Move backward in change history
+        "<c-j>" => vec![Todo("<c-j>")], /// TODO: Move forward in change history
 
         // TODO: With a count, `g` runs `GotoLine` instead of entering goto mode.
         "gk" => vec![GotoMoveToStart], /// Move to buffer start
@@ -169,6 +224,12 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "gH" => vec![GotoExtendToLineStart], /// Extend to line start
         "gI" => vec![GotoExtendToLineNonBlankStart], /// Extend to first non-blank
         "gL" => vec![GotoExtendUntilLineEnd], /// Extend to line end
+        "gt" => vec![Todo("gt")], /// TODO: Move to first displayed line
+        "gc" => vec![Todo("gc")], /// TODO: Move to middle displayed line
+        "gb" => vec![Todo("gb")], /// TODO: Move to last displayed line
+        "ga" => vec![Todo("ga")], /// TODO: Go to alternate buffer
+        "gf" => vec![Todo("gf")], /// TODO: Open file under selection
+        "g." => vec![Todo("g.")], /// TODO: Move to last modification
 
         "f<any>" => Mapping::Any(|key| Some(vec![Seek { select: Move, include: Onto, direction: Next, byte: key_char(key)? }])), /// Move onto next character
         "<a-f><any>" => Mapping::Any(|key| Some(vec![Seek { select: Move, include: Onto, direction: Prev, byte: key_char(key)? }])), /// Move onto previous character
@@ -179,16 +240,62 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "T<any>" => Mapping::Any(|key| Some(vec![Seek { select: Extend, include: Until, direction: Next, byte: key_char(key)? }])), /// Extend until next character
         "<a-T><any>" => Mapping::Any(|key| Some(vec![Seek { select: Extend, include: Until, direction: Prev, byte: key_char(key)? }])), /// Extend until previous character
 
+        "<a-a>" => vec![Todo("<a-a>")], /// TODO: Select whole object
+        "<a-i>" => vec![Todo("<a-i>")], /// TODO: Select inner object
+        "[" => vec![Todo("[")], /// TODO: Move to object start
+        "]" => vec![Todo("]")], /// TODO: Move to object end
+        "{" => vec![Todo("{")], /// TODO: Extend to object start
+        "}" => vec![Todo("}")], /// TODO: Extend to object end
+        "<a-[>" => vec![Todo("<a-[>")], /// TODO: Move to inner object start
+        "<a-]>" => vec![Todo("<a-]>")], /// TODO: Move to inner object end
+        "<a-{>" => vec![Todo("<a-{>")], /// TODO: Extend to inner object start
+        "<a-}>" => vec![Todo("<a-}>")], /// TODO: Extend to inner object end
+
+        "/" => vec![Todo("/")], /// TODO: Search forward
+        "<a-/>" => vec![Todo("<a-/>")], /// TODO: Search backward
+        "?" => vec![Todo("?")], /// TODO: Extend to next match
+        "<a-?>" => vec![Todo("<a-?>")], /// TODO: Extend to previous match
+        "n" => vec![Todo("n")], /// TODO: Select next match
+        "<a-n>" => vec![Todo("<a-n>")], /// TODO: Select previous match
+        "N" => vec![Todo("N")], /// TODO: Add next match to selection
+        "<a-N>" => vec![Todo("<a-N>")], /// TODO: Add previous match to selection
+        "*" => vec![Todo("*")], /// TODO: Set search pattern from selection
+        "<a-*>" => vec![Todo("<a-*>")], /// TODO: Set search pattern from selection verbatim
+
         "%" => vec![SelectAll], /// Select all
         "s" => vec![SelectRegex], /// Select regex matches
         "<a-s>" => vec![SplitIntoLines], /// Split into lines
+        "S" => vec![Todo("S")], /// TODO: Split on regex
+        "<a-S>" => vec![Todo("<a-S>")], /// TODO: Select first and last characters
+        "<a-k>" => vec![Todo("<a-k>")], /// TODO: Keep selection ranges matching regex
+        "<a-K>" => vec![Todo("<a-K>")], /// TODO: Remove selection ranges matching regex
+
+        "C" => vec![Todo("C")], /// TODO: Copy selection ranges down
+        "<a-C>" => vec![Todo("<a-C>")], /// TODO: Copy selection ranges up
+        "+" => vec![Todo("+")], /// TODO: Duplicate each selection range
+        "<a-+>" => vec![Todo("<a-+>")], /// TODO: Merge overlapping selection ranges
+        "<a-_>" => vec![Todo("<a-_>")], /// TODO: Merge contiguous selection ranges
+        "_" => vec![Todo("_")], /// TODO: Trim surrounding whitespace
         "x" => vec![ExpandToFullLines], /// Expand to full lines
+        "X" => vec![Todo("X")], /// TODO: Extend to full lines
+        "<a-x>" => vec![Todo("<a-x>")], /// TODO: Trim to full lines
+
         "<a-;>" => vec![Flip], /// Flip selection
         "<a-:>" => vec![FlipForward], /// Flip selection forward
         "(" => vec![RotateSelectionBackward], /// Rotate selection backward
         ")" => vec![RotateSelectionForward], /// Rotate selection forward
         "," => vec![KeepPrimary], /// Keep only primary selection range
+        "<a-,>" => vec![Todo("<a-,>")], /// TODO: Remove primary selection range
         ";" => vec![Collapse], /// Collapse selection ranges
+
+        "Z" => vec![Todo("Z")], /// TODO: Save selection to register
+        "z" => vec![Todo("z")], /// TODO: Restore selection from register
+        "<a-Z>" => vec![Todo("<a-Z>")], /// TODO: Combine selection with register
+        "<a-z>" => vec![Todo("<a-z>")], /// TODO: Combine register with selection
+
+        "<c-o>" => vec![Todo("<c-o>")], /// TODO: Jump backward
+        "<c-i>" => vec![Todo("<c-i>")], /// TODO: Jump forward
+        "<c-s>" => vec![Todo("<c-s>")], /// TODO: Save selection to jump list
 
         "o" => vec![InsertLineBelow], /// Enter insert mode on new line below
         "O" => vec![InsertLineAbove], /// Enter insert mode on new line above
@@ -196,6 +303,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<a-O>" => vec![AddLineAbove, Commit], /// Add line above
 
         ":" => vec![EnterCommandMode], /// Enter command mode
+        "\\ " => vec![Todo("\\ ")], /// TODO: Enter user mode
 
         "<c-u>" => vec![ScrollHalfPageUp], /// Scroll half page up
         "<c-d>" => vec![ScrollHalfPageDown], /// Scroll half page down
@@ -203,6 +311,7 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<c-f>" => vec![ScrollFullPageDown], /// Scroll page down
 
         "vc" => vec![ScrollCenter], /// Scroll to center cursor
+        "V" => vec![Todo("V")], /// TODO: Enter locked view mode
 
         "<c-z>" => vec![Suspend], /// Suspend
         "<c-c>" => vec![QuitHint],
@@ -289,6 +398,7 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
         Action::ScrollCenter => client.focused_window_mut().scroll_center_selection(),
         Action::Suspend => client.suspend = true,
         Action::QuitHint => quit_hint(client),
+        Action::Todo(keys) => todo(client, keys),
     }
 }
 
@@ -912,5 +1022,10 @@ fn goto_extend_until_line_end(client: &mut ClientMut) {
         .selection_move()
         .for_each_move(|mut range| range.extend_until_line_end());
     window.selection_move().merge_overlapping();
+    client.count = None;
+}
+
+fn todo(client: &mut ClientMut, keys: &str) {
+    client.set_error(format!("{keys} is not implemented yet"));
     client.count = None;
 }

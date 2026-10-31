@@ -17,6 +17,8 @@ pub enum Action {
     DeleteBefore,
     DeleteAfter,
     InsertChar(char),
+    #[cfg_attr(feature = "arbitrary", arbitrary(skip))]
+    Todo(&'static str),
 }
 
 pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
@@ -27,6 +29,9 @@ pub static KEYMAP: LazyLock<Keymap<Vec<Action>>> = LazyLock::new(|| {
         "<ret>" => vec![InsertChar('\n')], /// Insert newline
         "<bs>" => vec![DeleteBefore], /// Delete before cursor
         "<del>" => vec![DeleteAfter], /// Delete after cursor
+        "<c-r>" => vec![Todo("<c-r>")], /// TODO: Insert register contents
+        "<c-v>" => vec![Todo("<c-v>")], /// TODO: Insert next key literally
+        "<a-;>" => vec![Todo("<a-;>")], /// TODO: Run one normal mode command
         "<any>" => Mapping::Any(|key| Some(vec![InsertChar(char::from(key.typed_char()?))])), /// Insert character
     }
 });
@@ -43,6 +48,7 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
         Action::DeleteBefore => delete_before(client),
         Action::DeleteAfter => delete_after(client),
         Action::InsertChar(c) => insert_char(client, *c),
+        Action::Todo(keys) => todo(client, keys),
     }
 }
 
@@ -99,6 +105,11 @@ fn insert_char(client: &mut ClientMut, char: char) {
     let mut window = client.focused_window_mut();
     window.selection_edit().insert_char(char);
     window.scroll_to_selection();
+    client.count = None;
+}
+
+fn todo(client: &mut ClientMut, keys: &str) {
+    client.set_error(format!("{keys} is not implemented yet"));
     client.count = None;
 }
 
