@@ -30,11 +30,13 @@ pub fn should_skip_event(event: &TerminalEvent, areas: Areas) -> bool {
                 mouse_event.kind,
                 MouseEventKind::Moved | MouseEventKind::ScrollLeft | MouseEventKind::ScrollRight
             )
-            // Ignore mouse events outside the UI (e.g. when its size is limited)
-            || !areas.ui.contains(Position {
-                x: mouse_event.column,
-                y: mouse_event.row,
-            })
+            // Ignore mouse events outside the UI (e.g. when its size is limited), except releases,
+            // which end drags that started inside it
+            || (!matches!(mouse_event.kind, MouseEventKind::Up(_))
+                && !areas.ui.contains(Position {
+                    x: mouse_event.column,
+                    y: mouse_event.row,
+                }))
         }
         _ => false,
     }
