@@ -19,14 +19,15 @@ imbl = "7.0.2"
 indigo = { path = "crates/indigo/" }
 indigo-cli = { path = "crates/indigo-cli/" }
 indigo-core = { path = "crates/indigo-core/" }
-indigo-key = { path = "crates/indigo-key/" }
 indigo-kernel = { path = "crates/indigo-kernel/" }
+indigo-key = { path = "crates/indigo-key/" }
 indigo-term = { path = "crates/indigo-term/" }
 indigo-text = { path = "crates/indigo-text/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }
 libc = "0.2.189"
 log = "0.4.34"
 memchr = "2.8.3"
+palette = { version = "0.7.7", default-features = false }
 pathdiff = { version = "0.2.3", features = ["camino"] }
 ratatui = "0.30.2"
 ratatui-core = "0.1.2"

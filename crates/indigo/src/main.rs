@@ -19,6 +19,7 @@ use indigo_core::{
 };
 use indigo_key::Keymap;
 use indigo_text::rope::LINE_TYPE;
+use palette::{FromColor as _, Mix as _, Oklch, Srgb};
 use ratatui::{
     crossterm,
     prelude::{Buffer as Surface, Color, Line, Rect, Span, Style, Stylize as _, Widget as _},
@@ -418,25 +419,33 @@ fn render_prompt(client: &Client, mut area: Rect, surface: &mut Surface) {
 }
 
 fn render_rainbow(clock: &mut Clock, area: Rect, surface: &mut Surface) {
-    const PERIOD: Duration = Duration::from_secs(5);
+    use indigo::theme::flexoki::light::{BLUE, CYAN, GREEN, MAGENTA, ORANGE, PURPLE, RED, YELLOW};
+
+    const COLORS: [Color; 8] = [RED, ORANGE, YELLOW, GREEN, CYAN, BLUE, PURPLE, MAGENTA];
+
+    // Time spent fading from each color to the next
+    const FADE: Duration = Duration::from_millis(750);
 
     if area.is_empty() {
         return;
     }
 
-    // Hue around the color wheel, as 6 segments of 256 steps each
-    let hue = clock.cycle(PERIOD).as_nanos() * 6 * 256 / PERIOD.as_nanos();
-    let rise = u8::try_from(hue % 256).expect("Remainder is less than 256");
-    let fall = 255 - rise;
-    let (r, g, b) = match hue / 256 {
-        0 => (255, rise, 0),
-        1 => (fall, 255, 0),
-        2 => (0, 255, rise),
-        3 => (0, fall, 255),
-        4 => (rise, 0, 255),
-        5 => (255, 0, fall),
-        _ => unreachable!(),
+    let oklch = |color| {
+        let Color::Rgb(r, g, b) = color else {
+            unreachable!("Flexoki colors are RGB");
+        };
+        Oklch::from_color(Srgb::new(r, g, b).into_format::<f32>())
     };
+
+    let period = FADE * u32::try_from(COLORS.len()).unwrap();
+    let i = usize::try_from(clock.cycle(period).as_nanos() / FADE.as_nanos()).unwrap();
+    let from = oklch(COLORS[i]);
+    let to = oklch(COLORS[(i + 1) % COLORS.len()]);
+    let mixed = from.mix(to, clock.cycle(FADE).div_duration_f32(FADE));
+
+    let (r, g, b) = Srgb::from_color(mixed)
+        .into_format::<u8>()
+        .into_components();
 
     surface.set_style(area, Style::new().bg(Color::Rgb(r, g, b)));
 }

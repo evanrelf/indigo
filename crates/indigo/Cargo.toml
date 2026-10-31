@@ -12,6 +12,7 @@ indigo-core = { workspace = true, features = ["language-rust"] }
 indigo-key = { workspace = true }
 indigo-text = { workspace = true }
 libc = { workspace = true }
+palette = { workspace = true, features = ["std"] }
 ratatui = { workspace = true }
 sigpipe = { workspace = true }
 tracing = { workspace = true }

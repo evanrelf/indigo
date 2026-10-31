@@ -794,6 +794,7 @@ dependencies = [
  "indigo-key",
  "indigo-text",
  "libc",
+ "palette",
  "ratatui",
  "sigpipe",
  "tracing",
