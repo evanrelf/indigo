@@ -386,10 +386,10 @@ pub fn handle_action(client: &mut ClientMut, action: &Action) {
         Action::Replace(byte) => replace(client, *byte),
         Action::Undo => undo(client),
         Action::Redo => redo(client),
-        Action::ScrollHalfPageUp => client.focused_window_mut().scroll_half_page_up(),
-        Action::ScrollHalfPageDown => client.focused_window_mut().scroll_half_page_down(),
-        Action::ScrollFullPageUp => client.focused_window_mut().scroll_full_page_up(),
-        Action::ScrollFullPageDown => client.focused_window_mut().scroll_full_page_down(),
+        Action::ScrollHalfPageUp => scroll_half_page_up(client),
+        Action::ScrollHalfPageDown => scroll_half_page_down(client),
+        Action::ScrollFullPageUp => scroll_full_page_up(client),
+        Action::ScrollFullPageDown => scroll_full_page_down(client),
         Action::Suspend => client.suspend = true,
         Action::QuitHint => quit_hint(client),
         Action::Todo(keys) => todo(client, keys),
@@ -712,6 +712,26 @@ fn redo(client: &mut ClientMut) {
         }
     }
     window.scroll_to_selection();
+}
+
+fn scroll_half_page_up(client: &mut ClientMut) {
+    client.focused_window_mut().scroll_half_page_up();
+    client.count = None;
+}
+
+fn scroll_half_page_down(client: &mut ClientMut) {
+    client.focused_window_mut().scroll_half_page_down();
+    client.count = None;
+}
+
+fn scroll_full_page_up(client: &mut ClientMut) {
+    client.focused_window_mut().scroll_full_page_up();
+    client.count = None;
+}
+
+fn scroll_full_page_down(client: &mut ClientMut) {
+    client.focused_window_mut().scroll_full_page_down();
+    client.count = None;
 }
 
 fn select_all(client: &mut ClientMut) {
