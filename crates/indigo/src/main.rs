@@ -237,7 +237,12 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
                 ..area
             };
             let surface = frame.buffer_mut();
-            areas = Areas::new(&server.client(), area, args.experimental.x_ui_debug_bar);
+            areas = Areas::new(
+                &server.client(),
+                area,
+                args.experimental.x_ui_debug_bar,
+                !args.experimental.x_ui_barebones,
+            );
             server
                 .client_mut()
                 .focused_window_mut()
@@ -277,7 +282,12 @@ fn render(client: &Client, experimental: &ExperimentalArgs, area: Rect, surface:
     if area.is_empty() {
         return;
     }
-    let areas = Areas::new(client, area, experimental.x_ui_debug_bar);
+    let areas = Areas::new(
+        client,
+        area,
+        experimental.x_ui_debug_bar,
+        !experimental.x_ui_barebones,
+    );
     render_status_bar(client, areas.status_bar, surface);
     render_prompt(client, areas.status_bar, surface);
     render_line_numbers(client, areas.line_numbers, surface);
@@ -289,9 +299,7 @@ fn render(client: &Client, experimental: &ExperimentalArgs, area: Rect, surface:
     }
     render_text(client, areas.text, surface);
     render_selection(client, areas.text, surface);
-    if !experimental.x_ui_barebones {
-        render_scroll_bar(client, areas.scroll_bar, surface);
-    }
+    render_scroll_bar(client, areas.scroll_bar, surface);
 }
 
 fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
@@ -414,6 +422,10 @@ fn render_line_numbers(client: &Client, area: Rect, surface: &mut Surface) {
 fn render_scroll_bar(client: &Client, area: Rect, surface: &mut Surface) {
     const LOWER_BLOCKS: [&str; 9] = [" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
     const UPPER_BLOCKS: [&str; 9] = [" ", "▔", "🮂", "🮃", "▀", "🮄", "🮅", "🮆", "█"];
+
+    if area.is_empty() {
+        return;
+    }
 
     let thumb_color = THEME.scroll_bar_thumb;
 
