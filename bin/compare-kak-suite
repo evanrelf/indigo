@@ -265,6 +265,7 @@ same 'abc\n' 'lLrX' # replaces every char in the selection
 same 'abc\n' 'lLrXd' # and keeps all of them selected
 same 'ab\ncd\n' 'lLJrX' # including newlines
 same 'abc\n' 'lr<ret>' # replace with a newline
+same 'a\n' 'lr<ret>' # replace the final newline with a newline
 same 'abc\n' 'lr<tab>' # replace with a tab
 same 'abc\n' '3rX' # count is ignored
 

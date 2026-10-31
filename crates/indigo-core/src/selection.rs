@@ -653,7 +653,7 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
                 output_position += replacement.len();
             }
             spans.push((replacement_start, output_position - replacement.len()));
-            if end_exclusive == self.text.len() {
+            if end_exclusive == self.text.len() && replacement != "\n" {
                 // The final newline was replaced; restore the `Text` invariant.
                 ops.insert("\n");
             }
