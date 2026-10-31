@@ -32,8 +32,8 @@ by Kakoune and CodeMirror.
 
 ## Checking your work
 
-- Always run `cargo clippy --all-targets` to check if code compiles. Never run
-  `cargo check` or `cargo build`.
+- Always run `cargo clippy --all-targets` instead of `cargo check` to check if
+  code compiles.
 - Some crates may disable tests when feature flags aren't enabled. Err towards
   running `cargo test` from the root of the repo to include as much as possible.
 - Prefer writing property tests with Hegel over unit tests. Read the tests in
