@@ -3,6 +3,7 @@ use camino::Utf8PathBuf;
 use clap::Parser as _;
 use indigo::{
     areas::{self, Areas, byte_index_to_area, line_index_to_area},
+    clock::Clock,
     event::{IndigoEvent, handle_event, should_skip_event},
     scroll_bar::{self, UNITS_PER_CELL},
     state::State,
@@ -20,7 +21,7 @@ use indigo_key::Keymap;
 use indigo_text::rope::LINE_TYPE;
 use ratatui::{
     crossterm,
-    prelude::{Buffer as Surface, Line, Rect, Span, Style, Stylize as _, Widget as _},
+    prelude::{Buffer as Surface, Color, Line, Rect, Span, Style, Stylize as _, Widget as _},
 };
 use std::{
     borrow::Cow,
@@ -29,6 +30,7 @@ use std::{
     fs, mem,
     process::ExitCode,
     sync::Arc,
+    time::{Duration, Instant},
 };
 
 // TODO: Figure out how to represent the mutual exclusion here more elegantly
@@ -63,6 +65,10 @@ struct ExperimentalArgs {
     /// Hide superfluous UI chrome
     #[arg(long)]
     x_ui_barebones: bool,
+
+    /// Show a rainbow in the status bar
+    #[arg(long)]
+    x_ui_rainbow: bool,
 
     /// Limit viewport width
     #[arg(
@@ -231,6 +237,8 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
             terminal::suspend(terminal)?;
         }
 
+        let mut clock = Clock::now();
+
         terminal.draw(|frame| {
             let area = frame.area();
             let limit = |max, actual| if max == 0 { actual } else { min(max, actual) };
@@ -240,14 +248,7 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
                 ..area
             };
             let surface = frame.buffer_mut();
-            areas = Areas::new(
-                &server.client(),
-                area,
-                &areas::Options {
-                    show_debug_bar: args.experimental.x_ui_debug_bar,
-                    show_scroll_bar: !args.experimental.x_ui_barebones,
-                },
-            );
+            areas = Areas::new(&server.client(), area, &areas_options(&args.experimental));
             server
                 .client_mut()
                 .focused_window_mut()
@@ -260,10 +261,22 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
                 pending_center = false;
             }
             server.client_mut().focused_buffer_mut().text.reparse();
-            render(&server.client(), &args.experimental, area, surface);
+            render(
+                &server.client(),
+                &args.experimental,
+                &mut clock,
+                area,
+                surface,
+            );
         })?;
 
         let event = 'event_read: loop {
+            // Draw the next frame when requested, unless an event arrives first
+            if let Some(wakeup) = clock.wakeup()
+                && !crossterm::event::poll(wakeup.saturating_duration_since(Instant::now()))?
+            {
+                continue 'frame;
+            }
             let event = crossterm::event::read()?;
             if event.is_resize() {
                 continue 'frame;
@@ -283,20 +296,28 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
     Ok(exit_code)
 }
 
-fn render(client: &Client, experimental: &ExperimentalArgs, area: Rect, surface: &mut Surface) {
+fn areas_options(experimental: &ExperimentalArgs) -> areas::Options {
+    areas::Options {
+        show_debug_bar: experimental.x_ui_debug_bar,
+        show_scroll_bar: !experimental.x_ui_barebones,
+        show_rainbow: experimental.x_ui_rainbow,
+    }
+}
+
+fn render(
+    client: &Client,
+    experimental: &ExperimentalArgs,
+    clock: &mut Clock,
+    area: Rect,
+    surface: &mut Surface,
+) {
     if area.is_empty() {
         return;
     }
-    let areas = Areas::new(
-        client,
-        area,
-        &areas::Options {
-            show_debug_bar: experimental.x_ui_debug_bar,
-            show_scroll_bar: !experimental.x_ui_barebones,
-        },
-    );
+    let areas = Areas::new(client, area, &areas_options(experimental));
     render_status_bar(client, areas.status_bar, surface);
     render_prompt(client, areas.status_bar, surface);
+    render_rainbow(clock, areas.rainbow, surface);
     render_line_numbers(client, areas.line_numbers, surface);
     if !experimental.x_ui_barebones {
         render_dots(client, areas.dots, surface);
@@ -394,6 +415,30 @@ fn render_prompt(client: &Client, mut area: Rect, surface: &mut Surface) {
             Err(message) => Line::raw(message).bg(THEME.error_bg).render(area, surface),
         }
     }
+}
+
+fn render_rainbow(clock: &mut Clock, area: Rect, surface: &mut Surface) {
+    const PERIOD: Duration = Duration::from_secs(5);
+
+    if area.is_empty() {
+        return;
+    }
+
+    // Hue around the color wheel, as 6 segments of 256 steps each
+    let hue = clock.cycle(PERIOD).as_nanos() * 6 * 256 / PERIOD.as_nanos();
+    let rise = u8::try_from(hue % 256).expect("Remainder is less than 256");
+    let fall = 255 - rise;
+    let (r, g, b) = match hue / 256 {
+        0 => (255, rise, 0),
+        1 => (fall, 255, 0),
+        2 => (0, 255, rise),
+        3 => (0, fall, 255),
+        4 => (rise, 0, 255),
+        5 => (255, 0, fall),
+        _ => unreachable!(),
+    };
+
+    surface.set_style(area, Style::new().bg(Color::Rgb(r, g, b)));
 }
 
 fn render_line_numbers(client: &Client, area: Rect, surface: &mut Surface) {

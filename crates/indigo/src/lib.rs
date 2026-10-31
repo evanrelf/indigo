@@ -1,4 +1,5 @@
 pub mod areas;
+pub mod clock;
 pub mod event;
 pub mod key;
 pub mod scroll_bar;

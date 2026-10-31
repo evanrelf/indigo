@@ -7,6 +7,7 @@ use std::cmp::{max, min};
 pub struct Areas {
     pub ui: Rect,
     pub status_bar: Rect,
+    pub rainbow: Rect,
     pub line_numbers: Rect,
     pub dots: Rect,
     pub text: Rect,
@@ -17,6 +18,7 @@ pub struct Areas {
 pub struct Options {
     pub show_debug_bar: bool,
     pub show_scroll_bar: bool,
+    pub show_rainbow: bool,
 }
 
 impl Areas {
@@ -31,6 +33,14 @@ impl Areas {
             Constraint::Length(if options.show_debug_bar { 1 } else { 0 }),
         ])
         .areas(area);
+
+        let [status_bar, rainbow] = Layout::horizontal([
+            // status_bar
+            Constraint::Fill(1),
+            // rainbow
+            Constraint::Length(if options.show_rainbow { 1 } else { 0 }),
+        ])
+        .areas(status_bar);
 
         let line_numbers_width = {
             let n = client.focused_buffer().text.rope().len_lines_unix();
@@ -52,6 +62,7 @@ impl Areas {
         Self {
             ui: area,
             status_bar,
+            rainbow,
             line_numbers,
             dots: main,
             text,
