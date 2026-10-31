@@ -263,6 +263,7 @@ pub const KEYBOARD_ENHANCEMENT_FLAGS_QUERY: &str = "\x1b[?u";
 // TODO: Add query for current pointer shape.
 // TODO: Add methods to `Terminal`. Needs to handle separate stacks for main and alternate screens.
 
+#[derive(Clone, Copy, PartialEq)]
 pub enum PointerShape {
     Alias,
     Cell,
@@ -294,6 +295,41 @@ pub enum PointerShape {
     Wait,
     ZoomIn,
     ZoomOut,
+}
+
+impl PointerShape {
+    pub const ALL: [Self; 30] = [
+        Self::Alias,
+        Self::Cell,
+        Self::Copy,
+        Self::Crosshair,
+        Self::Default,
+        Self::EResize,
+        Self::EwResize,
+        Self::Grab,
+        Self::Grabbing,
+        Self::Help,
+        Self::Move,
+        Self::NResize,
+        Self::NeResize,
+        Self::NeswResize,
+        Self::NoDrop,
+        Self::NotAllowed,
+        Self::NsResize,
+        Self::NwResize,
+        Self::NwseResize,
+        Self::Pointer,
+        Self::Progress,
+        Self::SResize,
+        Self::SeResize,
+        Self::SwResize,
+        Self::Text,
+        Self::VerticalText,
+        Self::WResize,
+        Self::Wait,
+        Self::ZoomIn,
+        Self::ZoomOut,
+    ];
 }
 
 impl Display for PointerShape {
