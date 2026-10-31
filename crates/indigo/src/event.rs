@@ -4,7 +4,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use indigo_core::{
-    mode::{insert, prompt},
+    mode::{insert, prompt, view},
     prelude::*,
 };
 use ratatui::crossterm::{
@@ -80,7 +80,7 @@ pub fn handle_event(server: &mut Server, areas: Areas, event: TerminalEvent) -> 
         Mode::Normal => handle_event_normal(client, areas, event),
         Mode::Insert => handle_event_insert(client, areas, event),
         Mode::Prompt(_) => handle_event_prompt(client, areas, event)?,
-        Mode::View => false,
+        Mode::View(_) => handle_event_view(client, areas, event),
     };
 
     Ok(())
@@ -176,6 +176,29 @@ fn handle_event_insert(client: &mut ClientMut, _areas: Areas, event: TerminalEve
 
     match event {
         TerminalEvent::Paste(text) => insert::paste(client, &text),
+        _ => handled = false,
+    }
+
+    handled
+}
+
+#[expect(clippy::needless_pass_by_value)]
+fn handle_event_view(client: &mut ClientMut, _areas: Areas, event: TerminalEvent) -> bool {
+    let mut handled = true;
+
+    match event {
+        TerminalEvent::Mouse(mouse_event) => match (mouse_event.modifiers, mouse_event.kind) {
+            (KeyModifiers::NONE, MouseEventKind::Down(MouseButton::Left)) => {
+                view::drag_start(client, mouse_event.row);
+            }
+            (KeyModifiers::NONE, MouseEventKind::Drag(MouseButton::Left)) => {
+                view::drag_to(client, mouse_event.row);
+            }
+            (KeyModifiers::NONE, MouseEventKind::Up(MouseButton::Left)) => {
+                view::drag_end(client);
+            }
+            _ => handled = false,
+        },
         _ => handled = false,
     }
 

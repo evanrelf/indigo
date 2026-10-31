@@ -298,7 +298,7 @@ fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
         Mode::Normal => "normal",
         Mode::Insert => "insert",
         Mode::Prompt(_) => "prompt",
-        Mode::View => "view",
+        Mode::View(_) => "view",
     };
 
     let path = client

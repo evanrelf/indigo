@@ -10,6 +10,18 @@ use std::{num::NonZeroUsize, sync::Arc};
 #[cfg(feature = "arbitrary")]
 use arbitrary::Arbitrary;
 
+#[derive(Clone, Default)]
+pub struct State {
+    drag: Option<Drag>,
+}
+
+/// Where a drag started, so the grabbed line stays under the mouse.
+#[derive(Clone, Copy)]
+struct Drag {
+    row: u16,
+    vertical_scroll: usize,
+}
+
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
@@ -94,7 +106,42 @@ pub fn handle_keys(client: &mut ClientMut) -> bool {
 }
 
 pub fn enter(client: &mut ClientMut) {
-    client.mode = Mode::View;
+    client.mode = Mode::View(State::default());
+}
+
+pub fn drag_start(client: &mut ClientMut, row: u16) {
+    let vertical_scroll = client.focused_window().vertical_scroll();
+    let Mode::View(view_mode) = &mut client.mode else {
+        panic!("Not in view mode")
+    };
+    view_mode.drag = Some(Drag {
+        row,
+        vertical_scroll,
+    });
+}
+
+pub fn drag_to(client: &mut ClientMut, row: u16) {
+    let Mode::View(view_mode) = &client.mode else {
+        panic!("Not in view mode")
+    };
+    let Some(drag) = view_mode.drag else {
+        return;
+    };
+    // Dragging down pulls the text down, revealing earlier lines.
+    let line = if row < drag.row {
+        drag.vertical_scroll + usize::from(drag.row - row)
+    } else {
+        drag.vertical_scroll
+            .saturating_sub(usize::from(row - drag.row))
+    };
+    client.focused_window_mut().scroll_to_line(line);
+}
+
+pub fn drag_end(client: &mut ClientMut) {
+    let Mode::View(view_mode) = &mut client.mode else {
+        panic!("Not in view mode")
+    };
+    view_mode.drag = None;
 }
 
 fn scroll_line_up(client: &mut ClientMut) {

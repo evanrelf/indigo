@@ -316,7 +316,7 @@ impl ClientMut<'_> {
                 Mode::Normal => normal::handle_keys(self),
                 Mode::Insert => insert::handle_keys(self),
                 Mode::Prompt(_) => prompt::handle_keys(self),
-                Mode::View => view::handle_keys(self),
+                Mode::View(_) => view::handle_keys(self),
             },
         };
 

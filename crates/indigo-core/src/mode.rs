@@ -13,7 +13,7 @@ pub enum Mode {
     Normal,
     Insert,
     Prompt(prompt::State),
-    View,
+    View(view::State),
 }
 
 impl Mode {
@@ -23,7 +23,7 @@ impl Mode {
             Self::Normal => ModeKind::Normal,
             Self::Insert => ModeKind::Insert,
             Self::Prompt(_) => ModeKind::Prompt,
-            Self::View => ModeKind::View,
+            Self::View(_) => ModeKind::View,
         }
     }
 }
