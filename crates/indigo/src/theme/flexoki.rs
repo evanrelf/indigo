@@ -143,7 +143,6 @@ pub mod light {
         status_bar_bg: UI,
         line_numbers_fg: TX_3,
         dots: UI,
-        scroll_bar_track: BG,
         scroll_bar_thumb: UI,
         primary_cursor_fg: PAPER,
         primary_cursor_bg: BLUE,

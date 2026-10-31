@@ -412,6 +412,7 @@ fn render_line_numbers(client: &Client, area: Rect, surface: &mut Surface) {
 
 fn render_scroll_bar(client: &Client, area: Rect, surface: &mut Surface) {
     const LOWER_BLOCKS: [&str; 9] = [" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
+    const UPPER_BLOCKS: [&str; 9] = [" ", "▔", "🮂", "🮃", "▀", "🮄", "🮅", "🮆", "█"];
     const UNITS_PER_CELL: usize = 8;
     const MIN_UNITS: usize = 8;
 
@@ -419,7 +420,6 @@ fn render_scroll_bar(client: &Client, area: Rect, surface: &mut Surface) {
         return;
     }
 
-    let track_color = THEME.scroll_bar_track;
     let thumb_color = THEME.scroll_bar_thumb;
 
     let window = client.focused_window();
@@ -456,29 +456,24 @@ fn render_scroll_bar(client: &Client, area: Rect, surface: &mut Surface) {
         let overlap_units = overlap_end.saturating_sub(overlap_start);
 
         if overlap_units == 0 {
-            " ".bg(track_color).render(row, surface);
             continue;
         }
 
         if overlap_units == UNITS_PER_CELL {
-            " ".bg(thumb_color).render(row, surface);
+            "█".fg(thumb_color).render(row, surface);
             continue;
         }
 
         if overlap_end == cell_bottom && overlap_start > cell_top {
-            let h = overlap_units;
-            LOWER_BLOCKS[h]
+            LOWER_BLOCKS[overlap_units]
                 .fg(thumb_color)
-                .bg(track_color)
                 .render(row, surface);
             continue;
         }
 
         if overlap_start == cell_top && overlap_end < cell_bottom {
-            let empty = UNITS_PER_CELL - overlap_units;
-            LOWER_BLOCKS[empty]
-                .fg(track_color)
-                .bg(thumb_color)
+            UPPER_BLOCKS[overlap_units]
+                .fg(thumb_color)
                 .render(row, surface);
             continue;
         }

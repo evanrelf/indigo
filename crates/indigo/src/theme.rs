@@ -6,7 +6,6 @@ pub struct Theme {
     pub status_bar_bg: Color,
     pub line_numbers_fg: Color,
     pub dots: Color,
-    pub scroll_bar_track: Color,
     pub scroll_bar_thumb: Color,
     pub primary_cursor_fg: Color,
     pub primary_cursor_bg: Color,
