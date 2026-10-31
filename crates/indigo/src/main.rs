@@ -2,7 +2,7 @@ use arrayvec::ArrayString;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use indigo::{
-    areas::{Areas, byte_index_to_area, line_index_to_area},
+    areas::{self, Areas, byte_index_to_area, line_index_to_area},
     event::{IndigoEvent, handle_event, should_skip_event},
     scroll_bar::{self, UNITS_PER_CELL},
     terminal,
@@ -240,8 +240,10 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
             areas = Areas::new(
                 &server.client(),
                 area,
-                args.experimental.x_ui_debug_bar,
-                !args.experimental.x_ui_barebones,
+                &areas::Options {
+                    show_debug_bar: args.experimental.x_ui_debug_bar,
+                    show_scroll_bar: !args.experimental.x_ui_barebones,
+                },
             );
             server
                 .client_mut()
@@ -285,8 +287,10 @@ fn render(client: &Client, experimental: &ExperimentalArgs, area: Rect, surface:
     let areas = Areas::new(
         client,
         area,
-        experimental.x_ui_debug_bar,
-        !experimental.x_ui_barebones,
+        &areas::Options {
+            show_debug_bar: experimental.x_ui_debug_bar,
+            show_scroll_bar: !experimental.x_ui_barebones,
+        },
     );
     render_status_bar(client, areas.status_bar, surface);
     render_prompt(client, areas.status_bar, surface);

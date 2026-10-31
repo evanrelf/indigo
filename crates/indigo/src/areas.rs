@@ -14,16 +14,21 @@ pub struct Areas {
     pub debug_bar: Rect,
 }
 
+pub struct Options {
+    pub show_debug_bar: bool,
+    pub show_scroll_bar: bool,
+}
+
 impl Areas {
     #[must_use]
-    pub fn new(client: &Client, area: Rect, show_debug_bar: bool, show_scroll_bar: bool) -> Self {
+    pub fn new(client: &Client, area: Rect, options: &Options) -> Self {
         let [status_bar, main, debug_bar] = Layout::vertical([
             // status_bar
             Constraint::Length(1),
             // line_numbers + text
             Constraint::Fill(1),
             // debug_bar
-            Constraint::Length(if show_debug_bar { 1 } else { 0 }),
+            Constraint::Length(if options.show_debug_bar { 1 } else { 0 }),
         ])
         .areas(area);
 
@@ -40,7 +45,7 @@ impl Areas {
             // text
             Constraint::Fill(1),
             // scroll_bar
-            Constraint::Length(if show_scroll_bar { 1 } else { 0 }),
+            Constraint::Length(if options.show_scroll_bar { 1 } else { 0 }),
         ])
         .areas(main);
 
