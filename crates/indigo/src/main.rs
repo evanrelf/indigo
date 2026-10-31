@@ -4,6 +4,7 @@ use clap::Parser as _;
 use indigo::{
     areas::{Areas, byte_index_to_area, line_index_to_area},
     event::{IndigoEvent, handle_event, should_skip_event},
+    scroll_bar::{self, UNITS_PER_CELL},
     terminal,
     terminal::TerminalGuard,
     theme::THEME,
@@ -413,46 +414,26 @@ fn render_line_numbers(client: &Client, area: Rect, surface: &mut Surface) {
 fn render_scroll_bar(client: &Client, area: Rect, surface: &mut Surface) {
     const LOWER_BLOCKS: [&str; 9] = [" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
     const UPPER_BLOCKS: [&str; 9] = [" ", "▔", "🮂", "🮃", "▀", "🮄", "🮅", "🮆", "█"];
-    const UNITS_PER_CELL: usize = 8;
-    const MIN_UNITS: usize = 8;
-
-    if area.height == 0 {
-        return;
-    }
 
     let thumb_color = THEME.scroll_bar_thumb;
 
     let window = client.focused_window();
-    let buffer = window.buffer();
 
-    let text_lines = buffer.text.rope().len_lines_unix();
-    let window_lines = usize::from(window.height());
-    let scroll_lines = text_lines.saturating_add(window_lines.saturating_sub(1));
-    let track_cells = usize::from(area.height);
-    let track_units = track_cells * UNITS_PER_CELL;
-
-    if track_units == 0 || scroll_lines == 0 {
+    let Some(thumb) = scroll_bar::thumb(
+        window.buffer().text.rope().len_lines_unix(),
+        usize::from(window.height()),
+        window.vertical_scroll(),
+        usize::from(area.height),
+    ) else {
         return;
-    }
-
-    let thumb_units = ((track_units * window_lines) / scroll_lines).clamp(MIN_UNITS, track_units);
-
-    let current_scroll = window.vertical_scroll();
-    let max_scroll = text_lines.saturating_sub(1);
-
-    let thumb_start_units = if max_scroll == 0 || track_units == thumb_units {
-        0
-    } else {
-        ((track_units - thumb_units) * current_scroll) / max_scroll
     };
-    let thumb_end_units = thumb_start_units + thumb_units;
 
     for (i, row) in area.rows().enumerate() {
         let cell_top = i * UNITS_PER_CELL;
         let cell_bottom = cell_top + UNITS_PER_CELL;
 
-        let overlap_start = max(cell_top, thumb_start_units);
-        let overlap_end = min(cell_bottom, thumb_end_units);
+        let overlap_start = max(cell_top, thumb.start);
+        let overlap_end = min(cell_bottom, thumb.end);
         let overlap_units = overlap_end.saturating_sub(overlap_start);
 
         if overlap_units == 0 {
