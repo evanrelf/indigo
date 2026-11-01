@@ -10,6 +10,8 @@
 - Enforce 4 GiB size limit. Refuse to open files >= this size, refuse to apply
   edits that grow text >= this size, etc. So we can use `u32` for indexing bytes
   in places.
+- When holding down left click in scroll bar gutter, scroll to the cursor
+  (mimics behavior on macOS).
 
 - range: Select word for mouse double click
 - range: Select line for mouse triple click
