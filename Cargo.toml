@@ -12,14 +12,15 @@ clap = { version = "4.6.7", features = ["derive", "env"] }
 crop = { version = "0.4.3", features = ["graphemes"] }
 diff = "0.1.13"
 divan = "0.1.21"
+fastrand = "2.5.0"
 hegeltest = { version = "0.46.2", features = ["static-engine"] }
 hegeltest-c = { version = "=0.43.1", features = ["std"] } # TODO: upstream bug workaround :(
 imbl = "7.0.2"
 indigo = { path = "crates/indigo/" }
 indigo-cli = { path = "crates/indigo-cli/" }
 indigo-core = { path = "crates/indigo-core/" }
-indigo-key = { path = "crates/indigo-key/" }
 indigo-kernel = { path = "crates/indigo-kernel/" }
+indigo-key = { path = "crates/indigo-key/" }
 indigo-term = { path = "crates/indigo-term/" }
 indigo-text = { path = "crates/indigo-text/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }

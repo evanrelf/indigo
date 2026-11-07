@@ -8,6 +8,7 @@ anyhow = { workspace = true }
 arrayvec = { workspace = true }
 camino = { workspace = true }
 clap = { workspace = true }
+fastrand = { workspace = true }
 indigo-core = { workspace = true, features = ["language-rust"] }
 indigo-key = { workspace = true }
 indigo-text = { workspace = true }

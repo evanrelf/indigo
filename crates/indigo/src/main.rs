@@ -304,6 +304,26 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
 }
 
 fn prompt_resume() -> anyhow::Result<bool> {
+    use crossterm::style::{Stylize as _, style};
+
+    if fastrand::f64() < 0.05 {
+        let text = fastrand::choice([
+            // GTA
+            style("WASTED").red().bold(),
+            // Assassins Creed
+            style("DESYNCHRONIZED").bold(),
+            // Prince of Persia: The Sands of Time
+            style("No, no, no, that didn’t happen. May I start again?")
+                .italic()
+                .bold(),
+            style("Wait, wait, wait. That’s not how it happened. Now where was I?")
+                .italic()
+                .bold(),
+        ])
+        .unwrap();
+        eprintln!("\n{text}\n");
+    }
+
     eprint!("Resume before the panic? [y/n] ");
     crossterm::terminal::enable_raw_mode()?;
     let answer = loop {
@@ -322,6 +342,7 @@ fn prompt_resume() -> anyhow::Result<bool> {
     };
     crossterm::terminal::disable_raw_mode()?;
     eprintln!("{}", if answer { "y" } else { "n" });
+
     Ok(answer)
 }
 
