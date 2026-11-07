@@ -5,7 +5,6 @@
 use ropey::Rope;
 use std::cmp::min;
 
-#[cfg_attr(test, derive(hegel::PrettyPrintable))]
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Edit {
     ops: Vec<Op>,
@@ -335,7 +334,6 @@ impl Edit {
     }
 }
 
-#[cfg_attr(test, derive(hegel::PrettyPrintable))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Op {
     Retain(usize),
