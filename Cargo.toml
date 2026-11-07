@@ -27,6 +27,7 @@ indigo-wrap = { path = "crates/indigo-wrap/" }
 libc = "0.2.189"
 log = "0.4.34"
 memchr = "2.8.3"
+pastey = "0.2.3"
 pathdiff = { version = "0.2.3", features = ["camino"] }
 ratatui = "0.30.2"
 ratatui-core = "0.1.2"

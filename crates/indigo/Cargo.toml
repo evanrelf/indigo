@@ -17,5 +17,8 @@ sigpipe = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 
+[dev-dependencies]
+pastey = { workspace = true }
+
 [lints]
 workspace = true
