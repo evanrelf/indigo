@@ -10,30 +10,24 @@ use tree_sitter::{Node, Parser, Query, TextProvider, Tree};
 #[allow(clippy::allow_attributes, unused_imports)]
 use std::sync::OnceLock;
 
+#[derive(Clone)]
 pub struct Syntax {
     language: Language,
-    parser: Parser,
     tree: Tree,
 }
 
 impl Syntax {
     #[must_use]
     pub fn parse(language: Language, code: &Rope) -> Self {
-        let mut parser = Parser::new();
-        parser.set_language(&language.into()).unwrap();
-        let tree = parse(code, &mut parser, None);
-        Self {
-            language,
-            parser,
-            tree,
-        }
+        let tree = parse(language, code, None);
+        Self { language, tree }
     }
 
     pub fn reparse(&mut self, code: &Rope) {
         // TODO: If I want to do incremental reparsing, I need to call `tree.edit(..)`. For now I'll
         // just parse from scratch every time.
-        // self.tree = parse(code, &mut self.parser, Some(&self.tree));
-        self.tree = parse(code, &mut self.parser, None);
+        // self.tree = parse(self.language, code, Some(&self.tree));
+        self.tree = parse(self.language, code, None);
     }
 
     #[must_use]
@@ -109,18 +103,6 @@ impl Deref for Syntax {
     type Target = Tree;
     fn deref(&self) -> &Self::Target {
         &self.tree
-    }
-}
-
-impl Clone for Syntax {
-    fn clone(&self) -> Self {
-        let mut parser = Parser::new();
-        parser.set_language(&self.language.into()).unwrap();
-        Self {
-            language: self.language,
-            parser,
-            tree: self.tree.clone(),
-        }
     }
 }
 
@@ -203,7 +185,9 @@ impl From<Language> for tree_sitter::Language {
     }
 }
 
-fn parse(rope: &Rope, parser: &mut Parser, old_tree: Option<&Tree>) -> Tree {
+fn parse(language: Language, rope: &Rope, old_tree: Option<&Tree>) -> Tree {
+    let mut parser = Parser::new();
+    parser.set_language(&language.into()).unwrap();
     parser
         .parse_with_options(
             &mut |offset, _point| -> &[u8] {
