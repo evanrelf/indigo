@@ -1,7 +1,15 @@
-# Zen
+# The Zen of Indigo
 
-- Simple is better than easy.
-- Composable is better than extensible.
-- Consistent is better than familiar.
-- Smooth is better than fast.
-- Respect the user.
+Composable is better than extensible.
+
+Extensible is better than configurable.
+
+Simple is better than easy.
+
+Consistent is better than familiar.
+
+Smooth is better than fast.
+
+Uncertainty breaks flow.
+
+Respect the user.
