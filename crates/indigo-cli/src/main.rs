@@ -49,7 +49,7 @@ fn main() -> anyhow::Result<ExitCode> {
         .with_writer(io::stderr)
         .init();
 
-    let rope = Rope::from_reader(io::BufReader::new(io::stdin()))?;
+    let rope = Rope::from_reader(io::stdin().lock())?;
 
     let mut buffer = Buffer::from(rope);
 
