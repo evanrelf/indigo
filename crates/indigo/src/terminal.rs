@@ -50,10 +50,7 @@ pub fn suspend(terminal: &mut TerminalGuard) -> anyhow::Result<()> {
         libc::kill(0, libc::SIGTSTP);
     }
     // Execution resumes here once the process is continued (e.g. with `fg`).
-    enter()?;
-    // `enter` cleared the screen, so Ratatui's previous frame is stale. Force a full redraw.
-    terminal.clear()?;
-    Ok(())
+    reenter(terminal)
 }
 
 fn enter() -> anyhow::Result<()> {
@@ -73,6 +70,13 @@ fn enter() -> anyhow::Result<()> {
         ))?;
     }
     stdout.flush()?;
+    Ok(())
+}
+
+pub fn reenter(terminal: &mut TerminalGuard) -> anyhow::Result<()> {
+    enter()?;
+    // `enter` cleared the screen, so Ratatui's previous frame is stale. Force a full redraw.
+    terminal.clear()?;
     Ok(())
 }
 

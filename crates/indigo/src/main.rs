@@ -19,7 +19,10 @@ use indigo_core::{
 use indigo_key::Keymap;
 use indigo_text::rope::LINE_TYPE;
 use ratatui::{
-    crossterm,
+    crossterm::{
+        self,
+        event::{KeyCode, KeyEventKind, KeyModifiers},
+    },
     prelude::{Buffer as Surface, Line, Rect, Span, Style, Stylize as _, Widget as _},
 };
 use std::{
@@ -27,6 +30,7 @@ use std::{
     cmp::{max, min},
     fmt::Write as _,
     fs, mem,
+    panic::{self, AssertUnwindSafe},
     process::ExitCode,
     sync::Arc,
 };
@@ -174,6 +178,7 @@ fn parse_file_line(raw: &Utf8PathBuf) -> (Utf8PathBuf, Option<usize>) {
     (raw.clone(), None)
 }
 
+#[expect(clippy::too_many_lines)]
 fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
     let (file, goto_line) = if let Some(raw) = &args.file {
         let (path, line) = parse_file_line(raw);
@@ -273,7 +278,22 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
             }
         };
 
-        handle_event(&mut server, areas, &mut state, event)?;
+        let checkpoint = server.clone();
+
+        match panic::catch_unwind(AssertUnwindSafe(|| {
+            handle_event(&mut server, areas, &mut state, event)
+        })) {
+            Ok(result) => result?,
+            Err(payload) => {
+                // The panic hook already left the terminal and printed the panic.
+                if !prompt_resume()? {
+                    panic::resume_unwind(payload);
+                }
+                server = checkpoint;
+                state = State::default();
+                terminal::reenter(terminal)?;
+            }
+        }
 
         if let Some(exit_code) = server.client().exit_code {
             break exit_code;
@@ -281,6 +301,28 @@ fn run(args: &Args, terminal: &mut TerminalGuard) -> anyhow::Result<ExitCode> {
     };
 
     Ok(exit_code)
+}
+
+fn prompt_resume() -> anyhow::Result<bool> {
+    eprint!("Resume before the panic? [y/n] ");
+    crossterm::terminal::enable_raw_mode()?;
+    let answer = loop {
+        let crossterm::event::Event::Key(key) = crossterm::event::read()? else {
+            continue;
+        };
+        if key.kind != KeyEventKind::Press {
+            continue;
+        }
+        match (key.modifiers, key.code) {
+            (KeyModifiers::NONE, KeyCode::Char('y')) => break true,
+            (KeyModifiers::NONE, KeyCode::Char('n'))
+            | (KeyModifiers::CONTROL, KeyCode::Char('c')) => break false,
+            _ => {}
+        }
+    };
+    crossterm::terminal::disable_raw_mode()?;
+    eprintln!("{}", if answer { "y" } else { "n" });
+    Ok(answer)
 }
 
 fn render(client: &Client, experimental: &ExperimentalArgs, area: Rect, surface: &mut Surface) {
