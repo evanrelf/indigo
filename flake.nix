@@ -51,13 +51,13 @@
                 cargoExtraArgs = "--bin indigo";
               });
 
-            docs = config.checks.doc;
-          } // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
             static =
               craneStatic.buildPackage (commonArgs // {
                 cargoArtifacts = craneStatic.buildDepsOnly commonArgs;
                 cargoExtraArgs = "--bin indigo";
               });
+
+            docs = config.checks.doc;
           };
 
           checks.clippy =
