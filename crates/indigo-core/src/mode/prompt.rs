@@ -8,30 +8,24 @@ use crate::{
 };
 use indigo_key::{Keymap, KeymapResult, Mapping, keymap};
 use ropey::{Rope, RopeSlice};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct State {
     pub prompt: &'static str,
     text: Text,
     cursor: CursorState,
-    // TODO: Consider changing this back to `Box<dyn FnOnce(..)>`. Either write a weird `Clone` impl
-    // that makes `handler = None` or add a new trait for deriving view state?
-    #[expect(clippy::type_complexity)]
-    handler: Option<Arc<Mutex<dyn FnMut(&mut ClientMut, &str) + Send>>>,
+    handler: fn(&mut ClientMut, &str),
 }
 
 impl State {
     #[must_use]
-    pub fn new(
-        prompt: &'static str,
-        handler: impl FnMut(&mut ClientMut, &str) + Send + 'static,
-    ) -> Self {
+    pub fn new(prompt: &'static str, handler: fn(&mut ClientMut, &str)) -> Self {
         Self {
             prompt,
             text: Text::default(),
             cursor: CursorState::default(),
-            handler: Some(Arc::new(Mutex::new(handler))),
+            handler,
         }
     }
 
@@ -150,11 +144,7 @@ pub fn handle_keys(client: &mut ClientMut) -> bool {
     }
 }
 
-pub fn enter(
-    client: &mut ClientMut,
-    prompt: &'static str,
-    handler: impl FnMut(&mut ClientMut, &str) + Send + 'static,
-) {
+pub fn enter(client: &mut ClientMut, prompt: &'static str, handler: fn(&mut ClientMut, &str)) {
     client.mode = Mode::Prompt(State::new(prompt, handler));
     client.count = None;
 }
@@ -233,11 +223,7 @@ fn exec(client: &mut ClientMut) {
         panic!("Not in prompt mode")
     };
     let text = prompt_mode.content().to_string();
-    let handler = prompt_mode
-        .handler
-        .take()
-        .expect("Handler is always present");
-    handler.lock().unwrap()(client, &text);
+    (prompt_mode.handler)(client, &text);
     normal::enter(client);
 }
 
