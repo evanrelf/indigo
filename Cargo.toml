@@ -12,7 +12,7 @@ clap = { version = "4.6.7", features = ["derive", "env"] }
 crop = { version = "0.4.3", features = ["graphemes"] }
 diff = "0.1.13"
 divan = "0.1.21"
-hegeltest = { version = "0.46.2", features = ["static-engine"] }
+hegeltest = { version = "0.52.0", features = ["static-engine"] }
 hegeltest-c = { version = "=0.43.1", features = ["std"] } # TODO: upstream bug workaround :(
 imbl = "7.0.2"
 indigo = { path = "crates/indigo/" }
@@ -23,28 +23,28 @@ indigo-kernel = { path = "crates/indigo-kernel/" }
 indigo-term = { path = "crates/indigo-term/" }
 indigo-text = { path = "crates/indigo-text/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }
-libc = "0.2.189"
-log = "0.4.34"
+libc = "0.2.191"
+log = "0.4.35"
 memchr = "2.8.3"
 pastey = "0.2.3"
 pathdiff = { version = "0.2.3", features = ["camino"] }
 ratatui = "0.30.2"
 ratatui-core = "0.1.2"
 regex-cursor = { version = "0.1.5", default-features = false, features = ["perf-inline"] }
-roaring = "0.11.5"
+roaring = "0.12.0"
 ropey = { version = "2.0.0-beta.1" }
 shell-words = "1.1.1"
 sigpipe = "0.1.3"
 slotmap = "1.1.1"
-thiserror = "2.0.20"
+thiserror = "2.0.21"
 tinyvec = { version = "1.13.3", features = ["grab_spare_slice", "std"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
-tree-sitter = "0.27.0"
+tree-sitter = "0.27.2"
 tree-sitter-rust = "0.24.2"
 unicode-segmentation = "1.13.3"
-unicode-width = "0.2.2"
-winnow = "1.0.4"
+unicode-width = "0.2.3"
+winnow = "1.0.5"
 
 [workspace.lints]
 clippy.allow_attributes = "warn"

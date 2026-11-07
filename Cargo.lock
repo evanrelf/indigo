@@ -422,15 +422,36 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "993b95dc1b248e3f5747dcb017a41d6e75853a2e5ee4504f7d537c5b8dffdae4"
 
 [[package]]
+name = "dashu-base"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "861a614e79388a4c72aa66b0bdabc91e3a4f30d53e0c8d962953e207d75884d0"
+dependencies = [
+ "num-modular",
+]
+
+[[package]]
 name = "dashu-int"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49c05a0d5cb0b39fcc87c46432fdac24b90dce239857c7f6b798be4ffc3c42c6"
 dependencies = [
  "cfg-if",
- "dashu-base",
+ "dashu-base 0.4.3",
  "num-modular",
  "rustversion",
+ "static_assertions",
+]
+
+[[package]]
+name = "dashu-int"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "64a0490b40a6a3f6427970035f17f76fd59c01d3cd9f9140809672863a0d64c8"
+dependencies = [
+ "cfg-if",
+ "dashu-base 0.6.1",
+ "num-modular",
  "static_assertions",
 ]
 
@@ -560,6 +581,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "fearless_simd"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "629c9d6b6f30b5604089e0980f4d924a013aacb1654a6cdf5d3d852224f68651"
+dependencies = [
+ "libm",
+]
+
+[[package]]
+name = "fearless_simd_macros"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e91d94c6885390b81782d7ee60fd6583b33907333a8b340de25ccf468353315"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.9",
+]
+
+[[package]]
 name = "filedescriptor"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -676,11 +717,11 @@ checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "hegeltest"
-version = "0.46.2"
+version = "0.52.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4552a0e12f108b79670bffc3d326c5ca022904a2c949388df9d4a0b9c476aa4"
+checksum = "f6b95008b427c3bd008deeafe667169eae3f69543035f2ce57e9b9bba45876c0"
 dependencies = [
- "hegeltest-c",
+ "hegeltest-c 0.50.0",
  "hegeltest-macros",
  "parking_lot",
 ]
@@ -691,7 +732,25 @@ version = "0.43.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2516a3430aa6acc6191042653161173d6fa5023558f1487ae440c401843fdf5"
 dependencies = [
- "dashu-int",
+ "dashu-int 0.4.3",
+ "hashbrown",
+ "libm",
+ "miniz_oxide",
+ "once_cell",
+ "rand 0.10.3",
+ "rustc-hash",
+ "rustix",
+ "toml",
+ "windows-sys",
+]
+
+[[package]]
+name = "hegeltest-c"
+version = "0.50.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e894a93df5b2fe2c137c32bb32194e63c0d9190c4266140ab4b43ba757315a51"
+dependencies = [
+ "dashu-int 0.6.2",
  "hashbrown",
  "libm",
  "miniz_oxide",
@@ -705,9 +764,9 @@ dependencies = [
 
 [[package]]
 name = "hegeltest-macros"
-version = "0.46.2"
+version = "0.52.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec8a4479755f5cf0483af4badaac16b26f8b02c0b4fbfc89049babe25b5fbce0"
+checksum = "7ccc83b3daf472bc2d84b675ac403fdfcc76df02044a2ab9facc1294baeba017"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -818,7 +877,7 @@ dependencies = [
  "anyhow",
  "arrayvec",
  "hegeltest",
- "hegeltest-c",
+ "hegeltest-c 0.43.1",
  "imbl",
  "indigo-text",
  "ropey",
@@ -1621,12 +1680,14 @@ checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "roaring"
-version = "0.11.5"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18bd8a37d17a58532776dcdf6041ce64929adca78e8489d5cacbafe99229d3e1"
+checksum = "eccfaa25083dbde9444486adda410c9cd23565d7f54a2df916c0bdf4bee44931"
 dependencies = [
  "bytemuck",
  "byteorder",
+ "fearless_simd",
+ "fearless_simd_macros",
 ]
 
 [[package]]
