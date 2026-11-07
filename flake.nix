@@ -51,10 +51,14 @@
                 cargoExtraArgs = "--bin indigo";
               });
 
+            # If `allowedReferences` trips, `rm -rf` the culprit in `postFixup`
+            # (e.g. `$out/nix-support`, where `pkgsStatic` propagates
+            # `buildInputs`).
             static =
               craneStatic.buildPackage (commonArgs // {
                 cargoArtifacts = craneStatic.buildDepsOnly commonArgs;
                 cargoExtraArgs = "--bin indigo";
+                allowedReferences = [ ];
               });
 
             docs = config.checks.doc;
