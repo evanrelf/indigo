@@ -139,21 +139,6 @@ pub mod light {
     use super::*;
     use crate::theme::Theme;
 
-    pub const THEME: Theme = Theme {
-        status_bar_bg: UI,
-        line_numbers_fg: TX_3,
-        dots: UI,
-        scroll_bar_thumb: UI,
-        primary_cursor_fg: PAPER,
-        primary_cursor_bg: BLUE,
-        primary_range_bg: BLUE_100,
-        secondary_cursor_fg: PAPER,
-        secondary_cursor_bg: YELLOW,
-        secondary_range_bg: YELLOW_100,
-        error_bg: RED_100,
-        whitespace_fg: UI,
-    };
-
     pub const TX: Color = BLACK;
     pub const TX_2: Color = BASE_600;
     pub const TX_3: Color = BASE_300;
@@ -170,6 +155,21 @@ pub mod light {
     pub const BLUE: Color = BLUE_600;
     pub const PURPLE: Color = PURPLE_600;
     pub const MAGENTA: Color = MAGENTA_600;
+
+    pub const THEME: Theme = Theme {
+        status_bar_bg: UI,
+        line_numbers_fg: TX_3,
+        dots: UI,
+        scroll_bar_thumb: UI,
+        primary_cursor_fg: PAPER,
+        primary_cursor_bg: BLUE,
+        primary_range_bg: BLUE_100,
+        secondary_cursor_fg: PAPER,
+        secondary_cursor_bg: YELLOW,
+        secondary_range_bg: YELLOW_100,
+        error_bg: RED_100,
+        whitespace_fg: UI,
+    };
 }
 
 pub mod dark {
