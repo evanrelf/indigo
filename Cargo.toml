@@ -1,10 +1,9 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "fuzz"]
+members = ["crates/*"]
 
 [workspace.dependencies]
 anyhow = "1.0.104"
-arbitrary = { version = "1.4.2", features = ["derive"] }
 arrayvec = "0.7.8"
 bitflags = { version = "2.13.2", features = ["std"] }
 bpaf = "0.9.28"
@@ -46,11 +45,6 @@ tree-sitter-rust = "0.24.2"
 unicode-segmentation = "1.13.3"
 unicode-width = "0.2.2"
 winnow = "1.0.4"
-
-[patch.crates-io]
-# Fix generating zero for `NonZero<T>`.
-# https://github.com/rust-fuzz/arbitrary/pull/214
-arbitrary = { git = "https://github.com/rust-fuzz/arbitrary.git", rev = "69ac259b653cc094652a9e73eabd3f4ef9244d86" }
 
 [workspace.lints]
 clippy.allow_attributes = "warn"

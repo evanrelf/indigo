@@ -89,14 +89,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "arbitrary"
-version = "1.4.2"
-source = "git+https://github.com/rust-fuzz/arbitrary.git?rev=69ac259b653cc094652a9e73eabd3f4ef9244d86#69ac259b653cc094652a9e73eabd3f4ef9244d86"
-dependencies = [
- "derive_arbitrary",
-]
-
-[[package]]
 name = "archery"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -155,9 +147,6 @@ name = "bitflags"
 version = "2.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06"
-dependencies = [
- "arbitrary",
-]
 
 [[package]]
 name = "block-buffer"
@@ -220,8 +209,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "54413ede23c2daf518f35156dfde027feb2374004d63bd497f983c8db9c0e313"
 dependencies = [
  "find-msvc-tools",
- "jobserver",
- "libc",
  "shlex",
 ]
 
@@ -449,16 +436,6 @@ name = "deranged"
 version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7cd812cc2bc1d69d4764bd80df88b4317eaef9e773c75226407d9bc0876b211c"
-
-[[package]]
-name = "derive_arbitrary"
-version = "1.4.2"
-source = "git+https://github.com/rust-fuzz/arbitrary.git?rev=69ac259b653cc094652a9e73eabd3f4ef9244d86#69ac259b653cc094652a9e73eabd3f4ef9244d86"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
 
 [[package]]
 name = "derive_more"
@@ -818,7 +795,6 @@ name = "indigo-core"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "arbitrary",
  "bpaf",
  "camino",
  "divan",
@@ -835,17 +811,6 @@ dependencies = [
  "tracing",
  "tree-sitter",
  "tree-sitter-rust",
-]
-
-[[package]]
-name = "indigo-fuzz"
-version = "0.0.0"
-dependencies = [
- "arbitrary",
- "indigo-core",
- "indigo-text",
- "libfuzzer-sys",
- "ropey",
 ]
 
 [[package]]
@@ -866,7 +831,6 @@ name = "indigo-key"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "arbitrary",
  "arrayvec",
  "bitflags 2.13.2",
  "clap",
@@ -949,16 +913,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
-name = "jobserver"
-version = "0.1.35"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c00acbd29eabad4a2392fa0e921c874934dbbf4194312ad20f04a0ed67a3cb3"
-dependencies = [
- "getrandom 0.4.3",
- "libc",
-]
-
-[[package]]
 name = "js-sys"
 version = "0.3.105"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -997,16 +951,6 @@ name = "libc"
 version = "0.2.189"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
-
-[[package]]
-name = "libfuzzer-sys"
-version = "0.4.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9fd2f41a1cba099f79a0b6b6c35656cf7c03351a7bae8ff0f28f25270f929d2"
-dependencies = [
- "arbitrary",
- "cc",
-]
 
 [[package]]
 name = "libm"

@@ -9,9 +9,6 @@ use ropey::{Rope, RopeSlice};
 use std::{borrow::Cow, cmp::min, ops::Deref, thread};
 use thiserror::Error;
 
-#[cfg(feature = "arbitrary")]
-use arbitrary::Arbitrary;
-
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Byte index {byte_index} is not within text of length {length}")]
@@ -24,7 +21,6 @@ pub enum Error {
     Text(#[source] anyhow::Error),
 }
 
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
     MoveTo { byte_index: usize },
@@ -55,7 +51,6 @@ pub enum Direction {
     Forward,
 }
 
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum GoalColumn {
     Column(usize),

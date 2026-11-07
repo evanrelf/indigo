@@ -7,9 +7,6 @@ use crate::{
 use indigo_key::{Keymap, KeymapResult, keymap};
 use std::{num::NonZeroUsize, sync::Arc};
 
-#[cfg(feature = "arbitrary")]
-use arbitrary::Arbitrary;
-
 #[derive(Clone, Default)]
 pub struct State {
     drag: Option<Drag>,
@@ -22,7 +19,6 @@ struct Drag {
     vertical_scroll: usize,
 }
 
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
     EnterNormalMode,

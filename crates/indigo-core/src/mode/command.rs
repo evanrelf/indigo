@@ -3,9 +3,6 @@ use anyhow::anyhow;
 use camino::Utf8PathBuf;
 use std::borrow::Cow;
 
-#[cfg(feature = "arbitrary")]
-use arbitrary::Arbitrary;
-
 pub type Action = Command;
 
 #[derive(Clone, Debug)]
@@ -19,14 +16,6 @@ pub enum Command {
     WriteQuit { exit_code: Option<u8> },
     Readonly,
     Panic,
-}
-
-#[cfg(feature = "arbitrary")]
-impl<'a> Arbitrary<'a> for Command {
-    fn arbitrary(_u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        // TODO: Uhhh I don't know what's most useful here
-        Ok(Self::Nop)
-    }
 }
 
 pub fn handle_actions(client: &mut ClientMut, actions: &[Action]) {

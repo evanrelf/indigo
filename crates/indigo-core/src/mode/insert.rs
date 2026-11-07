@@ -7,17 +7,12 @@ use crate::{
 use indigo_key::{Keymap, KeymapResult, Mapping, keymap};
 use std::sync::Arc;
 
-#[cfg(feature = "arbitrary")]
-use arbitrary::Arbitrary;
-
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
     EnterNormalMode,
     DeleteBefore,
     DeleteAfter,
     InsertChar(char),
-    #[cfg_attr(feature = "arbitrary", arbitrary(skip))]
     Todo(&'static str),
 }
 

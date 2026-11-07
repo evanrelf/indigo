@@ -14,9 +14,6 @@ use std::{
 };
 use thiserror::Error;
 
-#[cfg(feature = "arbitrary")]
-use arbitrary::Arbitrary;
-
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Error from tail")]
@@ -26,7 +23,6 @@ pub enum Error {
     Head(#[source] anyhow::Error),
 }
 
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
     InvalidateGoalColumn,

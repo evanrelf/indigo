@@ -12,10 +12,6 @@ use winnow::{
     token::one_of,
 };
 
-#[cfg(feature = "arbitrary")]
-use arbitrary::Arbitrary;
-
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Clone, Debug)]
 pub struct Keys<K = Vec<Key>>(pub K);
 
@@ -54,7 +50,6 @@ fn keys(input: &mut &str) -> ModalResult<Keys> {
         .parse_next(input)
 }
 
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Key {
     pub modifiers: KeyModifiers,
@@ -136,7 +131,6 @@ fn key_bare_unmodified(input: &mut &str) -> ModalResult<Key> {
 }
 
 bitflags! {
-    #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
     #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
     pub struct KeyModifiers: u8 {
         const CONTROL = 1 << 0;
@@ -205,31 +199,6 @@ pub enum KeyCode {
     Char(u8),
     /// <https://en.wikipedia.org/wiki/Any_key>
     Any,
-}
-
-#[cfg(feature = "arbitrary")]
-impl<'a> Arbitrary<'a> for KeyCode {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        if u.ratio(8, 10)? {
-            loop {
-                let c = u.int_in_range(b' '..=b'~')?;
-                if !b" #<>\\".contains(&c) {
-                    return Ok(Self::Char(c));
-                }
-            }
-        }
-        Ok(*u.choose(&[
-            Self::Backspace,
-            Self::Delete,
-            Self::Return,
-            Self::Left,
-            Self::Right,
-            Self::Up,
-            Self::Down,
-            Self::Tab,
-            Self::Escape,
-        ])?)
-    }
 }
 
 impl FromStr for KeyCode {

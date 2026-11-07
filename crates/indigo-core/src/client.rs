@@ -19,9 +19,6 @@ use std::{
 };
 use thiserror::Error;
 
-#[cfg(feature = "arbitrary")]
-use arbitrary::Arbitrary;
-
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Focused window {key:?} does not exist")]
@@ -341,20 +338,17 @@ impl ClientMut<'_> {
     }
 }
 
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Event {
     Key(KeyEvent),
 }
 
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug, PartialEq)]
 pub struct KeyEvent {
     pub key: Key,
     pub kind: KeyEventKind,
 }
 
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug, PartialEq)]
 pub enum KeyEventKind {
     Press,
@@ -362,7 +356,6 @@ pub enum KeyEventKind {
     Release,
 }
 
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
     Normal(normal::Action),

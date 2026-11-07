@@ -1,11 +1,6 @@
 # cargo
 target/
 
-# cargo-fuzz
-fuzz/artifacts/
-fuzz/corpus/
-fuzz/coverage/
-
 # cargo-mutants
 mutants.out/
 mutants.out.old/

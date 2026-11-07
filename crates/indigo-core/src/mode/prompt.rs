@@ -10,9 +10,6 @@ use indigo_key::{Keymap, KeymapResult, Mapping, keymap};
 use ropey::{Rope, RopeSlice};
 use std::sync::{Arc, Mutex};
 
-#[cfg(feature = "arbitrary")]
-use arbitrary::Arbitrary;
-
 #[derive(Clone)]
 pub struct State {
     pub prompt: &'static str,
@@ -80,7 +77,6 @@ impl State {
     }
 }
 
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
     EnterNormalMode,

@@ -10,10 +10,6 @@ use indigo_text::rope::{LINE_TYPE, RopeExt as _};
 use regex_cursor::engines::meta::Regex;
 use std::{cmp::min, num::NonZeroUsize, sync::Arc};
 
-#[cfg(feature = "arbitrary")]
-use arbitrary::Arbitrary;
-
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Debug)]
 pub enum Action {
     AppendCountDigit(u8),
@@ -83,25 +79,21 @@ pub enum Action {
     ScrollFullPageDown,
     Suspend,
     QuitHint,
-    #[cfg_attr(feature = "arbitrary", arbitrary(skip))]
     Todo(&'static str),
 }
 
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Clone, Copy, Debug)]
 pub enum SeekSelect {
     Move,
     Extend,
 }
 
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Clone, Copy, Debug)]
 pub enum SeekInclude {
     Until,
     Onto,
 }
 
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 #[derive(Clone, Copy, Debug)]
 pub enum SeekDirection {
     Prev,
