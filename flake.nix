@@ -9,11 +9,6 @@
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
-    ghostty = {
-      url = "github:ghostty-org/ghostty/vt-1.0.0";
-      # Don't follow our `nixpkgs`, which lacks the Zig version Ghostty needs.
-      inputs.systems.follows = "systems";
-    };
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     systems.url = "github:nix-systems/default";
   };
@@ -44,8 +39,6 @@
             version = "0.0.0";
             src = crane.cleanCargoSource ./.;
             strictDeps = true;
-            nativeBuildInputs = [ pkgs.pkg-config ];
-            buildInputs = [ inputs'.ghostty.packages.libghostty-vt ];
           };
 
           cargoArtifacts = crane.buildDepsOnly commonArgs;
