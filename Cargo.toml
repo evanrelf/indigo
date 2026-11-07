@@ -47,6 +47,7 @@ unicode-width = "0.2.3"
 winnow = "1.0.5"
 
 [workspace.lints]
+cargo.unused_workspace_dependencies = "allow"
 clippy.allow_attributes = "warn"
 clippy.as_conversions = "deny"
 clippy.bool_to_int_with_if = "allow"
