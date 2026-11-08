@@ -94,6 +94,9 @@ impl Buffer {
         }
     }
 
+    // Unlike other editors, a buffer is considered modified only if its content diverges from
+    // what's on disk. Making further changes to restore the content is treated the same as undoing
+    // the changes.
     #[must_use]
     pub fn is_modified(&self) -> Option<bool> {
         if let BufferKind::File { on_disk, .. } = &self.kind {
