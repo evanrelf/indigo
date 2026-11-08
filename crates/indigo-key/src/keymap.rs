@@ -43,10 +43,7 @@ impl<V> Keymap<V> {
         description: Option<&'static str>,
     ) -> Result<Option<Mapping<V>>, InsertError> {
         let value = value.into();
-        let mut keys: Keys = keys.parse().unwrap();
-        for key in &mut keys.0 {
-            key.normalize();
-        }
+        let keys: Keys = keys.parse().unwrap();
         let anys = keys.0.iter().filter(|key| **key == Key::ANY).count();
         match value {
             Mapping::Static(_) => {
@@ -75,19 +72,13 @@ impl<V> Keymap<V> {
     }
 
     pub fn remove(&mut self, keys: &str) -> Option<Mapping<V>> {
-        let mut keys: Keys = keys.parse().unwrap();
-        for key in &mut keys.0 {
-            key.normalize();
-        }
+        let keys: Keys = keys.parse().unwrap();
         self.mappings.remove(&keys.0).map(|entry| entry.value)
     }
 
     #[must_use]
     pub fn get(&self, keys: &str) -> KeymapResult<'_, V> {
-        let mut keys: Keys = keys.parse().unwrap();
-        for key in &mut keys.0 {
-            key.normalize();
-        }
+        let keys: Keys = keys.parse().unwrap();
         self.get_keys(&keys.0)
     }
 

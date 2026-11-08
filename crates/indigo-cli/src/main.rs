@@ -98,12 +98,12 @@ fn main() -> anyhow::Result<ExitCode> {
         }
         client.clear_message();
 
-        if args.debug && is(&key, "<c-l>") {
+        if args.debug && is(key, "<c-l>") {
             let left = debug_rope.to_string();
             let right = server.client().focused_buffer().text.rope().to_string();
             eprint!("keys: ");
             for key in &debug_keys {
-                if !is(key, "<c-l>") {
+                if !is(*key, "<c-l>") {
                     eprint!("{key}");
                 }
             }

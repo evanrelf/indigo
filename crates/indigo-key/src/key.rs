@@ -117,6 +117,12 @@ fn key_wrapped(input: &mut &str) -> ModalResult<Key> {
         // TODO: Allow modifiers on `<any>`, e.g. `<a-any>` to match any alt chord.
         let code = alt((key_code_wrapped, key_code_bare.verify(|_| allow_bare)))
             .verify(|code| modifiers.is_empty() || *code != KeyCode::Any)
+            // Shift is expressed by the character itself (`A`, not `<s-a>`), except for space,
+            // which shift doesn't change.
+            .verify(|code| {
+                !(modifiers.contains(KeyModifiers::SHIFT)
+                    && matches!(code, KeyCode::Char(c) if *c != b' '))
+            })
             .context(StrContext::Label("key code"))
             .parse_next(input)?;
         Ok(Key { modifiers, code })
@@ -283,11 +289,9 @@ fn key_code_escaped(input: &mut &str) -> ModalResult<KeyCode> {
 }
 
 #[must_use]
-pub fn is(x: &Key, y: &str) -> bool {
-    let mut x = *x;
-    let mut y = y.parse::<Key>().unwrap();
+pub fn is(mut x: Key, y: &str) -> bool {
     x.normalize();
-    y.normalize();
+    let y = y.parse::<Key>().unwrap();
     x == y
 }
 
@@ -302,12 +306,12 @@ mod tests {
             # comment
             abc a b c # comment
 
-            \\t \\n <s-\\n> <c-->
+            \\t \\n <s-\\ > <c-->
 
             # comment
             <c-a-del> <a-a> <tab> <s-tab> <a-esc>
         ";
-        let expected = "abcabc\\t\\n<s-\\n><c--><c-a-del><a-a><tab><s-tab><a-esc>";
+        let expected = "abcabc\\t\\n<s-\\ ><c--><c-a-del><a-a><tab><s-tab><a-esc>";
         let actual = input.parse::<Keys>().unwrap().to_string();
         assert_eq!(expected, actual);
     }
@@ -333,10 +337,31 @@ mod tests {
 
     #[test]
     fn modifier_ordering() {
-        assert_eq!("<c-a-s-a>".parse::<Key>().unwrap().to_string(), "<c-a-s-a>");
-        assert_eq!("<s-c-a>".parse::<Key>().unwrap().to_string(), "<c-s-a>");
-        assert_eq!("<s-c-a-a>".parse::<Key>().unwrap().to_string(), "<c-a-s-a>");
-        assert_eq!("<a-s-c-a>".parse::<Key>().unwrap().to_string(), "<c-a-s-a>");
+        assert_eq!(
+            "<c-a-s-tab>".parse::<Key>().unwrap().to_string(),
+            "<c-a-s-tab>"
+        );
+        assert_eq!("<s-c-tab>".parse::<Key>().unwrap().to_string(), "<c-s-tab>");
+        assert_eq!(
+            "<s-c-a-tab>".parse::<Key>().unwrap().to_string(),
+            "<c-a-s-tab>"
+        );
+        assert_eq!(
+            "<a-s-c-tab>".parse::<Key>().unwrap().to_string(),
+            "<c-a-s-tab>"
+        );
+    }
+
+    #[test]
+    fn no_shifted_chars() {
+        assert!("<s-a>".parse::<Key>().is_err());
+        assert!("<s-A>".parse::<Key>().is_err());
+        assert!("<c-s-a>".parse::<Key>().is_err());
+        assert!("<s-1>".parse::<Key>().is_err());
+        assert!("<s-\\#>".parse::<Key>().is_err());
+        assert!("<s-\\ >".parse::<Key>().is_ok());
+        assert!("<c-s-\\ >".parse::<Key>().is_ok());
+        assert!("<s-tab>".parse::<Key>().is_ok());
     }
 
     #[test]
@@ -366,6 +391,10 @@ mod tests {
             let modifiers = KeyModifiers::from_bits_truncate(bits);
             for &code in &codes {
                 let key = Key { modifiers, code };
+                if modifiers.contains(KeyModifiers::SHIFT) && matches!(code, KeyCode::Char(_)) {
+                    assert!(key.to_string().parse::<Key>().is_err());
+                    continue;
+                }
                 match key.to_string().parse::<Key>() {
                     Ok(parsed_key) => assert_eq!(key, parsed_key),
                     Err(e) => panic!("Failed to parse `{key:?}` printed as `{key}`:\n{e}"),
