@@ -230,9 +230,6 @@ impl Display for KeyCode {
             Self::Char(b'<') => write!(f, "\\<")?,
             Self::Char(b'>') => write!(f, "\\>")?,
             Self::Char(b'\\') => write!(f, "\\\\")?,
-            Self::Char(b'\t') => write!(f, "\\t")?,
-            Self::Char(b'\n') => write!(f, "\\n")?,
-            Self::Char(b'\r') => write!(f, "\\r")?,
             Self::Char(c) => write!(f, "{}", char::from(*c))?,
             Self::Any => write!(f, "any")?,
         }
@@ -279,9 +276,6 @@ fn key_code_escaped(input: &mut &str) -> ModalResult<KeyCode> {
             '<'.value(KeyCode::Char(b'<')),
             '>'.value(KeyCode::Char(b'>')),
             '\\'.value(KeyCode::Char(b'\\')),
-            't'.value(KeyCode::Char(b'\t')),
-            'n'.value(KeyCode::Char(b'\n')),
-            'r'.value(KeyCode::Char(b'\r')),
         ))),
     )
     .parse_next(input)
@@ -305,12 +299,12 @@ mod tests {
             # comment
             abc a b c # comment
 
-            \\t \\n <s-\\ > <c-->
+            \\# \\\\ <s-\\ > <c-->
 
             # comment
             <c-a-del> <a-a> <tab> <s-tab> <a-esc>
         ";
-        let expected = "abcabc\\t\\n<s-\\ ><c--><c-a-del><a-a><tab><s-tab><a-esc>";
+        let expected = "abcabc\\#\\\\<s-\\ ><c--><c-a-del><a-a><tab><s-tab><a-esc>";
         let actual = input.parse::<Keys>().unwrap().to_string();
         assert_eq!(expected, actual);
     }
@@ -323,9 +317,12 @@ mod tests {
 
     #[test]
     fn escaped() {
-        assert_eq!("\\n".parse::<Key>().unwrap().to_string(), "\\n");
-        assert_eq!("\\t".parse::<Key>().unwrap().to_string(), "\\t");
-        assert_eq!("\\\\".parse::<Key>().unwrap().to_string(), "\\\\");
+        for key in ["\\ ", "\\#", "\\<", "\\>", "\\\\"] {
+            assert_eq!(key.parse::<Key>().unwrap().to_string(), key);
+        }
+        assert!("\\t".parse::<Key>().is_err());
+        assert!("\\n".parse::<Key>().is_err());
+        assert!("\\r".parse::<Key>().is_err());
     }
 
     #[test]
