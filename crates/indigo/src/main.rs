@@ -19,9 +19,11 @@ use indigo_core::{
 use indigo_key::Keymap;
 use indigo_text::rope::LINE_TYPE;
 use ratatui::{
+    backend::IntoCrossterm as _,
     crossterm::{
         self,
         event::{KeyCode, KeyEventKind, KeyModifiers},
+        style::Stylize as _,
     },
     prelude::{Buffer as Surface, Line, Rect, Span, Style, Stylize as _, Widget as _},
 };
@@ -29,7 +31,9 @@ use std::{
     borrow::Cow,
     cmp::{max, min},
     fmt::Write as _,
-    fs, mem,
+    fs,
+    io::{self, IsTerminal as _},
+    mem,
     panic::{self, AssertUnwindSafe},
     process::ExitCode,
     sync::Arc,
@@ -122,10 +126,16 @@ fn main() -> anyhow::Result<ExitCode> {
 
 fn print_keymap() {
     fn print_mode<V>(name: &str, keymap: &Keymap<V>) {
+        let color = io::stdout().is_terminal();
         println!("{name}");
         for (keys, description) in keymap.docs() {
             if let Some(description) = description {
-                println!("    {:10} {description}", format!("{keys}"));
+                let line = format!("    {:10} {description}", format!("{keys}"));
+                if color && description.starts_with("TODO") {
+                    println!("{}", line.with(THEME.ghost_text_fg.into_crossterm()));
+                } else {
+                    println!("{line}");
+                }
             }
         }
     }

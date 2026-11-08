@@ -169,6 +169,7 @@ pub mod light {
         secondary_range_bg: YELLOW_100,
         error_bg: RED_100,
         whitespace_fg: UI,
+        ghost_text_fg: TX_3,
     };
 }
 

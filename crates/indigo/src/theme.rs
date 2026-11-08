@@ -15,6 +15,7 @@ pub struct Theme {
     pub secondary_range_bg: Color,
     pub error_bg: Color,
     pub whitespace_fg: Color,
+    pub ghost_text_fg: Color,
 }
 
 pub const THEME: Theme = flexoki::light::THEME;
