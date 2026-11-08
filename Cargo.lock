@@ -417,12 +417,6 @@ dependencies = [
 
 [[package]]
 name = "dashu-base"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "993b95dc1b248e3f5747dcb017a41d6e75853a2e5ee4504f7d537c5b8dffdae4"
-
-[[package]]
-name = "dashu-base"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "861a614e79388a4c72aa66b0bdabc91e3a4f30d53e0c8d962953e207d75884d0"
@@ -432,25 +426,12 @@ dependencies = [
 
 [[package]]
 name = "dashu-int"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49c05a0d5cb0b39fcc87c46432fdac24b90dce239857c7f6b798be4ffc3c42c6"
-dependencies = [
- "cfg-if",
- "dashu-base 0.4.3",
- "num-modular",
- "rustversion",
- "static_assertions",
-]
-
-[[package]]
-name = "dashu-int"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "64a0490b40a6a3f6427970035f17f76fd59c01d3cd9f9140809672863a0d64c8"
 dependencies = [
  "cfg-if",
- "dashu-base 0.6.1",
+ "dashu-base",
  "num-modular",
  "static_assertions",
 ]
@@ -721,27 +702,9 @@ version = "0.52.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f6b95008b427c3bd008deeafe667169eae3f69543035f2ce57e9b9bba45876c0"
 dependencies = [
- "hegeltest-c 0.50.0",
+ "hegeltest-c",
  "hegeltest-macros",
  "parking_lot",
-]
-
-[[package]]
-name = "hegeltest-c"
-version = "0.43.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2516a3430aa6acc6191042653161173d6fa5023558f1487ae440c401843fdf5"
-dependencies = [
- "dashu-int 0.4.3",
- "hashbrown",
- "libm",
- "miniz_oxide",
- "once_cell",
- "rand 0.10.3",
- "rustc-hash",
- "rustix",
- "toml",
- "windows-sys",
 ]
 
 [[package]]
@@ -750,7 +713,7 @@ version = "0.50.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e894a93df5b2fe2c137c32bb32194e63c0d9190c4266140ab4b43ba757315a51"
 dependencies = [
- "dashu-int 0.6.2",
+ "dashu-int",
  "hashbrown",
  "libm",
  "miniz_oxide",
@@ -877,7 +840,6 @@ dependencies = [
  "anyhow",
  "arrayvec",
  "hegeltest",
- "hegeltest-c 0.43.1",
  "imbl",
  "indigo-text",
  "ropey",

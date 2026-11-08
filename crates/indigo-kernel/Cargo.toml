@@ -12,7 +12,6 @@ ropey = { workspace = true }
 
 [dev-dependencies]
 hegeltest = { workspace = true }
-hegeltest-c = { workspace = true } # TODO: upstream bug workaround :(
 
 [lints]
 workspace = true
