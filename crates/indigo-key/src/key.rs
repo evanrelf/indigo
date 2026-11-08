@@ -114,7 +114,6 @@ fn key_wrapped(input: &mut &str) -> ModalResult<Key> {
             .context(StrContext::Label("key modifiers"))
             .parse_next(input)?;
         let allow_bare = !modifiers.is_empty();
-        // TODO: Allow modifiers on `<any>`, e.g. `<a-any>` to match any alt chord.
         let code = alt((key_code_wrapped, key_code_bare.verify(|_| allow_bare)))
             .verify(|code| modifiers.is_empty() || *code != KeyCode::Any)
             // Shift is expressed by the character itself (`A`, not `<s-a>`), except for space,
