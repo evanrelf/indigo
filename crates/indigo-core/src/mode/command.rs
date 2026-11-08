@@ -1,5 +1,6 @@
 use crate::{buffer::Buffer, client::ClientMut, mode::prompt, window::WindowState};
 use anyhow::anyhow;
+use bpaf::{OptionParser, ParseFailure, Parser, choice, construct, long, positional, pure};
 use camino::Utf8PathBuf;
 use std::borrow::Cow;
 
@@ -35,67 +36,83 @@ pub fn enter_command_mode(client: &mut ClientMut) {
     });
 }
 
+struct Spec {
+    name: &'static str,
+    aliases: &'static [&'static str],
+    /// Parses the command's arguments. The name and aliases are applied by `parse_command`.
+    parser: fn() -> OptionParser<Command>,
+}
+
+const COMMANDS: &[Spec] = &[
+    Spec {
+        name: "echo",
+        aliases: &[],
+        parser: || {
+            let error = long("error").switch();
+            let message = positional("MESSAGE").many();
+            construct!(Command::Echo { error, message }).to_options()
+        },
+    },
+    Spec {
+        name: "edit",
+        aliases: &["e"],
+        parser: || {
+            let path = positional("PATH");
+            construct!(Command::Edit { path }).to_options()
+        },
+    },
+    Spec {
+        name: "write",
+        aliases: &["w"],
+        parser: || {
+            let path = positional("PATH").optional();
+            construct!(Command::Write { path }).to_options()
+        },
+    },
+    Spec {
+        name: "quit",
+        aliases: &["q"],
+        parser: || {
+            let exit_code = positional("EXIT_CODE").optional();
+            construct!(Command::Quit { exit_code }).to_options()
+        },
+    },
+    Spec {
+        name: "quit!",
+        aliases: &["q!"],
+        parser: || {
+            let exit_code = positional("EXIT_CODE").optional();
+            construct!(Command::QuitForce { exit_code }).to_options()
+        },
+    },
+    Spec {
+        name: "writequit",
+        aliases: &["wq"],
+        parser: || {
+            let exit_code = positional("EXIT_CODE").optional();
+            construct!(Command::WriteQuit { exit_code }).to_options()
+        },
+    },
+    Spec {
+        name: "readonly",
+        aliases: &["ro"],
+        parser: || pure(Command::Readonly).to_options(),
+    },
+    Spec {
+        name: "panic",
+        aliases: &[],
+        parser: || pure(Command::Panic).to_options(),
+    },
+];
+
 fn parse_command(command: &str) -> anyhow::Result<Command> {
-    use bpaf::{ParseFailure, Parser, construct, long, positional, pure};
-
-    let echo = {
-        let error = long("error").switch();
-        let message = positional("MESSAGE").many();
-        construct!(Command::Echo { error, message })
-            .to_options()
-            .command("echo")
-    };
-
-    let edit = {
-        let path = positional("PATH");
-        construct!(Command::Edit { path })
-            .to_options()
-            .command("edit")
-            .long("e")
-    };
-
-    let write = {
-        let path = positional("PATH").optional();
-        construct!(Command::Write { path })
-            .to_options()
-            .command("write")
-            .long("w")
-    };
-
-    let quit = {
-        let exit_code = positional("EXIT_CODE").optional();
-        construct!(Command::Quit { exit_code })
-            .to_options()
-            .command("quit")
-            .long("q")
-    };
-
-    let quit_force = {
-        let exit_code = positional("EXIT_CODE").optional();
-        construct!(Command::QuitForce { exit_code })
-            .to_options()
-            .command("quit!")
-            .long("q!")
-    };
-
-    let write_quit = {
-        let exit_code = positional("EXIT_CODE").optional();
-        construct!(Command::WriteQuit { exit_code })
-            .to_options()
-            .command("writequit")
-            .long("wq")
-    };
-
-    let readonly = pure(Command::Readonly)
-        .to_options()
-        .command("readonly")
-        .long("ro");
-
-    let panic = pure(Command::Panic).to_options().command("panic");
-
-    let parser = construct!([
-        echo, edit, write, quit, quit_force, write_quit, readonly, panic
-    ])
+    let parser = choice(COMMANDS.iter().map(|spec| {
+        let mut parser = (spec.parser)().command(spec.name);
+        for alias in spec.aliases {
+            parser = parser.long(alias);
+        }
+        parser.boxed()
+    }))
     .to_options();
 
     let Ok(args) = shell_words::split(command) else {
