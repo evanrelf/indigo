@@ -368,10 +368,7 @@ mod tests {
 
     #[test]
     fn key_roundtrip() {
-        let mut codes: Vec<KeyCode> = (b' '..=b'~')
-            .filter(|c| !b" #<>\\".contains(c))
-            .map(KeyCode::Char)
-            .collect();
+        let mut codes: Vec<KeyCode> = (b' '..=b'~').map(KeyCode::Char).collect();
         codes.extend([
             KeyCode::Backspace,
             KeyCode::Delete,
@@ -387,7 +384,9 @@ mod tests {
             let modifiers = KeyModifiers::from_bits_truncate(bits);
             for &code in &codes {
                 let key = Key { modifiers, code };
-                if modifiers.contains(KeyModifiers::SHIFT) && matches!(code, KeyCode::Char(_)) {
+                if modifiers.contains(KeyModifiers::SHIFT)
+                    && matches!(code, KeyCode::Char(c) if c != b' ')
+                {
                     assert!(key.to_string().parse::<Key>().is_err());
                     continue;
                 }
