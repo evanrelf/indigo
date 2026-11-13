@@ -606,7 +606,7 @@ mod tests {
 
     #[hegel::composite]
     fn gen_edit(tc: &hegel::TestCase, doc: String) -> Edit {
-        tc.draw(gen_edit_and_text(doc.clone())).0
+        tc.draw(gen_edit_and_text(doc)).0
     }
 
     #[hegel::test(test_cases = 5_000)]
@@ -718,7 +718,7 @@ mod tests {
     #[hegel::test(test_cases = 5_000)]
     fn compose_with_identity_is_identity(tc: hegel::TestCase) {
         let doc: String = tc.draw(gs::text());
-        let edit = tc.draw(gen_edit(doc.clone()));
+        let edit = tc.draw(gen_edit(doc));
 
         let mut before = Edit::new();
         before.retain(edit.length_before);

@@ -1,6 +1,6 @@
 use crate::{buffer::Buffer, client::ClientMut, mode::prompt, window::WindowState};
 use anyhow::anyhow;
-use bpaf::{OptionParser, ParseFailure, Parser, choice, construct, long, positional, pure};
+use bpaf::{OptionParser, ParseFailure, Parser as _, choice, construct, long, positional, pure};
 use camino::Utf8PathBuf;
 
 pub type Action = Command;

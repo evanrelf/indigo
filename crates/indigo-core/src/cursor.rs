@@ -575,7 +575,6 @@ impl<S: Wrap, T: Wrap> Drop for CursorView<'_, S, T> {
 mod tests {
     use super::*;
     use hegel::{TestCase, generators as gs};
-    use ropey::Rope;
 
     #[test]
     fn delete_before_can_merge_graphemes_past_cursor() {

@@ -51,11 +51,15 @@ clippy.bool_to_int_with_if = "allow"
 clippy.missing_errors_doc = "allow"
 clippy.missing_panics_doc = "allow"
 clippy.pedantic = { level = "warn", priority = -1 }
+clippy.redundant_clone = "warn"
 clippy.redundant_closure = "allow"
 clippy.redundant_closure_for_method_calls = "allow"
 clippy.redundant_pub_crate = "warn"
 clippy.should_panic_without_expect = "allow"
+clippy.undocumented_unsafe_blocks = "warn"
+clippy.unused_trait_names = "warn"
 clippy.use_self = "warn"
+rust.redundant_imports = "warn"
 rust.unsafe_code = "deny"
 
 [profile.dev.package.hegeltest]
