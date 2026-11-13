@@ -41,17 +41,16 @@ impl Syntax {
     /// Nodes from the root down to the smallest node that covers `byte_range`.
     #[must_use]
     pub fn node_path(&self, byte_range: Range<usize>) -> Vec<Node<'_>> {
-        let leaf = self
-            .tree
-            .root_node()
-            .descendant_for_byte_range(byte_range.start, byte_range.end);
-        let mut path = Vec::new();
-        let mut node = leaf;
-        while let Some(current) = node {
-            path.push(current);
-            node = current.parent();
+        let root = self.tree.root_node();
+        let Some(leaf) = root.descendant_for_byte_range(byte_range.start, byte_range.end) else {
+            return Vec::new();
+        };
+        let mut path = vec![root];
+        let mut node = root;
+        while node != leaf {
+            node = node.child_with_descendant(leaf).unwrap_or(leaf);
+            path.push(node);
         }
-        path.reverse();
         path
     }
 
