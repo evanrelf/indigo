@@ -178,13 +178,21 @@ impl<W: WrapMut> WindowView<'_, W> {
     pub fn selection_move(&mut self) -> SelectionMove<'_> {
         SelectionMove::new(&self.buffer.text, &mut self.state.selection)
             .expect("Window text and selection state are always kept valid")
-            .on_drop(|selection| selection.assert_invariants().unwrap())
+            .on_drop(|selection| {
+                if cfg!(debug_assertions) {
+                    selection.assert_invariants().unwrap();
+                }
+            })
     }
 
     pub fn selection_edit(&mut self) -> SelectionEdit<'_> {
         SelectionEdit::new(&mut self.buffer.text, &mut self.state.selection)
             .expect("Window text and selection state are always kept valid")
-            .on_drop(|selection| selection.assert_invariants().unwrap())
+            .on_drop(|selection| {
+                if cfg!(debug_assertions) {
+                    selection.assert_invariants().unwrap();
+                }
+            })
     }
 
     #[tracing::instrument(skip_all)]

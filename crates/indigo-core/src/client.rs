@@ -321,7 +321,9 @@ impl ClientMut<'_> {
             self.set_error(format!("{keys} is not mapped"));
         }
 
-        self.assert_invariants()?;
+        if cfg!(debug_assertions) {
+            self.assert_invariants()?;
+        }
 
         Ok(handled)
     }

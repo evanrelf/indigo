@@ -106,7 +106,9 @@ impl<'a, S: WrapRef, T: WrapRef> CursorView<'a, S, T> {
             text,
             on_drop: None,
         };
-        cursor_view.assert_invariants()?;
+        if cfg!(debug_assertions) {
+            cursor_view.assert_invariants()?;
+        }
         Ok(cursor_view)
     }
 

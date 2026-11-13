@@ -213,7 +213,9 @@ impl<'a, S: WrapRef, T: WrapRef> SelectionView<'a, S, T> {
             text,
             on_drop: None,
         };
-        selection_view.assert_invariants()?;
+        if cfg!(debug_assertions) {
+            selection_view.assert_invariants()?;
+        }
         Ok(selection_view)
     }
 
@@ -284,7 +286,11 @@ impl<S: WrapMut, T: WrapRef> SelectionView<'_, S, T> {
         let range_state = self.state.ranges.get_mut(index)?;
         let range = RangeMove::new(&self.text, range_state)
             .expect("Selection text and range state are always kept valid")
-            .on_drop(|range| range.assert_invariants().unwrap());
+            .on_drop(|range| {
+                if cfg!(debug_assertions) {
+                    range.assert_invariants().unwrap();
+                }
+            });
         Some(range)
     }
 
@@ -446,7 +452,11 @@ impl<S: WrapMut, T: WrapMut> SelectionView<'_, S, T> {
         let range_state = self.state.ranges.get_mut(index)?;
         let range = RangeEdit::new(&mut self.text, range_state)
             .expect("Selection text and range state are always kept valid")
-            .on_drop(|range| range.assert_invariants().unwrap());
+            .on_drop(|range| {
+                if cfg!(debug_assertions) {
+                    range.assert_invariants().unwrap();
+                }
+            });
         Some(range)
     }
 

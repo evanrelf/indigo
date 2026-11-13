@@ -49,20 +49,30 @@ impl State {
     pub fn cursor(&self) -> Cursor<'_> {
         let cursor = Cursor::new(&self.text, &self.cursor)
             .expect("Command mode text and cursor state are always kept valid");
-        cursor.assert_invariants().unwrap();
+        if cfg!(debug_assertions) {
+            cursor.assert_invariants().unwrap();
+        }
         cursor
     }
 
     pub fn cursor_move(&mut self) -> CursorMove<'_> {
         CursorMove::new(&self.text, &mut self.cursor)
             .expect("Command mode text and cursor state are always kept valid")
-            .on_drop(|cursor| cursor.assert_invariants().unwrap())
+            .on_drop(|cursor| {
+                if cfg!(debug_assertions) {
+                    cursor.assert_invariants().unwrap();
+                }
+            })
     }
 
     pub fn cursor_edit(&mut self) -> CursorEdit<'_> {
         CursorEdit::new(&mut self.text, &mut self.cursor)
             .expect("Command mode text and cursor state are always kept valid")
-            .on_drop(|cursor| cursor.assert_invariants().unwrap())
+            .on_drop(|cursor| {
+                if cfg!(debug_assertions) {
+                    cursor.assert_invariants().unwrap();
+                }
+            })
     }
 
     pub fn assert_invariants(&self) -> anyhow::Result<()> {

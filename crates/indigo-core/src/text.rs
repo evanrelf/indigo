@@ -123,7 +123,9 @@ impl Text {
             undo,
         });
         self.log.push(ops.clone());
-        self.assert_invariants().unwrap();
+        if cfg!(debug_assertions) {
+            self.assert_invariants().unwrap();
+        }
         Ok(())
     }
 
@@ -136,7 +138,9 @@ impl Text {
         if let Some(ops) = self.history.undo() {
             ops.undo.apply(&mut self.rope)?;
             self.log.push(ops.undo.clone());
-            self.assert_invariants().unwrap();
+            if cfg!(debug_assertions) {
+                self.assert_invariants().unwrap();
+            }
             Ok(true)
         } else {
             Ok(false)
@@ -148,7 +152,9 @@ impl Text {
         if let Some(ops) = self.history.redo() {
             ops.redo.apply(&mut self.rope)?;
             self.log.push(ops.redo.clone());
-            self.assert_invariants().unwrap();
+            if cfg!(debug_assertions) {
+                self.assert_invariants().unwrap();
+            }
             Ok(true)
         } else {
             Ok(false)

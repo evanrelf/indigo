@@ -165,7 +165,9 @@ impl<'a, S: WrapRef, T: WrapRef> RangeView<'a, S, T> {
             text,
             on_drop: None,
         };
-        range_view.assert_invariants()?;
+        if cfg!(debug_assertions) {
+            range_view.assert_invariants()?;
+        }
         Ok(range_view)
     }
 
@@ -266,13 +268,21 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
     fn tail_move(&mut self) -> CursorMove<'_> {
         CursorMove::new(&self.text, &mut self.state.tail)
             .expect("Range text and tail cursor state are always kept valid")
-            .on_drop(|cursor| cursor.assert_invariants().unwrap())
+            .on_drop(|cursor| {
+                if cfg!(debug_assertions) {
+                    cursor.assert_invariants().unwrap();
+                }
+            })
     }
 
     fn head_move(&mut self) -> CursorMove<'_> {
         CursorMove::new(&self.text, &mut self.state.head)
             .expect("Range text and head cursor state are always kept valid")
-            .on_drop(|cursor| cursor.assert_invariants().unwrap())
+            .on_drop(|cursor| {
+                if cfg!(debug_assertions) {
+                    cursor.assert_invariants().unwrap();
+                }
+            })
     }
 
     fn start_move(&mut self) -> CursorMove<'_> {
@@ -762,6 +772,10 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(
+        not(debug_assertions),
+        ignore = "constructors only check invariants in debug builds"
+    )]
     fn invalid_range_constructor_returns_error() {
         let range = RangeView::try_from(("~", usize::MAX, 0));
         assert!(range.is_err());
