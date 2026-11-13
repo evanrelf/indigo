@@ -227,7 +227,6 @@ impl WrapMut for WBox {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::convert::Infallible;
 
     struct TestDeref<T> {
         value: T,
@@ -235,7 +234,7 @@ mod tests {
 
     #[test]
     fn test_wrap() {
-        let _: <WPhantomData as Wrap>::Wrap<'_, Infallible> = PhantomData;
+        let _: <WPhantomData as Wrap>::Wrap<'_, !> = PhantomData;
 
         let xs: [usize; 3] = [1, 2, 3];
         let _: <WRef as Wrap>::Wrap<'_, [usize]> = &xs;

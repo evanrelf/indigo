@@ -39,7 +39,7 @@ impl Decoder {
                 Token::PasteChunk(chunk) => self.paste.extend_from_slice(&chunk),
                 Token::PasteEnd => {
                     let paste = mem::take(&mut self.paste);
-                    return Some(Event::Paste(String::from_utf8_lossy(&paste).into_owned()));
+                    return Some(Event::Paste(String::from_utf8_lossy_owned(paste)));
                 }
                 token => return Some(logical::decode(token)),
             }

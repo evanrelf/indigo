@@ -66,7 +66,7 @@ pub fn key_code_t2i(code: &t::KeyCode) -> anyhow::Result<i::KeyCode> {
         t::KeyCode::Up => Ok(i::KeyCode::Up),
         t::KeyCode::Down => Ok(i::KeyCode::Down),
         t::KeyCode::Tab => Ok(i::KeyCode::Tab),
-        t::KeyCode::Char(c) if c.is_ascii() => Ok(i::KeyCode::Char(u8::try_from(*c).unwrap())),
+        t::KeyCode::Char(c) if let Ok(byte) = u8::try_from(*c) => Ok(i::KeyCode::Char(byte)),
         t::KeyCode::Esc => Ok(i::KeyCode::Escape),
         _ => Err(anyhow!("Unsupported crossterm key code: {code:?}")),
     }

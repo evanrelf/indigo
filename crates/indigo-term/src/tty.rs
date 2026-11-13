@@ -5,7 +5,7 @@ use std::{
     fs::{self, File},
     io::{self, BufWriter, Read, Write},
     mem::{self, MaybeUninit},
-    os::fd::{AsRawFd as _, RawFd},
+    os::fd::{AsFd as _, AsRawFd as _, BorrowedFd},
 };
 use tinyvec::ArrayVec;
 
@@ -36,26 +36,26 @@ impl Tty {
             return Ok(());
         }
 
-        self.original_termios = Some(enable_raw_mode(self.reader.as_raw_fd())?);
+        self.original_termios = Some(enable_raw_mode(self.reader.as_fd())?);
 
         Ok(())
     }
 
     pub fn disable_raw_mode(&mut self) -> io::Result<()> {
         if let Some(original_termios) = mem::take(&mut self.original_termios) {
-            disable_raw_mode(self.reader.as_raw_fd(), &original_termios)?;
+            disable_raw_mode(self.reader.as_fd(), &original_termios)?;
         }
 
         Ok(())
     }
 
     pub fn size(&self) -> io::Result<(u16, u16)> {
-        let winsize = winsize(self.reader.as_raw_fd())?;
+        let winsize = winsize(self.reader.as_fd())?;
         Ok((winsize.ws_row, winsize.ws_col))
     }
 
     pub fn pixel_size(&self) -> io::Result<(u16, u16)> {
-        let winsize = winsize(self.reader.as_raw_fd())?;
+        let winsize = winsize(self.reader.as_fd())?;
         Ok((winsize.ws_ypixel, winsize.ws_xpixel))
     }
 }
@@ -85,10 +85,10 @@ impl Write for Tty {
     }
 }
 
-fn winsize(fd: RawFd) -> io::Result<libc::winsize> {
+fn winsize(fd: BorrowedFd<'_>) -> io::Result<libc::winsize> {
     let mut winsize = MaybeUninit::<libc::winsize>::uninit();
     // SAFETY: `winsize` points to valid, writable memory of the right size.
-    let ret = unsafe { libc::ioctl(fd, libc::TIOCGWINSZ, winsize.as_mut_ptr()) };
+    let ret = unsafe { libc::ioctl(fd.as_raw_fd(), libc::TIOCGWINSZ, winsize.as_mut_ptr()) };
     if ret != 0 {
         return Err(io::Error::last_os_error());
     }
@@ -96,10 +96,10 @@ fn winsize(fd: RawFd) -> io::Result<libc::winsize> {
     Ok(unsafe { winsize.assume_init() })
 }
 
-fn tcgetattr(fd: RawFd) -> io::Result<libc::termios> {
+fn tcgetattr(fd: BorrowedFd<'_>) -> io::Result<libc::termios> {
     let mut termios = MaybeUninit::<libc::termios>::uninit();
     // SAFETY: `termios` points to valid, writable memory of the right size.
-    let ret = unsafe { libc::tcgetattr(fd, termios.as_mut_ptr()) };
+    let ret = unsafe { libc::tcgetattr(fd.as_raw_fd(), termios.as_mut_ptr()) };
     if ret != 0 {
         return Err(io::Error::last_os_error());
     }
@@ -107,16 +107,16 @@ fn tcgetattr(fd: RawFd) -> io::Result<libc::termios> {
     Ok(unsafe { termios.assume_init() })
 }
 
-fn tcsetattr(fd: RawFd, termios: &libc::termios) -> io::Result<()> {
+fn tcsetattr(fd: BorrowedFd<'_>, termios: &libc::termios) -> io::Result<()> {
     // SAFETY: `termios` is a valid, initialized `termios` value.
-    let ret = unsafe { libc::tcsetattr(fd, libc::TCSAFLUSH, termios) };
+    let ret = unsafe { libc::tcsetattr(fd.as_raw_fd(), libc::TCSAFLUSH, termios) };
     if ret != 0 {
         return Err(io::Error::last_os_error());
     }
     Ok(())
 }
 
-fn enable_raw_mode(fd: RawFd) -> io::Result<libc::termios> {
+fn enable_raw_mode(fd: BorrowedFd<'_>) -> io::Result<libc::termios> {
     let cooked_termios = tcgetattr(fd)?;
     let mut raw_termios = cooked_termios;
     // SAFETY: `raw_termios` is a valid, initialized `termios` value.
@@ -125,7 +125,7 @@ fn enable_raw_mode(fd: RawFd) -> io::Result<libc::termios> {
     Ok(cooked_termios)
 }
 
-fn disable_raw_mode(fd: RawFd, termios: &libc::termios) -> io::Result<()> {
+fn disable_raw_mode(fd: BorrowedFd<'_>, termios: &libc::termios) -> io::Result<()> {
     tcsetattr(fd, termios)?;
     Ok(())
 }

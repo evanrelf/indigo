@@ -16,13 +16,13 @@ use ratatui::{
 };
 use std::{
     io::{self, Write as _},
-    ops::{Deref, DerefMut},
+    mem::DropGuard,
     panic,
     sync::atomic::{AtomicBool, Ordering},
     thread,
 };
 
-pub struct TerminalGuard(pub ratatui::DefaultTerminal);
+pub type TerminalGuard = DropGuard<ratatui::DefaultTerminal, fn(ratatui::DefaultTerminal)>;
 
 static ENTERED: AtomicBool = AtomicBool::new(false);
 
@@ -37,7 +37,7 @@ pub fn init() -> anyhow::Result<TerminalGuard> {
     }));
     enter()?;
     let terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
-    Ok(TerminalGuard(terminal))
+    Ok(DropGuard::new(terminal, |_| leave()))
 }
 
 pub fn suspend(terminal: &mut TerminalGuard) -> anyhow::Result<()> {
@@ -93,23 +93,4 @@ fn leave() {
     let _ = disable_raw_mode();
     let _ = stdout.queue(LeaveAlternateScreen);
     let _ = stdout.flush();
-}
-
-impl Deref for TerminalGuard {
-    type Target = ratatui::DefaultTerminal;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for TerminalGuard {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl Drop for TerminalGuard {
-    fn drop(&mut self) {
-        leave();
-    }
 }

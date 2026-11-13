@@ -1,4 +1,3 @@
-use arrayvec::ArrayString;
 use camino::Utf8PathBuf;
 use clap::Parser as _;
 use indigo::{
@@ -30,7 +29,7 @@ use ratatui::{
 use std::{
     borrow::Cow,
     cmp::{max, min},
-    fmt::Write as _,
+    fmt::NumBuffer,
     fs,
     io::{self, IsTerminal as _},
     mem,
@@ -462,10 +461,11 @@ fn render_line_numbers(client: &Client, area: Rect, surface: &mut Surface) {
             break;
         }
 
-        let mut label = ArrayString::<24>::new();
-        write!(label, "{line_number} ").expect("usize and a space fit in 24 bytes");
+        let mut num_buffer = NumBuffer::new();
+        let label = line_number.format_into(&mut num_buffer);
 
-        let width = u16::try_from(label.len()).expect("Label width is less than u16::MAX");
+        // Plus one for a trailing space
+        let width = u16::try_from(label.len() + 1).expect("Label width is less than u16::MAX");
         let x = max(row.x, row.right().saturating_sub(width));
 
         surface.set_stringn(

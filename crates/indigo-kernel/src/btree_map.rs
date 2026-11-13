@@ -289,11 +289,7 @@ impl<K, V> NodeBranch<K, V> {
     where
         K: Ord,
     {
-        // TODO: Go back to binary search; it's better once the nodes get larger (e.g. >=4 KiB).
-        self.keys
-            .iter()
-            .position(|k| k > key)
-            .unwrap_or(self.children.len() - 1)
+        self.keys.partition_point(|k| k <= key)
     }
 
     fn split(&mut self) -> (K, Self)

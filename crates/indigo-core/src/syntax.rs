@@ -1,14 +1,12 @@
 use anyhow::{Context as _, anyhow};
 use camino::Utf8Path;
 use ropey::Rope;
+use std::sync::OnceLock;
 use std::{
     ops::{Deref, Range},
     str::FromStr,
 };
 use tree_sitter::{Node, Parser, Query, TextProvider, Tree};
-
-#[allow(clippy::allow_attributes, unused_imports)]
-use std::sync::OnceLock;
 
 #[derive(Clone)]
 pub struct Syntax {

@@ -780,7 +780,7 @@ fn select_regex(client: &mut ClientMut) {
                     .syntax_error()
                     .map_or_else(|| error.to_string(), ToString::to_string);
                 let last_line = error.lines().last().unwrap_or_default();
-                let reason = last_line.strip_prefix("error: ").unwrap_or(last_line);
+                let reason = last_line.trim_prefix("error: ");
                 client.set_error(format!("Invalid regex: {reason}"));
             }
         }

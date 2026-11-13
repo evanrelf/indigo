@@ -399,7 +399,6 @@ impl<S: WrapMut, T: WrapRef> SelectionView<'_, S, T> {
     fn split_at(&mut self, mut f: impl FnMut(Range<'_>) -> Vec<usize>) {
         let old_primary_range = self.state.primary_range;
         let old_primary_head = self.state.ranges[old_primary_range].head.byte_index;
-        let mut primary_range = 0;
         let mut ranges = Vec::new();
 
         for range_state in &self.state.ranges {
@@ -426,15 +425,11 @@ impl<S: WrapMut, T: WrapRef> SelectionView<'_, S, T> {
             ranges.push(range_state.with_bounds(segment_start, end));
         }
 
-        for (i, range) in ranges.iter().enumerate() {
-            if range.head.byte_index == old_primary_head {
-                primary_range = i;
-                break;
-            }
-        }
-
+        self.state.primary_range = ranges
+            .iter()
+            .position(|range| range.head.byte_index == old_primary_head)
+            .unwrap_or(0);
         self.state.ranges = ranges;
-        self.state.primary_range = primary_range;
         self.state.sort();
     }
 

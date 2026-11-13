@@ -47,10 +47,9 @@ impl<A> Attributes<A> {
         A: Borrow<Q> + Ord,
         Q: Ord + ?Sized,
     {
-        match self.inner.get(attribute.borrow()) {
-            Some(ranges) => ranges.contains_range(range),
-            None => false,
-        }
+        self.inner
+            .get(attribute.borrow())
+            .is_some_and(|ranges| ranges.contains_range(range))
     }
 
     #[must_use]
