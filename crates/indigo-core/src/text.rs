@@ -21,34 +21,10 @@ pub enum Error {
 }
 
 #[derive(Clone)]
-struct BidiEdit {
-    /// Inverted operations. Apply to undo the edit.
-    undo: Arc<Edit>,
-    /// Original operations. Apply to perform the edit.
-    redo: Arc<Edit>,
-}
-
-impl Extend<Self> for BidiEdit {
-    fn extend<T>(&mut self, opss: T)
-    where
-        T: IntoIterator<Item = Self>,
-    {
-        for ops in opss {
-            if self.redo.is_empty() {
-                *self = ops;
-            } else {
-                self.undo = Arc::new(ops.undo.compose(&self.undo).unwrap());
-                self.redo = Arc::new(self.redo.compose(&ops.redo).unwrap());
-            }
-        }
-    }
-}
-
-#[derive(Clone)]
 pub struct Text {
     rope: Rope,
     syntax: Option<(Syntax, usize)>,
-    history: History<BidiEdit, BidiEdit>,
+    history: History<Arc<Edit>>,
     log: Vec<Arc<Edit>>,
     pub readonly: bool,
 }
@@ -117,14 +93,10 @@ impl Text {
 
     pub fn apply(&mut self, ops: &Edit) -> anyhow::Result<()> {
         anyhow::ensure!(!self.readonly, "Cannot modify readonly text");
-        let undo = Arc::new(ops.invert());
         ops.apply(&mut self.rope)?;
-        let redo = Arc::new(ops.clone());
-        self.history.push(BidiEdit {
-            redo: Arc::clone(&redo),
-            undo,
-        });
-        self.log.push(redo);
+        let ops = Arc::new(ops.clone());
+        self.history.push(Arc::clone(&ops));
+        self.log.push(ops);
         if cfg!(debug_assertions) {
             self.assert_invariants().unwrap();
         }
@@ -137,9 +109,12 @@ impl Text {
 
     pub fn undo(&mut self) -> anyhow::Result<bool> {
         anyhow::ensure!(!self.readonly, "Cannot modify readonly text");
-        if let Some(ops) = self.history.undo() {
-            ops.undo.apply(&mut self.rope)?;
-            self.log.push(Arc::clone(&ops.undo));
+        if let Some(opss) = self.history.undo() {
+            for ops in opss.iter().rev() {
+                let ops = ops.invert();
+                ops.apply(&mut self.rope)?;
+                self.log.push(Arc::new(ops));
+            }
             if cfg!(debug_assertions) {
                 self.assert_invariants().unwrap();
             }
@@ -151,9 +126,11 @@ impl Text {
 
     pub fn redo(&mut self) -> anyhow::Result<bool> {
         anyhow::ensure!(!self.readonly, "Cannot modify readonly text");
-        if let Some(ops) = self.history.redo() {
-            ops.redo.apply(&mut self.rope)?;
-            self.log.push(Arc::clone(&ops.redo));
+        if let Some(opss) = self.history.redo() {
+            for ops in opss {
+                ops.apply(&mut self.rope)?;
+                self.log.push(Arc::clone(ops));
+            }
             if cfg!(debug_assertions) {
                 self.assert_invariants().unwrap();
             }
