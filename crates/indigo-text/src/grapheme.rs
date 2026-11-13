@@ -28,6 +28,15 @@ fn is_grapheme_boundary_in_chunk(
     // Must be a `char` boundary.
     byte_offset: usize,
 ) -> bool {
+    // Note [ASCII fast path]
+    let bytes = chunk.as_bytes();
+    let i = byte_offset - chunk_byte_offset;
+    if 0 < i && i < bytes.len() {
+        let (before, after) = (bytes[i - 1], bytes[i]);
+        if before.is_ascii() && after.is_ascii() {
+            return !(before == b'\r' && after == b'\n');
+        }
+    }
     let mut cursor = GraphemeCursor::new(byte_offset, rope.len(), true);
     loop {
         match cursor.is_boundary(chunk, chunk_byte_offset) {
@@ -250,6 +259,20 @@ The workaround decides each chunk crossing with a fresh cursor (via `is_grapheme
 rebuilds the iterator's cursor there, so no stale state survives the hand-off.
 */
 
+/*
+Note [ASCII fast path]
+----------------------
+
+Claude: Between two ASCII characters there is always a grapheme boundary, except between CR and LF
+(GB3). Every rule that joins characters otherwise (Extend, ZWJ, SpacingMark, Prepend, regional
+indicators, emoji sequences, Indic conjuncts) involves a non-ASCII character on one side, and none
+look further back than the pair when the character after the boundary is ASCII. ASCII bytes only
+ever encode ASCII characters in UTF-8, so checking the two bytes around the offset is enough.
+
+The fast path skips `GraphemeCursor` entirely, which matters when snapping many cursors at once.
+It only applies when both bytes are in the same chunk; otherwise we fall back to the cursor.
+*/
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -284,6 +307,27 @@ mod tests {
             rope.is_grapheme_boundary(input)
         };
         assert_eq!(ropey, crop);
+    }
+
+    // Note [ASCII fast path]
+    #[hegel::test(test_cases = 10_000)]
+    fn test_is_grapheme_boundary_ascii_neighbors(tc: TestCase) {
+        // Mostly ASCII (including CR/LF), plus characters that join with ASCII neighbors:
+        // combining acute, ZWJ, regional indicator, Devanagari virama.
+        let string = tc
+            .draw(
+                gs::text()
+                    .alphabet("ab \r\n\t\u{301}\u{200d}\u{1f1e6}\u{94d}")
+                    .max_size(64),
+            )
+            // Repeat to sometimes span multiple chunks.
+            .repeat(tc.draw(gs::integers().min_value(1).max_value(100)));
+        let input = tc.draw(gs::integers().max_value(string.len()));
+        let rope = Rope::from(string.as_str());
+        let actual = is_grapheme_boundary(&rope.slice(..), input);
+        let expected =
+            input == string.len() || string.grapheme_indices(true).any(|(i, _)| i == input);
+        assert_eq!(actual, expected);
     }
 
     #[hegel::test(test_cases = 10_000)]
