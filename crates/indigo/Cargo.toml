@@ -12,7 +12,6 @@ indigo-key = { workspace = true }
 indigo-text = { workspace = true }
 libc = { workspace = true }
 ratatui = { workspace = true }
-sigpipe = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 

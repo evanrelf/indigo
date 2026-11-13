@@ -107,7 +107,13 @@ fn main() -> anyhow::Result<ExitCode> {
     let args = Args::parse();
 
     if args.keymap {
-        sigpipe::reset();
+        // Restore the default `SIGPIPE` behavior so piping into e.g. `head` exits quietly instead of
+        // panicking on a broken pipe.
+        // SAFETY: At this point the program is single-threaded, and `SIG_DFL` is a valid handler.
+        #[expect(unsafe_code)]
+        unsafe {
+            libc::signal(libc::SIGPIPE, libc::SIG_DFL);
+        }
         print_keymap();
         return Ok(ExitCode::SUCCESS);
     }
