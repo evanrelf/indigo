@@ -81,6 +81,10 @@ impl<K, V> BTreeMap<K, V> {
         K: Clone + Ord,
         V: Clone,
     {
+        // Avoid copying the path to a missing key.
+        if !self.contains_key(key) {
+            return None;
+        }
         let root = Arc::make_mut(&mut self.root);
         if let Some(value) = root.remove(key) {
             self.length -= 1;
@@ -104,6 +108,10 @@ impl<K, V> BTreeMap<K, V> {
         K: Clone + Ord,
         V: Clone,
     {
+        // Avoid copying the path to a missing key.
+        if !self.contains_key(key) {
+            return None;
+        }
         let root = Arc::make_mut(&mut self.root);
         root.get_mut(key)
     }
