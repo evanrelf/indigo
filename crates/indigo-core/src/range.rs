@@ -556,11 +556,8 @@ impl<S: WrapMut, T: WrapRef> RangeView<'_, S, T> {
     }
 
     pub fn flip(&mut self) {
-        fn both(state: &mut RangeState) -> (&mut CursorState, &mut CursorState) {
-            (&mut state.tail, &mut state.head)
-        }
-        let (tail, head) = both(&mut self.state);
-        mem::swap(tail, head);
+        let state = &mut *self.state;
+        mem::swap(&mut state.tail, &mut state.head);
         self.invalidate_goal_column();
     }
 
