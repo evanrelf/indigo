@@ -7,55 +7,13 @@ use std::iter::FusedIterator;
 use unicode_segmentation::{GraphemeCursor, GraphemeIncomplete};
 
 #[must_use]
-pub fn is_char_boundary(rope: &RopeSlice, byte_offset: usize) -> bool {
-    assert!(
-        byte_offset <= rope.len(),
-        "byte offset {byte_offset} is out of bounds (rope length is {})",
-        rope.len()
-    );
-    if byte_offset == 0 || byte_offset == rope.len() {
-        return true;
-    }
-    let (chunk, chunk_byte_offset) = rope.chunk(byte_offset);
-    chunk.is_char_boundary(byte_offset - chunk_byte_offset)
-}
-
-#[must_use]
-pub fn floor_char_boundary(rope: &RopeSlice, byte_offset: usize) -> usize {
-    assert!(
-        byte_offset <= rope.len(),
-        "byte offset {byte_offset} is out of bounds (rope length is {})",
-        rope.len()
-    );
-    if byte_offset == rope.len() {
-        return byte_offset;
-    }
-    let (chunk, chunk_byte_offset) = rope.chunk(byte_offset);
-    chunk_byte_offset + chunk.floor_char_boundary(byte_offset - chunk_byte_offset)
-}
-
-#[must_use]
-pub fn ceil_char_boundary(rope: &RopeSlice, byte_offset: usize) -> usize {
-    assert!(
-        byte_offset <= rope.len(),
-        "byte offset {byte_offset} is out of bounds (rope length is {})",
-        rope.len()
-    );
-    if byte_offset == rope.len() {
-        return byte_offset;
-    }
-    let (chunk, chunk_byte_offset) = rope.chunk(byte_offset);
-    chunk_byte_offset + chunk.ceil_char_boundary(byte_offset - chunk_byte_offset)
-}
-
-#[must_use]
 pub fn is_grapheme_boundary(rope: &RopeSlice, byte_offset: usize) -> bool {
     assert!(
         byte_offset <= rope.len(),
         "byte offset {byte_offset} is out of bounds (rope length is {})",
         rope.len()
     );
-    if !is_char_boundary(rope, byte_offset) {
+    if !rope.is_char_boundary(byte_offset) {
         return false;
     }
     let (chunk, chunk_byte_offset) = rope.chunk(byte_offset);
@@ -96,7 +54,7 @@ pub fn prev_grapheme_boundary(rope: &RopeSlice, byte_offset: usize) -> Option<us
         return None;
     }
     // `GraphemeCursor` requires a `char` boundary to start from
-    let start = floor_char_boundary(rope, byte_offset);
+    let start = rope.floor_char_boundary(byte_offset);
     if start < byte_offset && is_grapheme_boundary(rope, start) {
         return Some(start);
     }
@@ -128,7 +86,7 @@ pub fn next_grapheme_boundary(rope: &RopeSlice, byte_offset: usize) -> Option<us
         return None;
     }
     // `GraphemeCursor` requires a `char` boundary to start from
-    let start = ceil_char_boundary(rope, byte_offset);
+    let start = rope.ceil_char_boundary(byte_offset);
     if start > byte_offset && is_grapheme_boundary(rope, start) {
         return Some(start);
     }
@@ -156,7 +114,7 @@ pub fn floor_grapheme_boundary(rope: &RopeSlice, byte_offset: usize) -> usize {
         "byte offset {byte_offset} is out of bounds (rope length is {})",
         rope.len()
     );
-    let byte_offset = floor_char_boundary(rope, byte_offset);
+    let byte_offset = rope.floor_char_boundary(byte_offset);
     if is_grapheme_boundary(rope, byte_offset) {
         return byte_offset;
     }
@@ -171,7 +129,7 @@ pub fn ceil_grapheme_boundary(rope: &RopeSlice, byte_offset: usize) -> usize {
         "byte offset {byte_offset} is out of bounds (rope length is {})",
         rope.len()
     );
-    let byte_offset = ceil_char_boundary(rope, byte_offset);
+    let byte_offset = rope.ceil_char_boundary(byte_offset);
     if is_grapheme_boundary(rope, byte_offset) {
         return byte_offset;
     }
@@ -296,21 +254,6 @@ mod tests {
                 .collect();
             assert_eq!(actual, expected, "slice starting at {start}");
         }
-    }
-
-    #[hegel::test(test_cases = 10_000)]
-    fn test_is_char_boundary(tc: TestCase) {
-        let string = tc.draw(gs::text());
-        let input = tc.draw(gs::integers().max_value(string.len()));
-        let ropey = {
-            let rope = ropey::Rope::from(string.as_str());
-            is_char_boundary(&rope.slice(..), input)
-        };
-        let crop = {
-            let rope = crop::Rope::from(string.as_str());
-            rope.is_char_boundary(input)
-        };
-        assert_eq!(ropey, crop);
     }
 
     #[hegel::test(test_cases = 10_000)]
