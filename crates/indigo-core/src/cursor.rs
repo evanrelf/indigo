@@ -21,30 +21,6 @@ pub enum Error {
     Text(#[source] anyhow::Error),
 }
 
-#[derive(Debug)]
-pub enum Action {
-    MoveTo { byte_index: usize },
-    MoveLeft { count: u8 },
-    MoveRight { count: u8 },
-    MoveUp { goal_column: GoalColumn, count: u8 },
-    MoveDown { goal_column: GoalColumn, count: u8 },
-    MoveToPrevByte { byte: u8, count: u8 },
-    MoveToNextByte { byte: u8, count: u8 },
-    MoveToPrevBlank { count: u8 },
-    MoveToNextBlank { count: u8 },
-    MoveToStart,
-    MoveToEnd,
-    MoveToBottom,
-    MoveToLineStart,
-    MoveToLineNonBlankStart,
-    MoveToLineEnd,
-    MoveUntilLineEnd,
-    InsertChar { char: char },
-    Insert { text: String },
-    DeleteBefore,
-    DeleteAfter,
-}
-
 #[derive(Clone, Copy)]
 pub enum Direction {
     Backward,
@@ -495,57 +471,6 @@ impl<S: WrapMut, T: WrapMut> CursorView<'_, S, T> {
         self.text.apply(&ops).expect("Operations are well formed");
         self.state.transform(&ops, &self.text);
         Some(ops)
-    }
-}
-
-pub fn handle_action<S: WrapMut, T: WrapMut>(cursor: &mut CursorView<'_, S, T>, action: &Action) {
-    match action {
-        Action::MoveTo { byte_index } => {
-            cursor.move_to(*byte_index);
-        }
-        Action::MoveLeft { count } => {
-            cursor.move_left(usize::from(*count));
-        }
-        Action::MoveRight { count } => {
-            cursor.move_right(usize::from(*count));
-        }
-        Action::MoveUp { goal_column, count } => {
-            cursor.move_up(*goal_column, usize::from(*count));
-        }
-        Action::MoveDown { goal_column, count } => {
-            cursor.move_down(*goal_column, usize::from(*count));
-        }
-        Action::MoveToPrevByte { byte, count } => {
-            cursor.move_to_prev_byte(*byte, usize::from(*count));
-        }
-        Action::MoveToNextByte { byte, count } => {
-            cursor.move_to_next_byte(*byte, usize::from(*count));
-        }
-        Action::MoveToPrevBlank { count } => {
-            cursor.move_to_prev_blank(usize::from(*count));
-        }
-        Action::MoveToNextBlank { count } => {
-            cursor.move_to_next_blank(usize::from(*count));
-        }
-        Action::MoveToStart => cursor.move_to_start(),
-        Action::MoveToEnd => cursor.move_to_end(),
-        Action::MoveToBottom => cursor.move_to_bottom(),
-        Action::MoveToLineStart => cursor.move_to_line_start(),
-        Action::MoveToLineNonBlankStart => cursor.move_to_line_non_blank_start(),
-        Action::MoveToLineEnd => cursor.move_to_line_end(),
-        Action::MoveUntilLineEnd => cursor.move_until_line_end(),
-        Action::InsertChar { char } => {
-            cursor.insert_char(*char);
-        }
-        Action::Insert { text } => {
-            cursor.insert(text);
-        }
-        Action::DeleteBefore => {
-            cursor.delete_before();
-        }
-        Action::DeleteAfter => {
-            cursor.delete_after();
-        }
     }
 }
 

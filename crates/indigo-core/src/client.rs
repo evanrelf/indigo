@@ -1,7 +1,7 @@
 use crate::{
     buffer::{Buffer, BufferKey},
     fs::Fs,
-    mode::{Keymaps, Mode, command, insert, normal, prompt, view},
+    mode::{Keymaps, Mode, insert, normal, prompt, view},
     path,
     session::Session,
     window::{Window, WindowKey, WindowMut, WindowState},
@@ -325,17 +325,6 @@ impl ClientMut<'_> {
 
         Ok(handled)
     }
-
-    pub fn handle_action(&mut self, action: &Action) {
-        match action {
-            Action::Normal(action) => normal::handle_action(self, action),
-            Action::Insert(action) => insert::handle_action(self, action),
-            Action::Prompt(action) => prompt::handle_action(self, action),
-            Action::View(action) => view::handle_action(self, action),
-            Action::Command(action) => command::handle_action(self, action),
-        }
-        self.assert_invariants().unwrap();
-    }
 }
 
 #[derive(Debug)]
@@ -354,13 +343,4 @@ pub enum KeyEventKind {
     Press,
     Repeat,
     Release,
-}
-
-#[derive(Debug)]
-pub enum Action {
-    Normal(normal::Action),
-    Insert(insert::Action),
-    Prompt(prompt::Action),
-    View(view::Action),
-    Command(command::Action),
 }

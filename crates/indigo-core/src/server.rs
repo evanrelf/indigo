@@ -1,6 +1,6 @@
 use crate::{
     buffer::Buffer,
-    client::{Action, Client, ClientMut, ClientState, Event},
+    client::{Client, ClientMut, ClientState, Event},
     fs::{Fs, NoFs},
     session::Session,
 };
@@ -39,9 +39,5 @@ impl Server {
 
     pub fn handle_event(&mut self, event: Event) -> anyhow::Result<bool> {
         self.client_mut().handle_event(event)
-    }
-
-    pub fn handle_action(&mut self, action: &Action) {
-        self.client_mut().handle_action(action);
     }
 }

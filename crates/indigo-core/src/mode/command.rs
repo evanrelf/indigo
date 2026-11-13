@@ -3,8 +3,6 @@ use anyhow::anyhow;
 use bpaf::{OptionParser, ParseFailure, Parser as _, choice, construct, long, positional, pure};
 use camino::Utf8PathBuf;
 
-pub type Action = Command;
-
 #[derive(Clone, Debug)]
 pub enum Command {
     Nop,
@@ -16,16 +14,6 @@ pub enum Command {
     WriteQuit { exit_code: Option<u8> },
     Readonly,
     Panic,
-}
-
-pub fn handle_actions(client: &mut ClientMut, actions: &[Action]) {
-    for action in actions {
-        handle_action(client, action);
-    }
-}
-
-pub fn handle_action(client: &mut ClientMut, action: &Action) {
-    handle_command(client, action);
 }
 
 pub fn enter_command_mode(client: &mut ClientMut) {
