@@ -1,15 +1,14 @@
 //! Splitting bytes from the terminal into sequences, without interpreting them
 
 use crate::input::{BRACKETED_PASTE_BEGIN, BRACKETED_PASTE_END};
-use std::{cmp::min, ops::Deref};
+use std::cmp::min;
 use tinyvec::{ArrayVec, TinyVec};
 use winnow::{
     Partial,
-    combinator::{alt, repeat},
+    combinator::alt,
     error::{ErrMode, Needed},
     prelude::*,
-    stream::Accumulate,
-    token::one_of,
+    token::{one_of, take_while},
 };
 
 #[derive(Debug, PartialEq)]
@@ -145,14 +144,18 @@ fn paste_chunk(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
 
 fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
     "\x1b[".void().parse_next(input)?;
-    let Accumulated(parameter_bytes) = repeat(0.., one_of(0x30..=0x3F)).parse_next(input)?;
+    let parameter_bytes = take_while(0.., 0x30..=0x3F)
+        .map(TinyVec::from)
+        .parse_next(input)?;
     if parameter_bytes.is_heap() {
         log::debug!(
             "got {} csi parameter bytes, overflowing to heap",
             parameter_bytes.len()
         );
     }
-    let Accumulated(intermediate_bytes) = repeat(0.., one_of(0x20..=0x2F)).parse_next(input)?;
+    let intermediate_bytes = take_while(0.., 0x20..=0x2F)
+        .map(TinyVec::from)
+        .parse_next(input)?;
     if intermediate_bytes.is_heap() {
         log::debug!(
             "got {} csi intermediate bytes, overflowing to heap",
@@ -169,7 +172,9 @@ fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
 
 fn osc(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
     "\x1b]".void().parse_next(input)?;
-    let Accumulated(data_bytes) = repeat(0.., one_of(0x20..=0xFF)).parse_next(input)?;
+    let data_bytes = take_while(0.., 0x20..=0xFF)
+        .map(TinyVec::from)
+        .parse_next(input)?;
     if data_bytes.is_heap() {
         log::debug!(
             "found {} osc intermediate bytes, overflowing to heap",
@@ -178,29 +183,4 @@ fn osc(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
     }
     alt(("\x07", "\x1b\x5c")).void().parse_next(input)?;
     Ok(Token::Osc { data_bytes })
-}
-
-struct Accumulated<T: tinyvec::Array>(TinyVec<T>);
-
-impl<T: tinyvec::Array> Deref for Accumulated<T> {
-    type Target = TinyVec<T>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T, const N: usize> Accumulate<T> for Accumulated<[T; N]>
-where
-    T: Default,
-{
-    fn initial(capacity: Option<usize>) -> Self {
-        if let Some(capacity) = capacity {
-            Self(TinyVec::with_capacity(capacity))
-        } else {
-            Self(TinyVec::new())
-        }
-    }
-    fn accumulate(&mut self, acc: T) {
-        self.0.push(acc);
-    }
 }
