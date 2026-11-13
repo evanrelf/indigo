@@ -664,8 +664,10 @@ fn render_text(client: &Client, area: Rect, surface: &mut Surface) {
 
             let width_usize = grapheme.display_width();
 
-            let width_u16 = u16::try_from(width_usize)
-                .expect("No grapheme exists with a display width > u16::MAX");
+            // A grapheme too wide for `u16` is necessarily too wide for the row.
+            let Ok(width_u16) = u16::try_from(width_usize) else {
+                continue 'line;
+            };
 
             if width_u16 > rect.width {
                 continue 'line;
