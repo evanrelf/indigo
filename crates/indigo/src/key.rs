@@ -30,30 +30,46 @@ pub fn key_event_i2t(key_event: &i::KeyEvent) -> anyhow::Result<t::KeyEvent> {
     })
 }
 
-pub fn key_modifiers_t2i(modifiers: &t::KeyModifiers) -> anyhow::Result<i::KeyModifiers> {
-    modifiers
-        .iter_names()
-        .map(|m| match m {
-            ("SHIFT", _) => Ok(i::KeyModifiers::SHIFT),
-            ("CONTROL", _) => Ok(i::KeyModifiers::CONTROL),
-            ("ALT", _) => Ok(i::KeyModifiers::ALT),
-            (_, m) => Err(anyhow!("Unsupported crossterm key modifier: {m:?}")),
-        })
-        .try_fold(i::KeyModifiers::empty(), |ms, m| m.map(|m| ms | m))
+pub fn key_modifiers_t2i(t_modifiers: &t::KeyModifiers) -> anyhow::Result<i::KeyModifiers> {
+    let unsupported = t_modifiers
+        .difference(t::KeyModifiers::SHIFT | t::KeyModifiers::CONTROL | t::KeyModifiers::ALT);
+    if !unsupported.is_empty() {
+        return Err(anyhow!(
+            "Unsupported crossterm key modifiers: {unsupported:?}"
+        ));
+    }
+    let mut i_modifiers = i::KeyModifiers::empty();
+    i_modifiers.set(
+        i::KeyModifiers::SHIFT,
+        t_modifiers.contains(t::KeyModifiers::SHIFT),
+    );
+    i_modifiers.set(
+        i::KeyModifiers::CONTROL,
+        t_modifiers.contains(t::KeyModifiers::CONTROL),
+    );
+    i_modifiers.set(
+        i::KeyModifiers::ALT,
+        t_modifiers.contains(t::KeyModifiers::ALT),
+    );
+    Ok(i_modifiers)
 }
 
 #[must_use]
-pub fn key_modifiers_i2t(modifiers: &i::KeyModifiers) -> t::KeyModifiers {
-    modifiers
-        .iter_names()
-        .map(|m| match m {
-            ("SHIFT", _) => Ok(t::KeyModifiers::SHIFT),
-            ("CONTROL", _) => Ok(t::KeyModifiers::CONTROL),
-            ("ALT", _) => Ok(t::KeyModifiers::ALT),
-            (_, m) => Err(anyhow!("Unsupported indigo key modifier: {m:?}")),
-        })
-        .try_fold(t::KeyModifiers::empty(), |ms, m| m.map(|m| ms | m))
-        .expect("Indigo modifiers are a subset of terminal modifiers")
+pub fn key_modifiers_i2t(i_modifiers: &i::KeyModifiers) -> t::KeyModifiers {
+    let mut t_modifiers = t::KeyModifiers::empty();
+    t_modifiers.set(
+        t::KeyModifiers::SHIFT,
+        i_modifiers.contains(i::KeyModifiers::SHIFT),
+    );
+    t_modifiers.set(
+        t::KeyModifiers::CONTROL,
+        i_modifiers.contains(i::KeyModifiers::CONTROL),
+    );
+    t_modifiers.set(
+        t::KeyModifiers::ALT,
+        i_modifiers.contains(i::KeyModifiers::ALT),
+    );
+    t_modifiers
 }
 
 pub fn key_code_t2i(code: &t::KeyCode) -> anyhow::Result<i::KeyCode> {
