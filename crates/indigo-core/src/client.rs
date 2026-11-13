@@ -163,7 +163,7 @@ impl<'a, W: WrapRef> ClientView<'a, W> {
     }
 
     #[must_use]
-    pub fn display_path<'p>(&self, path: &'p Utf8Path) -> Cow<'p, str> {
+    pub fn display_path(&self, path: &Utf8Path) -> String {
         path::display_path(self.home, self.session.pwd(), path)
     }
 

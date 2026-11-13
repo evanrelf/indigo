@@ -1,13 +1,12 @@
 use camino::{Utf8Component, Utf8Path, Utf8PathBuf};
 use pathdiff::diff_utf8_paths;
-use std::borrow::Cow;
 
 #[must_use]
-pub fn display_path<'a>(home: &Utf8Path, pwd: &Utf8Path, path: &'a Utf8Path) -> Cow<'a, str> {
+pub fn display_path(home: &Utf8Path, pwd: &Utf8Path, path: &Utf8Path) -> String {
     // If we're under `$PWD`, use a relative path.
     let absolute = normalize(&pwd.join(path));
     if let Ok(relative) = absolute.strip_prefix(pwd) {
-        return Cow::Owned(relative.to_string());
+        return relative.to_string();
     }
     // If we're outside `$PWD`, use the shortest option (preferring absolute, then `~`, on ties).
     let mut shortest = absolute.clone();
@@ -22,7 +21,7 @@ pub fn display_path<'a>(home: &Utf8Path, pwd: &Utf8Path, path: &'a Utf8Path) -> 
     {
         shortest = relative;
     }
-    Cow::Owned(shortest.into_string())
+    shortest.into_string()
 }
 
 #[must_use]
@@ -104,7 +103,7 @@ mod tests {
 
         let display_path = display_path(&home, &pwd, path.as_str().into());
 
-        let resolved = absolute_path(&home, &pwd, display_path.as_ref().into());
+        let resolved = absolute_path(&home, &pwd, display_path.as_str().into());
         assert_eq!(normalize(&resolved), absolute);
         assert!(display_path.len() <= absolute.as_str().len());
         if absolute.starts_with(&pwd) {

@@ -371,7 +371,7 @@ fn render_status_bar(client: &Client, area: Rect, surface: &mut Surface) {
     let path = client
         .focused_buffer()
         .path()
-        .map_or(Cow::Borrowed("*scratch*"), |path| client.display_path(path));
+        .map_or_else(|| "*scratch*".to_owned(), |path| client.display_path(path));
 
     let buffer = client.focused_buffer();
 

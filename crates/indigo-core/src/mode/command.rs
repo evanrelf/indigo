@@ -2,7 +2,6 @@ use crate::{buffer::Buffer, client::ClientMut, mode::prompt, window::WindowState
 use anyhow::anyhow;
 use bpaf::{OptionParser, ParseFailure, Parser, choice, construct, long, positional, pure};
 use camino::Utf8PathBuf;
-use std::borrow::Cow;
 
 pub type Action = Command;
 
@@ -177,9 +176,10 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
                 let path = absolute_path
                     .as_deref()
                     .or_else(|| client.focused_buffer().path())
-                    .map_or(Cow::Borrowed("a scratch buffer"), |path| {
-                        client.display_path(path)
-                    });
+                    .map_or_else(
+                        || "a scratch buffer".to_owned(),
+                        |path| client.display_path(path),
+                    );
                 let error = format!("Failed to save {path}: {error:#}");
                 client.set_error(error);
             }
@@ -188,13 +188,10 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
             let mut modified = None;
             for (_, buffer) in client.session().buffers() {
                 if buffer.is_modified().unwrap_or(false) {
-                    modified = Some(
-                        buffer
-                            .path()
-                            .map_or(Cow::Borrowed("a scratch buffer"), |path| {
-                                client.display_path(path)
-                            }),
-                    );
+                    modified = Some(buffer.path().map_or_else(
+                        || "a scratch buffer".to_owned(),
+                        |path| client.display_path(path),
+                    ));
                     break;
                 }
             }
@@ -213,12 +210,10 @@ fn handle_command(client: &mut ClientMut, command: &Command) {
             match client.focused_buffer_mut().save(fs) {
                 Ok(()) => client.exit(exit_code.unwrap_or(0)),
                 Err(error) => {
-                    let path = client
-                        .focused_buffer()
-                        .path()
-                        .map_or(Cow::Borrowed("a scratch buffer"), |path| {
-                            client.display_path(path)
-                        });
+                    let path = client.focused_buffer().path().map_or_else(
+                        || "a scratch buffer".to_owned(),
+                        |path| client.display_path(path),
+                    );
                     let error = format!("Failed to save {path}: {error:#}");
                     client.set_error(error);
                 }
