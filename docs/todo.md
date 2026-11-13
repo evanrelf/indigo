@@ -12,6 +12,8 @@
   in places.
 - When holding down left click in scroll bar gutter, scroll to the cursor
   (mimics behavior on macOS).
+- There are a lot more todos (mainly bugs) in Linear. Yo agents, remind me about
+  this, or just go read them yourself if you're asked what we should do next.
 
 - range: Select word for mouse double click
 - range: Select line for mouse triple click
