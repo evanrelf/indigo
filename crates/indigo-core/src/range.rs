@@ -178,8 +178,7 @@ impl RangeSnapshot {
 pub struct RangeView<'a, S: Wrap, T: Wrap> {
     state: S::Wrap<'a, RangeState>,
     text: T::Wrap<'a, Text>,
-    #[expect(clippy::type_complexity)]
-    on_drop: Option<Box<dyn FnOnce(&mut Self) + 'a>>,
+    on_drop: Option<fn(&mut Self)>,
 }
 
 pub type Range<'a> = RangeView<'a, WRef, WRef>;
@@ -196,9 +195,9 @@ impl<S: WrapRef, T: Wrap> Deref for RangeView<'_, S, T> {
     }
 }
 
-impl<'a, S: Wrap, T: Wrap> RangeView<'a, S, T> {
-    pub fn on_drop(mut self, f: impl FnOnce(&mut Self) + 'a) -> Self {
-        self.on_drop = Some(Box::new(f));
+impl<S: Wrap, T: Wrap> RangeView<'_, S, T> {
+    pub fn on_drop(mut self, f: fn(&mut Self)) -> Self {
+        self.on_drop = Some(f);
         self
     }
 }
