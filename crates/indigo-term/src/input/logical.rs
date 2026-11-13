@@ -4,9 +4,8 @@ use crate::{
     input::{ColorScheme, Event, Key, KeyCode, KeyModifiers, ModeSetting, physical::Token},
     output::KeyboardEnhancementFlags,
 };
-use std::str;
 use winnow::{
-    ascii::digit1,
+    ascii::{dec_uint, digit1},
     combinator::{alt, opt, separated},
     prelude::*,
     token::one_of,
@@ -165,10 +164,7 @@ fn make_key_event(mut key: Key, event_type: u8) -> Event {
 }
 
 fn u32(input: &mut &[u8]) -> winnow::ModalResult<u32> {
-    digit1
-        .try_map(|bytes| str::from_utf8(bytes))
-        .try_map(|str| str::parse(str))
-        .parse_next(input)
+    dec_uint.parse_next(input)
 }
 
 fn in_band_resize(input: &mut &[u8]) -> winnow::ModalResult<Event> {
@@ -232,17 +228,11 @@ fn cursor_position(input: &mut &[u8]) -> winnow::ModalResult<Event> {
 }
 
 fn u8(input: &mut &[u8]) -> winnow::ModalResult<u8> {
-    digit1
-        .try_map(|bytes| str::from_utf8(bytes))
-        .try_map(|str| str::parse(str))
-        .parse_next(input)
+    dec_uint.parse_next(input)
 }
 
 fn u16(input: &mut &[u8]) -> winnow::ModalResult<u16> {
-    digit1
-        .try_map(|bytes| str::from_utf8(bytes))
-        .try_map(|str| str::parse(str))
-        .parse_next(input)
+    dec_uint.parse_next(input)
 }
 
 #[cfg(test)]
