@@ -5,7 +5,7 @@ use std::{
     str::FromStr,
 };
 use winnow::{
-    ascii::{multispace0, till_line_ending},
+    ascii::{multispace1, till_line_ending},
     combinator::{alt, cut_err, delimited, fail, opt, preceded, repeat, terminated},
     error::StrContext,
     prelude::*,
@@ -36,11 +36,7 @@ fn comment(input: &mut &str) -> ModalResult<()> {
 }
 
 fn not_key(input: &mut &str) -> ModalResult<()> {
-    multispace0.parse_next(input)?;
-    while comment.parse_next(input).is_ok() {
-        multispace0.parse_next(input)?;
-    }
-    Ok(())
+    repeat(0.., alt((multispace1.void(), comment))).parse_next(input)
 }
 
 fn keys(input: &mut &str) -> ModalResult<Keys> {
