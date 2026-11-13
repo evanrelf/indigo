@@ -410,10 +410,17 @@ pub fn handle_keys(client: &mut ClientMut) -> bool {
     }
 }
 
+// Generous cap that Indigo can still handle without hanging.
+const MAX_COUNT: usize = 100_000;
+
 pub fn append_count_digit(client: &mut ClientMut, digit: u8) {
     let digit = usize::from(digit);
     let old_count = client.count.map_or(0, |count| usize::from(count));
-    let new_count = NonZeroUsize::new(old_count.saturating_mul(10).saturating_add(digit));
+    let uncapped_count = old_count.saturating_mul(10).saturating_add(digit);
+    if uncapped_count > MAX_COUNT {
+        client.set_error("Max count is 100,000");
+    }
+    let new_count = NonZeroUsize::new(min(uncapped_count, MAX_COUNT));
     client.count = new_count;
 }
 
