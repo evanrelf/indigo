@@ -2,13 +2,8 @@ use arrayvec::ArrayVec;
 use std::iter;
 
 pub enum Trie<K, V> {
-    Branch {
-        keys: Vec<K>,
-        children: Vec<Box<Self>>,
-    },
-    Leaf {
-        value: V,
-    },
+    Branch { keys: Vec<K>, children: Vec<Self> },
+    Leaf { value: V },
 }
 
 impl<K, V> Trie<K, V> {
@@ -32,7 +27,7 @@ impl<K, V> Trie<K, V> {
                             branch.insert(tail, value)?;
                             Box::new(branch)
                         };
-                        children.insert(index, child);
+                        children.insert(index, *child);
                         Ok(None)
                     }
                 }
