@@ -81,14 +81,10 @@ impl Syntax {
     /// whitespace has no outer node.
     #[must_use]
     pub fn outer_node(&self, byte_range: Range<usize>) -> Option<Node<'_>> {
-        let mut node = self
-            .tree
-            .root_node()
-            .descendant_for_byte_range(byte_range.start, byte_range.end)?;
-        while !strictly_contains(&node.byte_range(), &byte_range) {
-            node = node.parent()?;
-        }
-        Some(node)
+        self.node_path(byte_range.clone())
+            .into_iter()
+            .rev()
+            .find(|node| strictly_contains(&node.byte_range(), &byte_range))
     }
 }
 
