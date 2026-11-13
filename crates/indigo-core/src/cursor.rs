@@ -58,34 +58,6 @@ pub enum GoalColumn {
     OntoLineEnd,
 }
 
-impl From<usize> for GoalColumn {
-    fn from(n: usize) -> Self {
-        if n == usize::MAX {
-            Self::OntoLineEnd
-        } else if n == usize::MAX - 1 {
-            Self::UntilLineEnd
-        } else {
-            Self::Column(n)
-        }
-    }
-}
-
-impl From<GoalColumn> for usize {
-    fn from(goal_column: GoalColumn) -> Self {
-        match goal_column {
-            GoalColumn::Column(n) => {
-                assert!(
-                    n < Self::MAX - 1,
-                    "ambiguous conversion from GoalColumn to usize"
-                );
-                n
-            }
-            GoalColumn::UntilLineEnd => Self::MAX - 1,
-            GoalColumn::OntoLineEnd => Self::MAX,
-        }
-    }
-}
-
 #[derive(Clone, Debug, Default)]
 pub struct CursorState {
     pub byte_index: usize,
@@ -309,7 +281,9 @@ impl<S: WrapMut, T: WrapRef> CursorView<'_, S, T> {
                 break;
             }
             let grapheme_width = grapheme.display_width();
-            if target_line_prefix + grapheme_width > usize::from(goal_column) {
+            if let GoalColumn::Column(n) = goal_column
+                && target_line_prefix + grapheme_width > n
+            {
                 reached_line_end = false;
                 break;
             }
