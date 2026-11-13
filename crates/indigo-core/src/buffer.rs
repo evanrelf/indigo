@@ -1,6 +1,6 @@
 use crate::{fs::Fs, syntax::Language, text::Text};
 use camino::Utf8Path;
-use ropey::Rope;
+use ropey::{Rope, extra::esoterica::ropes_are_instances};
 use std::sync::Arc;
 
 slotmap::new_key_type! {
@@ -99,11 +99,14 @@ impl Buffer {
     // the changes.
     #[must_use]
     pub fn is_modified(&self) -> Option<bool> {
-        if let BufferKind::File { on_disk, .. } = &self.kind {
-            Some(self.text.rope() != on_disk)
-        } else {
-            None
+        let BufferKind::File { on_disk, .. } = &self.kind else {
+            return None;
+        };
+        let rope = self.text.rope();
+        if ropes_are_instances(rope, on_disk) {
+            return Some(false);
         }
+        Some(rope != on_disk)
     }
 
     pub fn assert_invariants(&self) -> anyhow::Result<()> {
