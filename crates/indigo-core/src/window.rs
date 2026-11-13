@@ -1,6 +1,5 @@
 use crate::{
     buffer::{Buffer, BufferKey},
-    range::RangeState,
     selection::{Selection, SelectionEdit, SelectionMove, SelectionState},
 };
 use indigo_text::rope::{LINE_TYPE, RopeExt as _};
@@ -24,13 +23,9 @@ pub struct WindowState {
 impl WindowState {
     #[must_use]
     pub fn new(buffer_key: BufferKey) -> Self {
-        let selection = SelectionState {
-            ranges: vec![RangeState::default()],
-            primary_range: 0,
-        };
         Self {
             buffer: buffer_key,
-            selection,
+            selection: SelectionState::default(),
             height: 0,
             prev_vertical_scroll: 0,
         }
