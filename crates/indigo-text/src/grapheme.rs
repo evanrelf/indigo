@@ -13,10 +13,21 @@ pub fn is_grapheme_boundary(rope: &RopeSlice, byte_offset: usize) -> bool {
         "byte offset {byte_offset} is out of bounds (rope length is {})",
         rope.len()
     );
-    if !rope.is_char_boundary(byte_offset) {
+    let (chunk, chunk_byte_offset) = rope.chunk(byte_offset);
+    if !chunk.is_char_boundary(byte_offset - chunk_byte_offset) {
         return false;
     }
-    let (chunk, chunk_byte_offset) = rope.chunk(byte_offset);
+    is_grapheme_boundary_in_chunk(rope, chunk, chunk_byte_offset, byte_offset)
+}
+
+// Like `is_grapheme_boundary` but reuses `chunk`.
+fn is_grapheme_boundary_in_chunk(
+    rope: &RopeSlice,
+    chunk: &str,
+    chunk_byte_offset: usize,
+    // Must be a `char` boundary.
+    byte_offset: usize,
+) -> bool {
     let mut cursor = GraphemeCursor::new(byte_offset, rope.len(), true);
     loop {
         match cursor.is_boundary(chunk, chunk_byte_offset) {
@@ -114,8 +125,12 @@ pub fn floor_grapheme_boundary(rope: &RopeSlice, byte_offset: usize) -> usize {
         "byte offset {byte_offset} is out of bounds (rope length is {})",
         rope.len()
     );
-    let byte_offset = rope.floor_char_boundary(byte_offset);
-    if is_grapheme_boundary(rope, byte_offset) {
+    // Chunks are `str`s, so their edges are `char` boundaries, and flooring within the chunk
+    // agrees with flooring within the rope.
+    let (chunk, chunk_byte_offset) = rope.chunk(byte_offset);
+    let byte_offset =
+        chunk_byte_offset + chunk.floor_char_boundary(byte_offset - chunk_byte_offset);
+    if is_grapheme_boundary_in_chunk(rope, chunk, chunk_byte_offset, byte_offset) {
         return byte_offset;
     }
     prev_grapheme_boundary(rope, byte_offset)
@@ -269,6 +284,25 @@ mod tests {
             rope.is_grapheme_boundary(input)
         };
         assert_eq!(ropey, crop);
+    }
+
+    #[hegel::test(test_cases = 10_000)]
+    fn test_floor_grapheme_boundary(tc: TestCase) {
+        // Repeat to sometimes span multiple chunks.
+        let string = tc
+            .draw(gs::text())
+            .repeat(tc.draw(gs::integers().min_value(1).max_value(200)));
+        let input = tc.draw(gs::integers().max_value(string.len()));
+        let rope = Rope::from(string.as_str());
+        let actual = floor_grapheme_boundary(&rope.slice(..), input);
+        let expected = string
+            .grapheme_indices(true)
+            .map(|(i, _)| i)
+            .chain([string.len()])
+            .take_while(|&i| i <= input)
+            .last()
+            .unwrap();
+        assert_eq!(actual, expected);
     }
 
     #[hegel::test(test_cases = 10_000)]
