@@ -237,7 +237,9 @@ pub fn byte_index_to_area(
     // TODO(horizontal_scroll): When horizontal scroll is introduced, still return portion of rect
     // that is visible. Even if it starts to the left of the area, it might be wide enough to peek
     // into the viewport.
-    let x = area.x + u16::try_from(prefix_width).unwrap();
+    //
+    // A column too large for `u16` is necessarily to the right of the area.
+    let x = area.x.checked_add(u16::try_from(prefix_width).ok()?)?;
 
     if !(area.left()..area.right()).contains(&x) {
         return None;
