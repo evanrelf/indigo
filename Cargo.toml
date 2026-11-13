@@ -23,7 +23,6 @@ indigo-term = { path = "crates/indigo-term/" }
 indigo-text = { path = "crates/indigo-text/" }
 indigo-wrap = { path = "crates/indigo-wrap/" }
 libc = "0.2.191"
-log = "0.4.35"
 memchr = "2.8.3"
 pastey = "0.2.3"
 pathdiff = { version = "0.2.3", features = ["camino"] }

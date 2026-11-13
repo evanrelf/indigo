@@ -148,7 +148,7 @@ fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
         .map(TinyVec::from)
         .parse_next(input)?;
     if parameter_bytes.is_heap() {
-        log::debug!(
+        tracing::debug!(
             "got {} csi parameter bytes, overflowing to heap",
             parameter_bytes.len()
         );
@@ -157,7 +157,7 @@ fn csi(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
         .map(TinyVec::from)
         .parse_next(input)?;
     if intermediate_bytes.is_heap() {
-        log::debug!(
+        tracing::debug!(
             "got {} csi intermediate bytes, overflowing to heap",
             intermediate_bytes.len()
         );
@@ -176,7 +176,7 @@ fn osc(input: &mut Partial<&[u8]>) -> winnow::ModalResult<Token> {
         .map(TinyVec::from)
         .parse_next(input)?;
     if data_bytes.is_heap() {
-        log::debug!(
+        tracing::debug!(
             "found {} osc intermediate bytes, overflowing to heap",
             data_bytes.len()
         );

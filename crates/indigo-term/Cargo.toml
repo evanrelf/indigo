@@ -9,7 +9,7 @@ ratatui = ["dep:ratatui-core"]
 [dependencies]
 bitflags = { workspace = true }
 libc = { workspace = true }
-log = { workspace = true }
+tracing = { workspace = true }
 ratatui-core = { workspace = true, optional = true }
 tinyvec = { workspace = true }
 winnow = { workspace = true }

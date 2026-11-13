@@ -861,9 +861,9 @@ dependencies = [
  "bitflags 2.13.2",
  "hegeltest",
  "libc",
- "log",
  "ratatui-core",
  "tinyvec",
+ "tracing",
  "winnow",
 ]
 
