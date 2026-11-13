@@ -1,7 +1,5 @@
-#![allow(clippy::allow_attributes)]
 #![allow(clippy::as_conversions)]
 #![allow(clippy::uninlined_format_args)]
-#![allow(clippy::wildcard_imports)]
 
 use indigo_term::{
     Terminal,
@@ -116,7 +114,7 @@ fn render_clear(state: &State, terminal: &mut Terminal) -> io::Result<()> {
             } else {
                 input_display.div_ceil(width)
             };
-            #[allow(clippy::cast_possible_truncation)]
+            #[expect(clippy::cast_possible_truncation)]
             {
                 (line_height + input_height - 1) as u16
             }

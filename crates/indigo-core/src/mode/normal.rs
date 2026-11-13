@@ -1,4 +1,4 @@
-#![allow(clippy::enum_glob_use)]
+#![cfg_attr(not(test), expect(clippy::enum_glob_use))]
 
 use crate::{
     client::ClientMut,

@@ -1,6 +1,5 @@
-#![allow(clippy::allow_attributes)]
 #![allow(clippy::uninlined_format_args)]
-#![allow(clippy::wildcard_imports)]
+#![cfg_attr(not(test), expect(clippy::wildcard_imports))]
 
 use crate::{
     Reader, Tty,
@@ -83,7 +82,7 @@ impl Terminal {
     }
 
     pub fn enable_mode(&mut self, mode: u16) -> io::Result<bool> {
-        #[allow(clippy::enum_glob_use)]
+        #[cfg_attr(not(test), expect(clippy::enum_glob_use))]
         use ModeSetting::*;
 
         match self.query_mode(mode)? {
@@ -98,7 +97,7 @@ impl Terminal {
     }
 
     pub fn disable_mode(&mut self, mode: u16) -> io::Result<bool> {
-        #[allow(clippy::enum_glob_use)]
+        #[cfg_attr(not(test), expect(clippy::enum_glob_use))]
         use ModeSetting::*;
 
         match self.query_mode(mode)? {

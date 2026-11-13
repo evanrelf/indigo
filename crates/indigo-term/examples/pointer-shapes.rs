@@ -1,5 +1,3 @@
-#![allow(clippy::uninlined_format_args)]
-
 use indigo_term::{
     Terminal,
     input::{Event, KeyCode, KeyModifiers, physical::Token},

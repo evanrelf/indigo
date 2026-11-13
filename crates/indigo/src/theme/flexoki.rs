@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use ratatui::prelude::Color;
 
 // https://stephango.com/flexoki
@@ -134,7 +132,7 @@ pub const MAGENTA_900: Color = Color::from_u32(0x00_39172B);
 pub const MAGENTA_950: Color = Color::from_u32(0x00_24131D);
 
 pub mod light {
-    #![allow(clippy::wildcard_imports)]
+    #![cfg_attr(not(test), expect(clippy::wildcard_imports))]
 
     use super::*;
     use crate::theme::Theme;
@@ -174,7 +172,7 @@ pub mod light {
 }
 
 pub mod dark {
-    #![allow(clippy::wildcard_imports)]
+    #![cfg_attr(not(test), expect(clippy::wildcard_imports))]
 
     use super::*;
 
