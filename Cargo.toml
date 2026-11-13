@@ -26,7 +26,7 @@ libc = "0.2.191"
 memchr = "2.8.3"
 pastey = "0.2.3"
 pathdiff = { version = "0.2.3", features = ["camino"] }
-ratatui = "0.30.2"
+ratatui = { version = "0.30.2", default-features = false, features = ["crossterm", "layout-cache"] }
 ratatui-core = "0.1.2"
 regex-cursor = { version = "0.1.5", default-features = false, features = ["perf-inline"] }
 roaring = "0.12.0"
