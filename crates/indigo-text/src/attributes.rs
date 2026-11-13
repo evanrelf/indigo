@@ -58,8 +58,9 @@ impl<A> Attributes<A> {
         A: Borrow<Q> + Ord,
         Q: Ord + ?Sized,
     {
-        self.inner.get(attribute.borrow()).map(|ranges| Ranges {
-            iter: ranges.iter(),
+        self.inner.get(attribute.borrow()).map(|ranges| {
+            let mut iter = ranges.iter();
+            iter::from_fn(move || iter.next_range())
         })
     }
 
@@ -101,20 +102,6 @@ impl<A> Default for Attributes<A> {
         Self {
             inner: BTreeMap::default(),
         }
-    }
-}
-
-/// An iterator over ranges with a certain attribute.
-///
-/// This struct is created with the [`ranges`](Attributes::ranges) method on [`Attributes`].
-pub struct Ranges<'a> {
-    iter: roaring::bitmap::Iter<'a>,
-}
-
-impl Iterator for Ranges<'_> {
-    type Item = RangeInclusive<u32>;
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next_range()
     }
 }
 
