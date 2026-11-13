@@ -152,8 +152,8 @@ where
     T: Eq + Hash,
     S: BuildHasher,
 {
-    fn join(&mut self, mut other: Self) {
-        self.set.extend(other.set.drain());
+    fn join(&mut self, other: Self) {
+        self.set.extend(other.set);
     }
 }
 
