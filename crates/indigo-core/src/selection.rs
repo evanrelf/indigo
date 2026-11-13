@@ -10,7 +10,14 @@ use indigo_text::{
 use indigo_wrap::{WMut, WRef, Wrap, WrapMut, WrapRef};
 use regex_cursor::engines::meta::Regex;
 use ropey::{Rope, RopeSlice};
-use std::{borrow::Cow, cmp::max, iter::zip, mem, ops::Deref, thread};
+use std::{
+    borrow::Cow,
+    cmp::{max, min},
+    iter::zip,
+    mem,
+    ops::Deref,
+    thread,
+};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -59,13 +66,14 @@ impl SelectionState {
 
         ops.map_positions(&mut offsets, edit::Bias::Forward);
 
+        // Equivalent to `snap_to_grapheme_start`, but computes the slice and last grapheme start
+        // once instead of for every offset.
+        let rope = text.as_slice();
+        let last = rope.last_grapheme_start().expect("Text is never empty");
+
         for (i, range) in self.ranges.iter_mut().enumerate() {
-            range.tail.byte_index = text
-                .snap_to_grapheme_start(offsets[i * 2])
-                .expect("Text is never empty");
-            range.head.byte_index = text
-                .snap_to_grapheme_start(offsets[i * 2 + 1])
-                .expect("Text is never empty");
+            range.tail.byte_index = rope.floor_grapheme_boundary(min(offsets[i * 2], last));
+            range.head.byte_index = rope.floor_grapheme_boundary(min(offsets[i * 2 + 1], last));
             range.goal_column = None;
         }
     }
