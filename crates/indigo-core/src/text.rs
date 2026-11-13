@@ -7,6 +7,7 @@ use ropey::Rope;
 use std::{
     borrow::Cow,
     ops::{Deref, Range},
+    sync::Arc,
 };
 use thiserror::Error;
 
@@ -22,9 +23,9 @@ pub enum Error {
 #[derive(Clone)]
 struct BidiEdit {
     /// Inverted operations. Apply to undo the edit.
-    undo: Edit,
+    undo: Arc<Edit>,
     /// Original operations. Apply to perform the edit.
-    redo: Edit,
+    redo: Arc<Edit>,
 }
 
 impl Extend<Self> for BidiEdit {
@@ -36,8 +37,8 @@ impl Extend<Self> for BidiEdit {
             if self.redo.is_empty() {
                 *self = ops;
             } else {
-                self.undo = ops.undo.compose(&self.undo).unwrap();
-                self.redo = self.redo.compose(&ops.redo).unwrap();
+                self.undo = Arc::new(ops.undo.compose(&self.undo).unwrap());
+                self.redo = Arc::new(self.redo.compose(&ops.redo).unwrap());
             }
         }
     }
@@ -48,7 +49,7 @@ pub struct Text {
     rope: Rope,
     syntax: Option<(Syntax, usize)>,
     history: History<BidiEdit, BidiEdit>,
-    log: Vec<Edit>,
+    log: Vec<Arc<Edit>>,
     pub readonly: bool,
 }
 
@@ -116,13 +117,14 @@ impl Text {
 
     pub fn apply(&mut self, ops: &Edit) -> anyhow::Result<()> {
         anyhow::ensure!(!self.readonly, "Cannot modify readonly text");
-        let undo = ops.invert();
+        let undo = Arc::new(ops.invert());
         ops.apply(&mut self.rope)?;
+        let redo = Arc::new(ops.clone());
         self.history.push(BidiEdit {
-            redo: ops.clone(),
+            redo: Arc::clone(&redo),
             undo,
         });
-        self.log.push(ops.clone());
+        self.log.push(redo);
         if cfg!(debug_assertions) {
             self.assert_invariants().unwrap();
         }
@@ -137,7 +139,7 @@ impl Text {
         anyhow::ensure!(!self.readonly, "Cannot modify readonly text");
         if let Some(ops) = self.history.undo() {
             ops.undo.apply(&mut self.rope)?;
-            self.log.push(ops.undo.clone());
+            self.log.push(Arc::clone(&ops.undo));
             if cfg!(debug_assertions) {
                 self.assert_invariants().unwrap();
             }
@@ -151,7 +153,7 @@ impl Text {
         anyhow::ensure!(!self.readonly, "Cannot modify readonly text");
         if let Some(ops) = self.history.redo() {
             ops.redo.apply(&mut self.rope)?;
-            self.log.push(ops.redo.clone());
+            self.log.push(Arc::clone(&ops.redo));
             if cfg!(debug_assertions) {
                 self.assert_invariants().unwrap();
             }
@@ -191,7 +193,7 @@ impl Text {
     }
 
     #[must_use]
-    pub fn ops_since(&self, version: usize) -> Option<&[Edit]> {
+    pub fn ops_since(&self, version: usize) -> Option<&[Arc<Edit>]> {
         self.log.get(version..)
     }
 
